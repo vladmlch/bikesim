@@ -2,6 +2,7 @@
 
 #include "../configuration/model_config.hpp"
 #include "../configuration/rider_spec.hpp"
+#include "../spatial/config.hpp"
 #include <optional>
 #include <string>
 #include <vector>

@@ -93,6 +93,30 @@ public:
     // fresh episode; here the bootstrap restore does.
     void reset();
 
+    // Scoped suppression of the latched bite — the oracle's
+    // StaticBrakeApplier.hold_suspended context manager: a pose solve is
+    // not a standstill the latch should remember (its engage/release
+    // hysteresis ratchets the wheels while the damped settle cycles run).
+    // Zeroes the hold spec for the scope and leaves a forgotten latch.
+    class HoldSuspend {
+    public:
+        explicit HoldSuspend(StaticBrake &brake) noexcept
+            : brake_(&brake), saved_(brake.hold_) {
+            brake_->hold_.torque_nm = 0.;
+            brake_->hold_.stiffness_nm_rad = 0.;
+        }
+        HoldSuspend(const HoldSuspend &) = delete;
+        HoldSuspend &operator=(const HoldSuspend &) = delete;
+        HoldSuspend(HoldSuspend &&) = delete;
+        HoldSuspend &operator=(HoldSuspend &&) = delete;
+        ~HoldSuspend() { brake_->hold_ = saved_; brake_->reset(); }
+
+    private:
+        StaticBrake *brake_;
+        BrakeHoldSpec saved_;
+    };
+    [[nodiscard]] HoldSuspend hold_suspend() noexcept { return HoldSuspend{*this}; }
+
     // solved_components: per-brake generalized force of the solved
     // mjCNSTR_FRICTION_DOF constraint rows, via mj_mulJacTVec over the
     // selected multipliers. Zero vector when no row is present.

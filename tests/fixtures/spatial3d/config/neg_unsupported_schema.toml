@@ -1,3 +1,8 @@
+# Negative control named by the plan (W05). The public TOML schema carries no
+# contract-version key (C1): `spatial_contract` exists only on the wire, so the
+# rule this file actually triggers is the unknown-key rejection at
+# `spatial_3d.spatial_contract`. The real unsupported-version rejection is
+# exercised on the wire in test_config.cpp (schema-version cases).
 physics_mode = "physical"
 drive_mode = "coast"
 spatial = "3d"

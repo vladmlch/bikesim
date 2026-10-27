@@ -1036,6 +1036,45 @@ void test_aliases_and_resolution() {
                   });
 }
 
+void check_encoded_optionals() {
+    // Optional-vs-missing on the encoded tree: a disengaged optional
+    // serializes as an explicit null member, never as an absent member.
+    const Value encoded = cfg::to_value(cfg::default_physics());
+    const Value& drive_mode =
+        member(encoded, "drive_mode", "config");
+    bt::require(!io::is_null(drive_mode) &&
+                    string_of(drive_mode, "drive_mode") ==
+                        "ideal_speed_control",
+                "resolved drive_mode encoding");
+    const Value& assist =
+        member(member(encoded, "drive", "config"), "assist", "drive");
+    bt::require(io::is_null(member(assist, "profile", "assist")) &&
+                    io::is_null(member(assist, "torque_curve", "assist")),
+                "disengaged assist optionals must encode as explicit null");
+    const Value& distributed_node =
+        member(member(encoded, "tires", "config"), "distributed", "tires");
+    bt::require(io::is_null(member(distributed_node, "front_material",
+                                   "distributed")) &&
+                    io::is_null(member(distributed_node, "rear_material",
+                                       "distributed")),
+                "disengaged wheel materials must encode as explicit null");
+    // Tuple members carry the $tuple tag; nested records are plain objects.
+    const Value& cassette =
+        member(member(member(encoded, "drive", "config"), "shifting",
+                      "drive.shifting"),
+               "cassette", "drive.shifting");
+    const Value& tuple = member(cassette, "$tuple", "cassette");
+    bt::require(io::as_array(tuple, "cassette.$tuple").size() == 12,
+                "cassette tuple tag");
+    const Value& wind = member(
+        member(encoded, "resistance", "config"), "wind_world_mps",
+        "resistance");
+    bt::require(io::as_array(member(wind, "$tuple", "wind"),
+                             "wind.$tuple")
+                        .size() == 3,
+                "wind_world_mps tuple tag");
+}
+
 void test_resolved_profiles() {
     // The oracle documents carry the profile override values — guard the
     // fixtures themselves so a stale capture cannot pass vacuously.
@@ -1073,42 +1112,7 @@ void test_resolved_profiles() {
                               .string();
                   });
 
-    // Optional-vs-missing on the encoded tree: a disengaged optional
-    // serializes as an explicit null member, never as an absent member.
-    const Value encoded = cfg::to_value(cfg::default_physics());
-    const Value& drive_mode =
-        member(encoded, "drive_mode", "config");
-    bt::require(!io::is_null(drive_mode) &&
-                    string_of(drive_mode, "drive_mode") ==
-                        "ideal_speed_control",
-                "resolved drive_mode encoding");
-    const Value& assist =
-        member(member(encoded, "drive", "config"), "assist", "drive");
-    bt::require(io::is_null(member(assist, "profile", "assist")) &&
-                    io::is_null(member(assist, "torque_curve", "assist")),
-                "disengaged assist optionals must encode as explicit null");
-    const Value& distributed_node =
-        member(member(encoded, "tires", "config"), "distributed", "tires");
-    bt::require(io::is_null(member(distributed_node, "front_material",
-                                   "distributed")) &&
-                    io::is_null(member(distributed_node, "rear_material",
-                                       "distributed")),
-                "disengaged wheel materials must encode as explicit null");
-    // Tuple members carry the $tuple tag; nested records are plain objects.
-    const Value& cassette =
-        member(member(member(encoded, "drive", "config"), "shifting",
-                      "drive.shifting"),
-               "cassette", "drive.shifting");
-    const Value& tuple = member(cassette, "$tuple", "cassette");
-    bt::require(io::as_array(tuple, "cassette.$tuple").size() == 12,
-                "cassette tuple tag");
-    const Value& wind = member(
-        member(encoded, "resistance", "config"), "wind_world_mps",
-        "resistance");
-    bt::require(io::as_array(member(wind, "$tuple", "wind"),
-                             "wind.$tuple")
-                        .size() == 3,
-                "wind_world_mps tuple tag");
+    check_encoded_optionals();
 }
 
 void test_profile_coverage() {

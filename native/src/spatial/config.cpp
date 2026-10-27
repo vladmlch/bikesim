@@ -44,7 +44,7 @@ const Object& table(const Value& value, std::string_view path, Keys allowed, boo
     for (const auto& [key, unused] : object) {
         (void)unused;
         if (!seen.insert(key).second) fail(child(path, key), "duplicate key");
-        if (std::find(allowed.begin(), allowed.end(), key) == allowed.end())
+        if (std::ranges::find(allowed, key) == allowed.end())
             fail(child(path, key), "unknown key");
     }
     if (exact) for (const auto key : allowed) (void)required(object, key, path);
@@ -64,7 +64,7 @@ std::uint64_t unsigned_integer(const Value& value, std::string_view path) {
     if (!bike::io::is_integer_lexeme(number.lexeme) || number.lexeme.front() == '-')
         fail(path, "expected unsigned integer");
     std::uint64_t result = 0;
-    const auto* end = number.lexeme.data() + number.lexeme.size();
+    const auto* end = std::to_address(number.lexeme.cend());
     const auto parsed = std::from_chars(number.lexeme.data(), end, result);
     if (parsed.ec != std::errc{} || parsed.ptr != end) fail(path, "integer out of range");
     return result;
@@ -79,6 +79,7 @@ void finite_vector(const Vec3& value, std::string_view path) {
     for (std::size_t index = 0; index < value.size(); ++index)
         if (!std::isfinite(value[index])) fail(child(path, std::to_string(index)), "must be finite");
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (value, path) matches the file's helper convention
 void string_domain(std::string_view value, std::string_view path) {
     if (value.find('\0') != std::string_view::npos) fail(path, "embedded NUL is forbidden");
 }
@@ -87,9 +88,10 @@ std::string string(const Value& value, std::string_view path) {
     string_domain(result, path);
     return result;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (value, path) matches the file's helper convention
 void digest(std::string_view value, std::string_view path) {
     if (value.empty()) return; // No acquired profile identity: capability stays closed.
-    if (value.size() != 64 || !std::all_of(value.begin(), value.end(), [](char ch) {
+    if (value.size() != 64 || !std::ranges::all_of(value, [](char ch) {
             return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f');
         })) fail(path, "expected 64 lowercase hexadecimal characters");
 }

@@ -232,6 +232,22 @@ void projection_failure(st::RigModel& rig,Writer& writer,
     fault.reject=false;(void)adapter.probe_qfrc(rig.data,dt);
     bt::require(writer.state_bytes()==material,"valid projection retry remains observational");
 }
+void slot_clock_contract(st::RigModel& rig,Writer& writer,std::span<double> out,double dt) {
+    // Precondition: interval 0 is accepted. MuJoCo's `t += dt` drifts off exact
+    // slot multiples on long rides, so a sub-slot offset is a legitimate step,
+    // while a skipped slot (>= one whole slot away) must still be refused.
+    const auto before=writer.state_bytes();
+    const std::vector<double> untouched(out.begin(),out.end());
+    rig.data->time=2.*dt;
+    bt::require(writer.try_compute_into(rig.data,dt,true,out)!=CoreStatus::ok,"skipped time slot is rejected");
+    bt::require(writer.state_bytes()==before&&std::equal(out.begin(),out.end(),untouched.begin()),
+        "skipped slot changes neither state nor additive output");
+    rig.data->time=(1.+1e-6)*dt;
+    bt::require(writer.try_compute_into(rig.data,dt,true,out)==CoreStatus::ok,
+        "integrator-clock drift of 1e-6 slot is still the next accepted interval");
+    bt::require(writer.state().accepted_interval==1,"drifted step advances exactly one interval");
+    rig.data->time=0.;
+}
 void warm_window(st::RigModel& rig,Writer& writer,std::span<double> out,double dt) {
     // Warm error frames and engine Jacobian scratch before counting. This
     // hook measures executable-owned new/delete, not hidden vendor malloc.
@@ -291,6 +307,7 @@ void exercise(st::RigModel& rig,sp::TyreTier tier,const bike::terrain::Terrain3d
         bt::require(writer->try_compute_into(rig.data,dt,true,force)!=CoreStatus::ok,"duplicate accepted interval is rejected");
         bt::require(writer->state_bytes()==accepted&&force==accepted_force,"duplicate interval changes neither state nor additive output");
         restore_rejections(*writer);
+        if(trial==0)slot_clock_contract(rig,*writer,force,dt);
         if(trial==7)warm_window(rig,*writer,force,dt);
     }
     bt::require(couples>1e-10,"nonzero intrinsic couples exercise rotational Jacobian mapping");

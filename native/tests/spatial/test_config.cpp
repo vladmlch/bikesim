@@ -227,6 +227,29 @@ void override_resolution() {
     bt::require(io::find_member(io::as_object(planar_value, "planar"), "spatial_3d") == nullptr &&
                 io::find_member(io::as_object(field(planar_value, "tires"), "tires"), "pneumatic_3d") == nullptr,
                 "planar output contains no inherited spatial sections");
+    // The shoulder profile lives in the planar articulated table but is
+    // spatial-only: it must survive a 3D round trip and be dropped, not
+    // inherited, by an explicit planar transition.
+    const auto shouldered = own_config([&] { return cfg::SimulationPhysicsConfig(*base); });
+    shouldered->articulated.shoulder_profile = "synthetic-shoulder.json";
+    const auto kept = own_config([&] { return cfg::resolve_physics(Value{Object{}}, *shouldered); });
+    bt::require(kept->articulated.shoulder_profile == std::optional<std::string>("synthetic-shoulder.json"),
+                "3D resolution round-trips the shoulder profile");
+    const auto shoulder_planar = own_config([&] {
+        return cfg::resolve_physics(cfg::detail::parse_toml(
+            "spatial='planar'\n[tires]\nbackend='native_reference'\nsurface_mode='configured'\n", "planar shoulder"),
+            *shouldered);
+    });
+    bt::require(!shoulder_planar->spatial && !shoulder_planar->articulated.shoulder_profile &&
+                !shoulder_planar->articulated.shoulder_profile_sha256,
+                "explicit planar transition drops the inherited shoulder profile");
+    invalid_path([&] {
+        (void)own_config([&] {
+            return cfg::resolve_physics(cfg::detail::parse_toml(
+                "spatial='planar'\n[tires]\nbackend='native_reference'\nsurface_mode='configured'\n"
+                "[articulated]\nshoulder_profile='explicit.json'\n", "planar shoulder override"), *shouldered);
+        });
+    }, "articulated.shoulder_profile");
     invalid_path([&] { (void)resolve("spatial='planar'\n"); }, "tires.backend");
     invalid_path([&] {
         (void)resolve("spatial='planar'\n[spatial_3d]\nroot='free'\n");

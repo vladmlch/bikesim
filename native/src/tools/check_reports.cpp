@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <cctype>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -520,6 +521,44 @@ const std::regex &located_pattern() {
     return pattern;
 }
 
+// _SNIPPET_CONTEXT: clang echoes the offending source line under each
+// diagnostic with a "   <line> | <code>" gutter. Quoted code can contain
+// text like "error:" (a loop variable named error, a label, a string
+// literal), so collected diagnostic lines are not all severity headers.
+const std::regex &snippet_context_pattern() {
+    static const std::regex pattern("^\\s*\\d*\\s*\\|");
+    return pattern;
+}
+
+// _DIAGNOSTIC_HEADER: a severity token only counts where a diagnostic header
+// can put it: after a "file:line[:col]:" location, after a tool-name prefix
+// ("clang++: error:"), or at the start of the line ("error: unable to open
+// output file").
+const std::regex &diagnostic_header_pattern() {
+    static const std::regex pattern(
+        "^(?:.*?:\\d+(?::\\d+)?:|[^\\s:][^:\\n]*:)?\\s*"
+        "(warning|error|fatal error):",
+        std::regex_constants::icase);
+    return pattern;
+}
+
+// _diagnostic_severity: "warning"/"error" for a diagnostic header line, else
+// nullopt; snippet/context lines can never fake a severity-bearing finding.
+std::optional<std::string> diagnostic_severity(const std::string &line) {
+    if (std::regex_search(line.begin(), line.end(), snippet_context_pattern()))
+        return std::nullopt;
+    std::match_results<std::string::const_iterator> match;
+    if (!std::regex_search(line.begin(), line.end(), match,
+                           diagnostic_header_pattern()))
+        return std::nullopt;
+    std::string severity = match[1].str();
+    std::ranges::transform(severity, severity.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    if (severity == "fatal error") severity = "error";
+    return severity;
+}
+
 } // namespace
 
 bool is_diagnostic_line(std::string_view line) {
@@ -579,18 +618,14 @@ std::vector<std::string> split_lines(const std::string &text) {
 }
 
 bool has_warning(const std::vector<std::string> &diagnostics) {
-    static const std::regex pattern("\\bwarning:",
-                                    std::regex_constants::icase);
     return std::ranges::any_of(diagnostics, [](const auto &line) {
-        return std::regex_search(line.begin(), line.end(), pattern);
+        return diagnostic_severity(line) == "warning";
     });
 }
 
 bool has_error(const std::vector<std::string> &diagnostics) {
-    static const std::regex pattern("\\b(?:error|fatal error):",
-                                    std::regex_constants::icase);
     return std::ranges::any_of(diagnostics, [](const auto &line) {
-        return std::regex_search(line.begin(), line.end(), pattern);
+        return diagnostic_severity(line) == "error";
     });
 }
 

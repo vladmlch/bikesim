@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <memory>
@@ -47,9 +48,11 @@ std::vector<double> gaussian(double ell, double spacing) {
     for (auto& weight : weights) weight /= sum;
     return weights;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::size_t mirror(std::int64_t index, std::size_t count) noexcept {
     const auto last = static_cast<std::int64_t>(count - 1);
     const auto period = 2 * last;
+    if (period == 0) return 0;
     auto wrapped = index % period;
     if (wrapped < 0) wrapped += period;
     return static_cast<std::size_t>(wrapped <= last ? wrapped : period - wrapped);
@@ -61,6 +64,7 @@ double y_node(std::size_t index, std::size_t count, double half_width, double dy
         return -(-half_width + static_cast<double>(count - 1 - index) * dy);
     return -half_width + static_cast<double>(index) * dy;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double window(double x, double length, const Track3dSpec& spec) noexcept {
     // Catmull interpolation reads one node beyond each end of a cell. A cell
     // containing a non-grid-aligned lead boundary can therefore read as far
@@ -74,6 +78,7 @@ double window(double x, double length, const Track3dSpec& spec) noexcept {
     return quintic_smoothstep((x - start) / transition) *
            quintic_smoothstep((stop - x) / transition);
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double feature_height(const Feature3dSpec& feature, double x, double y) noexcept {
     const double c = std::cos(feature.yaw_rad), s = std::sin(feature.yaw_rad);
     const double dx = x - feature.x_m, dy = y - feature.y_m;
@@ -97,11 +102,11 @@ Gradient middle(const Gradient& a, const Gradient& b) noexcept {
 // They are the derivatives of the exact coefficients used by Grid3d::sample,
 // not independently estimated slopes. The common weights are nonnegative and
 // sum to one, so every gradient lies in the convex hull of this control net.
-GradientNet gradient_net(const BicubicPatch& patch, double dx, double dy) noexcept {
+void gradient_net(const BicubicPatch& patch, double dx, double dy, GradientNet& out) noexcept {
     constexpr std::array<std::array<double, 4>, 4> power_to_bernstein{{
         {1., 0., 0., 0.}, {1., 1. / 3., 0., 0.},
         {1., 2. / 3., 1. / 3., 0.}, {1., 1., 1., 1.}}};
-    GradientNet out{};
+    out = {};
     for (std::size_t j = 0; j < 4; ++j) for (std::size_t i = 0; i < 4; ++i) {
         auto& gradient = out[j * 4 + i];
         for (std::size_t b = 0; b <= j; ++b) for (std::size_t a = 0; a <= i; ++a) {
@@ -110,13 +115,13 @@ GradientNet gradient_net(const BicubicPatch& patch, double dx, double dy) noexce
             if (b < 3) gradient[1] += weight * static_cast<double>(b + 1) * patch.c[(b + 1) * 4 + a] / dy;
         }
     }
-    return out;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (left, right) output order mirrors the de Casteljau split convention
 void split_gradient(const GradientNet& input, bool along_x, GradientNet& left, GradientNet& right) noexcept {
     for (std::size_t line = 0; line < 4; ++line) {
         const auto index = [&](std::size_t i) { return along_x ? line * 4 + i : i * 4 + line; };
-        std::array<Gradient, 4> work;
+        std::array<Gradient, 4> work{};
         for (std::size_t i = 0; i < 4; ++i) work[i] = input[index(i)];
         left[index(0)] = work[0]; right[index(3)] = work[3];
         for (std::size_t level = 1; level < 4; ++level) {
@@ -127,9 +132,9 @@ void split_gradient(const GradientNet& input, bool along_x, GradientNet& left, G
 }
 
 Gradient centre_gradient(const GradientNet& net) noexcept {
-    std::array<Gradient, 4> rows;
+    std::array<Gradient, 4> rows{};
     for (std::size_t j = 0; j < 4; ++j) {
-        std::array<Gradient, 4> work;
+        std::array<Gradient, 4> work{};
         for (std::size_t i = 0; i < 4; ++i) work[i] = net[j * 4 + i];
         for (std::size_t n = 3; n != 0; --n)
             for (std::size_t i = 0; i < n; ++i) work[i] = middle(work[i], work[i + 1]);
@@ -140,18 +145,20 @@ Gradient centre_gradient(const GradientNet& net) noexcept {
     return rows[0];
 }
 
-enum class SlopeBound { valid, exceeds, exhausted };
+enum class SlopeBound : std::uint8_t { valid, exceeds, exhausted };
 
 constexpr unsigned kSlopeMaxDepth = 8;
 struct SlopeInterval { GradientNet net; unsigned depth; };
 // A depth-first four-way split has at most 1+3*depth pending cells.
 using SlopeStack = std::array<SlopeInterval, 1 + 3 * kSlopeMaxDepth>;
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 SlopeBound bound_slope(const BicubicPatch& patch, double dx, double dy, double limit,
                       SlopeStack& pending) noexcept {
     constexpr unsigned max_subdivisions = 256;
     std::size_t count = 1;
-    pending[0] = {gradient_net(patch, dx, dy), 0};
+    pending[0].depth = 0;
+    gradient_net(patch, dx, dy, pending[0].net);
     unsigned subdivisions = 0;
     // Conversion/subdivision roundoff only; this is not a physical slope margin.
     const double bounded_limit = limit + 128. * std::numeric_limits<double>::epsilon() * std::max(1., limit);
@@ -176,10 +183,10 @@ SlopeBound bound_slope(const BicubicPatch& patch, double dx, double dy, double l
         split_gradient(left, false, low_left, high_left);
         split_gradient(right, false, low_right, high_right);
         const unsigned next_depth = current.depth + 1;
-        pending[count++] = {high_right, next_depth};
-        pending[count++] = {high_left, next_depth};
-        pending[count++] = {low_right, next_depth};
-        pending[count++] = {low_left, next_depth};
+        pending[count++] = {.net = high_right, .depth = next_depth};
+        pending[count++] = {.net = high_left, .depth = next_depth};
+        pending[count++] = {.net = low_right, .depth = next_depth};
+        pending[count++] = {.net = low_left, .depth = next_depth};
     }
     return SlopeBound::valid;
 }
@@ -315,8 +322,9 @@ Grid3d generate_grid3d(const Track3dSpec& spec) {
         {"dependency_lock_sha256", bike::io::Value{build.dependency_lock_sha256}},
         {"execution_identity", bike::io::Value{bike::platform::execution_identity()}},
         {"roughness_stream", bike::io::Value{std::string("terrain3d/roughness")}}}};
-    auto grid = Grid3d::create({static_cast<std::uint64_t>(nx), static_cast<std::uint64_t>(ny),
-        0., -spec.half_width_m, spec.dx_m, spec.dy_m, 0}, std::move(elevation), std::move(materials), spec.surfaces, std::move(metadata));
+    auto grid = Grid3d::create({.nx = static_cast<std::uint64_t>(nx), .ny = static_cast<std::uint64_t>(ny),
+        .x0_m = 0., .y0_m = -spec.half_width_m, .dx_m = spec.dx_m, .dy_m = spec.dy_m, .dtype = 0},
+        std::move(elevation), std::move(materials), spec.surfaces, std::move(metadata));
     if (!grid) throw std::invalid_argument(grid.error());
     validate_bicubic_slopes(*grid, slope_limit);
     return std::move(*grid);

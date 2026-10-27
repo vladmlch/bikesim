@@ -141,7 +141,7 @@ std::vector<Value> grid_values(std::string_view key,const Value& raw) {
 void resolve_job_identity(Job& job, const cli::Arguments& args) {
     if (!args.has("spatial") && !args.has("terrain3d") && !args.has("physics_config")) return;
     auto request = cli::resolve_research(args);
-    auto& physics = *request->setup.model.physics;
+    auto& physics = *request->setup.model.physics; // NOLINT(bugprone-unchecked-optional-access) physics schema requires the field
     if (!physics.spatial) return;
     runtime::resolve_spatial_runtime_profiles(physics);
     const auto terrain_owner = terrain::detail::load_terrain3d_source(physics.spatial->terrain);

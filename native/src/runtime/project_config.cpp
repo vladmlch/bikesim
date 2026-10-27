@@ -8,11 +8,17 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <ranges>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "setup_values.hpp"
@@ -85,9 +91,9 @@ void require_request_model(const mdl::BuildRequest& request, const mjModel& mode
     if(request.spatial && request.spatial->mode==bike::spatial::Mode::spatial3d) {
         if(!request.terrain3d)
             throw std::invalid_argument("project_runtime.spatial.terrain: physical source missing");
-        auto expected=mdl::compile_mjcf(mdl::generate_mjcf(request));
+        const auto expected=mdl::compile_mjcf(mdl::generate_mjcf(request));
         mdl::populate_render_heightfield(*expected,trn::make_render_grid(*request.terrain3d,
-            {static_cast<std::uint32_t>(request.field.nrow),static_cast<std::uint32_t>(request.field.ncol)}));
+            {.nrow=static_cast<std::uint32_t>(request.field.nrow),.ncol=static_cast<std::uint32_t>(request.field.ncol)}));
         if(immutable_model_image(model)!=immutable_model_image(*expected))
             throw std::invalid_argument("project_runtime.spatial.model: differs from typed model and terrain");
         return;
@@ -556,7 +562,7 @@ RuntimeConfig bind_spatial_runtime(const mdl::BuildRequest& request,const mjMode
         const auto& wheel=topology.wheels[side];
         if(brakes[side]->dof_index!=0 || mj_name2id(&model,mjOBJ_JOINT,brakes[side]->joint.c_str())!=wheel.spin.joint_id)
             throw std::invalid_argument("config.geometry.brake_dofs: differs from spatial wheel binding");
-        if(!bodies[side] || mj_name2id(&model,mjOBJ_BODY,bodies[side]->c_str())!=wheel.wheel_body_id)
+        if(!bodies[side] || mj_name2id(&model,mjOBJ_BODY,bodies[side]->c_str())!=wheel.wheel_body_id) // NOLINT(bugprone-unchecked-optional-access) the !bodies[side] || short-circuit guards the access
             throw std::invalid_argument("config.geometry.wheel_bodies: differs from spatial wheel binding");
     }
     return result;
@@ -567,7 +573,11 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
     const auto config_ptr = std::make_unique<cfg::SimulationPhysicsConfig>(physics(request));
     const auto& config = *config_ptr;
     require_connected_spatial(config);
-    track.validate();
+    // A spatial request carries a name-only track label; the typed
+    // Terrain3dSource owns geometry, so the planar length contract does not
+    // apply. The only track use below is the non-pneumatic_3d tire branch,
+    // which a connected spatial configuration cannot reach.
+    if(!config.spatial || config.spatial->mode!=bike::spatial::Mode::spatial3d) track.validate();
     const auto document = cfg::detail::plain_document(cfg::to_value(config));
     auto res = field(document, "resistance");
     for (auto name : {"frame", "front_wheel", "rear_wheel"})

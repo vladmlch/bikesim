@@ -497,6 +497,31 @@ run_case(t56_analyzer_crash EXPECT_EXIT FAIL
   COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_crash_tool}"
         "${CHECKS_BINARY}" --kind analyzer --build "${BUILD_DIR}")
 
+# snippet false positive — clang echoes the offending source line under each
+# diagnostic with a "   <line> | <code>" gutter. When the quoted code itself
+# contains "error:" (here a loop variable named error), the collected line is
+# context, not a severity header: the alpha pass stays report-only and tool
+# health must not fail on the quoted text.
+set(_snippet_tool "${SCRATCH_DIR}/snippet-analyzer.sh")
+file(WRITE "${_snippet_tool}" "#!/bin/sh\n"
+  "case \"\$1\" in\n"
+  "  --version) echo \"clang version 23.1.2\"; exit 0 ;;\n"
+  "esac\n"
+  "case \" \$* \" in\n"
+  "  *-analyzer-checker=alpha*)\n"
+  "    printf '%s\\n' \\\n"
+  "      '/fixture/source.cpp:89:28: warning: cloned method [alpha.core.Clone]' \\\n"
+  "      '   89 | for(const auto& error:s.errors)errors.push_back(text(error));'\n"
+  "    ;;\n"
+  "esac\n"
+  "exit 0\n")
+file(CHMOD "${_snippet_tool}"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+run_case(t56_analyzer_snippet_error EXPECT_EXIT 0
+  EXPECT_STDOUT "native analyzer findings: report-only"
+  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_snippet_tool}"
+        "${CHECKS_BINARY}" --kind analyzer --build "${BUILD_DIR}")
+
 # malformed diagnostics — the analysis suppression manifest is the
 # diagnostics-control input; a malformed file must fail closed
 set(_fixture "${SCRATCH_DIR}/diag-malformed")

@@ -31,7 +31,7 @@ struct Pneumatic3dSpec {
 class Pneumatic3dModel {
 public:
     Pneumatic3dModel(Pneumatic3dSpec, bike::terrain::Terrain3dQueryView,
-                     TyreStateIdentity3d);
+                     const TyreStateIdentity3d&);
     ~Pneumatic3dModel();
     // Cold, owner-confined execution policy; not part of material identity.
     void set_worker_threads(unsigned);

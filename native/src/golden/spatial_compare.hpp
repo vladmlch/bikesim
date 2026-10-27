@@ -6,7 +6,7 @@
 namespace bike::golden {
 struct SpatialReferenceStatus {
     bool pending = false;
-    std::string platform;
+    std::string platform{};
 };
 [[nodiscard]] SpatialReferenceStatus inspect_spatial_reference(const io::Value& entry,
     const std::filesystem::path& directory, std::string_view current_platform);

@@ -60,7 +60,6 @@ private:
     struct WheelSpin {
         int dofadr = -1;
         double radius_m = 0.0;
-        int joint_id = -1, body_id = -1, hub_body_id = -1;
     };
 
     double wheel_torque(const mjData *d, const WheelSpin &wheel,
@@ -73,8 +72,6 @@ private:
                               double rear_demand, std::span<double> out) const;
 
     nativecfg::BrakeConfig cfg_;
-    const mjModel* model_ = nullptr;
-    bool spatial_ = false;
     mjtSize nv_ = 0, nu_ = 0;
     WheelSpin front_{}, rear_{};
     // The ctor resolves both actuators unconditionally (it throws on a

@@ -11,8 +11,9 @@ namespace bike::pneumatic3d {
 using namespace detail;
 
 TorusDims tier_dims(bike::spatial::TyreTier tier) noexcept {
-    return tier == bike::spatial::TyreTier::detailed ? TorusDims{256,15,1024}
-                                                  : TorusDims{64,7,256};
+    return tier == bike::spatial::TyreTier::detailed ?
+        TorusDims{.n_theta_fan=256,.n_phi=15,.n_theta_material=1024} :
+        TorusDims{.n_theta_fan=64,.n_phi=7,.n_theta_material=256};
 }
 std::size_t TorusGrid3d::element_count() const noexcept {
     return static_cast<std::size_t>(dims.n_theta_fan)*dims.n_phi;
@@ -21,6 +22,7 @@ std::size_t TorusGrid3d::material_cell_count() const noexcept {
     return static_cast<std::size_t>(dims.n_theta_material)*dims.n_phi;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 TorusGrid3d make_torus_grid(TorusDims dims, double outer, double width) {
     const double r = .5*width, R = outer-r;
     if (!std::isfinite(R) || !std::isfinite(r) || !(R > r && r > 0.) ||

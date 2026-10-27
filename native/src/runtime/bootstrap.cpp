@@ -166,7 +166,8 @@ ModelMutableState decode_model_mutable(const vread::Dict &root,
                                        const mjModel &model) {
     ModelMutableState out;
     const vread::Dict mutable_section = vread::section(root, "model_mutable");
-    const bool spatial=vread::integer(vread::field(root,"schema"),"state.schema")==2;
+    const bool spatial=vread::integer(vread::field(root,"schema"),"state.schema")==
+        static_cast<std::int64_t>(bike::spatial::kSpatialBootstrapSchema);
     if(spatial) vread::exact(mutable_section,vread::keys("dof_frictionloss","site_pos"),vread::keys("spatial_arrays"));
     else vread::exact(mutable_section, vread::keys("dof_frictionloss", "site_pos"));
     if(spatial && bio::find_member(*mutable_section.value,"spatial_arrays")) {
@@ -279,17 +280,17 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         "rider_controller", "rider_intent", "monitors", "geometry");
     const int version = vread::integer32(vread::field(root, "runtime_schema"),
                                          root.child("runtime_schema"));
-    if (version == static_cast<int>(bike::spatial::kSpatialRuntimeSchema)) {
+    if (std::cmp_equal(version, bike::spatial::kSpatialRuntimeSchema)) {
         vread::exact(root, required, vread::keys("async_telemetry", "spatial", "tyre_threads"));
         (void)vread::field(root, "spatial");
     } else vread::exact(root, required, vread::keys("async_telemetry"));
-    if (version != kRuntimeSchema && version != static_cast<int>(bike::spatial::kSpatialRuntimeSchema))
+    if (version != kRuntimeSchema && std::cmp_not_equal(version, bike::spatial::kSpatialRuntimeSchema))
         vread::invalid(root.child("runtime_schema"),
                        "unsupported runtime schema");
 
     RuntimeConfig out;
     out.schema = version;
-    if (version == static_cast<int>(bike::spatial::kSpatialRuntimeSchema)) {
+    if (std::cmp_equal(version, bike::spatial::kSpatialRuntimeSchema)) {
         if(root.contains("tyre_threads")) {
             const auto threads=vread::integer32(vread::field(root,"tyre_threads"),root.child("tyre_threads"));
             if(threads<1 || threads>64)vread::invalid(root.child("tyre_threads"),"expected [1,64]");
@@ -384,36 +385,16 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     return out;
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) decode arguments, the caller pins the roles
-BootstrapState decode_bootstrap_state(const bike::io::Value &state,
-                                      const mjModel &model) {
-    const vread::Dict root{.value = &vread::mapping(vread::Node{&state},
-                                                   "state"),
-                           .path = "state"};
-    constexpr auto required = vread::keys(
-        "schema", "model_digest", "model_dims", "integration_state",
-        "model_mutable", "tire", "drive", "rider_contacts",
-        "rider_controller", "rider_intent", "signals", "runtime");
-    const int version = vread::integer32(vread::field(root, "schema"), "state.schema");
-    if (version == static_cast<int>(bike::spatial::kSpatialBootstrapSchema)) {
-        vread::exact(root, required, vread::keys("spatial"));
-        (void)vread::field(root, "spatial");
-    } else vread::exact(root, required);
-    if (version != kRuntimeSchema && version != static_cast<int>(bike::spatial::kSpatialBootstrapSchema))
-        vread::invalid("state.schema", "unsupported bootstrap schema");
-
-    BootstrapState out;
-    out.schema = version;
-    out.model_digest = expected_model_digest(state);
-    out.model_dims = decode_model_dims(root, model);
-    out.integration_state = decode_integration_state(root, model);
-    out.model_mutable = decode_model_mutable(root, model);
-    if (version == kRuntimeSchema) out.tire = decode_tire_state(root);
-    else {
+namespace {
+// Spatial-schema tyre decode + validation arena — extracted so
+// decode_bootstrap_state stays under the stack-frame limit.
+void decode_spatial_bootstrap_tyre(const vread::Dict& root, BootstrapState& out,
+                                   const mjModel& model) {
         out.spatial = decode_spatial_bootstrap(*vread::field(root, "spatial").value);
         const auto tire = vread::section(root, "tire");
         vread::exact(tire, vread::keys("pneumatic3d_state", "identity", "encoding", "payload"));
-        if (vread::integer(vread::field(tire, "pneumatic3d_state"), tire.child("pneumatic3d_state")) != 1)
+        if (vread::integer(vread::field(tire, "pneumatic3d_state"), tire.child("pneumatic3d_state")) !=
+            static_cast<std::int64_t>(bike::pneumatic3d::kPneumatic3dStateVersion))
             vread::invalid(tire.child("pneumatic3d_state"), "unsupported tyre schema");
         if (vread::string(vread::field(tire, "encoding"), tire.child("encoding")) != "base64")
             vread::invalid(tire.child("encoding"), "expected canonical base64");
@@ -438,14 +419,42 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
         const auto q = std::views::counted(data->qpos, model.nq);
         for (std::size_t j = 0; j < types.size(); ++j) {
             if (types[j] != mjJNT_FREE && types[j] != mjJNT_BALL) continue;
-            const auto a = static_cast<std::size_t>(addresses[j] + (types[j] == mjJNT_FREE ? 3 : 0));
+            const auto a = static_cast<std::size_t>(addresses[j]) + (types[j] == mjJNT_FREE ? 3u : 0u);
             if (a > q.size() || q.size() - a < 4)
                 vread::invalid("state.integration_state.qpos", "quaternion span exceeds model");
             const double norm = std::hypot(std::hypot(q[a], q[a+1]), std::hypot(q[a+2], q[a+3]));
             if (std::abs(norm - 1.) > 1e-9)
                 vread::invalid("state.integration_state.qpos", "non-unit free/ball quaternion");
         }
-    }
+}
+} // namespace
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) decode arguments, the caller pins the roles
+BootstrapState decode_bootstrap_state(const bike::io::Value &state,
+                                      const mjModel &model) {
+    const vread::Dict root{.value = &vread::mapping(vread::Node{&state},
+                                                   "state"),
+                           .path = "state"};
+    constexpr auto required = vread::keys(
+        "schema", "model_digest", "model_dims", "integration_state",
+        "model_mutable", "tire", "drive", "rider_contacts",
+        "rider_controller", "rider_intent", "signals", "runtime");
+    const int version = vread::integer32(vread::field(root, "schema"), "state.schema");
+    if (std::cmp_equal(version, bike::spatial::kSpatialBootstrapSchema)) {
+        vread::exact(root, required, vread::keys("spatial"));
+        (void)vread::field(root, "spatial");
+    } else vread::exact(root, required);
+    if (version != kRuntimeSchema && std::cmp_not_equal(version, bike::spatial::kSpatialBootstrapSchema))
+        vread::invalid("state.schema", "unsupported bootstrap schema");
+
+    BootstrapState out;
+    out.schema = version;
+    out.model_digest = expected_model_digest(state);
+    out.model_dims = decode_model_dims(root, model);
+    out.integration_state = decode_integration_state(root, model);
+    out.model_mutable = decode_model_mutable(root, model);
+    if (version == kRuntimeSchema) out.tire = decode_tire_state(root);
+    else decode_spatial_bootstrap_tyre(root, out, model);
     out.drive = drivetrain::decode_drive_snapshot(
         *vread::field(root, "drive").value);
 
@@ -467,7 +476,8 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
                              "filters", "balance", "crash", "contacts",
                              "contact_query", "probe_query", "energy",
                              "history", "model_status", "monitor");
-    if(version==2)vread::exact(runtime_section,runtime_keys,vread::keys("continuation"));
+    if(std::cmp_equal(version,bike::spatial::kSpatialBootstrapSchema))
+        vread::exact(runtime_section,runtime_keys,vread::keys("continuation"));
     else vread::exact(runtime_section,runtime_keys);
     out.step = vread::integer(vread::field(runtime_section, "step"),
                               runtime_section.child("step"));
@@ -555,9 +565,9 @@ void validate_schema_family(const RuntimeConfig& config, int state_schema) {
     const auto version=bio::as_int64(*schema,"config.writer_config.schema");
     if(config.schema==kRuntimeSchema && !config.spatial && state_schema==kRuntimeSchema &&
        (version==1||version==2))return;
-    if(config.schema!=static_cast<int>(bike::spatial::kSpatialRuntimeSchema) ||
-       state_schema!=static_cast<int>(bike::spatial::kSpatialBootstrapSchema) ||
-       version!=bike::spatial::kSpatialWriterSchema || !config.spatial ||
+    if(std::cmp_not_equal(config.schema,bike::spatial::kSpatialRuntimeSchema) ||
+       std::cmp_not_equal(state_schema,bike::spatial::kSpatialBootstrapSchema) ||
+       std::cmp_not_equal(version,bike::spatial::kSpatialWriterSchema) || !config.spatial ||
        config.spatial->mode!=bike::spatial::Mode::spatial3d)
         vread::invalid("bootstrap.schema_family","expected planar (1,1|2,1) or spatial (2,3,2)");
     nativecfg::validate_spatial_writer_envelope(config.writer_config);

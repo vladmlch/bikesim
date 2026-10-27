@@ -1,12 +1,18 @@
 #include "spatial_checkpoint_internal.hpp"
+#include "bootstrap.hpp"
 #include "research_io.hpp"
 #include "setup_values.hpp"
-#include "../io/hash.hpp"
+#include "../io/json.hpp"
+#include "../pneumatic3d/state.hpp"
 #include "../spatial/bootstrap_state.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <initializer_list>
 #include <set>
 #include <stdexcept>
+#include <string>
 #include <string_view>
+#include <utility>
 
 namespace runtime::spatial {
 namespace {
@@ -70,11 +76,12 @@ bike::io::Value encode_checkpoint(const SpatialCheckpoint& c) {
 SpatialCheckpoint decode_checkpoint(const bike::io::Value& value) {
     keys(value,{"spatial_checkpoint","bootstrap2","research","sensor_v2","policy","identity"},"spatial_checkpoint");
     const auto version=bike::io::as_int64(field(value,"spatial_checkpoint"),"spatial_checkpoint");
-    if(version!=kSpatialCheckpointSchema) throw std::invalid_argument("spatial_checkpoint: unsupported schema");
+    if(std::cmp_not_equal(version,kSpatialCheckpointSchema)) throw std::invalid_argument("spatial_checkpoint: unsupported schema");
     SpatialCheckpoint out{.schema=kSpatialCheckpointSchema,.bootstrap2=field(value,"bootstrap2"),
         .research=field(value,"research"),.sensor_v2=field(value,"sensor_v2"),.policy=field(value,"policy"),.identity=field(value,"identity")};
     validate(out); return out;
 }
+// NOLINTNEXTLINE(cppcoreguidelines-owning-memory) CheckpointStage ownership is carried by the unique_ptr deleter contract; gsl::owner is unavailable
 void CheckpointStageDeleter::operator()(CheckpointStage* p) const noexcept { delete p; }
 CheckpointStageOwner stage_checkpoint(const SpatialCheckpoint& checkpoint,const RuntimeIdentity& execution) {
     auto validated=decode_checkpoint(encode_checkpoint(checkpoint));
@@ -106,7 +113,7 @@ Value bootstrap_comparison_value(const Value& bootstrap) {
     if(!bytes)throw std::invalid_argument("checkpoint.tire.payload: "+bytes.error());
     const auto decoded=bike::pneumatic3d::decode_tyre_state(*bytes,bike::pneumatic3d::tyre_identity_from_wire(field(tire,"identity")));
     if(!decoded)throw std::invalid_argument("checkpoint.tire.payload: "+decoded.error());
-    const auto exact=[](const auto& values) {Array out;for(const auto value:values)out.push_back(Value{bike::io::Number{std::to_string(value)}});return Value{std::move(out)};};
+    const auto exact=[](const auto& values) {Array entries;for(const auto value:values)entries.push_back(Value{bike::io::Number{std::to_string(static_cast<std::uint64_t>(value))}});return Value{std::move(entries)};};
     Array carcass,patches,brush;
     for(std::size_t i=0;i<2;++i) {
         const auto& c=decoded->carcass[i];const auto& p=decoded->patches[i];const auto& b=decoded->brush[i];

@@ -58,7 +58,8 @@ load_physics(const std::filesystem::path& file);
 // constructed and a declared-default `values` document.
 // Spatial tyre aliases override the corresponding inherited fields without
 // hiding contradictions within the override document. Explicit spatial=planar
-// removes inherited spatial sections; the caller must select a valid planar
+// removes inherited spatial sections (including articulated.shoulder_profile
+// and its digest); the caller must select a valid planar
 // tyre backend, and explicit planar+spatial fields remain invalid.
 [[nodiscard]] SimulationPhysicsConfig
 resolve_physics(const bike::io::Value& overrides,

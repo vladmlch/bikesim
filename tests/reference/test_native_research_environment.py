@@ -50,10 +50,11 @@ def test_one_second_pair_with_one_e_minus_nine_gate(environment_pair, assert_tre
         assert native.sim.time_s == reference.sim.time_s
         assert_bitwise_equal(integration_state(native.sim), integration_state(reference.sim),
                              msg=f'integration state at step {reference.sim.steps}')
-    # The Python oracle defines the outcome; this platform's documented
-    # baseline physics (energy.constraint_work from the first intervals)
-    # truncates this run near step 104 with 'numerical_quality'. The gate is
-    # cross-backend equality of steps/reason, not a scripted outcome.
+    # The Python oracle defines the outcome. The gate is cross-backend
+    # equality of steps/reason, not a scripted outcome: if the measured
+    # residual ever crosses the default limit again the run truncates with
+    # 'numerical_quality' — identically on both backends — and this still
+    # passes; today both reach 'duration' at step 800.
     assert reference.done and native.done
     assert native.sim.steps == reference.sim.steps
     assert native.reason == reference.reason
@@ -67,14 +68,13 @@ def test_one_second_pair_complete_episode_gate(environment_pair, assert_tree):
     """The complete one-second paired case, all 800 physics steps to 'duration'.
 
     The sibling gate above classifies the outcome under the default .05
-    residual limit; on this platform both backends truncate identically at
-    step 104 with 'numerical_quality'. Here the acceptance threshold is raised
-    (the established 1e9 parity-run convention) so the truncation decision
-    does not end the episode: the energy tolerance only gates the
-    'numerical_quality' classification, never the integrated physics, so both
-    backends still execute every real step — and all 800 must match bitwise.
-    The residual assertion proves the episode really did produce the
-    over-limit physics the default gate truncates on, so nothing is hidden.
+    residual limit. Here the acceptance threshold is raised (the established
+    1e9 parity-run convention) so a truncation decision cannot end the
+    episode: the energy tolerance only gates the 'numerical_quality'
+    classification, never the integrated physics, so both backends still
+    execute every real step — and all 800 must match bitwise. The residual
+    assertion proves the energy-quality channel measured a real nonzero
+    defect identically on both backends, so nothing is hidden.
     """
     reference, native = environment_pair(duration=1., decimation=20,
                                          energy_tolerance=1e9)
@@ -91,9 +91,11 @@ def test_one_second_pair_complete_episode_gate(environment_pair, assert_tree):
     assert reference.done and native.done
     assert native.sim.steps == reference.sim.steps == reference.max_steps == 800
     assert native.reason == reference.reason == 'duration'
-    # The identical >.05 residual shows the raised gate did not alter physics:
-    # under the default limit this same episode truncates at step 104.
-    assert native.max_energy_residual_ratio == reference.max_energy_residual_ratio > .05
+    # Identical positive residual proves the defect is measured, not hidden.
+    # Its level is platform- and physics-version-dependent: since brake-hold
+    # work entered the energy ledger the ratio sits below the default limit,
+    # so the raised gate only proves completeness rather than enabling it.
+    assert 0. < native.max_energy_residual_ratio == reference.max_energy_residual_ratio
     assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
     assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
     assert_tree(episode_metrics(native), episode_metrics(reference))

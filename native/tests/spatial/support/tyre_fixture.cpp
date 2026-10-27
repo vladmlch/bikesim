@@ -2,7 +2,10 @@
 #include "../../../src/pneumatic3d/kernel_math.hpp"
 #include "../../../src/spatial/frames.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <numbers>
 #include <stdexcept>
 
@@ -39,24 +42,29 @@ bike::pneumatic3d::WheelKinematics3d wheel_at(const bike::spatial::Vec3& hub,
     return kin;
 }
 
+// Independent full-circle midpoint quadrature in long double. Torus radii are
+// widened explicitly: an implicit double -> long double promotion trips
+// -Wdouble-promotion under the native -Werror policy.
 double full_torus_area(const bike::pneumatic3d::TorusGrid3d& g) {
-    const long double dt=2.*std::numbers::pi_v<long double>/1024.;
-    const long double dp=2.*std::numbers::pi_v<long double>/256.;
-    long double sum=0.;
+    const long double dt=2.L*std::numbers::pi_v<long double>/1024.L;
+    const long double dp=2.L*std::numbers::pi_v<long double>/256.L;
+    const auto r=static_cast<long double>(g.r_m), R=static_cast<long double>(g.R_m);
+    long double sum=0.L;
     for (unsigned i=0;i<1024;++i) for (unsigned j=0;j<256;++j) {
         const long double p=(static_cast<long double>(j)+.5L)*dp;
-        sum+=g.r_m*(g.R_m+g.r_m*std::cos(p))*dt*dp;
+        sum+=r*(R+r*std::cos(p))*dt*dp;
     }
     return static_cast<double>(sum);
 }
 double full_torus_volume(const bike::pneumatic3d::TorusGrid3d& g) {
     // Divergence theorem, V = 1/3 int(x.n)dA, full torus quadrature.
-    const long double dt=2.*std::numbers::pi_v<long double>/1024.;
-    const long double dp=2.*std::numbers::pi_v<long double>/256.;
-    long double sum=0.;
+    const long double dt=2.L*std::numbers::pi_v<long double>/1024.L;
+    const long double dp=2.L*std::numbers::pi_v<long double>/256.L;
+    const auto r=static_cast<long double>(g.r_m), R=static_cast<long double>(g.R_m);
+    long double sum=0.L;
     for (unsigned i=0;i<1024;++i) for (unsigned j=0;j<256;++j) {
         const long double p=(static_cast<long double>(j)+.5L)*dp;
-        sum+=(g.R_m*std::cos(p)+g.r_m)*g.r_m*(g.R_m+g.r_m*std::cos(p))*dt*dp/3.;
+        sum+=(R*std::cos(p)+r)*r*(R+r*std::cos(p))*dt*dp/3.L;
     }
     return static_cast<double>(sum);
 }

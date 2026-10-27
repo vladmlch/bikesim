@@ -29,11 +29,17 @@ Catalog build_catalog(const mjModel& model, CatalogVersion version) {
     if (version != CatalogVersion::spatial2) throw std::invalid_argument("unsupported recording catalog version");
     const auto base = build_catalog(joints, std::span<const ScalarAlias>{});
     auto coordinates = base.coordinates(); auto aliases = base.aliases();
-    for (const auto& c : coordinates.qpos) aliases.push_back(AliasSpec{.alias=c.joint + "." + c.component,
+    // Scalar joints (hinge/slide) have an empty component, so a plain
+    // joint + "." + component would publish the trailing-dot alias "joint.".
+    // The stored coordinate identity keeps its schema-1 component spelling.
+    for (const auto& c : coordinates.qpos) aliases.push_back(AliasSpec{
+        .alias=c.component.empty() ? c.joint : c.joint + "." + c.component,
         .canonical="physics.qpos", .index=c.index, .parameter={}, .note="joint-specific position coordinate"});
-    for (auto& c : coordinates.dof) {
-        if (c.component.starts_with('v')) c.component.erase(0,1);
-        aliases.push_back(AliasSpec{.alias=c.joint + ".d" + c.component,
+    for (const auto& c : coordinates.dof) {
+        // Linear tangent components are "vx" in the coordinate catalog; the alias
+        // spells the time derivative of the matching position member ("dx").
+        const std::string_view member = c.component.starts_with('v') ? std::string_view(c.component).substr(1) : std::string_view(c.component);
+        aliases.push_back(AliasSpec{.alias=c.joint + ".d" + std::string(member),
             .canonical="physics.qvel", .index=c.index, .parameter={}, .note="joint-specific tangent coordinate"});
     }
     return {schema_catalog(version).table_order(), std::move(coordinates), std::move(aliases)};

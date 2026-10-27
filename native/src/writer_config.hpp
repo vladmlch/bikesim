@@ -66,7 +66,8 @@ namespace nativecfg {
     [[nodiscard]] WriterConfig decode(const bike::io::Value &value);
     // W05 structural schema3 boundary. Validates the closed envelope/identity
     // and owned section shapes; it does not construct a spatial writer.
-    // The pneumatic_3d coefficient object belongs to W25's future decoder.
+    // The pneumatic_3d coefficient object is decoded by W25's
+    // runtime::decode_spatial_tire_config.
     void validate_spatial_writer_envelope(const bike::io::Value &value);
     // Standalone policy owner uses the identical generic decoder and
     // config-rooted diagnostics as the nanobind DrivePolicies adapter.

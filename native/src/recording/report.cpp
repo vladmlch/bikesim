@@ -1,5 +1,6 @@
 #include "report.hpp"
 #include "analysis_detail.hpp"
+#include <algorithm>
 #include <array>
 #include <functional>
 #include <format>

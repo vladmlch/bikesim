@@ -120,4 +120,13 @@ int main(){return bt::run([]{
     const auto& expected=bike::io::as_object(fixture,"fixture");const auto* original=bike::io::find_member(expected,"expected");bt::require(original!=nullptr,"existing seed0 fixture available");
     const auto legacy=runtime::SensorObservation::from_wire(runtime::sample_wire::object(runtime::vread::wire_from_value(*original,"legacy")));
     bt::require(bike::io::canonical_json(bike::research::wire_value(legacy.as_wire()))==bike::io::canonical_json(*original),"V1 schema bytes preserve existing historical seed0 values");
+    // The V2 seed0 evidence is pending independent capture (V07). Last, so every
+    // semantic check above still runs; a null/pending fixture must stay red.
+    const auto v2_fixture=spatial_tests::json(spatial_tests::fixture("sensor/v2_seed0_expected.json"));
+    const auto& v2_object=bike::io::as_object(v2_fixture,"v2 fixture");
+    const auto* v2_expected=bike::io::find_member(v2_object,"expected");
+    const auto* v2_status=bike::io::find_member(v2_object,"status");
+    bt::require(v2_expected!=nullptr&&!bike::io::is_null(*v2_expected)&&
+        (v2_status==nullptr||bike::io::as_string(*v2_status,"v2 fixture.status")!="pending_verification"),
+        "V2 seed0 expected values: missing/null; pending_verification (V07 captures them)");
 });}

@@ -83,7 +83,7 @@ void spatial_initial_velocity(SetupContext& context,const runtime::WheelSnapshot
     if(drive.pedaling.enabled && std::abs(rate)*60./(2.*std::numbers::pi)>=drive.pedaling.coast_above_rpm)pedaling=false;
     if(pedaling) {
         velocity[static_cast<std::size_t>(joint_address(context,"crank_spin").dof)]=rate;
-        for(std::string_view name:{"drive_shaft_spin","rotor_spin","cassette_spin"})
+        for(const std::string_view name:{"drive_shaft_spin","rotor_spin","cassette_spin"})
             if(mj_name2id(m,mjOBJ_JOINT,std::string(name).c_str())>=0)
                 velocity[static_cast<std::size_t>(joint_address(context,name).dof)]=name=="cassette_spin"?velocity[static_cast<std::size_t>(topology.wheels[1].spin.dof_adr)]:rate;
         const auto axle=spatial::rotate_body_to_world(pose.quat_world_from_body_wxyz,{0.,1.,0.});
@@ -139,6 +139,62 @@ void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshot
     }
     context.stepper.note_posvel_stale();context.stepper.forward();
 }
+// The spatial release/arm sequence stages two SpatialBootstrapState copies;
+// keeping it here holds finalize_initial_state under the 8 KiB frame budget.
+void arm_spatial_bootstrap(SetupContext& context) {
+    auto& physical=context.physical;auto& stepper=context.stepper;
+    auto causal=*physical.spatial_state(); // NOLINT(bugprone-unchecked-optional-access) the caller rejects spatial setups without an engaged spatial state
+    // An imported phase is state, not evidence that this pose can support
+    // itself. Recheck released imports (including PhysicalInitialState)
+    // before any lifecycle/accounting mutation. The one-point probe
+    // restores the complete incoming integration and material inventory.
+    const bool released=causal.bootstrap_phase>=spatial::BootstrapPhase::armed;
+    if(released || !context.bootstrap_hold || !context.spatial_report) {
+        (void)spatial_refine(context,1,context.equilibrium_tolerance);
+        context.equilibrium->spatial=context.spatial_report; // NOLINT(bugprone-unchecked-optional-access) equilibrium is assigned before finalize by the setup order
+    }
+    if((released || !context.bootstrap_hold) && !context.spatial_report->errors.empty()) // NOLINT(bugprone-unchecked-optional-access) spatial_report was engaged or assigned by the refine above
+        throw std::invalid_argument("spatial equilibrium: "+context.spatial_report->errors.front());
+    if(causal.bootstrap_phase<spatial::BootstrapPhase::armed) {
+        // Equilibrium accepted intervals live on their own clock. Retain
+        // the physical brake latch but start scored interval numbering at
+        // zero; the delay queue starts before its first control tick.
+        causal.brake.interval_index=-1;
+        auto& steer=causal.steer;
+        steer.next_tick=0;steer.fifo_head=0;steer.fifo_count=0;
+        std::ranges::fill(steer.delay_fifo_nm,0.);
+        steer.last_command_nm=steer.last_applied_nm=steer.work_j=0.;
+        steer.saturated_ticks=0;steer.valid_mask=0;
+        causal.outcome=spatial::canonical_unlatched_outcome();
+    }
+    if(causal.bootstrap_phase<spatial::BootstrapPhase::armed && context.bootstrap_hold) {
+        causal.bootstrap_phase=spatial::BootstrapPhase::release_check;
+        causal.hold.phase=spatial::BootstrapPhase::release_check;
+        physical.commit_spatial_state(physical.prepare_spatial_state(causal));
+        apply_initial_forces(context,false);stepper.forward();
+        if(!context.spatial_report) {
+            (void)spatial_refine(context,1,context.equilibrium_tolerance);
+            context.equilibrium->spatial=context.spatial_report; // NOLINT(bugprone-unchecked-optional-access) equilibrium is assigned before finalize by the setup order
+        }
+        const auto& cfg=context.physics.spatial->bootstrap; // NOLINT(bugprone-unchecked-optional-access) bootstrap_hold implies physics.spatial by setup contract
+        if(!context.bootstrap_hold->release_check(*context.spatial_report,
+                cfg.release_force_limit_n,cfg.release_moment_limit_nm,
+                context.equilibrium_tolerance)) {
+            const auto& h=context.bootstrap_hold->state();
+            throw std::invalid_argument(std::format("bootstrap: hold not releasable: residual force {} N, moment {} N m",
+                std::hypot(h.last_force_world_n[0],h.last_force_world_n[1],h.last_force_world_n[2]),
+                std::hypot(h.last_couple_world_nm[0],h.last_couple_world_nm[1],h.last_couple_world_nm[2])));
+        }
+        causal=*physical.spatial_state();causal.hold=context.bootstrap_hold->state(); // NOLINT(bugprone-unchecked-optional-access) commit_spatial_state above guarantees engagement
+    }
+    causal.bootstrap_phase=spatial::BootstrapPhase::armed;
+    causal.hold.active=false;causal.hold.phase=spatial::BootstrapPhase::armed;
+    causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;
+    auto armed=physical.prepare_spatial_state(causal);
+    if(context.bootstrap_hold && context.bootstrap_hold->restore(armed.hold)!=CoreStatus::ok)
+        throw std::invalid_argument("bootstrap.hold: armed state rejected");
+    physical.commit_spatial_state(std::move(armed));
+}
 }
 void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& config){
     require_initializing(context);
@@ -146,58 +202,7 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
     if(!context.equilibrium)throw std::invalid_argument("cannot finalize an incomplete equilibrium");
     auto& physical=context.physical;auto& stepper=context.stepper;mjData* d=stepper.data();mjModel* m=stepper.model();
-    if(context.topology) {
-        auto causal=*physical.spatial_state();
-        // An imported phase is state, not evidence that this pose can support
-        // itself. Recheck released imports (including PhysicalInitialState)
-        // before any lifecycle/accounting mutation. The one-point probe
-        // restores the complete incoming integration and material inventory.
-        const bool released=causal.bootstrap_phase>=spatial::BootstrapPhase::armed;
-        if(released || !context.bootstrap_hold || !context.spatial_report) {
-            (void)spatial_refine(context,1,.05);
-            context.equilibrium->spatial=context.spatial_report;
-        }
-        if((released || !context.bootstrap_hold) && !context.spatial_report->errors.empty())
-            throw std::invalid_argument("spatial equilibrium: "+context.spatial_report->errors.front());
-        if(causal.bootstrap_phase<spatial::BootstrapPhase::armed) {
-            // Equilibrium accepted intervals live on their own clock. Retain
-            // the physical brake latch but start scored interval numbering at
-            // zero; the delay queue starts before its first control tick.
-            causal.brake.interval_index=-1;
-            auto& steer=causal.steer;
-            steer.next_tick=0;steer.fifo_head=0;steer.fifo_count=0;
-            std::ranges::fill(steer.delay_fifo_nm,0.);
-            steer.last_command_nm=steer.last_applied_nm=steer.work_j=0.;
-            steer.saturated_ticks=0;steer.valid_mask=0;
-            causal.outcome=spatial::canonical_unlatched_outcome();
-        }
-        if(causal.bootstrap_phase<spatial::BootstrapPhase::armed && context.bootstrap_hold) {
-            causal.bootstrap_phase=spatial::BootstrapPhase::release_check;
-            causal.hold.phase=spatial::BootstrapPhase::release_check;
-            physical.commit_spatial_state(physical.prepare_spatial_state(causal));
-            apply_initial_forces(context,false);stepper.forward();
-            if(!context.spatial_report) {
-                (void)spatial_refine(context,1,.05);
-                context.equilibrium->spatial=context.spatial_report;
-            }
-            const auto& cfg=context.physics.spatial->bootstrap;
-            if(!context.bootstrap_hold->release_check(*context.spatial_report,
-                    cfg.release_force_limit_n,cfg.release_moment_limit_nm)) {
-                const auto& h=context.bootstrap_hold->state();
-                throw std::invalid_argument(std::format("bootstrap: hold not releasable: residual force {} N, moment {} N m",
-                    std::hypot(h.last_force_world_n[0],h.last_force_world_n[1],h.last_force_world_n[2]),
-                    std::hypot(h.last_couple_world_nm[0],h.last_couple_world_nm[1],h.last_couple_world_nm[2])));
-            }
-            causal=*physical.spatial_state();causal.hold=context.bootstrap_hold->state();
-        }
-        causal.bootstrap_phase=spatial::BootstrapPhase::armed;
-        causal.hold.active=false;causal.hold.phase=spatial::BootstrapPhase::armed;
-        causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;
-        auto armed=physical.prepare_spatial_state(causal);
-        if(context.bootstrap_hold && context.bootstrap_hold->restore(armed.hold)!=CoreStatus::ok)
-            throw std::invalid_argument("bootstrap.hold: armed state rejected");
-        physical.commit_spatial_state(std::move(armed));
-    }
+    if(context.topology)arm_spatial_bootstrap(context);
     d->time=0.;physical.step_=0;physical.generation_=1;physical.initializing_=false;
     physical.control_clock_.reset();physical.contact_query_.restore({});physical.probe_query_.restore({});
     for(auto& filter:physical.filters_)filter.restore({});
@@ -263,7 +268,7 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         if(context.physics.seated_climb.enabled){auto sensors=physical.sensor_channels(stepper.qvel(),stepper.drive().diagnostics(true).to_map());auto tires=physical.tire_channels(physical.snapshots_,stepper.qvel());sensors.emplace_back("tires",runtime::Wire{std::move(tires)});physical.update_intent_signals(sensors);}
     });
     if(context.topology) {
-        auto causal=*physical.spatial_state();
+        auto causal=*physical.spatial_state(); // NOLINT(bugprone-unchecked-optional-access) topology engagement implies an engaged spatial state; the caller also rejects spatial setups without one
         causal.bootstrap_phase=spatial::BootstrapPhase::scored;
         causal.hold.phase=spatial::BootstrapPhase::scored;causal.hold.active=false;
         causal.hold.last_force_world_n={};causal.hold.last_couple_world_nm={};causal.hold.stored_energy_j=0.;

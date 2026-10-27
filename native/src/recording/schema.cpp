@@ -58,7 +58,7 @@ std::vector<io::Value::Array> catalog_rows(CatalogVersion version) {
     std::vector<io::Value::Array> rows;
     for (const auto& spec : all_tables(version)) {
         auto const add = [&](const FieldSpec& f) {
-            auto definition = version == CatalogVersion::spatial2 ? describe_spatial_field(f) : describe_field(f);
+            const auto definition = version == CatalogVersion::spatial2 ? describe_spatial_field(f) : describe_field(f);
             rows.push_back({value::text(spec.name), value::text(f.key), value::text(f.duckdb_type()), value::text(f.unit), value::text(f.phase), io::Value{f.optional}, value::text(f.measurement), value::text(f.source), value::text(f.frame), value::text(io::recording_json(definition))});
             if (f.optional) rows.push_back({value::text(spec.name), value::text(f.key + "_present"), value::text("BOOLEAN"), value::text("1"), value::text(f.phase), io::Value{false}, value::text("declared"), value::text(f.source), value::text("n/a"), value::text(io::recording_json(io::Value{io::Value::Object{{"presence_of", value::text(f.key)}, {"description", value::text("field existed in source payload")}}}))});
         };

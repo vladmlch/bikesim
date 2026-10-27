@@ -191,8 +191,7 @@ void prepare_spatial_overrides(Value& base, const Value& overrides) {
     if (base_object == nullptr || override_object == nullptr) return;
 
     const auto erase_member = [](Value::Object& object, std::string_view key) {
-        object.erase(std::remove_if(object.begin(), object.end(),
-            [&](const auto& member) { return member.first == key; }), object.end());
+        std::erase_if(object, [&](const auto& member) { return member.first == key; });
     };
     const auto mutable_object = [](Value::Object& object, std::string_view key) {
         for (auto& [name, value] : object)
@@ -223,6 +222,14 @@ void prepare_spatial_overrides(Value& base, const Value& overrides) {
         erase_member(*base_object, "spatial_3d");
         if (auto* tires = mutable_object(*base_object, "tires"))
             erase_member(*tires, "pneumatic_3d");
+        // The shoulder profile is spatial-only data carried inside the planar
+        // articulated table. A null override cannot clear it (merge treats
+        // null as absent), so inheriting it would make 3D -> planar
+        // impossible. An override that itself supplies one stays invalid.
+        if (auto* articulated = mutable_object(*base_object, "articulated")) {
+            erase_member(*articulated, "shoulder_profile");
+            erase_member(*articulated, "shoulder_profile_sha256");
+        }
         // The backend is intentionally retained: a 3D -> planar transition
         // must explicitly choose a valid legacy backend in the override.
         return;

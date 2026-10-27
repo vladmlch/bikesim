@@ -16,6 +16,7 @@
 #include <limits>
 #include <numbers>
 #include <stdexcept>
+#include <utility>
 
 #include "../cblas_abi.hpp"
 #include "../diag.hpp"
@@ -64,7 +65,7 @@ void validate_spatial_layout(const mjModel* model, const SpindleConfig& config) 
     if (parents.empty() || parents[0] != 0)
         throw std::invalid_argument("rider.spatial.body_parentid: invalid world parent");
     for (std::size_t body = 1; body < parents.size(); ++body)
-        if (parents[body] < 0 || static_cast<std::size_t>(parents[body]) >= body)
+        if (parents[body] < 0 || std::cmp_greater_equal(parents[body], body))
             throw std::invalid_argument("rider.spatial.body_parentid: nonmonotonic or cyclic parent chain");
     const auto types = model_access::readonly_buffer(model->jnt_type, model->njnt, "jnt_type");
     const auto qpos = model_access::readonly_buffer(model->jnt_qposadr, model->njnt, "jnt_qposadr");
@@ -463,7 +464,7 @@ SpindleController::SpindleController(const mjModel *model,
                 const auto axes = model_access::readonly_buffer(model->jnt_axis, 3*model->njnt);
                 const auto stiffness = model_access::readonly_buffer(model->jnt_stiffness, model->njnt);
                 const auto damping = model_access::readonly_buffer(model->dof_damping, model->nv);
-                const auto& p = *config_.shoulder_profile;
+                const auto& p = *config_.shoulder_profile; // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
                 if (axes[3*j] != 0. || axes[3*j+1] != 0. || axes[3*j+2] != 1. || !joint_limited[j] ||
                     std::abs(joint_range[2*j]+p.swivel_range_rad) > 1e-12 ||
                     std::abs(joint_range[2*j+1]-p.swivel_range_rad) > 1e-12 ||
@@ -514,6 +515,13 @@ SpindleController::SpindleController(const mjModel *model,
     // aligned vectors must keep it so `sum(stored)` accumulates in the
     // same sequence as the oracle.
     for (const auto &joint : joints_) {
+        // Swivel shoulders are governed by the shoulder-profile contract
+        // (range/stiffness/damping/strength) plus the hard joint limit
+        // joint_ranges_ still carries; the generic soft-edge torque is an
+        // unprofiled stiffness the profile contract does not describe, so
+        // swivels do not enroll in the envelope arrays.
+        if (config_.spatial && is_swivel(joint.name))
+            continue;
         const auto range = joint_ranges_.find(joint.name);
         if (range == joint_ranges_.end())
             continue;
@@ -681,7 +689,7 @@ void SpindleController::resolve_model_layout(
     arm_branch_ =
         numeric::math_sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
     if (config_.spatial) spatial_state_ = SpatialState{.shoulders={}, .arm_branch=arm_branch_,
-        .shoulder_profile_sha256=config_.shoulder_profile->sha256_hex, .steer_torque_owner="actuator"};
+        .shoulder_profile_sha256=config_.shoulder_profile->sha256_hex, .steer_torque_owner="actuator"}; // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
     {
         const Vec2 goal{xz(vec_sub(pose_.grip, pose_.hip))};
         const double reach =
@@ -724,6 +732,7 @@ void SpindleController::reset_activation() {
     allocation_memory_ = {};
     active_state_.assign(joints_.size(), 0.);
     activation_time_s_ = std::nullopt;
+    coast_hold_nm_ = 0.;
     effort_diagnostics_ = {};
     sole_goal_diagnostics_.clear();
     pedal_recovery_ = {{"front", PedalRecoveryState{}},
@@ -833,7 +842,7 @@ SpindleController::upper_targets(const mjData *data,
             const double swivel = std::atan2(local[1], local[0]);
             targets.emplace_back(std::string(kSwivelJoints[s]), swivel);
             arm_target = {std::hypot(local[0], local[1]), local[2]};
-            arm_saturated = arm_saturated || std::abs(swivel) > config_.shoulder_profile->swivel_range_rad;
+            arm_saturated = arm_saturated || std::abs(swivel) > config_.shoulder_profile->swivel_range_rad; // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
         }
         const auto ik = spindle::two_link_ik(
             arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
@@ -985,7 +994,7 @@ double SpindleController::strength_capacity(const std::string &name,
                                             double angle_rad,
                                             double velocity_rad_s,
                                             double torque_nm) const {
-    if (config_.spatial && is_swivel(name)) return config_.shoulder_profile->swivel_strength_nm;
+    if (config_.spatial && is_swivel(name)) return config_.shoulder_profile->swivel_strength_nm; // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
     if (!config_.has_strength || torque_nm == 0.)
         return std::numeric_limits<double>::infinity();
     const int direction = torque_nm > 0. ? 1 : -1;
@@ -1071,7 +1080,7 @@ double SpindleController::directional_limit(const std::string &name,
                                             double sign) const {
     const JointEntry &entry = joints_[joint_index(name)];
     if (config_.spatial && is_swivel(name))
-        return std::min(config_.joint_limit_nm, config_.shoulder_profile->swivel_strength_nm);
+        return std::min(config_.joint_limit_nm, config_.shoulder_profile->swivel_strength_nm); // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
     if (!config_.has_strength)
         return config_.joint_limit_nm;
     const auto qpos = model_access::readonly_buffer(
@@ -1136,7 +1145,7 @@ SpindleController::finalize_effort(mjData *data,
     for (std::size_t i = 0; i < n; ++i) {
         speeds[i] = qvel[static_cast<std::size_t>(joints_[i].dof_adr)];
         const double damping = config_.spatial && is_swivel(joints_[i].name)
-            ? config_.shoulder_profile->swivel_damping_nms_per_rad : config_.passive_damping_nms_rad();
+            ? config_.shoulder_profile->swivel_damping_nms_per_rad : config_.passive_damping_nms_rad(); // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
         passive[i] = -damping * speeds[i];
     }
     const bool enabled = config_.activation_tau_s > 0. ||
@@ -1234,7 +1243,8 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                            bool advance, std::optional<double> dt_s,
                            bool steady_state,
                            std::optional<std::array<bool,4>> support_available,
-                           bool pedal_recovery) {
+                           bool pedal_recovery,
+                           std::optional<double> weld_crank_torque_nm) {
     if (legacy_) {
         auto previous = state();
         try {
@@ -1297,15 +1307,44 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         const double phase = std::atan2(-spindles[0][1], spindles[0][0]);
         const double rate = qvel[static_cast<std::size_t>(crank_spin_dof_)];
         if (command.mean_crank_torque_nm > 0.) {
-            total = spindle::spindle_torque_waveform(
+            const double task = spindle::spindle_torque_waveform(
                 command.mean_crank_torque_nm, phase,
                 config_.pedal_torque_ripple);
+            // The settled weld-press offset joins the effort ramp
+            // continuously, then integrates the residual between the
+            // requested waveform and the weld-measured press.
+            if (weld_crank_torque_nm && advance) {
+                const double unclipped =
+                    coast_hold_nm_ + config_.weld_servo_gain *
+                                         (task - *weld_crank_torque_nm);
+                coast_hold_nm_ =
+                    unclipped > config_.weld_servo_limit_nm
+                        ? config_.weld_servo_limit_nm
+                    : unclipped < -config_.weld_servo_limit_nm
+                        ? -config_.weld_servo_limit_nm
+                        : unclipped;
+            }
+            total = task + coast_hold_nm_;
         } else {
+            // Freewheeling: damp toward the coasting crank rate and servo
+            // the weld-measured pedal press to zero. Same NaN-propagating
+            // clip shape as below.
+            if (weld_crank_torque_nm && advance) {
+                const double unclipped =
+                    coast_hold_nm_ - *weld_crank_torque_nm;
+                coast_hold_nm_ =
+                    unclipped > config_.coasting_brake_limit_nm
+                        ? config_.coasting_brake_limit_nm
+                    : unclipped < -config_.coasting_brake_limit_nm
+                        ? -config_.coasting_brake_limit_nm
+                        : unclipped;
+            }
             // NaN must propagate like np.clip does (both branches' NaN
             // comparisons are false, so raw survives untouched).
             const double raw =
                 config_.coasting_brake_d_nm_s_rad *
-                (command.crank_target_rate_rad_s - rate);
+                    (command.crank_target_rate_rad_s - rate) +
+                coast_hold_nm_;
             total = raw > config_.coasting_brake_limit_nm
                         ? config_.coasting_brake_limit_nm
                     : raw < -config_.coasting_brake_limit_nm
@@ -1313,11 +1352,26 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                         : raw;
         }
         const Vec2 crank{0., 0.};
+        // The recovery preload applies whether or not the rider is
+        // mashing: a clipped-in foot keeps the same light stance
+        // pressure through the return stroke, and without it the weld
+        // reads unloaded.
         const Vec2 leg_targets_v = spindle::leg_crank_targets(
             total, phase, spindles[0], spindles[1], crank,
-            command.mean_crank_torque_nm > 0.
-                ? config_.return_foot_preload_n
-                : 0.);
+            config_.return_foot_preload_n);
+        // _leg_feedforward: inverse dynamics of the weld-imposed leg
+        // motion. The feet are pinned to the pedals, so the measured
+        // crank motion imposes the leg joints' trajectory through the
+        // closed loop: q_ddot = J*phi_ddot + (dJ/dphi)*phi_dot^2. The
+        // actuators must themselves supply the bias and inertia of the
+        // imposed motion; only the residual task circulates through the
+        // leg-crank-leg loop. The acceleration term stays at zero: every
+        // solved-proximity estimate re-injects the weld equalities' own
+        // ringing.
+        const double delta = 1e-3;
+        const double accel = 0.;
+        std::array<Vec2, 2> djac{};
+        std::array<Vec2, 2> leg_torques{};
         for (const auto side : kSides) {
             const auto s = side_index(side);
             const Vec2 hip = mat_t_vec_xz(
@@ -1330,6 +1384,16 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                            pelvis_pitch);
             jacobians[s] = jac;
             has_jacobian[s] = true;
+            const Vec2 plus =
+                spindle::leg_loop_jacobian(leg_geometry_[s], hip, crank,
+                                           crank_length_m_, phase + delta,
+                                           pelvis_pitch);
+            const Vec2 minus =
+                spindle::leg_loop_jacobian(leg_geometry_[s], hip, crank,
+                                           crank_length_m_, phase - delta,
+                                           pelvis_pitch);
+            djac[s] = Vec2{(plus[0] - minus[0]) / (2. * delta),
+                           (plus[1] - minus[1]) / (2. * delta)};
             const auto capacity = [&](int joint, double sign) {
                 return directional_limit(
                     std::string("rider_") +
@@ -1337,16 +1401,49 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                         std::string(side),
                     data, sign);
             };
-            const Vec2 torques = spindle::split_joint_torques(
+            leg_torques[s] = spindle::split_joint_torques(
                 leg_targets_v[s], jac, capacity);
+        }
+        std::vector<double> imposed(
+            static_cast<std::size_t>(model_->nv), 0.);
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
+            const Vec2 &jac = jacobians[s];
             const std::size_t hip_slot =
                 joint_index("rider_hip_" + std::string(side));
             const std::size_t knee_slot =
                 joint_index("rider_knee_" + std::string(side));
-            requested[hip_slot] = torques[0];
-            requested[knee_slot] = torques[1];
-            requested_filled[hip_slot] = 1;
-            requested_filled[knee_slot] = 1;
+            imposed[static_cast<std::size_t>(joints_[hip_slot].dof_adr)] =
+                jac[0] * accel + djac[s][0] * rate * rate;
+            imposed[static_cast<std::size_t>(joints_[knee_slot].dof_adr)] =
+                jac[1] * accel + djac[s][1] * rate * rate;
+        }
+        std::vector<double> inertia(
+            static_cast<std::size_t>(model_->nv), 0.);
+        engine::mul_m(model_, data, inertia.data(), imposed.data());
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
+            const Vec2 &jac = jacobians[s];
+            const std::size_t hip_slot =
+                joint_index("rider_hip_" + std::string(side));
+            const std::size_t knee_slot =
+                joint_index("rider_knee_" + std::string(side));
+            const std::array<std::size_t, 2> slots{hip_slot, knee_slot};
+            for (std::size_t i = 0; i < 2; ++i) {
+                const std::size_t slot = slots[i];
+                const auto dof =
+                    static_cast<std::size_t>(joints_[slot].dof_adr);
+                // Velocity-domain tracking of the crank-imposed leg
+                // motion: a bounded follow torque lets the actuators
+                // carry their own imposed motion instead of dragging it
+                // through the weld.
+                const double track =
+                    config_.leg_track_damping_nms_rad *
+                    (jac[i] * rate - qvel[dof]);
+                requested[slot] =
+                    leg_torques[s][i] + (bias[dof] + inertia[dof]) + track;
+                requested_filled[slot] = 1;
+            }
         }
         const auto upper = upper_targets(data, &command.posture);
         for (const auto &[name, target] : upper) {
@@ -1450,15 +1547,31 @@ void SpindleController::write(
         }
     const auto ctrl = model_access::mutable_buffer(
         data->ctrl, model_->nu, "ctrl");
+    const auto qvel = model_access::readonly_buffer(
+        data->qvel, model_->nv, "qvel");
     for (const auto &joint : joints_) {
         const double torque =
             validation::finite(named_at(torques, joint.name),
                                "rider torque");
+        // The held plan is applied verbatim between ticks, but the bound
+        // side still applies every step: directional Hill capacity follows
+        // the incoming joint velocity, not the control-tick velocity, and
+        // the accelerating-speed gate follows the same per-step rule.
+        const double cap = directional_limit(joint.name, data,
+                                             torque >= 0. ? 1. : -1.);
+        double clipped = torque > cap    ? cap
+                         : torque < -cap ? -cap
+                                         : torque;
+        const double speed =
+            qvel[static_cast<std::size_t>(joint.dof_adr)];
+        if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
+            clipped * speed > 0.)
+            clipped = 0.;
         // The actuator is a pure motor: ctrl is the muscle torque itself.
         // Passive damping lives on the DOF, so a disabled command removes
         // only active force; tissue damping still acts physically.
         ctrl[static_cast<std::size_t>(joint.actuator_id)] =
-            command_enabled_ ? torque : 0.;
+            command_enabled_ ? clipped : 0.;
     }
 }
 
@@ -1552,6 +1665,7 @@ SpindleController::State SpindleController::state(const mjData* data) const {
     out.sole_goal_diagnostics = sole_goal_diagnostics_;
     if (legacy_) out.allocation_memory = allocation_memory_;
     out.spatial = spatial_state_;
+    out.coast_hold_nm = coast_hold_nm_;
     if (out.spatial && data != nullptr) {
         const auto qpos = model_access::readonly_buffer(data->qpos, model_->nq, "qpos");
         const auto qvel = model_access::readonly_buffer(data->qvel, model_->nv, "qvel");
@@ -1587,7 +1701,7 @@ void SpindleController::validate_state(const State &state) const {
         throw std::invalid_argument("rider_controller.rider.spatial: incompatible model/state family");
     if (state.spatial) {
         if (state.spatial->arm_branch != arm_branch_ || state.spatial->steer_torque_owner != "actuator" ||
-            state.spatial->shoulder_profile_sha256 != config_.shoulder_profile->sha256_hex)
+            state.spatial->shoulder_profile_sha256 != config_.shoulder_profile->sha256_hex) // NOLINT(bugprone-unchecked-optional-access) spatial config validation requires an engaged shoulder_profile
             throw std::invalid_argument("rider_controller.rider.spatial: arm branch, profile or steering owner mismatch");
         for (const auto& lane : state.spatial->shoulders)
             if (!std::isfinite(lane.q) || !std::isfinite(lane.qd))
@@ -1610,6 +1724,8 @@ void SpindleController::validate_state(const State &state) const {
     if (state.allocation_memory && state.allocation_memory->solution)
         for (double const x : *state.allocation_memory->solution)
             if (!std::isfinite(x)) throw std::invalid_argument("rider_controller allocation warm start must be finite");
+    if (!std::isfinite(state.coast_hold_nm))
+        throw std::invalid_argument("rider_controller.coast_hold_nm: must be finite");
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) fields are consumed selectively rather than by a whole-object move
@@ -1632,6 +1748,7 @@ void SpindleController::commit_state(State &&state) noexcept {
     sole_goal_diagnostics_ = std::move(state.sole_goal_diagnostics);
     allocation_memory_ = state.allocation_memory ? std::move(*state.allocation_memory) : bike::rider::AllocationMemory{};
     spatial_state_ = std::move(state.spatial);
+    coast_hold_nm_ = state.coast_hold_nm;
 }
 
 void SpindleController::validate_spatial_lanes(const State& candidate,
@@ -1642,7 +1759,7 @@ void SpindleController::validate_spatial_lanes(const State& candidate,
         throw std::invalid_argument("rider_controller.rider.spatial: independent nq/nv width mismatch");
     for (std::size_t side = 0; side < 2; ++side) {
         const auto& joint = joints_[joint_index(std::string(kSwivelJoints[side]))];
-        const auto& lane = candidate.spatial->shoulders[side];
+        const auto& lane = candidate.spatial->shoulders[side]; // NOLINT(bugprone-unchecked-optional-access) validate_state pairs candidate.spatial with the config_.spatial guard above
         if (lane.q != qpos[static_cast<std::size_t>(joint.qpos_adr)] || lane.qd != qvel[static_cast<std::size_t>(joint.dof_adr)])
             throw std::invalid_argument("rider_controller."+std::string(kSwivelJoints[side])+": differs from integration state");
     }

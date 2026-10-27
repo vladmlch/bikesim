@@ -1,4 +1,6 @@
 """Static friction constraints and their actual, isolated generalized forces."""
+import contextlib
+
 import numpy as np
 from bike_sim.physics.checks import scalar
 
@@ -83,6 +85,25 @@ class StaticBrakeApplier:
     def reset(self):
         """Forgets both captured bite angles; the next standstill re-bites."""
         self._latch={'front':None,'rear':None}
+
+    @contextlib.contextmanager
+    def hold_suspended(self):
+        """Equilibrium is not a standstill the latch should remember.
+
+        A pose solve damps the wheels through the regularized friction bound;
+        the bite's engage/release hysteresis ratchets them downhill instead --
+        the captured angle drifts every cycle and the residual never lands.
+        Suppress the bite for the duration of the solve and leave a clean
+        latch: the episode re-bites at the settled angle on the first
+        standstill either way.
+        """
+        torque,stiffness=self.hold_torque_nm,self.hold_stiffness_nm_rad
+        self.hold_torque_nm=self.hold_stiffness_nm_rad=0.
+        try:
+            yield self
+        finally:
+            self.hold_torque_nm,self.hold_stiffness_nm_rad=torque,stiffness
+            self.reset()
 
     def solved_components(self,model,data):
         import mujoco

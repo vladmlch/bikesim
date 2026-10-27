@@ -34,7 +34,7 @@ void finish_spatial_rider(Element& root, const BuildContext& c) {
             {"ctrllimited", "true"}, {"ctrlrange", limits},
             {"forcelimited", "true"}, {"forcerange", limits}});
         auto& steer = required(root, "body", "steer");
-        const Vec3 hand = add(c.articulated->grip, {0., side == 0 ? -ARM_LATERAL_OFFSET_M : ARM_LATERAL_OFFSET_M, 0.});
+        const Vec3 hand = add(c.articulated->grip, {0., side == 0 ? -ARM_LATERAL_OFFSET_M : ARM_LATERAL_OFFSET_M, 0.}); // NOLINT(bugprone-unchecked-optional-access) finish_spatial_rider only runs under the caller's context.articulated guard
         const Vec3 steer_origin = div(c.fixed.P_HT_bot, 1000.);
         site(steer, "site_grip_"+suffix, vec17(sub(hand, steer_origin)), ".004");
         auto& connect = required(root, "connect", "connect_grip_"+suffix);

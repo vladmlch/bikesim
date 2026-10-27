@@ -7,10 +7,17 @@
 #include "recording/value_util.hpp"
 #include "runtime/setup_values.hpp"
 #include "io/hash.hpp"
+#include "platform/argv.hpp"
 #include "platform/files.hpp"
 #include <array>
+#include <cstddef>
 #include <filesystem>
 #include <iostream>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <variant>
 
 namespace {
 void incompatible(const std::filesystem::path& source,const std::filesystem::path& destination) {
@@ -70,10 +77,13 @@ void incompatible(const std::filesystem::path& source,const std::filesystem::pat
 }
 int main(int argc,char** argv) {
     try {
-        if(argc==3&&std::string_view(argv[1])=="--planar") {
-            std::cout<<recording_fixture::publish(argv[2]).directory.string()<<'\n';return 0;
+        // The shared wrapper keeps raw argv subscripting out of this file under
+        // -Wunsafe-buffer-usage; the pair is exactly the one main received.
+        const auto arguments=bike::platform::main_arguments(argc,argv);
+        if(arguments.size()==3&&std::string_view(arguments[1])=="--planar") {
+            std::cout<<recording_fixture::publish(arguments[2]).directory.string()<<'\n';return 0;
         }
-        if(argc==4&&std::string_view(argv[1])=="--incompatible") {incompatible(argv[2],argv[3]);return 0;}
+        if(arguments.size()==4&&std::string_view(arguments[1])=="--incompatible") {incompatible(arguments[2],arguments[3]);return 0;}
         throw std::invalid_argument("usage: installed_fixture --planar OUT | --incompatible SOURCE OUT");
     } catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }

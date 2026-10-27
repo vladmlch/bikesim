@@ -27,6 +27,7 @@ bool checked_product(std::uint64_t a, std::uint64_t b, std::uint64_t& result) no
     return true;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 bool distinct_nodes(double origin, double spacing, std::uint64_t nodes) noexcept {
     // A positive spacing and a finite, nonempty total extent do not imply
     // representable cells. At a large world offset, adjacent authored nodes
@@ -96,8 +97,8 @@ std::expected<Grid3d, std::string> Grid3d::create(
     // Sorted indices keep arbitrary u32 IDs bounded by surface count. A dense
     // max(id)+1 table would allow a one-record asset to demand sixteen GiB.
     std::vector<std::uint32_t> indices(surfaces.size());
-    std::iota(indices.begin(), indices.end(), std::uint32_t{0});
-    std::sort(indices.begin(), indices.end(), [&surfaces](auto a, auto b) {
+    std::ranges::iota(indices, std::uint32_t{0});
+    std::ranges::sort(indices, [&surfaces](auto a, auto b) {
         return surfaces[a].id < surfaces[b].id;
     });
     for (std::size_t i = 0; i < surfaces.size(); ++i) {
@@ -117,7 +118,7 @@ std::expected<Grid3d, std::string> Grid3d::create(
             return invalid(path + ".stribeck_speed_mps", "must be finite and > 0");
     }
     for (std::size_t i = 0; i < materials.size(); ++i) {
-        const auto it = std::lower_bound(indices.begin(), indices.end(), materials[i],
+        const auto it = std::ranges::lower_bound(indices, materials[i],
             [&surfaces](auto index, auto id) { return surfaces[index].id < id; });
         if (it == indices.end() || surfaces[*it].id != materials[i])
             return invalid("terrain3d.material[" + std::to_string(i) + "]", "unknown surface ID");
@@ -126,8 +127,8 @@ std::expected<Grid3d, std::string> Grid3d::create(
     if (!std::isfinite(metadata.height_datum_m))
         return invalid("terrain3d.metadata.height_datum_m", "non-finite");
     if (!metadata.seed_decimal.empty() &&
-        !std::all_of(metadata.seed_decimal.begin(), metadata.seed_decimal.end(),
-                     [](char c) { return c >= '0' && c <= '9'; }))
+        !std::ranges::all_of(metadata.seed_decimal,
+                             [](char c) { return c >= '0' && c <= '9'; }))
         return invalid("terrain3d.metadata.seed_decimal", "expected unsigned decimal digits");
     Grid3d result;
     result.desc_ = desc;

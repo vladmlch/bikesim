@@ -2,6 +2,8 @@
 #include "../platform/files.hpp"
 #include <filesystem>
 #include <span>
+#include <stdexcept>
+#include <string>
 #include <string_view>
 
 namespace bike::batch {
@@ -16,8 +18,10 @@ namespace bike::batch {
     }
     return platform::open_exclusive(path);
 }
+// The range constructor keeps the byte count tied to the view; the (pointer,
+// size) form is rejected by -Wunsafe-buffer-usage-in-container.
 inline void append_log(const platform::FileHandle& file, std::string_view text) {
-    platform::write_all(file, std::as_bytes(std::span{text.data(), text.size()}));
+    platform::write_all(file, std::as_bytes(std::span<const char>(text)));
     platform::sync(file);
 }
 inline void write_log(const std::filesystem::path& path, std::string_view text, bool overwrite) {

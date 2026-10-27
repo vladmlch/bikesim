@@ -100,8 +100,8 @@ namespace {
 ResistanceWriter::ResistanceWriter(const mjModel *m,
                                    nativecfg::ResistanceConfig config)
     : m_(m), cfg_(std::move(config)),
-      nv_(static_cast<int>(m->nv)) {
-    spatial_=mj_name2id(m,mjOBJ_JOINT,"root_free")>=0 || mj_name2id(m,mjOBJ_JOINT,"root_y")>=0;
+      nv_(static_cast<int>(m->nv)),
+      spatial_(mj_name2id(m,mjOBJ_JOINT,"root_free")>=0 || mj_name2id(m,mjOBJ_JOINT,"root_y")>=0) {
     nativecfg::validate(cfg_,spatial_);
     // ResistanceConfig.__post_init__ (physical_config.py:275-284): scalars
     // finite + bounds, both 3-vectors finite and planar ([1] == 0).

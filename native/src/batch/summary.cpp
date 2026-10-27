@@ -76,7 +76,7 @@ io::Value summarize(std::span<const Job> jobs,std::span<const Result> results,do
         {"throughput_x",elapsed>0.?real(std::round(wall/elapsed*100.)/100.):Value{}},
         {"results",text(path.string())},{"interrupted",Value{interrupted}}}};
     if (spatial) {
-        std::vector<std::size_t> order; for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
+        std::vector<std::size_t> order; order.reserve(jobs.size()); for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
         std::ranges::sort(order,{},[&](std::size_t i){return jobs[i].key.value_or(jobs[i].id);});
         Array canonical;
         for(const auto i:order) {

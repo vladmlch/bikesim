@@ -5,6 +5,7 @@
 #include "recording/reader.hpp"
 #include "runtime/setup_values.hpp"
 #include "io/hash.hpp"
+#include "io/json.hpp"
 #include "platform/files.hpp"
 #include <array>
 #include <filesystem>

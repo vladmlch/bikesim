@@ -559,6 +559,31 @@ def test_alpha_warning_is_report_only_but_alpha_crash_fails_health(
     assert crash_summary["tool_health"] == "failed"
 
 
+def test_alpha_snippet_line_mentioning_error_is_not_a_tool_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Clang echoes the offending source line under a diagnostic with a
+    # "   <line> | <code>" gutter. Quoted code containing "error:" (here a
+    # loop variable named error) is context, not an error diagnostic.
+    build, _ = write_fixture(tmp_path)
+    tool = tmp_path / "mock-analyzer"
+    write_fake_tool(
+        tool,
+        alpha_text=(
+            f"{tmp_path}/one.cpp:2:26: warning: experimental finding\n"
+            "    2 |         for(const auto& error:s.errors)errors.push_back(text(error));"
+        ),
+    )
+    monkeypatch.setenv("ANALYZER_CLANG", str(tool))
+
+    assert run_sweep("analyzer", build) == 0
+    summary = json.loads(
+        (build / "native_check_summaries" / "analyzer.json").read_text()
+    )
+    assert summary["tool_health"] == "ok"
+    assert summary["finding_status"] == "report-only"
+
+
 def test_positive_control_records_one_selected_translation_unit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1656,10 +1681,12 @@ def run_controller_kind(kind: str, *, timeout: int = 180) -> subprocess.Complete
 
 def test_standalone_header_sweep_compiles_first_party_headers() -> None:
     # The sweep compiles every first-party header in every library
-    # target's context: 228 headers x ~32 contexts = 7194 header TUs and
-    # ~40 min on this machine (each new native library adds another
-    # context — the matrix has grown ~7x since the first calibration).
-    result = run_controller_kind("headers", timeout=3600)
+    # target's context: ~330 headers x ~40 contexts = ~13.6k header TUs.
+    # Probes dispatch across a worker pool (~15-20 min under host
+    # contention); the bound is recalibrated with the matrix: 480 s at
+    # 1008 TUs, 3600 s at 7194 TUs, 7200 s at 13607 TUs serial — the pool
+    # keeps the same bound as a contention ceiling, not an expectation.
+    result = run_controller_kind("headers", timeout=7200)
 
     assert result.returncode == 0, result.stdout + result.stderr
     summary = json.loads(

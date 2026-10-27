@@ -26,6 +26,14 @@ namespace bike::io {
 inline constexpr std::size_t kMaxJsonBytes = 512ULL * 1024ULL * 1024ULL;
 inline constexpr std::size_t kMaxDepth = 512;
 
+// One shared contract bound, not three literals: an external steering
+// profile document is capped at 1 MiB by the runtime resolver
+// (runtime/spatial_tire_factory.cpp), by capture
+// (research/metadata.cpp) and by the recording reader
+// (recording/database_validate.cpp) — all three must reject the same byte
+// count, so the constant lives at this leaf where every layer can reach it.
+inline constexpr std::size_t kExternalSteerProfileBoundBytes = 1024ULL * 1024ULL;
+
 // Reserved key of the bike_recording.json.v1 tag scheme (json_codec.py:17).
 inline constexpr std::string_view kRecordingTag = "$bike_recording";
 

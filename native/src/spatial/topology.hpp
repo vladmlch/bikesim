@@ -43,7 +43,9 @@ struct Topology {
 // Cold compiled-model identity; may allocate and must not run in a force tick.
 [[nodiscard]] std::string model_fingerprint_hex(const mjModel&);
 [[nodiscard]] std::string topology_fingerprint_hex(const Topology&);
-// Model/data/binding identity and a current kinematic stage are preconditions.
+// Model/data/binding identity and current position and velocity stages are preconditions: xpos/xquat
+// (mj_kinematics), subtree_com (mj_comPos) and cvel (mj_comVel), e.g. after mj_forward or mj_step1.
+// A kinematics-only refresh leaves the velocities stale.
 [[nodiscard]] BodyPose body_pose(const mjModel&, const mjData&, const RootBinding&) noexcept;
 
 } // namespace bike::spatial

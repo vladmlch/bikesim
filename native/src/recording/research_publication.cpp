@@ -1,6 +1,13 @@
 #include "research_publication.hpp"
 #include "value_util.hpp"
 #include <algorithm>
+#include <cstdint>
+#include <filesystem>
+#include <memory>
+#include <optional>
+#include <span>
+#include <utility>
+#include <vector>
 
 namespace bike::recording {
 namespace {

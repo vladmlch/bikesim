@@ -1,13 +1,16 @@
 #include "spatial_recipe.hpp"
+#include "../io/json.hpp"
 #include "../runtime/spatial_checkpoint.hpp"
 #include "../runtime/setup_values.hpp"
 #include <algorithm>
 #include <set>
 #include <stdexcept>
+#include <string_view>
 
 namespace bike::replay {
 namespace {
 using namespace runtime::setupvalue;
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
 void digest(std::string_view value,std::string_view path) {
     if(value.size()!=64 || !std::ranges::all_of(value,[](char c){return (c>='0'&&c<='9')||(c>='a'&&c<='f');}))
         throw std::invalid_argument(std::string(path)+": expected lowercase SHA-256");

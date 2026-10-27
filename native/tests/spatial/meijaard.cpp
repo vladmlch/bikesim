@@ -208,13 +208,20 @@ void rollout(st::RigModel& rig,const Parameters& p,double speed) {
     bt::require(found,"weave eigenmode exists for nonlinear rollout");
     const Complex delta=(lambda*lambda-a[8]-a[10]*lambda)/(a[9]+a[11]*lambda);
     const std::array<Complex,4> mode{Complex{1.,0.},delta,lambda,lambda*delta};
-    auto basis=dense::zeros(4,2);State initial{};
-    for(std::size_t i=0;i<4;++i){basis.values[2*i]=mode[i].real();basis.values[2*i+1]=mode[i].imag();initial[i]=1e-5*mode[i].real();}
+    State initial{};for(std::size_t i=0;i<4;++i)initial[i]=1e-5*mode[i].real();
     initialize(rig,p,speed,initial);
+    // Least-squares projection onto the real/imaginary weave basis via its 2x2 normal equations.
+    // dense::least_squares would pull rider::LeastSquaresWorkspace (core objects), which this
+    // target does not link; the basis has two columns, so the Gram determinant is the rank test.
     const auto amplitude=[&] {
-        const auto x=measured_state(rig);dense::Matrix rhs{.rows=4,.cols=1,.values=std::vector<double>(x.begin(),x.end())};
-        const auto fit=dense::least_squares(basis,rhs);bt::require(fit.rank==2,"real and imaginary weave basis are independent");
-        return std::hypot(fit.solution.values[0],fit.solution.values[1]);
+        const auto x=measured_state(rig);double g00=0.,g01=0.,g11=0.,b0=0.,b1=0.;
+        for(std::size_t i=0;i<4;++i) {
+            const double re=mode[i].real(),im=mode[i].imag();
+            g00+=re*re;g01+=re*im;g11+=im*im;b0+=re*x[i];b1+=im*x[i];
+        }
+        const double determinant=g00*g11-g01*g01;
+        bt::require(determinant>1e-10*g00*g11,"real and imaginary weave basis are independent");
+        return std::hypot((g11*b0-g01*b1)/determinant,(g00*b1-g01*b0)/determinant);
     };
     const double start=amplitude();constexpr double dt=1e-4;const auto nv=static_cast<std::size_t>(rig.model->nv);
     for(int step=0;step<5000;++step) {

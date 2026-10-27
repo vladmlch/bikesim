@@ -352,8 +352,12 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
         if (!valid_at(piece,row)) invalid(spec.name + "." + name,"presence mask may not be null");
         return piece.b[row] != 0;
     };
+    // Schema-2 spatial physical channels have exactly one explicit source root
+    // per interval; the name tests are loop-invariant.
+    const bool spatial_physical = spec.name=="channel_spatial"||spec.name=="channel_spatial_energy"||spec.name=="channel_spatial_geometry"||spec.name=="channel_spatial_outcome";
+    const bool spatial_truth_table = spec.name=="channel_spatial";
     for (std::size_t row = 0; std::cmp_less(row ,table.rows); ++row) {
-        if(spec.name=="channel_spatial"||spec.name=="channel_spatial_energy"||spec.name=="channel_spatial_geometry"||spec.name=="channel_spatial_outcome")
+        if(spatial_physical)
             for(const auto& root:spec.claims)
                 if(!flag("__"+root+"_present",row)||!flag("__"+root+"_valid",row))invalid(spec.name,"spatial physical interval requires explicit source root");
         for (const auto& parent : parents) {
@@ -376,7 +380,7 @@ void validate_pieces(const runtime::EncodedTable& table, const TableSpec& spec) 
             bool empty_remainder = false;
             if (field.optional) {
                 const bool present = flag(field.key+"_present",row);
-                if(spec.name=="channel_spatial"&&!present)invalid(spec.name+"."+field.key,"nullable spatial fields must be explicit, including null values");
+                if(spatial_truth_table&&!present)invalid(spec.name+"."+field.key,"nullable spatial fields must be explicit, including null values");
                 if ((!present&&valid)||(!active&&(present||valid))) invalid(spec.name+"."+field.key,"inconsistent source presence");
                 // _distribute deliberately leaves a root container's terminal
                 // absent when its routed remainder is empty. The raw root

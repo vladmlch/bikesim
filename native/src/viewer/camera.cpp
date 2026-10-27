@@ -2,7 +2,8 @@
 #include <cmath>
 #include <numbers>
 #include <algorithm>
-#include <iterator>
+#include <array>
+#include <optional>
 #include <span>
 #include <stdexcept>
 
@@ -48,7 +49,7 @@ void Camera::update_spatial(mjvCamera& camera, const std::array<double, 3>& posi
     if (heading) {
         if (prev_heading_) unwrapped_heading_ += std::remainder(*heading - *prev_heading_, 2. * std::numbers::pi);
         else unwrapped_heading_ = *heading;
-        prev_heading_ = *heading;
+        prev_heading_ = heading;
     }
     if (reset_ || !lookat_) {
         lookat_ = target;
@@ -62,6 +63,8 @@ void Camera::update_spatial(mjvCamera& camera, const std::array<double, 3>& posi
         (*lookat_)[2] += smoothing_ * (target[2] - (*lookat_)[2]);
         if (!side && heading) camera.azimuth = 135. + unwrapped_heading_ * (180. / std::numbers::pi);
     }
-    std::ranges::copy(*lookat_, std::begin(camera.lookat));
+    // Same bounded-span write as update(): never raw pointer arithmetic.
+    auto const lookat = std::span(camera.lookat);
+    for (std::size_t i = 0; i < lookat.size(); ++i) lookat[i] = (*lookat_)[i];
 }
 } // namespace bike::viewer

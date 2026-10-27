@@ -9,9 +9,10 @@ namespace bike::pneumatic3d {
 namespace {
 bool nonnegative(double x) noexcept { return std::isfinite(x) && x>=0.; }
 struct MaxwellStep { double q=0., loss_density=0.; };
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 MaxwellStep maxwell(double q0, double rate, double k, double tau, double dt) noexcept {
     if (!(k>0.)) return {};
-    if (!(dt>0.)) return {q0,0.};
+    if (!(dt>0.)) return {.q=q0,.loss_density=0.};
     const double x=dt/tau, e=std::exp(-x);
     const double one_minus_e=-std::expm1(-x);
     const double one_minus_e2=-std::expm1(-2.*x);
@@ -41,7 +42,7 @@ MaxwellStep maxwell(double q0, double rate, double k, double tau, double dt) noe
     }
     // Never turn a nonfinite quadratic into zero through std::max(0, NaN).
     // The caller rejects it before changing any material state.
-    return {q,std::isfinite(loss) ? std::max(0.,loss) : loss};
+    return {.q=q,.loss_density=std::isfinite(loss) ? std::max(0.,loss) : loss};
 }
 }
 
@@ -127,7 +128,7 @@ CoreStatus detail::finish_carcass(const CarcassSpec3d& spec,
         // Inputs carry absolute material-cell identities. Do not rotate this
         // array again: doing so would advect the same material twice. The
         // model owns the exact continuous phase (not available in this API).
-        std::fill(state.active.begin(),state.active.end(),std::uint8_t{0});
+        std::ranges::fill(state.active,std::uint8_t{0});
         const double decay=spec.maxwell_k_n_per_m3>0. ? std::exp(-dt/spec.maxwell_tau_s) : 0.;
         for (std::size_t j=0;j<cells;++j) {
             state.deflection_m[j]=0.; state.previous_penetration_m[j]=0.;

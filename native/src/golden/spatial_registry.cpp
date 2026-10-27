@@ -2,6 +2,7 @@
 #include "spatial_compare.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../io/hash.hpp"
+#include "../io/json.hpp"
 #include "../platform/files.hpp"
 #include <array>
 #include <cctype>
@@ -13,7 +14,7 @@
 namespace bike::golden {
 namespace {
 using namespace runtime::setupvalue;
-void fail(std::string_view path,std::string_view reason) { throw std::invalid_argument(std::string("spatial manifest ")+std::string(path)+": "+std::string(reason)); }
+[[noreturn]] void fail(std::string_view path,std::string_view reason) { throw std::invalid_argument(std::string("spatial manifest ")+std::string(path)+": "+std::string(reason)); }
 void nonempty(const Value& v,std::string_view path) { if(io::as_string(v,path).empty())fail(path,"empty value"); }
 void digest(const Value& v,bool pending,std::string_view path) {
     if(io::is_null(v)){if(!pending)fail(path,"incompatibility: missing accepted identity");return;}
@@ -91,7 +92,9 @@ SpatialReferenceStatus inspect_spatial_reference(const io::Value& entry,
     const auto manifest_path=directory/"manifest.json";
     if(!std::filesystem::is_regular_file(manifest_path)||std::filesystem::is_symlink(manifest_path))fail("artifact","incompatibility: missing artifact manifest.json");
     const auto bytes=io::read_numpy_bytes(manifest_path);
-    const auto manifest=io::parse_json(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
+    std::string source;source.reserve(bytes.size());
+    for(const std::byte byte:bytes)source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+    const auto manifest=io::parse_json(source);
     const auto reference_platform=io::as_string(field(manifest,"spatial_platform"),"spatial_platform");
     if(reference_platform!="macos-arm64"&&reference_platform!="linux-aarch64")fail("artifact","incompatibility: unsupported reference platform");
     const auto& platforms=field(entry,"platforms");

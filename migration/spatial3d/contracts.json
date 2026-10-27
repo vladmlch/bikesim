@@ -1055,7 +1055,8 @@
         "spatial"
       ],
       "optional_keys": [
-        "async_telemetry"
+        "async_telemetry",
+        "tyre_threads"
       ],
       "allow_unknown": false,
       "version_field": "runtime_schema",

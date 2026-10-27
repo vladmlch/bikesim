@@ -4,6 +4,7 @@
 #include "../spatial/frames.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <stdexcept>
 
@@ -17,7 +18,7 @@ bool valid_hold(const spatial::HoldState& s) noexcept {
     if(s.schema!=1 || !finite(s.reference_position_world_m) || !finite(s.reference_quat_wxyz) ||
        !finite(s.last_force_world_n) || !finite(s.last_couple_world_nm) ||
        !std::isfinite(s.stored_energy_j) || s.stored_energy_j<0. || !std::isfinite(s.work_j))return false;
-    double q2=0.;for(double q:s.reference_quat_wxyz)q2+=q*q;
+    double q2=0.;for(const double q:s.reference_quat_wxyz)q2+=q*q;
     if(std::abs(q2-1.)>2e-9)return false;
     if(s.phase>=spatial::BootstrapPhase::armed && (s.active || norm(s.last_force_world_n)!=0. ||
         norm(s.last_couple_world_nm)!=0. || s.stored_energy_j!=0.))return false;
@@ -79,7 +80,7 @@ CoreStatus BootstrapHold::try_compute_into(const mjModel& model,const mjData& da
     stage.active=true;stage.phase=phase;
     if(!valid_hold(stage))return CoreStatus::invalid_geometry;
     struct Call{const mjModel* m;const mjData* d;double* jp;double* jr;const double* p;int body;};
-    Call call{&model,&data,jacp_.data(),jacr_.data(),pose.position_world_m.data(),root_.body_id};
+    Call call{.m=&model,.d=&data,.jp=jacp_.data(),.jr=jacr_.data(),.p=pose.position_world_m.data(),.body=root_.body_id};
     engine::ErrorBuffer error_buffer;
     if(!engine::invoke([](void* raw) noexcept {
         const auto& c=*static_cast<Call*>(raw);mj_jac(c.m,c.d,c.jp,c.jr,c.p,c.body);
@@ -110,11 +111,13 @@ CoreStatus BootstrapHold::restore(const spatial::HoldState& s) noexcept {
     if(!valid_hold(s))return CoreStatus::invalid_input;
     state_=s;return CoreStatus::ok;
 }
-bool BootstrapHold::release_check(const SpatialEquilibriumReport& r,double force_limit,double moment_limit) const noexcept {
-    return std::isfinite(force_limit) && force_limit>0. && std::isfinite(moment_limit) && moment_limit>0. &&
+bool BootstrapHold::release_check(const SpatialEquilibriumReport& r,double force_limit,double moment_limit,
+    double acceleration_tolerance) const noexcept {
+    return std::isfinite(acceleration_tolerance) && acceleration_tolerance>0. &&
+        std::isfinite(force_limit) && force_limit>0. && std::isfinite(moment_limit) && moment_limit>0. &&
         r.errors.empty() && r.contacts_valid>0 && r.contacts_valid==r.contacts_total &&
-        std::isfinite(r.max_linear_accel_mps2) && r.max_linear_accel_mps2>=0. && r.max_linear_accel_mps2<=.05 &&
-        std::isfinite(r.max_angular_accel_radps2) && r.max_angular_accel_radps2>=0. && r.max_angular_accel_radps2<=.05 &&
+        std::isfinite(r.max_linear_accel_mps2) && r.max_linear_accel_mps2>=0. && r.max_linear_accel_mps2<=acceleration_tolerance &&
+        std::isfinite(r.max_angular_accel_radps2) && r.max_angular_accel_radps2>=0. && r.max_angular_accel_radps2<=acceleration_tolerance &&
         std::isfinite(r.weight_residual_fraction) && r.weight_residual_fraction>=0. && r.weight_residual_fraction<=.005 &&
         std::isfinite(r.roll_moment_residual_nm) && std::abs(r.roll_moment_residual_nm)<=1. &&
         std::isfinite(r.pitch_moment_residual_nm) && std::abs(r.pitch_moment_residual_nm)<=1. &&

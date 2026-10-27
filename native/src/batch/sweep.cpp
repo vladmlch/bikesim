@@ -71,12 +71,12 @@ int research_sweep(std::span<const std::string_view> input, const std::filesyste
     const auto results = execute(jobs, request.workers, options);
     Array runs, passed;
     for (const auto& token : passthrough) passed.push_back(text(token));
-    std::vector<std::size_t> order;for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
+    std::vector<std::size_t> order;order.reserve(jobs.size());for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
     if(std::ranges::any_of(jobs,[](const auto& job){return job.key.has_value();}))
         std::ranges::sort(order,{},[&](std::size_t i){return jobs[i].key.value_or(jobs[i].id);});
     for (const auto i:order) {
         Value run{Object{{"seed", Value{io::Number{seeds[i]}}}, {"returncode", integer(results[i].exit_code)}, {"wall_s", real(results[i].wall_s)}}};
-        if(jobs[i].key){set(run,"job_key",text(*jobs[i].key));set(run,"identity",jobs[i].identity);}
+        if(const auto& key=jobs[i].key){set(run,"job_key",text(*key));set(run,"identity",jobs[i].identity);}
         runs.push_back(std::move(run));
     }
     write_log(root / "sweep.json", io::recording_json(Value{Object{{"jobs", integer(request.requested_workers)},

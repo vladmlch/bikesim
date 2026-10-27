@@ -8,11 +8,21 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
-#include <cstring>
+#include <cstddef>
+#include <cstdint>
 #include <dlfcn.h>
+#include <exception>
 #include <filesystem>
 #include <iterator>
+#include <memory>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <system_error>
 #include <utility>
 
 namespace bike::research {
@@ -43,7 +53,10 @@ template<class Call> void invoke(std::string_view operation,Call&& call) {
 struct Library {
     void* handle=nullptr;
     explicit Library(const std::filesystem::path& path):handle(dlopen(path.c_str(),RTLD_NOW|RTLD_LOCAL)){
-        if(!handle)throw PolicyFailure("cannot load native ABI2 policy: "+path.string());}
+        if(!handle){
+            // NOLINTNEXTLINE(concurrency-mt-unsafe) this loader is confined to its owning research session
+            const char* error=dlerror();
+            throw PolicyFailure("cannot load native ABI2 policy: "+path.string()+" ("+std::string(error?error:"unknown loader error")+")");}}
     ~Library(){if(handle)(void)dlclose(handle);}
     Library(const Library&)=delete;Library& operator=(const Library&)=delete;
     Library(Library&&)=delete;Library& operator=(Library&&)=delete;
@@ -54,10 +67,11 @@ struct Library {
         // NOLINTNEXTLINE(concurrency-mt-unsafe) same confined POSIX error slot as the matching dlsym call
         const char* error=dlerror();
         if(error||!symbol)throw std::invalid_argument("plugin: unsupported sensor schema 2 (bike_policy_v2 missing)");
-        using Entry=const BikePolicyV2*(*)();Entry entry{};static_assert(sizeof(entry)==sizeof(symbol));
-        // POSIX supplies the callable symbol representation. Copying it avoids
-        // writing a function-pointer object through an unrelated void** alias.
-        std::memcpy(&entry,&symbol,sizeof(entry));
+        using Entry=const BikePolicyV2*(*)();static_assert(sizeof(Entry)==sizeof(symbol));
+        // POSIX supplies the callable symbol representation. bit_cast copies it
+        // without a void** alias and without a libc memcpy that the unsafe-buffer policy flags.
+        // NOLINTNEXTLINE(bugprone-bitwise-pointer-cast) dlsym returns the function address as void*; bit_cast copies that representation without a void** alias or a libc memcpy
+        const Entry entry=std::bit_cast<Entry>(symbol);
         try{return entry();}catch(const std::exception& e){throw PolicyFailure("policy ABI2 entrypoint threw: "+std::string(e.what()));}
         catch(...){throw PolicyFailure("policy ABI2 entrypoint threw a non-standard exception");}
     }
@@ -85,7 +99,7 @@ public:
         if(platform::file_sha256(path_)!=digest_)throw PolicyFailure("native ABI2 policy binary changed while loading");
     }
     void reset(std::string_view seed) override{(void)validate_seed(seed);require_open();reset_pending_=true;}
-    runtime::RideControl act(const runtime::SensorObservation&,std::optional<double>) override{
+    [[noreturn]] runtime::RideControl act(const runtime::SensorObservation&,std::optional<double>) override{
         throw std::invalid_argument("plugin ABI2 requires sensor schema2");}
     runtime::RideControl act_v2(const runtime::spatial::SensorObservationV2& observation,std::optional<double> demand) override{
         require_open();validate_policy_input(observation,demand);const auto input=policy_observation_to_abi_v2(observation);
@@ -111,6 +125,7 @@ PluginPolicyV2::~PluginPolicyV2() = default;
 std::unique_ptr<Policy> load_plugin_policy_v2(std::string_view filename,const io::Value& config) {
     if(filename.empty()||filename.find('\0')!=std::string_view::npos)throw std::invalid_argument("native ABI2 policy requires a nonempty absolute path");
     const std::filesystem::path path(filename);if(!path.is_absolute())throw std::invalid_argument("native ABI2 policy requires an absolute path");
-    return std::make_unique<PluginPolicyV2>(std::filesystem::weakly_canonical(path),config);
+    try{return std::make_unique<PluginPolicyV2>(std::filesystem::weakly_canonical(path),config);}
+    catch(const std::system_error& error){throw PolicyFailure("cannot load native ABI2 policy '"+path.string()+"': "+error.what());}
 }
 } // namespace bike::research

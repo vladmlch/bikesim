@@ -8,11 +8,15 @@
 #include "writers/pneumatic_3d_tire.hpp"
 #include "model/rider_geometry.hpp"
 
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <numbers>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace runtime {
 namespace {
@@ -80,7 +84,8 @@ pn::Pneumatic3dSpec decode_spatial_tire_config(const Value& value) {
     vread::exact(d,vread::keys("tier","outer_radius_m","casing_width_m","carcass","brush","patch_capacity","coefficient_profile","provenance_status"));
     pn::Pneumatic3dSpec out;
     const auto tier=bike::spatial::parse_tyre_tier(vread::string(vread::field(d,"tier"),d.child("tier")));
-    if(!tier)vread::invalid(d.child("tier"),"expected fast or detailed");out.tier=*tier;
+    if(!tier)vread::invalid(d.child("tier"),"expected fast or detailed");
+    out.tier=*tier;
     out.outer_radius_m=vread::fixed<2>(vread::field(d,"outer_radius_m"),d.child("outer_radius_m"));
     out.casing_width_m=vread::fixed<2>(vread::field(d,"casing_width_m"),d.child("casing_width_m"));
     const auto capacity=vread::integer(vread::field(d,"patch_capacity"),d.child("patch_capacity"));
@@ -104,6 +109,8 @@ pn::Pneumatic3dSpec decode_spatial_tire_config(const Value& value) {
 bike::rider::SteerProfile resolved_steer_profile(const bike::spatial::SteerConfig& config) {
     bike::rider::SteerProfile p;
     if(bike::rider::builtin_steer_profile(config.profile_id)) {
+        if(!config.torque_cap_nm)
+            throw std::invalid_argument("spatial_3d.steer.torque_cap_nm: required with a built-in profile");
         p.speed_nodes_mps={1.,3.,5.,8.};
         // Pin decimal source coefficients exactly as in the profile record;
         // arithmetic scaling can differ by one ulp and change its digest.
@@ -111,7 +118,7 @@ bike::rider::SteerProfile resolved_steer_profile(const bike::spatial::SteerConfi
                  {{-40.,-8.,-6.,-2.,-1.,-.3}},
                  {{-32.,-6.4,-4.8,-1.6,-.8,-.24}},
                  {{-24.,-4.8,-3.6,-1.2,-.6,-.18}}};
-        p.cap_nm=config.torque_cap_nm.value_or(40.);p.delay_s=config.reaction_delay_s;
+        p.cap_nm=*config.torque_cap_nm;p.delay_s=config.reaction_delay_s;
         // Normalize/hash through the public cold decoder; no measured hash is fabricated.
         auto wire=Value{Object{{"schema",integer(1)},{"speed_nodes_mps",reals(p.speed_nodes_mps)},
             {"gains",Value{Array{}}},{"reference_torque_nm",real(0.)},{"cap_nm",real(p.cap_nm)},
@@ -120,7 +127,7 @@ bike::rider::SteerProfile resolved_steer_profile(const bike::spatial::SteerConfi
         p=bike::rider::read_steer_profile(wire);
     } else {
         std::ifstream input(config.profile_id,std::ios::binary|std::ios::ate);
-        if(!input || input.tellg()<0 || input.tellg()>1024*1024)
+        if(!input || input.tellg()<0 || std::cmp_greater(static_cast<std::size_t>(input.tellg()),bike::io::kExternalSteerProfileBoundBytes))
             throw std::invalid_argument("spatial_3d.steer.profile_id: unreadable or oversized profile file");
         std::string content(static_cast<std::size_t>(input.tellg()),'\0');input.seekg(0);
         input.read(content.data(),static_cast<std::streamsize>(content.size()));

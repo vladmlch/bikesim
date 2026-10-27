@@ -1,6 +1,10 @@
 #include "builder_internal.hpp"
+#include "../model_access.hpp"
+#include <algorithm>
+#include <cstdint>
 #include <limits>
 #include <stdexcept>
+#include <utility>
 
 namespace bike::model::detail {
 // mujoco/terrain.py. Elevation is populated by T21 into the owned model;
@@ -12,11 +16,11 @@ void build_terrain(Element& root,Element& world,const BuildContext& c) {
         if (!c.request.terrain3d)
             throw std::invalid_argument("model.terrain3d: physical source missing");
         if (field.nrow < 2 || field.ncol < 2 ||
-            static_cast<std::uint64_t>(field.nrow)>std::numeric_limits<std::uint32_t>::max() ||
-            static_cast<std::uint64_t>(field.ncol)>std::numeric_limits<std::uint32_t>::max())
+            std::cmp_greater(field.nrow,std::numeric_limits<std::uint32_t>::max()) ||
+            std::cmp_greater(field.ncol,std::numeric_limits<std::uint32_t>::max()))
             throw std::invalid_argument("model.terrain3d.render_resolution: invalid dimensions");
         const auto grid=terrain::make_render_grid(*c.request.terrain3d,
-            {static_cast<std::uint32_t>(field.nrow),static_cast<std::uint32_t>(field.ncol)});
+            {.nrow=static_cast<std::uint32_t>(field.nrow),.ncol=static_cast<std::uint32_t>(field.ncol)});
         build_terrain(root,world,c,grid);
         return;
     }
@@ -27,6 +31,7 @@ void build_terrain(Element& root,Element& world,const BuildContext& c) {
         {"condim","3"},{"friction","1.2 0.005 0.0001"},{"solref","-130000 -800"},{"material","mat_floor"}});
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void build_terrain(Element& root,Element& world,const BuildContext&,
                    const terrain::RenderGrid3d& grid) {
     if(grid.nrow<2 || grid.ncol<2 || !std::isfinite(grid.x0_m) ||
@@ -49,24 +54,32 @@ void build_terrain(Element& root,Element& world,const BuildContext&,
 } // namespace bike::model::detail
 
 namespace bike::model {
-void populate_render_heightfield(mjModel& model,const terrain::RenderGrid3d& grid) {
+void populate_render_heightfield(const mjModel& model,const terrain::RenderGrid3d& grid) {
     const int id=mj_name2id(&model,mjOBJ_HFIELD,"road");
     if(id<0)throw std::invalid_argument("model.terrain3d.render: road heightfield missing");
+    // Checked extents: raw mjModel pointer indexing/arithmetic is rejected by
+    // -Wunsafe-buffer-usage under the clang native policy (-Werror).
+    const auto rows=model_access::readonly_buffer(model.hfield_nrow,model.nhfield);
+    const auto columns=model_access::readonly_buffer(model.hfield_ncol,model.nhfield);
+    const auto addresses=model_access::readonly_buffer(model.hfield_adr,model.nhfield);
+    const auto slot=static_cast<std::size_t>(id);
     if(grid.nrow<2 || grid.ncol<2 ||
-       model.hfield_nrow[id]!=static_cast<mjtSize>(grid.nrow) ||
-       model.hfield_ncol[id]!=static_cast<mjtSize>(grid.ncol))
+       std::cmp_not_equal(rows[slot],grid.nrow) ||
+       std::cmp_not_equal(columns[slot],grid.ncol))
         throw std::invalid_argument("model.terrain3d.render: dimension mismatch");
-    const auto count=static_cast<std::uint64_t>(grid.nrow)*grid.ncol;
-    const auto address=model.hfield_adr[id];
+    const auto count=static_cast<std::size_t>(grid.nrow)*grid.ncol;
+    const auto address=addresses[slot];
     if(address<0 || count!=grid.normalized_height.size() ||
        static_cast<std::uint64_t>(address)>static_cast<std::uint64_t>(model.nhfielddata) ||
-       count>static_cast<std::uint64_t>(model.nhfielddata-address))
+       std::cmp_greater(count,model.nhfielddata-address))
         throw std::invalid_argument("model.terrain3d.render: heightfield storage mismatch");
-    for(float z:grid.normalized_height)
+    for(const float z:grid.normalized_height)
         if(!std::isfinite(z) || z<0.f || z>1.f)
             throw std::invalid_argument("model.terrain3d.render: sample outside [0,1]");
     // Validate the complete matrix before mutating any row. Physics never reads
     // this visual downsample; it retains the immutable Terrain3dSource owner.
-    std::copy(grid.normalized_height.begin(),grid.normalized_height.end(),model.hfield_data+address);
+    const auto data=model_access::mutable_buffer(model.hfield_data,model.nhfielddata);
+    std::ranges::copy(grid.normalized_height,
+        data.subspan(static_cast<std::size_t>(address),count).begin());
 }
 } // namespace bike::model

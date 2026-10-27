@@ -8,8 +8,13 @@
 #include <charconv>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <set>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <variant>
 #include <vector>
 
 namespace runtime::measurement {
@@ -50,8 +55,11 @@ Value median(std::vector<double> values) {
 std::uint64_t unsigned_value(const Value& object, std::string_view name, std::uint64_t maximum) {
     const auto& spelling = io::as_number(field(object, name), name).lexeme;
     std::uint64_t value = 0;
-    const auto parsed = std::from_chars(spelling.data(), spelling.data() + spelling.size(), value);
-    if (parsed.ec != std::errc{} || parsed.ptr != spelling.data() + spelling.size() || value > maximum)
+    // to_address(end) rather than data() + size(): -Wunsafe-buffer-usage is
+    // an error under the native warning policy.
+    const char* const end = std::to_address(spelling.cend());
+    const auto parsed = std::from_chars(std::to_address(spelling.cbegin()), end, value);
+    if (parsed.ec != std::errc{} || parsed.ptr != end || value > maximum)
         throw std::invalid_argument("spatial report." + std::string(name) + ": unsigned integer out of range");
     return value;
 }

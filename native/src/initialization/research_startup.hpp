@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include "../io/value.hpp"
 #include "../runtime/research_metrics.hpp"
 #include "../runtime/sensors.hpp"

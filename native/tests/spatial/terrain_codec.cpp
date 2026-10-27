@@ -7,11 +7,15 @@
 #include <algorithm>
 #include <bit>
 #include <charconv>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -105,8 +109,10 @@ int main() {
             const auto width = static_cast<std::size_t>(bike::io::as_int64(member(row, "width"), "width"));
             const auto& token = bike::io::as_string(member(row, "value_decimal"), "value_decimal");
             std::uint64_t value = 0;
-            const auto parsed = std::from_chars(token.data(), token.data() + token.size(), value);
-            bt::require(parsed.ec == std::errc{} && parsed.ptr == token.data() + token.size(), "corruption fixture u64 is exact");
+            // to_address avoids raw pointer arithmetic (-Wunsafe-buffer-usage).
+            const char* const token_end = std::to_address(token.cend());
+            const auto parsed = std::from_chars(token.data(), token_end, value);
+            bt::require(parsed.ec == std::errc{} && parsed.ptr == token_end, "corruption fixture u64 is exact");
             put(corrupt, offset, value, width);
             reject(corrupt, bike::io::as_string(member(row, "error"), "error"));
         }

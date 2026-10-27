@@ -93,7 +93,7 @@ void lifted_initial_state_is_rejected(const spatial_tests::OwnedStartup& source,
     using namespace bike;
     namespace values=runtime::setupvalue;
     auto payload=initial.payload();
-    validation::RuntimeRigAccess::inspect(*source.runtime,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
+    bike::validation::RuntimeRigAccess::inspect(*source.runtime,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
         auto integration=initialization::state_array(saved,"integration_state").doubles();
         auto coordinates=initialization::state_array(saved,"qpos").doubles();
         const auto* m=stepper.model();
@@ -129,8 +129,8 @@ void failure_keeps_committed_prefix() {
     spatial_tests::OwnedStartup setup(*request);
     auto& ride=*setup.runtime;
     const auto before=ride.snapshot();
-    auto& stepper=validation::SpatialRideAccess::stepper(ride);
-    auto& physical=validation::SpatialRideAccess::physical(ride);
+    auto& stepper=bike::validation::SpatialRideAccess::stepper(ride);
+    auto& physical=bike::validation::SpatialRideAccess::physical(ride);
     const auto* model=stepper.model();auto* data=stepper.data();
     const auto friction=model_access::readonly_buffer(model->dof_frictionloss,model->nv);
     const auto& wheels=physical.topology()->wheels;
@@ -187,8 +187,8 @@ void rider_spring_is_not_material_loss() {
     const auto request=spatial_tests::make_startup_request(
         spatial::RootKind::free6,spatial::TyreTier::fast,true,0.);
     spatial_tests::OwnedStartup setup(*request);
-    auto& stepper=validation::SpatialRideAccess::stepper(*setup.runtime);
-    auto& physical=validation::SpatialRideAccess::physical(*setup.runtime);
+    auto& stepper=bike::validation::SpatialRideAccess::stepper(*setup.runtime);
+    auto& physical=bike::validation::SpatialRideAccess::physical(*setup.runtime);
     const auto* model=stepper.model();
     auto* data=stepper.data();
     const auto joint=static_cast<std::size_t>(
@@ -372,7 +372,7 @@ int main(){return bt::run([] {
                     // physical pose. Preserve agreement of its two coordinate
                     // records so rejection requires the real terrain probe.
                     auto semantic=initialization::read_state_file(cache_file);
-                    validation::RuntimeRigAccess::inspect(*recovered.runtime,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
+                    bike::validation::RuntimeRigAccess::inspect(*recovered.runtime,[&](const Stepper& stepper,const runtime::PhysicalStep& physical) {
                         auto integration=initialization::state_array(semantic,"integration_state").doubles();
                         auto coordinates=initialization::state_array(semantic,"qpos").doubles();
                         auto friction=initialization::state_array(semantic,"model_dof_frictionloss").doubles();

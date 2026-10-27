@@ -71,7 +71,8 @@ totals are not asserted to cover every instruction of the outer wall interval.
 included in full wall time and never subtracted from RTF. The total observer
 overhead is pending until V09 compares complete collector-enabled and
 `--no-region-timing` runs with otherwise identical identity. The latter still
-contains disabled scope branches, reports unavailable regions and cannot close
+contains disabled scope branches, reports `instrumentation_available: false`
+(its region seconds are zero placeholders, not measurements) and cannot close
 the instrumented profile gate. Its raw full-run timing is an overhead control.
 The regular `--compare` operation rejects either a thread-count or observer-mode
 change as the same-run protocol; those deliberate experiments are adjudicated

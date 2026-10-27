@@ -26,6 +26,7 @@ void emit_root(Element& frame,bike::spatial::RootKind kind) {
     } else if(kind==bike::spatial::RootKind::free6) frame.add("freejoint",{{"name","root_free"}});
     else throw std::invalid_argument("spatial_3d.root: spatial model requires constrained4 or free6");
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (root, frame) mirrors the builder element order
 void emit_imu(Element& root,Element& frame,const bike::spatial::ImuMountConfig& cfg) {
     Vec3 position{};
     if(const auto* named=std::get_if<std::string>(&cfg.mount_pos)) {
@@ -49,7 +50,7 @@ void emit_imu(Element& root,Element& frame,const bike::spatial::ImuMountConfig& 
 
 void finish_spatial_topology(Element& root,const BuildContext& c) {
     if(!c.spatial() || !c.physical()) throw std::invalid_argument("spatial_3d: physical spatial build required");
-    const auto& cfg=*c.physics->spatial;
+    const auto& cfg=*c.physics->spatial; // NOLINT(bugprone-unchecked-optional-access) c.spatial() guarantees physics->spatial engagement
     if(c.physics->tires.backend!="pneumatic_3d") throw std::invalid_argument("tires.backend: spatial model requires pneumatic_3d");
     if(cfg.root==bike::spatial::RootKind::constrained4 && cfg.steer.controller!=bike::spatial::SteerController::off)
         throw std::invalid_argument("spatial_3d.steer.controller: constrained root requires off");

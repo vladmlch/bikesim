@@ -1,4 +1,5 @@
 #include "contracts.hpp"
+#include "versioned.hpp"
 #include "../runtime/encode.hpp"
 #include "value_util.hpp"
 #include "../research/evidence.hpp"
@@ -32,6 +33,9 @@ public:
     void tables(std::size_t maximum, const BatchSink& sink) const override {
         if (!maximum || maximum > static_cast<std::size_t>(std::numeric_limits<std::int64_t>::max())) throw std::invalid_argument("batch_rows must be positive int64");
         const auto& specs = catalog_.table_order();
+        // Ordinary commands must be encoded against the recording's own schema, not
+        // whichever version the unversioned table_spec overload resolves to.
+        const auto version = catalog_version(catalog_);
         if (episode_->samples.empty()) {
             for (const auto& spec : specs) sink(spec.name, encode_rows(spec, {}, episode_->generation));
             return;
@@ -52,7 +56,7 @@ public:
                     if (command.rollback_brake_demand) row.emplace_back("rollback_brake_demand", research::wire_value(*command.rollback_brake_demand));
                     rows.push_back(std::move(row));
                 }
-                if (!rows.empty()) sink("commands_applied", encode_rows(table_spec("commands_applied"), rows, episode_->generation));
+                if (!rows.empty()) sink("commands_applied", encode_rows(table_spec("commands_applied", version), rows, episode_->generation));
             }
             for (std::size_t i = 0; i < specs.size(); ++i) {
                 const auto& spec = specs[i];

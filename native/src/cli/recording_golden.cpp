@@ -5,6 +5,7 @@
 #include "../runtime/setup_values.hpp"
 #include "../platform/files.hpp"
 #include "../platform/provenance.hpp"
+#include "../io/json.hpp"
 #include "../io/npy.hpp"
 #include "../research/environment.hpp"
 #include "../runtime/research.hpp"
@@ -98,7 +99,7 @@ double real(const std::string &text, const char *name) {
         throw ParseError(std::string("--") + name + " must be finite and nonnegative");
     return value;
 }
-std::string spatial_platform() {
+std::string_view spatial_platform() {
 #if defined(__APPLE__) && defined(__aarch64__)
     return "macos-arm64";
 #elif defined(__linux__) && defined(__aarch64__)
@@ -109,19 +110,55 @@ std::string spatial_platform() {
 }
 bike::io::Value registry_entry(const Arguments& args) {
     const auto bytes=io::read_numpy_bytes(args.required("spatial-manifest"));
-    const auto manifest=io::parse_json(std::string(reinterpret_cast<const char*>(bytes.data()),bytes.size()));
+    std::string source;source.reserve(bytes.size());
+    for(const std::byte byte:bytes)source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+    const auto manifest=io::parse_json(source);
     golden::validate_spatial_manifest(manifest);
     const auto name=args.required("test");
     for(const auto& entry:io::as_array(runtime::setupvalue::field(manifest,"entries"),"entries"))
         if(io::as_string(runtime::setupvalue::field(entry,"test"),"test")==name)return entry;
     throw ParseError("spatial manifest has no selected test "+name);
 }
+void freeze_golden(const Arguments& args, std::unique_ptr<research::ResearchRequest> request,
+    bool spatial, std::ostream& out) {
+    const auto count = steps(args.required("steps"));
+    const std::string_view platform=spatial?spatial_platform():std::string_view{};
+    runtime::RideControl control;
+    control.human_torque_nm = real(args.get("human-torque", "35"), "human-torque");
+    const auto environment = research::make_environment(std::move(request));
+    const auto episode = golden::capture_episode(*environment, count, control);
+    auto destination=std::filesystem::path(args.required("out"));
+    if(spatial) {
+        destination/=platform;destination/="spatial";
+        std::filesystem::create_directories(destination);
+        destination/=args.required("test");
+    }
+    golden::save(episode, destination);
+    out << "captured " << episode.rows.size() << " rows from " << count << " physics steps\n";
+}
+int compare_golden(const Arguments& args, std::unique_ptr<research::ResearchRequest> request,
+    bool spatial, const std::optional<io::Value>& entry, std::ostream& out) {
+    auto rtol = real(args.get("rtol", "1e-12"), "rtol");
+    auto atol = real(args.get("atol", "1e-12"), "atol");
+    if(spatial) {
+        if(args.options.contains("rtol")||args.options.contains("atol"))throw ParseError("spatial tolerances belong to the reviewed manifest");
+        rtol=0.;atol=0.;
+    }
+    const auto artifact = golden::load_episode(args.required("golden"));
+    const auto environment = research::make_environment(std::move(request));
+    const auto mismatches = spatial ? golden::compare_spatial_episode(artifact,*environment,*entry,spatial_platform()) // NOLINT(bugprone-unchecked-optional-access) the caller populates entry exactly when spatial is set
+        : golden::compare_episode(artifact, *environment, rtol, atol);
+    for (const auto &line : mismatches) out << line << '\n';
+    if (!mismatches.empty()) return 1;
+    out << "golden episode matches\n";
+    return 0;
+}
 } // namespace
 int golden_command(std::span<const std::string_view> arguments, std::ostream &out, std::ostream &error) {
     if (std::ranges::any_of(arguments, [](auto arg) { return arg == "--help" || arg == "-h"; })) { out << help; return 0; }
     try {
         const auto args = parse(arguments);
-        auto request=std::make_unique<research::ResearchRequest>(research::read_research_request(args.required("request")));
+        auto request=research::load_research_request_ptr(args.required("request"));
         const bool spatial=request->setup.model.physics && request->setup.model.physics->spatial &&
             request->setup.model.physics->spatial->mode==bike::spatial::Mode::spatial3d;
         std::optional<io::Value> entry;
@@ -134,36 +171,8 @@ int golden_command(std::span<const std::string_view> arguments, std::ostream &ou
                 if(reference.pending){out<<"pending: spatial reference has no reviewed platform evidence\n";return 3;}
             }
         }
-        if (args.command == "freeze") {
-            const auto count = steps(args.required("steps"));
-            const auto platform=spatial?spatial_platform():std::string{};
-            runtime::RideControl control;
-            control.human_torque_nm = real(args.get("human-torque", "35"), "human-torque");
-            const auto environment = research::make_environment(std::move(*request));
-            const auto episode = golden::capture_episode(*environment, count, control);
-            auto destination=std::filesystem::path(args.required("out"));
-            if(spatial) {
-                destination/=platform;destination/="spatial";
-                std::filesystem::create_directories(destination);
-                destination/=args.required("test");
-            }
-            golden::save(episode, destination);
-            out << "captured " << episode.rows.size() << " rows from " << count << " physics steps\n";
-        } else {
-            auto rtol = real(args.get("rtol", "1e-12"), "rtol");
-            auto atol = real(args.get("atol", "1e-12"), "atol");
-            if(spatial) {
-                if(args.options.contains("rtol")||args.options.contains("atol"))throw ParseError("spatial tolerances belong to the reviewed manifest");
-                rtol=0.;atol=0.;
-            }
-            const auto artifact = golden::load_episode(args.required("golden"));
-            const auto environment = research::make_environment(std::move(*request));
-            const auto mismatches = spatial ? golden::compare_spatial_episode(artifact,*environment,*entry,spatial_platform())
-                : golden::compare_episode(artifact, *environment, rtol, atol);
-            for (const auto &line : mismatches) out << line << '\n';
-            if (!mismatches.empty()) return 1;
-            out << "golden episode matches\n";
-        }
+        if (args.command == "freeze") freeze_golden(args, std::move(request), spatial, out);
+        else if (const int rc = compare_golden(args, std::move(request), spatial, entry, out)) return rc;
         if (!out) throw std::runtime_error("golden output stream failed");
         return 0;
     } catch (const ParseError &failure) {

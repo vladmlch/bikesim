@@ -523,6 +523,7 @@ std::string pedal_stage(const ReviewRig& rig,std::string_view side) {
     bt::require(false,"pedal_recovery entries name the front/rear sides");
     return {};
 }
+void run_recovery_scenario(ReviewRig& on,ReviewRig& off,double angle,const std::string& side);
 void seated_climb_recovery_switch() {
     const auto flat=[](bool enabled){
         return review_rig("articulated_planar",[enabled](
@@ -562,7 +563,10 @@ void seated_climb_recovery_switch() {
         "the flat-pedal fixture reaches the recovery gate geometry");
     const auto [angle,side]=
         *armed; // NOLINT(bugprone-unchecked-optional-access) require() above engaged it
-    const auto on_state=on->physical->state(),off_state=off->physical->state();
+    run_recovery_scenario(*on,*off,angle,side);
+}
+void run_recovery_scenario(ReviewRig& on,ReviewRig& off,double angle,const std::string& side) {
+    const auto on_state=on.physical->state(),off_state=off.physical->state();
     // advance_physics is the committed interval: its control tick is where
     // compute() receives the pedal_recovery flag, and stepping the
     // integrator hands each replay a fresh timestamp (the drivetrain
@@ -585,18 +589,18 @@ void seated_climb_recovery_switch() {
     };
     // The oracle passes cfg.seated_climb.enabled into every compute —
     // including the init ticks where recovery geometry is first observed.
-    bt::require(scenario(*on,on_state,true)=="release",
+    bt::require(scenario(on,on_state,true)=="release",
         "seated_climb enabled: the armed gate advances the recovery "
         "state machine on an init tick");
-    bt::require(scenario(*on,on_state,false)=="release",
+    bt::require(scenario(on,on_state,false)=="release",
         "seated_climb enabled: the same gate fires on a live tick");
     // The pre-fix expression (active && !initializing_) is true on a live
     // tick — this is exactly the case it silently enabled with the switch
     // configured off.
-    bt::require(scenario(*off,off_state,false)=="none",
+    bt::require(scenario(off,off_state,false)=="none",
         "seated_climb disabled: no recovery transition on a live tick "
         "even when the geometry would trigger it");
-    bt::require(scenario(*off,off_state,true)=="none",
+    bt::require(scenario(off,off_state,true)=="none",
         "seated_climb disabled: init ticks stay clean as well");
 }
 } // namespace

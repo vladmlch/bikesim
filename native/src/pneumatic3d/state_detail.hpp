@@ -26,7 +26,7 @@ inline bool digest_valid(std::string_view s) noexcept {
     });
 }
 inline bool identity_valid(const TyreStateIdentity3d& id) noexcept {
-    constexpr std::uint64_t limit=1U<<20;
+    constexpr std::uint64_t limit=1U<<20U;
     const auto fan=std::uint64_t{id.dims.n_theta_fan}*id.dims.n_phi;
     const auto mat=std::uint64_t{id.dims.n_theta_material}*id.dims.n_phi;
     return id.schema==kPneumatic3dStateVersion &&
@@ -94,7 +94,7 @@ inline const char* state_layout_error(const TyreState3d& s,const TyreStateIdenti
             }
         }
         if(p.next_id==0||p.next_id<=max_id)return "patches.next_id: must exceed active IDs";
-        for(auto slot:p.element_to_patch_slot)
+        for(const auto slot:p.element_to_patch_slot)
             if(slot!=std::numeric_limits<std::uint32_t>::max()&&(slot>=cap||!p.slot_used[slot]))
                 return "patches.element_to_patch_slot: inactive or out-of-range slot";
         stored+=c.stored_energy_j+b.elastic_energy_j;

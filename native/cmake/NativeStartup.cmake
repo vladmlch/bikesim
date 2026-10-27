@@ -78,7 +78,12 @@ function(bike_add_native_startup native_dir)
   # the controllers and runtime objects through a model -> core cycle.
   add_library(bike_rider_spatial STATIC
     "${native_dir}/src/rider/spatial_support.cpp"
-    "${native_dir}/src/rider/steer_balance.cpp")
+    "${native_dir}/src/rider/steer_balance.cpp"
+    # rider_io is the cold io face of the rider kernel TUs: profile document
+    # read/write and digests live outside the hot-kernel directory the T56
+    # include-edge contract scans.
+    "${native_dir}/src/rider_io/steer_profile.cpp"
+    "${native_dir}/src/rider_io/shoulder_profile.cpp")
   bike_startup_target_policy(bike_rider_spatial "${native_dir}")
   target_link_libraries(bike_rider_spatial PUBLIC bike_spatial bike_io)
 

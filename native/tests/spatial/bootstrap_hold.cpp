@@ -10,6 +10,10 @@
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <span>
+#include <stdexcept>
+#include <string_view>
+#include <vector>
 
 int main(){return bt::run([] {
     using namespace bike;

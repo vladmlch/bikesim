@@ -14,6 +14,22 @@ authored physics TOML retains its mode; an empty configuration remains planar.
 explicitly removes the extension. The latter still requires a valid planar
 tyre backend in the resulting physics configuration.
 
+The spatial options of `bike-ride`, `bike-research` and `bike-settle` are:
+
+| Option | Meaning |
+| --- | --- |
+| `--spatial {planar,3d}` | Override the TOML mode; may be given once. Omitted preserves the TOML. |
+| `--terrain3d PATH` | `.terrain3d` asset (`grid_asset`) or `.toml` genspec; requires 3D and may be given once. Replacing a TOML genspec with an asset discards its `dx_m`/`dy_m`. |
+| `--threads N` | Spatial tyre worker threads, an integer in `[1,64]` (default `1`); may be given once and is rejected without spatial 3D. It is execution parallelism, not part of the physical configuration identity. |
+
+After the mode is resolved (from the flag or the TOML), spatial terrain
+conflicts with the planar selectors `--track`, `--track-file`, `--gen-spec`,
+`--scenario` and `--length`; choose the terrain with `--terrain3d` or
+`[spatial_3d.terrain]` instead. `--spatial 3d` without `--physics-config`
+selects physical physics with `dt=0.00125 s`, `closure_time_constant_s=0.0025 s`
+(the closure constant must be at least `2*dt`), the fast `pneumatic_3d` tyre
+and, for an articulated rider, spindle pedals, pin saddle and connect grips.
+
 `--preview` draws a planar track profile and is rejected for spatial requests
 before creating output. Use a spatial ride or the recorded-data reports below
 to inspect the 3D route. The optional live CSV leaves `grade_pct` empty when
@@ -27,7 +43,7 @@ the accepted presentation has no directional spatial grade measurement.
 | Constrained spatial root with steering off | Implemented in source | V07 physics; V08 CLI |
 | Free spatial root, `roll-heading-v1` steering | Implemented in source | V07 balance/domain; V08 application |
 | Native grid and terrain genspec requests | Implemented in source | V04 terrain; V08 installed inputs |
-| Profile extrusion request | Recognized, capability rejection with a named reason | C10/V04 material-registry limitation |
+| Profile extrusion request | Implemented in source | V04 terrain; V08 checked replay |
 | Sensor schema2, `noise2`, policy ABI2 | Implemented in source | V07 causal/sensor gates; V08 application |
 | Pose-aware camera, render copy and HUD | Implemented in source | V08 real-display smoke and interaction |
 | Container2, recipe4, offline reports and exports | Implemented in source | V07 recording; V08 relocated replay/report |
@@ -52,7 +68,7 @@ The output root itself is not a recording. These are shell substitutions for
 the manifest's `${EXAMPLES}`, `${OUT}` and `${RUN}` placeholders.
 
 Both spatial physics files choose physical `crank_effort`, `pneumatic_3d`
-`fast`, `dt=0.00125 s`, physical control period `0.005 s`, initial longitudinal
+`fast`, `dt=0.00125 s`, closure time constant `0.0025 s`, physical control period `0.005 s`, initial longitudinal
 speed `2 m/s`, no initial brake demand, no pitch assistance, no drag and no
 rolling resistance. The examples use the lumped rider. The free example uses
 `roll-heading-v1`, a `40 N m` steering cap, a `60 degree` steering range and

@@ -65,20 +65,45 @@ fixture also includes pressure explicitly.
 ## Maxwell branch
 
 Let `q` be branch stress, `k_m` branch stiffness per area, `τ` its relaxation
-time, and let normal indentation rate `d` be constant during an interval.
+time, `x = dt/τ`, and let the normal indentation rate
+`d = (δ - δ_prev)/dt` be constant during the interval. `δ_prev` is the
+previous accepted penetration of the same material cell; a cell that was not
+in contact has `δ_prev = 0`, so first contact sees `d = δ/dt`.
 
 ```
 q_ss = k_m τ d
-q(t+dt) = q(t) exp(-dt/τ) + q_ss (1-exp(-dt/τ))
+q(t+dt) = q0 exp(-x) + q_ss (1 - exp(-x))
 U_m = A q²/(2 k_m)
 D_m = A ∫ q(t)²/(k_m τ) dt >= 0.
 ```
 
-The implementation uses `expm1` for the small-interval difference and evaluates
-the integral analytically. This avoids estimating loss by subtracting two
-large nearly equal energies. The stress, elastic force, pressure force and
-rim force are exposed separately. The normal force used by the writer is the
-nonnegative sum.
+The loss integral is evaluated in closed form with `a = (1-e^{-2x})/2`,
+`b = (1-e^{-x})²` and `c = x - (1-e^{-x}) - (1-e^{-x})²/2`:
+
+```
+D_m / A = (q0² a + q0 q_ss b + q_ss² c) / k_m          (x >= 0.01)
+```
+
+The three `q_ss` terms of that form cancel to `O(x³)` when `dt << τ`, so for
+an ordinary small step the subtraction would erase (or invent) the loss. For
+`x < 0.01` the implementation therefore integrates in `q0` and the elastic
+strain increment `Δ = k_m d dt` (so `q_ss = Δ/x`):
+
+```
+q       = q0 e^{-x} + Δ f,            f = (1-e^{-x})/x
+D_m / A = (x/k_m) (q0² a/x + q0 Δ f² + Δ² c_s(x))
+c_s(x)  = [x - 2(1-e^{-x}) + (1-e^{-2x})/2]/x³
+        = 1/3 - x/4 + 7x²/60 - x³/24 + 31x⁴/2520 - x⁵/320 + 127x⁶/181440 - 17x⁷/120960 + O(x⁸)
+```
+
+with the truncated series error below `3e-21` on the branch. The stress update
+uses `q0 e + q_ss (1-e)`, not `q_ss + (q0-q_ss) e`: after complete relaxation
+`e` rounds to zero and the second form would subtract the small steady stress
+away. `expm1` supplies `1-e^{-x}` and `1-e^{-2x}` without cancellation. A
+nonfinite loss is reported as invalid geometry before any state changes; it is
+never clamped to zero. The stress, elastic force, pressure force and rim force
+are exposed separately. The normal force used by the writer is the nonnegative
+sum.
 
 ## Ownership, probes and material history
 

@@ -14,6 +14,7 @@
 #include <memory>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 
 namespace bike::initialization {
 double refine_equilibrium(SetupContext& context,int max_evaluations,double acceleration_tolerance) {
@@ -25,15 +26,14 @@ double refine_equilibrium(SetupContext& context,int max_evaluations,double accel
     if(context.topology)return spatial_refine(context,max_evaluations,acceleration_tolerance);
     auto& stepper=context.stepper;
     mjModel* m=stepper.model();mjData* d=stepper.data();
-    for(int joint=0;joint<m->njnt;++joint)
-        if(m->jnt_type[joint]!=mjJNT_HINGE && m->jnt_type[joint]!=mjJNT_SLIDE) {
-            if(context.topology)return spatial_refine(context,max_evaluations,acceleration_tolerance);
-            throw std::invalid_argument("equilibrium.refine: non-scalar joint requires spatial descriptor");
-        }
+    // Topology-bearing contexts returned above, so only a planar owner reaches
+    // this guard; a free/ball joint without a descriptor has no scalar address.
+    const auto joint_type=std::views::counted(m->jnt_type,m->njnt);
+    if(std::ranges::any_of(joint_type,[](int type){return type!=mjJNT_HINGE && type!=mjJNT_SLIDE;}))
+        throw std::invalid_argument("equilibrium.refine: non-scalar joint requires spatial descriptor");
     const auto n=static_cast<std::size_t>(m->nv);
     const std::vector<double> q0(stepper.qpos().begin(),stepper.qpos().end());
-    const auto root_x=static_cast<std::size_t>(context.topology?
-        context.topology->root.scalar[0].dof_adr:joint_address(context,"root_x").dof);
+    const auto root_x=static_cast<std::size_t>(joint_address(context,"root_x").dof);
     // NOLINTNEXTLINE(modernize-make-unique) make_unique's inlined forwarding path overflows the 8192-byte frame budget here
     const auto incoming_drive=std::unique_ptr<drivetrain::DriveSnapshot>{new drivetrain::DriveSnapshot(stepper.drive().state())};
     // NOLINTNEXTLINE(modernize-make-unique) same frame-budget constraint
@@ -46,11 +46,12 @@ double refine_equilibrium(SetupContext& context,int max_evaluations,double accel
     std::vector<std::size_t> qids,tire_ids;
     std::vector<double> x0,scales;
     const auto dof_jnt=std::views::counted(m->dof_jntid,m->nv);
-    const auto joint_type=std::views::counted(m->jnt_type,m->njnt);
+    const auto joint_qpos=std::views::counted(m->jnt_qposadr,m->njnt);
+    const auto joint_dof=std::views::counted(m->jnt_dofadr,m->njnt);
     for(std::size_t i=0;i<n;++i)if(i!=root_x){
         const auto joint=static_cast<std::size_t>(dof_jnt[i]);
-        const auto qa=m->jnt_qposadr[joint],va=m->jnt_dofadr[joint];
-        if(qa<0 || qa>=m->nq || va<0 || va>=m->nv || static_cast<std::size_t>(va)!=i)
+        const auto qa=joint_qpos[joint],va=joint_dof[joint];
+        if(qa<0 || qa>=m->nq || va<0 || va>=m->nv || std::cmp_not_equal(va,i))
             throw std::invalid_argument("equilibrium.refine: scalar joint span escapes model");
         qids.push_back(static_cast<std::size_t>(qa));x0.push_back(q0[static_cast<std::size_t>(qa)]);
         scales.push_back(joint_type[joint]==mjJNT_SLIDE?.05:.2);

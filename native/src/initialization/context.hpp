@@ -53,13 +53,18 @@ struct SetupContext {
     bool initializing = true;
     bool completed = false;
     std::optional<EquilibriumResult> equilibrium{};
+    // Acceleration tolerance accepted by the settle request. Finalize and the
+    // bootstrap release check must judge with this same value instead of their
+    // own literals (plan 04 W29/W30); .05 is the historical default. The settle
+    // owner is responsible for setting it from the request.
+    double equilibrium_tolerance = .05;
     const PhysicalInitialState* initial_state = nullptr;
-    std::shared_ptr<const terrain::Terrain3dSource> terrain3d;
-    std::optional<terrain::RenderGrid3d> render3d;
-    std::optional<spatial::Topology> topology;
-    std::shared_ptr<BootstrapHold> bootstrap_hold;
-    std::shared_ptr<SpatialEquilibriumReport> spatial_report;
-    mutable std::optional<std::string> cache_rejection_reason;
+    std::shared_ptr<const terrain::Terrain3dSource> terrain3d{};
+    std::optional<terrain::RenderGrid3d> render3d{};
+    std::optional<spatial::Topology> topology{};
+    std::shared_ptr<BootstrapHold> bootstrap_hold{};
+    std::shared_ptr<SpatialEquilibriumReport> spatial_report{};
+    mutable std::optional<std::string> cache_rejection_reason{};
 };
 
 // Resolves a scalar joint once, rejecting missing/free/ball joints instead

@@ -92,6 +92,12 @@ void contracts() {
     const std::array<std::string_view,8> research_args{"--spatial","3d","--terrain3d",terrain,"--duration","2","--rider","lumped"};
     const auto research=bike::cli::resolve_research(bike::cli::parse_arguments("bike-research",research_args));
     bt::require(research->setup.model.spatial&&research->sensors_v2.maximum_read_period_s==research->experiment.control_period_s,"research selects the V2 request with the actual control clock");
+    bt::require(research->setup.runtime.tyre_threads==1,"research serial thread default reaches the typed request");
+    const std::array<std::string_view,10> threaded_args{"--spatial","3d","--terrain3d",terrain,"--duration","2","--rider","lumped","--threads","3"};
+    const auto threaded=bike::cli::resolve_research(bike::cli::parse_arguments("bike-research",threaded_args));
+    bt::require(threaded->setup.runtime.tyre_threads==3,"research thread policy reaches the typed request");
+    const std::array<std::string_view,4> planar_threads{"--threads","2","--rider","lumped"};
+    bt::invalid([&]{(void)bike::cli::resolve_research(bike::cli::parse_arguments("bike-research",planar_threads));});
     for (const auto option : {"--track-file", "--gen-spec", "--scenario"}) {
         const auto value=std::string_view(option)=="--scenario"?"flat":"ignored.toml";
         const std::array<std::string_view,4> conflicting{"--physics-config",config_name,option,value};

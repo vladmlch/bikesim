@@ -5,10 +5,19 @@
 #include "value_util.hpp"
 #include "../platform/files.hpp"
 #include <cerrno>
+#include <cstddef>
 #include <cstdlib>
 #include <limits>
 #include <sys/stat.h>
 #include <system_error>
+#include <cstdint>
+#include <exception>
+#include <filesystem>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 #include <unistd.h>
 
 namespace bike::recording {

@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
+#include <ranges>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -89,19 +90,30 @@ int main(){return bt::run([]{
     model_request->field.nrow=7;model_request->field.ncol=5;
     const auto model=bike::model::compile_mjcf(bike::model::generate_mjcf(*model_request));
     bike::model::populate_render_heightfield(*model,raster);
+    // Checked views over the engine arrays: a raw pointer subscript is rejected by
+    // the repository's -Wunsafe-buffer-usage policy (see legacy/ride.cpp).
     const int field=mj_name2id(model.get(),mjOBJ_HFIELD,"road");
     bt::require(field>=0,"compiled terrain field exists");
-    const auto start=static_cast<std::size_t>(model->hfield_adr[field]);
-    bt::require(model->hfield_nrow[field]==7 && model->hfield_ncol[field]==5,"compiled hfield preserves rectangular resolution");
+    const auto field_index=static_cast<std::size_t>(field);
+    const auto field_rows=std::views::counted(model->hfield_nrow,model->nhfield);
+    const auto field_columns=std::views::counted(model->hfield_ncol,model->nhfield);
+    const auto field_addresses=std::views::counted(model->hfield_adr,model->nhfield);
+    const auto field_data=std::views::counted(model->hfield_data,model->nhfielddata);
+    const auto start=static_cast<std::size_t>(field_addresses[field_index]);
+    bt::require(field_rows[field_index]==7 && field_columns[field_index]==5,"compiled hfield preserves rectangular resolution");
     for(std::size_t i=0;i<raster.normalized_height.size();++i)
-        bt::require(model->hfield_data[start+i]==raster.normalized_height[i],"all hfield rows are populated");
+        bt::require(field_data[start+i]==raster.normalized_height[i],"all hfield rows are populated");
     const int ground=mj_name2id(model.get(),mjOBJ_GEOM,"terrain");
     bt::require(ground>=0,"compiled terrain geom exists");
+    const auto contype=std::views::counted(model->geom_contype,model->ngeom);
+    const auto conaffinity=std::views::counted(model->geom_conaffinity,model->ngeom);
+    const auto ground_index=static_cast<std::size_t>(ground);
     for(const char* name:{"geom_front_tire","geom_rear_tire"}){
         const int wheel=mj_name2id(model.get(),mjOBJ_GEOM,name);
         bt::require(wheel>=0,"wheel collision geom exists");
-        bt::require((model->geom_contype[wheel]&model->geom_conaffinity[ground])==0 &&
-            (model->geom_contype[ground]&model->geom_conaffinity[wheel])==0,"pneumatic3d wheel has one physical contact owner");
+        const auto wheel_index=static_cast<std::size_t>(wheel);
+        bt::require((contype[wheel_index]&conaffinity[ground_index])==0 &&
+            (contype[ground_index]&conaffinity[wheel_index])==0,"pneumatic3d wheel has one physical contact owner");
     }
     model_request=std::make_unique<bike::model::BuildRequest>();model_request->mode="ride";
     bt::require(planar_before==bike::model::generate_mjcf(*model_request),"spatial render work does not alter planar builder state");

@@ -2,13 +2,17 @@
 #include "pneumatic3d/brush_detail.hpp"
 #include "pneumatic3d/kernel_math.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <limits>
+#include <span>
 
 namespace bike::pneumatic3d {
 namespace {
-constexpr std::size_t max_cells=1024U*15U;
+constexpr std::size_t max_cells=std::size_t{1024}*15U;
 constexpr std::uint32_t absent=std::numeric_limits<std::uint32_t>::max();
 struct BristleScratch {
     std::array<std::uint32_t,max_cells> source_element{};
@@ -17,8 +21,18 @@ struct BristleScratch {
 };
 // Scratch only: no history survives entry, no heap allocation, no shared
 // cross-thread workspace. Reentry is an explicit invalid-input status.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) thread_local scratch keeps the frozen entry signature free of workspace arguments
 constinit thread_local BristleScratch scratch;
-struct ScratchUse {bool& busy;explicit ScratchUse(bool& b) noexcept:busy(b){busy=true;}~ScratchUse(){busy=false;}};
+struct ScratchUse {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) RAII guard clears the scratch busy flag through a reference
+    bool& busy;
+    explicit ScratchUse(bool& b) noexcept:busy(b){busy=true;}
+    ScratchUse(const ScratchUse&)=delete;
+    ScratchUse& operator=(const ScratchUse&)=delete;
+    ScratchUse(ScratchUse&&)=delete;
+    ScratchUse& operator=(ScratchUse&&)=delete;
+    ~ScratchUse(){busy=false;}
+};
 CoreStatus detailed_impl(const BrushSpec3d& spec,
     std::span<const ContactElement3d> elements,std::span<const NormalElement3d> normals,
     const WheelKinematics3d& kin,double dt,bool advance,BrushState3d& state,
@@ -36,8 +50,11 @@ CoreStatus detailed_impl(const BrushSpec3d& spec,
     if(scratch.busy)return CoreStatus::invalid_input;
     const ScratchUse use(scratch.busy);
     auto& source_element=scratch.source_element;auto& resolved_mu=scratch.resolved_mu;
-    source_element.fill(absent);resolved_mu.fill(0.);
     if (elements.size()>resolved_mu.size()) return CoreStatus::invalid_input;
+    // Reset exactly the lanes this call can read (j < cells, i < elements.size());
+    // lanes beyond them are never read, so a stale value there cannot leak.
+    std::fill_n(source_element.begin(),cells,absent);
+    std::fill_n(resolved_mu.begin(),elements.size(),0.);
     for (std::size_t i=0;i<elements.size();++i) {
         const auto j=elements[i].material_cell;
         if (j>=cells || source_element[j]!=absent) return CoreStatus::invalid_input;
@@ -54,10 +71,7 @@ CoreStatus detailed_impl(const BrushSpec3d& spec,
                 detail::cross(omega,detail::sub(elements[i].point_world_m,kin.hub.position_world_m)));
             const double speed=std::hypot(detail::dot(velocity,elements[i].longitudinal_world),
                                           detail::dot(velocity,elements[i].lateral_world));
-            const double ratio=material->stribeck_speed_mps>0. ? speed/material->stribeck_speed_mps : 0.;
-            resolved_mu[i]=material->stribeck_speed_mps>0. ? material->mu_slide+
-                (material->mu_peak-material->mu_slide)*std::exp(-ratio*ratio) :
-                (speed==0. ? material->mu_peak : material->mu_slide);
+            resolved_mu[i]=detail::stribeck_mu(*material,speed);
         }
     }
     for (std::size_t j=0;j<cells;++j)

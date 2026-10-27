@@ -9,14 +9,17 @@
 #include "recording/value_util.hpp"
 #include "batch/plan.hpp"
 #include "cli/arguments.hpp"
+#include "platform/argv.hpp"
 #include "platform/provenance.hpp"
 #include <algorithm>
 #include <array>
 #include <chrono>
 #include <csignal>
+#include <filesystem>
 #include <iostream>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -83,6 +86,24 @@ void unavailable_time_extent() {
         bt::require(panel.series.empty()&&panel.x_range==std::optional(std::pair{0.,3.})&&!panel.markers.empty(),
             "all-invalid IMU evidence retains its actual clock and N/A marker without invented samples");
 }
+void fragmented_channels() {
+    namespace viz=bike::viz;
+    // Contact validity can toggle on every other sample over rough terrain.
+    // Per-range series would exceed the plot's series bound and legend space;
+    // the report must stay renderable and keep every accepted sample.
+    constexpr std::size_t count=81;
+    std::vector<double> stamps(count),valid(count),roll(count),steer(count,0.);
+    for(std::size_t i=0;i<count;++i){stamps[i]=static_cast<double>(i);valid[i]=i%2==0?1.:0.;roll[i]=static_cast<double>(i)*.01;}
+    const viz::Channels channels{{"time_s",stamps},{"spatial.attitude_valid",valid},
+        {"spatial.roll_rad",roll},{"spatial.steer_angle_rad",steer}};
+    const auto report=viz::spatial_attitude_plot(channels);
+    const auto& panel=report.panels.at(0);
+    std::size_t retained=0;
+    for(const auto& series:panel.series)if(series.name=="roll")retained+=series.x.size();
+    bt::require(panel.series.size()<=3&&retained==41,"fragmented channel keeps every accepted sample in a bounded series count");
+    bt::require(panel.markers.size()<=16&&!panel.notes.empty(),"excess unavailable intervals are summarized instead of marked one by one");
+    bt::require(!viz::to_svg(report).empty()&&!viz::to_html(report).empty(),"fragmented report remains renderable");
+}
 void processes() {
     namespace batch=bike::batch;namespace io=bike::io;using namespace bike::recording::value;
     const bt::TemporaryDirectory tmp("spatial-batch");
@@ -119,10 +140,14 @@ void processes() {
 }
 }
 int main(int argc,char** argv) {
-    if(argc==3&&std::string_view(argv[1])=="--child") {
-        if(std::string_view(argv[2])=="crash"){std::raise(SIGTERM);return 99;}
-        if(std::string_view(argv[2])=="slow")std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    // Raw argv subscripting is rejected by -Wunsafe-buffer-usage; the shared
+    // wrapper performs the one ABI-to-span conversion.
+    const auto arguments=bike::platform::main_arguments(argc,argv);
+    if(arguments.size()==3&&std::string_view(arguments[1])=="--child") {
+        const std::string_view mode(arguments[2]);
+        if(mode=="crash"){std::raise(SIGTERM);return 99;}
+        if(mode=="slow")std::this_thread::sleep_for(std::chrono::milliseconds(30));
         std::cout<<"{\"outcome\":\"requested_completion\"}\n";return 0;
     }
-    return bt::run([]{reports();unavailable_time_extent();processes();});
+    return bt::run([]{reports();unavailable_time_extent();fragmented_channels();processes();});
 }

@@ -112,23 +112,23 @@ std::vector<double> polynomial_ray_roots_highprecision(const bike::terrain::Poly
     while (degree != 0 && polynomial.a[degree] == 0.) --degree;
     if (degree == 0) return polynomial.a[0] == 0. ? std::vector<double>{0.} : std::vector<double>{};
     std::array<long double, 7> a{};
-    long double radius = 1.;
+    long double radius = 1.L;
     for (unsigned i = 0; i <= degree; ++i) {
-        a[i] = static_cast<long double>(polynomial.a[i]) / polynomial.a[degree];
-        if (i < degree) radius = std::max(radius, 1. + std::abs(a[i]));
+        a[i] = static_cast<long double>(polynomial.a[i]) / static_cast<long double>(polynomial.a[degree]);
+        if (i < degree) radius = std::max(radius, 1.L + std::abs(a[i]));
     }
     std::array<Complex, 6> roots{};
     for (unsigned i = 0; i < degree; ++i) {
-        const long double angle = 2. * std::numbers::pi_v<long double> * (static_cast<long double>(i) + .5L) / degree;
+        const long double angle = 2.L * std::numbers::pi_v<long double> * (static_cast<long double>(i) + .5L) / degree;
         roots[i] = std::polar(radius, angle);
     }
     for (unsigned iteration = 0; iteration < 200; ++iteration) {
         const auto previous = roots;
         for (unsigned i = 0; i < degree; ++i) {
-            Complex value = a[degree], denominator = 1.;
+            Complex value = a[degree], denominator = 1.L;
             for (unsigned j = degree; j != 0; --j) value = value * previous[i] + a[j - 1];
             for (unsigned j = 0; j < degree; ++j) if (j != i) denominator *= previous[i] - previous[j];
-            if (std::abs(denominator) == 0.)
+            if (std::abs(denominator) == 0.L)
                 roots[i] += Complex{std::numeric_limits<long double>::epsilon() * (i + 1),
                                     std::numeric_limits<long double>::epsilon()};
             else roots[i] = previous[i] - value / denominator;
@@ -136,7 +136,7 @@ std::vector<double> polynomial_ray_roots_highprecision(const bike::terrain::Poly
     }
     std::vector<double> real_roots;
     for (unsigned i = 0; i < degree; ++i)
-        if (std::abs(roots[i].imag()) < 1e-14L && roots[i].real() >= 0. && roots[i].real() <= 1.)
+        if (std::abs(roots[i].imag()) < 1e-14L && roots[i].real() >= 0.L && roots[i].real() <= 1.L)
             real_roots.push_back(static_cast<double>(roots[i].real()));
     std::sort(real_roots.begin(), real_roots.end());
     real_roots.erase(std::unique(real_roots.begin(), real_roots.end(),

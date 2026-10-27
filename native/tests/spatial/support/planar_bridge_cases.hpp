@@ -5,7 +5,17 @@
 // no reduced tyre, fabricated bootstrap or capability-gate bypass here.
 #include "support/migration_test.hpp"
 #include "spatial/support/spatial_fixture.hpp"
+#if __has_include("fixture_paths.hpp")
 #include "fixture_paths.hpp"
+#else
+// fixture_paths.hpp is configure_file output that only exists inside the
+// spatial test graph; standalone header sweeps compile under foreign target
+// contexts where it is absent. The fallback only needs to keep this header
+// parseable — every consumer that runs these functions has the generated
+// values.
+#define BIKE_SPATIAL_FIXTURE_ROOT "."
+#define BIKE_SPATIAL_SOURCE_ROOT "."
+#endif
 #include "initialization/setup_owner.hpp"
 #include "io/json.hpp"
 #include "model_access.hpp"

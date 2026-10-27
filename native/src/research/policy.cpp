@@ -8,9 +8,14 @@
 
 namespace bike::research {
 PolicyFailure::~PolicyFailure() = default;
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wmissing-noreturn")
+// act_v2 is virtual: overrides do return, so the base stub cannot carry
+// [[noreturn]] even though its own body always throws.
 runtime::RideControl Policy::act_v2(const runtime::spatial::SensorObservationV2&, std::optional<double>) {
     throw std::invalid_argument("policy: unsupported sensor schema 2");
 }
+NATIVE_DIAG_POP
 io::Value Policy::metadata() const {
     using namespace runtime::setupvalue;
     return Value{Object{{"reference", Value{}}, {"class", text("native::Policy")},

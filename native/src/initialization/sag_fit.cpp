@@ -3,8 +3,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace bike::initialization {
 std::array<double,2> fit_sag(const SagEvaluator& evaluate,

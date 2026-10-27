@@ -46,7 +46,7 @@ ScalarJointBinding scalar(const mjModel& m, const char* name,mjtJoint type,const
         if (!std::isfinite(axes[3*index+k]) ||
             std::abs(axes[3*index+k]-axis[k])>1e-12) invalid(name,"unexpected joint axis");
     span(qa[index],1,m.nq,name);span(va[index],1,m.nv,name);
-    return {id,qa[index],va[index]};
+    return {.joint_id=id,.qpos_adr=qa[index],.dof_adr=va[index]};
 }
 RootBinding free_root(const mjModel& m,const char* name) {
     const int id=named(m,mjOBJ_JOINT,name);
@@ -66,12 +66,12 @@ RootBinding free_root(const mjModel& m,const char* name) {
 // Same compiled MJB identity as initialization::capture_model_image, kept
 // here to avoid a spatial -> initialization -> spatial library cycle.
 std::string model_digest(const mjModel& m) {
-    struct Size { const mjModel* model; mjtSize bytes=0; } size{&m};
+    struct Size { const mjModel* model=nullptr; mjtSize bytes=0; } size{.model=&m};
     engine::ErrorBuffer error;
     if (!engine::invoke([](void* p) noexcept { auto& c=*static_cast<Size*>(p);c.bytes=mj_sizeModel(c.model); },&size,error)) engine::throw_failure(error);
     if (size.bytes<=0 || std::cmp_greater(size.bytes,512U*1024U*1024U)) invalid("model","compiled image exceeds 512 MiB");
     std::vector<std::byte> bytes(static_cast<std::size_t>(size.bytes));
-    struct Save { const mjModel* model; void* buffer; int bytes; } save{&m,bytes.data(),static_cast<int>(size.bytes)};
+    struct Save { const mjModel* model=nullptr; void* buffer=nullptr; int bytes=0; } save{.model=&m,.buffer=bytes.data(),.bytes=static_cast<int>(size.bytes)};
     if (!engine::invoke([](void* p) noexcept { const auto& c=*static_cast<Save*>(p);mj_saveModel(c.model,nullptr,c.buffer,c.bytes); },&save,error)) engine::throw_failure(error);
     return bike::io::sha256(bytes);
 }
@@ -114,8 +114,22 @@ std::string topology_fingerprint_hex(const Topology& t) {
 Topology bind_topology(const mjModel& m,const Config& cfg) {
     if (m.nq<0 || m.nv<0 || std::cmp_greater(m.nq,std::numeric_limits<int>::max()) ||
         std::cmp_greater(m.nv,std::numeric_limits<int>::max())) invalid("model_dims","unsupported dimensions");
-    for(const auto count:{m.nbody,m.njnt,m.nu,m.nsite})
+    for(const auto count:{m.nbody,m.njnt,m.nu,m.nactuator,m.nout,m.nsite})
         if(count<0 || std::cmp_greater(count,std::numeric_limits<int>::max()/9)) invalid("model_dims","unsupported topology dimensions");
+    // MuJoCo 3.12 keeps nu (controls), nactuator and nout (force outputs)
+    // distinct, and indexes ctrl-sized and gear-sized arrays through the
+    // per-actuator ctrladr/outadr. Every array below is read by actuator id,
+    // so only the one-control, one-output layout is accepted; anything else
+    // is rejected before the first actuator array is read.
+    if(m.nu!=m.nactuator || m.nout!=m.nactuator)
+        invalid("model_dims","actuators must map exactly one control and one force output each");
+    {
+        const auto control_address=model_access::readonly_buffer(m.actuator_ctrladr,m.nactuator);
+        const auto output_address=model_access::readonly_buffer(m.actuator_outadr,m.nactuator);
+        for(std::size_t i=0;i<control_address.size();++i)
+            if(std::cmp_not_equal(control_address[i],i) || std::cmp_not_equal(output_address[i],i))
+                invalid("model_dims","actuator control/output address must equal the actuator id");
+    }
     const auto jtype=model_access::readonly_buffer(m.jnt_type,m.njnt);
     const auto jbody=model_access::readonly_buffer(m.jnt_bodyid,m.njnt);
     const auto parents=model_access::readonly_buffer(m.body_parentid,m.nbody);
@@ -126,7 +140,7 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
     // Even directly constructed/mutated engine models must not exploit an
     // ambiguous name lookup. Compiled MJCF normally enforces this itself.
     for (const auto kind:{mjOBJ_BODY,mjOBJ_JOINT,mjOBJ_ACTUATOR,mjOBJ_SITE}) {
-        const auto count=kind==mjOBJ_BODY?m.nbody:kind==mjOBJ_JOINT?m.njnt:kind==mjOBJ_ACTUATOR?m.nu:m.nsite;
+        const auto count=kind==mjOBJ_BODY?m.nbody:kind==mjOBJ_JOINT?m.njnt:kind==mjOBJ_ACTUATOR?m.nactuator:m.nsite;
         std::set<std::string> names;
         for (int id=0;id<count;++id) {
             if (const char* name=mj_id2name(&m,kind,id); name && *name && !names.insert(name).second)
@@ -184,7 +198,7 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
         const auto sj=static_cast<std::size_t>(steer);
         if (jtype[sj]!=mjJNT_HINGE) invalid("steer_joint","expected hinge");
         span(qa[sj],1,m.nq,"steer_joint");span(va[sj],1,m.nv,"steer_joint");
-        out.steer.joint={steer,qa[sj],va[sj]};
+        out.steer.joint={.joint_id=steer,.qpos_adr=qa[sj],.dof_adr=va[sj]};
         for (std::size_t k=0;k<3;++k) out.steer.axis_body[k]=axes[3*sj+k];
         const auto length=std::hypot(out.steer.axis_body[0],out.steer.axis_body[1],out.steer.axis_body[2]);
         if (!std::isfinite(length) || std::abs(length-1.)>1e-12) invalid("steer_joint.axis","expected unit axis");
@@ -219,6 +233,15 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
            dynamics[ai]!=mjDYN_NONE || gains[ai]!=mjGAIN_FIXED || biases[ai]!=mjBIAS_NONE ||
            gain_parameters[mjNGAIN*ai]!=1.)
             invalid("steer_torque","expected a pure unit-gain torque motor");
+        // Damping and delay change the delivered Nm or its timing, so a
+        // damped or delayed motor is not a pure torque motor either.
+        const auto damping=model_access::readonly_buffer(m.actuator_damping,m.nactuator);
+        const auto damping_poly=model_access::readonly_buffer(m.actuator_dampingpoly,mjNPOLY*m.nactuator)
+            .subspan(mjNPOLY*ai,mjNPOLY);
+        const auto delay=model_access::readonly_buffer(m.actuator_delay,m.nactuator);
+        if(damping[ai]!=0. || delay[ai]!=0. ||
+           !std::ranges::all_of(damping_poly,[](double x){return x==0.;}))
+            invalid("steer_torque","torque motor must have no damping or delay");
         const auto cap=cfg.steer.torque_cap_nm;
         if(cap && (!std::isfinite(*cap) || *cap<=0.))
             invalid("steer_torque","configured torque cap must be finite and positive");
@@ -271,8 +294,8 @@ Topology bind_topology(const mjModel& m,const Config& cfg) {
 
 BodyPose body_pose(const mjModel& model,const mjData& data,const RootBinding& root) noexcept {
     BodyPose pose;
-    // The frozen API is noexcept: validated model/binding identity and a
-    // current kinematic stage are explicit caller preconditions.
+    // The frozen API is noexcept: validated model/binding identity and current position and
+    // velocity stages (xpos/xquat, subtree_com, cvel) are explicit caller preconditions.
     const std::span<const mjtNum> positions=std::views::counted(data.xpos,3*model.nbody);
     const std::span<const mjtNum> quaternions=std::views::counted(data.xquat,4*model.nbody);
     const auto body=static_cast<std::size_t>(root.body_id);

@@ -3,12 +3,18 @@
 // and boxes; nothing here reaches Python. The owned bootstrap/composition
 // face lives in research_io.hpp.
 #pragma once
+#include <array>
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <variant>
+#include <vector>
 #include "programs.hpp"
 #include "recording.hpp"
 #include "research_metrics.hpp"
@@ -191,6 +197,14 @@ private:
     [[nodiscard]] bike::io::Value checkpoint_unlocked() const;
     [[nodiscard]] std::unique_ptr<ResearchEpisode> prepare_continuation(
         const WireObject&,const NativeRideRuntime&) const;
+    // Continuation decode stages; the splits keep prepare_continuation and
+    // reset_unlocked under the 8 KiB stack-frame budget.
+    void continuation_commands(ResearchEpisode&, const WireObject&,
+        const NativeRideRuntime&, std::int64_t expected_step) const;
+    void continuation_metrics(ResearchEpisode&, const WireObject&,
+        const NativeRideRuntime&, std::int64_t expected_step,
+        double expected_time) const;
+    [[nodiscard]] std::unique_ptr<NativeRideRuntime> make_reset_plant() const;
     void reset_unlocked(ResearchNoiseTape tape, ResearchSensorState startup,
                         std::optional<std::string> seed_decimal,
                         std::optional<bike::io::Value> metadata, ResearchAssets assets);

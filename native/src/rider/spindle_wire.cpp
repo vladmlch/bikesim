@@ -717,13 +717,17 @@ void parse_state_recovery(const nb::dict &d, std::string_view path,
 SpindleController::State parse_spindle_state(nb::handle value,
                                              std::string_view path) {
     const auto d = wire::mapping(value, path);
-    wire::exact_keys(d, kStateRequiredKeys, {}, path);
+    // coast_hold_nm is optional on the wire: captures predating the
+    // weld-press servo decode to the unset integrator (zero).
+    wire::exact_keys(d, kStateRequiredKeys, keys("coast_hold_nm"), path);
     SpindleController::State state;
     state.enabled = wire::boolean(d["enabled"], path);
     state.command_enabled = wire::boolean(d["command_enabled"], path);
     state.active_state = wire::vector(d["active_state"], path);
     state.activation_time_s =
         wire::optional_real(d["activation_time_s"], path);
+    if (d.contains("coast_hold_nm"))
+        state.coast_hold_nm = wire::finite_real(d["coast_hold_nm"], path);
     parse_state_terms(d, path, state);
     parse_state_ik(d, path, state);
     parse_state_recovery(d, path, state);
@@ -845,6 +849,7 @@ nb::dict spindle_state_dict(const SpindleController::State &state) {
     out["active_state"] =
         wire::owned_array<double>(state.active_state);
     set_or_none(out, "activation_time_s", state.activation_time_s);
+    out["coast_hold_nm"] = state.coast_hold_nm;
     out["last_terms"] = last_terms_dict(state.last_terms);
     nb::dict split;for(const auto&[name,pair]:state.pd_split)split[name.c_str()]=nb::make_tuple(pair[0],pair[1]);out["pd_split"] = split;
     out["saturated_ik"] = named_bools_dict(state.saturated_ik);

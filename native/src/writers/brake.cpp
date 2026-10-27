@@ -8,7 +8,6 @@
 #include "../model_access.hpp"
 #include "../model_topology.hpp"
 #include "../validation.hpp"
-#include "../spatial/frames.hpp"
 
 #include <algorithm>
 #include <array>
@@ -94,8 +93,7 @@ namespace {
 } // namespace
 
 BrakeWriter::BrakeWriter(const mjModel *m, nativecfg::BrakeConfig config)
-    : cfg_(config), model_(m), nv_(m->nv), nu_(m->nu) {
-    spatial_=mj_name2id(m,mjOBJ_JOINT,"root_free")>=0 || mj_name2id(m,mjOBJ_JOINT,"root_y")>=0;
+    : cfg_(config), nv_(m->nv), nu_(m->nu) {
     validation::nonnegative(cfg_.torque_ceiling_nm, "BrakeWriter.torque_ceiling_nm");
     validation::positive(cfg_.taper_radps, "BrakeWriter.taper_radps");
     nativecfg::validate(cfg_);
@@ -115,17 +113,6 @@ BrakeWriter::BrakeWriter(const mjModel *m, nativecfg::BrakeConfig config)
             resolve_wheel_spin(m, "rear_wheel_spin", "geom_rear_contact");
     front_ = {.dofadr = fdof, .radius_m = frad};
     rear_ = {.dofadr = rdof, .radius_m = rrad};
-    if(spatial_) {
-        const auto bodies=model_access::readonly_buffer(m->jnt_bodyid,m->njnt);
-        const auto parents=model_access::readonly_buffer(m->body_parentid,m->nbody);
-        for(auto [wheel,name]:{std::pair{&front_,"front_wheel_spin"},std::pair{&rear_,"rear_wheel_spin"}}) {
-            wheel->joint_id=mj_name2id(m,mjOBJ_JOINT,name);
-            wheel->body_id=bodies[static_cast<std::size_t>(wheel->joint_id)];
-            model_access::require_id(wheel->body_id,m->nbody,"brake.wheel_body");
-            wheel->hub_body_id=parents[static_cast<std::size_t>(wheel->body_id)];
-            model_access::require_id(wheel->hub_body_id,m->nbody,"brake.hub_body");
-        }
-    }
     // ride_sim.py:330-331.
     front_ctrl_adr_ = actuator_id(m, "front_brake");
     rear_ctrl_adr_ = actuator_id(m, "rear_brake");
@@ -134,7 +121,11 @@ BrakeWriter::BrakeWriter(const mjModel *m, nativecfg::BrakeConfig config)
 }
 
 // braking.py:89-107 — _wheel_torque; WheelSpin.omega_radps is the qvel read
-// (wheels.py:35-37).
+// (wheels.py:35-37). On a spatial model the same read is already the
+// wheel-minus-hub rate: bind_topology requires the wheel body to own exactly
+// its spin hinge, so qvel[spin dof] is the relative rate whatever the world
+// yaw/roll. It stays current between mj_step and the next forward, unlike a
+// cvel/xaxis recomputation.
 // Caller precondition (raw boundary): `d` is the live mjData of the model
 // this writer was built on, driven by the single owning Stepper — widths
 // are validated, model/data pairing is not derivable from them.
@@ -145,16 +136,7 @@ double BrakeWriter::wheel_torque(const mjData *d, const WheelSpin &wheel,
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, nv_);
     model_access::require_id(wheel.dofadr, nv_, "wheel spin dof address");
-    double omega = qvel[static_cast<std::size_t>(wheel.dofadr)];
-    if(spatial_) {
-        std::array<mjtNum,6> child{},hub{};
-        mj_objectVelocity(model_,d,mjOBJ_BODY,wheel.body_id,child.data(),0);
-        mj_objectVelocity(model_,d,mjOBJ_BODY,wheel.hub_body_id,hub.data(),0);
-        const auto axes=model_access::readonly_buffer(d->xaxis,3*model_->njnt);
-        const auto at=3*static_cast<std::size_t>(wheel.joint_id);
-        const bike::spatial::Vec3 axis{axes[at],axes[at+1],axes[at+2]};
-        omega=bike::spatial::axis_rate({child[0],child[1],child[2]},{hub[0],hub[1],hub[2]},axis);
-    }
+    const double omega = qvel[static_cast<std::size_t>(wheel.dofadr)];
     return opposing_torque(clamped * cfg_.torque_ceiling_nm, omega,
                            cfg_.taper_radps);
 }

@@ -51,6 +51,11 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     bio::Value physics=plain(configuration::to_value(context.physics));auto& config=std::get<bio::Value::Object>(physics.data);
     if(station_count){auto tires=field(config,"tires");auto distributed=field(std::get<bio::Value::Object>(tires.data),"distributed");put(std::get<bio::Value::Object>(distributed.data),"station_count",integer(*station_count));put(std::get<bio::Value::Object>(tires.data),"distributed",std::move(distributed));put(config,"tires",std::move(tires));}
     std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s";});
+    // The resolved paths are worktree-absolute spellings; the contract binds
+    // the file CONTENT below so a stored transfer validates from any checkout.
+    auto articulated=field(config,"articulated");auto& section=std::get<bio::Value::Object>(articulated.data);
+    for(std::string_view const key:{"joint_envelope_path","joint_strength_path"})if(std::erase_if(section,[key](const auto& p){return p.first==key;})!=1)throw std::invalid_argument("initial-state contract physics is missing articulated."+std::string(key));
+    put(config,"articulated",std::move(articulated));
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
     auto const add=[&](std::string name,const double* pointer,mjtSize count,std::optional<std::size_t> columns=std::nullopt){const auto values=std::span<const double>{std::views::counted(pointer,count)};compiled.emplace_back(std::move(name),columns?matrix(values,*columns):numbers(values));};
@@ -62,7 +67,7 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
         compiled.emplace_back("topology_fingerprint",string(context.topology->fingerprint_hex));
         compiled.emplace_back("physical_terrain_sha256",string(context.terrain3d->fingerprint_hex()));
     }
-    return hash(bio::Value{bio::Value::Object{{"physics",std::move(physics)},{"specs",plain(field(identity,"specs"))},{"mass",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"start_x_m",real(context.start_x_m)},{"joints",bio::Value{std::move(joints)}},{"compiled",bio::Value{std::move(compiled)}},{"envelope_sha256",context.physics.articulated.joint_envelope_path?string(platform::file_sha256(*context.physics.articulated.joint_envelope_path)):bio::Value{}}}});
+    return hash(bio::Value{bio::Value::Object{{"physics",std::move(physics)},{"specs",plain(field(identity,"specs"))},{"mass",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"start_x_m",real(context.start_x_m)},{"joints",bio::Value{std::move(joints)}},{"compiled",bio::Value{std::move(compiled)}},{"envelope_sha256",context.physics.articulated.joint_envelope_path?string(platform::file_sha256(*context.physics.articulated.joint_envelope_path)):bio::Value{}},{"strength_sha256",context.physics.articulated.joint_strength_path?string(platform::file_sha256(*context.physics.articulated.joint_strength_path)):bio::Value{}}}});
 }
 
 bio::Value shape_values(const bio::NpyArray& array){
@@ -94,12 +99,12 @@ std::optional<double> optional_real(const bio::Value& value,std::string_view nam
 
 bio::Value equilibrium_value(const EquilibriumResult& r){
     bio::Value::Object out{{"fork_travel_mm",real(r.fork_travel_mm)},{"shock_stroke_mm",real(r.shock_stroke_mm)},{"rear_travel_mm",real(r.rear_travel_mm)},{"root_z_m",real(r.root_z_m)},{"pitch_rad",real(r.pitch_rad)},{"steps",integer(r.steps)},{"residual_qacc",real(r.residual_qacc)},{"cache_hit",bio::Value{r.cache_hit}},{"initial_crank_phase_rad",real(r.initial_crank_phase_rad)},{"settled_crank_phase_rad",real(r.settled_crank_phase_rad)}};
-    if(r.spatial){const auto& s=*r.spatial;bio::Value::Array errors,worst;for(const auto& e:s.errors)errors.push_back(string(e));for(int d:s.worst_dofs)worst.push_back(integer(d));
+    if(r.spatial){const auto& s=*r.spatial;bio::Value::Array errors,worst;for(const auto& e:s.errors)errors.push_back(string(e));for(const int d:s.worst_dofs)worst.push_back(integer(d));
         out.emplace_back("spatial",bio::Value{bio::Value::Object{{"max_linear_accel_mps2",real(s.max_linear_accel_mps2)},
             {"max_angular_accel_radps2",real(s.max_angular_accel_radps2)},{"weight_residual_fraction",real(s.weight_residual_fraction)},
             {"pitch_moment_residual_nm",real(s.pitch_moment_residual_nm)},{"roll_moment_residual_nm",real(s.roll_moment_residual_nm)},
             {"contacts_valid",integer(s.contacts_valid)},{"contacts_total",integer(s.contacts_total)},{"evaluations",integer(s.evaluations)},
-            {"errors",bio::Value{std::move(errors)}},{"worst_dofs",bio::Value{std::move(worst)}}});}
+            {"errors",bio::Value{std::move(errors)}},{"worst_dofs",bio::Value{std::move(worst)}}}});}
     return bio::Value{std::move(out)};
 }
 EquilibriumResult equilibrium(const bio::Value& value){
@@ -123,7 +128,7 @@ EquilibriumResult equilibrium(const bio::Value& value){
 }
 StateFile stage_transfer_material(const SetupContext&,const bio::Value::Object&);
 void validated(const SetupContext& context,const bio::Value::Object& p){
-    guard(context);if(bio::as_int64(field(p,"schema_version"),"schema_version")!=1||bio::as_string(field(p,"contract_sha256"),"contract_sha256")!=contract(context))throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
+    guard(context);if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||bio::as_string(field(p,"contract_sha256"),"contract_sha256")!=contract(context))throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
     const auto q=vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());const auto v=vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
     if(context.topology) {
         const auto* model=context.stepper.model();
@@ -134,7 +139,7 @@ void validated(const SetupContext& context,const bio::Value::Object& p){
             const int type=types[index];
             if(type!=mjJNT_FREE && type!=mjJNT_BALL)continue;
             const auto start=static_cast<std::size_t>(addresses[index])+(type==mjJNT_FREE?3U:0U);
-            if(start>q.size() || q.size()-start<4)throw std::invalid_argument("initial_state.qpos.quaternion: invalid span");
+            if(q.size()<4||start>q.size()-4)throw std::invalid_argument("initial_state.qpos.quaternion: invalid span");
             const double norm=std::hypot(std::hypot(q[start],q[start+1]),std::hypot(q[start+2],q[start+3]));
             if(std::abs(norm-1.)>1e-9)throw std::invalid_argument("initial_state.qpos.quaternion: expected unit quaternion");
         }
@@ -173,7 +178,7 @@ StateFile stage_transfer_material(const SetupContext& context,const bio::Value::
         constexpr std::array<std::string_view,8> names{"integration_state","model_dof_frictionloss","model_site_pos",
             "model_tendon_stiffness","model_tendon_damping","model_tendon_lengthspring","model_tendon_range","model_wrap_prm"};
         if(engine_doc.size()!=names.size())throw std::invalid_argument("initial_state.spatial_engine: incomplete or unknown inventory");
-        for(auto name:names)put_array(material,std::string(name),material_array(field(engine_doc,name)));
+        for(const auto name:names)put_array(material,std::string(name),material_array(field(engine_doc,name)));
         const auto* m=context.stepper.model();
         const std::array<mjtSize,8> widths{engine::state_size(m,mjSTATE_INTEGRATION),m->nv,3*m->nsite,
             m->ntendon,m->ntendon,2*m->ntendon,2*m->ntendon,m->nwrap};
@@ -216,7 +221,7 @@ StateFile stage_transfer_material(const SetupContext& context,const bio::Value::
             if(!bio::is_null(value)){const auto cells=vector(value,"grip anchor",3);anchors[side]=::rider::Vec3{cells[0],cells[1],cells[2]};}
         }
         std::vector<double> values;std::vector<bool> present;
-        for(const auto& anchor:anchors){present.push_back(anchor.has_value());for(std::size_t axis=0;axis<3;++axis)values.push_back(anchor?(*anchor)[axis]:0.);}
+        for(const auto& anchor:anchors){present.push_back(anchor.has_value());for(std::size_t axis=0;axis<3;++axis)values.push_back(anchor?(*anchor)[axis]:0.);} // NOLINT(bugprone-unchecked-optional-access) the ternary guards engagement
         put_array(material,"state_native_grip_anchors",bio::double_array(values,{2,3}));
         put_array(material,"state_native_grip_anchors_valid",bio::bool_array(present,{2}));
     }
@@ -225,7 +230,7 @@ StateFile stage_transfer_material(const SetupContext& context,const bio::Value::
 } // namespace
 
 PhysicalInitialState::PhysicalInitialState(std::string json):payload_json_(std::move(json)){
-    const auto p=bio::parse_json(payload_json_);const auto& o=bio::as_object(p,"physical initial state");if(bio::as_int64(field(o,"schema_version"),"schema_version")!=1)throw std::invalid_argument("unsupported physical initial-state schema");
+    const auto p=bio::parse_json(payload_json_);const auto& o=bio::as_object(p,"physical initial state");if(bio::as_int64(field(o,"schema_version"),"schema_version")!=2)throw std::invalid_argument("unsupported physical initial-state schema");
     // Stored bytes are immutable: preserving the input's canonical/original
     // spelling also preserves the source object's SHA-256 identity.
 }
@@ -243,7 +248,7 @@ PhysicalInitialState PhysicalInitialState::capture(const SetupContext& context){
     bio::Value hub;if(drive.hub)hub=bio::Value{bio::Value::Object{{"boundary",optional(drive.hub.value().boundary)},{"energy_j",real(drive.hub.value().energy_j)},{"torque_nm",real(drive.hub.value().torque_nm)}}};
     bio::Value anchors;if(context.stepper.has_rider_contacts()){bio::Value::Object entries;const auto& rider_state=context.stepper.rider_contacts().state();for(std::size_t side=0;side<2;++side){const auto& anchor=rider_state.grip_anchor_local[side];entries.emplace_back(std::string(writers::kSideNames[side]),anchor?numbers(*anchor):bio::Value{});}anchors=bio::Value{std::move(entries)};}
     const bio::Value active=context.physical.rider_present()?numbers(context.physical.rider_control().state().active_state):bio::Value{};
-    bio::Value::Object p{{"schema_version",integer(1)},{"contract_sha256",string(contract(context))},{"qpos",numbers(context.stepper.qpos())},{"qvel",numbers(context.stepper.qvel())},{"qacc_warmstart",numbers(std::views::counted(d->qacc_warmstart,m->nv))},{"road_x",numbers(road_x)},{"road_z",numbers(road_z)},{"material",material_document(state)},{"equilibrium",equilibrium_value(*context.equilibrium)},
+    bio::Value::Object p{{"schema_version",integer(2)},{"contract_sha256",string(contract(context))},{"qpos",numbers(context.stepper.qpos())},{"qvel",numbers(context.stepper.qvel())},{"qacc_warmstart",numbers(std::views::counted(d->qacc_warmstart,m->nv))},{"road_x",numbers(road_x)},{"road_z",numbers(road_z)},{"material",material_document(state)},{"equilibrium",equilibrium_value(*context.equilibrium)},
         {"drive",bio::Value{bio::Value::Object{{"reference",optional(drive.reference)},{"angles",std::move(angles)},{"psi",optional(drive.psi)}}}},
         {"ideal_boundary",drive.ideal_hub?optional(drive.ideal_hub->boundary):bio::Value{}},{"clutch_boundary",drive.clutch?optional(drive.clutch->boundary):bio::Value{}},{"hub",std::move(hub)},{"grip_anchor_local",std::move(anchors)},{"active_state",active},{"source_timestep_s",real(m->opt.timestep)},{"source_sha256",string(context.source_identity)}};
     if(context.topology)p.emplace_back("spatial_engine",spatial_engine_document(state));
@@ -252,7 +257,7 @@ PhysicalInitialState PhysicalInitialState::capture(const SetupContext& context){
 
 void PhysicalInitialState::restore(SetupContext& context)const{
     auto const value=payload();const auto& p=bio::as_object(value,"initial state");validated(context,p);require_initializing(context);
-    StateFile material=stage_transfer_material(context,p);
+    const StateFile material=stage_transfer_material(context,p);
     const auto q=vector(field(p,"qpos"),"qpos"),v=vector(field(p,"qvel"),"qvel"),warm=vector(field(p,"qacc_warmstart"),"qacc_warmstart");
     // Decode every field before invoking the shared transactional material
     // restore. No coordinate is written before material validation succeeds.

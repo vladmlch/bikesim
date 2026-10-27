@@ -776,8 +776,11 @@ def test_numpy_float32_shifting_metadata_retains_baseline_bits():
     shifter = CadenceShifter(DrivetrainSpecs(), config)
     for cadence in (110.1, 111.2):
         shifter.update(cadence, 120.2, .001)
-    assert shifter.rear_teeth == 18
-    assert_bitwise_equal(shifter.required_ema, np.float32(90.40253))
+    # The throw jumps multiple cogs: 24→14 is the smallest cog whose landing
+    # cadence (120.2·14/24 ≈ 70.1) still clears the 65-rpm band floor; the
+    # second update would undershoot the band, so the no-hunting rule holds.
+    assert shifter.rear_teeth == 14
+    assert_bitwise_equal(shifter.required_ema, np.float32(71.098694))
 
 
 @pytest.mark.parametrize('kind,station,expected', [('fork', np.float32(170.4), 969.148193359375),

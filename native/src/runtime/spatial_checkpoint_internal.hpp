@@ -20,6 +20,16 @@ public:
 private:
     [[nodiscard]] static std::unique_ptr<NativeRideRuntime> prepare_locked(
         const SpatialCheckpoint&, const NativeRideRuntime&);
+    // The RuntimeBootstrap decode materializes ~6.5 KiB locals; these keep
+    // probe_locked/prepare_locked under the 8 KiB frame budget.
+    static void restore_probe_state(NativeRideRuntime& candidate,
+        const NativeRideRuntime& source);
+    [[nodiscard]] static const bike::io::Value& validated_continuation(
+        const SpatialCheckpoint&, const NativeRideRuntime&);
+    static void restore_accounting(NativeRideRuntime& candidate,
+        const bike::io::Value& continuation);
+    static void restore_physical(NativeRideRuntime& candidate,
+        const bike::io::Value& continuation);
 };
 [[nodiscard]] SpatialCheckpoint capture_checkpoint(const NativeRideRuntime&,
     bike::io::Value research, bike::io::Value sensor_v2,

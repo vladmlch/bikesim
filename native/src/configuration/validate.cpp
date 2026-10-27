@@ -48,7 +48,7 @@ void validate_spatial_tyre_profile(const SpatialTyreCoefficientProfile& p) {
         throw std::invalid_argument("lateral_coefficients.status: expected measured/calibrated/inferred/provisional");
     if((p.status=="measured" || p.status=="calibrated") && p.source_measurements==0)
         throw std::invalid_argument("lateral_coefficients.source_measurements: evidence required for measured/calibrated status");
-    for(double x:{p.kx_n_per_m3,p.ky_n_per_m3,p.relaxation_x_m,p.relaxation_y_m})
+    for(const double x:{p.kx_n_per_m3,p.ky_n_per_m3,p.relaxation_x_m,p.relaxation_y_m})
         if(!std::isfinite(x)||x<=0.)throw std::invalid_argument("lateral_coefficients: stiffness/relaxation must be finite and positive");
     if(!std::isfinite(p.camber_coefficient_per_rad)||!std::isfinite(p.pneumatic_trail_m)||p.pneumatic_trail_m<0.)
         throw std::invalid_argument("lateral_coefficients: invalid camber coefficient/pneumatic trail");

@@ -71,6 +71,9 @@ private:
     void before_reset();
     void new_episode();
     void annotate_failure();
+    // seal() staging halves; the splits keep seal under the 8 KiB frame budget.
+    void seal_prepare(std::string reason);
+    void seal_prepare_events();
     PolicySession* session_ = nullptr;
     runtime::NativeResearchRuntime* environment_;
     std::shared_ptr<ResearchPublication> publication_;

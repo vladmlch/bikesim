@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <set>
+#include <utility>
 
 namespace rider {
     UnreachableSoleTarget::~UnreachableSoleTarget() = default;
@@ -339,13 +340,13 @@ namespace rider {
             throw std::invalid_argument("rider.spatial.support: model and data required");
         const auto parents = model_access::readonly_buffer(model->body_parentid, model->nbody);
         for (std::size_t body = 1; body < parents.size(); ++body)
-            if (parents[body] < 0 || static_cast<std::size_t>(parents[body]) >= body)
+            if (parents[body] < 0 || std::cmp_greater_equal(parents[body], body))
                 throw std::invalid_argument("rider.spatial.support: invalid or cyclic parent chain");
         const auto types = model_access::readonly_buffer(model->geom_type, model->ngeom);
         const auto sizes = model_access::readonly_buffer(model->geom_size, 3*model->ngeom);
         const auto positions = model_access::readonly_buffer(data->geom_xpos, 3*model->ngeom);
         const auto rotations = model_access::readonly_buffer(data->geom_xmat, 9*model->ngeom);
-        for (int geom : geoms) {
+        for (const int geom : geoms) {
             model_access::require_id(geom, model->ngeom, "rider.spatial.support.geom");
             const auto g = static_cast<std::size_t>(geom);
             if (types[g] != mjGEOM_BOX)

@@ -69,11 +69,14 @@ public:
 [[nodiscard]] terrain::TrackSpec resolve_research_track(const std::optional<std::filesystem::path>& track_file,
     std::string_view scenario, const std::optional<std::filesystem::path>& generator_spec_file, std::string_view seed_decimal);
 [[nodiscard]] ResearchRequest read_research_request(const std::filesystem::path&);
+// Heap-returning twin for callers whose frame cannot host the request prvalue.
+[[nodiscard]] std::unique_ptr<ResearchRequest> load_research_request_ptr(const std::filesystem::path&);
 [[nodiscard]] PreparedEnvironment prepare_environment(ResearchRequest);
 // Heap-returning twin for callers whose frame cannot host the request and
 // prepared values at once; the request itself stays caller-owned on the heap.
 [[nodiscard]] std::unique_ptr<PreparedEnvironment> prepare_environment(std::unique_ptr<ResearchRequest>);
 [[nodiscard]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(ResearchRequest);
+[[nodiscard]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(std::unique_ptr<ResearchRequest>);
 [[nodiscard]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(const std::filesystem::path&);
 
 [[nodiscard]] runtime::ResearchPrograms programs_from_documents(

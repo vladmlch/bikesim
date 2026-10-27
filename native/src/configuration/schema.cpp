@@ -347,7 +347,7 @@ bike::io::Value to_value(const SimulationPhysicsConfig &config) {
     for (auto& [key, value] : root)
         if (key == "tires")
             std::get<Value::Object>(value.data).emplace_back(
-                "pneumatic_3d", Value{.data = std::move(tyre)});
+                "pneumatic_3d", Value{.data = tyre});
     root.emplace_back("spatial", Value{.data = std::string("3d")});
     root.emplace_back("spatial_3d", Value{.data = std::move(source)});
     return result;

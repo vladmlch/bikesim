@@ -2,16 +2,24 @@
 #include "research_io.hpp"
 #include "spatial_checkpoint_internal.hpp"
 #include "setup_values.hpp"
+#include "spatial_truth.hpp"
 #include "value_readers.hpp"
 #include "../io/json.hpp"
 #include "../io/hash.hpp"
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <limits>
+#include <optional>
+#include <span>
 #include <stdexcept>
-#include <utility>
+#include <string>
 #include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
 #include "../stepper.hpp"
 #include "../model_access.hpp"
 
@@ -54,7 +62,7 @@ void validate_brake(double value) {
 // Steps must stay below 2^53 so every committed index is exactly real-representable.
 constexpr std::int64_t kMaxExactStep = static_cast<std::int64_t>(std::uint64_t{1} << 52U);
 std::size_t tape_rows(const ResearchNoiseTape& tape) { return std::visit([](const auto& value){return value.noise.size();},tape); }
-std::string spatial_contact(const WireObject& truth) {
+std::string_view spatial_contact(const WireObject& truth) {
     const bool front=boolean(required(truth,"front_contact_valid")),rear=boolean(required(truth,"rear_contact_valid"));
     return front?(rear?"two_wheels":"rear_lift"):(rear?"front_lift":"flight");
 }
@@ -355,7 +363,7 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
         outcome.terminal=boolean(required(record,"terminal"));outcome.valid=boolean(required(record,"valid"));
         outcome.tick=integer(required(record,"tick"));outcome.time_s=number(required(record,"time_s"));
         const auto label=string(required(record,"reason"));bool recognized=false;
-        for(auto reason:{bike::spatial::SpatialReason::none,bike::spatial::SpatialReason::capsize,
+        for(const auto reason:{bike::spatial::SpatialReason::none,bike::spatial::SpatialReason::capsize,
             bike::spatial::SpatialReason::off_corridor,bike::spatial::SpatialReason::balance_lost,
             bike::spatial::SpatialReason::terrain_invalid,bike::spatial::SpatialReason::terrain_outside,
             bike::spatial::SpatialReason::numerical_failure,bike::spatial::SpatialReason::requested_completion})
@@ -385,7 +393,7 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     }
     if(e.sensors_v2) {
         e.spatial_truth=object(required(s.channels,"spatial"));
-        auto& metrics=*e.spatial_metrics;
+        auto& metrics=*e.spatial_metrics; // NOLINT(bugprone-unchecked-optional-access) every sensors_v2 sample carries the spatial channel that assigns spatial_metrics above
         for(std::size_t w=0;w<2;++w){const auto prefix=w==0?"front_":"rear_";
             if(boolean(required(*e.spatial_truth,std::string(prefix)+"contact_valid")))
                 metrics.lateral_slip_path_m[w]=spatial::integrate_abs_slip(metrics.lateral_slip_path_m[w],
@@ -462,7 +470,7 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
             ? (crash->pitch_rad < 0. ? "crash:loop_out" : "crash:endo") : "crash:" + crash->cause;
         if (stop_at_outcome) return;
     }
-    if (e.truth->position_m >= config_.track_length_m) {
+    if (e.truth->position_m >= config_.track_length_m) { // NOLINT(bugprone-unchecked-optional-access) the non-spatial branch assigns e.truth in this same consume_sample pass
         e.terminated = true;
         e.reason = "finish";
     }
@@ -498,18 +506,18 @@ void NativeResearchRuntime::finish_window() {
     const ResearchObservation observation=e.sensors_v2?ResearchObservation{e.sensors_v2->read(runtime_->committed_time_s_)}:
         ResearchObservation{e.sensors.read(runtime_->committed_time_s_)};
     ResearchTransition result{.observation = observation, .truth = e.truth, .spatial_truth=e.spatial_truth,
-        .contact_state = e.spatial_truth?spatial_contact(*e.spatial_truth):e.tracker.state(), .terminated = e.terminated, .truncated = e.truncated,
+        .contact_state = e.spatial_truth?std::string(spatial_contact(*e.spatial_truth)):e.tracker.state(), .terminated = e.terminated, .truncated = e.truncated,
         .numerically_valid = e.numerically_valid, .model_valid = model_valid(), .reason = e.reason,
         .physics_steps = runtime_->committed_step_ - e.window->start_step,
         .demand_nm = e.window->seen_demand};
     // Stage the deliverable before publishing the completed control prefix.
     // Python boxing may fail and retry without advancing any of the clocks.
-    auto pending = result;
+    const auto pending = result;
     if (keeps_history(config_.capture_mode)) {
         e.transitions.push_back(std::move(result));
         e.observations.push_back(observation);
     }
-    e.pending_transition = std::move(pending);
+    e.pending_transition = pending;
     ++e.completed_count;
     e.observation = observation;
     e.demand_nm = demand;
@@ -644,11 +652,15 @@ WireObject NativeResearchRuntime::status_unlocked() const {
     const auto &e = *episode_;
     const auto &balance = runtime_->committed_balance_;
     const auto &crash = runtime_->committed_crash_;
+    // SensorPipelineV2::state() returns a copy of its queue; read it once per status.
+    const std::array<std::size_t, 3> sensor_counters = e.sensors_v2
+        ? [&] { const auto state = e.sensors_v2->state(); return std::array<std::size_t, 3>{state.samples_attempted, state.samples_dropped, state.cursor}; }()
+        : [&] { const auto &state = e.sensors.state(); return std::array<std::size_t, 3>{state.samples_attempted, state.samples_dropped, state.cursor}; }();
     WireObject result{{"step", runtime_->committed_step_}, {"time_s", runtime_->committed_time_s_},
         {"position_m", runtime_->committed_position_m_}, {"battery_energy_j", runtime_->committed_battery_energy_j_},
         {"observation", research_observation_wire(e.observation)}, {"demand_nm", opt(e.demand_nm)},
         {"truth", e.spatial_truth?Wire(*e.spatial_truth):e.truth ? Wire(e.truth->as_wire()) : Wire(nullptr)},
-        {"contact_state", e.spatial_truth?spatial_contact(*e.spatial_truth):e.tracker.state()},
+        {"contact_state", e.spatial_truth?std::string(spatial_contact(*e.spatial_truth)):e.tracker.state()},
         {"terminated", e.terminated}, {"truncated", e.truncated}, {"reason", opt(e.reason)}, {"error", opt(e.error)},
         {"numerically_valid", e.numerically_valid}, {"model_valid", model_valid()},
         {"max_energy_residual_ratio", e.max_energy_residual_ratio}, {"torque_delivered_nms", e.torque_delivered_nms},
@@ -656,9 +668,9 @@ WireObject NativeResearchRuntime::status_unlocked() const {
         {"max_shock_stroke_m", e.max_shock_stroke_m}, {"max_fork_travel_m", e.max_fork_travel_m},
         {"metrics", e.tracker.metrics()}, {"accounting", runtime_->accounting_->state_wire()},
         {"active", e.window.has_value()}, {"stop_requested", e.stop_requested}, {"delivery_pending", e.delivery_pending},
-        {"samples_attempted", static_cast<std::int64_t>(e.sensors_v2?e.sensors_v2->state().samples_attempted:e.sensors.state().samples_attempted)},
-        {"samples_dropped", static_cast<std::int64_t>(e.sensors_v2?e.sensors_v2->state().samples_dropped:e.sensors.state().samples_dropped)},
-        {"noise_cursor", static_cast<std::int64_t>(e.sensors_v2?e.sensors_v2->state().cursor:e.sensors.state().cursor)},
+        {"samples_attempted", static_cast<std::int64_t>(sensor_counters[0])},
+        {"samples_dropped", static_cast<std::int64_t>(sensor_counters[1])},
+        {"noise_cursor", static_cast<std::int64_t>(sensor_counters[2])},
         {"recorded_rows", static_cast<std::int64_t>(config_.capture_mode == ResearchCaptureMode::full
             ? runtime_->accounting_->recorded_samples().size() : e.recorder.rows())},
         {"requested_count", e.requested_count}, {"completed_count", e.completed_count},
@@ -742,15 +754,21 @@ std::unique_ptr<ResearchEpisode> NativeResearchRuntime::prepare_continuation(con
     next->last_requested.reset();if(!is_none(required(clock,"last_requested")))next->last_requested=continuation_command(object(required(clock,"last_requested")),true);
     const auto& delay=section(wire,"actuator_delay");constexpr std::array<std::string_view,1> delay_keys{"steps"};exact(delay,delay_keys,"research continuation.actuator_delay");
     if(integer(required(delay,"steps"))!=config_.delay_steps)throw std::invalid_argument("research continuation.actuator_delay: configuration differs");
-    next->commands.clear();std::int64_t previous=-1;
+    continuation_commands(*next,wire,plant,expected_step);
+    continuation_metrics(*next,wire,plant,expected_step,expected_time);
+    return next;
+}
+void NativeResearchRuntime::continuation_commands(ResearchEpisode& next,
+    const WireObject& wire,const NativeRideRuntime& plant,std::int64_t expected_step) const {
+    next.commands.clear();std::int64_t previous=-1;
     for(const auto& row:array(required(wire,"pending_commands"))){const auto& command=object(row);
         constexpr std::array<std::string_view,2> command_keys{"step","control"};exact(command,command_keys,"research continuation.pending_commands");
         const auto step=integer(required(command,"step"));if(step<expected_step||step<=previous||step>config_.max_steps+config_.delay_steps)
             throw std::invalid_argument("research continuation.pending_commands: inconsistent deadlines");
-        auto control=research_control_from_wire(object(required(command,"control")));
+        const auto control=research_control_from_wire(object(required(command,"control")));
         control_validate_for(control,plant.physical_->rider_present(),plant.physical_->drive_mode());
-        next->commands.emplace_back(step,std::move(control));previous=step;}
-    next->window.reset();if(!is_none(required(wire,"window"))){const auto& window=object(required(wire,"window"));
+        next.commands.emplace_back(step,control);previous=step;}
+    next.window.reset();if(!is_none(required(wire,"window"))){const auto& window=object(required(wire,"window"));
         constexpr std::array<std::string_view,6> window_keys{"control","front","rear","start_step","target_step","seen_demand"};exact(window,window_keys,"research continuation.window");
         ResearchWindow value;value.control=research_control_from_wire(object(required(window,"control")));
         control_validate_for(value.control,plant.physical_->rider_present(),plant.physical_->drive_mode());
@@ -760,23 +778,26 @@ std::unique_ptr<ResearchEpisode> NativeResearchRuntime::prepare_continuation(con
             throw std::invalid_argument("research continuation.window: inconsistent plant/control deadline");
         if(!is_none(required(window,"seen_demand")))value.seen_demand=field(window,"seen_demand");
         if(value.seen_demand&&*value.seen_demand<0.)throw std::invalid_argument("research continuation.window.seen_demand: negative");
-        next->window=std::move(value);}
+        next.window=value;}
     const auto& ack=section(wire,"ack");constexpr std::array<std::string_view,3> ack_keys{"delivery_pending","stop_requested","pending_transition"};exact(ack,ack_keys,"research continuation.ack");
-    next->delivery_pending=boolean(required(ack,"delivery_pending"));next->stop_requested=boolean(required(ack,"stop_requested"));
-    next->pending_transition.reset();if(!is_none(required(ack,"pending_transition")))next->pending_transition=continuation_transition(object(required(ack,"pending_transition")));
-    if(next->delivery_pending!=next->pending_transition.has_value()||(next->delivery_pending&&!next->window))
+    next.delivery_pending=boolean(required(ack,"delivery_pending"));next.stop_requested=boolean(required(ack,"stop_requested"));
+    next.pending_transition.reset();if(!is_none(required(ack,"pending_transition")))next.pending_transition=continuation_transition(object(required(ack,"pending_transition")));
+    if(next.delivery_pending!=next.pending_transition.has_value()||(next.delivery_pending&&!next.window))
         throw std::invalid_argument("research continuation.ack: inconsistent pending transition/window");
+}
+void NativeResearchRuntime::continuation_metrics(ResearchEpisode& next,
+    const WireObject& wire,const NativeRideRuntime& plant,std::int64_t expected_step,double expected_time) const {
     const auto& metrics=section(wire,"metrics_cursors");
     constexpr std::array<std::string_view,12> metric_keys{"requested_count","completed_count","applied_base","observation","spatial_metrics","spatial_truth","episode","requested","applied","observations","transitions","recorder"};
     exact(metrics,metric_keys,"research continuation.metrics_cursors");
-    next->requested_count=integer(required(metrics,"requested_count"));next->completed_count=integer(required(metrics,"completed_count"));next->applied_base=integer(required(metrics,"applied_base"));
-    if(next->requested_count<0||next->completed_count<0||next->completed_count>next->requested_count||next->applied_base<0)
+    next.requested_count=integer(required(metrics,"requested_count"));next.completed_count=integer(required(metrics,"completed_count"));next.applied_base=integer(required(metrics,"applied_base"));
+    if(next.requested_count<0||next.completed_count<0||next.completed_count>next.requested_count||next.applied_base<0)
         throw std::invalid_argument("research continuation.metrics_cursors: invalid counters");
-    next->observation=research_observation_from_wire(object(required(metrics,"observation")));
-    if(!std::holds_alternative<spatial::SensorObservationV2>(next->observation)||std::get<spatial::SensorObservationV2>(next->observation).time_s>expected_time)
+    next.observation=research_observation_from_wire(object(required(metrics,"observation")));
+    if(!std::holds_alternative<spatial::SensorObservationV2>(next.observation)||std::get<spatial::SensorObservationV2>(next.observation).time_s>expected_time)
         throw std::invalid_argument("research continuation.observation: schema/time differs");
-    next->spatial_truth.reset();if(!is_none(required(metrics,"spatial_truth")))next->spatial_truth=checked_spatial_truth(object(required(metrics,"spatial_truth")));
-    next->spatial_metrics.reset();if(!is_none(required(metrics,"spatial_metrics"))){const auto& values=object(required(metrics,"spatial_metrics"));
+    next.spatial_truth.reset();if(!is_none(required(metrics,"spatial_truth")))next.spatial_truth=checked_spatial_truth(object(required(metrics,"spatial_truth")));
+    next.spatial_metrics.reset();if(!is_none(required(metrics,"spatial_metrics"))){const auto& values=object(required(metrics,"spatial_metrics"));
         constexpr std::array<std::string_view,16> spatial_keys{"spatial_schema","requested_duration_s","valid_duration_s","completed_distance_m","terminal_reason","terminal_tick",
             "front_lateral_slip_path_m","rear_lateral_slip_path_m","front_unloaded_s","front_lift_s","flight_s","valid","start_position_m","accepted_origin_time_s","last_end_time_s","last_interval"};
         exact(values,spatial_keys,"research continuation.spatial_metrics");if(integer(required(values,"spatial_schema"))!=1)throw std::invalid_argument("research continuation.spatial_metrics: unknown schema");
@@ -787,10 +808,10 @@ std::unique_ptr<ResearchEpisode> NativeResearchRuntime::prepare_continuation(con
         value.lateral_slip_path_m={field(values,"front_lateral_slip_path_m"),field(values,"rear_lateral_slip_path_m")};
         value.front_unloaded_s=field(values,"front_unloaded_s");value.front_lift_s=field(values,"front_lift_s");value.flight_s=field(values,"flight_s");
         const auto label=string(required(values,"terminal_reason"));bool known=false;
-        for(auto reason:{bike::spatial::SpatialReason::none,bike::spatial::SpatialReason::capsize,bike::spatial::SpatialReason::off_corridor,
+        for(const auto reason:{bike::spatial::SpatialReason::none,bike::spatial::SpatialReason::capsize,bike::spatial::SpatialReason::off_corridor,
             bike::spatial::SpatialReason::balance_lost,bike::spatial::SpatialReason::terrain_invalid,bike::spatial::SpatialReason::terrain_outside,
             bike::spatial::SpatialReason::numerical_failure,bike::spatial::SpatialReason::requested_completion})if(label==bike::spatial::to_string(reason)){known=true;value.terminal_reason=reason;break;}
-        if(!known||value.last_interval!=next->sample_cursor||value.last_interval<0||value.last_end_time_s>expected_time||
+        if(!known||value.last_interval!=next.sample_cursor||value.last_interval<0||value.last_end_time_s>expected_time||
             value.last_end_time_s<0.||value.accepted_origin_time_s<0.||value.accepted_origin_time_s>value.last_end_time_s||
             value.terminal_tick>=expected_step||value.terminal_tick<-1||
             ((value.terminal_reason==bike::spatial::SpatialReason::none)!=(value.terminal_tick==-1))||
@@ -799,27 +820,28 @@ std::unique_ptr<ResearchEpisode> NativeResearchRuntime::prepare_continuation(con
             value.lateral_slip_path_m[0]<0.||value.lateral_slip_path_m[1]<0.||value.front_unloaded_s<0.||value.front_lift_s<0.||value.flight_s<0.||
             value.flight_s>value.front_lift_s||value.front_lift_s>value.last_end_time_s-value.accepted_origin_time_s+config_.timestep_s)
             throw std::invalid_argument("research continuation.spatial_metrics: inconsistent state");
-        next->spatial_metrics=value;}
+        next.spatial_metrics=value;}
     const auto& episode=section(metrics,"episode");constexpr std::array<std::string_view,14> episode_keys{"terminated","truncated","numerically_valid","reason","error","cleanup_notes",
         "max_energy_residual_ratio","torque_delivered_nms","torque_requested_nms","demand_integral_nms","demand_nm","max_shock_stroke_m","max_fork_travel_m","checkpoint_unavailable_reason"};exact(episode,episode_keys,"research continuation.episode");
-    next->terminated=boolean(required(episode,"terminated"));next->truncated=boolean(required(episode,"truncated"));next->numerically_valid=boolean(required(episode,"numerically_valid"));
+    next.terminated=boolean(required(episode,"terminated"));next.truncated=boolean(required(episode,"truncated"));next.numerically_valid=boolean(required(episode,"numerically_valid"));
     const auto optional_text=[&](std::string_view key){const auto& v=required(episode,key);return is_none(v)?std::nullopt:std::optional(string(v));};
     const auto optional_number=[&](std::string_view key){const auto& v=required(episode,key);return is_none(v)?std::nullopt:std::optional(number(v));};
-    next->reason=optional_text("reason");next->error=optional_text("error");next->demand_nm=optional_number("demand_nm");next->demand_integral_nms=optional_number("demand_integral_nms");
-    next->checkpoint_unavailable_reason=optional_text("checkpoint_unavailable_reason");
-    if(next->checkpoint_unavailable_reason)throw std::invalid_argument("research continuation: failed boundary is diagnostic evidence, not resumable state");
-    next->max_energy_residual_ratio=field(episode,"max_energy_residual_ratio");next->torque_delivered_nms=field(episode,"torque_delivered_nms");next->torque_requested_nms=field(episode,"torque_requested_nms");
-    next->max_shock_stroke_m=field(episode,"max_shock_stroke_m");next->max_fork_travel_m=field(episode,"max_fork_travel_m");
-    if((next->terminated&&next->truncated)||next->max_energy_residual_ratio<0.||next->max_shock_stroke_m<0.||next->max_fork_travel_m<0.||
-        (next->demand_nm&&*next->demand_nm<0.)||(next->demand_integral_nms&&*next->demand_integral_nms<0.))
+    next.reason=optional_text("reason");next.error=optional_text("error");next.demand_nm=optional_number("demand_nm");next.demand_integral_nms=optional_number("demand_integral_nms");
+    next.checkpoint_unavailable_reason=optional_text("checkpoint_unavailable_reason");
+    if(next.checkpoint_unavailable_reason)throw std::invalid_argument("research continuation: failed boundary is diagnostic evidence, not resumable state");
+    next.max_energy_residual_ratio=field(episode,"max_energy_residual_ratio");next.torque_delivered_nms=field(episode,"torque_delivered_nms");next.torque_requested_nms=field(episode,"torque_requested_nms");
+    next.max_shock_stroke_m=field(episode,"max_shock_stroke_m");next.max_fork_travel_m=field(episode,"max_fork_travel_m");
+    if((next.terminated&&next.truncated)||next.max_energy_residual_ratio<0.||next.max_shock_stroke_m<0.||next.max_fork_travel_m<0.||
+        (next.demand_nm&&*next.demand_nm<0.)||(next.demand_integral_nms&&*next.demand_integral_nms<0.))
         throw std::invalid_argument("research continuation.episode: invalid outcome or metric domain");
-    next->cleanup_notes.clear();for(const auto& note:array(required(episode,"cleanup_notes")))next->cleanup_notes.push_back(string(note));
-    next->requested.clear();next->applied_records.clear();next->observations.clear();next->transitions.clear();
-    for(const auto& row:array(required(metrics,"requested")))next->requested.push_back(continuation_command(object(row),true));
-    for(const auto& row:array(required(metrics,"applied")))next->applied_records.push_back(continuation_command(object(row),false));
-    for(const auto& row:array(required(metrics,"observations"))){auto value=research_observation_from_wire(object(row));
-        if(!std::holds_alternative<spatial::SensorObservationV2>(value))throw std::invalid_argument("research continuation: history schema mismatch");next->observations.push_back(std::move(value));}
-    for(const auto& row:array(required(metrics,"transitions")))next->transitions.push_back(continuation_transition(object(row)));
+    next.cleanup_notes.clear();for(const auto& note:array(required(episode,"cleanup_notes")))next.cleanup_notes.push_back(string(note));
+    next.requested.clear();next.applied_records.clear();next.observations.clear();next.transitions.clear();
+    for(const auto& row:array(required(metrics,"requested")))next.requested.push_back(continuation_command(object(row),true));
+    for(const auto& row:array(required(metrics,"applied")))next.applied_records.push_back(continuation_command(object(row),false));
+    for(const auto& row:array(required(metrics,"observations"))){const auto value=research_observation_from_wire(object(row));
+        if(!std::holds_alternative<spatial::SensorObservationV2>(value))throw std::invalid_argument("research continuation: history schema mismatch");
+        next.observations.push_back(value);}
+    for(const auto& row:array(required(metrics,"transitions")))next.transitions.push_back(continuation_transition(object(row)));
     const auto check_command_history=[&](const std::vector<ResearchCommand>& history,bool strict) {
         std::int64_t prior=-1;
         for(const auto& row:history) {
@@ -831,55 +853,55 @@ std::unique_ptr<ResearchEpisode> NativeResearchRuntime::prepare_continuation(con
             prior=row.step;
         }
     };
-    check_command_history(next->requested,true);check_command_history(next->applied_records,false);
-    if(next->last_requested)check_command_history(std::vector<ResearchCommand>{*next->last_requested},true);
-    if(next->last_requested.has_value()!=(next->requested_count>0)||next->requested_count-next->completed_count>1||
-        (next->window&&next->requested_count-next->completed_count!=(next->delivery_pending?0:1)))
+    check_command_history(next.requested,true);check_command_history(next.applied_records,false);
+    if(next.last_requested)check_command_history(std::vector<ResearchCommand>{*next.last_requested},true);
+    if(next.last_requested.has_value()!=(next.requested_count>0)||next.requested_count-next.completed_count>1||
+        (next.window&&next.requested_count-next.completed_count!=(next.delivery_pending?0:1)))
         throw std::invalid_argument("research continuation.history: request/window counters disagree");
     if(keeps_history(config_.capture_mode)) {
-        if(next->requested.size()!=static_cast<std::size_t>(next->requested_count)||
-            next->transitions.size()!=static_cast<std::size_t>(next->completed_count)||
-            next->observations.size()!=static_cast<std::size_t>(next->completed_count)+1)
+        if(next.requested.size()!=static_cast<std::size_t>(next.requested_count)||
+            next.transitions.size()!=static_cast<std::size_t>(next.completed_count)||
+            next.observations.size()!=static_cast<std::size_t>(next.completed_count)+1)
             throw std::invalid_argument("research continuation.history: incomplete retained control prefix");
-        if(bike::io::canonical_json(checkpoint_value(research_observation_wire(next->observations.back())))!=
-           bike::io::canonical_json(checkpoint_value(research_observation_wire(next->observation))))
+        if(bike::io::canonical_json(checkpoint_value(research_observation_wire(next.observations.back())))!=
+           bike::io::canonical_json(checkpoint_value(research_observation_wire(next.observation))))
             throw std::invalid_argument("research continuation.history: current observation differs from delivered prefix");
-        if(next->last_requested&&bike::io::canonical_json(checkpoint_value(next->last_requested->as_wire(true)))!=
-           bike::io::canonical_json(checkpoint_value(next->requested.back().as_wire(true))))
+        if(next.last_requested&&bike::io::canonical_json(checkpoint_value(next.last_requested->as_wire(true)))!=
+           bike::io::canonical_json(checkpoint_value(next.requested.back().as_wire(true))))
             throw std::invalid_argument("research continuation.history: last request differs from retained prefix");
-    } else if(!next->requested.empty()||!next->observations.empty()||!next->transitions.empty())
+    } else if(!next.requested.empty()||!next.observations.empty()||!next.transitions.empty())
         throw std::invalid_argument("research continuation.history: retained rows conflict with capture mode");
     double previous_time=-1.;
-    for(const auto& row:next->observations) {
+    for(const auto& row:next.observations) {
         const auto time=std::get<spatial::SensorObservationV2>(row).time_s;
         if(time<previous_time||time>expected_time)throw std::invalid_argument("research continuation.history: observation clock differs");
         previous_time=time;
     }
-    for(std::size_t i=0;i<next->transitions.size();++i) {
-        const auto& transition=next->transitions[i];
+    for(std::size_t i=0;i<next.transitions.size();++i) {
+        const auto& transition=next.transitions[i];
         if(bike::io::canonical_json(checkpoint_value(research_observation_wire(transition.observation)))!=
-            bike::io::canonical_json(checkpoint_value(research_observation_wire(next->observations[i+1]))))
+            bike::io::canonical_json(checkpoint_value(research_observation_wire(next.observations[i+1]))))
             throw std::invalid_argument("research continuation.history: transition observation differs");
     }
-    next->recorder.restore_continuation(section(metrics,"recorder"),plant.accounting_->recorded_samples(),next->sample_cursor);
+    next.recorder.restore_continuation(section(metrics,"recorder"),plant.accounting_->recorded_samples(),next.sample_cursor);
     const auto& sensor=section(wire,"sensor_v2");constexpr std::array<std::string_view,3> sensor_keys{"schema","config","state"};exact(sensor,sensor_keys,"research continuation.sensor_v2");
     if(integer(required(sensor,"schema"))!=2||bike::io::canonical_json(checkpoint_value(required(sensor,"config")))!=
-        bike::io::canonical_json(checkpoint_value(sensor_config_v2_to_wire(*config_.sensors_v2))))throw std::invalid_argument("research continuation.sensor_v2: configuration/schema differs");
+        bike::io::canonical_json(checkpoint_value(sensor_config_v2_to_wire(*config_.sensors_v2))))throw std::invalid_argument("research continuation.sensor_v2: configuration/schema differs"); // NOLINT(bugprone-unchecked-optional-access) prepare_continuation rejects a missing sensors_v2 before this decode path
     auto sensor_state=decode_sensor_state_v2(checkpoint_value(required(sensor,"state")));
     if((sensor_state.last_time&&*sensor_state.last_time>expected_time)||(sensor_state.delivery_time&&*sensor_state.delivery_time>expected_time))
         throw std::invalid_argument("research continuation.sensor_v2: sensor clock exceeds plant clock");
-    const auto acquisitions=next->sample_cursor<0?std::int64_t{1}:next->sample_cursor/config_.sensor_steps+1;
-    if(sensor_state.cursor!=static_cast<std::size_t>(acquisitions)||
-        next->next_sensor_step!=acquisitions*config_.sensor_steps||!sensor_state.last_time||!sensor_state.delivery_time||
+    const auto acquisitions=next.sample_cursor<0?std::int64_t{1}:next.sample_cursor/config_.sensor_steps+1;
+    if(std::cmp_not_equal(sensor_state.cursor,acquisitions)||
+        next.next_sensor_step!=acquisitions*config_.sensor_steps||!sensor_state.last_time||!sensor_state.delivery_time||
         std::abs(*sensor_state.last_time-static_cast<double>((acquisitions-1)*config_.sensor_steps)*config_.timestep_s)>
             .25*config_.timestep_s||
-        *sensor_state.delivery_time!=std::get<spatial::SensorObservationV2>(next->observation).time_s)
+        *sensor_state.delivery_time!=std::get<spatial::SensorObservationV2>(next.observation).time_s)
         throw std::invalid_argument("research continuation.sensor_v2: acquisition/delivery cursor disagrees with consumed prefix");
     if(plant.completion_step_!=config_.max_steps)
         throw std::invalid_argument("research continuation: plant completion deadline differs");
-    if(next->spatial_metrics.has_value()!=(next->sample_cursor>=0)||next->spatial_truth.has_value()!=(next->sample_cursor>=0))
+    if(next.spatial_metrics.has_value()!=(next.sample_cursor>=0)||next.spatial_truth.has_value()!=(next.sample_cursor>=0))
         throw std::invalid_argument("research continuation: spatial truth/metrics differ from consumed prefix");
-    next->sensors_v2->import_state(std::move(sensor_state));return next;
+    next.sensors_v2->import_state(std::move(sensor_state)); // NOLINT(bugprone-unchecked-optional-access) the ResearchEpisode ctor emplaces sensors_v2 whenever config_.sensors_v2 holds, guarded in prepare_continuation
 }
 void NativeResearchRuntime::restore_continuation(const WireObject& wire) {
     const ResearchGuard guard(busy_);require_open();auto next=prepare_continuation(wire,*runtime_);
@@ -1054,6 +1076,10 @@ void NativeResearchRuntime::reset(ResearchNoiseTape tape, ResearchSensorState st
     const ResearchGuard guard(busy_); require_open();
     reset_unlocked(std::move(tape), std::move(startup), std::move(seed_decimal), std::move(metadata), std::move(assets));
 }
+std::unique_ptr<NativeRideRuntime> NativeResearchRuntime::make_reset_plant() const {
+    return std::make_unique<NativeRideRuntime>(RuntimeBootstrap{
+        .model=runtime_->model_image_,.config=runtime_->config_,.state=runtime_->bootstrap_});
+}
 void NativeResearchRuntime::reset_unlocked(ResearchNoiseTape tape, ResearchSensorState startup,
     std::optional<std::string> seed_decimal, std::optional<bike::io::Value> metadata, ResearchAssets assets) {
     if (episode_->window || episode_->delivery_pending)
@@ -1075,8 +1101,7 @@ void NativeResearchRuntime::reset_unlocked(ResearchNoiseTape tape, ResearchSenso
         // Construct from the original reset origin. Neither the accepted
         // plant nor the sensor seed/history changes until every new owner
         // and the new initial checkpoint have been captured successfully.
-        auto plant=std::make_unique<NativeRideRuntime>(RuntimeBootstrap{
-            .model=runtime_->model_image_,.config=runtime_->config_,.state=runtime_->bootstrap_});
+        auto plant=make_reset_plant();
         plant->physical_->set_generation(runtime_->committed_generation_+1);
         plant->initialize_accounting();
         auto staged=std::make_unique<NativeResearchRuntime>(std::move(plant),std::move(next_config),

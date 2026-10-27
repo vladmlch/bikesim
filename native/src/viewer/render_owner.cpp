@@ -6,9 +6,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <exception>
+#include <limits>
+#include <optional>
 #include <span>
 #include <stdexcept>
+#include <string_view>
 #include <thread>
+#include <utility>
 
 namespace bike::viewer {
 namespace {
@@ -46,7 +51,15 @@ struct RenderOwner::Impl {
     std::unique_ptr<mjData, DataDelete> data;
     std::thread::id thread = std::this_thread::get_id();
     std::string digest, overlay;
-    std::optional<runtime::RenderFrame> frame;
+    // Accepted-frame identity and the smoothed display pose are all the next
+    // apply() needs. Keeping them instead of a whole RenderFrame copy means a
+    // steady-state apply allocates nothing: the integration vector reuses its
+    // reserved capacity and SpatialPresentation owns no heap storage.
+    bool has_frame = false;
+    int frame_generation = 0;
+    std::int64_t frame_step = 0;
+    std::vector<double> integration;
+    std::optional<runtime::SpatialPresentation> display_pose;
     Camera tracking;
     mjvCamera camera{};
     mjvOption option{};
@@ -73,16 +86,19 @@ RenderOwner::RenderOwner(const runtime::ModelImage& image) : impl_(std::make_uni
     p.digest = image.sha256;
     p.model.reset(engine::load_model_image(image.mjb));
     p.data.reset(engine::make_data(p.model.get()));
+    const auto joint_types = model_access::readonly_buffer(p.model->jnt_type, p.model->njnt, "render jnt_type");
+    const auto joint_qpos = model_access::readonly_buffer(p.model->jnt_qposadr, p.model->njnt, "render jnt_qposadr");
     const int root = mj_name2id(p.model.get(), mjOBJ_JOINT, "root_free");
     if (root >= 0) {
-        if (p.model->jnt_type[root] != mjJNT_FREE) throw std::invalid_argument("render root_free is not a free joint");
-        p.free_root_qpos = p.model->jnt_qposadr[root];
+        if (joint_types[static_cast<std::size_t>(root)] != mjJNT_FREE)
+            throw std::invalid_argument("render root_free is not a free joint");
+        p.free_root_qpos = joint_qpos[static_cast<std::size_t>(root)];
     }
     const int rider = mj_name2id(p.model.get(), mjOBJ_JOINT, "rider_root_free");
-    if(rider>=0) {
-        if(p.model->jnt_type[rider]!=mjJNT_FREE)
+    if (rider >= 0) {
+        if (joint_types[static_cast<std::size_t>(rider)] != mjJNT_FREE)
             throw std::invalid_argument("render rider_root_free is not a free joint");
-        p.rider_root_qpos=p.model->jnt_qposadr[rider];
+        p.rider_root_qpos = joint_qpos[static_cast<std::size_t>(rider)];
     }
     // mjSTATE_INTEGRATION stores TIME before QPOS. Ask the engine for the
     // width of that prefix instead of assuming a generalized coordinate ID.
@@ -109,9 +125,9 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     p.require_live();
     const auto& state = frame.state;
     if (frame.model_sha256 != p.digest) throw std::invalid_argument("render frame: wrong compiled model identity");
-    if (state.generation < 0 || state.step < 0 || (p.frame &&
-        (state.generation < p.frame->state.generation ||
-        (state.generation == p.frame->state.generation && state.step < p.frame->state.step))))
+    if (state.generation < 0 || state.step < 0 || (p.has_frame &&
+        (state.generation < p.frame_generation ||
+        (state.generation == p.frame_generation && state.step < p.frame_step))))
         throw std::invalid_argument("render frame moved backwards without a generation change");
     const auto width = engine::state_size(p.model.get(), mjSTATE_INTEGRATION);
     if (state.integration_state.size() != static_cast<std::size_t>(width) || !finite(state.integration_state))
@@ -121,7 +137,7 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     if (!std::isfinite(frame.presentation.position_m) || !std::isfinite(frame.presentation.z_m))
         throw std::invalid_argument("render frame: nonfinite camera endpoint");
     if (const auto& pose = frame.presentation.spatial) {
-        if (pose->generation != static_cast<std::uint64_t>(state.generation) ||
+        if (std::cmp_not_equal(pose->generation, state.generation) ||
             !finite(pose->position_world_m) || !finite(pose->quat_wxyz) || !finite(pose->lateral_slip_mps) ||
             !std::isfinite(pose->steer_angle_rad) || !std::isfinite(pose->steer_torque_nm) ||
             (pose->heading_rad && !std::isfinite(*pose->heading_rad)) ||
@@ -136,13 +152,16 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
         if (fields[i].size() != frame.presentation.model_fields[i].size() || !finite(frame.presentation.model_fields[i]))
             throw std::invalid_argument("render frame: incompatible model field " + std::string(field_names[i]));
     }
-    // Complete the throwing allocations before modifying the render replica.
-    auto staged = frame;
-    const bool generation_changed = !p.frame || p.frame->state.generation != state.generation;
-    if (auto& pose = staged.presentation.spatial) {
+    // Complete every throwing step (and the only allocation, on the first
+    // frame) before modifying the render replica. The caller's frame is never
+    // copied: only the spatial pose is staged, by value.
+    p.integration.reserve(state.integration_state.size());
+    const bool generation_changed = !p.has_frame || p.frame_generation != state.generation;
+    std::optional<runtime::SpatialPresentation> staged_pose = frame.presentation.spatial;
+    if (auto& pose = staged_pose) {
         pose->quat_wxyz = normalized(pose->quat_wxyz);
-        if (!generation_changed && p.frame->presentation.spatial) {
-            const auto& previous = *p.frame->presentation.spatial;
+        if (!generation_changed && p.display_pose) {
+            const auto& previous = *p.display_pose;
             for (std::size_t axis = 0; axis < 3; ++axis)
                 pose->position_world_m[axis] = .8 * previous.position_world_m[axis] +
                     .2 * pose->position_world_m[axis];
@@ -151,9 +170,9 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
         if(!finite(pose->position_world_m))throw std::invalid_argument("render frame: interpolated spatial pose is nonfinite");
     }
     std::optional<std::array<double,7>> rider_pose;
-    if(p.free_root_qpos>=0&&p.rider_root_qpos>=0&&staged.presentation.spatial) {
+    if(p.free_root_qpos>=0&&p.rider_root_qpos>=0&&staged_pose) {
         const auto& source=*frame.presentation.spatial;
-        const auto& target=*staged.presentation.spatial;
+        const auto& target=*staged_pose;
         const auto address=p.qpos_state_offset+static_cast<std::size_t>(p.rider_root_qpos);
         std::array<double,3> relative{};
         std::array<double,4> rider_quat{};
@@ -169,12 +188,15 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
         if(!finite(*rider_pose))throw std::invalid_argument("render frame: interpolated rider pose is nonfinite");
     }
     for (std::size_t i = 0; i < fields.size(); ++i)
-        std::copy(staged.presentation.model_fields[i].begin(), staged.presentation.model_fields[i].end(), fields[i].begin());
-    struct Refresh { mjModel* m; mjData* d; const double* state; int root;
+        std::copy(frame.presentation.model_fields[i].begin(), frame.presentation.model_fields[i].end(), fields[i].begin());
+    // The qpos view is formed here, where a bad extent can still throw; the
+    // noexcept engine frame below only indexes a checked span.
+    const auto qpos = model_access::mutable_buffer(p.data->qpos, p.model->nq, "render qpos");
+    struct Refresh { mjModel* m; mjData* d; std::span<mjtNum> qpos; const double* state; int root;
         const runtime::SpatialPresentation* pose; int rider; const std::array<double,7>* rider_pose;
-    } refresh{.m=p.model.get(), .d=p.data.get(),
-        .state=staged.state.integration_state.data(), .root=p.free_root_qpos,
-        .pose=staged.presentation.spatial ? &*staged.presentation.spatial : nullptr,
+    } refresh{.m=p.model.get(), .d=p.data.get(), .qpos=qpos,
+        .state=state.integration_state.data(), .root=p.free_root_qpos,
+        .pose=staged_pose ? &*staged_pose : nullptr,
         .rider=p.rider_root_qpos,.rider_pose=rider_pose?&*rider_pose:nullptr};
     engine::ErrorBuffer error;
     // Deliberately kinematic only. No mj_forward, mj_step, sensor acquisition,
@@ -183,14 +205,17 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
         auto const* r = static_cast<Refresh*>(opaque);
         mj_setState(r->m, r->d, r->state, mjSTATE_INTEGRATION);
         if (r->root >= 0 && r->pose) {
-            for (std::size_t i = 0; i < 3; ++i) r->d->qpos[r->root + static_cast<int>(i)] = r->pose->position_world_m[i];
-            for (std::size_t i = 0; i < 4; ++i) r->d->qpos[r->root + 3 + static_cast<int>(i)] = r->pose->quat_wxyz[i];
+            const auto root = static_cast<std::size_t>(r->root);
+            for (std::size_t i = 0; i < 3; ++i) r->qpos[root + i] = r->pose->position_world_m[i];
+            for (std::size_t i = 0; i < 4; ++i) r->qpos[root + 3 + i] = r->pose->quat_wxyz[i];
         }
         // The articulated pelvis is an independent world free joint. Apply
         // the bike's display transform to it too, preserving the accepted
         // bike-relative rider pose and all local articulated coordinates.
-        if(r->rider>=0&&r->rider_pose)
-            for(std::size_t i=0;i<7;++i)r->d->qpos[r->rider+static_cast<int>(i)]=(*r->rider_pose)[i];
+        if(r->rider>=0&&r->rider_pose) {
+            const auto pelvis=static_cast<std::size_t>(r->rider);
+            for(std::size_t i=0;i<7;++i)r->qpos[pelvis+i]=(*r->rider_pose)[i];
+        }
         mj_kinematics(r->m, r->d);
         mj_comPos(r->m, r->d);
         mj_camlight(r->m, r->d);
@@ -198,17 +223,24 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     }, &refresh, error);
     if (!ok) { p.poisoned = true; engine::throw_failure(error); }
     if (generation_changed) p.tracking.reset_preset();
-    if (const auto& pose = staged.presentation.spatial)
-        p.tracking.update_spatial(p.camera, pose->position_world_m, pose->attitude_valid ? pose->heading_rad : std::nullopt);
-    else p.tracking.update(p.camera, staged.presentation.position_m, staged.presentation.z_m);
-    p.frame = std::move(staged);
+    if (staged_pose)
+        p.tracking.update_spatial(p.camera, staged_pose->position_world_m,
+            staged_pose->attitude_valid ? staged_pose->heading_rad : std::nullopt);
+    else p.tracking.update(p.camera, frame.presentation.position_m, frame.presentation.z_m);
+    // Capacity was reserved above, so these cannot throw or allocate.
+    p.has_frame = true;
+    p.frame_generation = state.generation;
+    p.frame_step = state.step;
+    p.integration.assign(state.integration_state.begin(), state.integration_state.end());
+    p.display_pose = staged_pose;
 }
 void RenderOwner::draw(int width, int height) {
-    auto const& p = *impl_; p.require_live();
+    impl_->require_live();
     if (width < 0 || height < 0) throw std::invalid_argument("negative framebuffer dimension");
     if (width == 0 || height == 0) return; // minimized window, no division by zero
 #if defined(BIKE_BUILD_GUI) && BIKE_BUILD_GUI
-    if (!p.frame) throw std::runtime_error("render owner has no frame");
+    auto& p = *impl_;
+    if (!p.has_frame) throw std::runtime_error("render owner has no frame");
     struct Draw { Impl* p; int width, height; } draw{&p, width, height};
     engine::ErrorBuffer error;
     const bool ok = engine::invoke([](void* opaque) noexcept {
@@ -257,19 +289,21 @@ void RenderOwner::close() noexcept {
     if (p.is_closed) return;
     if (p.thread != std::this_thread::get_id()) std::terminate();
     if (p.graphics) { mjr_freeContext(&p.context); mjv_freeScene(&p.scene); p.graphics = false; }
-    p.data.reset(); p.model.reset(); p.frame.reset(); p.is_closed = true;
+    p.data.reset(); p.model.reset(); p.has_frame = false; p.display_pose.reset();
+    std::vector<double>().swap(p.integration);
+    p.is_closed = true;
 }
 bool RenderOwner::closed() const noexcept { return impl_->is_closed; }
 bool RenderOwner::has_markers() const noexcept { return !impl_->marker_sizes.empty(); }
 std::string_view RenderOwner::model_sha256() const noexcept { return impl_->digest; }
 std::vector<double> RenderOwner::integration_state() const {
     impl_->require_live();
-    if (!impl_->frame) return {};
-    return impl_->frame->state.integration_state;
+    if (!impl_->has_frame) return {};
+    return impl_->integration;
 }
 std::vector<double> RenderOwner::rendered_qpos() const {
     impl_->require_live();
-    if(!impl_->frame)return {};
+    if(!impl_->has_frame)return {};
     const auto qpos=model_access::readonly_buffer(impl_->data->qpos,impl_->model->nq);
     return {qpos.begin(),qpos.end()};
 }

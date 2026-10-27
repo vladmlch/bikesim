@@ -5,9 +5,19 @@
 #include "../io/hash.hpp"
 #include "../platform/files.hpp"
 #include <array>
+#include <cstdint>
 #include <iterator>
+#include <memory>
 #include <regex>
 #include <set>
+#include <optional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <variant>
+#include <vector>
 
 namespace bike::recording {
 RecordingError::~RecordingError() = default;
@@ -56,8 +66,8 @@ io::Value read_manifest(const std::filesystem::path& directory) {
 }
 
 Recording::Recording(std::filesystem::path path) : path_(std::move(path)), manifest_(read_manifest(path_)),
+    schema_version_(count(field(manifest_, "schema_version"))),
     database_(std::make_unique<Database>(path_ / "run.duckdb", true)) {
-    schema_version_ = count(field(manifest_, "schema_version"));
     if (static_cast<int>(database_version(database_->connection())) != schema_version_) throw RecordingError("manifest/container schema disagree");
     const auto expected_database = string(field(field(manifest_, "file_sha256"), "run.duckdb"));
     if (database_->opened_sha256() != expected_database) throw RecordingError("opened database checksum differs from manifest");

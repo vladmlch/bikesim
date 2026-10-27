@@ -147,6 +147,16 @@ public:
     // without touching brush state — the init/restore re-arm.
     void restart_clock() noexcept { last_time_s_.reset(); }
 
+    // tire.states[side].xi — the released-brake statics solve mutates the
+    // stored brush deflection in place, preserving the remaining
+    // _BrushState fields exactly like the oracle's set_xi rebuild.
+    [[nodiscard]] double brush_xi(std::size_t side) const noexcept {
+        return states_[side].xi;
+    }
+    void set_brush_xi(std::size_t side, double xi) noexcept {
+        states_[side].xi = xi;
+    }
+
     // stored_energy(model, data) (tire_forces.py:173-184): elastic +
     // shear energy at the CURRENT geometry — the patch delta comes from
     // a fresh profile contact, the shear term from the stored brush.

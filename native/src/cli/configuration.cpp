@@ -73,10 +73,19 @@ void spatial_arguments(configuration::SimulationPhysicsConfig& physics, const Ar
     // and incompatible combinations fail the ordinary capability boundary.
     if (enabled && choose_defaults && !args.has("physics_config")) {
         physics.physics_mode = "physical";
-        physics.drive_mode = args.text("rider") == "articulated_planar" ? "articulated_effort" : "crank_effort";
+        const bool articulated = args.text("rider") == "articulated_planar";
+        physics.drive_mode = articulated ? "articulated_effort" : "crank_effort";
+        // runtime::implemented_capabilities rejects any other attachment set for a spatial articulated rider.
+        if (articulated) {
+            physics.articulated.pedal_attachment = "spindle";
+            physics.articulated.saddle_attachment = "pin";
+            physics.articulated.grip_attachment = "connect";
+        }
         physics.tires.backend = "pneumatic_3d";
         physics.tires.surface_mode = "track";
         physics.timestep_s = .00125;
+        // validate.cpp requires closure_time_constant_s >= 2*timestep_s; the .001 s default is too short for this step.
+        physics.closure_time_constant_s = .0025;
         physics.initial_speed_mps = 2.;
         physics.initial_front_brake = physics.initial_rear_brake = 0.;
         physics.pitch_assist = false;
@@ -84,6 +93,17 @@ void spatial_arguments(configuration::SimulationPhysicsConfig& physics, const Ar
         physics.drive.shifting.enabled = false;
         physics.resistance.cda_m2 = 0.;
     }
+}
+// The spatial terrain source owns geometry, identity and the finish/outcome
+// boundary; a planar TrackSpec remains on the request only to carry a label
+// through name/logging plumbing. It is name-only: it must never be validated,
+// serialized or sampled as a track, and every spatial-path consumer is
+// guarded accordingly (SetupOwner, project_writer_config, metadata and
+// launch capture all branch on the engaged spatial mode first).
+terrain::TrackSpec spatial_placeholder_track() {
+    terrain::TrackSpec track;
+    track.name = "spatial-terrain";
+    return track;
 }
 void require_spatial_capability(const configuration::SimulationPhysicsConfig& physics) {
     if (physics.spatial && physics.spatial->mode == spatial::Mode::spatial3d) {
@@ -166,11 +186,13 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     if (physics.spatial) {
         // Physical geometry/domain is resolved by SetupOwner from the typed
         // terrain request. No implicit planar track/extrusion is loaded here.
-        request.track.name = "spatial-terrain";
+        request.track = spatial_placeholder_track();
         request.model.spatial = physics.spatial;
     } else request.track = resolve_track(args.text("track", "road_worn"), seed, args.optional_real("length"));
     request.seed_decimal = research::validate_seed(args.text("seed", "0"));
-    request.model.mode = "ride"; request.model.field = terrain::HeightFieldSpec::for_track(request.track);
+    request.model.mode = "ride";
+    // The spatial render grid takes its shape from the default field, exactly as the research request does.
+    request.model.field = physics.spatial ? terrain::HeightFieldSpec{} : terrain::HeightFieldSpec::for_track(request.track);
     request.model.physics = physics;
     auto rider = model::rider_from_args(args.flag("no_rider") ? "none" : args.text("rider", "seated"), args.real("rider_mass", 80.), args.real("rider_height", 1.8), args.optional_real("rider_inseam"));
     request.model.rider = std::move(rider);
@@ -183,6 +205,23 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     request.runtime.async_telemetry = args.flag("async_telemetry");
     request.runtime.tyre_threads = tyre_threads(args,physics.spatial.has_value());
     return owner;
+}
+void resolve_research_model(research::ResearchRequest& request, const Arguments& args,
+    configuration::SimulationPhysicsConfig& defaults, const Value& overrides) {
+    if (!args.has("physics_config")) spatial_arguments(defaults, args);
+    request.setup.model.physics = research::resolve_research_physics(defaults, file(args, "physics_config"), overrides);
+    // Explicit CLI selection overrides a loaded TOML extension, while an
+    // omitted --spatial leaves the TOML-selected mode unchanged.
+    spatial_arguments(*request.setup.model.physics, args, false);
+    if(args.present("spatial")||args.has("terrain3d"))
+        resolve_physics_into(*request.setup.model.physics,Value{Object{}});
+    require_spatial_capability(*request.setup.model.physics);
+    request.setup.runtime.tyre_threads = tyre_threads(args,request.setup.model.physics->spatial.has_value());
+    if (request.setup.model.physics->spatial) {
+        request.setup.model.spatial = request.setup.model.physics->spatial;
+        request.setup.track = spatial_placeholder_track();
+    } else request.setup.track = research::resolve_research_track(file(args, "track_file"), args.text("scenario"), file(args, "gen_spec"), args.text("seed"));
+    if (request.setup.model.physics->drive.transmission_model != "elastic_chain" && (args.has("chain_stiffness") || args.has("freehub_stiffness"))) throw ArgumentError("--chain-stiffness/--freehub-stiffness apply only to elastic_chain");
 }
 } // namespace
 
@@ -297,20 +336,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     add_number(drive, args, "chain_stiffness", "chain_k_n_m");
     add_number(drive, args, "freehub_stiffness", "freehub_k_nm_rad");
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", std::move(drive));
-    if (!args.has("physics_config")) spatial_arguments(*defaults, args);
-    request.setup.model.physics = research::resolve_research_physics(*defaults, file(args, "physics_config"), overrides);
-    // Explicit CLI selection overrides a loaded TOML extension, while an
-    // omitted --spatial leaves the TOML-selected mode unchanged.
-    spatial_arguments(*request.setup.model.physics, args, false);
-    if(args.present("spatial")||args.has("terrain3d"))
-        resolve_physics_into(*request.setup.model.physics,Value{Object{}});
-    require_spatial_capability(*request.setup.model.physics);
-    request.setup.runtime.tyre_threads = tyre_threads(args,request.setup.model.physics->spatial.has_value());
-    if (request.setup.model.physics->spatial) {
-        request.setup.model.spatial = request.setup.model.physics->spatial;
-        request.setup.track.name = "spatial-terrain";
-    } else request.setup.track = research::resolve_research_track(file(args, "track_file"), args.text("scenario"), file(args, "gen_spec"), args.text("seed"));
-    if (request.setup.model.physics->drive.transmission_model != "elastic_chain" && (args.has("chain_stiffness") || args.has("freehub_stiffness"))) throw ArgumentError("--chain-stiffness/--freehub-stiffness apply only to elastic_chain");
+    resolve_research_model(request, args, *defaults, overrides);
     request.experiment.control_period_s = args.real("control_period"); request.experiment.actuator_delay_s = args.real("actuator_delay");
     request.experiment.duration_s = args.real("duration"); request.experiment.seed_decimal = research::validate_seed(args.text("seed"));
     request.experiment.record_decimation = bounded_integer(args, "record_decimation", 80);
@@ -320,7 +346,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     request.sensors = args.flag("ideal_sensors") ? research::SensorConfig::ideal() : research::SensorConfig{};
     if (!args.flag("ideal_sensors")) request.sensors.delivery.latency_s = args.real("sensor_delay");
     request.sensors.sample_period_s = args.real("sensor_period");
-    if (request.setup.model.physics->spatial) {
+    if (request.setup.model.physics->spatial) { // NOLINT(bugprone-unchecked-optional-access) physics schema requires the field
         request.sensors_v2.sample_period_s = args.real("sensor_period");
         request.sensors_v2.maximum_read_period_s = request.experiment.control_period_s;
         request.sensors_v2.latency_s = args.flag("ideal_sensors") ? 0. : args.real("sensor_delay");

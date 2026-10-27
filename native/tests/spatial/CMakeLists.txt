@@ -200,7 +200,8 @@ if(BIKE_BUILD_GUI)
   set_tests_properties(spatial.viewer_smoke PROPERTIES LABELS "spatial;gui;slow" RUN_SERIAL TRUE)
 endif()
 
-foreach(_spatial_test IN ITEMS terrain_codec terrain_sampling terrain_raycast terrain_generator
+foreach(_spatial_test IN ITEMS harness baseline references contracts_registry
+    terrain_codec terrain_sampling terrain_raycast terrain_generator
     terrain_extrusion terrain_startup terrain_acceptance terrain_budget_300m topology frames model
     force_mapping drive rider grip road_preview runtime_state planar_bridge planar_bridge_long topology_negatives
     tyre_geometry tyre_carcass tyre_patches tyre_brush_fast tyre_brush_detailed tyre_writer

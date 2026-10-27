@@ -5,6 +5,7 @@
 #include "../terrain/asset3d.hpp"
 #include "../runtime/spatial_checkpoint.hpp"
 #include "../rider/steer_balance.hpp"
+#include <limits>
 
 namespace bike::replay {
 namespace {
@@ -58,26 +59,7 @@ std::vector<Value> stream(const recording::Recording& reader, const recording::T
     }
     return out;
 }
-ReplayInput database_input(const std::filesystem::path& path, std::optional<std::int64_t> episode) {
-    const recording::Recording reader(path);
-    const auto selected = reader.episode(episode);
-    if(reader.schema_version()==2) {
-        const auto summary=io::parse_recording_json(string(field(selected,"summary_json")));
-        if(const auto* research=find(summary,"research"))
-            if(const auto* available=find(*research,"checkpoint_final_available");available&&!io::as_bool(*available,"checkpoint_final_available"))
-                throw recording::RecordingError("checkpoint-unavailable: "+string(field(*research,"checkpoint_unavailable_reason")));
-    }
-    if (!io::as_bool(field(selected, "replay_eligible"), "replay_eligible"))
-        throw recording::RecordingError("failure/incomplete-prefix evidence is analyzable but not completed replay");
-    ReplayInput out; out.episode_id = count(field(selected, "episode_id")); out.container_schema_version = static_cast<int>(reader.schema_version()); out.replay_contract_version = reader.schema_version()==2 ? 4 : 3;
-    out.summary = io::parse_recording_json(string(field(selected, "summary_json")));
-    const std::array params{integer(out.episode_id)};
-    for (const auto& row : reader.rows("SELECT name,content FROM assets WHERE episode_id=? ORDER BY name", params))
-        out.assets.emplace(string(field(row, "name")), std::get<io::Bytes>(field(row, "content").data).value);
-    const auto recipe = io::parse_recording_json(asset_text(out, "recipe.json"));
-    const bool spatial=reader.schema_version()==2;
-    if(spatial) out.spatial_recipe=read_spatial_recipe(recipe);
-    if(!spatial) {
+void validate_planar_recipe(const Value& recipe) {
     std::set<std::string> expected_recipe{"replay_contract_version", "start_x_m", "heightfield", "state_signature", "execution"};
     for (auto key : {"joint_envelope_file", "joint_strength_file"}) if (find(recipe, key)) expected_recipe.insert(key);
     exact_keys(recipe, expected_recipe, "replay recipe");
@@ -85,30 +67,16 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
         throw recording::RecordingError("invalid replay contract 3 recipe");
     (void)io::as_double(field(recipe, "start_x_m"), "start_x_m"); (void)io::as_object(field(recipe, "heightfield"), "heightfield");
     validate_execution(field(recipe,"execution"));
-    }
-    const auto& execution=spatial?field(out.summary,"execution"):field(recipe,"execution");
-    validate_execution(execution);
-    if(spatial && out.spatial_recipe->execution_identity_sha256!=string(field(execution,"execution_identity")))
-        throw recording::RecordingError("spatial recipe execution identity differs from summary");
-    const auto& research = field(out.summary, "research");
-    if (!equal(field(research, "execution"), execution)) throw recording::RecordingError("summary and recipe execution identities disagree");
-    for (auto key : {"source_changed_during_run", "configuration_changed_during_run", "execution_changed_during_run"})
-        if (!find(research, key) || !std::holds_alternative<bool>(field(research, key).data) || io::as_bool(field(research, key), key))
-            throw recording::RecordingError(std::string("exact replay requires a checked unchanged identity: ") + key);
-    if (const auto* error = find(research, "error"); error && !io::is_null(*error) && (!std::holds_alternative<std::string>(error->data) || !string(*error).empty()))
-        throw recording::RecordingError("failed recording is not replay eligible");
-    if (const auto* metadata = find(research, "run_metadata"))
-        if (const auto* changed = find(*metadata, "policy_source_changed_during_run"); changed && !io::is_null(*changed) && io::as_bool(*changed, "policy changed"))
-            throw recording::RecordingError("policy identity changed during recording");
-    const auto resolved = io::parse_recording_json(asset_text(out, "resolved_config.json"));
-    if (!equal(resolved, field(out.summary, "resolved_config"))) throw recording::RecordingError("bundled and summarized resolved configurations disagree");
-    const auto& articulated = field(field(resolved, "physics"), "articulated");
+}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
+void validate_bundled_assets(const ReplayInput& out, bool spatial, const Value& recipe,
+    const Value& resolved, const Value& articulated) {
     std::set<std::string> expected_assets=spatial
         ? std::set<std::string>{"model.mjb","track.toml","resolved_config.json","recipe.json","spatial/terrain_source.json","spatial/config.json","spatial/calibration.json","spatial/checkpoint_initial.json","spatial/checkpoint_final.json"}
         : std::set<std::string>{"track.toml", "terrain_vertices.npy", "resolved_config.json", "recipe.json"};
-    if(spatial && out.spatial_recipe->terrain_kind==terrain::Terrain3dKind::grid) expected_assets.insert("spatial/terrain.terrain3d");
+    if(spatial && out.spatial_recipe->terrain_kind==terrain::Terrain3dKind::grid) expected_assets.insert("spatial/terrain.terrain3d"); // NOLINT(bugprone-unchecked-optional-access) spatial_recipe is parsed iff the recording is spatial
     if(spatial) {
-        const auto* path=find(articulated,"shoulder_profile");const bool required=path&&!io::is_null(*path);
+        const auto* shoulder=find(articulated,"shoulder_profile");const bool required=shoulder&&!io::is_null(*shoulder);
         if(required!=out.assets.contains("spatial/shoulder_profile.json"))throw recording::RecordingError("spatial shoulder profile bundle differs from configuration");
         if(required) {
             expected_assets.insert("spatial/shoulder_profile.json");
@@ -143,35 +111,17 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
     }
     std::set<std::string> actual_assets; for (const auto& [name, ignored] : out.assets) { (void)ignored; actual_assets.insert(name); }
     if (actual_assets != expected_assets) throw recording::RecordingError("replay recipe must own exactly its fixed input assets");
-    const auto& extents = field(out.summary, "recording_extents");
-    for (auto key : {"physical_rows", "complete_control_steps", "replay_eligible"})
-        if (!equal(field(extents, key), field(selected, key))) throw recording::RecordingError(std::string("summary and database extents disagree: ") + key);
+}
+void compose_manifest(ReplayInput& out, const recording::Recording& reader, bool spatial,
+    const Value& recipe, const Value& execution) {
     out.manifest = spatial ? Value{Object{{"schema_version",integer(4)},{"execution",execution},{"container_schema_version",integer(2)},{"container_manifest",reader.manifest()},{"episode_id",integer(out.episode_id)}}} : Value{Object{{"schema_version", integer(3)}, {"start_x_m", field(recipe, "start_x_m")}, {"heightfield", field(recipe, "heightfield")},
         {"state_signature", field(recipe, "state_signature")}, {"execution", execution}, {"container_schema_version", integer(1)},
         {"container_manifest", reader.manifest()}, {"episode_id", integer(out.episode_id)}}};
     for (auto key : {"joint_envelope_file", "joint_strength_file"}) if (const auto* value = find(recipe, key)) set(out.manifest, key, *value);
-    out.requested = stream(reader, recording::table_spec("commands_requested",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
-    out.applied = stream(reader, recording::table_spec("commands_applied",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
-    out.observations = stream(reader, recording::table_spec("observations",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
-    out.transitions = stream(reader, recording::table_spec("transitions",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
-    for (std::size_t i = 0; i < out.transitions.size(); ++i) {
-        auto& row = std::get<Object>(out.transitions[i].data);
-        if (count(pop(row, "request_id")) != static_cast<std::int64_t>(i) || count(pop(row, "previous_observation_id")) != static_cast<std::int64_t>(i) ||
-            count(pop(row, "observation_id")) != static_cast<std::int64_t>(i) + 1 || i + 1 >= out.observations.size())
-            throw recording::RecordingError("inconsistent transition observation/request references");
-        set(row, "observation", out.observations[i + 1]);
-    }
-    command_shapes(out);
-    std::set<std::string> phases;
-    for (const auto& row : reader.rows("SELECT phase,state FROM integration_states WHERE episode_id=?", params)) {
-        const auto phase = string(field(row, "phase")); if (!phases.insert(phase).second) throw recording::RecordingError("duplicate integration state phase");
-        if (phase == "initial") out.initial_state = double_vector(field(row, "state"), "initial state");
-        else if (phase == "final") out.final_state = double_vector(field(row, "state"), "final state");
-        else throw recording::RecordingError("unknown integration state phase");
-    }
-    if (out.initial_state.empty() || out.final_state.size() != out.initial_state.size()) throw recording::RecordingError("invalid initial/final integration state for checked replay");
+}
+void validate_terrain_identity(ReplayInput& out, bool spatial, const Value& resolved) {
     if(spatial) {
-        const auto& recipe4=*out.spatial_recipe;
+        const auto& recipe4=*out.spatial_recipe; // NOLINT(bugprone-unchecked-optional-access) spatial_recipe is parsed iff the recording is spatial
         const auto source=io::parse_recording_json(asset_text(out,"spatial/terrain_source.json"));
         exact_keys(source,{"kind","sha256","corridor","source_track_toml"},"spatial terrain source");
         if(string(field(source,"sha256"))!=recipe4.terrain_sha256_hex ||
@@ -200,6 +150,70 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
     const auto canonical = io::double_array(out.terrain_vertices, {out.terrain_vertices.size() / 2, 2});
     if (io::sha256(canonical.bytes) != string(field(out.summary, "terrain_sha256"))) throw recording::RecordingError("terrain identity differs from the bundled compiled road");
     }
+}
+ReplayInput database_input(const std::filesystem::path& path, std::optional<std::int64_t> episode) {
+    const recording::Recording reader(path);
+    const auto selected = reader.episode(episode);
+    if(reader.schema_version()==2) {
+        const auto summary=io::parse_recording_json(string(field(selected,"summary_json")));
+        if(const auto* research=find(summary,"research"))
+            if(const auto* available=find(*research,"checkpoint_final_available");available&&!io::as_bool(*available,"checkpoint_final_available"))
+                throw recording::RecordingError("checkpoint-unavailable: "+string(field(*research,"checkpoint_unavailable_reason")));
+    }
+    if (!io::as_bool(field(selected, "replay_eligible"), "replay_eligible"))
+        throw recording::RecordingError("failure/incomplete-prefix evidence is analyzable but not completed replay");
+    ReplayInput out; out.episode_id = count(field(selected, "episode_id")); out.container_schema_version = static_cast<int>(reader.schema_version()); out.replay_contract_version = reader.schema_version()==2 ? 4 : 3;
+    out.summary = io::parse_recording_json(string(field(selected, "summary_json")));
+    const std::array params{integer(out.episode_id)};
+    for (const auto& row : reader.rows("SELECT name,content FROM assets WHERE episode_id=? ORDER BY name", params))
+        out.assets.emplace(string(field(row, "name")), std::get<io::Bytes>(field(row, "content").data).value);
+    const auto recipe = io::parse_recording_json(asset_text(out, "recipe.json"));
+    const bool spatial=reader.schema_version()==2;
+    if(spatial) out.spatial_recipe=read_spatial_recipe(recipe);
+    if(!spatial) validate_planar_recipe(recipe);
+    const auto& execution=spatial?field(out.summary,"execution"):field(recipe,"execution");
+    validate_execution(execution);
+    if(spatial && out.spatial_recipe->execution_identity_sha256!=string(field(execution,"execution_identity")))
+        throw recording::RecordingError("spatial recipe execution identity differs from summary");
+    const auto& research = field(out.summary, "research");
+    if (!equal(field(research, "execution"), execution)) throw recording::RecordingError("summary and recipe execution identities disagree");
+    for (auto key : {"source_changed_during_run", "configuration_changed_during_run", "execution_changed_during_run"})
+        if (!find(research, key) || !std::holds_alternative<bool>(field(research, key).data) || io::as_bool(field(research, key), key))
+            throw recording::RecordingError(std::string("exact replay requires a checked unchanged identity: ") + key);
+    if (const auto* error = find(research, "error"); error && !io::is_null(*error) && (!std::holds_alternative<std::string>(error->data) || !string(*error).empty()))
+        throw recording::RecordingError("failed recording is not replay eligible");
+    if (const auto* metadata = find(research, "run_metadata"))
+        if (const auto* changed = find(*metadata, "policy_source_changed_during_run"); changed && !io::is_null(*changed) && io::as_bool(*changed, "policy changed"))
+            throw recording::RecordingError("policy identity changed during recording");
+    const auto resolved = io::parse_recording_json(asset_text(out, "resolved_config.json"));
+    if (!equal(resolved, field(out.summary, "resolved_config"))) throw recording::RecordingError("bundled and summarized resolved configurations disagree");
+    const auto& articulated = field(field(resolved, "physics"), "articulated");
+    validate_bundled_assets(out, spatial, recipe, resolved, articulated);
+    const auto& extents = field(out.summary, "recording_extents");
+    for (auto key : {"physical_rows", "complete_control_steps", "replay_eligible"})
+        if (!equal(field(extents, key), field(selected, key))) throw recording::RecordingError(std::string("summary and database extents disagree: ") + key);
+    compose_manifest(out, reader, spatial, recipe, execution);
+    out.requested = stream(reader, recording::table_spec("commands_requested",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
+    out.applied = stream(reader, recording::table_spec("commands_applied",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
+    out.observations = stream(reader, recording::table_spec("observations",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
+    out.transitions = stream(reader, recording::table_spec("transitions",spatial?recording::CatalogVersion::spatial2:recording::CatalogVersion::planar1), out.episode_id);
+    for (std::size_t i = 0; i < out.transitions.size(); ++i) {
+        auto& row = std::get<Object>(out.transitions[i].data);
+        if (count(pop(row, "request_id")) != static_cast<std::int64_t>(i) || count(pop(row, "previous_observation_id")) != static_cast<std::int64_t>(i) ||
+            count(pop(row, "observation_id")) != static_cast<std::int64_t>(i) + 1 || i + 1 >= out.observations.size())
+            throw recording::RecordingError("inconsistent transition observation/request references");
+        set(row, "observation", out.observations[i + 1]);
+    }
+    command_shapes(out);
+    std::set<std::string> phases;
+    for (const auto& row : reader.rows("SELECT phase,state FROM integration_states WHERE episode_id=?", params)) {
+        const auto phase = string(field(row, "phase")); if (!phases.insert(phase).second) throw recording::RecordingError("duplicate integration state phase");
+        if (phase == "initial") out.initial_state = double_vector(field(row, "state"), "initial state");
+        else if (phase == "final") out.final_state = double_vector(field(row, "state"), "final state");
+        else throw recording::RecordingError("unknown integration state phase");
+    }
+    if (out.initial_state.empty() || out.final_state.size() != out.initial_state.size()) throw recording::RecordingError("invalid initial/final integration state for checked replay");
+    validate_terrain_identity(out, spatial, resolved);
     std::int64_t completed = 0;
     for (std::size_t i = 0; i < out.transitions.size(); ++i) {
         if (count(field(out.requested[i], "step")) != completed) throw recording::RecordingError("requested controls do not cover consecutive physical windows");

@@ -94,6 +94,7 @@ def _native_build_provenance(root):
             'address': cache.get('NATIVE_SANITIZE', False),
             'realtime': cache.get('NATIVE_RTSAN', False),
             'coverage': cache.get('NATIVE_COVERAGE', False),
+            'thread': cache.get('NATIVE_TSAN', False),
         }
     provenance['sanitizer_runtime'] = os.environ.get(
         'NATIVE_TEST_SANITIZER_RUNTIME')

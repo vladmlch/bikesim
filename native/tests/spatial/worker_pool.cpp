@@ -1,12 +1,14 @@
 #include "support/migration_test.hpp"
 #include "runtime/spatial_worker_pool.hpp"
 #include "allocation_faults.hpp"
+#include "platform/argv.hpp"
 
 #include <array>
 #include <atomic>
 #include <barrier>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
@@ -46,10 +48,13 @@ void blocked(void* raw,std::size_t begin,std::size_t end) noexcept {
 }
 void no_work(void* raw,std::size_t begin,std::size_t end) noexcept {(void)raw;(void)begin;(void)end;}
 struct AllocationLane {std::size_t allocations=0,frees=0;};
+// A span, not a raw pointer: lane slots are indexed by range begin, and a bare
+// pointer subscript is rejected by -Wunsafe-buffer-usage under -Werror.
+struct AllocationLanes {std::span<AllocationLane> slots;};
 void reset_allocations(void*,std::size_t,std::size_t) noexcept {allocation_counter::reset();}
 void capture_allocations(void* raw,std::size_t begin,std::size_t) noexcept {
-    auto* lanes=static_cast<AllocationLane*>(raw);
-    lanes[begin]={allocation_counter::count(),allocation_counter::freed()};
+    auto& lanes=*static_cast<AllocationLanes*>(raw);
+    lanes.slots[begin]={allocation_counter::count(),allocation_counter::freed()};
 }
 void allocate_control(void*,std::size_t,std::size_t) noexcept {
     void* pointer=::operator new(1,std::nothrow);
@@ -59,16 +64,17 @@ void warm_allocations(unsigned threads) {
     WorkerPool pool(threads);
     const auto ranges=partition_ranges(threads,threads);
     std::array<AllocationLane,8> lanes{};
+    AllocationLanes capture{lanes};
     pool.run(ranges,no_work,nullptr);
     pool.run(ranges,reset_allocations,nullptr);
     for(unsigned generation=0;generation<64;++generation)pool.run(ranges,no_work,nullptr);
-    pool.run(ranges,capture_allocations,lanes.data());
+    pool.run(ranges,capture_allocations,&capture);
     for(unsigned i=0;i<threads;++i)
         bt::require(lanes[i].allocations==0&&lanes[i].frees==0,
             "warmed pool dispatch/completion allocates or frees on neither caller nor worker threads");
     pool.run(ranges,reset_allocations,nullptr);
     pool.run(ranges,allocate_control,nullptr);
-    pool.run(ranges,capture_allocations,lanes.data());
+    pool.run(ranges,capture_allocations,&capture);
     for(unsigned i=0;i<threads;++i)
         bt::require(lanes[i].allocations==1&&lanes[i].frees==1,
             "per-thread allocation instrumentation detects the explicit negative control on every pool lane");
@@ -160,7 +166,11 @@ void cases() {
 }
 }
 int main(int argc,char** argv) {
-    if(argc==2 && std::string_view(argv[1])=="--tsan-race-control")return bt::run(race_control);
-    if(argc!=1)return 2;
+    // The shared wrapper keeps raw argv subscripting out of the test under
+    // -Wunsafe-buffer-usage. "--tsan-race-control" is the argument contract
+    // named by BIKE_CAP_TSAN_VIOLATION_CONTROL in BikeCompilerPolicy.cmake.
+    const auto arguments=bike::platform::main_arguments(argc,argv);
+    if(arguments.size()==2 && std::string_view(arguments[1])=="--tsan-race-control")return bt::run(race_control);
+    if(arguments.size()!=1)return 2;
     return bt::run(cases);
 }

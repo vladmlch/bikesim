@@ -12,6 +12,7 @@
 #include "../runtime/provenance.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../rider/allocation.hpp"
+#include "../rider/steer_balance.hpp"
 #include "../terrain/trackfile.hpp"
 #include "../terrain/asset3d.hpp"
 #include "../terrain/source3d.hpp"
@@ -23,9 +24,22 @@
 #include <bit>
 #include <cctype>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <filesystem>
 #include <fstream>
+#include <memory>
+#include <optional>
 #include <ranges>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
 
 namespace bike::research {
 namespace {
@@ -142,7 +156,11 @@ io::Value physical_configuration_metadata(const initialization::SetupRequest& re
         {"geometry_and_suspension", field(inputs, "specs")}, {"mass_budget", field(inputs, "mass_specs")},
         {"rider", field(inputs, "rider")}, {"target_speed_kmh", physics.drive_mode == "ideal_speed_control" ? real(request.runtime.speed_kph) : Value{}},
         {"terrain_sha256", text(hash)}, {"seed", seed},
-        {"track", terrain::track_to_dict(request.track)}, {"active_suspension", active_suspension(request.model.bike)}}};
+        // Under spatial the request track is a name-only label; the physical
+        // identity is terrain_sha256 and the spatial extension above. Keep
+        // the key present so the resolved-config contract is stable.
+        {"track", bootstrap.config.spatial ? Value{} : terrain::track_to_dict(request.track)},
+        {"active_suspension", active_suspension(request.model.bike)}}};
     for (const auto& [name, value] : io::as_object(startup.compiled_metadata, "compiled metadata")) set(resolved, name, value);
     set(resolved, "allocation_numerical_guards", Value{Object{{"support_force_n", real(1e-5)},
         {"support_moment_nm", real(1e-6)}, {"grip_radius_fraction", real(1e-6)}}});
@@ -257,7 +275,7 @@ io::Value identity_receipt(const io::Value& metadata) {
             const auto& steer=field(*spatial_source,"steer");
             if(io::as_string(field(steer,"controller"),"steer.controller")!="off" &&
                !rider::builtin_steer_profile(io::as_string(field(steer,"profile_id"),"steer.profile_id"))) {
-                auto config=spatial::spatial_config_from_wire(field(metadata,"spatial"));
+                const auto config=spatial::spatial_config_from_wire(field(metadata,"spatial"));
                 // The resolver checks both the saved content hash and the
                 // cap/delay contract; a changed or missing file fails closed.
                 (void)runtime::resolved_steer_profile(config.steer);
@@ -346,8 +364,28 @@ std::vector<runtime::ResearchAsset> snapshot_spatial_assets(const initialization
     if(!bootstrap.config.spatial || !bootstrap.config.terrain3d || !bootstrap.state.spatial)
         throw std::invalid_argument("spatial assets require complete bootstrap/terrain");
     const auto& source_owner=*bootstrap.config.terrain3d;
-    const auto track=terrain::dump_track(request.track);
-    Value source{Object{{"kind",text(source_owner.kind()==terrain::Terrain3dKind::grid?"grid":"profile_extrusion")},
+    std::string track;
+    if(const auto* extrusion=source_owner.extrusion()) {
+        // Checked replay rebuilds a profile extrusion by re-reading the staged
+        // track.toml and fingerprinting those bytes as source_utf8; a canonical
+        // reserialization would alter them and break source identity. Stage the
+        // exact bytes the loader fingerprinted instead.
+        track=io::as_string(field(extrusion->source(),"source_utf8"),"source_utf8");
+    } else {
+        // Checked replay requires a track.toml asset for every spatial
+        // recording (replay/input.cpp) and parses it back into the rebuilt
+        // request (replay/rebuild.cpp). For a grid source the physical
+        // identity is the terrain asset itself, so stage only the
+        // longitudinal domain the terrain owns — a real extent and its
+        // provenance name, never a fabricated planar ride track.
+        terrain::TrackSpec domain;
+        const auto stem=bootstrap.config.spatial->terrain.path.stem().string();
+        domain.name=stem.empty()?"spatial-terrain":stem;
+        domain.description="spatial terrain longitudinal domain; not a planar ride track";
+        domain.length_m=source_owner.x_max_m();
+        track=terrain::dump_track(domain);
+    }
+    const Value source{Object{{"kind",text(source_owner.kind()==terrain::Terrain3dKind::grid?"grid":"profile_extrusion")},
         {"sha256",text(source_owner.fingerprint_hex())},{"corridor",real(source_owner.half_width_m())},
         {"source_track_toml",source_owner.kind()==terrain::Terrain3dKind::profile_extrusion?text(track):Value{}}}};
     std::vector<runtime::ResearchAsset> out;
@@ -364,7 +402,7 @@ std::vector<runtime::ResearchAsset> snapshot_spatial_assets(const initialization
         // expand a valid near-limit source beyond the resolver's 1 MiB cap.
         // Validate this very snapshot, not a second read of the pathname.
         std::ifstream input(steer.profile_id,std::ios::binary|std::ios::ate);
-        if(!input || input.tellg()<0 || input.tellg()>1024*1024)
+        if(!input || static_cast<std::streamoff>(input.tellg())<0 || std::cmp_greater(static_cast<std::streamoff>(input.tellg()),io::kExternalSteerProfileBoundBytes))
             throw std::invalid_argument("steer profile: unreadable or oversized recording source");
         std::string content(static_cast<std::size_t>(input.tellg()),'\0');input.seekg(0);
         input.read(content.data(),static_cast<std::streamsize>(content.size()));

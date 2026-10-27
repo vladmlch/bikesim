@@ -4,6 +4,8 @@ physics_mode = "physical"
 drive_mode = "articulated_effort"
 spatial = "3d"
 timestep_s = 0.00125
+# validate.cpp requires closure_time_constant_s >= 2*timestep_s; the .001 s default is below 2*.00125 s.
+closure_time_constant_s = 0.0025
 control_period_s = 0.005
 initial_speed_mps = 3.0
 initial_front_brake = 0.0
@@ -29,7 +31,8 @@ shoulder_profile = "../research/profiles/spatial-shoulder.json"
 
 [spatial_3d]
 root = "free"
-corridor_half_width_m = 1.5
+# Must equal performance_flat.toml half_width_m: load_terrain3d_source rejects a genspec whose width differs from the corridor.
+corridor_half_width_m = 6.0
 capsize_roll_rad = 1.0471975511965976
 [spatial_3d.steer]
 controller = "roll_heading"

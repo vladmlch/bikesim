@@ -154,8 +154,8 @@ std::string decoded_digest(std::span<const double> values) {
     std::string hex;
     hex.reserve(64);
     for (const auto byte : digest.finish()) {
-        hex.push_back(alphabet[byte >> 4U]);
-        hex.push_back(alphabet[byte & 0xfU]);
+        hex.push_back(alphabet[static_cast<std::size_t>(byte >> 4U)]);
+        hex.push_back(alphabet[static_cast<std::size_t>(byte & 0xfU)]);
     }
     return hex;
 }

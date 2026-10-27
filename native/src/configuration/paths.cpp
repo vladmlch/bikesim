@@ -104,7 +104,7 @@ void resolve_config_paths(bike::io::Value& values,
         ? nullptr : std::get_if<Value::Object>(&spatial->data);
     if (spatial_object == nullptr) return;
     if(Value* steer=find_mut(*spatial_object,"steer"))if(auto* section=std::get_if<Value::Object>(&steer->data)) {
-        if(Value* profile=find_mut(*section,"profile_id"))if(auto* id=std::get_if<std::string>(&profile->data)) {
+        if(Value* profile=find_mut(*section,"profile_id"))if(const auto* id=std::get_if<std::string>(&profile->data)) {
             if(!id->empty() && *id!="roll-heading-v1" && *id!="steer-provisional-v1")
                 resolve_member_in_place(*section,"profile_id",directory);
         }
@@ -121,6 +121,8 @@ void resolve_config_paths(bike::io::Value& values,
                                "spatial_3d.terrain.path", "string path");
     // An empty path is the canonical kind='none' source spelling. It must
     // remain empty so validation never turns it into a directory asset.
+    // kind_error() is [[noreturn]] — `spelling` is non-null on this path.
+    // cppcheck-suppress nullPointerRedundantCheck
     if (spelling->empty()) return;
     const std::filesystem::path file(*spelling);
     if (!file.is_absolute())

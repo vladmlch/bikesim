@@ -30,7 +30,8 @@ public:
     runtime::RideControl act_v2(const runtime::spatial::SensorObservationV2& observation,std::optional<double> demand) override {
         validate_policy_input(observation,demand);runtime::RideControl control;
         control.motor_torque_nm=zero_?std::optional(0.):zero_missing_?std::optional(demand.value_or(0.)):demand;
-        if(limit_)control.motor_limit_nm=40.;return control;
+        if(limit_)control.motor_limit_nm=40.;
+        return control;
     }
     io::Value metadata() const override {
         return Value{Object{{"reference", text(name_)}, {"class", text("native::" + name_)},

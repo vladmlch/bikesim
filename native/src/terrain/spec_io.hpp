@@ -66,7 +66,7 @@ inline std::string source_spec_hash(const bike::io::Value& value){
     // Unicode/float codec enters this source hash boundary.
     const auto compact=bike::io::canonical_json(value);std::string text;text.reserve(compact.size()*2);
     bool quoted=false,escaped=false;
-    for(char c:compact){text.push_back(c);if(quoted){if(escaped)escaped=false;else if(c=='\\')escaped=true;else if(c=='"')quoted=false;}else if(c=='"')quoted=true;else if(c==','||c==':')text.push_back(' ');}
+    for(const char c:compact){text.push_back(c);if(quoted){if(escaped)escaped=false;else if(c=='\\')escaped=true;else if(c=='"')quoted=false;}else if(c=='"')quoted=true;else if(c==','||c==':')text.push_back(' ');}
     return bike::io::sha256(std::as_bytes(std::span(text.data(),text.size())));
 }
 } // namespace bike::terrain::detail

@@ -493,9 +493,13 @@ namespace writers {
         std::array<int, kSideCount> grip_eq_{-1, -1};
         // Owned per-step scratch — the oracle's self._jac_a/_jac_b plus the
         // np.zeros(nv) qfrc accumulator (sized at construction).
+        // transport_ is evaluate()'s `jrel.T @ f` product buffer — the
+        // two-ufunc contract needs it rounded before the +=, and each
+        // dgemv(beta=0) overwrites it completely ahead of the read.
         std::vector<double> jac_a_;
         std::vector<double> jac_b_;
         std::vector<double> qfrc_;
+        std::vector<double> transport_;
         rider::EqualityReactions equality_;
         // T3b-2 measurement scratch: the DGELSD workspace behind
         // attachment_sample / attachment_raw_from_geometry's validation

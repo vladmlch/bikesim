@@ -23,7 +23,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
     if(!c.physical()) throw std::invalid_argument("physical topology cannot modify the legacy model");
     const auto& cfg=*c.physics;const auto& drive=cfg.drive;
     auto& steer=required(root,"body","steer");
-    const bool spatial_free=c.spatial() && c.physics->spatial->root==bike::spatial::RootKind::free6;
+    const bool spatial_free=c.spatial() && c.physics->spatial->root==bike::spatial::RootKind::free6; // NOLINT(bugprone-unchecked-optional-access) c.spatial() guarantees physics->spatial engagement
     if(!spatial_free) for(auto* value:steer.direct("joint")) if(value->get("name")=="steer_joint") (void)steer.remove(value);
     if(auto* sensors=root.child("sensor"); sensors && !spatial_free) {
         std::vector<Element*> remove;

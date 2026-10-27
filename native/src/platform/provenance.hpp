@@ -33,6 +33,15 @@ namespace bike::platform {
 // working; in a developer build it resolves to the build root's parent.
 [[nodiscard]] std::filesystem::path install_prefix();
 
+// The lower-case "<system>-<machine>" key naming per-platform runtime
+// artifacts — the same axis as Python's
+// platform.system().lower() + "-" + platform.machine() and the test-side
+// BIKE_GOLDEN_PLATFORM/initial_state/<platform>/ directory convention.
+// Explicit t=0 transfer documents are platform-bound (their contract pins
+// compiled-model arrays), so request readers prefer a capture inside a
+// sibling directory named by this key.
+[[nodiscard]] std::string key();
+
 struct BuildIdentity {
     // ---- numerical-execution axis (digested by execution_identity()) ----
     std::string compiler;        // configured compiler id + version

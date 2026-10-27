@@ -153,7 +153,7 @@ std::optional<SpatialPresentation> spatial_read(const Value& value,bool expected
 bike::io::Value encode_presentation_checkpoint(const PresentationState& state) {
     Object scalar,flags,model;Array supports,joints,addresses;
     for(const auto& [name,member]:scalar_fields)scalar.emplace_back(name,real(state.*member));
-    for(const auto& [name,member]:flag_fields)flags.emplace_back(name,Value{state.*member});
+    for(const auto& [name,member]:flag_fields){const bool flag=state.*member;flags.emplace_back(name,Value{flag});}
     for(const auto& support:state.supports)supports.push_back(Value{Object{{"in_platform",Value{support.in_platform}},
         {"normal_load_n",real(support.normal_load_n)},{"gap_m",real(support.gap_m)}}});
     for(const auto& [name,angle]:state.joints)joints.push_back(Value{Object{{"name",text(name)},{"angle_rad",real(angle)}}});

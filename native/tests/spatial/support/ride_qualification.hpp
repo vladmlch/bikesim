@@ -595,6 +595,9 @@ inline Report run(OwnedStartup& fixture,double duration,std::span<const Demand> 
     const auto start=rt.snapshot();const double start_x=observe(rt).position[0];
     auto preceding=observe(rt);
     const auto steps=static_cast<std::int64_t>(std::llround(duration/dt));
+    // The last step reports valid_duration=duration, so a non-whole-step duration would count unsimulated time as valid.
+    if(std::abs(static_cast<double>(steps)*dt-duration)>1e-9*std::max(1.,duration))
+        throw std::invalid_argument("qualification duration must be an integer number of physics steps");
     std::size_t at=0;
     for(std::int64_t i=1;i<=steps;++i) {
         const double time=start.time_s+static_cast<double>(i-1)*dt;
@@ -611,7 +614,9 @@ inline Report run(OwnedStartup& fixture,double duration,std::span<const Demand> 
         if((point.load>1e-6)!=(preceding.load>1e-6))report.events.push_back({point.load>1e-6?"landing":"airborne",point.time});
         if((point.max_rim>0.)!=(preceding.max_rim>0.))report.events.push_back({point.max_rim>0.?"rim_on":"rim_off",point.time});
         report.mean_load+=point.load;report.peak_load=std::max(report.peak_load,point.load);++report.samples;
-        if(point.valid && report.invalid_ticks==0)report.valid_duration=std::min(duration,static_cast<double>(i)*dt);
+        // The last step closes the requested interval exactly: i*dt for i==steps can round a
+        // few ulp below `duration`, which would make valid_duration==requested_duration fail spuriously.
+        if(point.valid && report.invalid_ticks==0)report.valid_duration=i==steps?duration:std::min(duration,static_cast<double>(i)*dt);
         report.completed_distance=point.position[0]-start_x;
         const bool distance_complete=requested_distance>0. && report.completed_distance>=requested_distance;
         if(i%decimation==0 || result.outcome || i==steps || distance_complete)report.points.push_back(point);

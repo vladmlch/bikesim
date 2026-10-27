@@ -33,7 +33,9 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -113,8 +115,10 @@ double seconds(SteadyClock::time_point start, SteadyClock::time_point end) {
 std::vector<std::byte> complete_bytes(runtime::NativeRideRuntime& live) {
     auto result = spatial_tests::complete_physics_state_bytes(live);
     const auto append = [&](std::span<const std::byte> bytes) {
-        const std::uint64_t size = bytes.size();
-        const auto header = std::as_bytes(std::span{&size, std::size_t{1}});
+        // An array owner, not span(&size, 1): the pointer+count span
+        // constructor is flagged by -Wunsafe-buffer-usage-in-container.
+        const std::array<std::uint64_t, 1> size{bytes.size()};
+        const auto header = std::as_bytes(std::span{size});
         result.insert(result.end(), header.begin(), header.end());
         result.insert(result.end(), bytes.begin(), bytes.end());
     };

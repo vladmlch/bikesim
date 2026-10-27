@@ -65,7 +65,7 @@
       "sample_period_s": 0.005,
       "torque_std_nm": 0.05
     },
-    "start_position_m": 2.010643980251582,
+    "start_position_m": 2.0100312622079275,
     "startup_control": {
       "crank_target_rate_rad_s": null,
       "human_torque_nm": null,
@@ -87,16 +87,16 @@
       {
         "crank_rad_s": -0.0042743829311977476,
         "front_wheel_rad_s": -0.0076608782387878075,
-        "human_torque_nm": 4.408854678645065,
+        "human_torque_nm": 0.009309995507962398,
         "motor_torque_nm": -0.006464675719399796,
         "pitch_rate_up_rad_s": -0.0020254286244773163,
         "rear_wheel_rad_s": 0.00708975897188535,
         "source_time_s": 0.0,
         "specific_force_body_mps2": {
           "$tuple": [
-            0.051655240085060325,
+            -0.13098647069214636,
             0.005121182798484943,
-            10.020831016099958
+            9.916030251126925
           ]
         },
         "time_s": 0.0,

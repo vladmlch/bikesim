@@ -17,7 +17,7 @@ inline constexpr std::uint32_t kTerrain3dVersion = 1;
 inline constexpr std::uint32_t kTerrain3dHeaderBytes = 112;
 
 struct Terrain3dLoadLimits {
-    std::uint64_t max_total_bytes = 1ull << 30;
+    std::uint64_t max_total_bytes = 1ull << 30u;
     std::uint64_t max_nodes = 100'000'000;
 };
 

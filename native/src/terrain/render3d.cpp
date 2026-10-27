@@ -9,6 +9,7 @@
 
 namespace bike::terrain {
 namespace {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (a, b) mirrors the interval-endpoint argument order
 std::array<double, 4> integral_powers(double a, double b) noexcept {
     std::array<double, 4> out{};
     double pa = a, pb = b;
@@ -18,6 +19,7 @@ std::array<double, 4> integral_powers(double a, double b) noexcept {
     }
     return out;
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (xa, xb, ya, yb) mirrors the rectangle-corner argument order
 double area_mean(const Grid3d& grid, double xa, double xb, double ya, double yb) noexcept {
     const auto& d = grid.descriptor();
     const double ua = (xa - d.x0_m) / d.dx_m, ub = (xb - d.x0_m) / d.dx_m;
@@ -48,7 +50,7 @@ RenderGrid3d make_render_grid(const Terrain3dSource& source, RenderResolution re
     constexpr auto bytes_per_sample = sizeof(float) + sizeof(double);
     if (rows > std::numeric_limits<std::size_t>::max() / columns ||
         rows * columns > std::numeric_limits<std::size_t>::max() / bytes_per_sample ||
-        rows * columns > (512ull << 20) / bytes_per_sample)
+        rows * columns > (512ull << 20U) / bytes_per_sample)
         throw std::invalid_argument("terrain3d.render.resolution: raster exceeds resource limit");
     RenderGrid3d out;
     out.nrow = resolution.nrow; out.ncol = resolution.ncol; out.resolution = resolution;
@@ -82,7 +84,7 @@ RenderGrid3d make_render_grid(const Terrain3dSource& source, RenderResolution re
             for (std::size_t row = 0; row < rows; ++row) heights[row * columns + column] = sampled.height_m;
         }
     }
-    const auto [minimum, maximum] = std::minmax_element(heights.begin(), heights.end());
+    const auto [minimum, maximum] = std::ranges::minmax_element(heights);
     out.z_min_m = *minimum; out.z_max_m = *maximum;
     const double span = out.z_max_m - out.z_min_m;
     for (std::size_t i = 0; i < heights.size(); ++i) {

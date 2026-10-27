@@ -143,10 +143,54 @@ double finalization_elapsed(double started) {
     return elapsed;
 }
 } // namespace
-[[gnu::noinline]] io::Value viewer_performance_value(const viewer::PacingReport& pacing, const io::Value& summary,
-    const ViewerFinalizationTimes& finalization, bool fast_profile, bool strict, bool recording_enabled) {
+namespace {
+// The report literal materializes dozens of Value temporaries; its own frame
+// keeps the caller inside the strict stack bound.
+io::Value viewer_performance_object(const viewer::PacingReport& pacing,
+    const ViewerFinalizationTimes& finalization, bool strict, bool recording_enabled,
+    bool eligible, double total_s, const std::optional<double>& total_rtf, Array reasons) {
     const auto optional_real = [](std::optional<double> value) { return value ? real(*value) : Value{}; };
     const auto counter = [](std::uint64_t value) { return Value{io::Number{std::to_string(value)}}; };
+    return Value{Object{
+        {"viewer_performance_schema", integer(1)},
+        {"measurement_scope", text("first viewer window through terminal presentation/callbacks; setup and terminal idle excluded")},
+        {"simulation_s", real(pacing.simulated_s)}, {"viewer_wall_s", real(pacing.wall_s)},
+        {"mean_achieved_rtf", optional_real(pacing.mean_achieved_rtf)},
+        {"render_wall_s", real(pacing.render_wall_s)}, {"presented_frames", counter(pacing.presented_frames)},
+        {"frames_per_s", optional_real(pacing.frames_per_s)},
+        {"frame_count_scope", text("positive framebuffer draw followed by successful swap only")},
+        {"render_interval_s", real(pacing.render_interval_s)},
+        {"first_frame_delay_s", pacing.presented_frames ? real(pacing.first_frame_delay_s) : Value{}},
+        {"frame_lateness", Value{Object{
+            {"units", text("seconds per completed presentation interval, never per physics step")},
+            {"definition", text("max(0, actual presentation interval - requested render interval); first frame excluded")},
+            {"late_frames", counter(pacing.late_frames)},
+            {"total_s", real(pacing.total_frame_lateness_s)},
+            {"maximum_s", real(pacing.max_frame_lateness_s)},
+            {"mean_s", optional_real(pacing.mean_frame_lateness_s)}}}},
+        {"debt_s", real(pacing.debt_s)}, {"maximum_debt_s", real(pacing.max_debt_s)},
+        {"initial_time_scale", integer(pacing.initial_scale)},
+        {"paused", Value{pacing.paused}}, {"scaled", Value{pacing.scaled}},
+        {"hidden", Value{pacing.hidden}}, {"framebuffer_unavailable", Value{pacing.framebuffer_unavailable}},
+        {"resets", counter(pacing.resets)}, {"ended_at_terminal_frame", Value{pacing.terminal}},
+        {"strict", Value{strict}}, {"recording_enabled", Value{recording_enabled}},
+        {"finalization_wall_s", Value{Object{{"seal_and_flush", real(finalization.seal_s)},
+            {"preview", real(finalization.preview_s)}, {"recording_publication", real(finalization.publication_s)},
+            {"runtime_close", real(finalization.close_s)}}}},
+        {"viewer_and_finalization_wall_s", real(total_s)},
+        {"mean_rtf_with_finalization", optional_real(total_rtf)},
+        {"plot_export_wall_s", real(finalization.export_s)},
+        {"finalization_scope", text("seal/flush, preview, recording publication and runtime close included; setup, terminal idle, window teardown and plot export excluded")},
+        {"eligible_1x_measurement", Value{eligible}}, {"ineligibility_reasons", Value{std::move(reasons)}},
+        {"target_rtf", real(1.)}, {"target_met", eligible ? Value{*total_rtf >= 1.} : Value{}}, // NOLINT(bugprone-unchecked-optional-access) eligible includes total_rtf engagement by construction
+        {"full_acceptance_verified", Value{false}},
+        {"pending_gates", Value{Array{text("V10 matching final candidate and both-platform evidence"),
+            text("V10 real-display visual acceptance and complete physical qualification")}}}
+    }};
+}
+} // namespace
+[[gnu::noinline]] io::Value viewer_performance_value(const viewer::PacingReport& pacing, const io::Value& summary,
+    const ViewerFinalizationTimes& finalization, bool fast_profile, bool strict, bool recording_enabled) {
     const auto& status = field(summary, "model_status");
     const auto accepted_true=[](const Value& value) {
         const auto* flag=std::get_if<bool>(&value.data);return flag&&*flag;
@@ -188,44 +232,47 @@ double finalization_elapsed(double started) {
     if (!full_window) reasons.push_back(text("less_than_30_simulated_seconds"));
     if (!fast_profile) reasons.push_back(text("not_free_root_fast_tyre_profile"));
     if (!strict) reasons.push_back(text("non_strict_run"));
-    return Value{Object{
-        {"viewer_performance_schema", integer(1)},
-        {"measurement_scope", text("first viewer window through terminal presentation/callbacks; setup and terminal idle excluded")},
-        {"simulation_s", real(pacing.simulated_s)}, {"viewer_wall_s", real(pacing.wall_s)},
-        {"mean_achieved_rtf", optional_real(pacing.mean_achieved_rtf)},
-        {"render_wall_s", real(pacing.render_wall_s)}, {"presented_frames", counter(pacing.presented_frames)},
-        {"frames_per_s", optional_real(pacing.frames_per_s)},
-        {"frame_count_scope", text("positive framebuffer draw followed by successful swap only")},
-        {"render_interval_s", real(pacing.render_interval_s)},
-        {"first_frame_delay_s", pacing.presented_frames ? real(pacing.first_frame_delay_s) : Value{}},
-        {"frame_lateness", Value{Object{
-            {"units", text("seconds per completed presentation interval, never per physics step")},
-            {"definition", text("max(0, actual presentation interval - requested render interval); first frame excluded")},
-            {"late_frames", counter(pacing.late_frames)},
-            {"total_s", real(pacing.total_frame_lateness_s)},
-            {"maximum_s", real(pacing.max_frame_lateness_s)},
-            {"mean_s", optional_real(pacing.mean_frame_lateness_s)}}}},
-        {"debt_s", real(pacing.debt_s)}, {"maximum_debt_s", real(pacing.max_debt_s)},
-        {"initial_time_scale", integer(pacing.initial_scale)},
-        {"paused", Value{pacing.paused}}, {"scaled", Value{pacing.scaled}},
-        {"hidden", Value{pacing.hidden}}, {"framebuffer_unavailable", Value{pacing.framebuffer_unavailable}},
-        {"resets", counter(pacing.resets)}, {"ended_at_terminal_frame", Value{pacing.terminal}},
-        {"strict", Value{strict}}, {"recording_enabled", Value{recording_enabled}},
-        {"finalization_wall_s", Value{Object{{"seal_and_flush", real(finalization.seal_s)},
-            {"preview", real(finalization.preview_s)}, {"recording_publication", real(finalization.publication_s)},
-            {"runtime_close", real(finalization.close_s)}}}},
-        {"viewer_and_finalization_wall_s", real(total_s)},
-        {"mean_rtf_with_finalization", optional_real(total_rtf)},
-        {"plot_export_wall_s", real(finalization.export_s)},
-        {"finalization_scope", text("seal/flush, preview, recording publication and runtime close included; setup, terminal idle, window teardown and plot export excluded")},
-        {"eligible_1x_measurement", Value{eligible}}, {"ineligibility_reasons", Value{std::move(reasons)}},
-        {"target_rtf", real(1.)}, {"target_met", eligible ? Value{*total_rtf >= 1.} : Value{}},
-        {"full_acceptance_verified", Value{false}},
-        {"pending_gates", Value{Array{text("V10 matching final candidate and both-platform evidence"),
-            text("V10 real-display visual acceptance and complete physical qualification")}}}
-    }};
+    return viewer_performance_object(pacing,finalization,strict,recording_enabled,eligible,total_s,total_rtf,std::move(reasons));
 }
 namespace {
+// The finalization helpers stage a RenderFrame and a Recording plus report
+// temporaries in their own frames, keeping physical_run under the bound.
+double finalize_preview(research::PhysicalPreviewCsv& preview,const runtime::NativeRideRuntime& runtime,
+    const terrain::TrackSpec& track,const std::string& reason,bool timed,std::exception_ptr& failure) {
+    const double preview_started=timed?platform::monotonic_seconds():0.;
+    try {
+        const auto frame=runtime.render_frame();
+        preview.write(frame.state.time_s,frame.state.generation,physical_preview_row(frame,track,{}));
+        preview.write_marker("run ended; "+reason+"; t="+geometry::detail::py_fixed(frame.state.time_s,6)+"s");
+        preview.close();
+    } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"preview finalization also failed\n";}
+    return timed?finalization_elapsed(preview_started):0.;
+}
+double export_publication(const recording::Publication& publication,bool has_preview,
+    const std::ostringstream& preview_bytes,const Arguments& args,const initialization::SetupRequest& request,
+    const runtime::NativeRideRuntime& runtime,std::int64_t episode_id,bool timed,std::exception_ptr& failure) {
+    const double export_started=timed?platform::monotonic_seconds():0.;
+    try {
+        if(has_preview){const auto bytes=preview_bytes.str();platform::write_exclusive(publication.directory/"preview.csv",std::as_bytes(std::span(bytes)));}
+        if(!args.flag("no_plots")) {
+            if(request.model.spatial) {
+                const recording::Recording accepted(publication.directory);
+                const auto columns=recording::spatial_report_channels(accepted,episode_id);
+                std::vector<viz::Report> reports{viz::spatial_attitude_plot(columns),viz::spatial_contact_plot(columns),viz::spatial_energy_plot(columns)};
+                if(viz::numeric(columns,"spatial.front_wheel_x_m"))reports.push_back(viz::spatial_wheel_path_plot(columns));
+                if(const auto* times=viz::numeric(columns,"observations.time_s");times&&!times->empty())reports.push_back(viz::spatial_imu_plot(columns));
+                for(const auto& report:reports)viz::write_artifact(report,publication.directory/(report.title+".png"));
+                const auto html=viz::to_html(reports);
+                platform::write_exclusive(publication.directory/"spatial.html",std::as_bytes(std::span(html)));
+            } else {
+                const auto columns=plot_columns(runtime.recorded_columns());
+                if(!columns.empty())for(const auto& report:viz::physical_ride_plots(columns))viz::write_artifact(report,publication.directory/(report.title+".png"));
+                if(has_preview)(void)viz::plot_physical_ride_html(viz::load_ride_csv(publication.directory/"preview.csv"),publication.directory);
+            }
+        }
+    } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"plot/preview publication also failed\n";}
+    return timed?finalization_elapsed(export_started):0.;
+}
 // ResolvedRide, PreparedSimulation and the by-value arguments of prepare and
 // make_ride are each several KB; heap ownership keeps this orchestration
 // frame inside the strict bound.
@@ -249,7 +296,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
     const auto max_steps=static_cast<std::int64_t>(requested_steps);
     // Spatial runs use the committed W33 terrain-domain/corridor outcome.
     // A planar TrackSpec is not their physical finish boundary.
-    if (request.model.physics->spatial) {
+    if (request.model.physics->spatial) { // NOLINT(bugprone-unchecked-optional-access) physics schema requires the field
         if(args.has("duration"))runtime->set_completion_step(max_steps);
     } else runtime->set_finish_position(limits.finish_x_m);
     recording::RunCapture capture(recording::make_run_metadata("native",args.flag("headless")?"physical_headless":"physical_viewer",metadata),args.flag("record"));
@@ -327,14 +374,8 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
     try {seal(reason);}catch(...){if(!failure)failure=std::current_exception();try{seal(reason);}catch(const std::exception& error){std::cerr<<"recording seal failed: "<<error.what()<<'\n';}}
     if(viewer_pacing)viewer_finalization.seal_s=finalization_elapsed(seal_started);
     if(preview) {
-        const double preview_started=viewer_pacing?platform::monotonic_seconds():0.;
-        try {
-            const auto frame=runtime->render_frame();
-            preview->write(frame.state.time_s,frame.state.generation,physical_preview_row(frame,request.track,{}));
-            preview->write_marker("run ended; "+reason+"; t="+geometry::detail::py_fixed(frame.state.time_s,6)+"s");
-            preview->close();
-        } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"preview finalization also failed\n";}
-        if(viewer_pacing)viewer_finalization.preview_s=finalization_elapsed(preview_started);
+        const auto elapsed=finalize_preview(*preview,*runtime,request.track,reason,viewer_pacing.has_value(),failure);
+        if(viewer_pacing)viewer_finalization.preview_s=elapsed;
     }
     if(capture.enabled()&&sealed) {
         const double publication_started=viewer_pacing?platform::monotonic_seconds():0.;
@@ -343,27 +384,8 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
         if(viewer_pacing)viewer_finalization.publication_s=finalization_elapsed(publication_started);
     }
     if(publication) {
-        const double export_started=viewer_pacing?platform::monotonic_seconds():0.;
-        try {
-            if(preview){const auto bytes=preview_bytes.str();platform::write_exclusive(publication->directory/"preview.csv",std::as_bytes(std::span(bytes)));}
-            if(!args.flag("no_plots")) {
-                if(request.model.spatial) {
-                    const recording::Recording accepted(publication->directory);
-                    const auto columns=recording::spatial_report_channels(accepted,episode_id);
-                    std::vector<viz::Report> reports{viz::spatial_attitude_plot(columns),viz::spatial_contact_plot(columns),viz::spatial_energy_plot(columns)};
-                    if(viz::numeric(columns,"spatial.front_wheel_x_m"))reports.push_back(viz::spatial_wheel_path_plot(columns));
-                    if(const auto* times=viz::numeric(columns,"observations.time_s");times&&!times->empty())reports.push_back(viz::spatial_imu_plot(columns));
-                    for(const auto& report:reports)viz::write_artifact(report,publication->directory/(report.title+".png"));
-                    const auto html=viz::to_html(reports);
-                    platform::write_exclusive(publication->directory/"spatial.html",std::as_bytes(std::span(html)));
-                } else {
-                    const auto columns=plot_columns(runtime->recorded_columns());
-                    if(!columns.empty())for(const auto& report:viz::physical_ride_plots(columns))viz::write_artifact(report,publication->directory/(report.title+".png"));
-                    if(preview)(void)viz::plot_physical_ride_html(viz::load_ride_csv(publication->directory/"preview.csv"),publication->directory);
-                }
-            }
-        } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"plot/preview publication also failed\n";}
-        if(viewer_pacing)viewer_finalization.export_s=finalization_elapsed(export_started);
+        const auto elapsed=export_publication(*publication,preview!=nullptr,preview_bytes,args,request,*runtime,episode_id,viewer_pacing.has_value(),failure);
+        if(viewer_pacing)viewer_finalization.export_s=elapsed;
     }
     const double close_started=viewer_pacing?platform::monotonic_seconds():0.;
     runtime->close();
@@ -492,7 +514,7 @@ int ride_command(const Arguments& input) {
         request->experiment.duration_s=input.real("duration",90.);request->experiment.seed_decimal=resolved->setup.seed_decimal;
         request->experiment.control_period_s=input.real("control_period",.01);request->experiment.actuator_delay_s=input.real("actuator_delay",.005);request->experiment.record_decimation=resolved->setup.runtime.measurement_decimation;request->experiment.stop_on_model_violation=resolved->setup.runtime.strict;request->experiment.async_telemetry=input.flag("async_telemetry");
         request->sensors.sample_period_s=input.real("sensor_period",.005);request->sensors.delivery.latency_s=input.real("sensor_delay",.01);
-        if (request->setup.model.physics->spatial) {
+        if (request->setup.model.physics->spatial) { // NOLINT(bugprone-unchecked-optional-access) physics schema requires the field
             request->sensors_v2.sample_period_s = input.real("sensor_period",.005);
             request->sensors_v2.latency_s = input.real("sensor_delay",.01);
             request->sensors_v2.maximum_read_period_s = request->experiment.control_period_s;

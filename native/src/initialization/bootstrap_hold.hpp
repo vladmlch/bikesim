@@ -21,8 +21,12 @@ public:
                                 std::span<double> qfrc) noexcept;
     const bike::spatial::HoldState& state() const noexcept;
     CoreStatus restore(const bike::spatial::HoldState&) noexcept;
+    // acceleration_tolerance is the tolerance the settle request accepted
+    // (SetupContext::equilibrium_tolerance); the default keeps callers that do
+    // not carry the request on the historical bound.
     bool release_check(const SpatialEquilibriumReport&, double force_limit_n,
-                       double moment_limit_nm) const noexcept;
+                       double moment_limit_nm,
+                       double acceleration_tolerance = .05) const noexcept;
 private:
     bike::spatial::BootstrapConfig cfg_;
     bike::spatial::RootBinding root_;

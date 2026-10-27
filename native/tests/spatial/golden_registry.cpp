@@ -11,9 +11,17 @@
 #include "pneumatic3d/state.hpp"
 #include "research/environment.hpp"
 #include "runtime/research_io.hpp"
+#include "io/json.hpp"
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <limits>
+#include <memory>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
 #include <functional>
 #include <filesystem>
 namespace {
@@ -120,7 +128,7 @@ void accepted_reference_checks(const Value& pending_entry) {
     auto other=platform;set(other,"execution_identity",text(std::string(64,'d')));set(other,"provider",text("synthetic-candidate"));
     set(entry,"platforms",Value{Object{{"macos-arm64",platform},{"linux-aarch64",other}}});
     set(entry,"comparison",Value{Object{{"same_platform",text("bitwise")},{"cross_platform_tolerances",Value{Object{
-        {"rows.*.x",Value{Object{{"atol",real(1e-6)},{"rtol",real(0.)}}}}}}}});
+        {"rows.*.x",Value{Object{{"atol",real(1e-6)},{"rtol",real(0.)}}}}}}}}});
     const Value registry{Object{{"spatial_manifest_version",integer(1)},{"entries",Value{Array{entry}}}}};
     golden::validate_spatial_manifest(registry);
     bt::require(!golden::inspect_spatial_reference(entry,root.path(),"linux-aarch64").pending,"complete synthetic reference is structurally inspectable");

@@ -38,6 +38,9 @@ public:
     explicit Terrain3dSource(ProfileExtrusion3d);
     Terrain3dSource(Terrain3dSource&&) = delete;
     Terrain3dSource& operator=(Terrain3dSource&&) = delete;
+    Terrain3dSource(const Terrain3dSource&) = delete;
+    Terrain3dSource& operator=(const Terrain3dSource&) = delete;
+    ~Terrain3dSource() = default;
     Terrain3dKind kind() const noexcept;
     Terrain3dQueryView query_view() const noexcept;
     const Grid3d* grid() const noexcept;

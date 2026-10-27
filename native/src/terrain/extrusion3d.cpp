@@ -11,7 +11,7 @@
 namespace bike::terrain {
 namespace {
 std::size_t segment(std::span<const double> x, double query) noexcept {
-    const auto upper = std::upper_bound(x.begin(), x.end(), query);
+    const auto upper = std::ranges::upper_bound(x, query);
     if (upper == x.begin()) return 0;
     return std::min(static_cast<std::size_t>(upper - x.begin() - 1), x.size() - 2);
 }
@@ -97,7 +97,8 @@ GridSample3d ProfileExtrusion3d::sample(double x, double y) const noexcept {
     const double norm = std::hypot(slope, 1.);
     // Both planar SignedProfile and RoadProfile use this same np.interp
     // primitive (including exact knots and the required explicit FMA).
-    return {QueryStatus3d::ok, biketyre::np_interp(x, kx_, kz_), {-slope / norm, 0., 1. / norm}, seg_surface_[i]};
+    return {.status = QueryStatus3d::ok, .height_m = biketyre::np_interp(x, kx_, kz_),
+        .normal_world = {-slope / norm, 0., 1. / norm}, .surface_id = seg_surface_[i]};
 }
 
 RayHit3d ProfileExtrusion3d::ray_cast(std::array<double, 3> origin,
@@ -119,7 +120,8 @@ RayHit3d ProfileExtrusion3d::ray_cast(std::array<double, 3> origin,
     const auto hit_at = [&](double distance) -> RayHit3d {
         const std::array<double, 3> point{origin[0] + distance * direction[0], origin[1] + distance * direction[1], origin[2] + distance * direction[2]};
         const auto sampled = sample(std::clamp(point[0], kx_.front(), kx_.back()), std::clamp(point[1], -half_width_, half_width_));
-        return {QueryStatus3d::ok, distance, point, sampled.normal_world, sampled.surface_id};
+        return {.status = QueryStatus3d::ok, .distance_m = distance, .point_world_m = point,
+            .normal_world = sampled.normal_world, .surface_id = sampled.surface_id};
     };
     if (start[2] == at_start.height_m) return hit_at(enter);
     const double projected_norm = direction[1] == 0. ? 1. : std::hypot(direction[0], direction[2]);
@@ -158,4 +160,5 @@ std::span<const double> ProfileExtrusion3d::knots_x_m() const noexcept { return 
 std::span<const double> ProfileExtrusion3d::knots_z_m() const noexcept { return kz_; }
 std::span<const SurfaceSpec3d> ProfileExtrusion3d::surfaces() const noexcept { return surfaces_; }
 const std::string& ProfileExtrusion3d::fingerprint_hex() const noexcept { return fingerprint_hex_; }
+const bike::io::Value& ProfileExtrusion3d::source() const noexcept { return source_; }
 } // namespace bike::terrain

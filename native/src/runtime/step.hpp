@@ -18,6 +18,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -315,6 +316,9 @@ public:
     [[nodiscard]] rider::SpindleController &rider_control() {
         return engaged(rider_control_);
     }
+    // runtime.brake — the latched elastic bite owner. The equilibrium's
+    // released-settle failure path resets it like the oracle does.
+    [[nodiscard]] StaticBrake &brake() noexcept { return brake_; }
     [[nodiscard]] rider::RiderIntent &rider_intent() noexcept {
         return rider_intent_;
     }
@@ -449,8 +453,8 @@ private:
         bool full = false;
         std::vector<std::pair<std::string, std::vector<double>>> components;
         std::array<int, 3> warning_counts{};
-        std::optional<runtime::spatial::SpatialTruth> truth;
-        std::optional<runtime::spatial::ImuTruth> imu;
+        std::optional<runtime::spatial::SpatialTruth> truth{};
+        std::optional<runtime::spatial::ImuTruth> imu{};
         // Produced by solve_tail, consumed by publish_raw.
         std::vector<std::pair<std::string, double>> constraint_powers{};
         writers::RiderSettleOutcome settle{};
@@ -469,6 +473,18 @@ private:
     // Publish stage: energy observation, channel/diagnostic dicts,
     // RawStep assembly, commit (physical_runtime.py:662-700).
     [[nodiscard]] RawStep publish_raw(SolvedInputs in);
+    // publish_raw's channels/diagnostics blocks — the extractions keep the
+    // publish frame under -Wframe-larger-than while preserving the wire
+    // key order in both objects.
+    [[nodiscard]] WireObject raw_channels(
+        const SolvedInputs &in,
+        const std::vector<std::pair<std::string, std::vector<double>>> &components,
+        WireObject drive,
+        const std::optional<rider::SpindleController::State> &rider_state,
+        double front, double rear, bool braking);
+    [[nodiscard]] WireObject raw_diagnostics(
+        const SolvedInputs &in, const std::optional<MassObservations> &mass,
+        const std::optional<rider::SpindleController::State> &rider_state);
 
     Stepper *stepper_;
     StepConfig config_;

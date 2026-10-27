@@ -146,9 +146,10 @@ runtime::ModelImage capture_model_image(const mjModel& model) {
     return out;
 }
 
+namespace {
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
-static Value capture_state_document(Stepper const& stepper,
+Value capture_state_document(Stepper const& stepper,
     runtime::PhysicalStep const& physical, const runtime::RuntimeConfig& config,
     const runtime::ModelImage* immutable_spatial_model, bool initial,
     runtime::ModelImage& image) {
@@ -173,7 +174,7 @@ static Value capture_state_document(Stepper const& stepper,
         // Mutable friction/site/tendon rows are restored by the existing
         // bootstrap inventories. They must not change model/topology identity.
         image=*immutable_spatial_model;
-        runtime::validate_spatial_identity(config,*state.spatial,*physical.topology());
+        runtime::validate_spatial_identity(config,*state.spatial,*physical.topology()); // NOLINT(bugprone-unchecked-optional-access) state.spatial engagement is enforced for spatial configs by the producer-state check above; topology() is required non-null two lines up
     } else image=capture_model_image(m);
     const auto size = engine::state_size(&m, mjSTATE_INTEGRATION);
     if (size < 0) throw std::invalid_argument("invalid integration-state size");
@@ -225,7 +226,7 @@ static Value capture_state_document(Stepper const& stepper,
         // Full model rows have one owner in a continuation. Do not keep a
         // competing sparse friction/site copy beside them.
         const auto row=[](const double* values,mjtSize count) {
-            return reals(std::span<const double>(values,static_cast<std::size_t>(count)));
+            return reals(std::span<const double>{std::views::counted(values,count)});
         };
         Value full_rows{Object{
                 {"dof_frictionloss",row(m.dof_frictionloss,m.nv)},
@@ -240,9 +241,9 @@ static Value capture_state_document(Stepper const& stepper,
     }
     if(config.spatial) {
         const auto& tire=stepper.spatial_tire_writer().state();
-        if(tire.identity.topology_fingerprint_hex!=state.spatial->topology_fingerprint ||
-           tire.identity.terrain_sha256_hex!=state.spatial->terrain_sha256 ||
-           tire.identity.calibration_sha256_hex!=state.spatial->calibration_sha256)
+        if(tire.identity.topology_fingerprint_hex!=state.spatial->topology_fingerprint || // NOLINT(bugprone-unchecked-optional-access) state.spatial engagement is enforced for spatial configs by the producer-state check above
+           tire.identity.terrain_sha256_hex!=state.spatial->terrain_sha256 || // NOLINT(bugprone-unchecked-optional-access) state.spatial engagement is enforced for spatial configs by the producer-state check above
+           tire.identity.calibration_sha256_hex!=state.spatial->calibration_sha256) // NOLINT(bugprone-unchecked-optional-access) state.spatial engagement is enforced for spatial configs by the producer-state check above
             throw std::invalid_argument("bootstrap.spatial.tire.identity: differs from causal owners");
         doc_obj.emplace_back("tire",Value{Object{
             {"pneumatic3d_state",integer(pneumatic3d::kPneumatic3dStateVersion)},
@@ -256,10 +257,11 @@ static Value capture_state_document(Stepper const& stepper,
     doc_obj.emplace_back("rider_intent", ::rider::encode_intent_state(state.rider_intent));
     doc_obj.emplace_back("signals", ::rider::encode_intent_signals(state.signals));
     doc_obj.emplace_back("runtime", runtime_state(state, config));
-    if(config.spatial)doc_obj.emplace_back("spatial",runtime::encode_spatial_bootstrap(*state.spatial));
+    if(config.spatial)doc_obj.emplace_back("spatial",runtime::encode_spatial_bootstrap(*state.spatial)); // NOLINT(bugprone-unchecked-optional-access) state.spatial engagement is enforced for spatial configs by the producer-state check above
     return Value{std::move(doc_obj)};
 }
 NATIVE_DIAG_POP
+} // namespace
 
 runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
     runtime::PhysicalStep const& physical, const runtime::RuntimeConfig& config,

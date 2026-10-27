@@ -6,6 +6,8 @@
 #include "../rider/state_codec.hpp"
 #include "../runtime/spatial_checkpoint_internal.hpp"
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <set>
 #include <utility>
 #include <format>
@@ -140,7 +142,7 @@ struct ReplaySession::Impl {
             set(config.metadata, "configuration_sha256", field(input.summary, "configuration_sha256"));
         }
         model = prepared->bootstrap.ride.model.mjb;
-        environment = runtime::make_research(std::move(prepared->bootstrap));
+        environment = runtime::make_research(std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap)));
         if(input.spatial_recipe)environment->restore_checkpoint(input.spatial_recipe->checkpoint_initial);
     }
     void require_open() const { if (closed) throw std::runtime_error("replay session is closed"); }

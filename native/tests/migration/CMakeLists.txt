@@ -82,8 +82,9 @@ endif()
 
 # allocation_faults.cpp is the throwing-allocation override TU: it defines
 # replacement operator new/delete plus the counting seam, so it must land
-# in test binaries directly, never in a shipped library. Two consumers
-# share it — native_contract_tests (legacy graph) and migration_T07 —
+# in test binaries directly, never in a shipped library. Four consumers
+# share it — native_contract_tests (both graphs), migration_T07 and the
+# spatial tyre_writer/worker_pool tests —
 # and the ODR sweep compiles every compile-database entry once before a
 # combined relocatable link, so per-target duplicate compiles would
 # collide. One OBJECT library = one compile entry; each executable gets

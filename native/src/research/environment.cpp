@@ -12,6 +12,11 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     (void)initialization::settle(*owner, options);
     return owner;
 }
+// seal_bootstrap() returns ~6.5 KiB by value; the prvalue temp lives here
+// so prepare_environment_into stays under the 8 KiB frame budget.
+void seal_bootstrap_into(runtime::RuntimeBootstrap& dst, initialization::SetupOwner& owner) {
+    dst = owner.seal_bootstrap();
+}
 [[gnu::noinline]] void prepare_environment_into(ResearchRequest& request, PreparedEnvironment& out) {
     request.experiment.validate(); request.sensors.validate(); request.programs.validate();
     if (!request.setup.model.physics) throw std::invalid_argument("research requires physical configuration");
@@ -47,7 +52,6 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     }
     if (config.control_steps < 1 || config.max_steps < 1 || config.sensor_steps < 1)
         throw std::invalid_argument("control period, sensor period and duration must span at least one physics step");
-    config.track_length_m = request.setup.track.length_m;
     config.record_decimation = request.experiment.record_decimation;
     config.capture_mode = request.capture_mode;
     config.stop_on_model_violation = request.experiment.stop_on_model_violation;
@@ -76,17 +80,22 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
         config.raw_initial = startup->observation;
         out.bootstrap.startup = startup_sensor_state(request.sensors, out.bootstrap.tape, startup->observation);
     }
-    out.bootstrap.ride = owner->seal_bootstrap();
+    seal_bootstrap_into(out.bootstrap.ride, *owner);
     out.metadata = configuration_metadata(request, *startup, out.bootstrap.ride, owner->metadata());
     config.metadata = out.metadata;
+    // The spatial extent identity is the loaded physical terrain owner;
+    // the request track is a name-only label with no geometry under spatial.
+    // configuration_metadata already proved spatial implies a terrain owner.
+    config.track_length_m = spatial ? out.bootstrap.ride.config.terrain3d->x_max_m()
+        : request.setup.track.length_m;
     if (request.capture_mode == runtime::ResearchCaptureMode::full || request.capture_mode == runtime::ResearchCaptureMode::legacy)
         config.assets = snapshot_research_assets(request, *startup, out.metadata, out.bootstrap.ride);
 }
+} // namespace
+
 [[gnu::noinline]] std::unique_ptr<ResearchRequest> load_research_request_ptr(const std::filesystem::path& file) {
     return std::make_unique<ResearchRequest>(read_research_request(file));
 }
-} // namespace
-
 PreparedEnvironment prepare_environment(ResearchRequest request) {
     PreparedEnvironment out;
     prepare_environment_into(request, out);
@@ -98,14 +107,14 @@ PreparedEnvironment prepare_environment(ResearchRequest request) {
     return prepared;
 }
 [[gnu::noinline]] std::unique_ptr<runtime::NativeResearchRuntime> make_environment(ResearchRequest request) {
+    return make_environment(std::make_unique<ResearchRequest>(std::move(request)));
+}
+std::unique_ptr<runtime::NativeResearchRuntime> make_environment(std::unique_ptr<ResearchRequest> request) {
     auto prepared = std::make_unique<PreparedEnvironment>();
-    prepare_environment_into(request, *prepared);
-    return runtime::make_research(std::move(prepared->bootstrap));
+    prepare_environment_into(*request, *prepared);
+    return runtime::make_research(std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap)));
 }
 std::unique_ptr<runtime::NativeResearchRuntime> make_environment(const std::filesystem::path& file) {
-    auto req = load_research_request_ptr(file);
-    auto prepared = std::make_unique<PreparedEnvironment>();
-    prepare_environment_into(*req, *prepared);
-    return runtime::make_research(std::move(prepared->bootstrap));
+    return make_environment(load_research_request_ptr(file));
 }
 } // namespace bike::research

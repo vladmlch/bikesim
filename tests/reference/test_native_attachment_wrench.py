@@ -782,7 +782,7 @@ def test_relative_planar_jacobian_oracle(jacobian, tmp_path):
     # A moving point reads the same engine jacobian. mj_jac reads cdof,
     # which mj_kinematics does NOT refresh — only mj_crb (inside
     # mj_forward) does; run forward on both sides like the Stepper does.
-    data.qpos[:4] = [.03, .0, -.02, .965925826]
+    data.qpos[:7] = [.03, .0, -.02, .965925826, .0, .258819045, .0]
     mujoco.mj_forward(model, data)
     stepper.set_state(data.qpos, data.qvel, data.act, data.qacc_warmstart,
                       data.time)

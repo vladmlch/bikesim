@@ -3,10 +3,15 @@
 
 namespace {
 namespace ride=spatial_tests::ride;
-ride::Report episode(bike::spatial::TyreTier tier,double dt) {
+ride::Report episode(bike::spatial::TyreTier tier,double dt,double coarse_dt) {
     const auto manifest=ride::example("research/spatial_flat.toml");
     auto request=spatial_tests::make_startup_request(bike::spatial::RootKind::free6,tier,true,5.);
-    request->model.physics->timestep_s=dt;
+    auto& physics=*request->model.physics;
+    physics.timestep_s=dt;
+    // validate.cpp requires closure_time_constant_s >= 2*timestep_s (legacy excepted). Pin one
+    // closure constant per tier from the coarse step so refined runs differ only in dt, not in
+    // linkage closure stiffness.
+    physics.closure_time_constant_s=std::max(physics.closure_time_constant_s,2.*coarse_dt);
     const auto pin=ride::pin_profile(*request,manifest);
     spatial_tests::OwnedStartup fixture(std::move(*request));
     ride::SpatialRideAccess::perturb(*fixture.runtime,{0.,0.,0.},{.01,0.,.01});
@@ -43,7 +48,7 @@ void compare(const ride::Report& coarse,const ride::Report& fine,double dt) {
 int main() {return bt::run([] {
     for(const auto tier:{bike::spatial::TyreTier::fast,bike::spatial::TyreTier::detailed}) {
         const double dt=tier==bike::spatial::TyreTier::fast?.00125:.0005;
-        const auto coarse=episode(tier,dt),half=episode(tier,.5*dt),quarter=episode(tier,.25*dt);
+        const auto coarse=episode(tier,dt,dt),half=episode(tier,.5*dt,dt),quarter=episode(tier,.25*dt,dt);
         compare(coarse,quarter,dt);compare(half,quarter,.5*dt);
     }
 });}

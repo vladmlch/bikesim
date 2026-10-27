@@ -81,7 +81,7 @@ Value outcome_value(const OutcomeState& s) {
     return Value{Object{{"schema", integer(s.schema)}, {"latched", Value{Object{
         {"reason", text(to_string(l.reason))}, {"terminal", Value{l.terminal}},
         {"valid", Value{l.valid}}, {"tick", integer(l.tick)}, {"time_s", real(l.time_s)},
-        {"position_world_m", reals(l.position_world_m)}, {"diagnostic", text(l.diagnostic)}}},
+        {"position_world_m", reals(l.position_world_m)}, {"diagnostic", text(l.diagnostic)}}}},
         {"capsize_dwell_ticks", integer(s.capsize_dwell_ticks)},
         {"corridor_dwell_ticks", integer(s.corridor_dwell_ticks)},
         {"balance_dwell_ticks", integer(s.balance_dwell_ticks)},
@@ -193,7 +193,7 @@ OutcomeState decode_outcome(const Value& value) {
         "position_world_m", "diagnostic"));
     const auto& name = vread::string(vread::field(l, "reason"), l.child("reason"));
     bool found = false;
-    for (auto reason : {SpatialReason::none, SpatialReason::capsize, SpatialReason::off_corridor,
+    for (const auto reason : {SpatialReason::none, SpatialReason::capsize, SpatialReason::off_corridor,
                         SpatialReason::balance_lost, SpatialReason::terrain_invalid,
                         SpatialReason::terrain_outside, SpatialReason::numerical_failure,
                         SpatialReason::requested_completion})
@@ -214,10 +214,14 @@ OutcomeState decode_outcome(const Value& value) {
         vread::invalid(l.child("tick"), "latched outcome requires nonnegative tick");
     if (s.latched.reason != SpatialReason::none && !s.latched.terminal)
         vread::invalid(l.child("terminal"), "a reason is present only in a terminal latch");
-    if (s.latched.terminal && s.latched.valid &&
-        (s.latched.reason==SpatialReason::terrain_invalid || s.latched.reason==SpatialReason::terrain_outside ||
-         s.latched.reason==SpatialReason::numerical_failure))
-        vread::invalid(l.child("valid"), "numerical and terrain failures are invalid episodes");
+    // evaluate_outcome clears `valid` for exactly these reasons and for nothing else;
+    // an unlatched or physical outcome with valid=false would mark every later
+    // interval numerically invalid after a restore.
+    const bool failure = s.latched.reason == SpatialReason::terrain_invalid ||
+                         s.latched.reason == SpatialReason::terrain_outside ||
+                         s.latched.reason == SpatialReason::numerical_failure;
+    if (s.latched.valid == failure)
+        vread::invalid(l.child("valid"), "validity is the complement of a numerical/terrain failure");
     s.capsize_dwell_ticks = count(d, "capsize_dwell_ticks");
     s.corridor_dwell_ticks = count(d, "corridor_dwell_ticks");
     s.balance_dwell_ticks = count(d, "balance_dwell_ticks");

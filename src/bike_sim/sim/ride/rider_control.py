@@ -1731,6 +1731,9 @@ class ArticulatedRiderController:
             'command_enabled': bool(self.command_enabled),
             'active_state': np.asarray(self.active_state, float).copy(),
             'activation_time_s': self.activation_time_s,
+            # _coast_hold_nm is a persistent servo integrator: dropping it
+            # would restart the weld-press hold from zero on every restore.
+            'coast_hold_nm': float(self._coast_hold_nm),
             'last_terms': owned(self.last_terms),
             'pd_split': owned(self.pd_split),
             'saturated_ik': owned(self.saturated_ik),

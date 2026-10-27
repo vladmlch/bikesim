@@ -44,12 +44,29 @@ namespace drivetrain {
         int selected = next.rear_teeth;
         ShiftDirection direction = ShiftDirection::none;
         if (engaged(next.cadence_ema) > config_.target_cadence_max_rpm) {
-            for (int const teeth: config_.cassette) if (
-                teeth < next.rear_teeth && (selected == next.rear_teeth || teeth > selected)) selected = teeth;
+            // A throw can jump several cogs: the smallest cog whose
+            // wheel-implied landing cadence still clears the band floor —
+            // the no-hunting rule below, applied across the throw.
+            std::vector<int> candidates;
+            for (int const teeth : config_.cassette)
+                if (teeth < next.rear_teeth) candidates.push_back(teeth);
+            std::ranges::sort(candidates);
+            for (int const teeth : candidates)
+                if (engaged(next.required_ema) * teeth / next.rear_teeth >=
+                    config_.target_cadence_min_rpm) { selected = teeth; break; }
+            if (selected == next.rear_teeth && !candidates.empty())
+                selected = candidates.back();
             direction = ShiftDirection::up;
         } else if (engaged(next.cadence_ema) < config_.target_cadence_min_rpm) {
-            for (int const teeth: config_.cassette) if (
-                teeth > next.rear_teeth && (selected == next.rear_teeth || teeth < selected)) selected = teeth;
+            std::vector<int> candidates;
+            for (int const teeth : config_.cassette)
+                if (teeth > next.rear_teeth) candidates.push_back(teeth);
+            std::ranges::sort(candidates, std::ranges::greater{});
+            for (int const teeth : candidates)
+                if (engaged(next.required_ema) * teeth / next.rear_teeth <=
+                    config_.target_cadence_max_rpm) { selected = teeth; break; }
+            if (selected == next.rear_teeth && !candidates.empty())
+                selected = candidates.front();
             direction = ShiftDirection::down;
         } else return finish(false);
         if (selected == next.rear_teeth) return finish(false);

@@ -11,49 +11,49 @@
     {
       "attachment_samples": {
         "foot_front": {
-          "gap_m": 6.262354955215294e-05,
+          "gap_m": 2.6502220218172627e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 113.14789189074952,
+          "normal_n": 39.60419615361818,
           "pull_n": 0.0,
-          "tangent_n": -4.807691022649312
+          "tangent_n": -9.783873628493202
         },
         "foot_rear": {
-          "gap_m": 4.835154723084796e-05,
+          "gap_m": 2.7127770462446795e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 96.90836556824517,
+          "normal_n": 40.6053700841872,
           "pull_n": 0.0,
-          "tangent_n": 31.070125235929993
+          "tangent_n": 9.776122723031234
         },
         "grip_left": {
-          "gap_m": 1.9916451359017057e-05,
+          "gap_m": 2.7212452730526197e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 49.98807800212124,
+          "normal_n": 105.69320026985311,
           "pull_n": 0.0,
-          "tangent_n": 62.069781703889944
+          "tangent_n": 108.33766920333724
         },
         "grip_right": {
-          "gap_m": 1.991645135754606e-05,
+          "gap_m": 2.7212452730434318e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 49.98807800001435,
+          "normal_n": 105.69320026978698,
           "pull_n": 0.0,
-          "tangent_n": 62.06978170284543
+          "tangent_n": 108.3376692032878
         },
         "saddle": {
-          "gap_m": 2.1110348685747755e-05,
+          "gap_m": 2.2930472462362008e-05,
           "half_patch_m": 0.045,
           "kind": "saddle",
           "moment_nm": 0.0,
-          "normal_n": 452.99555177286516,
+          "normal_n": 455.0255975245043,
           "pull_n": 0.0,
-          "tangent_n": -28.463721874818688
+          "tangent_n": 164.406844724945
         }
       },
       "attachment_violations": [],
@@ -114,7 +114,7 @@
         "assist_demand_gated": true,
         "assist_gain": 3.4,
         "assist_mode": "turbo",
-        "assist_sensor_nm": 4.399546989674254,
+        "assist_sensor_nm": 2.7835893372203324e-06,
         "battery_empty": false,
         "battery_energy_j": 1800000.0,
         "cadence_rpm": 0.0,
@@ -125,7 +125,7 @@
         "chain_power_w": 0.0,
         "chain_tension_n": 0.0,
         "coasting_reason": "",
-        "crank_phase_rad": 0.0049819711627524955,
+        "crank_phase_rad": -0.03075432522535688,
         "crank_rad_s": 0.0,
         "crank_target_phase_rad": null,
         "crank_target_rate_rad_s": 0.0,
@@ -135,9 +135,9 @@
         "freehub_deflection_rad": 0.0,
         "freehub_dissipation_power_w": 0.0,
         "freehub_energy_j": 0.0,
-        "freehub_engaged": true,
+        "freehub_engaged": false,
         "freehub_power_w": 0.0,
-        "freehub_torque_nm": 6.255804403877632,
+        "freehub_torque_nm": 0.0,
         "front_brake_demand": 0.0,
         "front_brake_power_w": 0.0,
         "front_brake_torque_nm": 0.0,
@@ -147,7 +147,7 @@
         "human_active_power_w": 0.0,
         "human_command_nm": 0.375,
         "human_joint_power_w": 0.0,
-        "human_sensor_nm": 4.399546989674254,
+        "human_sensor_nm": 2.7835893372203324e-06,
         "human_setpoint_nm": 10.0,
         "human_torque_nm": 0.0,
         "motor_control_source": "external_request",
@@ -180,26 +180,26 @@
       "dt_s": 0.00125,
       "endpoint_mass": {
         "angular_momentum_kg_m2_s": [
-          0.0028518909735290752,
-          -1.4043100630065086e-06,
-          -0.0004510272801575114
+          0.00010498787669088082,
+          -3.08808732324493e-05,
+          -4.4201602420364114e-05
         ],
         "com_m": [
-          2.08669766365296,
+          2.0886750224674318,
           9.195402298852594e-06,
-          0.6127694016013687
+          0.6120692175583111
         ],
         "com_velocity_mps": [
-          -3.8636070456194666e-08,
+          -8.507958096590987e-08,
           0.0,
-          -1.5172305079205777e-07
+          1.2211597642494836e-06
         ],
-        "gravitational_energy_j": 627.5763614216643,
-        "kinetic_energy_j": 0.0016652181369075155,
+        "gravitational_energy_j": 626.8592581313901,
+        "kinetic_energy_j": 1.0098479726318643e-07,
         "linear_momentum_kg_mps": [
-          -4.033605755626723e-06,
+          -8.88230825284099e-06,
           0.0,
-          -1.583988650269083e-05
+          0.0001274890793876461
         ],
         "mass_kg": 104.39999999999999
       },
@@ -210,28 +210,28 @@
         "constraint_work_ok": true,
         "constraint_work_ratio": null,
         "elastic_energy_j": {
-          "fork_air": 12.070650056143045,
+          "fork_air": 11.975672686320678,
           "rider_interfaces": 0.0,
           "rider_joint_envelope": 0.0,
           "shock_bumper": 0.0,
-          "shock_coil": 11.936296044536036,
+          "shock_coil": 11.991226296477477,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0,
-          "tires": 2.073789075348909
+          "tires": 2.068018756422203
         },
         "electrical_residual_j": 0.0,
         "electrical_work_j": 0.0,
-        "energy_scale_j": 26.07953354497397,
+        "energy_scale_j": 26.034910287565527,
         "external_work_j": 0.0,
         "loss_j": 0.0,
         "loss_step_j": 0.0,
         "measured": true,
-        "mechanical_energy_j": 653.6587618158293,
+        "mechanical_energy_j": 652.8941759715952,
         "motor_positive_j": 0.0,
         "motor_signed_j": 0.0,
         "muscle_positive_j": 0.0,
         "muscle_signed_j": 0.0,
-        "residual_j": 0.0028667495228091866,
+        "residual_j": 9.115978400586755e-06,
         "solver_constraint_work_j": 0.0,
         "source_interval_id": 0,
         "source_positive_work_j": 0.0,
@@ -246,16 +246,16 @@
           0.0
         ],
         "com_m": [
-          2.086697663668233,
+          2.088675022573778,
           9.195402298852594e-06,
-          0.6127694016986854
+          0.6120692160318576
         ],
         "com_velocity_mps": [
           0.0,
           0.0,
           0.0
         ],
-        "gravitational_energy_j": 627.5763615213325,
+        "gravitational_energy_j": 626.8592565680514,
         "kinetic_energy_j": 0.0,
         "linear_momentum_kg_mps": [
           0.0,
@@ -311,32 +311,32 @@
         "tires": 0.0
       },
       "qpos": [
-        2.0106439802515816,
-        -0.05325475116716922,
-        0.005910497967106907,
-        0.0049819711627524955,
-        0.005285132216013804,
-        0.005285132213622646,
-        0.06088387071706992,
-        -4.119621606237369e-05,
-        0.1250513774698985,
-        -0.06774340121830413,
-        0.0018877601651235939,
-        0.22006347205170912,
-        -0.1858785446409892,
-        0.014434262027829,
-        2.0262397427342482,
-        -0.05332326758390321,
-        0.18956598549898246,
-        -0.18257266789886867,
-        0.09367827156665275,
-        -0.15100075682476197,
-        0.09367827156667102,
-        -0.15100075682478775,
-        -0.18206478616478855,
-        0.01727310736909179,
-        -0.17349510321312211,
-        0.006490656981853889
+        2.0100655190860297,
+        -0.05322823406313442,
+        0.00567195222888611,
+        -0.03075432522535688,
+        0.02082245173092483,
+        0.020822451685910622,
+        0.06062278027726021,
+        0.0037515712179980593,
+        0.1253116525489677,
+        -0.06787877930349835,
+        0.004012014131822495,
+        0.220520782193102,
+        -0.18627302316265096,
+        0.01446620455044813,
+        2.02934231785172,
+        -0.054211573245164145,
+        0.2555047523509326,
+        -0.24797109502472395,
+        0.12427366772586275,
+        -0.20081123290014086,
+        0.1242736677258626,
+        -0.20081123290014077,
+        -0.2645480039492126,
+        0.0470215815729253,
+        -0.22470285664052977,
+        -0.010923612256173222
       ],
       "qvel": [
         0.0,
@@ -370,23 +370,23 @@
         "front_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            -5.965345337744994,
+            8.126822831816064,
             0.0,
-            -96.17735212579692
+            -39.80210400203692
           ],
           "force_on_rider_n": [
-            5.965345337744994,
+            -8.126822831816064,
             -0.0,
-            96.17735212579692
+            39.80210400203692
           ],
-          "gap_m": 6.262354955215294e-05,
+          "gap_m": 2.6502220218172627e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 96.29561060556588,
+          "normal_load_n": 39.46483412999038,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -396,8 +396,8 @@
             0.0,
             0.0
           ],
-          "tangent_n": 3.5810312801363975,
-          "vertical_force_on_rider_n": 96.17735212579692,
+          "tangent_n": -9.632216744915828,
+          "vertical_force_on_rider_n": 39.80210400203692,
           "would_separate": false,
           "would_slip": false
         },
@@ -406,97 +406,97 @@
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            124.60589949630779,
-            -1.111523948118131e-23,
-            -183.45182121173136
+            170.1528841280167,
+            4.265150033476549e-25,
+            -250.86004728743399
           ],
           "force_on_rider_n": [
-            -124.60589949630779,
-            1.111523948118131e-23,
-            183.45182121173136
+            -170.1528841280167,
+            -4.265150033476549e-25,
+            250.86004728743399
           ],
-          "hand_gap_m": 1.9916451359017057e-05,
+          "hand_gap_m": 2.7212452730526197e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6104902051661009,
-          "trial_pair_force_n": 221.76834962452375
+          "shoulder_distance_m": 0.6072947532353165,
+          "trial_pair_force_n": 303.1217037794158
         },
         "grip_left": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            62.302949749099156,
-            -1.545146635782163e-10,
-            -91.72591060656714
+            85.0764420640365,
+            7.728982185233937e-11,
+            -125.43002364374719
           ],
           "force_on_rider_n": [
-            -62.302949749099156,
-            1.545146635782163e-10,
-            91.72591060656714
+            -85.0764420640365,
+            -7.728982185233937e-11,
+            125.43002364374719
           ],
-          "hand_gap_m": 1.9916451359017057e-05,
+          "hand_gap_m": 2.7212452730526197e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.5345712661687645,
+            2.533834654567522,
             -0.1,
-            0.609660174801054
+            0.6098116536638183
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6104902051661009,
-          "trial_pair_force_n": 110.88417481337325
+          "shoulder_distance_m": 0.6072947532353165,
+          "trial_pair_force_n": 151.56085188974868
         },
         "grip_right": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            62.30294974720863,
-            1.545146635782052e-10,
-            -91.72591060516422
+            85.0764420639802,
+            -7.728982185233894e-11,
+            -125.43002364368681
           ],
           "force_on_rider_n": [
-            -62.30294974720863,
-            -1.545146635782052e-10,
-            91.72591060516422
+            -85.0764420639802,
+            7.728982185233894e-11,
+            125.43002364368681
           ],
-          "hand_gap_m": 1.991645135754606e-05,
+          "hand_gap_m": 2.7212452730434318e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.5345712661687645,
+            2.533834654567522,
             0.1,
-            0.609660174801054
+            0.6098116536638183
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6104902051661009,
-          "trial_pair_force_n": 110.88417481115049
+          "shoulder_distance_m": 0.6072947532353165,
+          "trial_pair_force_n": 151.5608518896671
         },
         "rear_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            -26.89548010645647,
+            -10.514206348145184,
             0.0,
-            -69.28385925220151
+            -40.269746449658875
           ],
           "force_on_rider_n": [
-            26.89548010645647,
+            10.514206348145184,
             -0.0,
-            69.28385925220151
+            40.269746449658875
           ],
-          "gap_m": 4.835154723084796e-05,
+          "gap_m": 2.7127770462446795e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 69.87297841172631,
+          "normal_load_n": 40.470781103757716,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -506,31 +506,31 @@
             0.0,
             0.0
           ],
-          "tangent_n": 25.325617285864737,
-          "vertical_force_on_rider_n": 69.28385925220151,
+          "tangent_n": 9.711688375504915,
+          "vertical_force_on_rider_n": 40.269746449658875,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "enabled": true,
           "force_on_bike_n": [
-            -91.74573800921397,
+            -167.7280933110424,
             0.0,
-            -435.8869366036505
+            -453.96378055963555
           ],
           "force_on_rider_n": [
-            91.74573800921397,
+            167.7280933110424,
             -0.0,
-            435.8869366036505
+            453.96378055963555
           ],
-          "gap_m": 2.1110348685747755e-05,
+          "gap_m": 2.2930472462362008e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 436.42158283246187,
+          "normal_load_n": 454.9078189670138,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -540,39 +540,39 @@
             0.0,
             0.0
           ],
-          "tangent_n": 89.16784163911798,
-          "vertical_force_on_rider_n": 435.8869366036505,
+          "tangent_n": 165.1505482534929,
+          "vertical_force_on_rider_n": 453.96378055963555,
           "would_separate": false,
           "would_slip": false
         }
       },
-      "rider_activation_saturated": false,
+      "rider_activation_saturated": true,
       "rider_active_delivered_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_active_positive_power_limit_w": 450.0,
       "rider_active_request_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.15800572340974,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.934359322909289,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_allocation": {
-        "crank_task_nm": 0.5624906925632541,
-        "crank_task_shortfall_nm": 7.771561172376096e-16,
+        "crank_task_nm": 0.5901939749501188,
+        "crank_task_shortfall_nm": 5.000131065793209,
         "invalid_controller": false
       },
       "rider_balance": {
@@ -584,120 +584,120 @@
       },
       "rider_control": {
         "rider_elbow_left": {
-          "active_delivered_nm": 3.450713320524967,
-          "active_request_nm": 3.450713320524967,
-          "command_nm": 3.450713320524967,
+          "active_delivered_nm": 6.351275602987638,
+          "active_request_nm": 6.351275602987638,
+          "command_nm": 6.351275602987638,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320524967,
-          "requested_nm": 3.450713320524967,
+          "posture_nm": 6.351275602987638,
+          "requested_nm": 6.351275602987638,
           "saturated": false,
-          "solved_active_nm": 3.450713320524967,
-          "solved_force_nm": 3.450713320524967,
+          "solved_active_nm": 6.351275602987638,
+          "solved_force_nm": 6.351275602987638,
           "solved_passive_nm": 0.0
         },
         "rider_elbow_right": {
-          "active_delivered_nm": 3.450713320540423,
-          "active_request_nm": 3.450713320540423,
-          "command_nm": 3.450713320540423,
+          "active_delivered_nm": 6.351275602987588,
+          "active_request_nm": 6.351275602987588,
+          "command_nm": 6.351275602987588,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320540423,
-          "requested_nm": 3.450713320540423,
+          "posture_nm": 6.351275602987588,
+          "requested_nm": 6.351275602987588,
           "saturated": false,
-          "solved_active_nm": 3.450713320540423,
-          "solved_force_nm": 3.450713320540423,
+          "solved_active_nm": 6.351275602987588,
+          "solved_force_nm": 6.351275602987588,
           "solved_passive_nm": 0.0
         },
         "rider_hip_front": {
-          "active_delivered_nm": 7.15292492057795,
-          "active_request_nm": 7.15292492057795,
-          "command_nm": 7.15292492057795,
+          "active_delivered_nm": -29.63037243977777,
+          "active_request_nm": -29.15800572340974,
+          "command_nm": -29.63037243977777,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 7.15292492057795,
+          "pedaling_nm": -29.15800572340974,
           "posture_nm": 0.0,
-          "requested_nm": 7.15292492057795,
-          "saturated": false,
-          "solved_active_nm": 7.15292492057795,
-          "solved_force_nm": 7.15292492057795,
+          "requested_nm": -29.15800572340974,
+          "saturated": true,
+          "solved_active_nm": -29.63037243977777,
+          "solved_force_nm": -29.63037243977777,
           "solved_passive_nm": 0.0
         },
         "rider_hip_rear": {
-          "active_delivered_nm": 8.31480351764151,
-          "active_request_nm": 8.31480351764151,
-          "command_nm": 8.31480351764151,
+          "active_delivered_nm": -12.350264926181017,
+          "active_request_nm": -12.350264926181017,
+          "command_nm": -12.350264926181017,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 8.31480351764151,
+          "pedaling_nm": -12.350264926181017,
           "posture_nm": 0.0,
-          "requested_nm": 8.31480351764151,
+          "requested_nm": -12.350264926181017,
           "saturated": false,
-          "solved_active_nm": 8.31480351764151,
-          "solved_force_nm": 8.31480351764151,
+          "solved_active_nm": -12.350264926181017,
+          "solved_force_nm": -12.350264926181017,
           "solved_passive_nm": 0.0
         },
         "rider_knee_front": {
-          "active_delivered_nm": -7.074713659045089,
-          "active_request_nm": -7.074713659045089,
-          "command_nm": -7.074713659045089,
+          "active_delivered_nm": -5.439186065840848,
+          "active_request_nm": -5.934359322909289,
+          "command_nm": -5.439186065840848,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -7.074713659045089,
+          "pedaling_nm": -5.934359322909289,
           "posture_nm": 0.0,
-          "requested_nm": -7.074713659045089,
-          "saturated": false,
-          "solved_active_nm": -7.074713659045089,
-          "solved_force_nm": -7.074713659045089,
+          "requested_nm": -5.934359322909289,
+          "saturated": true,
+          "solved_active_nm": -5.439186065840848,
+          "solved_force_nm": -5.439186065840848,
           "solved_passive_nm": 0.0
         },
         "rider_knee_rear": {
-          "active_delivered_nm": -6.748568855664899,
-          "active_request_nm": -6.748568855664899,
-          "command_nm": -6.748568855664899,
+          "active_delivered_nm": 1.059983517173249,
+          "active_request_nm": 1.059983517173249,
+          "command_nm": 1.059983517173249,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -6.748568855664899,
+          "pedaling_nm": 1.059983517173249,
           "posture_nm": 0.0,
-          "requested_nm": -6.748568855664899,
+          "requested_nm": 1.059983517173249,
           "saturated": false,
-          "solved_active_nm": -6.748568855664899,
-          "solved_force_nm": -6.748568855664899,
+          "solved_active_nm": 1.059983517173249,
+          "solved_force_nm": 1.059983517173249,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_left": {
-          "active_delivered_nm": -7.1553179394468875,
-          "active_request_nm": -7.1553179394468875,
-          "command_nm": -7.1553179394468875,
+          "active_delivered_nm": -8.171896609073311,
+          "active_request_nm": -8.171896609073311,
+          "command_nm": -8.171896609073311,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.1553179394468875,
-          "requested_nm": -7.1553179394468875,
+          "posture_nm": -8.171896609073311,
+          "requested_nm": -8.171896609073311,
           "saturated": false,
-          "solved_active_nm": -7.1553179394468875,
-          "solved_force_nm": -7.1553179394468875,
+          "solved_active_nm": -8.171896609073311,
+          "solved_force_nm": -8.171896609073311,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_right": {
-          "active_delivered_nm": -7.155317939457729,
-          "active_request_nm": -7.155317939457729,
-          "command_nm": -7.155317939457729,
+          "active_delivered_nm": -8.17189660907323,
+          "active_request_nm": -8.17189660907323,
+          "command_nm": -8.17189660907323,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.155317939457729,
-          "requested_nm": -7.155317939457729,
+          "posture_nm": -8.17189660907323,
+          "requested_nm": -8.17189660907323,
           "saturated": false,
-          "solved_active_nm": -7.155317939457729,
-          "solved_force_nm": -7.155317939457729,
+          "solved_active_nm": -8.17189660907323,
+          "solved_force_nm": -8.17189660907323,
           "solved_passive_nm": 0.0
         },
         "rider_torso_hinge": {
-          "active_delivered_nm": 0.5073441097003837,
-          "active_request_nm": 0.5073441097003837,
-          "command_nm": 0.5073441097003837,
+          "active_delivered_nm": 40.554969653279926,
+          "active_request_nm": 40.554969653279926,
+          "command_nm": 40.554969653279926,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 0.5073441097003837,
-          "requested_nm": 0.5073441097003837,
+          "posture_nm": 40.554969653279926,
+          "requested_nm": 40.554969653279926,
           "saturated": false,
-          "solved_active_nm": 0.5073441097003837,
-          "solved_force_nm": 0.5073441097003837,
+          "solved_active_nm": 40.554969653279926,
+          "solved_force_nm": 40.554969653279926,
           "solved_passive_nm": 0.0
         }
       },
@@ -718,23 +718,23 @@
         }
       },
       "rider_joint_capacity_nm": {
-        "rider_elbow_left": 29.890346960309525,
-        "rider_elbow_right": 29.89034696030985,
-        "rider_hip_front": 160.5775200309377,
-        "rider_hip_rear": 179.25749363754727,
-        "rider_knee_front": 135.18325631576386,
-        "rider_knee_rear": 123.67608949027641,
-        "rider_shoulder_left": 56.612179069058485,
-        "rider_shoulder_right": 56.6121790690587,
-        "rider_torso_hinge": 153.33380746217193
+        "rider_elbow_left": 30.51297791125176,
+        "rider_elbow_right": 30.51297791125176,
+        "rider_hip_front": 116.87239688459357,
+        "rider_hip_rear": 128.63899469039,
+        "rider_knee_front": 134.04702987047855,
+        "rider_knee_rear": 53.060252513197916,
+        "rider_shoulder_left": 56.96629245053082,
+        "rider_shoulder_right": 56.96629245053082,
+        "rider_torso_hinge": 156.24040422332106
       },
       "rider_joint_positive_power_w": {
         "rider_elbow_left": 0.0,
         "rider_elbow_right": 0.0,
-        "rider_hip_front": 0.0,
-        "rider_hip_rear": 0.0,
+        "rider_hip_front": -0.0,
+        "rider_hip_rear": -0.0,
         "rider_knee_front": -0.0,
-        "rider_knee_rear": -0.0,
+        "rider_knee_rear": 0.0,
         "rider_shoulder_left": -0.0,
         "rider_shoulder_right": -0.0,
         "rider_torso_hinge": 0.0
@@ -742,15 +742,15 @@
       "rider_joint_power_violations": [],
       "rider_joint_speed_violations": [],
       "rider_joint_torques": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_lean_limit_rad": 0.5671875000000001,
       "rider_passive_power_w": 0.0,
@@ -766,51 +766,51 @@
         }
       },
       "rider_welds": {
-        "crank_torque_nm": 2.7496442939134034,
+        "crank_torque_nm": 0.0028218638931671635,
         "front_pedal": {
           "force_on_rider_n": [
-            -2.003341861049305,
+            -8.273078892438754,
             -0.0,
-            113.23226551508085
+            39.947123823775776
           ],
-          "normal_n": 113.14789189074952,
-          "tangent_n": -4.807691022649321,
+          "normal_n": 39.60419615361818,
+          "tangent_n": -9.783873628493204,
           "would_separate": false,
           "would_slip": false
         },
         "grip_left": {
           "force_on_rider_n": [
-            -38.214697469318125,
-            1.545146635782163e-10,
-            69.9364185560227
+            -84.91499544499348,
+            -7.728982185233937e-11,
+            125.28985074726428
           ]
         },
         "grip_right": {
           "force_on_rider_n": [
-            -38.21469746742928,
-            -1.545146635782052e-10,
-            69.93641855462175
+            -84.91499544493716,
+            7.728982185233894e-11,
+            125.28985074720391
           ]
         },
         "rear_pedal": {
           "force_on_rider_n": [
-            33.248434278035184,
+            10.58130318730917,
             -0.0,
-            96.18277193626822
+            40.40302807993249
           ],
-          "normal_n": 96.90836556824512,
-          "tangent_n": 31.07012523592997,
+          "normal_n": 40.6053700841872,
+          "tangent_n": 9.776122723031238,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "force_on_rider_n": [
-            -25.78581100162262,
+            166.9850697760911,
             -0.0,
-            453.1558731164789
+            454.0857754508706
           ],
-          "normal_n": 452.9955517728653,
-          "tangent_n": -28.463721874818702,
+          "normal_n": 455.0255975245044,
+          "tangent_n": 164.40684472494516,
           "would_separate": false,
           "would_slip": false
         }
@@ -828,30 +828,30 @@
           0.0
         ],
         "frame_specific_force_body_mps2": [
-          2.3718914831292297,
+          -0.03722051905652194,
           0.0,
-          9.568705057431293
+          9.80728997096533
         ],
-        "human_torque_nm": 4.399546989674254,
+        "human_torque_nm": 2.7835893372203324e-06,
         "motor_torque_nm": 0.0
       },
       "suspension": {
-        "fork_travel_m": 0.06088387071706992,
+        "fork_travel_m": 0.06062278027726021,
         "fork_velocity_mps": 0.0,
         "generalized_force_components_n": {
           "fork_damper": -0.0,
-          "fork_spring": -355.3792419239038,
+          "fork_spring": -354.10836299174156,
           "shock_bumper": -0.0,
-          "shock_coil": -1654.1664283892035,
+          "shock_coil": -1657.8270414813558,
           "shock_damper": -0.0,
           "shock_hbo": -0.0,
           "shock_solver_limit": 0.0,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0
         },
-        "linkage_closure_max_m": 4.455568751504657e-05,
+        "linkage_closure_max_m": 4.45778304243305e-05,
         "shock_solver_limit_power_w": 0.0,
-        "shock_stroke_m": 0.014434262027829,
+        "shock_stroke_m": 0.01446620455044813,
         "shock_velocity_mps": 0.0
       },
       "time_s": 0.0,
@@ -861,13 +861,13 @@
           "branch_release_loss_j": 0.0,
           "brush_loss_j": 0.0,
           "controller_grounded": true,
-          "effective_radius_m": 0.3686999754528417,
+          "effective_radius_m": 0.3686836393005879,
           "friction_coefficient": 1.05,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 429.00319113057583,
+          "normal_load_n": 431.1268909235733,
           "normal_speed_mps": 0.0,
-          "normal_vertical_n": 429.00319113057583,
+          "normal_vertical_n": 431.1268909235733,
           "omega_abs_rad_s": 0.0,
           "omega_rel_rad_s": 0.0,
           "outside_material_load_range": false,
@@ -883,44 +883,44 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 429.00319113057583,
+              "normal_load_n": 431.1268909235733,
               "point_m": [
-                2.8174525875721175,
+                2.816969941325585,
                 0.0,
                 -0.349500010430813
               ],
               "slip_mps": 0.0,
               "source_geom": "terrain",
-              "tangent_force_n": -7.330071735064762,
+              "tangent_force_n": -0.004331709571193134,
               "world_force_n": [
-                -7.330071735064762,
+                -0.004331709571193134,
                 0.0,
-                429.00319113057583
+                431.1268909235733
               ]
             }
           ],
-          "penetration_m": 0.0033000245471582756,
-          "radial_energy_j": 0.7078605307700668,
+          "penetration_m": 0.003316360699412102,
+          "radial_energy_j": 0.7148861387593333,
           "raw_contact": true,
-          "shear_energy_j": 0.0013432487910298833,
+          "shear_energy_j": 4.690926952291551e-10,
           "slip_mps": 0.0,
           "slip_ratio": -0.0,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
           "tangent_center_speed_mps": 0.0,
-          "tangent_force_n": -7.330071735064762,
+          "tangent_force_n": -0.004331709571193134,
           "unloaded_radius_m": 0.372,
-          "vertical_force_n": 429.00319113057583,
+          "vertical_force_n": 431.1268909235733,
           "wheel_axis_m": [
-            2.8174525875721175,
+            2.816969941325585,
             0.0,
-            0.019199965022028698
+            0.01918362886977487
           ],
-          "wheel_axis_moment_nm": 2.7025972687859467,
+          "wheel_axis_moment_nm": 0.0015970304491006737,
           "world_force_n": [
-            -7.330071735064762,
+            -0.004331709571193134,
             0.0,
-            429.00319113057583
+            431.1268909235733
           ]
         },
         "rear": {
@@ -928,13 +928,13 @@
           "branch_release_loss_j": 0.0,
           "brush_loss_j": 0.0,
           "controller_grounded": true,
-          "effective_radius_m": 0.34742184249173863,
+          "effective_radius_m": 0.3474373915320087,
           "friction_coefficient": 1.05,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 595.1604760739754,
+          "normal_load_n": 593.1391008388664,
           "normal_speed_mps": 0.0,
-          "normal_vertical_n": 595.1604760739754,
+          "normal_vertical_n": 593.1391008388664,
           "omega_abs_rad_s": 0.0,
           "omega_rel_rad_s": 0.0,
           "outside_material_load_range": false,
@@ -950,44 +950,44 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 595.1604760739754,
+              "normal_load_n": 593.1391008388664,
               "point_m": [
-                1.5599540271496337,
+                1.5593624728507396,
                 0.0,
                 -0.349500010430813
               ],
               "slip_mps": 0.0,
               "source_geom": "terrain",
-              "tangent_force_n": 7.331258120032852,
+              "tangent_force_n": -0.00277375337549492,
               "world_force_n": [
-                7.331258120032852,
+                -0.00277375337549492,
                 0.0,
-                595.1604760739754
+                593.1391008388664
               ]
             }
           ],
-          "penetration_m": 0.004578157508261349,
-          "radial_energy_j": 1.3623692010792345,
+          "penetration_m": 0.00456260846799128,
+          "radial_energy_j": 1.3531307420920728,
           "raw_contact": true,
-          "shear_energy_j": 0.0013436836405636907,
+          "shear_energy_j": 1.923426947017366e-10,
           "slip_mps": 0.0,
           "slip_ratio": -0.0,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
           "tangent_center_speed_mps": 0.0,
-          "tangent_force_n": 7.331258120032852,
+          "tangent_force_n": -0.00277375337549492,
           "unloaded_radius_m": 0.352,
-          "vertical_force_n": 595.1604760739754,
+          "vertical_force_n": 593.1391008388664,
           "wheel_axis_m": [
-            1.5599540271496337,
+            1.5593624728507396,
             0.0,
-            -0.002078167939074395
+            -0.002062618898804316
           ],
-          "wheel_axis_moment_nm": -2.5470392038443332,
+          "wheel_axis_moment_nm": 0.0009637056375350594,
           "world_force_n": [
-            7.331258120032852,
+            -0.00277375337549492,
             0.0,
-            595.1604760739754
+            593.1391008388664
           ]
         }
       }
@@ -995,73 +995,73 @@
     {
       "attachment_samples": {
         "foot_front": {
-          "gap_m": 6.530532628754969e-05,
+          "gap_m": 2.653036658406988e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 121.15224091380574,
+          "normal_n": 39.70570925239699,
           "pull_n": 0.0,
-          "tangent_n": -5.989782839868099
+          "tangent_n": -9.806130301991416
         },
         "foot_rear": {
-          "gap_m": 5.27844028824342e-05,
+          "gap_m": 2.7151797055424386e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 110.28392734052295,
+          "normal_n": 40.65770467984609,
           "pull_n": 0.0,
-          "tangent_n": 37.154243384398484
+          "tangent_n": 9.811289164465663
         },
         "grip_left": {
-          "gap_m": 1.8510645882611924e-05,
+          "gap_m": 2.7203485421078984e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 45.97872008894642,
+          "normal_n": 105.6684712954885,
           "pull_n": 0.0,
-          "tangent_n": 59.26644021755037
+          "tangent_n": 108.32173261082886
         },
         "grip_right": {
-          "gap_m": 1.8510645881154828e-05,
+          "gap_m": 2.7203485421078984e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 45.97872008890386,
+          "normal_n": 105.66847129554206,
           "pull_n": 0.0,
-          "tangent_n": 59.266440217542524
+          "tangent_n": 108.32173261087037
         },
         "saddle": {
-          "gap_m": 2.1050810174440902e-05,
+          "gap_m": 2.2928716079455932e-05,
           "half_patch_m": 0.045,
           "kind": "saddle",
           "moment_nm": 0.0,
-          "normal_n": 440.4628084400034,
+          "normal_n": 454.9640784726042,
           "pull_n": 0.0,
-          "tangent_n": -40.3326463266766
+          "tangent_n": 164.33625066557565
         }
       },
       "attachment_violations": [],
       "component_work_j": {
-        "act_rider_elbow_left": 0.00017226830969727387,
-        "act_rider_elbow_right": 0.00017226830971204377,
-        "act_rider_hip_front": 0.0015369350330063456,
-        "act_rider_hip_rear": 0.0017100360866174353,
-        "act_rider_knee_front": 0.0002481987719453677,
-        "act_rider_knee_rear": 0.0001494970986496049,
-        "act_rider_shoulder_left": 0.0003117152643375498,
-        "act_rider_shoulder_right": 0.0003117152643612586,
-        "act_rider_torso_hinge": 0.00010709050116121788,
-        "aerodynamic": -6.239050308648563e-11,
+        "act_rider_elbow_left": 2.3334601426163493e-06,
+        "act_rider_elbow_right": 2.333460144480323e-06,
+        "act_rider_hip_front": -4.867575432923546e-05,
+        "act_rider_hip_rear": -1.6550214689027954e-05,
+        "act_rider_knee_front": 2.548116905006334e-06,
+        "act_rider_knee_rear": 2.717522523695705e-08,
+        "act_rider_shoulder_left": 2.5469053025450086e-06,
+        "act_rider_shoulder_right": 2.5469053036192586e-06,
+        "act_rider_torso_hinge": 5.993892496660443e-05,
+        "aerodynamic": -2.0786479812810826e-17,
         "chain": 0.0,
-        "closure": -0.00046963559991112017,
-        "drive_bearings": -2.1509143831261624e-08,
-        "engine_passive": -1.7080649441147473e-07,
-        "fork_damper": -2.27774328389712e-05,
-        "fork_spring": -0.0023691161514039685,
+        "closure": 2.162668374112199e-06,
+        "drive_bearings": -7.504556573853134e-12,
+        "engine_passive": -1.5627932138670194e-12,
+        "fork_damper": -5.658957444716076e-10,
+        "fork_spring": -1.1825937491141154e-05,
         "freehub": 0.0,
         "front_brake": 0.0,
         "front_static_brake": 0.0,
-        "ideal_transmission": 0.00010763271750804429,
+        "ideal_transmission": -2.9808669836292016e-09,
         "joint_limits": 0.0,
         "mid_drive": 0.0,
         "native_contact": 0.0,
@@ -1070,15 +1070,15 @@
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "rider_passive_damping": 0.0,
-        "road_rolling": -1.1770857565820462e-05,
+        "road_rolling": -1.8097816378745815e-12,
         "shock_bumper": 0.0,
-        "shock_coil": 0.0020397008307076647,
-        "shock_damper": -4.860672177199745e-06,
+        "shock_coil": 6.249188482836432e-06,
+        "shock_damper": -4.5361042010642e-11,
         "shock_hbo": 0.0,
         "shock_solver_limit": 0.0,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": -0.0008690072227203788
+        "tires": -1.8750758341951848e-06
       },
       "contact_crash_cause": null,
       "control": {
@@ -1098,10 +1098,10 @@
         "assist_demand_gated": true,
         "assist_gain": 3.4,
         "assist_mode": "turbo",
-        "assist_sensor_nm": 2.7496442939134034,
+        "assist_sensor_nm": 0.0028218638931671635,
         "battery_empty": false,
         "battery_energy_j": 1800000.0,
-        "cadence_rpm": -0.0006046720558192714,
+        "cadence_rpm": 0.0022687810715299335,
         "chain_dissipation_power_w": 0.0,
         "chain_energy_j": 0.0,
         "chain_extension_m": 0.0,
@@ -1109,29 +1109,29 @@
         "chain_power_w": 0.0,
         "chain_tension_n": 0.0,
         "coasting_reason": "",
-        "crank_phase_rad": 0.004981892011365479,
-        "crank_rad_s": -6.332110961309535e-05,
+        "crank_phase_rad": -0.030754028242609092,
+        "crank_rad_s": 0.00023758619823073394,
         "crank_target_phase_rad": null,
-        "crank_target_rate_rad_s": 0.04713762173556372,
-        "drive_shaft_rad_s": -6.332110961309535e-05,
+        "crank_target_rate_rad_s": 0.0,
+        "drive_shaft_rad_s": 0.00023758619823073394,
         "electrical_power_w": 0.0,
         "energy_limited": false,
         "freehub_deflection_rad": 0.0,
         "freehub_dissipation_power_w": 0.0,
         "freehub_energy_j": 0.0,
         "freehub_engaged": true,
-        "freehub_power_w": 0.08610617400643543,
-        "freehub_torque_nm": 4.228936012351614,
+        "freehub_power_w": -2.384693586903361e-06,
+        "freehub_torque_nm": 0.02098154438446904,
         "front_brake_demand": 0.0,
         "front_brake_power_w": 0.0,
         "front_brake_torque_nm": 0.0,
         "gear_front_teeth": 22,
         "gear_ratio": 0.43137254901960786,
         "gear_rear_teeth": 51,
-        "human_active_power_w": 3.7757797115904776,
+        "human_active_power_w": 0.005639183177476194,
         "human_command_nm": 0.75,
-        "human_joint_power_w": 3.7757797115904776,
-        "human_sensor_nm": 2.7496442939134034,
+        "human_joint_power_w": 0.005639183177476194,
+        "human_sensor_nm": 0.0028218638931671635,
         "human_setpoint_nm": 10.0,
         "human_torque_nm": 0.0,
         "motor_control_source": "external_request",
@@ -1143,13 +1143,13 @@
         "motor_limited_request_nm": 0.0,
         "motor_request_nm": 0.0,
         "motor_setpoint_nm": 25.0,
-        "motor_shaft_power_w": -0.0,
+        "motor_shaft_power_w": 0.0,
         "motor_torque_nm": 0.0,
         "omits_suspension_coupling": true,
         "rear_brake_demand": 0.0,
         "rear_brake_power_w": 0.0,
         "rear_brake_torque_nm": 0.0,
-        "required_cadence_rpm": 0.450131130288656,
+        "required_cadence_rpm": 0.0,
         "rider_mode": "pedaling",
         "rollback_brake_demand": 0.0,
         "safety_limited": false,
@@ -1164,87 +1164,87 @@
       "dt_s": 0.00125,
       "endpoint_mass": {
         "angular_momentum_kg_m2_s": [
-          0.006338007710973683,
-          0.0005383881980120242,
-          -0.002450263563843093
+          0.0001998860288436049,
+          -6.401041494789286e-05,
+          -9.745054337631161e-05
         ],
         "com_m": [
-          2.086697666734484,
-          9.195402298852594e-06,
-          0.6127694160564293
+          2.088675022242389,
+          9.195402298852062e-06,
+          0.6120692206610815
         ],
         "com_velocity_mps": [
-          2.36482189343333e-06,
+          -1.800427687939461e-07,
           0.0,
-          1.1300667511736361e-05
+          2.4822054070962775e-06
         ],
-        "gravitational_energy_j": 627.5763762260168,
-        "kinetic_energy_j": 0.006320051788523569,
+        "gravitational_energy_j": 626.8592613091357,
+        "kinetic_energy_j": 3.899959048031108e-07,
         "linear_momentum_kg_mps": [
-          0.0002468874056744396,
+          -1.8796465062087972e-05,
           0.0,
-          0.001179789688225276
+          0.00025914224450085133
         ],
         "mass_kg": 104.39999999999999
       },
       "energy": {
-        "active_work_j": 0.004719724639488097,
-        "constraint_absolute_j": 0.0016329315254950097,
-        "constraint_signed_j": -0.00036200288240308544,
+        "active_work_j": 7.0489789718452345e-06,
+        "constraint_absolute_j": 6.575460783792868e-06,
+        "constraint_signed_j": 2.159687507128606e-06,
         "constraint_work_ok": false,
-        "constraint_work_ratio": 0.34598025313445363,
+        "constraint_work_ratio": 0.09097842290654802,
         "elastic_energy_j": {
-          "fork_air": 12.074783383027901,
+          "fork_air": 11.975693934103653,
           "rider_interfaces": 0.0,
           "rider_joint_envelope": 0.0,
           "shock_bumper": 0.0,
-          "shock_coil": 11.933394225963584,
+          "shock_coil": 11.991210933335715,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0,
-          "tires": 2.0747711669244415
+          "tires": 2.068029801555054
         },
         "electrical_residual_j": 0.0,
         "electrical_work_j": 0.0,
-        "energy_scale_j": 26.07953354497397,
-        "external_work_j": -1.1770919956323548e-05,
-        "loss_j": 3.113734084108343e-05,
-        "loss_step_j": 3.113734084108343e-05,
+        "energy_scale_j": 26.034910287565527,
+        "external_work_j": -1.8098024243543942e-12,
+        "loss_j": 6.417334256053116e-10,
+        "loss_step_j": 6.417334256053116e-10,
         "measured": true,
-        "mechanical_energy_j": 653.6656450537213,
+        "mechanical_energy_j": 652.894196368126,
         "motor_positive_j": 0.0,
         "motor_signed_j": 0.0,
-        "muscle_positive_j": 0.004719724639488097,
-        "muscle_signed_j": 0.004719724639488097,
-        "residual_j": 0.005073171036116347,
-        "solver_constraint_work_j": -0.00036200288240308544,
+        "muscle_positive_j": 7.227494799010866e-05,
+        "muscle_signed_j": 7.0489789718452345e-06,
+        "residual_j": 2.246417374387406e-05,
+        "solver_constraint_work_j": 2.159687507128606e-06,
         "source_interval_id": 1,
-        "source_positive_work_j": 0.004719724639488097,
+        "source_positive_work_j": 7.227494799010866e-05,
         "source_time_s": 0.0025
       },
       "interval_end_s": 0.0025,
       "interval_id": 1,
       "mass": {
         "angular_momentum_kg_m2_s": [
-          0.0028518909735290752,
-          -1.4043100630065086e-06,
-          -0.0004510272801575114
+          0.00010498787669088082,
+          -3.08808732324493e-05,
+          -4.4201602420364114e-05
         ],
         "com_m": [
-          2.08669766365296,
+          2.0886750224674318,
           9.195402298852594e-06,
-          0.6127694016013687
+          0.6120692175583111
         ],
         "com_velocity_mps": [
-          -3.8636070456194666e-08,
+          -8.507958096590987e-08,
           0.0,
-          -1.5172305079205777e-07
+          1.2211597642494836e-06
         ],
-        "gravitational_energy_j": 627.5763614216643,
-        "kinetic_energy_j": 0.0016652181369075155,
+        "gravitational_energy_j": 626.8592581313901,
+        "kinetic_energy_j": 1.0098479726318643e-07,
         "linear_momentum_kg_mps": [
-          -4.033605755626723e-06,
+          -8.88230825284099e-06,
           0.0,
-          -1.583988650269083e-05
+          0.0001274890793876461
         ],
         "mass_kg": 104.39999999999999
       },
@@ -1256,26 +1256,26 @@
         "numerically_valid": true
       },
       "powers_w": {
-        "act_rider_elbow_left": 0.1378146477578191,
-        "act_rider_elbow_right": 0.137814647769635,
-        "act_rider_hip_front": 1.2295480264050764,
-        "act_rider_hip_rear": 1.3680288692939482,
-        "act_rider_knee_front": 0.19855901755629415,
-        "act_rider_knee_rear": 0.11959767891968393,
-        "act_rider_shoulder_left": 0.24937221147003982,
-        "act_rider_shoulder_right": 0.24937221148900687,
-        "act_rider_torso_hinge": 0.0856724009289743,
-        "aerodynamic": -4.99124024691885e-08,
+        "act_rider_elbow_left": 0.0018667681140930794,
+        "act_rider_elbow_right": 0.0018667681155842585,
+        "act_rider_hip_front": -0.03894060346338837,
+        "act_rider_hip_rear": -0.013240171751222364,
+        "act_rider_knee_front": 0.0020384935240050674,
+        "act_rider_knee_rear": 2.174018018956564e-05,
+        "act_rider_shoulder_left": 0.002037524242036007,
+        "act_rider_shoulder_right": 0.0020375242428954067,
+        "act_rider_torso_hinge": 0.04795113997328354,
+        "aerodynamic": -1.662918385024866e-14,
         "chain": 0.0,
-        "closure": -0.3757084799288961,
-        "drive_bearings": -1.72073150650093e-05,
-        "engine_passive": -0.00013664519552917978,
-        "fork_damper": -0.01822194627117696,
-        "fork_spring": -1.8952929211231748,
+        "closure": 0.0017301346992897593,
+        "drive_bearings": -6.0036452590825074e-09,
+        "engine_passive": -1.2502345710936155e-09,
+        "fork_damper": -4.527165955772861e-07,
+        "fork_spring": -0.009460749992912923,
         "freehub": 0.0,
         "front_brake": 0.0,
         "front_static_brake": 0.0,
-        "ideal_transmission": 0.08610617400643543,
+        "ideal_transmission": -2.384693586903361e-06,
         "joint_limits": 0.0,
         "mid_drive": 0.0,
         "native_contact": 0.0,
@@ -1284,93 +1284,93 @@
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "rider_passive_damping": 0.0,
-        "road_rolling": -0.00941668605265637,
+        "road_rolling": -1.4478253102996651e-09,
         "shock_bumper": 0.0,
-        "shock_coil": 1.6317606645661318,
-        "shock_damper": -0.0038885377417597956,
+        "shock_coil": 0.004999350786269146,
+        "shock_damper": -3.62888336085136e-08,
         "shock_hbo": 0.0,
         "shock_solver_limit": 0.0,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": -0.695205778176303
+        "tires": -0.0015000606673561479
       },
       "qpos": [
-        2.0106477768862634,
-        -0.053255163394113854,
-        0.005916627829909841,
-        0.004981892011365479,
-        0.005279081504597886,
-        0.005279081502206728,
-        0.06089053655310578,
-        -2.7894170561215465e-05,
-        0.1250398827235096,
-        -0.067737733568142,
-        0.001913177510177084,
-        0.22004591776542728,
-        -0.1858634846022817,
-        0.014433028853784353,
-        2.0262376736665204,
-        -0.05332056522428083,
-        0.18936704984391606,
-        -0.18236158729477048,
-        0.0936347074277877,
-        -0.15095083430333064,
-        0.09363470742780274,
-        -0.15095083430335238,
-        -0.18184991811429568,
-        0.017238024850716217,
-        -0.17328944157806492,
-        0.0064685045667497425
+        2.010065547852599,
+        -0.05322823825369874,
+        0.005671989629503424,
+        -0.030754028242609092,
+        0.02082211734755973,
+        0.02082211730254552,
+        0.060622813673624994,
+        0.003751545300167916,
+        0.12531161830761905,
+        -0.06787876181881457,
+        0.004012000171123156,
+        0.22052072870993758,
+        -0.18627297747853855,
+        0.014466200780941447,
+        2.029342301636291,
+        -0.05421155124573095,
+        0.25550335618743714,
+        -0.24796961705727683,
+        0.12427335605949882,
+        -0.20081086549990687,
+        0.12427335605949853,
+        -0.2008108654999065,
+        -0.26454636118368785,
+        0.04702111309898928,
+        -0.2247015165709209,
+        -0.010923586618769625
       ],
       "qvel": [
-        0.003037307745436927,
-        -0.0003297815557079141,
-        0.0049038902423472345,
-        -6.332110961309535e-05,
-        -0.004840569132734136,
-        -0.0048405691327340974,
-        0.005332668828690519,
-        0.010641636400926581,
-        -0.009195797111111069,
-        0.004534120129707307,
-        0.020333876042792194,
-        -0.014043429025466831,
-        0.012048030966020556,
-        -0.000986539235717689,
-        -0.0016552541822650309,
-        0.0021618876979026588,
-        -0.1591485240531302,
-        0.16886448327855594,
-        -0.03485131109202906,
-        0.039938017145061754,
-        -0.03485131109462702,
-        0.03993801714830706,
-        0.17189444039428417,
-        -0.02806601470045852,
-        0.16452930804575272,
-        -0.017721932083317335
+        2.3013255413179716e-05,
+        -3.352451453605276e-06,
+        2.992049385126775e-05,
+        0.00023758619823073394,
+        -0.0002675066920820021,
+        -0.00026750669208200177,
+        2.6717091830375117e-05,
+        -2.0734264114653452e-05,
+        -2.7393078914493145e-05,
+        1.398774702643514e-05,
+        -1.1168559471292252e-05,
+        -4.2786531543636804e-05,
+        3.6547289938019984e-05,
+        -3.015605345959155e-06,
+        -1.2972343311744903e-05,
+        1.7599546552069596e-05,
+        -0.001116930796372985,
+        0.0011823739576983124,
+        -0.0002493330911423586,
+        0.00029392018718491013,
+        -0.0002493330912475264,
+        0.0002939201874196966,
+        0.001314212419790982,
+        -0.0003747791488155196,
+        0.0010720556870933882,
+        2.050992287836898e-05
       ],
       "rider": {
         "front_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            2.003341861049305,
+            8.273078892438754,
             0.0,
-            -113.23226551508085
+            -39.947123823775776
           ],
           "force_on_rider_n": [
-            -2.003341861049305,
+            -8.273078892438754,
             -0.0,
-            113.23226551508085
+            39.947123823775776
           ],
-          "gap_m": 6.530532628754969e-05,
+          "gap_m": 2.653036658406988e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 113.14789189074952,
+          "normal_load_n": 39.60419615361818,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -1380,8 +1380,8 @@
             0.0,
             0.0
           ],
-          "tangent_n": -4.807691022649321,
-          "vertical_force_on_rider_n": 113.23226551508085,
+          "tangent_n": -9.783873628493204,
+          "vertical_force_on_rider_n": 39.947123823775776,
           "would_separate": false,
           "would_slip": false
         },
@@ -1390,97 +1390,97 @@
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            76.4293949367474,
-            -1.111523948118131e-23,
-            -139.87283711064447
+            169.82999088993063,
+            4.265150033476549e-25,
+            -250.5797014944682
           ],
           "force_on_rider_n": [
-            -76.4293949367474,
-            1.111523948118131e-23,
-            139.87283711064447
+            -169.82999088993063,
+            -4.265150033476549e-25,
+            250.5797014944682
           ],
-          "hand_gap_m": 1.8510645882611924e-05,
+          "hand_gap_m": 2.7203485421078984e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6104946079312942,
-          "trial_pair_force_n": 159.39216722216366
+          "shoulder_distance_m": 0.6072947870046607,
+          "trial_pair_force_n": 302.7084614059057
         },
         "grip_left": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            38.214697469318125,
-            -1.545146635782163e-10,
-            -69.9364185560227
+            84.91499544499348,
+            7.728982185233937e-11,
+            -125.28985074726428
           ],
           "force_on_rider_n": [
-            -38.214697469318125,
-            1.545146635782163e-10,
-            69.9364185560227
+            -84.91499544499348,
+            -7.728982185233937e-11,
+            125.28985074726428
           ],
-          "hand_gap_m": 1.8510645882611924e-05,
+          "hand_gap_m": 2.7203485421078984e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.5345791263711486,
+            2.533834708132192,
             -0.1,
-            0.6096565509592734
+            0.6098116298839645
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6104946079312942,
-          "trial_pair_force_n": 79.6960836121494
+          "shoulder_distance_m": 0.6072947870046607,
+          "trial_pair_force_n": 151.35423070299365
         },
         "grip_right": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            38.21469746742928,
-            1.545146635782052e-10,
-            -69.93641855462175
+            84.91499544493716,
+            -7.728982185233894e-11,
+            -125.28985074720391
           ],
           "force_on_rider_n": [
-            -38.21469746742928,
-            -1.545146635782052e-10,
-            69.93641855462175
+            -84.91499544493716,
+            7.728982185233894e-11,
+            125.28985074720391
           ],
-          "hand_gap_m": 1.8510645881154828e-05,
+          "hand_gap_m": 2.7203485421078984e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.5345791263711486,
+            2.533834708132192,
             0.1,
-            0.6096565509592734
+            0.6098116298839645
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6104946079312942,
-          "trial_pair_force_n": 79.69608361001428
+          "shoulder_distance_m": 0.6072947870046607,
+          "trial_pair_force_n": 151.35423070291208
         },
         "rear_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            -33.248434278035184,
+            -10.58130318730917,
             0.0,
-            -96.18277193626822
+            -40.40302807993249
           ],
           "force_on_rider_n": [
-            33.248434278035184,
+            10.58130318730917,
             -0.0,
-            96.18277193626822
+            40.40302807993249
           ],
-          "gap_m": 5.27844028824342e-05,
+          "gap_m": 2.7151797055424386e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 96.90836556824512,
+          "normal_load_n": 40.6053700841872,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -1490,31 +1490,31 @@
             0.0,
             0.0
           ],
-          "tangent_n": 31.07012523592997,
-          "vertical_force_on_rider_n": 96.18277193626822,
+          "tangent_n": 9.776122723031238,
+          "vertical_force_on_rider_n": 40.40302807993249,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "enabled": true,
           "force_on_bike_n": [
-            25.78581100162262,
+            -166.9850697760911,
             0.0,
-            -453.1558731164789
+            -454.0857754508706
           ],
           "force_on_rider_n": [
-            -25.78581100162262,
+            166.9850697760911,
             -0.0,
-            453.1558731164789
+            454.0857754508706
           ],
-          "gap_m": 2.1050810174440902e-05,
+          "gap_m": 2.2928716079455932e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 452.9955517728653,
+          "normal_load_n": 455.0255975245044,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -1524,39 +1524,39 @@
             0.0,
             0.0
           ],
-          "tangent_n": -28.463721874818702,
-          "vertical_force_on_rider_n": 453.1558731164789,
+          "tangent_n": 164.40684472494516,
+          "vertical_force_on_rider_n": 454.0857754508706,
           "would_separate": false,
           "would_slip": false
         }
       },
-      "rider_activation_saturated": false,
+      "rider_activation_saturated": true,
       "rider_active_delivered_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_active_positive_power_limit_w": 450.0,
       "rider_active_request_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.15800572340974,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.934359322909289,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_allocation": {
-        "crank_task_nm": 0.5624906925632541,
-        "crank_task_shortfall_nm": 7.771561172376096e-16,
+        "crank_task_nm": 0.5901939749501188,
+        "crank_task_shortfall_nm": 5.000131065793209,
         "invalid_controller": false
       },
       "rider_balance": {
@@ -1568,120 +1568,120 @@
       },
       "rider_control": {
         "rider_elbow_left": {
-          "active_delivered_nm": 3.450713320524967,
-          "active_request_nm": 3.450713320524967,
-          "command_nm": 3.450713320524967,
+          "active_delivered_nm": 6.351275602987638,
+          "active_request_nm": 6.351275602987638,
+          "command_nm": 6.351275602987638,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320524967,
-          "requested_nm": 3.450713320524967,
+          "posture_nm": 6.351275602987638,
+          "requested_nm": 6.351275602987638,
           "saturated": false,
-          "solved_active_nm": 3.450713320524967,
-          "solved_force_nm": 3.450713320524967,
+          "solved_active_nm": 6.351275602987638,
+          "solved_force_nm": 6.351275602987638,
           "solved_passive_nm": 0.0
         },
         "rider_elbow_right": {
-          "active_delivered_nm": 3.450713320540423,
-          "active_request_nm": 3.450713320540423,
-          "command_nm": 3.450713320540423,
+          "active_delivered_nm": 6.351275602987588,
+          "active_request_nm": 6.351275602987588,
+          "command_nm": 6.351275602987588,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320540423,
-          "requested_nm": 3.450713320540423,
+          "posture_nm": 6.351275602987588,
+          "requested_nm": 6.351275602987588,
           "saturated": false,
-          "solved_active_nm": 3.450713320540423,
-          "solved_force_nm": 3.450713320540423,
+          "solved_active_nm": 6.351275602987588,
+          "solved_force_nm": 6.351275602987588,
           "solved_passive_nm": 0.0
         },
         "rider_hip_front": {
-          "active_delivered_nm": 7.15292492057795,
-          "active_request_nm": 7.15292492057795,
-          "command_nm": 7.15292492057795,
+          "active_delivered_nm": -29.63037243977777,
+          "active_request_nm": -29.15800572340974,
+          "command_nm": -29.63037243977777,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 7.15292492057795,
+          "pedaling_nm": -29.15800572340974,
           "posture_nm": 0.0,
-          "requested_nm": 7.15292492057795,
-          "saturated": false,
-          "solved_active_nm": 7.15292492057795,
-          "solved_force_nm": 7.15292492057795,
+          "requested_nm": -29.15800572340974,
+          "saturated": true,
+          "solved_active_nm": -29.63037243977777,
+          "solved_force_nm": -29.63037243977777,
           "solved_passive_nm": 0.0
         },
         "rider_hip_rear": {
-          "active_delivered_nm": 8.31480351764151,
-          "active_request_nm": 8.31480351764151,
-          "command_nm": 8.31480351764151,
+          "active_delivered_nm": -12.350264926181017,
+          "active_request_nm": -12.350264926181017,
+          "command_nm": -12.350264926181017,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 8.31480351764151,
+          "pedaling_nm": -12.350264926181017,
           "posture_nm": 0.0,
-          "requested_nm": 8.31480351764151,
+          "requested_nm": -12.350264926181017,
           "saturated": false,
-          "solved_active_nm": 8.31480351764151,
-          "solved_force_nm": 8.31480351764151,
+          "solved_active_nm": -12.350264926181017,
+          "solved_force_nm": -12.350264926181017,
           "solved_passive_nm": 0.0
         },
         "rider_knee_front": {
-          "active_delivered_nm": -7.074713659045089,
-          "active_request_nm": -7.074713659045089,
-          "command_nm": -7.074713659045089,
+          "active_delivered_nm": -5.439186065840848,
+          "active_request_nm": -5.934359322909289,
+          "command_nm": -5.439186065840848,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -7.074713659045089,
+          "pedaling_nm": -5.934359322909289,
           "posture_nm": 0.0,
-          "requested_nm": -7.074713659045089,
-          "saturated": false,
-          "solved_active_nm": -7.074713659045089,
-          "solved_force_nm": -7.074713659045089,
+          "requested_nm": -5.934359322909289,
+          "saturated": true,
+          "solved_active_nm": -5.439186065840848,
+          "solved_force_nm": -5.439186065840848,
           "solved_passive_nm": 0.0
         },
         "rider_knee_rear": {
-          "active_delivered_nm": -6.748568855664899,
-          "active_request_nm": -6.748568855664899,
-          "command_nm": -6.748568855664899,
+          "active_delivered_nm": 1.059983517173249,
+          "active_request_nm": 1.059983517173249,
+          "command_nm": 1.059983517173249,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -6.748568855664899,
+          "pedaling_nm": 1.059983517173249,
           "posture_nm": 0.0,
-          "requested_nm": -6.748568855664899,
+          "requested_nm": 1.059983517173249,
           "saturated": false,
-          "solved_active_nm": -6.748568855664899,
-          "solved_force_nm": -6.748568855664899,
+          "solved_active_nm": 1.059983517173249,
+          "solved_force_nm": 1.059983517173249,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_left": {
-          "active_delivered_nm": -7.1553179394468875,
-          "active_request_nm": -7.1553179394468875,
-          "command_nm": -7.1553179394468875,
+          "active_delivered_nm": -8.171896609073311,
+          "active_request_nm": -8.171896609073311,
+          "command_nm": -8.171896609073311,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.1553179394468875,
-          "requested_nm": -7.1553179394468875,
+          "posture_nm": -8.171896609073311,
+          "requested_nm": -8.171896609073311,
           "saturated": false,
-          "solved_active_nm": -7.1553179394468875,
-          "solved_force_nm": -7.1553179394468875,
+          "solved_active_nm": -8.171896609073311,
+          "solved_force_nm": -8.171896609073311,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_right": {
-          "active_delivered_nm": -7.155317939457729,
-          "active_request_nm": -7.155317939457729,
-          "command_nm": -7.155317939457729,
+          "active_delivered_nm": -8.17189660907323,
+          "active_request_nm": -8.17189660907323,
+          "command_nm": -8.17189660907323,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.155317939457729,
-          "requested_nm": -7.155317939457729,
+          "posture_nm": -8.17189660907323,
+          "requested_nm": -8.17189660907323,
           "saturated": false,
-          "solved_active_nm": -7.155317939457729,
-          "solved_force_nm": -7.155317939457729,
+          "solved_active_nm": -8.17189660907323,
+          "solved_force_nm": -8.17189660907323,
           "solved_passive_nm": 0.0
         },
         "rider_torso_hinge": {
-          "active_delivered_nm": 0.5073441097003837,
-          "active_request_nm": 0.5073441097003837,
-          "command_nm": 0.5073441097003837,
+          "active_delivered_nm": 40.554969653279926,
+          "active_request_nm": 40.554969653279926,
+          "command_nm": 40.554969653279926,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 0.5073441097003837,
-          "requested_nm": 0.5073441097003837,
+          "posture_nm": 40.554969653279926,
+          "requested_nm": 40.554969653279926,
           "saturated": false,
-          "solved_active_nm": 0.5073441097003837,
-          "solved_force_nm": 0.5073441097003837,
+          "solved_active_nm": 40.554969653279926,
+          "solved_force_nm": 40.554969653279926,
           "solved_passive_nm": 0.0
         }
       },
@@ -1702,45 +1702,45 @@
         }
       },
       "rider_joint_capacity_nm": {
-        "rider_elbow_left": 29.890346960309525,
-        "rider_elbow_right": 29.89034696030985,
-        "rider_hip_front": 160.5775200309377,
-        "rider_hip_rear": 179.25749363754727,
-        "rider_knee_front": 135.18325631576386,
-        "rider_knee_rear": 123.67608949027641,
-        "rider_shoulder_left": 56.612179069058485,
-        "rider_shoulder_right": 56.6121790690587,
-        "rider_torso_hinge": 153.33380746217193
+        "rider_elbow_left": 30.51297791125176,
+        "rider_elbow_right": 30.51297791125176,
+        "rider_hip_front": 116.87239688459357,
+        "rider_hip_rear": 128.63899469039,
+        "rider_knee_front": 134.04702987047855,
+        "rider_knee_rear": 53.060252513197916,
+        "rider_shoulder_left": 56.96629245053082,
+        "rider_shoulder_right": 56.96629245053082,
+        "rider_torso_hinge": 156.24040422332106
       },
       "rider_joint_positive_power_w": {
-        "rider_elbow_left": 0.1378146477578191,
-        "rider_elbow_right": 0.137814647769635,
-        "rider_hip_front": 1.2295480264050764,
-        "rider_hip_rear": 1.3680288692939482,
-        "rider_knee_front": 0.19855901755629415,
-        "rider_knee_rear": 0.11959767891968393,
-        "rider_shoulder_left": 0.24937221147003982,
-        "rider_shoulder_right": 0.24937221148900687,
-        "rider_torso_hinge": 0.0856724009289743
+        "rider_elbow_left": 0.0018667681140930794,
+        "rider_elbow_right": 0.0018667681155842585,
+        "rider_hip_front": 0.0,
+        "rider_hip_rear": 0.0,
+        "rider_knee_front": 0.0020384935240050674,
+        "rider_knee_rear": 2.174018018956564e-05,
+        "rider_shoulder_left": 0.002037524242036007,
+        "rider_shoulder_right": 0.0020375242428954067,
+        "rider_torso_hinge": 0.04795113997328354
       },
       "rider_joint_power_violations": [],
       "rider_joint_speed_violations": [],
       "rider_joint_torques": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_lean_limit_rad": 0.5671875000000001,
       "rider_passive_power_w": 0.0,
       "rider_passive_work_step_j": 0.0,
-      "rider_positive_power_w": 3.7757797115904776,
-      "rider_positive_work_step_j": 0.004719724639488097,
+      "rider_positive_power_w": 0.05781995839208692,
+      "rider_positive_work_step_j": 7.227494799010866e-05,
       "rider_strength_limited": [],
       "rider_strength_violations": [],
       "rider_support_targets": {
@@ -1750,51 +1750,51 @@
         }
       },
       "rider_welds": {
-        "crank_torque_nm": 1.8776846376404508,
+        "crank_torque_nm": 0.011402604176036184,
         "front_pedal": {
           "force_on_rider_n": [
-            -2.9891112289502657,
-            2.1364253312561384e-11,
-            121.26338355400841
+            -8.291474031463423,
+            2.1271288877783905e-11,
+            40.049406950928585
           ],
-          "normal_n": 121.1522409138057,
-          "tangent_n": -5.989782839868075,
+          "normal_n": 39.70570925239701,
+          "tangent_n": -9.806130301991425,
           "would_separate": false,
           "would_slip": false
         },
         "grip_left": {
           "force_on_rider_n": [
-            -34.7642969607642,
-            1.5450445896656423e-10,
-            66.46801707514645
+            -84.89346114031108,
+            -0.0,
+            125.26980417225806
           ]
         },
         "grip_right": {
           "force_on_rider_n": [
-            -34.764296960723684,
-            -1.5450445896655412e-10,
-            66.46801707513119
+            -84.89346114035648,
+            -0.0,
+            125.26980417230834
           ]
         },
         "rear_pedal": {
           "force_on_rider_n": [
-            39.63106374583242,
-            -2.1343845795653487e-11,
-            109.41828557188529
+            10.617501702339002,
+            -0.0,
+            40.45465365694243
           ],
-          "normal_n": 110.28392734052302,
-          "tangent_n": 37.1542433843985,
+          "normal_n": 40.65770467984607,
+          "tangent_n": 9.81128916446566,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "force_on_rider_n": [
-            -37.725901070967474,
+            166.91414490181037,
             -0.0,
-            440.6937308005999
+            454.02465154982724
           ],
-          "normal_n": 440.4628084400036,
-          "tangent_n": -40.3326463266766,
+          "normal_n": 454.964078472604,
+          "tangent_n": 164.3362506655755,
           "would_separate": false,
           "would_slip": false
         }
@@ -1802,58 +1802,58 @@
       "schema_version": 2,
       "sensors": {
         "encoders_rad_s": {
-          "crank": -6.332110961309535e-05,
-          "front_wheel": 0.010641636400926581,
-          "rear_wheel": 0.020333876042792194
+          "crank": 0.00023758619823073394,
+          "front_wheel": -2.0734264114653452e-05,
+          "rear_wheel": -1.1168559471292252e-05
         },
         "frame_gyro_body_rad_s": [
           0.0,
-          0.0049038902423472345,
+          2.992049385126775e-05,
           0.0
         ],
         "frame_specific_force_body_mps2": [
-          2.368428354105743,
+          -0.036538919749975585,
           0.0,
-          9.286844927122107
+          9.806051647260714
         ],
-        "human_torque_nm": 2.7496442939134034,
+        "human_torque_nm": 0.0028218638931671635,
         "motor_torque_nm": 0.0
       },
       "suspension": {
-        "fork_travel_m": 0.06089053655310578,
-        "fork_velocity_mps": 0.005332668828690519,
+        "fork_travel_m": 0.060622813673624994,
+        "fork_velocity_mps": 2.6717091830375117e-05,
         "generalized_force_components_n": {
-          "fork_damper": -3.4170406707313776,
-          "fork_spring": -355.411705097123,
+          "fork_damper": -0.01694483061448271,
+          "fork_spring": -354.10852547045687,
           "shock_bumper": -0.0,
-          "shock_coil": -1654.025106643687,
-          "shock_damper": 3.941594617806515,
+          "shock_coil": -1657.82660949589,
+          "shock_damper": 0.012033681282976848,
           "shock_hbo": -0.0,
           "shock_solver_limit": 0.0,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0
         },
-        "linkage_closure_max_m": 4.454415902888087e-05,
+        "linkage_closure_max_m": 4.457776495803145e-05,
         "shock_solver_limit_power_w": 0.0,
-        "shock_stroke_m": 0.014433028853784353,
-        "shock_velocity_mps": -0.000986539235717689
+        "shock_stroke_m": 0.014466200780941447,
+        "shock_velocity_mps": -3.015605345959155e-06
       },
       "time_s": 0.00125,
       "tires": {
         "front": {
           "backend": "compliant_2d",
           "branch_release_loss_j": 0.0,
-          "brush_loss_j": 3.5550747877828457e-07,
+          "brush_loss_j": 1.6312707108922581e-12,
           "controller_grounded": true,
-          "effective_radius_m": 0.36870062599660197,
-          "friction_coefficient": 1.0496902725880415,
+          "effective_radius_m": 0.3686836350303102,
+          "friction_coefficient": 1.049999318838632,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 428.5022619818958,
-          "normal_speed_mps": 0.0005204480748003907,
-          "normal_vertical_n": 428.5022619818958,
-          "omega_abs_rad_s": 0.015545526643273817,
-          "omega_rel_rad_s": 0.010641636400926581,
+          "normal_load_n": 431.1301790371219,
+          "normal_speed_mps": -3.4162218116067268e-06,
+          "normal_vertical_n": 431.1301790371219,
+          "omega_abs_rad_s": 9.186229736614298e-06,
+          "omega_rel_rad_s": -2.0734264114653452e-05,
           "outside_material_load_range": false,
           "patches": [
             {
@@ -1867,60 +1867,60 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 428.5022619818958,
+              "normal_load_n": 431.1301790371219,
               "point_m": [
-                2.8174539417183158,
+                2.81696995833089,
                 0.0,
                 -0.349500010430813
               ],
-              "slip_mps": -0.0046483111080924955,
+              "slip_mps": 1.0217432119744085e-05,
               "source_geom": "terrain",
-              "tangent_force_n": -7.213815113779182,
+              "tangent_force_n": -0.0045871449841577185,
               "world_force_n": [
-                -7.213815113779182,
+                -0.0045871449841577185,
                 0.0,
-                428.5022619818958
+                431.1301790371219
               ]
             }
           ],
-          "penetration_m": 0.00329937400339797,
-          "radial_energy_j": 0.7075814729293927,
+          "penetration_m": 0.003316364969689789,
+          "radial_energy_j": 0.7148879797920611,
           "raw_contact": true,
-          "shear_energy_j": 0.0013009782123947237,
-          "slip_mps": -0.0046483111080924955,
-          "slip_ratio": 0.046483111080924955,
+          "shear_energy_j": 5.260474776420828e-10,
+          "slip_mps": 1.0217432119744085e-05,
+          "slip_ratio": -0.00010217432119744084,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
-          "tangent_center_speed_mps": 0.0010833342967294156,
-          "tangent_force_n": -7.213815113779182,
+          "tangent_center_speed_mps": 1.3604244691262575e-05,
+          "tangent_force_n": -0.0045871449841577185,
           "unloaded_radius_m": 0.372,
-          "vertical_force_n": 428.5022619818958,
+          "vertical_force_n": 431.1301790371219,
           "wheel_axis_m": [
-            2.8174539417183158,
+            2.81696995833089,
             0.0,
-            0.019200615565789003
+            0.019183624599497184
           ],
-          "wheel_axis_moment_nm": 2.6597381482741334,
+          "wheel_axis_moment_nm": 0.0016912052871703223,
           "world_force_n": [
-            -7.213815113779182,
+            -0.0045871449841577185,
             0.0,
-            428.5022619818958
+            431.1301790371219
           ]
         },
         "rear": {
           "backend": "compliant_2d",
           "branch_release_loss_j": 0.0,
-          "brush_loss_j": 2.859458839438139e-07,
+          "brush_loss_j": 8.105359457969156e-12,
           "controller_grounded": true,
-          "effective_radius_m": 0.3474199081803159,
-          "friction_coefficient": 1.0497445942380912,
+          "effective_radius_m": 0.34743739147489455,
+          "friction_coefficient": 1.049998481615169,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 596.6498963322084,
-          "normal_speed_mps": -0.0015474497165931808,
-          "normal_vertical_n": 596.6498963322084,
-          "omega_abs_rad_s": 0.020576089303735667,
-          "omega_rel_rad_s": 0.020333876042792194,
+          "normal_load_n": 593.1391448167936,
+          "normal_speed_mps": -4.569136010855388e-08,
+          "normal_vertical_n": 593.1391448167936,
+          "omega_abs_rad_s": 5.346602491917492e-06,
+          "omega_rel_rad_s": -1.1168559471292252e-05,
           "outside_material_load_range": false,
           "patches": [
             {
@@ -1934,44 +1934,44 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 596.6498963322084,
+              "normal_load_n": 593.1391448167936,
               "point_m": [
-                1.5599581719250448,
+                1.559362503642539,
                 0.0,
                 -0.349500010430813
               ],
-              "slip_mps": -0.003832718157395049,
+              "slip_mps": 2.2775830100313673e-05,
               "source_geom": "terrain",
-              "tangent_force_n": 7.426922159133856,
+              "tangent_force_n": -0.0033431486132949506,
               "world_force_n": [
-                7.426922159133856,
+                -0.0033431486132949506,
                 0.0,
-                596.6498963322084
+                593.1391448167936
               ]
             }
           ],
-          "penetration_m": 0.004580091819684107,
-          "radial_energy_j": 1.3635206699879228,
+          "penetration_m": 0.004562608525105427,
+          "radial_energy_j": 1.353130775968707,
           "raw_contact": true,
-          "shear_energy_j": 0.0013789793189458374,
-          "slip_mps": -0.0038327181573950494,
-          "slip_ratio": 0.03832718157395049,
+          "shear_energy_j": 2.7941606626439876e-10,
+          "slip_mps": 2.2775830100313673e-05,
+          "slip_ratio": -0.00022775830100313672,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
-          "tangent_center_speed_mps": 0.0033158248992187756,
-          "tangent_force_n": 7.426922159133856,
+          "tangent_center_speed_mps": 2.463343972335866e-05,
+          "tangent_force_n": -0.0033431486132949506,
           "unloaded_radius_m": 0.352,
-          "vertical_force_n": 596.6498963322084,
+          "vertical_force_n": 593.1391448167936,
           "wheel_axis_m": [
-            1.5599581719250448,
+            1.559362503642539,
             0.0,
-            -0.002080102250497153
+            -0.0020626189559184594
           ],
-          "wheel_axis_moment_nm": -2.5802606145886373,
+          "wheel_axis_moment_nm": 0.0011615348335161087,
           "world_force_n": [
-            7.426922159133856,
+            -0.0033431486132949506,
             0.0,
-            596.6498963322084
+            593.1391448167936
           ]
         }
       }
@@ -1979,73 +1979,73 @@
     {
       "attachment_samples": {
         "foot_front": {
-          "gap_m": 6.849188489132908e-05,
+          "gap_m": 2.6566890154981043e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 124.68728048187073,
+          "normal_n": 39.74170522635221,
           "pull_n": 0.0,
-          "tangent_n": -5.935196607527631
+          "tangent_n": -9.80512096206717
         },
         "foot_rear": {
-          "gap_m": 5.8251526699133196e-05,
+          "gap_m": 2.717814645715381e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 116.05083555389466,
+          "normal_n": 40.689278114414854,
           "pull_n": 0.0,
-          "tangent_n": 40.40638163846597
+          "tangent_n": 9.828598759584345
         },
         "grip_left": {
-          "gap_m": 1.7316851091568943e-05,
+          "gap_m": 2.71959519190793e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 46.10252793810629,
+          "normal_n": 105.6689099393558,
           "pull_n": 0.0,
-          "tangent_n": 59.264965373206564
+          "tangent_n": 108.32143649885779
         },
         "grip_right": {
-          "gap_m": 1.7316851090199196e-05,
+          "gap_m": 2.719595191932852e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 46.10252793849781,
+          "normal_n": 105.66890993968576,
           "pull_n": 0.0,
-          "tangent_n": 59.264965373500615
+          "tangent_n": 108.32143649903078
         },
         "saddle": {
-          "gap_m": 2.0915533281615016e-05,
+          "gap_m": 2.292649683152411e-05,
           "half_patch_m": 0.045,
           "kind": "saddle",
           "moment_nm": 0.0,
-          "normal_n": 433.2319146220101,
+          "normal_n": 454.9178299457134,
           "pull_n": 0.0,
-          "tangent_n": -41.44598191951528
+          "tangent_n": 164.32833725053433
         }
       },
       "attachment_violations": [],
       "component_work_j": {
-        "act_rider_elbow_left": 0.0005657142693893508,
-        "act_rider_elbow_right": 0.0005657142694253084,
-        "act_rider_hip_front": 0.00441379571012592,
-        "act_rider_hip_rear": 0.004875229771025875,
-        "act_rider_knee_front": 0.0006815535316405464,
-        "act_rider_knee_rear": 0.0003658977273511114,
-        "act_rider_shoulder_left": 0.001008298858852224,
-        "act_rider_shoulder_right": 0.0010082988589046394,
-        "act_rider_torso_hinge": 0.0003107939443248204,
-        "aerodynamic": -5.287323039836981e-10,
+        "act_rider_elbow_left": 7.52732625637891e-06,
+        "act_rider_elbow_right": 7.52732625842257e-06,
+        "act_rider_hip_front": -0.00014061334076436195,
+        "act_rider_hip_rear": -4.75687086660207e-05,
+        "act_rider_knee_front": 7.014732849643004e-06,
+        "act_rider_knee_rear": 1.2156510894950415e-07,
+        "act_rider_shoulder_left": 8.158627344163514e-06,
+        "act_rider_shoulder_right": 8.158627345379625e-06,
+        "act_rider_torso_hinge": 0.00017500928990127888,
+        "aerodynamic": -1.8201770698856751e-16,
         "chain": 0.0,
-        "closure": -0.0012701626265313503,
-        "drive_bearings": -6.534342663002877e-08,
-        "engine_passive": -5.108761921271453e-07,
-        "fork_damper": -9.262771236961827e-05,
-        "fork_spring": -0.006502772336346019,
+        "closure": 4.370266917175549e-06,
+        "drive_bearings": -2.826709162552761e-11,
+        "engine_passive": -1.106821529608428e-11,
+        "fork_damper": -2.39277619987333e-09,
+        "fork_spring": -3.307372923459656e-05,
         "freehub": 0.0,
         "front_brake": 0.0,
         "front_static_brake": 0.0,
-        "ideal_transmission": 0.0002101634959334258,
+        "ideal_transmission": -5.277508449595394e-09,
         "joint_limits": 0.0,
         "mid_drive": 0.0,
         "native_contact": 0.0,
@@ -2054,15 +2054,15 @@
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "rider_passive_damping": 0.0,
-        "road_rolling": -3.991390994508732e-05,
+        "road_rolling": -3.220444809550986e-10,
         "shock_bumper": 0.0,
-        "shock_coil": 0.004941343017314668,
-        "shock_damper": -1.4704925174390664e-05,
+        "shock_coil": 2.161232532377714e-05,
+        "shock_damper": -3.19517522840968e-10,
         "shock_hbo": 0.0,
         "shock_solver_limit": 0.0,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": -0.0018167064217131843
+        "tires": -1.2920418217225711e-05
       },
       "contact_crash_cause": null,
       "control": {
@@ -2082,10 +2082,10 @@
         "assist_demand_gated": true,
         "assist_gain": 3.4,
         "assist_mode": "turbo",
-        "assist_sensor_nm": 1.8776846376404508,
+        "assist_sensor_nm": 0.011402604176036184,
         "battery_empty": false,
         "battery_energy_j": 1800000.0,
-        "cadence_rpm": 0.005779204509520008,
+        "cadence_rpm": 0.004125177603402823,
         "chain_dissipation_power_w": 0.0,
         "chain_energy_j": 0.0,
         "chain_extension_m": 0.0,
@@ -2093,29 +2093,29 @@
         "chain_power_w": 0.0,
         "chain_tension_n": 0.0,
         "coasting_reason": "",
-        "crank_phase_rad": 0.004982648507466758,
-        "crank_rad_s": 0.0006051968810233687,
+        "crank_phase_rad": -0.030753488258123525,
+        "crank_rad_s": 0.00043198758845344856,
         "crank_target_phase_rad": null,
-        "crank_target_rate_rad_s": 0.0566723530523041,
-        "drive_shaft_rad_s": 0.0006051968810233687,
+        "crank_target_rate_rad_s": 0.00024123030663267587,
+        "drive_shaft_rad_s": 0.00043198758845344856,
         "electrical_power_w": 0.0,
         "energy_limited": false,
         "freehub_deflection_rad": 0.0,
         "freehub_dissipation_power_w": 0.0,
         "freehub_energy_j": 0.0,
         "freehub_engaged": true,
-        "freehub_power_w": 0.08202462274030523,
-        "freehub_torque_nm": 3.3914327400325317,
+        "freehub_power_w": -1.837313172772954e-06,
+        "freehub_torque_nm": 0.022327986385494814,
         "front_brake_demand": 0.0,
         "front_brake_power_w": 0.0,
         "front_brake_torque_nm": 0.0,
         "gear_front_teeth": 22,
         "gear_ratio": 0.43137254901960786,
         "gear_rear_teeth": 51,
-        "human_active_power_w": 7.260457841241359,
+        "human_active_power_w": 0.014629173329590493,
         "human_command_nm": 1.125,
-        "human_joint_power_w": 7.260457841241359,
-        "human_sensor_nm": 1.8776846376404508,
+        "human_joint_power_w": 0.014629173329590493,
+        "human_sensor_nm": 0.011402604176036184,
         "human_setpoint_nm": 10.0,
         "human_torque_nm": 0.0,
         "motor_control_source": "external_request",
@@ -2133,7 +2133,7 @@
         "rear_brake_demand": 0.0,
         "rear_brake_power_w": 0.0,
         "rear_brake_torque_nm": 0.0,
-        "required_cadence_rpm": 0.5411811074953956,
+        "required_cadence_rpm": 0.0023035797434498395,
         "rider_mode": "pedaling",
         "rollback_brake_demand": 0.0,
         "safety_limited": false,
@@ -2148,87 +2148,87 @@
       "dt_s": 0.0012499999999999998,
       "endpoint_mass": {
         "angular_momentum_kg_m2_s": [
-          0.010053862340307567,
-          -0.00012278642415253227,
-          -0.005055434938432377
+          0.0002935785386433144,
+          -0.00010082689823522496,
+          -0.0001530386300408081
         ],
         "com_m": [
-          2.08669767711612,
-          9.195402298849935e-06,
-          0.6127694521760011
+          2.0886750218878007,
+          9.195402298852594e-06,
+          0.6120692255542565
         ],
         "com_velocity_mps": [
-          8.083855751015645e-06,
+          -2.836888073119053e-07,
           0.0,
-          2.8327356055653516e-05
+          3.914516320778164e-06
         ],
-        "gravitational_energy_j": 627.576413218382,
-        "kinetic_energy_j": 0.013910372685018072,
+        "gravitational_energy_j": 626.8592663205494,
+        "kinetic_energy_j": 8.668256932238219e-07,
         "linear_momentum_kg_mps": [
-          0.0008439545404060332,
+          -2.961711148336291e-05,
           0.0,
-          0.0029573759722102268
+          0.00040867550388924034
         ],
         "mass_kg": 104.39999999999999
       },
       "energy": {
-        "active_work_j": 0.013795296941039797,
-        "constraint_absolute_j": 0.003163428399887018,
-        "constraint_signed_j": -0.0010599991305979294,
+        "active_work_j": 2.533544563383336e-05,
+        "constraint_absolute_j": 1.3983657335519617e-05,
+        "constraint_signed_j": 4.364989408726079e-06,
         "constraint_work_ok": false,
-        "constraint_work_ratio": 0.22931209189677507,
+        "constraint_work_ratio": 0.06549185738299332,
         "elastic_energy_j": {
-          "fork_air": 12.080380188639802,
+          "fork_air": 11.975723896079057,
           "rider_interfaces": 0.0,
           "rider_joint_envelope": 0.0,
           "shock_bumper": 0.0,
-          "shock_coil": 11.930104920781176,
+          "shock_coil": 11.991188592466717,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0,
-          "tires": 2.0758172456196333
+          "tires": 2.068048425273035
         },
         "electrical_residual_j": 0.0,
         "electrical_work_j": 0.0,
-        "energy_scale_j": 26.07953354497397,
-        "external_work_j": -3.9914438677391305e-05,
-        "loss_j": 0.00011418030980349993,
-        "loss_step_j": 8.30429689624165e-05,
+        "energy_scale_j": 26.034910287565527,
+        "external_work_j": -3.220446629728056e-10,
+        "loss_j": 2.944160901814099e-09,
+        "loss_step_j": 2.3024274762087875e-09,
         "measured": true,
-        "mechanical_energy_j": 653.6766259461076,
+        "mechanical_energy_j": 652.8942281011939,
         "motor_positive_j": 0.0,
         "motor_signed_j": 0.0,
-        "muscle_positive_j": 0.013795296941039797,
-        "muscle_signed_j": 0.013795296941039797,
-        "residual_j": 0.00708967760857651,
-        "solver_constraint_work_j": -0.0010599991305979294,
+        "muscle_positive_j": 0.00021351749506421603,
+        "muscle_signed_j": 2.533544563383336e-05,
+        "residual_j": 3.591339762962045e-05,
+        "solver_constraint_work_j": 4.364989408726079e-06,
         "source_interval_id": 2,
-        "source_positive_work_j": 0.013795296941039797,
+        "source_positive_work_j": 0.00021351749506421603,
         "source_time_s": 0.00375
       },
       "interval_end_s": 0.00375,
       "interval_id": 2,
       "mass": {
         "angular_momentum_kg_m2_s": [
-          0.006338007710973683,
-          0.0005383881980120242,
-          -0.002450263563843093
+          0.0001998860288436049,
+          -6.401041494789286e-05,
+          -9.745054337631161e-05
         ],
         "com_m": [
-          2.086697666734484,
-          9.195402298852594e-06,
-          0.6127694160564293
+          2.088675022242389,
+          9.195402298852062e-06,
+          0.6120692206610815
         ],
         "com_velocity_mps": [
-          2.36482189343333e-06,
+          -1.800427687939461e-07,
           0.0,
-          1.1300667511736361e-05
+          2.4822054070962775e-06
         ],
-        "gravitational_energy_j": 627.5763762260168,
-        "kinetic_energy_j": 0.006320051788523569,
+        "gravitational_energy_j": 626.8592613091357,
+        "kinetic_energy_j": 3.899959048031108e-07,
         "linear_momentum_kg_mps": [
-          0.0002468874056744396,
+          -1.8796465062087972e-05,
           0.0,
-          0.001179789688225276
+          0.00025914224450085133
         ],
         "mass_kg": 104.39999999999999
       },
@@ -2240,26 +2240,26 @@
         "numerically_valid": true
       },
       "powers_w": {
-        "act_rider_elbow_left": 0.3147567677536615,
-        "act_rider_elbow_right": 0.31475676777061173,
-        "act_rider_hip_front": 2.3014885416956594,
-        "act_rider_hip_rear": 2.532154947526752,
-        "act_rider_knee_front": 0.3466838077561429,
-        "act_rider_knee_rear": 0.17312050296120518,
-        "act_rider_shoulder_left": 0.5572668756117394,
-        "act_rider_shoulder_right": 0.5572668756347047,
-        "act_rider_torso_hinge": 0.162962754530882,
-        "aerodynamic": -3.7307344071777003e-07,
+        "act_rider_elbow_left": 0.004155092891010049,
+        "act_rider_elbow_right": 0.004155092891153798,
+        "act_rider_hip_front": -0.0735500691481012,
+        "act_rider_hip_rear": -0.0248147951815942,
+        "act_rider_knee_front": 0.003573292755709336,
+        "act_rider_knee_rear": 7.551190697003768e-05,
+        "act_rider_shoulder_left": 0.004489377633294805,
+        "act_rider_shoulder_right": 0.004489377633408293,
+        "act_rider_torso_hinge": 0.09205629194773957,
+        "aerodynamic": -1.2898498174060534e-13,
         "chain": 0.0,
-        "closure": -0.6404216212961842,
-        "drive_bearings": -3.506742623901372e-05,
-        "engine_passive": -0.00027205575817253647,
-        "fork_damper": -0.05588022362451765,
-        "fork_spring": -3.3069249479536404,
+        "closure": 0.0017660788344506795,
+        "drive_bearings": -1.661002804133958e-08,
+        "engine_passive": -7.604337665773807e-09,
+        "fork_damper": -1.4615043643213775e-06,
+        "fork_spring": -0.016998233394764323,
         "freehub": 0.0,
         "front_brake": 0.0,
         "front_static_brake": 0.0,
-        "ideal_transmission": 0.08202462274030523,
+        "ideal_transmission": -1.837313172772954e-06,
         "joint_limits": 0.0,
         "mid_drive": 0.0,
         "native_contact": 0.0,
@@ -2268,93 +2268,93 @@
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "rider_passive_damping": 0.0,
-        "road_rolling": -0.022514441903413486,
+        "road_rolling": -2.561877594537792e-07,
         "shock_bumper": 0.0,
-        "shock_coil": 2.321313749285603,
-        "shock_damper": -0.007875402397752735,
+        "shock_coil": 0.012290509472752566,
+        "shock_damper": -2.193251846642608e-07,
         "shock_hbo": 0.0,
         "shock_solver_limit": 0.0,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": -0.7581593591942445
+        "tires": -0.00883627390642442
       },
       "qpos": [
-        2.010655360771076,
-        -0.05325642075811521,
-        0.0059282200835527816,
-        0.004982648507466758,
-        0.00526824981532679,
-        0.005268249812935632,
-        0.060902165313584035,
-        -2.2548293883205807e-06,
-        0.12502496898809942,
-        -0.0677300319573425,
-        0.0019437361319209734,
-        0.22002021496519317,
-        -0.18584136077513,
-        0.01443127434900287,
-        2.02623264711046,
-        -0.05331558347973774,
-        0.18899118136791676,
-        -0.1819600778670097,
-        0.09353735555601769,
-        -0.15083681557063794,
-        0.09353735555602886,
-        -0.15083681557065404,
-        -0.1814477245069165,
-        0.01717677081548878,
-        -0.17290877188723064,
-        0.006436438415639814
+        2.01006560644314,
+        -0.05322824859454286,
+        0.0056720599570116645,
+        -0.030753488258123525,
+        0.020821590873605977,
+        0.020821590828591773,
+        0.060622873677190846,
+        0.0037514978324324887,
+        0.12531153627257025,
+        -0.067878720512734,
+        0.0040121302462884974,
+        0.22052059500484067,
+        -0.18627286254530975,
+        0.014466191513900736,
+        2.0293422636944634,
+        -0.05421150932915352,
+        0.25550069111654433,
+        -0.24796677966482114,
+        0.12427266934963084,
+        -0.20081004773251046,
+        0.12427266934963054,
+        -0.20081004773251007,
+        -0.26454325836793274,
+        0.04702029190701486,
+        -0.22469900500585227,
+        -0.01092349757032483
       ],
       "qvel": [
-        0.006067107850065966,
-        -0.0010058912010859117,
-        0.009273802914351991,
-        0.0006051968810233687,
-        -0.00866535141687691,
-        -0.008665351416877102,
-        0.0093030083826045,
-        0.020511472938315907,
-        -0.011930988328147332,
-        0.006161288639592223,
-        0.024446897395111574,
-        -0.020562240187289627,
-        0.01769906172135906,
-        -0.0014036038251869626,
-        -0.0040212448482725436,
-        0.003985395634472603,
-        -0.3006947807994455,
-        0.3212075422086225,
-        -0.07788149741600672,
-        0.09121498615416035,
-        -0.07788149741909828,
-        0.09121498615866387,
-        0.3217548859033321,
-        -0.049003228181949715,
-        0.30453575266743005,
-        -0.025652920887942632
+        4.6872433139217806e-05,
+        -8.272675297162193e-06,
+        5.626200659232402e-05,
+        0.00043198758845344856,
+        -0.00042117916300125506,
+        -0.00042117916299936,
+        4.800285268152562e-05,
+        -3.797418834186326e-05,
+        -6.56280390563787e-05,
+        3.304486445417388e-05,
+        0.000104060132272919,
+        -0.00010696407751756055,
+        9.194658304656553e-05,
+        -7.413632569083257e-06,
+        -3.0353461871245167e-05,
+        3.3533261942708855e-05,
+        -0.00213205671424847,
+        0.0022699139645464984,
+        -0.0005493678943894394,
+        0.00065421391713115,
+        -0.0005493678944033325,
+        0.0006542139171537882,
+        0.002482252604066587,
+        -0.0006569535795346869,
+        0.00200925205490855,
+        7.123875583595102e-05
       ],
       "rider": {
         "front_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            2.9891112289502657,
-            -2.1364253312561384e-11,
-            -121.26338355400841
+            8.291474031463423,
+            -2.1271288877783905e-11,
+            -40.049406950928585
           ],
           "force_on_rider_n": [
-            -2.9891112289502657,
-            2.1364253312561384e-11,
-            121.26338355400841
+            -8.291474031463423,
+            2.1271288877783905e-11,
+            40.049406950928585
           ],
-          "gap_m": 6.849188489132908e-05,
+          "gap_m": 2.6566890154981043e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 121.1522409138057,
+          "normal_load_n": 39.70570925239701,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -2364,8 +2364,8 @@
             0.0,
             0.0
           ],
-          "tangent_n": -5.989782839868075,
-          "vertical_force_on_rider_n": 121.26338355400841,
+          "tangent_n": -9.806130301991425,
+          "vertical_force_on_rider_n": 40.049406950928585,
           "would_separate": false,
           "would_slip": false
         },
@@ -2374,97 +2374,97 @@
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            69.52859392148788,
-            -1.0107113109632307e-23,
-            -132.93603415027764
+            169.78692228066757,
+            -0.0,
+            -250.5396083445664
           ],
           "force_on_rider_n": [
-            -69.52859392148788,
-            1.0107113109632307e-23,
-            132.93603415027764
+            -169.78692228066757,
+            0.0,
+            250.5396083445664
           ],
-          "hand_gap_m": 1.7316851091568943e-05,
+          "hand_gap_m": 2.719595191932852e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6105026642755707,
-          "trial_pair_force_n": 150.02071373081435
+          "shoulder_distance_m": 0.607294849882907,
+          "trial_pair_force_n": 302.65110990543246
         },
         "grip_left": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            34.7642969607642,
-            -1.5450445896656423e-10,
-            -66.46801707514645
+            84.89346114031108,
+            0.0,
+            -125.26980417225806
           ],
           "force_on_rider_n": [
-            -34.7642969607642,
-            1.5450445896656423e-10,
-            66.46801707514645
+            -84.89346114031108,
+            -0.0,
+            125.26980417225806
           ],
-          "hand_gap_m": 1.7316851091568943e-05,
+          "hand_gap_m": 2.71959519190793e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.534594394861494,
+            2.533834813352674,
             -0.09999999999999999,
-            0.6096492200056363
+            0.6098115827077388
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6105026642755707,
-          "trial_pair_force_n": 75.01035686542332
+          "shoulder_distance_m": 0.607294849882907,
+          "trial_pair_force_n": 151.3255549526827
         },
         "grip_right": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            34.764296960723684,
-            1.5450445896655412e-10,
-            -66.46801707513119
+            84.89346114035648,
+            0.0,
+            -125.26980417230834
           ],
           "force_on_rider_n": [
-            -34.764296960723684,
-            -1.5450445896655412e-10,
-            66.46801707513119
+            -84.89346114035648,
+            -0.0,
+            125.26980417230834
           ],
-          "hand_gap_m": 1.7316851090199196e-05,
+          "hand_gap_m": 2.719595191932852e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.534594394861494,
+            2.533834813352674,
             0.09999999999999999,
-            0.6096492200056363
+            0.6098115827077388
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6105026642755707,
-          "trial_pair_force_n": 75.01035686539102
+          "shoulder_distance_m": 0.607294849882907,
+          "trial_pair_force_n": 151.3255549527498
         },
         "rear_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            -39.63106374583242,
-            2.1343845795653487e-11,
-            -109.41828557188529
+            -10.617501702339002,
+            0.0,
+            -40.45465365694243
           ],
           "force_on_rider_n": [
-            39.63106374583242,
-            -2.1343845795653487e-11,
-            109.41828557188529
+            10.617501702339002,
+            -0.0,
+            40.45465365694243
           ],
-          "gap_m": 5.8251526699133196e-05,
+          "gap_m": 2.717814645715381e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 110.28392734052302,
+          "normal_load_n": 40.65770467984607,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -2474,31 +2474,31 @@
             0.0,
             0.0
           ],
-          "tangent_n": 37.1542433843985,
-          "vertical_force_on_rider_n": 109.41828557188529,
+          "tangent_n": 9.81128916446566,
+          "vertical_force_on_rider_n": 40.45465365694243,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "enabled": true,
           "force_on_bike_n": [
-            37.725901070967474,
+            -166.91414490181037,
             0.0,
-            -440.6937308005999
+            -454.02465154982724
           ],
           "force_on_rider_n": [
-            -37.725901070967474,
+            166.91414490181037,
             -0.0,
-            440.6937308005999
+            454.02465154982724
           ],
-          "gap_m": 2.0915533281615016e-05,
+          "gap_m": 2.292649683152411e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 440.4628084400036,
+          "normal_load_n": 454.964078472604,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -2508,39 +2508,39 @@
             0.0,
             0.0
           ],
-          "tangent_n": -40.3326463266766,
-          "vertical_force_on_rider_n": 440.6937308005999,
+          "tangent_n": 164.3362506655755,
+          "vertical_force_on_rider_n": 454.02465154982724,
           "would_separate": false,
           "would_slip": false
         }
       },
-      "rider_activation_saturated": false,
+      "rider_activation_saturated": true,
       "rider_active_delivered_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_active_positive_power_limit_w": 450.0,
       "rider_active_request_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.15800572340974,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.934359322909289,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_allocation": {
-        "crank_task_nm": 0.5624906925632541,
-        "crank_task_shortfall_nm": 7.771561172376096e-16,
+        "crank_task_nm": 0.5901939749501188,
+        "crank_task_shortfall_nm": 5.000131065793209,
         "invalid_controller": false
       },
       "rider_balance": {
@@ -2552,120 +2552,120 @@
       },
       "rider_control": {
         "rider_elbow_left": {
-          "active_delivered_nm": 3.450713320524967,
-          "active_request_nm": 3.450713320524967,
-          "command_nm": 3.450713320524967,
+          "active_delivered_nm": 6.351275602987638,
+          "active_request_nm": 6.351275602987638,
+          "command_nm": 6.351275602987638,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320524967,
-          "requested_nm": 3.450713320524967,
+          "posture_nm": 6.351275602987638,
+          "requested_nm": 6.351275602987638,
           "saturated": false,
-          "solved_active_nm": 3.450713320524967,
-          "solved_force_nm": 3.450713320524967,
+          "solved_active_nm": 6.351275602987638,
+          "solved_force_nm": 6.351275602987638,
           "solved_passive_nm": 0.0
         },
         "rider_elbow_right": {
-          "active_delivered_nm": 3.450713320540423,
-          "active_request_nm": 3.450713320540423,
-          "command_nm": 3.450713320540423,
+          "active_delivered_nm": 6.351275602987588,
+          "active_request_nm": 6.351275602987588,
+          "command_nm": 6.351275602987588,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320540423,
-          "requested_nm": 3.450713320540423,
+          "posture_nm": 6.351275602987588,
+          "requested_nm": 6.351275602987588,
           "saturated": false,
-          "solved_active_nm": 3.450713320540423,
-          "solved_force_nm": 3.450713320540423,
+          "solved_active_nm": 6.351275602987588,
+          "solved_force_nm": 6.351275602987588,
           "solved_passive_nm": 0.0
         },
         "rider_hip_front": {
-          "active_delivered_nm": 7.15292492057795,
-          "active_request_nm": 7.15292492057795,
-          "command_nm": 7.15292492057795,
+          "active_delivered_nm": -29.63037243977777,
+          "active_request_nm": -29.15800572340974,
+          "command_nm": -29.63037243977777,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 7.15292492057795,
+          "pedaling_nm": -29.15800572340974,
           "posture_nm": 0.0,
-          "requested_nm": 7.15292492057795,
-          "saturated": false,
-          "solved_active_nm": 7.15292492057795,
-          "solved_force_nm": 7.15292492057795,
+          "requested_nm": -29.15800572340974,
+          "saturated": true,
+          "solved_active_nm": -29.63037243977777,
+          "solved_force_nm": -29.63037243977777,
           "solved_passive_nm": 0.0
         },
         "rider_hip_rear": {
-          "active_delivered_nm": 8.31480351764151,
-          "active_request_nm": 8.31480351764151,
-          "command_nm": 8.31480351764151,
+          "active_delivered_nm": -12.350264926181017,
+          "active_request_nm": -12.350264926181017,
+          "command_nm": -12.350264926181017,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 8.31480351764151,
+          "pedaling_nm": -12.350264926181017,
           "posture_nm": 0.0,
-          "requested_nm": 8.31480351764151,
+          "requested_nm": -12.350264926181017,
           "saturated": false,
-          "solved_active_nm": 8.31480351764151,
-          "solved_force_nm": 8.31480351764151,
+          "solved_active_nm": -12.350264926181017,
+          "solved_force_nm": -12.350264926181017,
           "solved_passive_nm": 0.0
         },
         "rider_knee_front": {
-          "active_delivered_nm": -7.074713659045089,
-          "active_request_nm": -7.074713659045089,
-          "command_nm": -7.074713659045089,
+          "active_delivered_nm": -5.439186065840848,
+          "active_request_nm": -5.934359322909289,
+          "command_nm": -5.439186065840848,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -7.074713659045089,
+          "pedaling_nm": -5.934359322909289,
           "posture_nm": 0.0,
-          "requested_nm": -7.074713659045089,
-          "saturated": false,
-          "solved_active_nm": -7.074713659045089,
-          "solved_force_nm": -7.074713659045089,
+          "requested_nm": -5.934359322909289,
+          "saturated": true,
+          "solved_active_nm": -5.439186065840848,
+          "solved_force_nm": -5.439186065840848,
           "solved_passive_nm": 0.0
         },
         "rider_knee_rear": {
-          "active_delivered_nm": -6.748568855664899,
-          "active_request_nm": -6.748568855664899,
-          "command_nm": -6.748568855664899,
+          "active_delivered_nm": 1.059983517173249,
+          "active_request_nm": 1.059983517173249,
+          "command_nm": 1.059983517173249,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -6.748568855664899,
+          "pedaling_nm": 1.059983517173249,
           "posture_nm": 0.0,
-          "requested_nm": -6.748568855664899,
+          "requested_nm": 1.059983517173249,
           "saturated": false,
-          "solved_active_nm": -6.748568855664899,
-          "solved_force_nm": -6.748568855664899,
+          "solved_active_nm": 1.059983517173249,
+          "solved_force_nm": 1.059983517173249,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_left": {
-          "active_delivered_nm": -7.1553179394468875,
-          "active_request_nm": -7.1553179394468875,
-          "command_nm": -7.1553179394468875,
+          "active_delivered_nm": -8.171896609073311,
+          "active_request_nm": -8.171896609073311,
+          "command_nm": -8.171896609073311,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.1553179394468875,
-          "requested_nm": -7.1553179394468875,
+          "posture_nm": -8.171896609073311,
+          "requested_nm": -8.171896609073311,
           "saturated": false,
-          "solved_active_nm": -7.1553179394468875,
-          "solved_force_nm": -7.1553179394468875,
+          "solved_active_nm": -8.171896609073311,
+          "solved_force_nm": -8.171896609073311,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_right": {
-          "active_delivered_nm": -7.155317939457729,
-          "active_request_nm": -7.155317939457729,
-          "command_nm": -7.155317939457729,
+          "active_delivered_nm": -8.17189660907323,
+          "active_request_nm": -8.17189660907323,
+          "command_nm": -8.17189660907323,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.155317939457729,
-          "requested_nm": -7.155317939457729,
+          "posture_nm": -8.17189660907323,
+          "requested_nm": -8.17189660907323,
           "saturated": false,
-          "solved_active_nm": -7.155317939457729,
-          "solved_force_nm": -7.155317939457729,
+          "solved_active_nm": -8.17189660907323,
+          "solved_force_nm": -8.17189660907323,
           "solved_passive_nm": 0.0
         },
         "rider_torso_hinge": {
-          "active_delivered_nm": 0.5073441097003837,
-          "active_request_nm": 0.5073441097003837,
-          "command_nm": 0.5073441097003837,
+          "active_delivered_nm": 40.554969653279926,
+          "active_request_nm": 40.554969653279926,
+          "command_nm": 40.554969653279926,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 0.5073441097003837,
-          "requested_nm": 0.5073441097003837,
+          "posture_nm": 40.554969653279926,
+          "requested_nm": 40.554969653279926,
           "saturated": false,
-          "solved_active_nm": 0.5073441097003837,
-          "solved_force_nm": 0.5073441097003837,
+          "solved_active_nm": 40.554969653279926,
+          "solved_force_nm": 40.554969653279926,
           "solved_passive_nm": 0.0
         }
       },
@@ -2686,45 +2686,45 @@
         }
       },
       "rider_joint_capacity_nm": {
-        "rider_elbow_left": 29.890346960309525,
-        "rider_elbow_right": 29.89034696030985,
-        "rider_hip_front": 160.5775200309377,
-        "rider_hip_rear": 179.25749363754727,
-        "rider_knee_front": 135.18325631576386,
-        "rider_knee_rear": 123.67608949027641,
-        "rider_shoulder_left": 56.612179069058485,
-        "rider_shoulder_right": 56.6121790690587,
-        "rider_torso_hinge": 153.33380746217193
+        "rider_elbow_left": 30.51297791125176,
+        "rider_elbow_right": 30.51297791125176,
+        "rider_hip_front": 116.87239688459357,
+        "rider_hip_rear": 128.63899469039,
+        "rider_knee_front": 134.04702987047855,
+        "rider_knee_rear": 53.060252513197916,
+        "rider_shoulder_left": 56.96629245053082,
+        "rider_shoulder_right": 56.96629245053082,
+        "rider_torso_hinge": 156.24040422332106
       },
       "rider_joint_positive_power_w": {
-        "rider_elbow_left": 0.3147567677536615,
-        "rider_elbow_right": 0.31475676777061173,
-        "rider_hip_front": 2.3014885416956594,
-        "rider_hip_rear": 2.532154947526752,
-        "rider_knee_front": 0.3466838077561429,
-        "rider_knee_rear": 0.17312050296120518,
-        "rider_shoulder_left": 0.5572668756117394,
-        "rider_shoulder_right": 0.5572668756347047,
-        "rider_torso_hinge": 0.162962754530882
+        "rider_elbow_left": 0.004155092891010049,
+        "rider_elbow_right": 0.004155092891153798,
+        "rider_hip_front": 0.0,
+        "rider_hip_rear": 0.0,
+        "rider_knee_front": 0.003573292755709336,
+        "rider_knee_rear": 7.551190697003768e-05,
+        "rider_shoulder_left": 0.004489377633294805,
+        "rider_shoulder_right": 0.004489377633408293,
+        "rider_torso_hinge": 0.09205629194773957
       },
       "rider_joint_power_violations": [],
       "rider_joint_speed_violations": [],
       "rider_joint_torques": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_lean_limit_rad": 0.5671875000000001,
       "rider_passive_power_w": 0.0,
       "rider_passive_work_step_j": 0.0,
-      "rider_positive_power_w": 7.260457841241359,
-      "rider_positive_work_step_j": 0.009075572301551699,
+      "rider_positive_power_w": 0.1129940376592859,
+      "rider_positive_work_step_j": 0.00014124254707410737,
       "rider_strength_limited": [],
       "rider_strength_violations": [],
       "rider_support_targets": {
@@ -2734,51 +2734,51 @@
         }
       },
       "rider_welds": {
-        "crank_torque_nm": 1.515254302173887,
+        "crank_torque_nm": 0.012241163744387358,
         "front_pedal": {
           "force_on_rider_n": [
-            -2.85139918651529,
-            6.412628718912381e-11,
-            124.79588933700443
+            -8.289114059575134,
+            -0.0,
+            40.085335466806214
           ],
-          "normal_n": 124.68728048187076,
-          "tangent_n": -5.935196607527649,
+          "normal_n": 39.741705226352195,
+          "tangent_n": -9.805120962067155,
           "would_separate": false,
           "would_slip": false
         },
         "grip_left": {
           "force_on_rider_n": [
-            -34.88559612125295,
-            2.317445705152814e-10,
-            66.48890423398532
+            -84.89393384322285,
+            -0.0,
+            125.26959778641532
           ]
         },
         "grip_right": {
           "force_on_rider_n": [
-            -34.8855961215862,
-            -2.3174457051526818e-10,
-            66.48890423434396
+            -84.89393384351705,
+            -0.0,
+            125.2695977866438
           ]
         },
         "rear_pedal": {
           "force_on_rider_n": [
-            43.0092473137148,
-            -6.407918058778528e-11,
-            115.11158393219233
+            10.635432851444671,
+            -0.0,
+            40.48587747735639
           ],
-          "normal_n": 116.05083555389461,
-          "tangent_n": 40.40638163846599,
+          "normal_n": 40.689278114414854,
+          "tangent_n": 9.828598759584345,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "force_on_rider_n": [
-            -38.87697454327791,
+            166.9060012214762,
             -0.0,
-            433.47000140111976
+            453.9784369133614
           ],
-          "normal_n": 433.2319146220101,
-          "tangent_n": -41.44598191951535,
+          "normal_n": 454.9178299457134,
+          "tangent_n": 164.32833725053428,
           "would_separate": false,
           "would_slip": false
         }
@@ -2786,58 +2786,58 @@
       "schema_version": 2,
       "sensors": {
         "encoders_rad_s": {
-          "crank": 0.0006051968810233687,
-          "front_wheel": 0.020511472938315907,
-          "rear_wheel": 0.024446897395111574
+          "crank": 0.00043198758845344856,
+          "front_wheel": -3.797418834186326e-05,
+          "rear_wheel": 0.000104060132272919
         },
         "frame_gyro_body_rad_s": [
           0.0,
-          0.00927380291435199,
+          5.6262006592324015e-05,
           0.0
         ],
         "frame_specific_force_body_mps2": [
-          2.2449211957264312,
+          -0.03717933429695904,
           0.0,
-          9.213688791383115
+          9.805356628956527
         ],
-        "human_torque_nm": 1.8776846376404508,
+        "human_torque_nm": 0.011402604176036184,
         "motor_torque_nm": 0.0
       },
       "suspension": {
-        "fork_travel_m": 0.060902165313584035,
-        "fork_velocity_mps": 0.0093030083826045,
+        "fork_travel_m": 0.060622873677190846,
+        "fork_velocity_mps": 4.800285268152562e-05,
         "generalized_force_components_n": {
-          "fork_damper": -6.0066831423055485,
-          "fork_spring": -355.46834012717756,
+          "fork_damper": -0.03044619814613335,
+          "fork_spring": -354.1088173975599,
           "shock_bumper": -0.0,
-          "shock_coil": -1653.8240403957288,
-          "shock_damper": 5.610844211473788,
+          "shock_coil": -1657.8255474930243,
+          "shock_damper": 0.029584037598370184,
           "shock_hbo": -0.0,
           "shock_solver_limit": 0.0,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0
         },
-        "linkage_closure_max_m": 4.4504061687877794e-05,
+        "linkage_closure_max_m": 4.4577625971431445e-05,
         "shock_solver_limit_power_w": 0.0,
-        "shock_stroke_m": 0.01443127434900287,
-        "shock_velocity_mps": -0.0014036038251869626
+        "shock_stroke_m": 0.014466191513900736,
+        "shock_velocity_mps": -7.413632569083257e-06
       },
       "time_s": 0.0025,
       "tires": {
         "front": {
           "backend": "compliant_2d",
           "branch_release_loss_j": 0.0,
-          "brush_loss_j": 1.1117939685806445e-06,
+          "brush_loss_j": 8.560270434018299e-12,
           "controller_grounded": true,
-          "effective_radius_m": 0.36870049782380454,
-          "friction_coefficient": 1.0494490853649745,
+          "effective_radius_m": 0.36868362202106864,
+          "friction_coefficient": 1.0499984396009738,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 429.0172792514951,
-          "normal_speed_mps": -0.00010249543260711699,
-          "normal_vertical_n": 429.0172792514951,
-          "omega_abs_rad_s": 0.029785275852667898,
-          "omega_rel_rad_s": 0.020511472938315907,
+          "normal_load_n": 431.13746317468093,
+          "normal_speed_mps": -1.0407392004841196e-05,
+          "normal_vertical_n": 431.13746317468093,
+          "omega_abs_rad_s": 1.8287818250460765e-05,
+          "omega_rel_rad_s": -3.797418834186326e-05,
           "outside_material_load_range": false,
           "patches": [
             {
@@ -2851,60 +2851,60 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 429.0172792514951,
+              "normal_load_n": 431.13746317468093,
               "point_m": [
-                2.8174573298129335,
+                2.8169699960164696,
                 0.0,
                 -0.349500010430813
               ],
-              "slip_mps": -0.00827131650081852,
+              "slip_mps": 2.34060462634769e-05,
               "source_geom": "terrain",
-              "tangent_force_n": -7.00691349847135,
+              "tangent_force_n": -0.005172295166139882,
               "world_force_n": [
-                -7.00691349847135,
+                -0.005172295166139882,
                 0.0,
-                429.0172792514951
+                431.13746317468093
               ]
             }
           ],
-          "penetration_m": 0.003299502176195457,
-          "radial_energy_j": 0.7076364496967061,
+          "penetration_m": 0.003316377978931362,
+          "radial_energy_j": 0.7148935884441562,
           "raw_contact": true,
-          "shear_energy_j": 0.0012274209193765004,
-          "slip_mps": -0.00827131650081852,
-          "slip_ratio": 0.0827131650081852,
+          "shear_energy_j": 6.688159321418496e-10,
+          "slip_mps": 2.3406046263476905e-05,
+          "slip_ratio": -0.00023406046263476903,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
-          "tangent_center_speed_mps": 0.0027105295338794794,
-          "tangent_force_n": -7.00691349847135,
+          "tangent_center_speed_mps": 3.014846533491977e-05,
+          "tangent_force_n": -0.005172295166139882,
           "unloaded_radius_m": 0.372,
-          "vertical_force_n": 429.0172792514951,
+          "vertical_force_n": 431.13746317468093,
           "wheel_axis_m": [
-            2.8174573298129335,
+            2.8169699960164696,
             0.0,
-            0.019200487392991517
+            0.01918361159025561
           ],
-          "wheel_axis_moment_nm": 2.583452495094723,
+          "wheel_axis_moment_nm": 0.0019069405160145165,
           "world_force_n": [
-            -7.00691349847135,
+            -0.005172295166139882,
             0.0,
-            429.0172792514951
+            431.13746317468093
           ]
         },
         "rear": {
           "backend": "compliant_2d",
           "branch_release_loss_j": 0.0,
-          "brush_loss_j": 2.6761543699443026e-07,
+          "brush_loss_j": 4.86098209787313e-13,
           "controller_grounded": true,
-          "effective_radius_m": 0.3474183396363723,
-          "friction_coefficient": 1.0497914736140899,
+          "effective_radius_m": 0.34743738230953825,
+          "friction_coefficient": 1.0499996282257915,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 596.6197174575583,
-          "normal_speed_mps": -0.0012548377324513586,
-          "normal_vertical_n": 596.6197174575583,
-          "omega_abs_rad_s": 0.027951000620908457,
-          "omega_rel_rad_s": 0.024446897395111574,
+          "normal_load_n": 593.1461655881637,
+          "normal_speed_mps": -7.3322851728830675e-06,
+          "normal_vertical_n": 593.1461655881637,
+          "omega_abs_rad_s": 0.0001277389642630382,
+          "omega_rel_rad_s": 0.000104060132272919,
           "outside_material_load_range": false,
           "patches": [
             {
@@ -2918,44 +2918,44 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 596.6197174575583,
+              "normal_load_n": 593.1461655881637,
               "point_m": [
-                1.5599663990530972,
+                1.5593625660899233,
                 0.0,
                 -0.349500010430813
               ],
-              "slip_mps": -0.003128983374002122,
+              "slip_mps": 5.576616582134705e-06,
               "source_geom": "terrain",
-              "tangent_force_n": 7.50483802695971,
+              "tangent_force_n": -0.0034825629404635757,
               "world_force_n": [
-                7.50483802695971,
+                -0.0034825629404635757,
                 0.0,
-                596.6197174575583
+                593.1461655881637
               ]
             }
           ],
-          "penetration_m": 0.004581660363627671,
-          "radial_energy_j": 1.3644547596963947,
+          "penetration_m": 0.004562617690461734,
+          "radial_energy_j": 1.353136212305434,
           "raw_contact": true,
-          "shear_energy_j": 0.001408064845272513,
-          "slip_mps": -0.003128983374002122,
-          "slip_ratio": 0.031289833740021214,
+          "shear_energy_j": 3.0320611585725767e-10,
+          "slip_mps": 5.576616582134705e-06,
+          "slip_ratio": -5.5766165821347045e-05,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
-          "tangent_center_speed_mps": 0.006581706852889105,
-          "tangent_force_n": 7.50483802695971,
+          "tangent_center_speed_mps": 4.9957907944616344e-05,
+          "tangent_force_n": -0.0034825629404635757,
           "unloaded_radius_m": 0.352,
-          "vertical_force_n": 596.6197174575583,
+          "vertical_force_n": 593.1461655881637,
           "wheel_axis_m": [
-            1.5599663990530972,
+            1.5593625660899233,
             0.0,
-            -0.0020816707944407205
+            -0.0020626281212748065
           ],
-          "wheel_axis_moment_nm": -2.607318366566251,
+          "wheel_axis_moment_nm": 0.0012099725517628732,
           "world_force_n": [
-            7.50483802695971,
+            -0.0034825629404635757,
             0.0,
-            596.6197174575583
+            593.1461655881637
           ]
         }
       }
@@ -2963,75 +2963,75 @@
     {
       "attachment_samples": {
         "foot_front": {
-          "gap_m": 7.143694738236577e-05,
+          "gap_m": 2.659951723880994e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 126.13172356738961,
+          "normal_n": 39.756927886224034,
           "pull_n": 0.0,
-          "tangent_n": -5.768418963080649
+          "tangent_n": -9.80279174911555
         },
         "foot_rear": {
-          "gap_m": 6.334604353707043e-05,
+          "gap_m": 2.7203453853224564e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 118.2843336281213,
+          "normal_n": 40.70048236423886,
           "pull_n": 0.0,
-          "tangent_n": 41.805433548608775
+          "tangent_n": 9.835594203593821
         },
         "grip_left": {
-          "gap_m": 1.6416935976634996e-05,
+          "gap_m": 2.719022375789155e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 46.651555602965516,
+          "normal_n": 105.67200091750709,
           "pull_n": 0.0,
-          "tangent_n": 59.626994384751725
+          "tangent_n": 108.32335665430195
         },
         "grip_right": {
-          "gap_m": 1.641693597594274e-05,
+          "gap_m": 2.719022375789155e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 46.651555604112815,
+          "normal_n": 105.67200091723298,
           "pull_n": 0.0,
-          "tangent_n": 59.62699438553923
+          "tangent_n": 108.32335665416375
         },
         "saddle": {
-          "gap_m": 2.078176614067545e-05,
+          "gap_m": 2.292433436573427e-05,
           "half_patch_m": 0.045,
           "kind": "saddle",
           "moment_nm": 0.0,
-          "normal_n": 430.2820510029172,
+          "normal_n": 454.897857188259,
           "pull_n": 0.0,
-          "tangent_n": -41.88823218644554
+          "tangent_n": 164.32443988112885
         }
       },
       "attachment_violations": [
         "energy.constraint_work"
       ],
       "component_work_j": {
-        "act_rider_elbow_left": 0.0011859947563100447,
-        "act_rider_elbow_right": 0.001185994756368569,
-        "act_rider_hip_front": 0.00861485974378175,
-        "act_rider_hip_rear": 0.009467167998396954,
-        "act_rider_knee_front": 0.0012763396558539359,
-        "act_rider_knee_rear": 0.0006176653103254909,
-        "act_rider_shoulder_left": 0.002095240716903049,
-        "act_rider_shoulder_right": 0.002095240716983863,
-        "act_rider_torso_hinge": 0.0006110176308837746,
-        "aerodynamic": -2.0336019746465204e-09,
+        "act_rider_elbow_left": 1.565754871420402e-05,
+        "act_rider_elbow_right": 1.5657548712213842e-05,
+        "act_rider_hip_front": -0.0002753664785202053,
+        "act_rider_hip_rear": -9.287575399131672e-05,
+        "act_rider_knee_front": 1.3238298417407255e-05,
+        "act_rider_knee_rear": 3.124469888098477e-07,
+        "act_rider_shoulder_left": 1.688203688106216e-05,
+        "act_rider_shoulder_right": 1.6882036878319323e-05,
+        "act_rider_torso_hinge": 0.00034536046878123785,
+        "aerodynamic": -7.128108358971501e-16,
         "chain": 0.0,
-        "closure": -0.0021341697990087294,
-        "drive_bearings": -1.253665269664571e-07,
-        "engine_passive": -9.318324467319071e-07,
-        "fork_damper": -0.00022145499890229882,
-        "fork_spring": -0.01210018152716992,
+        "closure": 5.791528729878446e-06,
+        "drive_bearings": -6.928287650664864e-11,
+        "engine_passive": -3.081710618095259e-11,
+        "fork_damper": -6.0255598259342355e-09,
+        "fork_spring": -6.303572203446588e-05,
         "freehub": 0.0,
         "front_brake": 0.0,
         "front_static_brake": 0.0,
-        "ideal_transmission": 0.00029506396751051087,
+        "ideal_transmission": -7.403603954468011e-09,
         "joint_limits": 0.0,
         "mid_drive": 0.0,
         "native_contact": 0.0,
@@ -3040,15 +3040,15 @@
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "rider_passive_damping": 0.0,
-        "road_rolling": -8.37665281042802e-05,
+        "road_rolling": -1.5158419456342311e-09,
         "shock_bumper": 0.0,
-        "shock_coil": 0.008230421503530812,
-        "shock_damper": -2.7360005949577788e-05,
+        "shock_coil": 4.39531839149178e-05,
+        "shock_damper": -8.992679473566847e-10,
         "shock_hbo": 0.0,
         "shock_solver_limit": 0.0,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": -0.002821899220603669
+        "tires": -3.154475986589892e-05
       },
       "contact_crash_cause": null,
       "control": {
@@ -3068,10 +3068,10 @@
         "assist_demand_gated": true,
         "assist_gain": 3.4,
         "assist_mode": "turbo",
-        "assist_sensor_nm": 1.515254302173887,
+        "assist_sensor_nm": 0.012241163744387358,
         "battery_empty": false,
         "battery_energy_j": 1800000.0,
-        "cadence_rpm": 0.010429392844290487,
+        "cadence_rpm": 0.00619857425021742,
         "chain_dissipation_power_w": 0.0,
         "chain_energy_j": 0.0,
         "chain_extension_m": 0.0,
@@ -3079,29 +3079,29 @@
         "chain_power_w": 0.0,
         "chain_tension_n": 0.0,
         "coasting_reason": "",
-        "crank_phase_rad": 0.004984013711797634,
-        "crank_rad_s": 0.0010921634647008316,
+        "crank_phase_rad": -0.03075267686665156,
+        "crank_rad_s": 0.0006491131775737969,
         "crank_target_phase_rad": null,
-        "crank_target_rate_rad_s": 0.05196672711800057,
-        "drive_shaft_rad_s": 0.0010921634647008316,
+        "crank_target_rate_rad_s": 0.0004845937693609324,
+        "drive_shaft_rad_s": 0.0006491131775737969,
         "electrical_power_w": 0.0,
         "energy_limited": false,
         "freehub_deflection_rad": 0.0,
         "freehub_dissipation_power_w": 0.0,
         "freehub_energy_j": 0.0,
         "freehub_engaged": true,
-        "freehub_power_w": 0.06792037726166802,
-        "freehub_torque_nm": 3.0949018988163095,
+        "freehub_power_w": -1.700876403898094e-06,
+        "freehub_torque_nm": 0.02396641707700185,
         "front_brake_demand": 0.0,
         "front_brake_power_w": 0.0,
         "front_brake_torque_nm": 0.0,
         "gear_front_teeth": 22,
         "gear_ratio": 0.43137254901960786,
         "gear_rear_teeth": 51,
-        "human_active_power_w": 10.683379475814109,
+        "human_active_power_w": 0.024330165782319085,
         "human_command_nm": 1.5,
-        "human_joint_power_w": 10.683379475814109,
-        "human_sensor_nm": 1.515254302173887,
+        "human_joint_power_w": 0.024330165782319085,
+        "human_sensor_nm": 0.012241163744387358,
         "human_setpoint_nm": 10.0,
         "human_torque_nm": 0.0,
         "motor_control_source": "external_request",
@@ -3119,7 +3119,7 @@
         "rear_brake_demand": 0.0,
         "rear_brake_power_w": 0.0,
         "rear_brake_torque_nm": 0.0,
-        "required_cadence_rpm": 0.49624568982824613,
+        "required_cadence_rpm": 0.004627529627119575,
         "rider_mode": "pedaling",
         "rollback_brake_demand": 0.0,
         "safety_limited": false,
@@ -3134,87 +3134,87 @@
       "dt_s": 0.0012500000000000002,
       "endpoint_mass": {
         "angular_momentum_kg_m2_s": [
-          0.013849152076173292,
-          -0.0030007017729111463,
-          -0.00788725852334194
+          0.0003863924573993588,
+          -0.0001464384537741485,
+          -0.00020911628551049529
         ],
         "com_m": [
-          2.0866976992008506,
+          2.0886750213943843,
           9.195402298852062e-06,
-          0.6127695205605896
+          0.6120692324656453
         ],
         "com_velocity_mps": [
-          1.7278560945805013e-05,
+          -3.947650294419035e-07,
           0.0,
-          5.371812181058621e-05
+          5.5290692965428055e-06
         ],
-        "gravitational_energy_j": 627.5764832554156,
-        "kinetic_energy_j": 0.024455715824162536,
+        "gravitational_energy_j": 626.8592733989451,
+        "kinetic_energy_j": 1.5310616714797872e-06,
         "linear_momentum_kg_mps": [
-          0.0018038817627420432,
+          -4.121346907373472e-05,
           0.0,
-          0.0056081719170252
+          0.0005772348345590688
         ],
         "mass_kg": 104.39999999999999
       },
       "energy": {
-        "active_work_j": 0.027149521285807433,
-        "constraint_absolute_j": 0.0044784442095248764,
-        "constraint_signed_j": -0.0018391058314982172,
+        "active_work_j": 5.5748152861732226e-05,
+        "constraint_absolute_j": 2.0199645562759886e-05,
+        "constraint_signed_j": 5.784125125924116e-06,
         "constraint_work_ok": false,
-        "constraint_work_ratio": 0.16495481310257978,
+        "constraint_work_ratio": 0.04764175382179338,
         "elastic_energy_j": {
-          "fork_air": 12.087258397232217,
+          "fork_air": 11.97576214968867,
           "rider_interfaces": 0.0,
           "rider_joint_envelope": 0.0,
           "shock_bumper": 0.0,
-          "shock_coil": 11.926561121431494,
+          "shock_coil": 11.991161110644963,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0,
-          "tires": 2.0770809583341308
+          "tires": 2.0680732915544495
         },
         "electrical_residual_j": 0.0,
         "electrical_work_j": 0.0,
-        "energy_scale_j": 26.07953354497397,
-        "external_work_j": -8.376856170625485e-05,
-        "loss_j": 0.00026067232058719003,
-        "loss_step_j": 0.0001464920107836901,
+        "energy_scale_j": 26.034910287565527,
+        "external_work_j": -1.5158426584450672e-09,
+        "loss_j": 7.75007438832007e-09,
+        "loss_step_j": 4.80591348650597e-09,
         "measured": true,
-        "mechanical_energy_j": 653.6918394482376,
+        "mechanical_energy_j": 652.8942714818949,
         "motor_positive_j": 0.0,
         "motor_signed_j": 0.0,
-        "muscle_positive_j": 0.027149521285807433,
-        "muscle_signed_j": 0.027149521285807433,
-        "residual_j": 0.009139301527616932,
-        "solver_constraint_work_j": -0.0018391058314982172,
+        "muscle_positive_j": 0.0004239903853732543,
+        "muscle_signed_j": 5.5748152861732226e-05,
+        "residual_j": 4.888739107175429e-05,
+        "solver_constraint_work_j": 5.784125125924116e-06,
         "source_interval_id": 3,
-        "source_positive_work_j": 0.027149521285807433,
+        "source_positive_work_j": 0.0004239903853732543,
         "source_time_s": 0.005
       },
       "interval_end_s": 0.005,
       "interval_id": 3,
       "mass": {
         "angular_momentum_kg_m2_s": [
-          0.010053862340307567,
-          -0.00012278642415253227,
-          -0.005055434938432377
+          0.0002935785386433144,
+          -0.00010082689823522496,
+          -0.0001530386300408081
         ],
         "com_m": [
-          2.08669767711612,
-          9.195402298849935e-06,
-          0.6127694521760011
+          2.0886750218878007,
+          9.195402298852594e-06,
+          0.6120692255542565
         ],
         "com_velocity_mps": [
-          8.083855751015645e-06,
+          -2.836888073119053e-07,
           0.0,
-          2.8327356055653516e-05
+          3.914516320778164e-06
         ],
-        "gravitational_energy_j": 627.576413218382,
-        "kinetic_energy_j": 0.013910372685018072,
+        "gravitational_energy_j": 626.8592663205494,
+        "kinetic_energy_j": 8.668256932238219e-07,
         "linear_momentum_kg_mps": [
-          0.0008439545404060332,
+          -2.961711148336291e-05,
           0.0,
-          0.0029573759722102268
+          0.00040867550388924034
         ],
         "mass_kg": 104.39999999999999
       },
@@ -3234,26 +3234,26 @@
         "numerically_valid": true
       },
       "powers_w": {
-        "act_rider_elbow_left": 0.49622438953655507,
-        "act_rider_elbow_right": 0.4962243895546085,
-        "act_rider_hip_front": 3.360851226924665,
-        "act_rider_hip_rear": 3.673550581896863,
-        "act_rider_knee_front": 0.4758288993707117,
-        "act_rider_knee_rear": 0.20141406637950365,
-        "act_rider_shoulder_left": 0.86955348644066,
-        "act_rider_shoulder_right": 0.8695534864633786,
-        "act_rider_torso_hinge": 0.2401789492471635,
-        "aerodynamic": -1.2038957365302577e-06,
+        "act_rider_elbow_left": 0.0065041779662600874,
+        "act_rider_elbow_right": 0.006504177963033017,
+        "act_rider_hip_front": -0.10780251020467474,
+        "act_rider_hip_rear": -0.036245636260236816,
+        "act_rider_knee_front": 0.004978852454211402,
+        "act_rider_knee_rear": 0.00015270550388827485,
+        "act_rider_shoulder_left": 0.006978727629518918,
+        "act_rider_shoulder_right": 0.00697872762635176,
+        "act_rider_torso_hinge": 0.13628094310396718,
+        "aerodynamic": -4.24634503126866e-13,
         "chain": 0.0,
-        "closure": -0.6912057379819032,
-        "drive_bearings": -4.8018480269142666e-05,
-        "engine_passive": -0.0003367650036838095,
-        "fork_damper": -0.10306182922614446,
-        "fork_spring": -4.477927352659122,
+        "closure": 0.0011370094501623185,
+        "drive_bearings": -3.2812627904896826e-08,
+        "engine_passive": -1.5799112707894647e-08,
+        "fork_damper": -2.9062269008487253e-06,
+        "fork_spring": -0.02396959423989546,
         "freehub": 0.0,
         "front_brake": 0.0,
         "front_static_brake": 0.0,
-        "ideal_transmission": 0.06792037726166802,
+        "ideal_transmission": -1.700876403898094e-06,
         "joint_limits": 0.0,
         "mid_drive": 0.0,
         "native_contact": 0.0,
@@ -3262,93 +3262,93 @@
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "rider_passive_damping": 0.0,
-        "road_rolling": -0.03508209452735431,
+        "road_rolling": -9.55037971743306e-07,
         "shock_bumper": 0.0,
-        "shock_coil": 2.631262788972915,
-        "shock_damper": -0.010124064620149698,
+        "shock_coil": 0.01787268687291253,
+        "shock_damper": -4.6380033961257346e-07,
         "shock_hbo": 0.0,
         "shock_solver_limit": 0.0,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": -0.8041542391123879
+        "tires": -0.01489947331893857
       },
       "qpos": [
-        2.0106665379295956,
-        -0.05325863304531592,
-        0.0059453353021777225,
-        0.004984013711797634,
-        0.005254002220713492,
-        0.005254002218322346,
-        0.06091790849353433,
-        3.39103334917956e-05,
-        0.12500875178039966,
-        -0.06772157368555508,
-        0.001971757406347346,
-        0.21999136687285747,
-        -0.18581650418972936,
-        0.01442928530313206,
-        2.026224546018643,
-        -0.05330856021895843,
-        0.18843834423566067,
-        -0.18136832232906475,
-        0.09338544869915273,
-        -0.15065706129107168,
-        0.09338544869916017,
-        -0.15065706129108203,
-        -0.180860403364824,
-        0.01709269870276759,
-        -0.17235651130553098,
-        0.0063991316046167574
+        2.0100656938491506,
+        -0.05322826615136014,
+        0.005672163564170295,
+        -0.03075267686665156,
+        0.020820891712836687,
+        0.02082089166782249,
+        0.0606229582894809,
+        0.0037514292367353897,
+        0.12531142202236284,
+        -0.06787866197554077,
+        0.0040123915468504075,
+        0.22052039952770458,
+        -0.1862726941976852,
+        0.01446617803788727,
+        2.0293422032254242,
+        -0.05421144907044571,
+        0.2554967520869892,
+        -0.24796257916410971,
+        0.12427160186065561,
+        -0.20080876763966518,
+        0.12427160186065579,
+        -0.20080876763966543,
+        -0.2645387105635462,
+        0.04701914769802983,
+        -0.2246953364978813,
+        -0.010923317490279463
       ],
       "qvel": [
-        0.008941726815612347,
-        -0.001769829760568712,
-        0.013692174899952482,
-        0.0010921634647008316,
-        -0.011398075690637543,
-        -0.011398075690628513,
-        0.0125945439602391,
-        0.028932130304092946,
-        -0.012973766159800367,
-        0.006766617429941292,
-        0.022417019541098288,
-        -0.023078473868555886,
-        0.01988526832051535,
-        -0.0015912366966475547,
-        -0.006480873453435591,
-        0.005618608623445414,
-        -0.44226970580488545,
-        0.4734044303559633,
-        -0.12152548549196646,
-        0.14380342365301532,
-        -0.12152548549495738,
-        0.143803423657603,
-        0.46985691367400945,
-        -0.06725769017695295,
-        0.4418084653597279,
-        -0.02984544881844574
+        6.992480846065369e-05,
+        -1.4045453829507894e-05,
+        8.288572690435323e-05,
+        0.0006491131775737969,
+        -0.0005593286154316751,
+        -0.0005593286154258651,
+        6.768983204472227e-05,
+        -5.487655767910664e-05,
+        -9.140016593529061e-05,
+        4.6829754582653254e-05,
+        0.00020904044952824535,
+        -0.0001563817088790154,
+        0.000134678099658733,
+        -1.0780810773061859e-05,
+        -4.83752312049444e-05,
+        4.820696624993199e-05,
+        -0.0031512236441020632,
+        0.003360400569130874,
+        -0.0008539911801833603,
+        0.0010240742762289397,
+        -0.0008539911797958019,
+        0.0010240742757208496,
+        0.0036382435092160207,
+        -0.0009153671880209374,
+        0.002934806376776631,
+        0.00014406403629323218
       ],
       "rider": {
         "front_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            2.85139918651529,
-            -6.412628718912381e-11,
-            -124.79588933700443
+            8.289114059575134,
+            0.0,
+            -40.085335466806214
           ],
           "force_on_rider_n": [
-            -2.85139918651529,
-            6.412628718912381e-11,
-            124.79588933700443
+            -8.289114059575134,
+            -0.0,
+            40.085335466806214
           ],
-          "gap_m": 7.143694738236577e-05,
+          "gap_m": 2.659951723880994e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 124.68728048187076,
+          "normal_load_n": 39.741705226352195,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -3358,8 +3358,8 @@
             0.0,
             0.0
           ],
-          "tangent_n": -5.935196607527649,
-          "vertical_force_on_rider_n": 124.79588933700443,
+          "tangent_n": -9.805120962067155,
+          "vertical_force_on_rider_n": 40.085335466806214,
           "would_separate": false,
           "would_slip": false
         },
@@ -3368,97 +3368,97 @@
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            69.77119224283915,
-            -1.320904040670616e-23,
-            -132.97780846832927
+            169.7878676867399,
+            -0.0,
+            -250.53919557305912
           ],
           "force_on_rider_n": [
-            -69.77119224283915,
-            1.320904040670616e-23,
-            132.97780846832927
+            -169.7878676867399,
+            0.0,
+            250.53919557305912
           ],
-          "hand_gap_m": 1.6416935976634996e-05,
+          "hand_gap_m": 2.719022375789155e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6105143853679027,
-          "trial_pair_force_n": 150.17029270806822
+          "shoulder_distance_m": 0.6072949423103393,
+          "trial_pair_force_n": 302.6512985797442
         },
         "grip_left": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            34.88559612125295,
-            -2.317445705152814e-10,
-            -66.48890423398532
+            84.89393384322285,
+            0.0,
+            -125.26959778641532
           ],
           "force_on_rider_n": [
-            -34.88559612125295,
-            2.317445705152814e-10,
-            66.48890423398532
+            -84.89393384322285,
+            -0.0,
+            125.26959778641532
           ],
-          "hand_gap_m": 1.6416935976634996e-05,
+          "hand_gap_m": 2.719022375789155e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.5346169177182434,
-            -0.09999999999999999,
-            0.6096380402902287
+            2.5338349694543547,
+            -0.1,
+            0.6098115108846786
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6105143853679027,
-          "trial_pair_force_n": 75.0851463537979
+          "shoulder_distance_m": 0.6072949423103393,
+          "trial_pair_force_n": 151.325649289695
         },
         "grip_right": {
           "arm_reach_m": 0.6223297242629591,
           "elastic_energy_j": 0.0,
           "enabled": true,
           "force_on_bike_n": [
-            34.8855961215862,
-            2.3174457051526818e-10,
-            -66.48890423434396
+            84.89393384351705,
+            0.0,
+            -125.2695977866438
           ],
           "force_on_rider_n": [
-            -34.8855961215862,
-            -2.3174457051526818e-10,
-            66.48890423434396
+            -84.89393384351705,
+            -0.0,
+            125.2695977866438
           ],
-          "hand_gap_m": 1.641693597594274e-05,
+          "hand_gap_m": 2.719022375789155e-05,
           "overloaded": false,
           "pair_force_limit_n": null,
           "point_m": [
-            2.5346169177182434,
-            0.09999999999999999,
-            0.6096380402902287
+            2.5338349694543547,
+            0.1,
+            0.6098115108846786
           ],
           "reachable": true,
           "release_loss_j": 0.0,
-          "shoulder_distance_m": 0.6105143853679027,
-          "trial_pair_force_n": 75.08514635427031
+          "shoulder_distance_m": 0.6072949423103393,
+          "trial_pair_force_n": 151.32564929004917
         },
         "rear_pedal": {
           "enabled": true,
           "force_on_bike_n": [
-            -43.0092473137148,
-            6.407918058778528e-11,
-            -115.11158393219233
+            -10.635432851444671,
+            0.0,
+            -40.48587747735639
           ],
           "force_on_rider_n": [
-            43.0092473137148,
-            -6.407918058778528e-11,
-            115.11158393219233
+            10.635432851444671,
+            -0.0,
+            40.48587747735639
           ],
-          "gap_m": 6.334604353707043e-05,
+          "gap_m": 2.7203453853224564e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 116.05083555389461,
+          "normal_load_n": 40.689278114414854,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -3468,31 +3468,31 @@
             0.0,
             0.0
           ],
-          "tangent_n": 40.40638163846599,
-          "vertical_force_on_rider_n": 115.11158393219233,
+          "tangent_n": 9.828598759584345,
+          "vertical_force_on_rider_n": 40.48587747735639,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "enabled": true,
           "force_on_bike_n": [
-            38.87697454327791,
+            -166.9060012214762,
             0.0,
-            -433.47000140111976
+            -453.9784369133614
           ],
           "force_on_rider_n": [
-            -38.87697454327791,
+            166.9060012214762,
             -0.0,
-            433.47000140111976
+            453.9784369133614
           ],
-          "gap_m": 2.078176614067545e-05,
+          "gap_m": 2.292433436573427e-05,
           "in_platform": true,
           "moment_about_rider_origin_nm": [
             0.0,
             0.0,
             0.0
           ],
-          "normal_load_n": 433.2319146220101,
+          "normal_load_n": 454.9178299457134,
           "patches": [],
           "radial_energy_j": 0.0,
           "relative_power_w": 0.0,
@@ -3502,39 +3502,39 @@
             0.0,
             0.0
           ],
-          "tangent_n": -41.44598191951535,
-          "vertical_force_on_rider_n": 433.47000140111976,
+          "tangent_n": 164.32833725053428,
+          "vertical_force_on_rider_n": 453.9784369133614,
           "would_separate": false,
           "would_slip": false
         }
       },
-      "rider_activation_saturated": false,
+      "rider_activation_saturated": true,
       "rider_active_delivered_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_active_positive_power_limit_w": 450.0,
       "rider_active_request_nm": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.15800572340974,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.934359322909289,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_allocation": {
-        "crank_task_nm": 0.5624906925632541,
-        "crank_task_shortfall_nm": 7.771561172376096e-16,
+        "crank_task_nm": 0.5901939749501188,
+        "crank_task_shortfall_nm": 5.000131065793209,
         "invalid_controller": false
       },
       "rider_balance": {
@@ -3546,120 +3546,120 @@
       },
       "rider_control": {
         "rider_elbow_left": {
-          "active_delivered_nm": 3.450713320524967,
-          "active_request_nm": 3.450713320524967,
-          "command_nm": 3.450713320524967,
+          "active_delivered_nm": 6.351275602987638,
+          "active_request_nm": 6.351275602987638,
+          "command_nm": 6.351275602987638,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320524967,
-          "requested_nm": 3.450713320524967,
+          "posture_nm": 6.351275602987638,
+          "requested_nm": 6.351275602987638,
           "saturated": false,
-          "solved_active_nm": 3.450713320524967,
-          "solved_force_nm": 3.450713320524967,
+          "solved_active_nm": 6.351275602987638,
+          "solved_force_nm": 6.351275602987638,
           "solved_passive_nm": 0.0
         },
         "rider_elbow_right": {
-          "active_delivered_nm": 3.450713320540423,
-          "active_request_nm": 3.450713320540423,
-          "command_nm": 3.450713320540423,
+          "active_delivered_nm": 6.351275602987588,
+          "active_request_nm": 6.351275602987588,
+          "command_nm": 6.351275602987588,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 3.450713320540423,
-          "requested_nm": 3.450713320540423,
+          "posture_nm": 6.351275602987588,
+          "requested_nm": 6.351275602987588,
           "saturated": false,
-          "solved_active_nm": 3.450713320540423,
-          "solved_force_nm": 3.450713320540423,
+          "solved_active_nm": 6.351275602987588,
+          "solved_force_nm": 6.351275602987588,
           "solved_passive_nm": 0.0
         },
         "rider_hip_front": {
-          "active_delivered_nm": 7.15292492057795,
-          "active_request_nm": 7.15292492057795,
-          "command_nm": 7.15292492057795,
+          "active_delivered_nm": -29.63037243977777,
+          "active_request_nm": -29.15800572340974,
+          "command_nm": -29.63037243977777,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 7.15292492057795,
+          "pedaling_nm": -29.15800572340974,
           "posture_nm": 0.0,
-          "requested_nm": 7.15292492057795,
-          "saturated": false,
-          "solved_active_nm": 7.15292492057795,
-          "solved_force_nm": 7.15292492057795,
+          "requested_nm": -29.15800572340974,
+          "saturated": true,
+          "solved_active_nm": -29.63037243977777,
+          "solved_force_nm": -29.63037243977777,
           "solved_passive_nm": 0.0
         },
         "rider_hip_rear": {
-          "active_delivered_nm": 8.31480351764151,
-          "active_request_nm": 8.31480351764151,
-          "command_nm": 8.31480351764151,
+          "active_delivered_nm": -12.350264926181017,
+          "active_request_nm": -12.350264926181017,
+          "command_nm": -12.350264926181017,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": 8.31480351764151,
+          "pedaling_nm": -12.350264926181017,
           "posture_nm": 0.0,
-          "requested_nm": 8.31480351764151,
+          "requested_nm": -12.350264926181017,
           "saturated": false,
-          "solved_active_nm": 8.31480351764151,
-          "solved_force_nm": 8.31480351764151,
+          "solved_active_nm": -12.350264926181017,
+          "solved_force_nm": -12.350264926181017,
           "solved_passive_nm": 0.0
         },
         "rider_knee_front": {
-          "active_delivered_nm": -7.074713659045089,
-          "active_request_nm": -7.074713659045089,
-          "command_nm": -7.074713659045089,
+          "active_delivered_nm": -5.439186065840848,
+          "active_request_nm": -5.934359322909289,
+          "command_nm": -5.439186065840848,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -7.074713659045089,
+          "pedaling_nm": -5.934359322909289,
           "posture_nm": 0.0,
-          "requested_nm": -7.074713659045089,
-          "saturated": false,
-          "solved_active_nm": -7.074713659045089,
-          "solved_force_nm": -7.074713659045089,
+          "requested_nm": -5.934359322909289,
+          "saturated": true,
+          "solved_active_nm": -5.439186065840848,
+          "solved_force_nm": -5.439186065840848,
           "solved_passive_nm": 0.0
         },
         "rider_knee_rear": {
-          "active_delivered_nm": -6.748568855664899,
-          "active_request_nm": -6.748568855664899,
-          "command_nm": -6.748568855664899,
+          "active_delivered_nm": 1.059983517173249,
+          "active_request_nm": 1.059983517173249,
+          "command_nm": 1.059983517173249,
           "passive_damping_nm": -0.0,
-          "pedaling_nm": -6.748568855664899,
+          "pedaling_nm": 1.059983517173249,
           "posture_nm": 0.0,
-          "requested_nm": -6.748568855664899,
+          "requested_nm": 1.059983517173249,
           "saturated": false,
-          "solved_active_nm": -6.748568855664899,
-          "solved_force_nm": -6.748568855664899,
+          "solved_active_nm": 1.059983517173249,
+          "solved_force_nm": 1.059983517173249,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_left": {
-          "active_delivered_nm": -7.1553179394468875,
-          "active_request_nm": -7.1553179394468875,
-          "command_nm": -7.1553179394468875,
+          "active_delivered_nm": -8.171896609073311,
+          "active_request_nm": -8.171896609073311,
+          "command_nm": -8.171896609073311,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.1553179394468875,
-          "requested_nm": -7.1553179394468875,
+          "posture_nm": -8.171896609073311,
+          "requested_nm": -8.171896609073311,
           "saturated": false,
-          "solved_active_nm": -7.1553179394468875,
-          "solved_force_nm": -7.1553179394468875,
+          "solved_active_nm": -8.171896609073311,
+          "solved_force_nm": -8.171896609073311,
           "solved_passive_nm": 0.0
         },
         "rider_shoulder_right": {
-          "active_delivered_nm": -7.155317939457729,
-          "active_request_nm": -7.155317939457729,
-          "command_nm": -7.155317939457729,
+          "active_delivered_nm": -8.17189660907323,
+          "active_request_nm": -8.17189660907323,
+          "command_nm": -8.17189660907323,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": -7.155317939457729,
-          "requested_nm": -7.155317939457729,
+          "posture_nm": -8.17189660907323,
+          "requested_nm": -8.17189660907323,
           "saturated": false,
-          "solved_active_nm": -7.155317939457729,
-          "solved_force_nm": -7.155317939457729,
+          "solved_active_nm": -8.17189660907323,
+          "solved_force_nm": -8.17189660907323,
           "solved_passive_nm": 0.0
         },
         "rider_torso_hinge": {
-          "active_delivered_nm": 0.5073441097003837,
-          "active_request_nm": 0.5073441097003837,
-          "command_nm": 0.5073441097003837,
+          "active_delivered_nm": 40.554969653279926,
+          "active_request_nm": 40.554969653279926,
+          "command_nm": 40.554969653279926,
           "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
-          "posture_nm": 0.5073441097003837,
-          "requested_nm": 0.5073441097003837,
+          "posture_nm": 40.554969653279926,
+          "requested_nm": 40.554969653279926,
           "saturated": false,
-          "solved_active_nm": 0.5073441097003837,
-          "solved_force_nm": 0.5073441097003837,
+          "solved_active_nm": 40.554969653279926,
+          "solved_force_nm": 40.554969653279926,
           "solved_passive_nm": 0.0
         }
       },
@@ -3680,45 +3680,45 @@
         }
       },
       "rider_joint_capacity_nm": {
-        "rider_elbow_left": 29.890346960309525,
-        "rider_elbow_right": 29.89034696030985,
-        "rider_hip_front": 160.5775200309377,
-        "rider_hip_rear": 179.25749363754727,
-        "rider_knee_front": 135.18325631576386,
-        "rider_knee_rear": 123.67608949027641,
-        "rider_shoulder_left": 56.612179069058485,
-        "rider_shoulder_right": 56.6121790690587,
-        "rider_torso_hinge": 153.33380746217193
+        "rider_elbow_left": 30.51297791125176,
+        "rider_elbow_right": 30.51297791125176,
+        "rider_hip_front": 116.87239688459357,
+        "rider_hip_rear": 128.63899469039,
+        "rider_knee_front": 134.04702987047855,
+        "rider_knee_rear": 53.060252513197916,
+        "rider_shoulder_left": 56.96629245053082,
+        "rider_shoulder_right": 56.96629245053082,
+        "rider_torso_hinge": 156.24040422332106
       },
       "rider_joint_positive_power_w": {
-        "rider_elbow_left": 0.49622438953655507,
-        "rider_elbow_right": 0.4962243895546085,
-        "rider_hip_front": 3.360851226924665,
-        "rider_hip_rear": 3.673550581896863,
-        "rider_knee_front": 0.4758288993707117,
-        "rider_knee_rear": 0.20141406637950365,
-        "rider_shoulder_left": 0.86955348644066,
-        "rider_shoulder_right": 0.8695534864633786,
-        "rider_torso_hinge": 0.2401789492471635
+        "rider_elbow_left": 0.0065041779662600874,
+        "rider_elbow_right": 0.006504177963033017,
+        "rider_hip_front": 0.0,
+        "rider_hip_rear": 0.0,
+        "rider_knee_front": 0.004978852454211402,
+        "rider_knee_rear": 0.00015270550388827485,
+        "rider_shoulder_left": 0.006978727629518918,
+        "rider_shoulder_right": 0.00697872762635176,
+        "rider_torso_hinge": 0.13628094310396718
       },
       "rider_joint_power_violations": [],
       "rider_joint_speed_violations": [],
       "rider_joint_torques": {
-        "rider_elbow_left": 3.450713320524967,
-        "rider_elbow_right": 3.450713320540423,
-        "rider_hip_front": 7.15292492057795,
-        "rider_hip_rear": 8.31480351764151,
-        "rider_knee_front": -7.074713659045089,
-        "rider_knee_rear": -6.748568855664899,
-        "rider_shoulder_left": -7.1553179394468875,
-        "rider_shoulder_right": -7.155317939457729,
-        "rider_torso_hinge": 0.5073441097003837
+        "rider_elbow_left": 6.351275602987638,
+        "rider_elbow_right": 6.351275602987588,
+        "rider_hip_front": -29.63037243977777,
+        "rider_hip_rear": -12.350264926181017,
+        "rider_knee_front": -5.439186065840848,
+        "rider_knee_rear": 1.059983517173249,
+        "rider_shoulder_left": -8.171896609073311,
+        "rider_shoulder_right": -8.17189660907323,
+        "rider_torso_hinge": 40.554969653279926
       },
       "rider_lean_limit_rad": 0.5671875000000001,
       "rider_passive_power_w": 0.0,
       "rider_passive_work_step_j": 0.0,
-      "rider_positive_power_w": 10.683379475814109,
-      "rider_positive_work_step_j": 0.013354224344767636,
+      "rider_positive_power_w": 0.16837831224723063,
+      "rider_positive_work_step_j": 0.00021047289030903828,
       "rider_strength_limited": [],
       "rider_strength_violations": [],
       "rider_support_targets": {
@@ -3728,51 +3728,51 @@
         }
       },
       "rider_welds": {
-        "crank_torque_nm": 1.3869151314419654,
+        "crank_torque_nm": 0.012925060226543793,
         "front_pedal": {
           "force_on_rider_n": [
-            -2.655228961190343,
-            -2.1386240388942425e-11,
-            126.23563722886519
+            -8.286230014272833,
+            -2.1271384448489753e-11,
+            40.10045427644815
           ],
-          "normal_n": 126.13172356738951,
-          "tangent_n": -5.768418963080633,
+          "normal_n": 39.75692788622401,
+          "tangent_n": -9.802791749115556,
           "would_separate": false,
           "would_slip": false
         },
         "grip_left": {
           "force_on_rider_n": [
-            -35.360678910928605,
-            -7.724532338258026e-11,
-            66.94302418097055
+            -84.89662080532332,
+            1.5457941509302965e-10,
+            125.27204456941651
           ]
         },
         "grip_right": {
           "force_on_rider_n": [
-            -35.36067891191836,
-            7.724532338257815e-11,
-            66.94302418194867
+            -84.89662080507794,
+            -1.5457941509302965e-10,
+            125.27204456923208
           ]
         },
         "rear_pedal": {
           "force_on_rider_n": [
-            44.45379181977058,
-            2.137595336752887e-11,
-            117.31469749728863
+            10.642645956318857,
+            -2.1290459267611047e-11,
+            40.496941428556504
           ],
-          "normal_n": 118.28433362812126,
-          "tangent_n": 41.80543354860879,
+          "normal_n": 40.70048236423883,
+          "tangent_n": 9.835594203593821,
           "would_separate": false,
           "would_slip": false
         },
         "saddle": {
           "force_on_rider_n": [
-            -39.32933587957585,
+            166.90203766204195,
             -0.0,
-            430.52348455137036
+            453.95846929094165
           ],
-          "normal_n": 430.2820510029171,
-          "tangent_n": -41.888232186445585,
+          "normal_n": 454.897857188259,
+          "tangent_n": 164.32443988112888,
           "would_separate": false,
           "would_slip": false
         }
@@ -3780,58 +3780,58 @@
       "schema_version": 2,
       "sensors": {
         "encoders_rad_s": {
-          "crank": 0.0010921634647008316,
-          "front_wheel": 0.028932130304092946,
-          "rear_wheel": 0.022417019541098288
+          "crank": 0.0006491131775737969,
+          "front_wheel": -5.487655767910664e-05,
+          "rear_wheel": 0.00020904044952824535
         },
         "frame_gyro_body_rad_s": [
           0.0,
-          0.01369217489995248,
+          8.288572690435323e-05,
           0.0
         ],
         "frame_specific_force_body_mps2": [
-          2.230384566713867,
+          -0.03726003131981132,
           0.0,
-          9.210858581685217
+          9.80521146642957
         ],
-        "human_torque_nm": 1.515254302173887,
+        "human_torque_nm": 0.012241163744387358,
         "motor_torque_nm": 0.0
       },
       "suspension": {
-        "fork_travel_m": 0.06091790849353433,
-        "fork_velocity_mps": 0.0125945439602391,
+        "fork_travel_m": 0.0606229582894809,
+        "fork_velocity_mps": 6.768983204472227e-05,
         "generalized_force_components_n": {
-          "fork_damper": -8.183053673996458,
-          "fork_spring": -355.5450174929646,
+          "fork_damper": -0.042934467601110284,
+          "fork_spring": -354.1092290502197,
           "shock_bumper": -0.0,
-          "shock_coil": -1653.596095738934,
-          "shock_damper": 6.36238759543395,
+          "shock_coil": -1657.8240031418811,
+          "shock_damper": 0.0430209146024042,
           "shock_hbo": -0.0,
           "shock_solver_limit": 0.0,
           "shock_top_out": 0.0,
           "shock_upper_stop": 0.0
         },
-        "linkage_closure_max_m": 4.4478765292677025e-05,
+        "linkage_closure_max_m": 4.457743067387554e-05,
         "shock_solver_limit_power_w": 0.0,
-        "shock_stroke_m": 0.01442928530313206,
-        "shock_velocity_mps": -0.0015912366966475547
+        "shock_stroke_m": 0.01446617803788727,
+        "shock_velocity_mps": -1.0780810773061859e-05
       },
       "time_s": 0.00375,
       "tires": {
         "front": {
           "backend": "compliant_2d",
           "branch_release_loss_j": 0.0,
-          "brush_loss_j": 2.0383839708767807e-06,
+          "brush_loss_j": 2.0558179791298668e-11,
           "controller_grounded": true,
-          "effective_radius_m": 0.3686986675916306,
-          "friction_coefficient": 1.0492519085911882,
+          "effective_radius_m": 0.36868359712137144,
+          "friction_coefficient": 1.0499975818431286,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 430.34449379752925,
-          "normal_speed_mps": -0.0014641008868866827,
-          "normal_vertical_n": 430.34449379752925,
-          "omega_abs_rad_s": 0.04262430520404543,
-          "omega_rel_rad_s": 0.028932130304092946,
+          "normal_load_n": 431.1483100256645,
+          "normal_speed_mps": -1.9919754940448426e-05,
+          "normal_vertical_n": 431.1483100256645,
+          "omega_abs_rad_s": 2.800916922524659e-05,
+          "omega_rel_rad_s": -5.487655767910664e-05,
           "outside_material_load_range": false,
           "patches": [
             {
@@ -3845,60 +3845,60 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 430.34449379752925,
+              "normal_load_n": 431.1483100256645,
               "point_m": [
-                2.8174629298620784,
+                2.8169700542652416,
                 0.0,
                 -0.349500010430813
               ],
-              "slip_mps": -0.011235385453687161,
+              "slip_mps": 3.627249925843789e-05,
               "source_geom": "terrain",
-              "tangent_force_n": -6.725840532747731,
+              "tangent_force_n": -0.006079105877098457,
               "world_force_n": [
-                -6.725840532747731,
+                -0.006079105877098457,
                 0.0,
-                430.34449379752925
+                431.1483100256645
               ]
             }
           ],
-          "penetration_m": 0.003301332408369384,
-          "radial_energy_j": 0.7084217185857498,
+          "penetration_m": 0.003316402878628555,
+          "radial_energy_j": 0.7149043234694248,
           "raw_contact": true,
-          "shear_energy_j": 0.001130923271798807,
-          "slip_mps": -0.011235385453687161,
-          "slip_ratio": 0.1123538545368716,
+          "shear_energy_j": 9.23888206624325e-10,
+          "slip_mps": 3.627249925843789e-05,
+          "slip_ratio": -0.00036272499258437887,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
-          "tangent_center_speed_mps": 0.0044801390820633944,
-          "tangent_force_n": -6.725840532747731,
+          "tangent_center_speed_mps": 4.659902052078302e-05,
+          "tangent_force_n": -0.006079105877098457,
           "unloaded_radius_m": 0.372,
-          "vertical_force_n": 430.34449379752925,
+          "vertical_force_n": 431.1483100256645,
           "wheel_axis_m": [
-            2.8174629298620784,
+            2.8169700542652416,
             0.0,
-            0.01919865716081759
+            0.01918358669055842
           ],
-          "wheel_axis_moment_nm": 2.4798084428578715,
+          "wheel_axis_moment_nm": 0.002241266622050329,
           "world_force_n": [
-            -6.725840532747731,
+            -0.006079105877098457,
             0.0,
-            430.34449379752925
+            431.1483100256645
           ]
         },
         "rear": {
           "backend": "compliant_2d",
           "branch_release_loss_j": 0.0,
-          "brush_loss_j": 1.785712941408206e-07,
+          "brush_loss_j": 2.057552516430811e-12,
           "controller_grounded": true,
-          "effective_radius_m": 0.34741782711727076,
-          "friction_coefficient": 1.0499532344664877,
+          "effective_radius_m": 0.34743736900996197,
+          "friction_coefficient": 1.0499992350266516,
           "geometric_contact": true,
           "multi_support": false,
-          "normal_load_n": 596.0104917776554,
-          "normal_speed_mps": -0.00041002127857130534,
-          "normal_vertical_n": 596.0104917776554,
-          "omega_abs_rad_s": 0.029902045711191698,
-          "omega_rel_rad_s": 0.022417019541098288,
+          "normal_load_n": 593.1505404339205,
+          "normal_speed_mps": -1.0639661224350226e-05,
+          "normal_vertical_n": 593.1505404339205,
+          "omega_abs_rad_s": 0.00024735576507996124,
+          "omega_rel_rad_s": 0.00020904044952824535,
           "outside_material_load_range": false,
           "patches": [
             {
@@ -3912,44 +3912,44 @@
                 0.0,
                 1.0
               ],
-              "normal_load_n": 596.0104917776554,
+              "normal_load_n": 593.1505404339205,
               "point_m": [
-                1.5599785077510475,
+                1.5593626591724499,
                 0.0,
                 -0.349500010430813
               ],
-              "slip_mps": -0.0007015376837448608,
+              "slip_mps": -1.1474614855899582e-05,
               "source_geom": "terrain",
-              "tangent_force_n": 7.52192106534025,
+              "tangent_force_n": -0.0031956960817487567,
               "world_force_n": [
-                7.52192106534025,
+                -0.0031956960817487567,
                 0.0,
-                596.0104917776554
+                593.1505404339205
               ]
             }
           ],
-          "penetration_m": 0.0045821728827292185,
-          "radial_energy_j": 1.3647600412692347,
+          "penetration_m": 0.004562630990038008,
+          "radial_energy_j": 1.3531441008315888,
           "raw_contact": true,
-          "shear_energy_j": 0.0014144824128302352,
-          "slip_mps": -0.0007015376837448608,
-          "slip_ratio": 0.007015376837448607,
+          "shear_energy_j": 2.553118361726089e-10,
+          "slip_mps": -1.1474614855899582e-05,
+          "slip_ratio": 0.00011474614855899581,
           "supports_multiple_contacts": false,
           "surface": "asphalt",
-          "tangent_center_speed_mps": 0.009686966063598663,
-          "tangent_force_n": 7.52192106534025,
+          "tangent_center_speed_mps": 7.446602137292837e-05,
+          "tangent_force_n": -0.0031956960817487567,
           "unloaded_radius_m": 0.352,
-          "vertical_force_n": 596.0104917776554,
+          "vertical_force_n": 593.1505404339205,
           "wheel_axis_m": [
-            1.5599785077510475,
+            1.5593626591724499,
             0.0,
-            -0.0020821833135422473
+            -0.0020626414208510645
           ],
-          "wheel_axis_moment_nm": -2.6132494722681363,
+          "wheel_axis_moment_nm": 0.0011103042387982324,
           "world_force_n": [
-            7.52192106534025,
+            -0.0031956960817487567,
             0.0,
-            596.0104917776554
+            593.1505404339205
           ]
         }
       }

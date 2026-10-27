@@ -59,15 +59,19 @@ def test_effort_ceiling_rejects_bad_inputs():
 # ---- A2.3: SpindleController through the native-only adapter ---------------
 
 def _damped_config(tmp_path):
-    """The pinned TOML plus a nonzero activation time constant and joint
-    passive damping — the pinned profile leaves both at zero, which makes
-    the activation filter and passive-damping terms vacuous."""
+    """The pinned TOML plus joint passive damping and a shifted activation
+    time constant — the pinned profile's zero damping makes the
+    passive-damping term vacuous, and a distinct tau exercises the filter."""
     from test_pinned_topology import _pinned_config
     text = _pinned_config(tmp_path).read_text()
     assert 'joint_passive_damping_nms_rad = 0.0' in text
+    assert 'activation_tau_s = 0.025' in text
     text = text.replace(
         'joint_passive_damping_nms_rad = 0.0',
-        'joint_passive_damping_nms_rad = 2.5\nactivation_tau_s = 0.05')
+        'joint_passive_damping_nms_rad = 2.5')
+    text = text.replace(
+        'activation_tau_s = 0.025',
+        'activation_tau_s = 0.05')
     path = tmp_path / 'physics_damped.toml'
     path.write_text(text)
     return path

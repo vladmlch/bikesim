@@ -915,7 +915,7 @@ io::Value shoulder_profile_document(const configuration::ArticulatedConfig& conf
                 if (errno == EINTR) continue;
                 throw std::system_error(errno, std::generic_category(), "articulated.shoulder_profile");
             }
-            if (content.size() + static_cast<std::size_t>(count) > 256U*1024U)
+            if (content.size() + static_cast<std::size_t>(count) > std::size_t{256}*1024U)
                 throw std::invalid_argument("articulated.shoulder_profile: exceeds 256 KiB");
             content.append(buffer.data(), static_cast<std::size_t>(count));
         }

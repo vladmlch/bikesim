@@ -45,7 +45,7 @@ struct TerrainRequest3d {
     TerrainRequestKind kind = TerrainRequestKind::none;
     std::filesystem::path path;
     double corridor_half_width_m = 1.5;
-    std::uint64_t max_asset_bytes = 1ull << 30; // validated in [1, INT64_MAX] for TOML round trip
+    std::uint64_t max_asset_bytes = 1ull << 30u; // validated in [1, INT64_MAX] for TOML round trip
     // Optional generation overrides; absent for an immutable imported asset.
     // Frozen in W00 so W05 never accepts a grid step it cannot preserve.
     std::optional<double> dx_m;

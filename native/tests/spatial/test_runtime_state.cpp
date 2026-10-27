@@ -138,9 +138,9 @@ void families_and_dims() {
     config.writer_config=Value{Object{{"schema",integer(3)}, {"spatial",Value{Object{
         {"spatial_contract",integer(1)},{"root_kind",text("constrained")},
         {"topology_fingerprint",text(std::string(64,'a'))},{"terrain_sha256",text(std::string(64,'b'))},
-        {"numeric_profile",text("binary64")}}}, {"drive",Value{Object{}}},
+        {"numeric_profile",text("binary64")}}}}, {"drive",Value{Object{}}},
         {"suspension",Value{Object{}}},{"resistance",Value{Object{}}},
-        {"tire",Value{Object{{"backend",text("pneumatic_3d")},{"pneumatic_3d",Value{Object{}}}}}}};
+        {"tire",Value{Object{{"backend",text("pneumatic_3d")},{"pneumatic_3d",Value{Object{}}}}}}}};
     runtime::validate_schema_family(config,2);
     invalid_path([&]{runtime::validate_schema_family(config,1);},"schema_family");
     auto rig=spatial_tests::mixed_joint_rig();const auto before=spatial_tests::complete_state_bytes(rig);

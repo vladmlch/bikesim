@@ -20,7 +20,7 @@ inline void exact(const Value& value, std::initializer_list<std::string_view> ke
     if (object.size() != keys.size()) vread::invalid(path, "wrong field set");
     for (const auto& [name, unused] : object) {
         (void)unused;
-        if (!seen.insert(name).second || std::find(keys.begin(), keys.end(), name) == keys.end())
+        if (!seen.insert(name).second || std::ranges::find(keys, name) == keys.end())
             vread::invalid(path, "duplicate or unknown field");
     }
 }

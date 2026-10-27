@@ -2,15 +2,25 @@
 #include "versioned.hpp"
 #include "value_util.hpp"
 #include "../io/hash.hpp"
+#include "../io/json.hpp"
 #include <algorithm>
 #include <array>
 #include <cctype>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <map>
 #include <set>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <optional>
+#include <utility>
+#include <variant>
+#include <vector>
 #include <format>
 
 namespace bike::recording {
@@ -95,7 +105,7 @@ const Value& checkpoint_envelope_identity(const Value& checkpoint) {
 void terrain_asset_envelope(std::span<const std::byte> bytes) {
     constexpr std::size_t header_bytes=112;
     const auto word=[&](std::size_t offset,std::size_t width) {
-        std::uint64_t value=0;for(std::size_t i=0;i<width;++i)value|=std::uint64_t(std::to_integer<unsigned char>(bytes[offset+i]))<<(8*i);return value;
+        std::uint64_t value=0;for(std::size_t i=0;i<width;++i)value|=static_cast<std::uint64_t>(std::to_integer<unsigned char>(bytes[offset+i]))<<(8*i);return value;
     };
     if(bytes.size()<header_bytes||bytes[0]!=std::byte{'B'}||bytes[1]!=std::byte{'K'}||bytes[2]!=std::byte{'T'}||bytes[3]!=std::byte{'3'}||
         word(4,4)!=1||word(8,4)!=header_bytes||word(12,4)>1||word(104,8)!=0)
@@ -288,7 +298,7 @@ void validate_episode_row(const Connection& c, const Object& row, CatalogVersion
             std::vector<std::string> invalid;
             for(const auto& field:table_spec(table,family).fields) {
                 const auto column=quote(field.key);
-                if(field.dtype=="double")invalid.push_back("("+column+" IS NOT NULL AND NOT isfinite("+column+"))");
+                if(field.dtype=="double")invalid.push_back(std::string("(").append(column).append(" IS NOT NULL AND NOT isfinite(").append(column).append("))"));
                 else if(field.dtype=="double[]")invalid.push_back("len(list_filter("+column+", spatial_value -> (spatial_value IS NULL OR NOT isfinite(spatial_value))))>0");
             }
             if(!invalid.empty())require_zero(c,"SELECT count(*) FROM "+quote(table)+" WHERE episode_id=? AND ("+value::join(invalid," OR ")+")",std::string(table)+": nonfinite spatial evidence",params);
@@ -303,9 +313,16 @@ void validate_episode_row(const Connection& c, const Object& row, CatalogVersion
         std::map<std::string,std::vector<std::byte>> assets;
         for(const auto& asset:c.query("SELECT name,content FROM assets WHERE episode_id=?",params))
             assets.emplace(io::as_string(value::require(asset,"name"),"asset.name"),std::get<io::Bytes>(value::require(asset,"content").data).value);
+        // Capture and the runtime resolver both bound an external steering
+        // profile at 1 MiB; a larger bundled asset was never produced by this
+        // writer. Semantic identity stays with the checked-replay boundary.
+        if(const auto it=assets.find("spatial/steer_profile.json");it!=assets.end()&&it->second.size()>io::kExternalSteerProfileBoundBytes)
+            throw std::invalid_argument("spatial steer profile asset exceeds the 1 MiB capture bound");
         const auto document=[&](std::string_view name) {
             const auto it=assets.find(std::string(name));if(it==assets.end())throw std::invalid_argument("spatial recording missing asset: "+std::string(name));
-            return io::parse_recording_json(std::string(reinterpret_cast<const char*>(it->second.data()),it->second.size()));
+            std::string content;content.reserve(it->second.size());
+            for(const std::byte byte:it->second)content.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+            return io::parse_recording_json(content);
         };
         const auto source=document("spatial/terrain_source.json");
         (void)io::as_object(document("spatial/config.json"),"spatial configuration");const auto calibration=document("spatial/calibration.json");
@@ -347,8 +364,10 @@ void validate_episode_row(const Connection& c, const Object& row, CatalogVersion
             if(!io::is_null(value::require(source,"source_track_toml")))throw std::invalid_argument("spatial grid source cannot claim a track extrusion");
         } else if(kind=="profile_extrusion") {
             const auto it=assets.find("track.toml");if(it==assets.end())throw std::invalid_argument("spatial extrusion recording missing source track");
+            std::string track_toml;track_toml.reserve(it->second.size());
+            for(const std::byte byte:it->second)track_toml.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
             if(io::as_string(value::require(source,"source_track_toml"),"source_track_toml")!=
-                std::string(reinterpret_cast<const char*>(it->second.data()),it->second.size()))
+                track_toml)
                 throw std::invalid_argument("spatial extrusion source track differs");
         } else throw std::invalid_argument("spatial recording unknown terrain kind");
         if(io::canonical_json(value::require(source,"sha256"))!=io::canonical_json(value::require(initial_identity,"terrain_sha256")))

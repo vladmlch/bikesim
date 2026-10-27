@@ -38,7 +38,7 @@ public:
             {"terrain_kind", text("grid")}, {"measurement_controls", text("synthetic fixture")},
             {"versions", Value{Object{{"engine", text("synthetic")}}}},
             {"execution", Value{Object{{"native_source_sha256", text(profile.source_sha)},
-                {"build_context", Value{Object{{"build_type", text("Release")}}}}}}}};
+                {"build_context", Value{Object{{"build_type", text("Release")}}}}}}}}};
     }
     const measure::Settings& settings() const override { return settings_; }
     measure::Boundary boundary() const override { return {.step = step_, .time_s = static_cast<double>(step_) * settings_.timestep_s}; }
@@ -57,7 +57,7 @@ public:
     void flush() override { fixture_->clock += fixture_->flush_s; }
     Value summary(std::string_view) const override {
         return Value{Object{{"model_status", Value{Object{
-            {"model_valid", Value{true}}, {"numerically_valid", Value{true}}}}}};
+            {"model_valid", Value{true}}, {"numerically_valid", Value{true}}}}}}};
     }
     Value execution_identity() const override { return field(settings_.metadata, "execution"); }
     measure::MeasurementTimings timings() const override {

@@ -26,6 +26,10 @@ struct WorkerPool::Impl {
         }
     }
     ~Impl() { shutdown(); }
+    Impl(const Impl&) = delete;
+    Impl& operator=(const Impl&) = delete;
+    Impl(Impl&&) = delete;
+    Impl& operator=(Impl&&) = delete;
 
     struct Operation {
         explicit Operation(std::atomic_flag& busy) : busy_(busy) {
@@ -35,6 +39,8 @@ struct WorkerPool::Impl {
         ~Operation() { busy_.clear(std::memory_order_release); }
         Operation(const Operation&) = delete;
         Operation& operator=(const Operation&) = delete;
+        Operation(Operation&&) = delete;
+        Operation& operator=(Operation&&) = delete;
         std::atomic_flag& busy_;
     };
 
@@ -62,7 +68,7 @@ struct WorkerPool::Impl {
     }
 
     void run(std::span<const IndexRange> ranges, ElementWork work, void* context) {
-        Operation operation(busy_);
+        const Operation operation(busy_);
         if (!work || ranges.size() != count_)
             throw std::invalid_argument("WorkerPool.run: one range per thread and a work callback are required");
         for (std::size_t i = 0; i < ranges.size(); ++i) {
@@ -74,8 +80,8 @@ struct WorkerPool::Impl {
         if (stopping_) throw std::logic_error("WorkerPool.run: pool has been stopped");
         if (generation_ == std::numeric_limits<std::uint64_t>::max())
             throw std::logic_error("WorkerPool.run: generation exhausted");
-        std::copy(ranges.begin(), ranges.end(), ranges_.begin());
-        std::fill(statuses_.begin(), statuses_.end(), std::uint8_t{0});
+        std::ranges::copy(ranges, ranges_.begin());
+        std::ranges::fill(statuses_, std::uint8_t{0});
         work_ = work;
         context_ = context;
         remaining_ = workers_.size();
@@ -93,13 +99,13 @@ struct WorkerPool::Impl {
     }
 
     void stop() {
-        Operation operation(busy_);
+        const Operation operation(busy_);
         shutdown();
     }
 
     void shutdown() noexcept {
         {
-            std::lock_guard lock(mutex_);
+            const std::scoped_lock lock(mutex_);
             stopping_ = true;
         }
         published_.notify_all();
@@ -113,7 +119,8 @@ struct WorkerPool::Impl {
     std::vector<std::uint8_t> statuses_;
     std::mutex mutex_;
     std::condition_variable published_, completed_;
-    std::atomic_flag busy_ = ATOMIC_FLAG_INIT;
+    // C++20 default-initializes atomic_flag clear; ATOMIC_FLAG_INIT is deprecated.
+    std::atomic_flag busy_;
     std::size_t ready_ = 0, remaining_ = 0;
     std::uint64_t generation_ = 0;
     ElementWork work_ = nullptr;

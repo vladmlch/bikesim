@@ -66,7 +66,7 @@ for(const auto& arg:job.argv)views.push_back(arg);
     };
     const auto results=batch::execute(jobs,static_cast<unsigned>(count),options);
     if (spatial) {
-        std::vector<std::size_t> order; for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
+        std::vector<std::size_t> order; order.reserve(jobs.size()); for(std::size_t i=0;i<jobs.size();++i)order.push_back(i);
         std::ranges::sort(order,{},[&](std::size_t i){return jobs[i].key.value_or(jobs[i].id);});
         for(const auto i:order)batch::append_log(results_file,io::recording_json(batch::result_record(jobs[i],results[i]))+"\n");
     }

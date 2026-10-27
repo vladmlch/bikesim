@@ -95,7 +95,9 @@ private:
     std::vector<double> elevation_;
     std::vector<std::uint32_t> materials_;
     std::vector<SurfaceSpec3d> surfaces_;
-    std::vector<std::uint32_t> surface_index_by_id_; // Missing ID: 0xFFFFFFFF.
+    // Surface indices sorted by surface ID (arbitrary u32 IDs stay bounded
+    // by the surface count); built and consumed during create() validation.
+    std::vector<std::uint32_t> surface_index_by_id_;
     Grid3dMetadata meta_;
     RayBudget budget_;
     std::string sha256_hex_;

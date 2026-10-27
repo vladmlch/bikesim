@@ -51,6 +51,6 @@ using ModelOwner = std::unique_ptr<mjModel, ModelDeleter>;
 // asset_root anchors relative includes/assets without changing process cwd.
 [[nodiscard]] ModelOwner compile_mjcf(
     std::string_view xml, const std::filesystem::path& asset_root = {});
-void populate_render_heightfield(mjModel& model, const terrain::RenderGrid3d& grid);
+void populate_render_heightfield(const mjModel& model, const terrain::RenderGrid3d& grid);
 
 } // namespace bike::model

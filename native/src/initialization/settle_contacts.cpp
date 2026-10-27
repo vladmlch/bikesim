@@ -1,12 +1,15 @@
 #include "context.hpp"
 #include "bootstrap_hold.hpp"
+#include "../model_access.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
+#include "../writers/rider_contacts.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace bike::initialization {
 void apply_initial_forces(SetupContext& context,bool advance) {
@@ -20,8 +23,10 @@ void apply_initial_forces(SetupContext& context,bool advance) {
         // staged until preparing the complete causal record has succeeded.
         // Preparation validates and allocates, so it can still throw.
         auto hold=*context.bootstrap_hold;
-        const auto target=std::span<double>(context.stepper.data()->qfrc_applied,
-            static_cast<std::size_t>(context.stepper.model()->nv));
+        // Checked extent instead of the raw (pointer, size) span constructor,
+        // which -Wunsafe-buffer-usage-in-container rejects.
+        const auto target=model_access::mutable_buffer(context.stepper.data()->qfrc_applied,
+            context.stepper.model()->nv);
         std::vector<double> force(target.begin(),target.end());
         const auto status=hold.try_compute_into(*context.stepper.model(),
             *context.stepper.data(),spatial.bootstrap_phase,force);

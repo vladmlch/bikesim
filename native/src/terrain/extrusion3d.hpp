@@ -29,6 +29,9 @@ public:
     std::span<const SurfaceSpec3d> surfaces() const noexcept;
     // Hash includes knots, surfaces, corridor and source bytes.
     const std::string& fingerprint_hex() const noexcept;
+    // Recorded loader provenance {resolved_track, source_utf8, resolution_m};
+    // checked replay restages source_utf8 byte-exact, so capture exposes it.
+    [[nodiscard]] const bike::io::Value& source() const noexcept;
 
 private:
     ProfileExtrusion3d() = default;

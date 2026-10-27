@@ -67,21 +67,34 @@ struct Material {
     drivetrain::DriveSnapshot drive;
     std::optional<std::pair<writers::RiderContactsState,std::optional<writers::RiderContactsProbe>>> rider;
     std::optional<::rider::SpindleController::State> controller;
+    // equilibrium_cache.py _state_arrays: the weld-press servo integrator is
+    // part of the pose's certification, kept outside State to match the
+    // oracle's state_dict() surface.
+    std::optional<double> control_coast_hold_nm;
     std::vector<std::string> tire_names;
     std::vector<double> tire_row;
     std::optional<runtime::SpatialBootstrapState> spatial;
     std::optional<pneumatic3d::TyreState3d> tire3d;
 };
+void stage_spatial_material(Material& value,const SetupContext& context) {
+    if(!context.stepper.has_spatial_tire() || !context.physical.spatial_state())
+        throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
+    value.spatial=context.physical.spatial_state();
+    value.tire3d=context.stepper.spatial_tire_writer().state();
+}
+void stage_rider_material(Material& value,const SetupContext& context) {
+    if(context.stepper.has_rider_contacts())value.rider=std::pair{context.stepper.rider_contacts().state(),context.stepper.rider_contacts().probe()};
+    if(context.physical.rider_present()) {
+        value.controller=context.physical.rider_control().state(context.topology?context.stepper.data():nullptr);
+        if(context.physical.rider_control().spindle())
+            value.control_coast_hold_nm=context.physical.rider_control().coast_hold_nm();
+    }
+}
 std::unique_ptr<Material> current_material(const SetupContext& context){
     auto value=std::make_unique<Material>();value->drive=context.stepper.drive().state();
-    if(context.topology) {
-        if(!context.stepper.has_spatial_tire() || !context.physical.spatial_state())
-            throw std::invalid_argument("bootstrap.spatial.tire: producer state missing");
-        value->spatial=context.physical.spatial_state();
-        value->tire3d=context.stepper.spatial_tire_writer().state();
-    } else if(context.stepper.has_tire()){value->tire_names=context.stepper.tire_state_names();value->tire_row=context.stepper.tire_state();}
-    if(context.stepper.has_rider_contacts())value->rider=std::pair{context.stepper.rider_contacts().state(),context.stepper.rider_contacts().probe()};
-    if(context.physical.rider_present())value->controller=context.physical.rider_control().state(context.topology?context.stepper.data():nullptr);
+    if(context.topology)stage_spatial_material(*value,context);
+    else if(context.stepper.has_tire()){value->tire_names=context.stepper.tire_state_names();value->tire_row=context.stepper.tire_state();}
+    stage_rider_material(*value,context);
     return value;
 }
 NATIVE_DIAG_PUSH
@@ -96,19 +109,19 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
         if(context.stepper.has_rider_contacts() && !find(state,"state_native_rider_contacts"))
             throw std::invalid_argument("state.spatial.rider_contacts: producer state missing");
         const auto causal=runtime::decode_spatial_bootstrap(io::parse_json(text(state,"state_native_spatial")));
-        if(causal.root_kind!=next.spatial->root_kind || causal.topology_fingerprint!=next.spatial->topology_fingerprint ||
-           causal.terrain_sha256!=next.spatial->terrain_sha256 || causal.calibration_sha256!=next.spatial->calibration_sha256)
+        if(causal.root_kind!=next.spatial->root_kind || causal.topology_fingerprint!=next.spatial->topology_fingerprint || // NOLINT(bugprone-unchecked-optional-access) spatial material is staged iff context.topology by current_material
+           causal.terrain_sha256!=next.spatial->terrain_sha256 || causal.calibration_sha256!=next.spatial->calibration_sha256) // NOLINT(bugprone-unchecked-optional-access) spatial material is staged iff context.topology by current_material
             throw std::invalid_argument("state.spatial.identity: differs from initialization owners");
         const auto tire=io::parse_json(text(state,"state_native_spatial_tire"));
         const auto& object=io::as_object(tire,"state.spatial.tire");
         if(object.size()!=2)throw std::invalid_argument("state.spatial.tire: expected identity and payload");
         const auto identity=pneumatic3d::tyre_identity_from_wire(field(object,"identity"));
         if(io::canonical_json(pneumatic3d::tyre_identity_to_wire(identity))!=
-           io::canonical_json(pneumatic3d::tyre_identity_to_wire(next.tire3d->identity)))
+           io::canonical_json(pneumatic3d::tyre_identity_to_wire(next.tire3d->identity))) // NOLINT(bugprone-unchecked-optional-access) tire3d is staged iff context.topology by current_material
             throw std::invalid_argument("state.spatial.tire.identity: differs from configured producer");
         const auto bytes=pneumatic3d::base64_decode_strict(io::as_string(field(object,"payload"),"state.spatial.tire.payload"));
         if(!bytes)throw std::invalid_argument("state.spatial.tire.payload: "+bytes.error());
-        auto decoded=pneumatic3d::decode_tyre_state(*bytes,next.tire3d->identity);
+        auto decoded=pneumatic3d::decode_tyre_state(*bytes,next.tire3d->identity); // NOLINT(bugprone-unchecked-optional-access) tire3d is staged iff context.topology by current_material
         if(!decoded)throw std::invalid_argument("state.spatial.tire.payload: "+decoded.error());
         next.spatial=causal;next.tire3d=std::move(*decoded);
         for(const auto& [name,array]:state.arrays){(void)array;if(name.starts_with("state_tire_"))
@@ -144,6 +157,13 @@ std::unique_ptr<Material> decode_material(const SetupContext& context,const Stat
         if(!context.physical.rider_present())throw std::invalid_argument("unexpected rider controller state");
         next.controller=::rider::decode_spindle_state(io::parse_recording_json(text(state,"state_native_rider_controller")),"state.rider_controller");
     }
+    // equilibrium_cache.py:216-227 — the servo latch is required when a
+    // spindle rider is engaged and foreign otherwise.
+    if(context.physical.rider_present() && context.physical.rider_control().spindle()){
+        const auto hold=doubles(state,"state_control_coast_hold_nm",{1});
+        if(!std::isfinite(hold.front()))throw std::invalid_argument("equilibrium control state: nonfinite coast hold");
+        next.control_coast_hold_nm=hold.front();
+    }else if(find(state,"state_control_coast_hold_nm"))throw std::invalid_argument("unexpected control material state");
     if(!context.topology && context.stepper.has_tire()){
         if(find(state,"state_tire_wire_names")){
             next.tire_names=state_array(state,"state_tire_wire_names").strings();shape(state_array(state,"state_tire_wire_names"),{next.tire_names.size()},"state_tire_wire_names");
@@ -208,6 +228,7 @@ void install_material(SetupContext& context,Material& state){
     else if(context.stepper.has_tire())context.stepper.tire_writer().commit_prepared_state();
     if(state.controller)context.physical.rider_control().commit_state(std::move(*state.controller));
     if(state.rider)context.stepper.rider_contacts().assign_state(std::move(state.rider.value().first),std::move(state.rider.value().second));
+    if(state.control_coast_hold_nm)context.physical.rider_control().set_coast_hold_nm(*state.control_coast_hold_nm);
     if(state.spatial) {
         if(context.bootstrap_hold && context.bootstrap_hold->restore(state.spatial->hold)!=CoreStatus::ok)
             throw std::invalid_argument("state.spatial.hold: bootstrap owner rejected restored state");
@@ -223,7 +244,7 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     const auto& identity=io::as_object(context.identity,"equilibrium identity");
     io::Value physics=plain(configuration::to_value(context.physics));auto& fields=std::get<io::Value::Object>(physics.data);
     std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file";});
-    io::Value::Object payload{{"version",io::Value{io::Number{"4"}}},{"source",io::Value{legacy?*context.legacy_source_identity:context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"physics",std::move(physics)},
+    io::Value::Object payload{{"version",io::Value{io::Number{"5"}}},{"source",io::Value{legacy?*context.legacy_source_identity:context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"physics",std::move(physics)},
         {"specs",plain(field(identity,"specs"))},{"mass_specs",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"track",plain(legacy?*context.legacy_track_identity:field(identity,"track"))},{"start_x_m",number(context.start_x_m)}};
     if(!legacy){payload.emplace_back("native_equilibrium_schema",io::Value{io::Number{"1"}});payload.emplace_back("provider_identity",io::Value{context.provider_identity});payload.emplace_back("model_sha256",io::Value{context.model_sha256});}
     if(!legacy && context.topology) {
@@ -278,11 +299,12 @@ StateFile capture_state(const SetupContext& context,std::int64_t steps,double re
         out.arrays.emplace_back("state_rider_keys",io::string_array(keys,{keys.size()}));out.arrays.emplace_back("state_rider_xi",io::double_array(xi,{xi.size()}));out.arrays.emplace_back("state_rider_tangent",io::double_array(tangent,{keys.size(),3}));out.arrays.emplace_back("state_rider_tangent_valid",io::bool_array(valid,{valid.size()}));out.arrays.emplace_back("state_rider_grip_xi",io::double_array(grip,{2,3}));out.arrays.emplace_back("state_rider_enabled",io::bool_array(enabled,{enabled.size()}));out.arrays.emplace_back("state_rider_pending_release_loss",io::double_array(std::array<double,1>{r.pending_release_loss_j},{1}));
     }
     if(material.controller)put_text(out,"state_native_rider_controller",io::recording_json(::rider::encode_spindle_state(*material.controller)));
+    if(material.control_coast_hold_nm)out.arrays.emplace_back("state_control_coast_hold_nm",io::double_array(std::array<double,1>{*material.control_coast_hold_nm},{1}));
     if(material.spatial) {
         put_text(out,"state_native_spatial",io::canonical_json(runtime::encode_spatial_bootstrap(*material.spatial)));
         put_text(out,"state_native_spatial_tire",io::canonical_json(io::Value{io::Value::Object{
-            {"identity",pneumatic3d::tyre_identity_to_wire(material.tire3d->identity)},
-            {"payload",io::Value{pneumatic3d::base64_canonical(pneumatic3d::encode_tyre_state(*material.tire3d))}}}}));
+            {"identity",pneumatic3d::tyre_identity_to_wire(material.tire3d->identity)}, // NOLINT(bugprone-unchecked-optional-access) tire3d is staged iff material.spatial by current_material
+            {"payload",io::Value{pneumatic3d::base64_canonical(pneumatic3d::encode_tyre_state(*material.tire3d))}}}})); // NOLINT(bugprone-unchecked-optional-access) tire3d is staged iff material.spatial by current_material
     } else if(context.stepper.has_tire()){out.arrays.emplace_back("state_tire_wire_names",io::string_array(material.tire_names,{material.tire_names.size()}));out.arrays.emplace_back("state_tire_wire_row",io::double_array(material.tire_row,{material.tire_row.size()}));}
     const mjModel* m=context.stepper.model();const mjData* d=context.stepper.data();
     std::vector<double> integration(static_cast<std::size_t>(engine::state_size(m,mjSTATE_INTEGRATION)));engine::get_state(m,d,integration.data(),mjSTATE_INTEGRATION);out.arrays.emplace_back("integration_state",io::double_array(integration,{integration.size()}));
@@ -332,7 +354,7 @@ void restore_equilibrium_state(SetupContext& context,const StateFile& state){
         const int type=types[index];
         if(type!=mjJNT_FREE && type!=mjJNT_BALL)continue;
         const auto start=static_cast<std::size_t>(addresses[index])+(type==mjJNT_FREE?3U:0U);
-        if(start>q.size() || q.size()-start<4)throw std::invalid_argument("state.qpos.quaternion: invalid model span");
+        if(q.size()<4||start>q.size()-4)throw std::invalid_argument("state.qpos.quaternion: invalid model span");
         const double norm=std::hypot(std::hypot(q[start],q[start+1]),std::hypot(q[start+2],q[start+3]));
         if(std::abs(norm-1.)>1e-9)throw std::invalid_argument("state.qpos.quaternion: expected unit quaternion");
     }
@@ -370,5 +392,29 @@ void restore_equilibrium_state(SetupContext& context,const StateFile& state){
         d->time=0.;
         context.stepper.note_posvel_stale();
     });
+}
+void restore_equilibrium_material(SetupContext& context,const StateFile& state){
+    require_initializing(context);
+    auto next=decode_material(context,state);
+    // equilibrium_cache.py restore_state's apply scope — material owners only:
+    // rider contacts, tire stations, drive constraint boundaries (+ their
+    // tendon_range rows), then the weld-press latch. Pose, velocity, model
+    // rows, controller internals and drive clocks stay with the caller, and
+    // data.time keeps advancing the way the oracle's rollback leaves it.
+    if(next->rider)context.stepper.rider_contacts().assign_state(std::move(next->rider->first),std::move(next->rider->second));
+    if(!context.topology && context.stepper.has_tire() && !next->tire_names.empty()){
+        context.stepper.tire_writer().prepare_state(next->tire_names,next->tire_row);
+        context.stepper.tire_writer().commit_prepared_state();
+    }
+    auto live=context.stepper.drive().state();
+    for(const auto& pair:{std::pair{&live.ideal_hub,&next->drive.ideal_hub},std::pair{&live.clutch,&next->drive.clutch}}){
+        auto& field=*pair.first;if(!field)continue;
+        const auto& held=*pair.second;
+        if(!held||!held->boundary)throw std::invalid_argument("equilibrium material: engaged drive constraint lacks a boundary");
+        field->boundary=held->boundary;field->range[1]=*held->boundary;
+    }
+    context.stepper.mutate([&]{context.stepper.drive().restore(live);});
+    if(next->control_coast_hold_nm)context.physical.rider_control().set_coast_hold_nm(*next->control_coast_hold_nm);
+    context.stepper.note_posvel_stale();
 }
 } // namespace bike::initialization

@@ -4,6 +4,7 @@
 #include "model_image.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
+#include "../io/json.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/research.hpp"
 #include "../runtime/setup_values.hpp"
@@ -65,7 +66,7 @@ void require_finite_spatial_wire(const runtime::Wire& wire,const std::string& pa
             if(!std::isfinite(value))
                 throw std::invalid_argument("physical_invalid: "+path+" contains nonfinite numeric evidence");
         } else if constexpr(std::is_same_v<T,runtime::WireObject>) {
-            for(const auto& [name,child]:value)require_finite_spatial_wire(child,path+"."+name);
+            for(const auto& [name,child]:value)require_finite_spatial_wire(child,std::string(path).append(".").append(name));
         } else if constexpr(std::is_same_v<T,runtime::WireArray>) {
             for(std::size_t i=0;i<value.size();++i)
                 require_finite_spatial_wire(value[i],path+"["+std::to_string(i)+"]");
@@ -235,7 +236,7 @@ public:
                 staged_reference=runtime::spatial::CheckpointAccess::prepare(checkpoint,target);
                 if(staged_reference->committed_step_!=0 || staged_reference->committed_time_s_!=0.)
                     throw std::invalid_argument("golden replay: spatial checkpoint must describe t=0");
-                validate_initial(*initial,*staged_reference->stepper_->model(),*staged_reference->stepper_->data());
+                validate_initial(*initial,*staged_reference->stepper_->model(),*staged_reference->stepper_->data()); // NOLINT(bugprone-unchecked-optional-access) initial is engaged iff replay, required by the enclosing guard; a prepared runtime always owns stepper_
                 reference_generation=staged_reference->committed_generation_;
             } else {
                 // Reviewed cross-platform comparison runs the target's own
@@ -248,7 +249,7 @@ public:
                 if(!data)throw std::runtime_error("golden replay: cannot allocate initial-state validation arena");
                 engine::set_state(&input_model,data.get(),decoded->integration_state.data(),mjSTATE_INTEGRATION);
                 if(decoded->step!=0)throw std::invalid_argument("golden replay: spatial checkpoint must describe t=0");
-                validate_initial(*initial,input_model,*data);
+                validate_initial(*initial,input_model,*data); // NOLINT(bugprone-unchecked-optional-access) initial is engaged iff replay, required by the enclosing guard
                 reference_generation=decoded->generation;
             }
         }
@@ -334,8 +335,8 @@ public:
             const auto* config_hash=io::find_member(metadata,"configuration_sha256");
             if(!config_hash)throw std::invalid_argument("spatial golden requires captured configuration identity");
             manifest.emplace_back("config_sha256",*config_hash);
-            manifest.emplace_back("calibration_sha256",Value{runtime.bootstrap_.spatial->calibration_sha256});
-            manifest.emplace_back("terrain_sha256",Value{runtime.bootstrap_.spatial->terrain_sha256});
+            manifest.emplace_back("calibration_sha256",Value{runtime.bootstrap_.spatial->calibration_sha256}); // NOLINT(bugprone-unchecked-optional-access) bootstrap_.spatial engagement follows config_.spatial at runtime construction
+            manifest.emplace_back("terrain_sha256",Value{runtime.bootstrap_.spatial->terrain_sha256}); // NOLINT(bugprone-unchecked-optional-access) bootstrap_.spatial engagement follows config_.spatial at runtime construction
         }
         return std::move(*result);
     }
@@ -377,7 +378,7 @@ private:
     }
     static void validate_initial(const InitialState& initial,const mjModel& model,const mjData& data) {
         const auto equal=[&](const std::vector<double>& expected,const double* values,mjtSize count,std::string_view name) {
-            const auto actual=std::span<const double>(values,static_cast<std::size_t>(count));
+            const auto actual=std::views::counted(values,count);
             if(!std::ranges::equal(std::as_bytes(std::span{expected}),std::as_bytes(actual)))
                 throw std::invalid_argument("golden replay: initial "+std::string(name)+" disagrees with spatial checkpoint");
         };
@@ -516,7 +517,7 @@ public:
         if(cross_)for(const auto& [path,value]:io::as_object(required(required(entry,"comparison"),"cross_platform_tolerances"),"tolerances"))
             rules_.emplace(path,Tolerance{.atol=io::as_double(required(value,"atol"),"atol"),.rtol=io::as_double(required(value,"rtol"),"rtol")});
     }
-    void number(double expected,double actual,const std::string& path,const std::string& label) {
+    void number(double expected,double actual,const std::string& path,const std::string& label) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
         if(!difference_.empty())return;
         if(!std::isfinite(expected)||!std::isfinite(actual)) {
             difference_="physical_invalid: "+label+" contains nonfinite numeric evidence";return;
@@ -548,8 +549,8 @@ public:
             if(object->size()!=other.size()){difference_="regression: "+label+" object keys differ";return;}
             for(const auto& [key,child]:*object) {
                 const auto* found=io::find_member(other,key);
-                if(!found){difference_="regression: "+label+" missing "+key;return;}
-                value(child,*found,path+"."+key,label+"."+key);
+                if(!found){difference_="regression: ";difference_.append(label).append(" missing ").append(key);return;}
+                value(child,*found,std::string(path).append(".").append(key),std::string(label).append(".").append(key));
             }
         } else if(const auto* array=std::get_if<Value::Array>(&expected.data)) {
             const auto& other=std::get<Value::Array>(actual.data);
@@ -619,7 +620,10 @@ std::vector<std::string> compare_spatial_artifacts(const EpisodeArtifact& expect
             required(actual.manifest,"spatial_checkpoint_final")),std::string("checkpoints.")+key,std::string("checkpoints.")+key);
     if(expected.initial.size()!=actual.initial.size())return {"regression: initial engine state fields differ"};
     for(const auto& [name,value]:expected.initial) {
-        const auto found=std::ranges::find_if(actual.initial,[&](const auto& p){return p.first==name;});
+        // A named copy: capturing a structured binding in a lambda is only valid in
+        // C++20 compilers with P1091/P1381, and this runs on both qualified hosts.
+        const std::string& wanted=name;
+        const auto found=std::ranges::find_if(actual.initial,[&wanted](const auto& p){return p.first==wanted;});
         if(found==actual.initial.end())return {"regression: missing initial engine field "+name};
         compare.array(value,found->second,"initial."+name);
     }

@@ -211,7 +211,7 @@ const Catalog& schema_catalog(CatalogVersion version) {
     if (version != CatalogVersion::spatial2) throw std::invalid_argument("unsupported recording catalog version");
     static const Catalog out(spatial_descriptors().physical, {}, {}); return out;
 }
-std::span<const TableDescriptor> all_tables(CatalogVersion version) {
+const std::vector<TableSpec>& all_tables(CatalogVersion version) {
     if (version == CatalogVersion::planar1) return all_tables();
     if (version != CatalogVersion::spatial2) throw std::invalid_argument("unsupported recording catalog version");
     static const auto out = [] { auto result = spatial_descriptors().physical;

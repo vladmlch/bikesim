@@ -126,7 +126,11 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
     // unconfigured ctor left it.
     const nativecfg::WriterConfig &cfg = config;
     try {
-        if (cfg.cruise)
+        // RideSimulation always projects the legacy cruise object for wire
+        // compatibility, but physical stepping never applies it; a free
+        // spatial root has no planar root_x slide DOF for it to act on, so
+        // it is only constructed when the joint exists.
+        if (cfg.cruise && mj_name2id(m_, mjOBJ_JOINT, "root_x") >= 0)
             cruise_ = std::make_unique<CruiseWriter>(m_, *cfg.cruise);
         if (cfg.suspension)
             suspension_ =
@@ -196,11 +200,9 @@ void Stepper::install_spatial_tire(const bike::spatial::Config& config,
         throw std::invalid_argument("stepper.spatial.tire.identity: differs from bound owners");
     auto producer=std::make_unique<bike::pneumatic3d::Pneumatic3dTireWriter>(
         *m_,topology,std::move(spec),*terrain,std::move(identity));
-    auto initial=producer->state();
     auto projection=std::make_unique<SpatialTireAdapter>(*m_,topology,*producer,terrain->query_view());
     tire_out_.resize(static_cast<std::size_t>(m_->nv));
     // All validation/allocation is complete before the ownership commit.
-    initial_spatial_tire_.emplace(std::move(initial));
     spatial_terrain_=std::move(terrain);
     spatial_tire_=std::move(producer);
     spatial_tire_view_=std::move(projection);
@@ -566,6 +568,17 @@ bool TireWriterView::is_spatial() const noexcept {
     return std::holds_alternative<SpatialTireAdapter *>(writer_);
 }
 
+bool TireWriterView::is_compliant() const noexcept {
+    return std::holds_alternative<TireWriter *>(writer_);
+}
+
+TireWriter &TireWriterView::compliant_writer() const {
+    if (auto *writer = std::get_if<TireWriter *>(&writer_))
+        return **writer;
+    throw std::invalid_argument(
+        "tire backend is not the compliant_2d brush writer");
+}
+
 void Stepper::set_inputs(std::span<const double> ctrl,
                          std::span<const double> force) {
     require_healthy();
@@ -632,12 +645,15 @@ void Stepper::set_state(std::span<const double> qpos,
     check_finite(qvel, "set_state", "qvel");
     check_finite(act, "set_state", "act");
     check_finite(warmstart, "set_state", "warmstart");
-    for (int joint=0; joint<m_->njnt; ++joint) {
-        const int type=m_->jnt_type[joint];
+    // views::counted keeps -Wunsafe-buffer-usage off the raw jnt_* subscripts.
+    const auto joint_types=std::views::counted(m_->jnt_type, m_->njnt);
+    const auto joint_qposadr=std::views::counted(m_->jnt_qposadr, m_->njnt);
+    for (std::size_t joint=0; joint<joint_types.size(); ++joint) {
+        const int type=joint_types[joint];
         if(type!=mjJNT_FREE && type!=mjJNT_BALL) continue;
-        const auto start=static_cast<std::size_t>(m_->jnt_qposadr[joint])+
+        const auto start=static_cast<std::size_t>(joint_qposadr[joint])+
             (type==mjJNT_FREE?3U:0U);
-        if(start>qpos.size() || qpos.size()-start<4)
+        if(qpos.size()<4 || start>qpos.size()-4)
             throw std::invalid_argument("set_state.qpos.quaternion: span escapes model");
         const double norm=std::hypot(std::hypot(qpos[start],qpos[start+1]),
             std::hypot(qpos[start+2],qpos[start+3]));

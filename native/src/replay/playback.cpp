@@ -120,11 +120,11 @@ bike::spatial::BodyPose presentation_pose(const mjModel& model, mjData& data) {
     // coordinates for both free6 and constrained4. This updates only the
     // kinematic caches needed by XBODY velocity, never dynamics or sensors.
     struct Refresh {
-        const mjModel* model;
-        mjData* data;
+        const mjModel* model = nullptr;
+        mjData* data = nullptr;
         bike::spatial::RootBinding root;
         bike::spatial::BodyPose pose;
-    } refresh{&model, &data, {.body_id=frame}, {}};
+    } refresh{.model=&model, .data=&data, .root={.body_id=frame}, .pose={}};
     engine::ErrorBuffer error;
     if (!engine::invoke([](void* opaque) noexcept {
         auto& r = *static_cast<Refresh*>(opaque);

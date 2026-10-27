@@ -38,7 +38,7 @@ void initialize_pose(SetupContext& context) {
     if(context.topology) {
         if(!context.terrain3d)throw std::invalid_argument("initial_pose.spatial.terrain: owner missing");
         bool manifold=context.topology->root.kind==spatial::RootKind::free6;
-        for(int j=0;j<m->njnt;++j)manifold=manifold || m->jnt_type[j]==mjJNT_FREE || m->jnt_type[j]==mjJNT_BALL;
+        for(const int type:std::views::counted(m->jnt_type,m->njnt))manifold=manifold || type==mjJNT_FREE || type==mjJNT_BALL;
         if(manifold) {
             // W29 owns manifold placement; quaternion coordinates never enter
             // the scalar root or planar pelvis placement below.

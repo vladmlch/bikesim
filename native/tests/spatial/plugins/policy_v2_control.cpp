@@ -1,17 +1,22 @@
 #include "bike/policy_v2.h"
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <new>
+#include <ranges>
 #include <stdexcept>
-#include <span>
 #include <string_view>
 
 namespace {
 struct Instance{int mode=0;};
 void error(BikeErrorV1* out,const char* message)noexcept {
-    if(!out)return;const std::string_view text(message);out->written=0;
+    if(!out)return;out->written=0;
     if(!out->data)return;
-    const auto buffer=std::span(out->data,out->capacity);
-    for(char c:text){if(out->written==buffer.size())break;buffer[out->written++]=c;}
+    const std::string_view text(message);
+    out->written=std::min(out->capacity,text.size());
+    // counted() avoids the two-argument std::span constructor that the strict unsafe-buffer policy rejects.
+    const auto destination=std::views::counted(out->data,static_cast<std::ptrdiff_t>(out->written));
+    std::ranges::copy(text.substr(0,out->written),destination.begin());
 }
 bool valid(const BikeObservationV2* observation)noexcept {
     if(!observation||observation->struct_size!=sizeof(BikeObservationV2)||observation->sensor_schema_version!=2||observation->valid>1||

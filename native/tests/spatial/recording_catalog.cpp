@@ -19,26 +19,32 @@ namespace {
 namespace rec=bike::recording;
 using V=bike::io::Value;
 #include "recording/catalog_v2_data.inc"
+// The production encoder consumes exactly this wire object; hand-writing the 21 members
+// here would let the fixture and spatial_truth_to_wire drift apart unnoticed.
 V::Object truth() {
-    using namespace rec::value;
-    return {{"root_position_world_m",doubles(std::array{1.,2.,3.})},
-        {"root_quat_world_from_body_wxyz",doubles(std::array{1.,0.,0.,0.})},
-        {"root_linear_velocity_world_mps",doubles(std::array{2.,0.,0.})},
-        {"root_angular_velocity_world_rad_s",doubles(std::array{0.,0.,0.})},
-        {"attitude_valid",V{false}},{"roll_rad",V{}},{"pitch_rad",V{}},{"heading_rad",V{}},
-        {"steer_angle_rad",real(0.)},{"steer_rate_rad_s",real(0.)},{"steer_torque_nm",real(0.)},{"steer_work_j",real(0.)},
-        {"lateral_displacement_m",real(2.)},{"front_contact_valid",V{false}},{"rear_contact_valid",V{false}},
-        {"front_lateral_slip_mps",V{}},{"rear_lateral_slip_mps",V{}},{"front_normal_load_n",V{}},{"rear_normal_load_n",V{}},
-        {"front_support_normal_world",V{}},{"rear_support_normal_world",V{}}};
+    runtime::spatial::SpatialTruth value;
+    value.root.position_world_m={1.,2.,3.};
+    value.root.linear_velocity_world_mps={2.,0.,0.};
+    value.lateral_displacement_m=2.;
+    return std::get<V::Object>(runtime::spatial::spatial_truth_to_wire(value).data);
 }
 }
 int main(){return bt::run([]{
     const std::array<rec::JointCoords,1> joints{{{.name="root_free",.joint_type="free",.qposadr=0,.dofadr=0}}};
     const auto base=rec::build_catalog(joints,std::span<const rec::ScalarAlias>{});
     bt::require(base.coordinates().qpos.size()==7&&base.coordinates().dof.size()==6,"freejoint positions and tangent velocities have independent widths");
-    bt::ModelFixture fixture(R"(<mujoco><worldbody><body name="frame"><freejoint name="root_free"/><geom type="sphere" size=".2" mass="2"/></body></worldbody></mujoco>)");
+    bt::ModelFixture fixture(R"(<mujoco><worldbody><body name="frame"><freejoint name="root_free"/><geom type="sphere" size=".2" mass="2"/>
+        <body name="arm" pos="0 0 .5"><joint name="steer" type="hinge" axis="0 0 1"/><geom type="sphere" size=".1" mass="1"/></body></body></worldbody></mujoco>)");
     const auto catalog=rec::build_catalog(*fixture.model,rec::CatalogVersion::spatial2);
     bt::require(!catalog.resolve_alias("pitch_rad")&&catalog.resolve_alias("root_free.qw").has_value(),"free root has named quaternion coordinates without scalar pitch alias");
+    // Tangent coordinates are named by derivative ("dx", "dwx"); a scalar joint has no
+    // component, so its aliases are the bare joint name and "<joint>.d", never a trailing dot.
+    const auto linear_rate=catalog.resolve_alias("root_free.dx"),angular_rate=catalog.resolve_alias("root_free.dwx"),
+        hinge_position=catalog.resolve_alias("steer"),hinge_rate=catalog.resolve_alias("steer.d");
+    bt::require(linear_rate&&linear_rate->canonical=="physics.qvel"&&linear_rate->index==0&&angular_rate&&angular_rate->index==3,"free root tangent aliases follow the dof order");
+    bt::require(hinge_position&&hinge_position->canonical=="physics.qpos"&&hinge_position->index==7&&hinge_rate&&hinge_rate->canonical=="physics.qvel"&&hinge_rate->index==6,"scalar joint aliases bind its qpos and dof entries");
+    bt::require(std::ranges::none_of(catalog.aliases(),[](const auto& alias){return alias.alias.ends_with('.');}),"no alias ends with a separator");
+    bt::require(catalog.coordinates().dof.front().component=="vx","alias naming does not rewrite the stored coordinate identity");
     bt::require(catalog.channel_table("spatial").name=="channel_spatial","truth root routes to its versioned table");
     bt::require(catalog.channel_table("spatial_outcome").name=="channel_spatial_outcome","accepted outcome latch has an explicit schema2 root");
     for(const auto name:{"specific_force_sensor_mps2","angular_rate_sensor_rad_s"}) {

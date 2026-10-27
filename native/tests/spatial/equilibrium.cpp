@@ -9,8 +9,16 @@
 #include "model_access.hpp"
 #include "model/mapping.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <exception>
 #include <ranges>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace {
 void failed_probe_preserves_state() {
@@ -69,6 +77,24 @@ void released_phase_still_requires_support() {
             state==io::canonical_json(runtime::encode_spatial_bootstrap(*arena.physical->spatial_state())),
             "failed release validation leaves integration, material and causal owners unchanged");
     }
+}
+void exhausted_budget_never_seals() {
+    using namespace bike;
+    // A one-step budget with a tolerance below floating-point noise cannot
+    // converge, so setup must fail loudly (not release an unsettled pose) and
+    // the unconverged owner must refuse to seal.
+    auto request=spatial_tests::make_startup_request(spatial::RootKind::free6,spatial::TyreTier::fast,false,0.);
+    auto options=request->equilibrium;options.max_steps=1;options.tolerance=1e-12;
+    auto owner=initialization::make_setup(std::move(*request));
+    bool failed=false;
+    try {(void)initialization::settle(*owner,options);}
+    // Only the W30 release failure counts; any other exception (terrain, engine,
+    // solver dimension) propagates to bt::run as a test failure.
+    catch(const std::invalid_argument& error) {
+        failed=std::string_view(error.what()).starts_with("bootstrap: hold not releasable");
+    }
+    bt::require(failed,"an exhausted equilibrium budget is the W30 release failure, not a quiet success");
+    bt::invalid([&]{(void)owner->seal_bootstrap();});
 }
 void local_rolling_start() {
     using namespace bike;
@@ -207,6 +233,7 @@ int main(){return bt::run([] {
     auto owner=initialization::make_setup(std::move(*request));
     bt::invalid([&]{(void)owner->seal_bootstrap();});
     failed_probe_preserves_state();
+    exhausted_budget_never_seals();
     released_phase_still_requires_support();
     local_rolling_start();
 });}

@@ -1,6 +1,7 @@
 #include "support/migration_test.hpp"
 #include "runtime/spatial_worker_pool.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 

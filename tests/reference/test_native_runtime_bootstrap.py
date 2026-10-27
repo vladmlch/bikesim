@@ -189,7 +189,7 @@ def test_rejects_schema_version(setup):
 
 def test_rejects_bad_runtime_config_envelope(setup):
     config = copy.deepcopy(setup.config)
-    config['runtime_schema'] = 2
+    config['runtime_schema'] = 99  # valid set is {1, 2 (spatial)}
     with pytest.raises(ValueError, match='runtime_schema'):
         load_native().NativeRideRuntime(
             str(setup.model_path), config, setup.state)

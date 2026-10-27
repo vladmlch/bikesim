@@ -112,6 +112,12 @@ SensorConfig decode_sensors(const bio::Value &document) {
     return c;
 }
 
+// read_bootstrap returns ~6.5 KiB by value; the prvalue temp lives here
+// so read_research_bootstrap stays under the 8 KiB frame budget.
+void read_ride_bootstrap_into(RuntimeBootstrap &dst, const fs::path &directory) {
+    dst = read_bootstrap(directory);
+}
+
 } // namespace
 
 namespace {
@@ -288,8 +294,11 @@ ResearchConfig decode_research_config(const bio::Value &document) {
         else if(mode=="legacy")c.capture_mode=ResearchCaptureMode::legacy;else if(mode=="verify")c.capture_mode=ResearchCaptureMode::verify;
         else throw std::invalid_argument("research.capture_mode: unsupported mode");
         c.seed_decimal=vread::string(d["seed_decimal"],d.child("seed_decimal"));c.metadata=*vread::field(d,"metadata").value;
-        const auto& raw=*vread::field(d,"raw_initial_v2").value;
-        if(!bio::is_null(raw))c.raw_initial_v2=spatial::SensorObservationV2::from_wire(object(vread::wire_from_value(raw,"research.raw_initial_v2")));
+        const auto raw_node=vread::field(d,"raw_initial_v2");
+        if(!bio::is_null(*raw_node.value)){
+            const auto wire=vread::wire_from_value(*raw_node.value,"research.raw_initial_v2");
+            c.raw_initial_v2=spatial::SensorObservationV2::from_wire(object(wire));
+        }
         return c;
     }
     const vread::Dict d{.value = &vread::mapping(vread::Node{&document},
@@ -408,7 +417,7 @@ ResearchBootstrap read_research_bootstrap(const fs::path &directory) {
         out.tape = decode_noise_tape(*vread::field(root, "noise").value,*vread::field(root, "dropout_uniform").value);
         out.startup = decode_sensor_state(*vread::field(root, "sensor_state").value);
     }
-    out.ride = read_bootstrap(directory);
+    read_ride_bootstrap_into(out.ride, directory);
     return out;
 }
 

@@ -144,60 +144,63 @@ void ResearchRun::reset(std::optional<std::string> seed) {
     else environment_->reset();
     new_episode();
 }
+void ResearchRun::seal_prepare(std::string reason) {
+    const auto capture = [&] {
+        if (session_) return session_->seal_episode();
+        auto owned = environment_->seal_episode();
+        set(owned.run_metadata, "identity_checks", identity_receipt(owned.configuration.metadata));
+        return owned;
+    };
+    auto episode = [&] {
+        try { return capture(); }
+        catch (const runtime::InvalidReferenceRun&) {
+            // A strict accounting flush commits its failure prefix first.
+            // Only the ownership step is retried: never integrate a suffix.
+            return capture();
+        }
+    }();
+    if (failures_.primary && !is_interrupt(failures_.primary))
+        set(episode.run_metadata, "launch_failure", Value{Object{{"error", text(exception_text(failures_.primary))}}});
+    set(episode.run_metadata, "seal_reason", text(reason));
+    auto summary = summarize(episode);
+    set(summary, "seal_reason", text(reason));
+    prepared_ = EpisodeReceipt{.episode_id=episode_id_, .seal_reason=std::move(reason), .episode=std::move(episode), .summary=std::move(summary)};
+}
+void ResearchRun::seal_prepare_events() {
+    std::vector<OperatorEvent> staged;
+    for (const auto& event : events_)
+        if (event.episode_id == episode_id_) staged.push_back(event);
+    if (session_) {
+        const auto& operator_events = session_->operator_events();
+        staged.insert(staged.end(), operator_events.begin(), operator_events.end());
+    }
+    const auto& final = prepared_->episode.final_snapshot; // NOLINT(bugprone-unchecked-optional-access) callers engage prepared_ via seal_prepare before staging events
+    if (final.first_failure)
+        staged.push_back(OperatorEvent{.event_id=0, .processed_step=final.step, .time_s=final.time_s, .received_wall_s=platform::monotonic_seconds(),
+            .kind="model_first_failure", .queued=false, .terminal=false, .applied=false,
+            .values=Value{Object{{"evidence", wire_value(final.first_failure->as_wire())}, {"classification", text("measured")}}}, .episode_id=episode_id_});
+    staged.push_back(OperatorEvent{.event_id=0, .processed_step=final.step, .time_s=final.time_s, .received_wall_s=platform::monotonic_seconds(),
+        .kind="episode_ended", .queued=false, .terminal=true, .applied=false,
+        .values=Value{Object{{"reason", text(prepared_->seal_reason)}, {"episode_id", integer(episode_id_)}}}, .episode_id=episode_id_}); // NOLINT(bugprone-unchecked-optional-access) callers engage prepared_ via seal_prepare before staging events
+    std::ranges::stable_sort(staged, [](const auto& first, const auto& second) {
+        return first.received_wall_s < second.received_wall_s;
+    });
+    prepared_events_ = std::move(staged);
+}
 const EpisodeReceipt* ResearchRun::seal(std::string reason) {
     if (!publication_) return nullptr;
     if (reason.empty()) throw std::invalid_argument("episode seal reason must be nonempty");
     for (const auto& receipt : episodes_)
         if (receipt.episode_id == episode_id_) return &receipt;
-    if (!prepared_) {
-        runtime::OwnedResearchEpisode episode;
-        const auto capture = [&] {
-            if (session_) return session_->seal_episode();
-            auto owned = environment_->seal_episode();
-            set(owned.run_metadata, "identity_checks", identity_receipt(owned.configuration.metadata));
-            return owned;
-        };
-        try { episode = capture(); }
-        catch (const runtime::InvalidReferenceRun&) {
-            // A strict accounting flush commits its failure prefix first.
-            // Only the ownership step is retried: never integrate a suffix.
-            episode = capture();
-        }
-        if (failures_.primary && !is_interrupt(failures_.primary))
-            set(episode.run_metadata, "launch_failure", Value{Object{{"error", text(exception_text(failures_.primary))}}});
-        set(episode.run_metadata, "seal_reason", text(reason));
-        auto summary = summarize(episode);
-        set(summary, "seal_reason", text(reason));
-        prepared_ = EpisodeReceipt{.episode_id=episode_id_, .seal_reason=std::move(reason), .episode=std::move(episode), .summary=std::move(summary)};
-    }
-    if (!prepared_events_) {
-        std::vector<OperatorEvent> staged;
-        for (const auto& event : events_)
-            if (event.episode_id == episode_id_) staged.push_back(event);
-        if (session_) {
-            const auto& operator_events = session_->operator_events();
-            staged.insert(staged.end(), operator_events.begin(), operator_events.end());
-        }
-        const auto& final = prepared_->episode.final_snapshot;
-        if (final.first_failure)
-            staged.push_back(OperatorEvent{.event_id=0, .processed_step=final.step, .time_s=final.time_s, .received_wall_s=platform::monotonic_seconds(),
-                .kind="model_first_failure", .queued=false, .terminal=false, .applied=false,
-                .values=Value{Object{{"evidence", wire_value(final.first_failure->as_wire())}, {"classification", text("measured")}}}, .episode_id=episode_id_});
-        staged.push_back(OperatorEvent{.event_id=0, .processed_step=final.step, .time_s=final.time_s, .received_wall_s=platform::monotonic_seconds(),
-            .kind="episode_ended", .queued=false, .terminal=true, .applied=false,
-            .values=Value{Object{{"reason", text(prepared_->seal_reason)}, {"episode_id", integer(episode_id_)}}}, .episode_id=episode_id_});
-        std::ranges::stable_sort(staged, [](const auto& first, const auto& second) {
-            return first.received_wall_s < second.received_wall_s;
-        });
-        prepared_events_ = std::move(staged);
-    }
+    if (!prepared_) seal_prepare(std::move(reason));
+    if (!prepared_events_) seal_prepare_events();
     // Reserve both owners before the receipt and its terminating event are
     // committed, so an allocation retry cannot invent a duplicate episode.
     episodes_.reserve(episodes_.size() + 1);
-    events_.reserve(events_.size() + prepared_events_->size());
-    episodes_.push_back(std::move(*prepared_)); prepared_.reset();
+    events_.reserve(events_.size() + prepared_events_->size()); // NOLINT(bugprone-unchecked-optional-access) line 196 engages prepared_events_ via seal_prepare_events
+    episodes_.push_back(std::move(*prepared_)); prepared_.reset(); // NOLINT(bugprone-unchecked-optional-access) line 195 engages prepared_ via seal_prepare
     std::erase_if(events_, [this](const auto& event) { return event.episode_id == episode_id_; });
-    for (auto& event : *prepared_events_) {
+    for (auto& event : *prepared_events_) { // NOLINT(bugprone-unchecked-optional-access) line 196 engages prepared_events_ via seal_prepare_events
         event.event_id = static_cast<std::int64_t>(events_.size());
         event.episode_id = episode_id_;
         events_.push_back(std::move(event));

@@ -106,74 +106,79 @@ def solve_physical_equilibrium(runtime, *, max_steps=None, tolerance=.05):
     cycle = max(1, round(.02/dt))
     first_refine = cycle*max(1, round(sim.physics_config.equilibrium_refine_after_s/(cycle*dt)))
     refine_period = cycle*max(1, round(sim.physics_config.equilibrium_refine_period_s/(cycle*dt)))
-    while not cache_hit and steps < max_steps:
-        for _ in range(min(cycle, max_steps-steps)):
-            runtime.apply_forces(active=False, advance=True, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
-            interval_state = (data.qpos.copy(), data.qvel.copy())
-            mujoco.mj_step(model, data)
-            if runtime.rider_contacts is not None:
-                runtime.rider_contacts.settle_welds(model, data, interval_state)
-            steps += 1
-            if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
-                raise RuntimeError('non-finite physical equilibrium state')
-        data.qvel.fill(0.)
-        runtime.apply_forces(active=False, advance=False, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
-        mujoco.mj_forward(model, data)
-        residual = float(np.max(np.abs(data.qacc)))
-        if residual > tolerance and (steps == first_refine or steps % refine_period == 0):
-            from bike_sim.sim.ride.equilibrium_refine import refine_equilibrium
-            # Re-center the trust region while the actual equilibrium residual
-            # improves. A coupled rider may need more than three position boxes;
-            # stagnation returns to damped physical relaxation instead of burning
-            # a fixed number of identical optimizer calls.
-            for _ in range(8):
-                previous = residual
-                residual = refine_equilibrium(runtime,acceleration_tolerance=tolerance)
-                if residual <= tolerance or residual >= previous*(1.-1e-3):
-                    break
-        if residual <= tolerance:
-            break
-    if not cache_hit and steps >= max_steps and residual > tolerance:
-        names = []
-        for dof in np.argsort(np.abs(data.qacc))[-5:][::-1]:
-            jid = int(model.dof_jntid[dof])
-            names.append((mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_JOINT,jid),float(data.qacc[dof])))
-        raise RuntimeError(f'physical equilibrium did not converge after {steps} steps: residual={residual:.6g}; {names}')
-    # Release consistency. The braked relaxation converges with the wheel
-    # brakes holding whatever tangential load the pose left behind -- the
-    # regularized friction bound plateaus and the angle latch pins the rest.
-    # The episode starts unbraked, so that store is released across the first
-    # intervals as constraint work the energy ledger rightfully rejects.
-    # Re-settle the pose under the released demand: the wheel brushes are
-    # adjusted to wheel statics first, then damped cycles let the chassis
-    # and weld deflections follow. When no released rest exists (a grade the
-    # standstill needs the brakes for), the held result is kept unchanged.
-    if (not cache_hit and residual <= tolerance and steps < max_steps
-            and (sim.physics_config.initial_front_brake > 0.
-                 or sim.physics_config.initial_rear_brake > 0.)):
-        from bike_sim.sim.ride.equilibrium_cache import _state_arrays, restore_state
-        held_pose = data.qpos.copy()
-        held_state = copy.deepcopy(_state_arrays(runtime))
-        held_steps = steps
-        released, used = _relax_released(
-            runtime, max_steps=min(max_steps-steps, round(15./dt)),
-            cycle=cycle, tolerance=min(tolerance, 0.01))
-        steps += used
-        if released is not None and released <= min(tolerance, 0.01):
-            residual = released
-        else:
-            # No released-brake rest exists under this track/config: keep the
-            # brake-assisted equilibrium rather than the drifted state.
-            restore_state(runtime, held_state)
-            data.qpos[:] = held_pose
+    # The latched elastic bite is a ride-time latch, not an equilibrium
+    # force: its engage/release hysteresis ratchets the wheels while the
+    # damped cycles run and the standstill residual never lands. Solve the
+    # pose on the friction bound alone (static_braking.py::hold_suspended).
+    with runtime.brake.hold_suspended():
+        while not cache_hit and steps < max_steps:
+            for _ in range(min(cycle, max_steps-steps)):
+                runtime.apply_forces(active=False, advance=True, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
+                interval_state = (data.qpos.copy(), data.qvel.copy())
+                mujoco.mj_step(model, data)
+                if runtime.rider_contacts is not None:
+                    runtime.rider_contacts.settle_welds(model, data, interval_state)
+                steps += 1
+                if not np.isfinite(data.qpos).all() or not np.isfinite(data.qvel).all():
+                    raise RuntimeError('non-finite physical equilibrium state')
             data.qvel.fill(0.)
-            runtime.brake.reset()
-            runtime.apply_forces(active=False, advance=False,
-                                 front=sim.physics_config.initial_front_brake,
-                                 rear=sim.physics_config.initial_rear_brake)
+            runtime.apply_forces(active=False, advance=False, front=sim.physics_config.initial_front_brake, rear=sim.physics_config.initial_rear_brake)
             mujoco.mj_forward(model, data)
             residual = float(np.max(np.abs(data.qacc)))
-            steps = held_steps
+            if residual > tolerance and (steps == first_refine or steps % refine_period == 0):
+                from bike_sim.sim.ride.equilibrium_refine import refine_equilibrium
+                # Re-center the trust region while the actual equilibrium residual
+                # improves. A coupled rider may need more than three position boxes;
+                # stagnation returns to damped physical relaxation instead of burning
+                # a fixed number of identical optimizer calls.
+                for _ in range(8):
+                    previous = residual
+                    residual = refine_equilibrium(runtime,acceleration_tolerance=tolerance)
+                    if residual <= tolerance or residual >= previous*(1.-1e-3):
+                        break
+            if residual <= tolerance:
+                break
+        if not cache_hit and steps >= max_steps and residual > tolerance:
+            names = []
+            for dof in np.argsort(np.abs(data.qacc))[-5:][::-1]:
+                jid = int(model.dof_jntid[dof])
+                names.append((mujoco.mj_id2name(model,mujoco.mjtObj.mjOBJ_JOINT,jid),float(data.qacc[dof])))
+            raise RuntimeError(f'physical equilibrium did not converge after {steps} steps: residual={residual:.6g}; {names}')
+        # Release consistency. The braked relaxation converges with the wheel
+        # brakes holding whatever tangential load the pose left behind -- the
+        # regularized friction bound plateaus and the angle latch pins the rest.
+        # The episode starts unbraked, so that store is released across the first
+        # intervals as constraint work the energy ledger rightfully rejects.
+        # Re-settle the pose under the released demand: the wheel brushes are
+        # adjusted to wheel statics first, then damped cycles let the chassis
+        # and weld deflections follow. When no released rest exists (a grade the
+        # standstill needs the brakes for), the held result is kept unchanged.
+        if (not cache_hit and residual <= tolerance and steps < max_steps
+                and (sim.physics_config.initial_front_brake > 0.
+                     or sim.physics_config.initial_rear_brake > 0.)):
+            from bike_sim.sim.ride.equilibrium_cache import _state_arrays, restore_state
+            held_pose = data.qpos.copy()
+            held_state = copy.deepcopy(_state_arrays(runtime))
+            held_steps = steps
+            released, used = _relax_released(
+                runtime, max_steps=min(max_steps-steps, round(15./dt)),
+                cycle=cycle, tolerance=min(tolerance, 0.01))
+            steps += used
+            if released is not None and released <= min(tolerance, 0.01):
+                residual = released
+            else:
+                # No released-brake rest exists under this track/config: keep the
+                # brake-assisted equilibrium rather than the drifted state.
+                restore_state(runtime, held_state)
+                data.qpos[:] = held_pose
+                data.qvel.fill(0.)
+                runtime.brake.reset()
+                runtime.apply_forces(active=False, advance=False,
+                                     front=sim.physics_config.initial_front_brake,
+                                     rear=sim.physics_config.initial_rear_brake)
+                mujoco.mj_forward(model, data)
+                residual = float(np.max(np.abs(data.qacc)))
+                steps = held_steps
     stroke = sim.shock_stroke_mm
     result = {'fork_travel_mm': sim.fork_travel_mm, 'shock_stroke_mm': stroke,
             'rear_travel_mm': float(sim.solver.solve_state_from_shock_stroke(stroke)['wheel_travel']),

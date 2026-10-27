@@ -9,6 +9,11 @@
 #include "runtime/spatial_tire_factory.hpp"
 #include "pneumatic3d/state.hpp"
 #include "terrain/asset3d.hpp"
+#include "io/hash.hpp"
+#include "io/json.hpp"
+#include "recording/publish.hpp"
+#include "research/evidence.hpp"
+#include "rider/steer_balance.hpp"
 #include <array>
 #include <cstdint>
 #include <filesystem>
@@ -21,7 +26,7 @@ namespace replay=bike::replay;
 using namespace runtime::setupvalue;
 void external_steer_profile(const std::filesystem::path& root) {
     const auto profile_path=root/"original-steer-profile.json";
-    const auto profile=runtime::resolved_steer_profile(bike::spatial::SteerConfig{});
+    const auto profile=runtime::resolved_steer_profile(bike::spatial::SteerConfig{.torque_cap_nm=40.});
     {
         std::ofstream file(profile_path,std::ios::binary);
         file<<bike::io::recording_json(bike::rider::write_steer_profile(profile));
@@ -136,9 +141,10 @@ void corruption_cases(const std::filesystem::path& accepted,const std::filesyste
     });
     mismatch(bristle,"tire.brush[0].bristle_ux_m[0]");
     const auto calibration=mutate_recording(accepted,root/"calibration",[&](const auto& c){
-        auto calibration=saved_document(c,"spatial/calibration.json");auto imu=field(calibration,"imu");
+        // `saved`, not `calibration`: the latter is the variable this lambda initializes.
+        auto saved=saved_document(c,"spatial/calibration.json");auto imu=field(saved,"imu");
         auto angles=std::get<Array>(field(imu,"mount_rpy_rad").data);angles[0]=real(bike::io::as_double(angles[0],"mount roll")+.1);
-        set(imu,"mount_rpy_rad",Value{std::move(angles)});set(calibration,"imu",imu);replace_document(c,"spatial/calibration.json",calibration);
+        set(imu,"mount_rpy_rad",Value{std::move(angles)});set(saved,"imu",imu);replace_document(c,"spatial/calibration.json",saved);
     });
     const auto calibration_result=replay::check(calibration,0);
     bt::require(!calibration_result.matched && bike::io::as_string(field(calibration_result.details,"status"),"status")=="incompatible-execution" &&

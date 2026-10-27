@@ -69,7 +69,7 @@ double Pacer::debt_s_at(std::chrono::steady_clock::time_point now) const {
 }
 
 PacingMeasurement::PacingMeasurement(TimePoint start, double simulation_s,
-    double render_interval_s, unsigned scale, bool hidden)
+    double render_interval_s, unsigned scale, bool hidden) // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
     : start_(start), observed_(start), last_frame_(start), last_simulation_s_(simulation_s) {
     if (!std::isfinite(simulation_s) || !std::isfinite(render_interval_s) || render_interval_s <= 0.)
         throw std::invalid_argument("pacing measurement requires finite simulation time and positive finite render interval");

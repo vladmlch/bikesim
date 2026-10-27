@@ -13,12 +13,16 @@
 
 #include <algorithm>
 #include <bit>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <numbers>
+#include <optional>
 #include <span>
 #include <string>
 #include <utility>
+#include <variant>
+#include <vector>
 
 namespace {
 using namespace runtime::setupvalue;
@@ -207,6 +211,9 @@ void continuation() {
     resumed->restore_checkpoint(serialized);
     bt::require(bytes(resumed->checkpoint())==bytes(checkpoint),"cold restore retains every serialized semantic field");
     same_snapshot(continuous->snapshot(),resumed->snapshot());
+    const auto restored=resumed->snapshot();
+    bt::require(restored.spatial && restored.spatial->brake.interval_index==restored.step-1,
+        "restored brake clock carries the last accepted interval");
     reject_without_change(*resumed,checkpoint,[](Value& bad) {
         auto identity=field(bad,"identity");set(identity,"terrain_sha256",text(std::string(64,'a')));set(bad,"identity",std::move(identity));
     },"terrain identity");
@@ -220,6 +227,11 @@ void continuation() {
         auto plant=field(bad,"bootstrap2");auto spatial=field(plant,"spatial");
         set(spatial,"topology_fingerprint",text(std::string(64,'b')));set(plant,"spatial",std::move(spatial));set(bad,"bootstrap2",std::move(plant));
     },"topology identity");
+    reject_without_change(*resumed,checkpoint,[](Value& bad) {
+        auto plant=field(bad,"bootstrap2");auto spatial=field(plant,"spatial");auto brake=field(spatial,"brake");
+        set(brake,"interval_index",integer(io::as_int64(field(brake,"interval_index"),"interval_index")+1));
+        set(spatial,"brake",std::move(brake));set(plant,"spatial",std::move(spatial));set(bad,"bootstrap2",std::move(plant));
+    },"scored brake interval index");
     reject_without_change(*resumed,checkpoint,[](Value& bad) {
         auto sensor=field(bad,"sensor_v2");auto state=field(sensor,"state");
         set(state,"cursor",integer(io::as_int64(field(state,"cursor"),"cursor")+1));

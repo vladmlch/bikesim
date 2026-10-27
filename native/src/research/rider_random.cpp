@@ -54,7 +54,9 @@ runtime::spatial::NoiseTapeV2 make_sensor_tape_v2(const runtime::spatial::Sensor
     // Domain separation is the literal ASCII stream name, one byte per uint32
     // spawn-key word. Revision sensor-v2-rng/1 pins this mapping and draw order.
     const auto stream=[&](std::string_view name){std::vector<std::uint32_t> key;key.reserve(name.size());
-        for(unsigned char c:name)key.push_back(c);
+        // Go through unsigned char explicitly: plain char may be signed
+        // (macOS arm64) and a negative value must never sign-extend into a word.
+        for(const char c:name)key.push_back(static_cast<std::uint32_t>(static_cast<unsigned char>(c)));
         return random::SeedSequence(validate_seed(seed_decimal),key);};
     random::NumpyRng normal(stream("sensor_v2/noise")),dropout(stream("sensor_v2/dropout"));
     runtime::spatial::NoiseTapeV2 tape;

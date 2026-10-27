@@ -8,7 +8,9 @@ MTB tyre data.
 
 The stored displacement `u` is spring extension, the contact material velocity
 relative to the fixed road is `v`, and the force on the wheel is `F = -K u`.
-With convective decay rate `a = |v_roll|/ell`,
+With convective decay rate `a = |v_roll|/ell` (`v_roll` is the hub velocity
+projected on the patch longitudinal tangent; `ell_x`/`ell_y` are the two
+relaxation lengths, so `a_x` and `a_y` differ),
 
 ```
 du/dt = v - a u
@@ -19,16 +21,20 @@ The W23 prose uses both `du/dt=-v-a*u` and `F=-K*u`. That pair makes a fresh
 tyre accelerate the slip that loads it. The source retains a work-conjugate,
 passive sign convention, and the discrepancy is explicit in the ledger.
 
-For each tangent direction `K = k_area * patch_area`. The return map scales
-the trial displacement radially until
+For each tangent direction `K_x = kx_n_per_m3 * A` and `K_y = ky_n_per_m3 * A`
+with `A` the patch (fast) or cell (detailed) area. The return map scales the
+trial displacement radially until
 
 ```
 (Fx/(mu_x Fz))² + (Fy/(mu_y Fz))² <= 1.
 ```
 
-A zero coefficient independently removes that force component. A zero normal
-load clears the force. Camber contributes through the same spring and shares
-this ellipse; it never adds force outside the combined grip budget.
+with `Fx = -K_x u_x`, `Fy = -K_y u_y` and `mu_i` the road coefficient times
+`mu_i_scale`. A zero coefficient independently removes that force component. A
+zero normal load clears the force. Camber contributes through the same spring
+and shares this ellipse; it never adds force outside the combined grip budget.
+A trial value, stiffness, denominator or grip capacity that overflows is
+`invalid_geometry`, never a silent zero-force contact.
 
 For endpoint force work, the discrete identity is
 
@@ -48,16 +54,32 @@ the change of elastic storage plus all three terms during stop/start/reverse.
 ## Camber and trail
 
 The resolved kernel receives axle, spin and camber from wheel kinematics.
-The specified lateral source augments slip by `b_gamma * omega_spin`; the
-conjugate wheel couple is `b_gamma * Fy * axle`. Its power must accompany the
+The camber source is
+
+```
+b_gamma = r_eff * C_gamma * Fz * sin(gamma) / (K_y * ell_y)    (0 when K_y = 0)
+v_y,eff = v_y + b_gamma * omega_spin
+```
+
+`C_gamma` is `camber_coefficient_per_rad`, normalized by normal load, so
+`b_gamma` has units of length and `b_gamma * omega_spin` is a velocity. The
+`Fz` factor makes the source invariant when a patch is split into equal
+area/load elements (`K_y` and `Fz` both halve). `gamma` is
+`asin(axle . patch_normal)` and `omega_spin` is the absolute wheel angular
+velocity projected on the axle, conjugate to the wheel-body couple. The
+conjugate wheel couple is `b_gamma * Fy * axle`. Its power accompanies the
 modified lateral slip in the energy identity.
 
-Pneumatic trail shifts the **tangential** application point along the patch
-longitudinal tangent. The actual velocity at the shifted point includes
-`omega × offset`. A compensating couple leaves the distributed normal load
-at its original centroid. The reported `mz_nm` is the tangential lever-arm
-moment, not another couple to add to the engine. Thus the writer applies
-one lever arm and one intrinsic couple only.
+Pneumatic trail (fast tier only) shifts the **tangential** application point
+along the patch longitudinal tangent by `pneumatic_trail_m` with the sign of
+the hub longitudinal velocity (zero offset at standstill). The actual velocity
+at the shifted point includes `omega × offset`. A compensating couple
+`-offset × F_normal` leaves the distributed normal load at its original
+centroid. The reported `mz_nm` is the tangential lever-arm moment, not another
+couple to add to the engine. Thus the writer applies one lever arm and one
+intrinsic couple only. The detailed tier applies no trail offset and no
+convective decay (`a = 0`): each cell already moves with the material, so its
+own position and residence time carry both effects.
 
 The frozen standalone `update_fast_brush` signature lacks axle, spin, angular
 velocity and a material resolver. It is a unit-road synthetic kernel. The
@@ -71,7 +93,12 @@ The detailed tier stores two displacement components and elastic energy per
 full-circle material cell. Geometry provides the current material association;
 the same signed spin is not applied again as a second array rotation.
 Each cell uses its local normal load, actual surface ID and resolved Stribeck
-coefficient. Local return mapping occurs before deterministic force reduction.
+coefficient `mu = mu_slide + (mu_peak - mu_slide) exp(-(v/v_s)²)`, with `v` the
+local tangential slip speed. A nonpositive `v_s` is the zero-width limit: peak
+at exactly zero slip speed, sliding value otherwise. Local return mapping
+occurs before deterministic force reduction. Stored energy and losses are
+reduced in material-cell order, so the result does not depend on the fan
+enumeration; per-element wrenches keep the caller's order.
 Leaving contact releases stored bristle energy once and clears its displacement.
 
 The resolved overload rejects an unresolvable surface instead of assuming a
@@ -118,8 +145,12 @@ The frozen standalone patch and bristle signatures expose no caller workspace.
 Their temporary connectivity, overlap and coefficient arrays exceed the native
 8 KiB frame policy for the detailed tier. They use `constinit thread_local`
 bounded scratch records instead of automatic arrays or warm-path allocation.
-Every lane is reset at call entry; a per-thread reentry guard rejects nested
-use. No tyre history, contact identity, force result or accepted interval lives
-in that scratch. Histories still belong entirely to the explicit state and its
-codec. An owner-supplied workspace is the preferred future C10 signature;
-these source changes do not claim an allocation or real-time measurement.
+The bristle record maps each material cell to its source element (a sentinel
+marks an absent cell) and holds one resolved friction lane per element, both
+sized at compile time. Every lane the call can read is reset at entry; a
+per-thread reentry guard rejects nested use. The kernel runs only on the owner
+thread, so worker-thread count cannot change the reduction. No tyre history,
+contact identity, force result or accepted interval lives in that scratch.
+Histories still belong entirely to the explicit state and its codec. An
+owner-supplied workspace is the preferred future C10 signature; these source
+changes do not claim an allocation or real-time measurement.

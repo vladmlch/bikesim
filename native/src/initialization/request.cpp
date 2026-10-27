@@ -3,11 +3,14 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <ranges>
 #include <stdexcept>
+#include <system_error>
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
+#include "../platform/provenance.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
 
@@ -22,6 +25,58 @@ std::filesystem::path path(const Value& document, std::string_view key,
         throw std::invalid_argument(std::string(key) + ": expected a nonempty path");
     const std::filesystem::path file(name);
     return std::filesystem::weakly_canonical(file.is_absolute() ? file : base / file);
+}
+
+// The NPZ/JSON staging locals live here so read_setup_request stays under
+// the 8 KiB stack-frame budget.
+void apply_initial_state_file(const Value& document,
+                              const std::filesystem::path& base,
+                              configuration::SimulationPhysicsConfig& physics,
+                              SetupRequest& out) {
+    auto state_file = path(document, "initial_state_file", base);
+    // Explicit-t0 transfer documents and native equilibrium state files are
+    // platform-bound (the contract pins compiled-model arrays and the
+    // payload is platform solver output): a same-named capture inside a
+    // sibling directory keyed by the running platform supersedes the shared
+    // spelling, so one request document resolves correctly on every platform.
+    std::error_code keyed_error;
+    if (const auto keyed = state_file.parent_path() / platform::key() /
+            state_file.filename();
+        std::filesystem::is_regular_file(keyed, keyed_error))
+        state_file = keyed;
+    const auto bytes = io::read_numpy_bytes(state_file);
+    std::string source;
+    source.reserve(bytes.size());
+    for (auto const byte : bytes) source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+    const auto first = source.find_first_not_of(" \t\r\n");
+    bool transfer = false;
+    if (first != std::string::npos && source[first] == '{') {
+        const auto state = io::parse_json(source);
+        transfer = find(state, "contract_sha256") != nullptr;
+    }
+    if (transfer) {
+        out.initial_state.emplace(std::move(source));
+        physics.equilibrium_state_file.reset();
+    } else physics.equilibrium_state_file = state_file.string();
+}
+
+// The override merge materializes a second SimulationPhysicsConfig beside
+// `physics`; staging both here holds read_setup_request under the 8 KiB
+// frame budget.
+[[nodiscard]] configuration::SimulationPhysicsConfig request_physics(
+    const Value& document, const std::filesystem::path& base) {
+    auto physics = configuration::load_physics(path(document, "physics_file", base));
+    if (const auto* overrides = find(document, "overrides")) {
+        auto owned = *overrides;
+        configuration::detail::resolve_config_paths(owned, base);
+        physics = configuration::resolve_physics(owned, physics);
+    }
+    const double speed = io::as_double(field(document, "speed_kph"), "speed_kph");
+    if (!std::isfinite(speed)) throw std::invalid_argument("speed_kph must be finite");
+    physics.initial_speed_mps = speed / 3.6;
+    physics.equilibrium_cache_enabled =
+        io::as_bool(field(document, "use_equilibrium_cache"), "use_equilibrium_cache");
+    return physics;
 }
 }
 
@@ -55,12 +110,7 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
         if (io::as_int64(field(document, "request_schema"), "request_schema") != 1)
             throw std::invalid_argument("unsupported request_schema");
         const auto base = std::filesystem::absolute(file).parent_path();
-        auto physics = configuration::load_physics(path(document, "physics_file", base));
-        if (const auto* overrides = find(document, "overrides")) {
-            auto owned = *overrides;
-            configuration::detail::resolve_config_paths(owned, base);
-            physics = configuration::resolve_physics(owned, physics);
-        }
+        auto physics = request_physics(document, base);
         SetupRequest out;
         out.origin = std::filesystem::absolute(file).string();
         out.asset_root = base;
@@ -75,28 +125,8 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
             throw std::invalid_argument("native ride preparation requires model_mode='ride'");
         out.model.rider = model::rider_from_args(
             io::as_string(field(document, "rider_variant"), "rider_variant"));
-        const double speed = io::as_double(field(document, "speed_kph"), "speed_kph");
-        if (!std::isfinite(speed)) throw std::invalid_argument("speed_kph must be finite");
-        physics.initial_speed_mps = speed / 3.6;
-        physics.equilibrium_cache_enabled =
-            io::as_bool(field(document, "use_equilibrium_cache"), "use_equilibrium_cache");
-        if (!skip_initial_state && find(document, "initial_state_file")) {
-            const auto state_file = path(document, "initial_state_file", base);
-            const auto bytes = io::read_numpy_bytes(state_file);
-            std::string source;
-            source.reserve(bytes.size());
-            for (auto const byte : bytes) source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
-            const auto first = source.find_first_not_of(" \t\r\n");
-            bool transfer = false;
-            if (first != std::string::npos && source[first] == '{') {
-                const auto state = io::parse_json(source);
-                transfer = find(state, "contract_sha256") != nullptr;
-            }
-            if (transfer) {
-                out.initial_state.emplace(std::move(source));
-                physics.equilibrium_state_file.reset();
-            } else physics.equilibrium_state_file = state_file.string();
-        }
+        if (!skip_initial_state && find(document, "initial_state_file"))
+            apply_initial_state_file(document, base, physics, out);
         configuration::post_init(physics);
         if(physics.spatial)out.model.spatial=physics.spatial;
         out.model.physics = std::move(physics);

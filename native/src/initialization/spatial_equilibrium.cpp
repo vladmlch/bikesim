@@ -5,6 +5,7 @@
 #include "../model_access.hpp"
 #include "../numerics/least_squares.hpp"
 #include "../runtime/step.hpp"
+#include "../spatial/brake_state.hpp"
 #include "../spatial/frames.hpp"
 #include "../stepper.hpp"
 #include "../writers/drivetrain.hpp"
@@ -19,10 +20,14 @@
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace bike::initialization {
 namespace {
@@ -60,11 +65,12 @@ bool translation(const mjModel& m,int dof) {
     const int type=types[joint];
     return type==mjJNT_SLIDE || (type==mjJNT_FREE && dof-addresses[joint]<3);
 }
-SpatialEquilibriumReport report(SetupContext& context,int evaluations,double tolerance) {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
+SpatialEquilibriumReport report(const SetupContext& context,int evaluations,double tolerance) {
     const auto& m=*context.stepper.model();const auto& d=*context.stepper.data();
     SpatialEquilibriumReport out;out.evaluations=evaluations;
     const auto accelerations=context.stepper.qacc();
-    std::vector<int> order(static_cast<std::size_t>(m.nv));std::iota(order.begin(),order.end(),0);
+    std::vector<int> order(static_cast<std::size_t>(m.nv));std::ranges::iota(order,0);
     for(int i=0;i<m.nv;++i) {
         const double a=std::abs(accelerations[static_cast<std::size_t>(i)]);
         auto& maximum=translation(m,i)?out.max_linear_accel_mps2:out.max_angular_accel_radps2;
@@ -75,7 +81,7 @@ SpatialEquilibriumReport report(SetupContext& context,int evaluations,double tol
         const double value=std::abs(accelerations[static_cast<std::size_t>(dof)]);
         return std::isfinite(value)?value:std::numeric_limits<double>::infinity();
     };
-    std::stable_sort(order.begin(),order.end(),[&](int a,int b){return severity(a)>severity(b);});
+    std::ranges::stable_sort(order,[&](int a,int b){return severity(a)>severity(b);});
     for(std::size_t i=0;i<std::min<std::size_t>(3,order.size());++i)out.worst_dofs.push_back(order[i]);
     const auto masses=model_access::readonly_buffer(m.body_mass,m.nbody);
     double mass=0.;for(std::size_t b=1;b<masses.size();++b)mass+=masses[b];
@@ -154,6 +160,7 @@ void spatial_initial_pose(SetupContext& context,const spatial::Topology& topolog
     stepper.note_posvel_stale();stepper.forward();
     const auto original=spatial::body_pose(m,d,topology.root);
     std::vector<spatial::BodyPose> riders;
+    riders.reserve(topology.rider_roots.size());
     for(const auto& root:topology.rider_roots)riders.push_back(spatial::body_pose(m,d,root));
     const spatial::Quat yaw{std::cos(heading/2.),0.,0.,std::sin(heading/2.)};
     std::array<double,2> terrain_height{},radius{},forward_offset{};
@@ -232,7 +239,8 @@ double spatial_refine(SetupContext& context,int max_evaluations,double tolerance
     engine::get_state(&m,&d,integration.data(),mjSTATE_INTEGRATION);
     // NOLINTNEXTLINE(modernize-make-unique) preserve the native stack-frame budget for complete causal snapshots
     const std::unique_ptr<runtime::StepState> incoming_step{new runtime::StepState(context.physical.state())};
-    const auto drive=std::make_unique<drivetrain::DriveSnapshot>(stepper.drive().state());
+    // NOLINTNEXTLINE(modernize-make-unique) make_unique would materialize the by-value snapshot in this frame (8192-byte budget; see refine.cpp)
+    const std::unique_ptr<drivetrain::DriveSnapshot> drive{new drivetrain::DriveSnapshot(stepper.drive().state())};
     const auto tire=stepper.has_spatial_tire()?std::make_unique<pneumatic3d::TyreState3d>(stepper.spatial_tire_writer().state()):nullptr;
     std::unique_ptr<writers::RiderContactsState> rider;
     std::optional<writers::RiderContactsProbe> rider_probe;
@@ -240,7 +248,7 @@ double spatial_refine(SetupContext& context,int max_evaluations,double tolerance
     const auto hold=context.bootstrap_hold?std::optional{context.bootstrap_hold->state()}:std::nullopt;
     struct ModelRow{std::span<double> target;std::vector<double> bytes;};std::vector<ModelRow> model_rows;
     const auto save_row=[&](double* target,mjtSize width){const auto values=model_access::mutable_buffer(target,width);
-        model_rows.push_back({values,std::vector<double>(values.begin(),values.end())});};
+        model_rows.push_back({.target=values,.bytes=std::vector<double>(values.begin(),values.end())});};
     save_row(m.dof_frictionloss,m.nv);save_row(m.site_pos,3*m.nsite);
     save_row(m.tendon_stiffness,m.ntendon);save_row(m.tendon_damping,m.ntendon);
     save_row(m.tendon_lengthspring,2*m.ntendon);
@@ -262,7 +270,13 @@ double spatial_refine(SetupContext& context,int max_evaluations,double tolerance
         context.physical.restore(*incoming_step);
         stepper.mutate([&]{stepper.drive().restore(*drive);});
         if(tire)stepper.restore_spatial_tire(*tire);
-        if(rider){auto copy=*rider;auto probe=rider_probe;stepper.rider_contacts().assign_state(std::move(copy),std::move(probe));}
+        if(rider) {
+            // Heap copy: the writer consumes its state by rvalue, and a stack
+            // copy of the support/grip inventory would count against the frame budget.
+            const auto copy=std::make_unique<writers::RiderContactsState>(*rider);
+            auto probe=rider_probe;
+            stepper.rider_contacts().assign_state(std::move(*copy),std::move(probe));
+        }
         if(hold && context.bootstrap_hold->restore(*hold)!=CoreStatus::ok)
             throw std::invalid_argument("spatial_refine: hold snapshot failed restore");
         for(const auto& row:model_rows)std::ranges::copy(row.bytes,row.target.begin());
@@ -276,16 +290,16 @@ double spatial_refine(SetupContext& context,int max_evaluations,double tolerance
                 // coordinates. Rotate the allowed WORLD roll/pitch basis so
                 // fixing world yaw remains correct at a pitched/yawed start.
                 spatial::Vec3 axis{};axis[static_cast<std::size_t>(dof-root.free_dof_adr-3)]=1.;
-                const auto qa=static_cast<std::size_t>(root.free_qpos_adr+3);
+                const auto qa=static_cast<std::size_t>(root.free_qpos_adr)+3;
                 const auto local=spatial::rotate_world_to_body({q0[qa],q0[qa+1],q0[qa+2],q0[qa+3]},axis);
                 for(std::size_t k=0;k<3;++k)dq[static_cast<std::size_t>(root.free_dof_adr+3)+k]+=x[i]*local[k];
             } else dq[static_cast<std::size_t>(dof)]=x[i];
         }
         stepper.mutate([&]{engine::integrate_pos(&m,d.qpos,dq.data(),1.);});
-        struct Difference{const mjModel* model;double* dq;const double* a;const double* b;} call{&m,difference_q.data(),q0.data(),d.qpos};
+        struct Difference{const mjModel* model;double* dq;const double* a;const double* b;} call{.model=&m,.dq=difference_q.data(),.a=q0.data(),.b=d.qpos};
         engine::ErrorBuffer error;
         if(!engine::invoke([](void* raw) noexcept {const auto& c=*static_cast<Difference*>(raw);mj_differentiatePos(c.model,c.dq,1.,c.a,c.b);},&call,error))engine::throw_failure(error);
-        if(!std::ranges::all_of(difference_q,[](double x){return std::isfinite(x);}))
+        if(!std::ranges::all_of(difference_q,[](double v){return std::isfinite(v);}))
             throw std::invalid_argument("spatial_refine: nonfinite tangent displacement");
         std::ranges::fill(qvel,0.);stepper.note_posvel_stale();
     };

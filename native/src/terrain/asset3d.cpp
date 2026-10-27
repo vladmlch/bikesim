@@ -73,7 +73,7 @@ const Object& object(const Value& value, std::string_view path,
     const auto& result = bike::io::as_object(value, path);
     for (const auto& [key, unused] : result) {
         (void)unused;
-        if (std::find(keys.begin(), keys.end(), key) == keys.end())
+        if (std::ranges::find(keys, key) == keys.end())
             fail(std::string(path) + "." + key, "unknown field");
     }
     return result;
@@ -86,7 +86,7 @@ const Value& required(const Object& fields, std::string_view name, std::string_v
 
 std::uint32_t surface_id(const Value& value, std::string_view path) {
     const auto result = bike::io::as_int64(value, path);
-    if (result < 0 || static_cast<std::uint64_t>(result) > std::numeric_limits<std::uint32_t>::max())
+    if (result < 0 || std::cmp_greater(result, std::numeric_limits<std::uint32_t>::max()))
         fail(path, "expected u32");
     return static_cast<std::uint32_t>(result);
 }
@@ -173,7 +173,7 @@ std::expected<Grid3d, std::string> read_terrain3d(std::span<const std::byte> byt
             if (bytes[i] != static_cast<std::byte>(kTerrain3dMagic[i])) fail("terrain3d.header.magic", "expected BKT3");
         if (get<std::uint32_t>(bytes, 4) != kTerrain3dVersion) fail("terrain3d.header.version", "unsupported version");
         if (get<std::uint32_t>(bytes, 8) != kTerrain3dHeaderBytes) fail("terrain3d.header.header_bytes", "expected 112");
-        Grid3dDescriptor desc{.nx = get<std::uint64_t>(bytes, 16), .ny = get<std::uint64_t>(bytes, 24),
+        const Grid3dDescriptor desc{.nx = get<std::uint64_t>(bytes, 16), .ny = get<std::uint64_t>(bytes, 24),
             .x0_m = std::bit_cast<double>(get<std::uint64_t>(bytes, 32)),
             .y0_m = std::bit_cast<double>(get<std::uint64_t>(bytes, 40)),
             .dx_m = std::bit_cast<double>(get<std::uint64_t>(bytes, 48)),

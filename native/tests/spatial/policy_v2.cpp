@@ -5,13 +5,15 @@
 #include "runtime/research_io.hpp"
 #include "support/startup_cases.hpp"
 #include "io/json.hpp"
+#include "platform/argv.hpp"
 #include <array>
 #include <iterator>
 #include <limits>
 #include <memory>
-#include <span>
+#include <optional>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 namespace {
 template<class F>void rejected(F&& call){bool failed=false;try{call();}catch(const bike::research::PolicyFailure&){failed=true;}bt::require(failed,"ABI2 boundary captures invalid descriptor/demand/exception");}
@@ -68,8 +70,9 @@ void pacing(const std::string& plugin_path) {
 }
 }
 int main(int argc,char** argv){return bt::run([&]{
-    bt::require(argc==2,"policy_v2 test requires its plugin path");
-    const auto arguments=std::span(argv,static_cast<std::size_t>(argc));
+    // The shared entry-point wrapper keeps raw argv subscripting out of the test body.
+    const auto arguments=bike::platform::main_arguments(argc,argv);
+    bt::require(arguments.size()==2,"policy_v2 test requires its plugin path");
     const std::string plugin_path(arguments[1]);
     using namespace bike::research;
     static_assert(std::is_standard_layout_v<BikeObservationV2> && std::is_trivially_copyable_v<BikeObservationV2>);

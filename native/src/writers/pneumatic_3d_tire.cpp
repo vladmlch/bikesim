@@ -20,6 +20,7 @@ Vec3 cross(const Vec3& a,const Vec3& b) noexcept {
 double dot(const Vec3& a,const Vec3& b) noexcept{return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
 }
 Pneumatic3dTireWriter::Pneumatic3dTireWriter(const mjModel& m,const spatial::Topology& topology,
+    // NOLINTNEXTLINE(performance-unnecessary-value-param) by-value keeps the call sites' std::move identity transfer meaningful
     Pneumatic3dSpec spec,const terrain::Terrain3dSource& terrain,TyreStateIdentity3d identity)
     :model_(&m),topology_(topology),kernels_(std::move(spec),terrain.query_view(),identity),
      jacp_(3*static_cast<std::size_t>(m.nv)),jacr_(3*static_cast<std::size_t>(m.nv)) {
@@ -39,7 +40,8 @@ Pneumatic3dTireWriter::Pneumatic3dTireWriter(const mjModel& m,const spatial::Top
             throw std::invalid_argument("pneumatic3d.writer.topology: invalid wheel binding");
         for(std::size_t g=0;g<geom_body.size();++g)if(geom_body[g]==wheel.wheel_body_id)
             for(std::size_t h=0;h<geom_type.size();++h)if(geom_type[h]==mjGEOM_HFIELD || geom_type[h]==mjGEOM_PLANE)
-                if((contype[g]&conaffinity[h]) || (contype[h]&conaffinity[g]))
+                if((static_cast<unsigned>(contype[g])&static_cast<unsigned>(conaffinity[h])) ||
+                   (static_cast<unsigned>(contype[h])&static_cast<unsigned>(conaffinity[g])))
                     throw std::invalid_argument("pneumatic3d.writer: engine_contact_enabled");
     }
     point_velocity_.resize(2*(static_cast<std::size_t>(identity.patch_capacity)+1));
@@ -53,21 +55,26 @@ CoreStatus Pneumatic3dTireWriter::try_compute_into(const mjData* d,double dt,boo
         // W00 exposes no writable clock in this writer. The owned stepper
         // uses a fixed dt and an integer time origin; pin that contract rather
         // than accepting a duplicate advancement or inventing hidden state.
+        // MuJoCo advances d->time by repeated `t += dt`; inside one binade the
+        // rounding error of each addition is the same constant, so the clock
+        // drifts systematically (|t/dt - N| passes 1e-6 slots after ~3.3e5
+        // steps). A duplicate or skipped advance is at least one whole slot
+        // away, so a quarter-slot guard still rejects both without refusing a
+        // legitimate step on a long ride.
         const auto slot=d->time/dt;
         if(!std::isfinite(slot)||slot<0.||slot>=static_cast<double>(std::numeric_limits<std::int64_t>::max()))
             return CoreStatus::invalid_input;
-        const auto interval=static_cast<std::int64_t>(std::llround(slot));
-        if(std::abs(slot-static_cast<double>(interval))>1e-6 || interval!=state().accepted_interval+1)
-            return CoreStatus::invalid_input;
+        const auto expected=static_cast<double>(state().accepted_interval+1);
+        if(!(std::abs(slot-expected)<=0.25))return CoreStatus::invalid_input;
     }
     std::array<WheelKinematics3d,2> kin{};
     struct KinematicsCall {
         const mjModel* m;const mjData* d;const spatial::Topology* topology;
         std::array<WheelKinematics3d,2>* output;
-    } call{model_,d,&topology_,&kin};
+    } call{.m=model_,.d=d,.topology=&topology_,.output=&kin};
     engine::ErrorBuffer error;
     if(!engine::invoke([](void* raw) noexcept {
-        auto& c=*static_cast<KinematicsCall*>(raw);
+        const auto& c=*static_cast<KinematicsCall*>(raw);
         // Model/data pairing and immutable engine extents belong to the
         // owning stepper. These bounded views preserve the hot noexcept path.
         const std::span<const mjtNum> xpos=std::views::counted(
@@ -110,7 +117,8 @@ CoreStatus Pneumatic3dTireWriter::try_compute_into(const mjData* d,double dt,boo
         const Pneumatic3dModel* kernels;const std::array<WheelKinematics3d,2>* kin;
         std::span<double> jp;std::span<double> jr;std::span<double> output;std::array<double,2>* moments;
         bool finite=true;
-    } force{model_,d,&topology_,&kernels_,&kin,jacp_,jacr_,qfrc,&moments};
+    } force{.m=model_,.d=d,.topology=&topology_,.kernels=&kernels_,.kin=&kin,
+        .jp=jacp_,.jr=jacr_,.output=qfrc,.moments=&moments};
     if(!engine::invoke([](void* raw) noexcept {
         auto& c=*static_cast<ForceCall*>(raw);
         for(std::size_t w=0;w<2;++w)for(const auto& patch:c.kernels->wrenches(w))if(patch.valid) {

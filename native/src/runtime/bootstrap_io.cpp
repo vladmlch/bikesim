@@ -377,9 +377,40 @@ bike::io::Value resolve_bootstrap_document(const bike::io::Value &document,
     return resolve_tags(document, directory, "document");
 }
 
+namespace {
+// Spatial identity/tier validation — extracted so compose_bootstrap stays
+// under the stack-frame limit.
+void validate_spatial_bootstrap(RuntimeConfig& config, const BootstrapState& state,
+                                const mjModel& image_model) {
+        if (!state.spatial || !state.tire3d)
+            io_invalid("state.spatial.tire", "producer state missing");
+        if (!config.terrain3d)
+            config.terrain3d = bike::terrain::detail::load_terrain3d_source(config.spatial->terrain); // NOLINT(bugprone-unchecked-optional-access) the caller guards config.spatial
+        const auto topology = bike::spatial::bind_topology(image_model, *config.spatial); // NOLINT(bugprone-unchecked-optional-access) the caller guards config.spatial
+        validate_spatial_identity(config, *state.spatial, topology);
+        if (state.tire3d->identity.tier != config.spatial->tyre.tier) // NOLINT(bugprone-unchecked-optional-access) the caller guards config.spatial
+            io_invalid("state.tire.identity.tier", "differs from configured tyre tier");
+}
+
+// decode_bootstrap_state returns ~5.6 KiB by value; materializing that
+// prvalue in compose_bootstrap's frame trips the 8 KiB frame budget, so the
+// temp lives in this non-inlined helper and move-assigns into the caller's
+// state.
+[[gnu::noinline]] void decode_bootstrap_state_into(BootstrapState &dst,
+                                 const bike::io::Value &state,
+                                 const mjModel &image_model,
+                                 const RuntimeConfig &config) {
+    dst = decode_bootstrap_state(state, image_model);
+    validate_schema_family(config, dst.schema);
+}
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) compose arguments, the roles are pinned by the API
-RuntimeBootstrap compose_bootstrap(RuntimeConfig config, ModelImage model,
-                                   const bike::io::Value &state) {
+// compose_bootstrap's counted frame is dominated by the 6.6 KiB sret return
+// slot, so the body runs in this non-inlined helper where the parameters are
+// reference slots: the wrapper then holds only the return object plus four
+// references.
+[[gnu::noinline]] void compose_bootstrap_into(RuntimeBootstrap &out, RuntimeConfig &&config,
+                                              ModelImage &&model, const bike::io::Value &state) {
     // The nanobind ctor's validation order, verbatim — the config envelope
     // decode ran at the call site (ordinal position 1). Here:
     // state.model_digest read, artifact digest comparison, the schema-2
@@ -387,11 +418,10 @@ RuntimeBootstrap compose_bootstrap(RuntimeConfig config, ModelImage model,
     // needed the loaded model — the owned image loads a disposable model
     // here purely for validation; the runtime's Stepper compiles its own
     // from the same bytes).
-    RuntimeBootstrap out;
     out.config = std::move(config);
     // Select the family before loading an engine or decoding a writer. The
     // planar branch below retains its historical decode order.
-    if (out.config.schema == static_cast<int>(bike::spatial::kSpatialRuntimeSchema) || out.config.spatial) {
+    if (std::cmp_equal(out.config.schema, bike::spatial::kSpatialRuntimeSchema) || out.config.spatial) {
         const auto& state_object = bio::as_object(state, "state");
         const auto* state_version = bio::find_member(state_object, "schema");
         if (!state_version) io_invalid("state.schema", "missing required key");
@@ -410,19 +440,17 @@ RuntimeBootstrap compose_bootstrap(RuntimeConfig config, ModelImage model,
     if (image_model == nullptr)
         throw std::invalid_argument(
             "model.mjb: failed to load the model image");
-    out.state = decode_bootstrap_state(state, *image_model);
-    validate_schema_family(out.config, out.state.schema);
-    if (out.config.spatial) {
-        if (!out.state.spatial || !out.state.tire3d)
-            io_invalid("state.spatial.tire", "producer state missing");
-        if (!out.config.terrain3d)
-            out.config.terrain3d = bike::terrain::detail::load_terrain3d_source(out.config.spatial->terrain);
-        const auto topology = bike::spatial::bind_topology(*image_model, *out.config.spatial);
-        validate_spatial_identity(out.config, *out.state.spatial, topology);
-        if (out.state.tire3d->identity.tier != out.config.spatial->tyre.tier)
-            io_invalid("state.tire.identity.tier", "differs from configured tyre tier");
-    }
+    decode_bootstrap_state_into(out.state, state, *image_model, out.config);
+    if (out.config.spatial) validate_spatial_bootstrap(out.config, out.state, *image_model);
     out.model = std::move(model);
+}
+} // namespace
+
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) compose arguments, the roles are pinned by the API
+RuntimeBootstrap compose_bootstrap(RuntimeConfig config, ModelImage model,
+                                   const bike::io::Value &state) {
+    RuntimeBootstrap out;
+    compose_bootstrap_into(out, std::move(config), std::move(model), state);
     return out;
 }
 

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <iterator>
+#include <variant>
 
 namespace bike::recording {
 io::Value Recording::query(std::string_view sql, std::uint64_t maximum, std::span<const io::Value> parameters) const {
@@ -69,7 +70,7 @@ viz::Channels spatial_report_channels(const Recording& recording, std::int64_t e
         for(std::size_t axis=0;axis<3;++axis)columns[std::string("spatial.")+side+"_wheel_"+axes[axis]+"_m"].push_back(number(position[axis]));
     }
     viz::Channels result;
-    for(auto& [name,values]:columns)result.emplace_back(std::move(name),std::move(values));
+    for(auto& [name,values]:columns)result.emplace_back(name,std::move(values));
     return result;
 }
 } // namespace bike::recording

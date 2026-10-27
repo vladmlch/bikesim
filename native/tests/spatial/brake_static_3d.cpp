@@ -56,6 +56,16 @@ void hinge_contracts() {
     auto invalid=checkpoint;invalid.wheel[0].stored_energy_j=std::numeric_limits<double>::quiet_NaN();
     bt::invalid([&]{restored.restore_spatial_brake(invalid);});
     bt::require(bytes(restored.capture_spatial_brake())==bytes(checkpoint),"invalid restore cannot partially replace latch");
+    // The NaN case above dies inside decode_brake; this one is a well-formed
+    // just-latched state (zero stored energy) that only the hold-spec check rejects.
+    runtime::StaticBrake soft(f,r,40.,{.torque_nm=30.,.stiffness_nm_rad=0.});
+    const auto soft_before=bytes(soft.capture_spatial_brake());
+    auto latched=sp::canonical_released_brake();
+    latched.wheel[0].engaged=true;latched.wheel[0].previous_demand=1.;
+    latched.interval_index=0;latched.valid_mask=3;
+    bt::invalid([&]{soft.restore_spatial_brake(latched);});
+    bt::require(bytes(soft.capture_spatial_brake())==soft_before,
+        "a spec that cannot latch rejects an engaged restore without mutation");
     bt::invalid([&]{(void)brake.apply_spatial(rig.model,rates,1.,.5,.001,200,true,forces);});
     bt::require(bytes(brake.capture_spatial_brake())==bytes(checkpoint),"duplicate interval has no state effect");
     std::ranges::fill(forces,0.);eval=brake.apply_spatial(rig.model,rates,0.,0.,.001,201,true,forces);

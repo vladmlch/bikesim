@@ -4,6 +4,13 @@
 #include "../io/json.hpp"
 #include "../platform/files.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <exception>
+#include <span>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace bike::recording {
 Asset asset(std::string name, std::string media_type, std::vector<std::byte> content) {

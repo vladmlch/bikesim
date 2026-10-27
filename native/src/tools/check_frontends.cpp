@@ -1080,6 +1080,11 @@ int run_scripts(const fs::path &build,
     Value record = run_process(argv, tools_dir, log_directory, "shellcheck");
     const bool healthy = record_health_ok(record);
     const std::vector<std::string> diagnostics = record_diagnostics(record);
+    // The legacy xargs passthrough let shellcheck's report reach the console;
+    // the buffered capture echoes it on failure so the offending script is
+    // named.
+    const std::string tool_stdout = record_stdout_text(record);
+    const std::string tool_stderr = record_stderr_text(record);
     const Value *rc = member(record, "returncode");
     const std::string returncode_text =
         rc != nullptr && !io::is_null(*rc)
@@ -1112,6 +1117,8 @@ int run_scripts(const fs::path &build,
               << "\n";
     if (std::get<std::string>(member(summary, "status")->data) != "passed") {
         for (const auto &line: diagnostics) std::cerr << line << "\n";
+        if (!tool_stderr.empty()) std::cerr << tool_stderr;
+        if (!tool_stdout.empty()) std::cerr << tool_stdout;
         std::cerr << "  shellcheck: rc=" << returncode_text << "\n";
         return 1;
     }

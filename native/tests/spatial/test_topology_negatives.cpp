@@ -159,9 +159,9 @@ runtime::RuntimeConfig cold_config(const sp::Config& spatial,const runtime::Spat
     config.writer_config=Value{Object{{"schema",integer(3)}, {"spatial",Value{Object{
         {"spatial_contract",integer(1)},{"root_kind",text(sp::to_string(spatial.root))},
         {"topology_fingerprint",text(state.topology_fingerprint)},{"terrain_sha256",text(state.terrain_sha256)},
-        {"numeric_profile",text("binary64")}}}, {"drive",Value{Object{}}},
+        {"numeric_profile",text("binary64")}}}}, {"drive",Value{Object{}}},
         {"suspension",Value{Object{}}},{"resistance",Value{Object{}}},
-        {"tire",Value{Object{{"backend",text("pneumatic_3d")},{"pneumatic_3d",Value{Object{}}}}}}};
+        {"tire",Value{Object{{"backend",text("pneumatic_3d")},{"pneumatic_3d",Value{Object{}}}}}}}};
     return config;
 }
 
@@ -190,6 +190,16 @@ void topology_matrix() {
     const int original=targets[target];targets[target]=rig.topology.wheels[1].spin.joint_id;
     reject(witness,rig,"topology.steer_torque",[&]{(void)sp::bind_topology(*rig.model,config);});
     targets[target]=original;
+    // bind_topology indexes ctrl- and gear-sized arrays by actuator id, so a model whose
+    // control/output addresses diverge from the id must fail closed (int arrays only:
+    // mutating nu/nout would make mj_saveModel read past the real buffers).
+    for(const auto address:{rig.model->actuator_ctrladr,rig.model->actuator_outadr}) {
+        auto addresses=model_access::mutable_buffer(address,rig.model->nactuator);
+        const auto steer_actuator=static_cast<std::size_t>(rig.topology.steer.actuator_id);
+        const int address_initial=addresses[steer_actuator];addresses[steer_actuator]=address_initial+1;
+        reject(witness,rig,"topology.model_dims",[&]{(void)sp::bind_topology(*rig.model,config);});
+        addresses[steer_actuator]=address_initial;
+    }
     auto constrained=config;constrained.root=sp::RootKind::constrained4;
     auto scalar=spatial_tests::constrained_rig(constrained);
     auto axes=model_access::mutable_buffer(scalar.model->jnt_axis,3*scalar.model->njnt);

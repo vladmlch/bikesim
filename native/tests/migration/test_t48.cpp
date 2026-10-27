@@ -29,6 +29,7 @@ constexpr std::string_view scene = R"XML(<mujoco>
   </fixed></tendon>
 </mujoco>)XML";
 
+void check_render_mutation(bike::viewer::RenderOwner& renderer, const runtime::RenderFrame& frame);
 void replica_contracts() {
     auto model = bike::model::compile_mjcf(scene);
     std::unique_ptr<mjData, decltype(&mj_deleteData)> data(engine::make_data(model.get()), mj_deleteData);
@@ -57,6 +58,27 @@ void replica_contracts() {
     renderer.apply(frame);
     bt::require(renderer.model_sha256() == image.sha256, "renderer owns its model after simulation destruction");
 
+    check_render_mutation(renderer, frame);
+
+    frame.state.generation = 1;
+    renderer.apply(frame);
+    bt::require(renderer.integration_state() == captured, "new generation permits reset to step zero");
+    renderer.set_markers(true); renderer.set_markers(false);
+    renderer.set_camera(bike::viewer::CameraMode::chase); renderer.reset_camera();
+    renderer.draw(0, 0); // minimized/no-context path must remain display independent
+    bool wrong_thread_rejected = false;
+    std::thread other([&] {
+        try { (void)renderer.model_fields(); }
+        catch (const std::runtime_error&) { wrong_thread_rejected = true; }
+    });
+    other.join();
+    bt::require(wrong_thread_rejected, "render access is confined to its owning event thread");
+    renderer.close(); renderer.close();
+    bt::require(renderer.closed(), "render cleanup is idempotent without graphics initialization");
+    auto invalid_image = image; invalid_image.sha256 = std::string(64, '0');
+    bt::invalid([&] { bike::viewer::RenderOwner const rejected(invalid_image); });
+}
+void check_render_mutation(bike::viewer::RenderOwner& renderer, const runtime::RenderFrame& frame) {
     auto changed = frame;
     changed.state.step = 1; changed.state.time_s = .00125;
     changed.state.integration_state[0] = changed.state.time_s;
@@ -83,24 +105,6 @@ void replica_contracts() {
     bt::require(renderer.integration_state() == changed.state.integration_state &&
         renderer.model_fields() == changed.presentation.model_fields,
         "validation errors leave the last accepted render replica intact");
-
-    frame.state.generation = 1;
-    renderer.apply(frame);
-    bt::require(renderer.integration_state() == captured, "new generation permits reset to step zero");
-    renderer.set_markers(true); renderer.set_markers(false);
-    renderer.set_camera(bike::viewer::CameraMode::chase); renderer.reset_camera();
-    renderer.draw(0, 0); // minimized/no-context path must remain display independent
-    bool wrong_thread_rejected = false;
-    std::thread other([&] {
-        try { (void)renderer.model_fields(); }
-        catch (const std::runtime_error&) { wrong_thread_rejected = true; }
-    });
-    other.join();
-    bt::require(wrong_thread_rejected, "render access is confined to its owning event thread");
-    renderer.close(); renderer.close();
-    bt::require(renderer.closed(), "render cleanup is idempotent without graphics initialization");
-    auto invalid_image = image; invalid_image.sha256 = std::string(64, '0');
-    bt::invalid([&] { bike::viewer::RenderOwner const rejected(invalid_image); });
 }
 }
 int main() { return bt::run(replica_contracts); }

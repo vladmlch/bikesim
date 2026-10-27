@@ -15,6 +15,13 @@ class SpatialTireEvaluationError final : public std::runtime_error {
 public:
     SpatialTireEvaluationError(CoreStatus status_value,ReasonCode3d reason_value)
         :std::runtime_error("pneumatic_3d: force evaluation rejected"),status(status_value),reason(reason_value){}
+    // Out-of-line key function anchors the vtable (-Wweak-vtables under
+    // -Werror), the same idiom as engine::EngineFailure.
+    ~SpatialTireEvaluationError() override;
+    SpatialTireEvaluationError(const SpatialTireEvaluationError&)=default;
+    SpatialTireEvaluationError& operator=(const SpatialTireEvaluationError&)=default;
+    SpatialTireEvaluationError(SpatialTireEvaluationError&&)=default;
+    SpatialTireEvaluationError& operator=(SpatialTireEvaluationError&&)=default;
     CoreStatus status;
     ReasonCode3d reason;
 };
@@ -25,7 +32,7 @@ public:
 // snapshots are projections, never an independent force/contact producer.
 class SpatialTireAdapter {
 public:
-    SpatialTireAdapter(const mjModel&,const bike::spatial::Topology&,
+    SpatialTireAdapter(const mjModel&,bike::spatial::Topology,
                       bike::pneumatic3d::Pneumatic3dTireWriter&,
                       bike::terrain::Terrain3dQueryView);
     CoreStatus try_compute_into(const mjData*,double,std::span<double>) noexcept;
@@ -46,10 +53,10 @@ public:
     double elastic_energy_j() const noexcept{return writer_->model().stored_energy_j();}
     double brush_loss_step_j() const noexcept{return brush_loss_;}
     double radial_dissipation_power_w() const noexcept{return radial_power_;}
-    void set_state(std::span<const std::string>,std::span<const double>);
-    void prepare_state(std::span<const std::string>,std::span<const double>);
+    [[noreturn]] void set_state(std::span<const std::string>,std::span<const double>);
+    [[noreturn]] void prepare_state(std::span<const std::string>,std::span<const double>);
     void commit_prepared_state() noexcept{}
-    std::vector<double> state() const;
+    [[noreturn]] std::vector<double> state() const;
     const std::vector<std::string>& state_names() const noexcept{return no_planar_columns_;}
     void reset();
     void restart_clock();

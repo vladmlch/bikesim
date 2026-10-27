@@ -1,9 +1,21 @@
 #pragma once
 
+#include <algorithm>
+
 // Private test assembly, not a frozen production API. These helpers own the
 // real SetupOwner and runtime, including material and causal state inventories.
 #include "startup_fixture.hpp"
+#if __has_include("fixture_paths.hpp")
 #include "fixture_paths.hpp"
+#else
+// fixture_paths.hpp is configure_file output that only exists inside the
+// spatial test graph; standalone header sweeps compile under foreign target
+// contexts where it is absent. The fallback only needs to keep this header
+// parseable — every consumer that runs these functions has the generated
+// values.
+#define BIKE_SPATIAL_FIXTURE_ROOT "."
+#define BIKE_SPATIAL_SOURCE_ROOT "."
+#endif
 #include "terrain_fixture.hpp"
 #include "support/migration_test.hpp"
 #include "initialization/setup_owner.hpp"
@@ -37,6 +49,8 @@ inline std::unique_ptr<bike::initialization::SetupRequest> make_startup_request(
     physics.physics_mode="physical";physics.drive_mode=articulated?"articulated_effort":"crank_effort";
     physics.tires.backend="pneumatic_3d";physics.tires.surface_mode="track";
     physics.timestep_s=tier==bike::spatial::TyreTier::fast?.00125:.0005;
+    // configuration/validate.cpp requires closure_time_constant_s >= 2*timestep_s for non-legacy physics.
+    physics.closure_time_constant_s=std::max(physics.closure_time_constant_s,2.*physics.timestep_s);
     physics.control_period_s=.005;physics.initial_speed_mps=speed;
     physics.initial_front_brake=physics.initial_rear_brake=0.;
     physics.drive.transmission_model="ideal_mid_drive";physics.drive.shifting.enabled=false;

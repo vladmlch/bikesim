@@ -114,6 +114,14 @@ public:
     // tyre — its diagnostics dict is the pneumatic schema.
     [[nodiscard]] bool is_pneumatic() const noexcept;
     [[nodiscard]] bool is_spatial() const noexcept;
+    // True for the plain compliant_2d brush backend — the released-brake
+    // statics solve (physical_equilibrium.py::_solve_brush_shear) reaches
+    // its stored xi only through this view.
+    [[nodiscard]] bool is_compliant() const noexcept;
+    // Mutable borrowed reference to the plain compliant_2d writer;
+    // throws std::invalid_argument for the other backends — callers gate
+    // with is_compliant() first, same as drive()'s throw-on-absent.
+    [[nodiscard]] TireWriter &compliant_writer() const;
 
 private:
     friend class Stepper;
@@ -515,11 +523,10 @@ private:
     std::unique_ptr<DistributedTireWriter> distributed_tire_;
     std::unique_ptr<PneumaticTireWriter> pneumatic_tire_;
     // Declaration order keeps the immutable terrain alive through writer
-    // destruction. The initial state is the producer's real typed state.
+    // destruction.
     std::shared_ptr<const bike::terrain::Terrain3dSource> spatial_terrain_;
     std::unique_ptr<bike::pneumatic3d::Pneumatic3dTireWriter> spatial_tire_;
     std::unique_ptr<SpatialTireAdapter> spatial_tire_view_;
-    std::optional<bike::pneumatic3d::TyreState3d> initial_spatial_tire_;
     std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
     // T3b-1 — the model-owned RiderContactWriter plus its construction-

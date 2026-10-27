@@ -4,9 +4,13 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstddef>
 #include <limits>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace bike::viz {
 namespace {
@@ -44,33 +48,69 @@ void retain_time_extent(Plot& plot, const std::vector<double>& time) {
     }
     plot.x_range=std::pair{first,last};
 }
+// A rough-terrain ride can toggle contact validity dozens of times. One series
+// per valid range would exhaust the 256-series plot bound and the legend rows
+// each panel reserves, so a heavily fragmented channel falls back to one gapped
+// line plus one points series for its isolated samples.
+constexpr std::size_t maximum_segment_series = 6, maximum_gap_markers = 16;
 // Each contiguous valid range is its own series. Renderers cannot join two
 // sides of an unavailable interval, even when they ignore a NaN convention.
+// `on_time_axis` is false for non-temporal abscissae (world X), where a
+// vertical N/A marker would sit at a coordinate instead of an interval.
 void segments(Plot& plot, const std::vector<double>& x, const std::vector<double>& y,
-              const std::vector<double>* mask, std::string name, std::string color) {
+              const std::vector<double>* mask, const std::string& name, const std::string& color,
+              bool on_time_axis = true) {
     if (x.size() != y.size() || (mask && mask->size() != x.size()))
         throw std::invalid_argument("spatial plot: inconsistent series dimensions");
-    Series current{.name=name, .x={}, .y={}, .color=color};
-    bool gap = false;
-    const auto finish = [&] {
-        if (!current.x.empty()) {
+    const auto valid = [&](std::size_t i) {
+        return (!mask || (*mask)[i] == 1.) && std::isfinite(x[i]) && std::isfinite(y[i]);
+    };
+    // Contiguous valid ranges as [first, last) pairs, and the first sample of
+    // every unavailable interval.
+    std::vector<std::pair<std::size_t, std::size_t>> runs;
+    std::vector<std::size_t> gaps;
+    for (std::size_t i = 0; i < x.size(); ++i) {
+        if (valid(i)) {
+            if (!runs.empty() && runs.back().second == i) ++runs.back().second;
+            else runs.emplace_back(i, i + 1);
+        } else if (i == 0 || valid(i - 1)) gaps.push_back(i);
+    }
+    const auto append = [&](Series& series, std::size_t first, std::size_t last) {
+        for (std::size_t i = first; i < last; ++i) { series.x.push_back(x[i]); series.y.push_back(y[i]); }
+    };
+    if (runs.size() <= maximum_segment_series) {
+        for (const auto& run : runs) {
+            Series series{.name=name, .x={}, .y={}, .color=color};
             // A one-sample valid island has no line segment. Explicit points
             // keep it visible in both native HTML and the Plotly backend.
-            if(current.x.size()==1)current.style=SeriesStyle::points;
-            plot.series.push_back(std::move(current));
-            current = Series{.name=name, .x={}, .y={}, .color=color};
+            if (run.second - run.first == 1) series.style = SeriesStyle::points;
+            append(series, run.first, run.second);
+            plot.series.push_back(std::move(series));
         }
-    };
-    for (std::size_t i = 0; i < x.size(); ++i) {
-        const bool valid = (!mask || (*mask)[i] == 1.) && std::isfinite(x[i]) && std::isfinite(y[i]);
-        if (!valid) {
-            finish();
-            if (!gap && std::isfinite(x[i])) plot.markers.push_back({.kind=MarkerKind::vertical,
-                .first=x[i], .second=0., .label="N/A: " + name, .color="#8b949e"});
-            gap = true;
-        } else { current.x.push_back(x[i]); current.y.push_back(y[i]); gap = false; }
+    } else {
+        // Non-finite separators break the line in the SVG, native HTML and
+        // Plotly renderers alike (they serialize as null).
+        constexpr double separator = std::numeric_limits<double>::quiet_NaN();
+        Series line{.name=name, .x={}, .y={}, .color=color};
+        Series islands{.name=name, .x={}, .y={}, .color=color, .style=SeriesStyle::points};
+        for (const auto& run : runs) {
+            if (run.second - run.first == 1) { append(islands, run.first, run.second); continue; }
+            if (!line.x.empty()) { line.x.push_back(separator); line.y.push_back(separator); }
+            append(line, run.first, run.second);
+        }
+        if (!line.x.empty()) plot.series.push_back(std::move(line));
+        if (!islands.x.empty()) plot.series.push_back(std::move(islands));
     }
-    finish();
+    if (!on_time_axis) {
+        if (!gaps.empty()) plot.notes.push_back("N/A: " + name + " — samples with unavailable coordinates are omitted");
+        return;
+    }
+    for (std::size_t g = 0; g < gaps.size() && g < maximum_gap_markers; ++g)
+        if (std::isfinite(x[gaps[g]])) plot.markers.push_back({.kind=MarkerKind::vertical,
+            .first=x[gaps[g]], .second=0., .label="N/A: " + name, .color="#8b949e"});
+    if (gaps.size() > maximum_gap_markers)
+        plot.notes.push_back("N/A: " + name + " — " + std::to_string(gaps.size() - maximum_gap_markers) +
+            " further unavailable intervals are not individually marked");
 }
 Report one(std::string title, Plot plot) {
     Report report{.title=std::move(title), .panels={std::move(plot)}};
@@ -111,12 +151,13 @@ Report spatial_wheel_path_plot(const Channels& channels) {
     const auto& time = time_axis(channels);
     Plot plot{.title="Recorded axle paths — world frame", .x_label="world X (m)", .y_label="world Y (m)", .series={}};
     plot.equal_axes = true;
-    plot.notes.push_back("Accepted force-stage axle transforms, including steering and suspension motion; world frame.");
+    plot.notes.emplace_back("Accepted force-stage axle transforms, including steering and suspension motion; world frame.");
     for (const auto side : {"front", "rear"}) {
         const std::string prefix = std::string("spatial.") + side + "_wheel_";
         const auto& x = required(channels, prefix + "x_m", time.size());
         const auto& y = required(channels, prefix + "y_m", time.size());
-        segments(plot, x, y, nullptr, std::string(side) + " (world frame)", side == std::string_view("front") ? "#38bdf8" : "#f97316");
+        segments(plot, x, y, nullptr, std::string(side) + " (world frame)",
+                 side == std::string_view("front") ? "#38bdf8" : "#f97316", false);
     }
     return one("Spatial wheel paths", std::move(plot));
 }

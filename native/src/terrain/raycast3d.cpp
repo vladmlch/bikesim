@@ -9,9 +9,10 @@
 namespace bike::terrain {
 namespace {
 
-using Real = long double;
+using Real = double;
 using Bernstein = std::array<Real, 7>;
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (n, k) mirrors the binomial-coefficient argument order
 Real choose(unsigned n, unsigned k) noexcept {
     Real result = 1.;
     for (unsigned i = 1; i <= k; ++i)
@@ -45,10 +46,11 @@ Bernstein to_bernstein(const Poly6& p) noexcept {
     Bernstein result{};
     for (unsigned k = 0; k <= 6; ++k)
         for (unsigned j = 0; j <= k; ++j)
-            result[k] += static_cast<Real>(p.a[j]) * choose(k, j) / choose(6, j);
+            result[k] += p.a[j] * choose(k, j) / choose(6, j);
     return result;
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (left, right) output order mirrors the de Casteljau split convention
 void bisect(const Bernstein& input, Bernstein& left, Bernstein& right) noexcept {
     auto work = input;
     left[0] = work[0];
@@ -78,6 +80,17 @@ struct Interval {
     Real lo = 0., hi = 1.;
     Bernstein b{};
 };
+
+// Fixed-capacity DFS stack (budget.stack_capacity <= 128). On the call stack
+// it would be 9 KiB, over the -Wframe-larger-than budget, and the hot path
+// may not allocate. Constant-initialised thread-local scratch (the
+// pneumatic3d idiom) has neither cost. The storage persists between calls, so
+// earliest_root_bernstein rewrites slot 0 in full on entry (a previous call
+// leaves its last pushed interval there) and writes every pushed slot in full
+// before it can be popped; no bound from an earlier call is ever read. The
+// search is not reentrant: it calls only pure helpers.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) thread_local stack scratch keeps the hot path inside its frame budget; see above
+constinit thread_local std::array<Interval, 128> pending_stack{};
 
 bool valid_budget(const RayBudget& budget) noexcept {
     return budget.stack_capacity > 0 && budget.stack_capacity <= 128 &&
@@ -120,6 +133,7 @@ RayHit3d hit_at(const Grid3d& grid, const std::array<double, 3>& origin,
             .normal_world = sample.normal_world, .surface_id = sample.surface_id};
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 std::int64_t initial_cell(double position, double low, double spacing,
                           std::uint64_t nodes, double direction) noexcept {
     const double coordinate = (position - low) / spacing;
@@ -132,6 +146,7 @@ std::int64_t initial_cell(double position, double low, double spacing,
 } // namespace
 
 Poly6 line_minus_surface(const BicubicPatch& patch, std::array<double, 2> uv0,
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (z0, dz) mirrors the reference line-parameter order
                          std::array<double, 2> duv, double z0, double dz) noexcept {
     std::array<std::array<double, 4>, 4> u{}, v{};
     u[0][0] = v[0][0] = 1.;
@@ -154,27 +169,27 @@ Poly6 line_minus_surface(const BicubicPatch& patch, std::array<double, 2> uv0,
 
 RootSearchResult earliest_root_bernstein(const Poly6& polynomial, const RayBudget& budget) noexcept {
     if (!valid_budget(budget) ||
-        !std::all_of(polynomial.a.begin(), polynomial.a.end(), [](double x) { return std::isfinite(x); }))
+        !std::ranges::all_of(polynomial.a, [](double x) { return std::isfinite(x); }))
         return {.status = QueryStatus3d::invalid_input};
-    std::array<Interval, 128> stack{};
+    auto& stack = pending_stack;
     std::size_t size = 1;
-    stack[0].b = to_bernstein(polynomial);
+    stack[0] = Interval{.lo = 0., .hi = 1., .b = to_bernstein(polynomial)};
     std::uint32_t divisions = 0;
     const Real tolerance = std::min<Real>(1., budget.root_interval_m);
     Real coefficient_scale = 1.;
-    for (const double a : polynomial.a) coefficient_scale = std::max(coefficient_scale, std::abs(static_cast<Real>(a)));
+    for (const double a : polynomial.a) coefficient_scale = std::max(coefficient_scale, std::abs(a));
     // Poly6 was assembled in binary64. Keep a conservative arithmetic envelope
     // around zero so a rounded analytic tangent is not proved away. This is
     // much smaller than the physical residual; e.g. a 2e-8 m clearance is not
     // accepted as a tangent merely because the query's interval is small.
     const Real roundoff = 64. * std::numeric_limits<double>::epsilon() * coefficient_scale;
     const auto exhausted = [&]() { return RootSearchResult{.status = QueryStatus3d::budget_exhausted, .s = 0., .subdivisions = divisions}; };
-    const auto root = [&](Real s) { return RootSearchResult{.status = QueryStatus3d::ok, .s = static_cast<double>(s), .subdivisions = divisions}; };
+    const auto root = [&](Real s) { return RootSearchResult{.status = QueryStatus3d::ok, .s = s, .subdivisions = divisions}; };
     while (size != 0) {
         const auto interval = stack[--size];
         const Real fa = value(polynomial, interval.lo), fb = value(polynomial, interval.hi);
         if (fa == 0.) return root(interval.lo);
-        const auto [minimum, maximum] = std::minmax_element(interval.b.begin(), interval.b.end());
+        const auto [minimum, maximum] = std::ranges::minmax_element(interval.b);
         if (*minimum > roundoff || *maximum < -roundoff) continue; // Convex hull proves no root.
         if (interval.hi - interval.lo <= tolerance) {
             if (opposite(fa, fb) || fb == 0.) {
@@ -221,7 +236,7 @@ RootSearchResult earliest_root_bernstein(const Poly6& polynomial, const RayBudge
                         ++divisions;
                         const Real dm = derivative(polynomial, mid);
                         if (dm == 0.) { lo = hi = mid; break; }
-                        if (opposite(da, dm)) { hi = mid; db = dm; }
+                        if (opposite(da, dm)) { hi = mid; }
                         else { lo = mid; da = dm; }
                     }
                     Real stationary = (lo + hi) / 2.;
@@ -257,8 +272,8 @@ RootSearchResult earliest_root_bernstein(const Poly6& polynomial, const RayBudge
 RayHit3d ray_cast_grid(const Grid3d& grid, std::array<double, 3> origin,
                       std::array<double, 3> direction, double max_distance) noexcept {
     if (!std::isfinite(max_distance) || max_distance < 0. || !valid_budget(grid.budget()) ||
-        !std::all_of(origin.begin(), origin.end(), [](double x) { return std::isfinite(x); }) ||
-        !std::all_of(direction.begin(), direction.end(), [](double x) { return std::isfinite(x); }) ||
+        !std::ranges::all_of(origin, [](double x) { return std::isfinite(x); }) ||
+        !std::ranges::all_of(direction, [](double x) { return std::isfinite(x); }) ||
         std::abs(std::hypot(direction[0], direction[1], direction[2]) - 1.) > 1e-9)
         return {.status = QueryStatus3d::invalid_input};
     const auto& d = grid.descriptor();

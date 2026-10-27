@@ -10,8 +10,10 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <numbers>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>

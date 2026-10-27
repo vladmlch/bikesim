@@ -10,12 +10,15 @@
 #include "../terrain/asset3d.hpp"
 #include "../terrain/spec_io.hpp"
 #include "../runtime/research_io.hpp"
+#include "../runtime/bootstrap.hpp"
 #include "../runtime/spatial_checkpoint.hpp"
+#include "../spatial/config.hpp"
 #include "../rider/allocation.hpp"
 #include "../rider/steer_balance.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <cerrno>
+#include <limits>
 #include <memory>
 #include <system_error>
 #include <unistd.h>
@@ -109,6 +112,52 @@ FixedAssets::FixedAssets(const ReplayInput& input) {
 }
 FixedAssets::~FixedAssets() { std::error_code ignored; std::filesystem::remove_all(path_, ignored); }
 
+namespace {
+void resolve_spatial_replay_setup(const ReplayInput& input, const FixedAssets& assets,
+    const Value& saved, research::ResearchRequest& request) {
+    if(const auto* threads=find(field(saved,"execution"),"tyre_threads")) {
+        const auto value=count(*threads);
+        if(value<1 || value>64)throw IncompatibleExecution("execution.tyre_threads: expected [1,64]");
+        request.setup.runtime.tyre_threads=static_cast<unsigned>(value);
+    }
+    const auto& recipe=*input.spatial_recipe; // NOLINT(bugprone-unchecked-optional-access) caller resolves the setup only under input.spatial_recipe engagement
+    const auto source=io::parse_recording_json(asset_text(input,"spatial/terrain_source.json"));
+    if(recipe.terrain_kind==terrain::Terrain3dKind::grid) {
+        auto grid=terrain::read_terrain3d(input.assets.at("spatial/terrain.terrain3d"));
+        if(!grid)throw IncompatibleExecution("spatial terrain: "+grid.error());
+        request.setup.model.terrain3d=std::make_shared<const terrain::Terrain3dSource>(std::move(*grid));
+    } else {
+        auto extrusion=terrain::detail::load_profile_extrusion3d(assets.path()/"track.toml",io::as_double(field(source,"corridor"),"corridor"));
+        request.setup.model.terrain3d=std::make_shared<const terrain::Terrain3dSource>(std::move(extrusion));
+    }
+    if(request.setup.model.terrain3d->fingerprint_hex()!=recipe.terrain_sha256_hex)
+        throw IncompatibleExecution("spatial terrain rebuilt source identity differs");
+    request.setup.start_x_m=io::as_double(field(recipe.config_spatial,"start_x_m"),"start_x_m");
+}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
+void fill_replay_model(const ReplayInput& input, const FixedAssets& assets, const Value& physics,
+    const Value& resolved, const Value& saved, research::ResearchRequest& request) {
+    request.setup.model.physics = configuration::detail::construct_config(physics);
+    request.setup.model.bike = bike_specs(field(resolved, "geometry_and_suspension"));
+    request.setup.model.masses = mass_specs(field(resolved, "mass_budget"));
+    request.setup.model.rider = rider_specs(field(resolved, "rider"));
+    request.setup.model.mode = "ride"; request.setup.model.crank_joint = true;
+    request.setup.asset_root = assets.path(); request.setup.origin = "validated replay recipe";
+    request.setup.track = terrain::track_from_dict(terrain::parse_track_toml(asset_text(input, "track.toml"), "recording/track.toml"));
+    if(input.spatial_recipe) {
+        resolve_spatial_replay_setup(input, assets, saved, request);
+    } else {
+    request.setup.start_x_m = io::as_double(field(input.manifest, "start_x_m"), "start_x_m");
+    auto& f = request.setup.model.field; const auto& field_value = field(input.manifest, "heightfield");
+    integers(f, field_value, {{"nrow", &terrain::HeightFieldSpec::nrow}, {"ncol", &terrain::HeightFieldSpec::ncol}});
+    reals(f, field_value, {{"radius_x_m", &terrain::HeightFieldSpec::radius_x_m}, {"radius_y_m", &terrain::HeightFieldSpec::radius_y_m},
+        {"elevation_m", &terrain::HeightFieldSpec::elevation_m}, {"base_m", &terrain::HeightFieldSpec::base_m}, {"datum_z_m", &terrain::HeightFieldSpec::datum_z_m}});
+    f.validate(); request.road_resolution_m = f.resolution_m();
+    if (!(research::research_field(request.setup.track, request.road_resolution_m) == f))
+        throw IncompatibleExecution("recorded heightfield differs from the native research field contract");
+    }
+}
+} // namespace
 std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput& input, const FixedAssets& assets) {
     const auto& saved = input.summary;
     const auto& resolved = field(saved, "resolved_config"), experiment = field(field(saved, "research"), "config");
@@ -150,42 +199,7 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     auto owner = std::make_unique<research::ResearchRequest>();
     auto& request = *owner;
     request.capture_mode = input.spatial_recipe ? runtime::ResearchCaptureMode::full : runtime::ResearchCaptureMode::verify;
-    request.setup.model.physics = configuration::detail::construct_config(physics);
-    request.setup.model.bike = bike_specs(field(resolved, "geometry_and_suspension"));
-    request.setup.model.masses = mass_specs(field(resolved, "mass_budget"));
-    request.setup.model.rider = rider_specs(field(resolved, "rider"));
-    request.setup.model.mode = "ride"; request.setup.model.crank_joint = true;
-    request.setup.asset_root = assets.path(); request.setup.origin = "validated replay recipe";
-    request.setup.track = terrain::track_from_dict(terrain::parse_track_toml(asset_text(input, "track.toml"), "recording/track.toml"));
-    if(input.spatial_recipe) {
-        if(const auto* threads=find(field(saved,"execution"),"tyre_threads")) {
-            const auto value=count(*threads);
-            if(value<1 || value>64)throw IncompatibleExecution("execution.tyre_threads: expected [1,64]");
-            request.setup.runtime.tyre_threads=static_cast<unsigned>(value);
-        }
-        const auto& recipe=*input.spatial_recipe;
-        const auto source=io::parse_recording_json(asset_text(input,"spatial/terrain_source.json"));
-        if(recipe.terrain_kind==terrain::Terrain3dKind::grid) {
-            auto grid=terrain::read_terrain3d(input.assets.at("spatial/terrain.terrain3d"));
-            if(!grid)throw IncompatibleExecution("spatial terrain: "+grid.error());
-            request.setup.model.terrain3d=std::make_shared<const terrain::Terrain3dSource>(std::move(*grid));
-        } else {
-            auto extrusion=terrain::detail::load_profile_extrusion3d(assets.path()/"track.toml",io::as_double(field(source,"corridor"),"corridor"));
-            request.setup.model.terrain3d=std::make_shared<const terrain::Terrain3dSource>(std::move(extrusion));
-        }
-        if(request.setup.model.terrain3d->fingerprint_hex()!=recipe.terrain_sha256_hex)
-            throw IncompatibleExecution("spatial terrain rebuilt source identity differs");
-        request.setup.start_x_m=io::as_double(field(recipe.config_spatial,"start_x_m"),"start_x_m");
-    } else {
-    request.setup.start_x_m = io::as_double(field(input.manifest, "start_x_m"), "start_x_m");
-    auto& f = request.setup.model.field; const auto& field_value = field(input.manifest, "heightfield");
-    integers(f, field_value, {{"nrow", &terrain::HeightFieldSpec::nrow}, {"ncol", &terrain::HeightFieldSpec::ncol}});
-    reals(f, field_value, {{"radius_x_m", &terrain::HeightFieldSpec::radius_x_m}, {"radius_y_m", &terrain::HeightFieldSpec::radius_y_m},
-        {"elevation_m", &terrain::HeightFieldSpec::elevation_m}, {"base_m", &terrain::HeightFieldSpec::base_m}, {"datum_z_m", &terrain::HeightFieldSpec::datum_z_m}});
-    f.validate(); request.road_resolution_m = f.resolution_m();
-    if (!(research::research_field(request.setup.track, request.road_resolution_m) == f))
-        throw IncompatibleExecution("recorded heightfield differs from the native research field contract");
-    }
+    fill_replay_model(input, assets, physics, resolved, saved, request);
     auto& e = request.experiment;
     reals(e, experiment, {{"control_period_s", &research::ExperimentConfig::control_period_s}, {"actuator_delay_s", &research::ExperimentConfig::actuator_delay_s},
         {"duration_s", &research::ExperimentConfig::duration_s}, {"wheelie_persistence_s", &research::ExperimentConfig::wheelie_persistence_s},
@@ -248,7 +262,7 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
             bootstrap.model.sha256!=string(field(expected_checkpoint.identity,"model_digest")))
             throw IncompatibleExecution("spatial model/topology/terrain/state identity differs");
         const Value expected_calibration{Object{{"calibration_sha256",text(bootstrap.state.spatial->calibration_sha256)},
-            {"tire",field(bootstrap.config.writer_config,"tire")},{"imu",field(spatial::spatial_config_to_wire(*bootstrap.config.spatial),"imu")}}};
+            {"tire",field(bootstrap.config.writer_config,"tire")},{"imu",field(spatial::spatial_config_to_wire(*bootstrap.config.spatial),"imu")}}}; // NOLINT(bugprone-unchecked-optional-access) bootstrap spatial config pairs with the engaged spatial state checked above
         if(!equal(expected_calibration,io::parse_recording_json(asset_text(input,"spatial/calibration.json"))))
             throw IncompatibleExecution("spatial calibration coefficients/revision differ from reconstructed configuration");
         return;

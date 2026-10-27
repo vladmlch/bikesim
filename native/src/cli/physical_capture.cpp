@@ -63,8 +63,17 @@ io::Value launch_metadata(const initialization::SetupRequest& request,const app:
     const std::optional<std::string>& seed_decimal) {
     const auto snapshot=compiled_snapshot(prepared);
     auto result=research::physical_configuration_metadata(request,snapshot,prepared.bootstrap,prepared.metadata,seed_decimal);
-    set(result,"track_name",text(request.track.name));
-    set(result,"track",terrain::track_to_dict(request.track));set(result,"backend",text("native"));
+    // Under spatial the request track is a name-only label and
+    // track_to_dict would validate it; the physical terrain identity is the
+    // terrain_sha256/spatial fields already emitted above.
+    if(prepared.bootstrap.config.spatial) {
+        set(result,"track_name",Value{});
+        set(result,"track",Value{});
+    } else {
+        set(result,"track_name",text(request.track.name));
+        set(result,"track",terrain::track_to_dict(request.track));
+    }
+    set(result,"backend",text("native"));
     set(result,"equilibrium",field(prepared.metadata,"equilibrium"));
     set(result,"async_telemetry",Value{request.runtime.async_telemetry});
     return result;
@@ -94,22 +103,27 @@ io::Value physical_summary(runtime::NativeRideRuntime const& environment,const i
     }
     return result;
 }
+namespace {
+std::vector<recording::Asset> spatial_physical_assets(const initialization::SetupRequest& request,
+    const app::PreparedSimulation& prepared, const io::Value& metadata) {
+    std::vector<recording::Asset> assets;
+    for(auto& a:research::snapshot_spatial_assets(request,prepared.bootstrap,metadata))
+        assets.push_back(recording::Asset{.name=std::move(a.name),.media_type=std::move(a.media_type),.sha256=std::move(a.sha256),.content=std::move(a.content)});
+    const auto initial=std::make_unique<runtime::NativeRideRuntime>(prepared.bootstrap);
+    const auto checkpoint=runtime::spatial::capture_checkpoint(*initial,runtime::spatial::inactive_research_checkpoint(),
+        runtime::spatial::inactive_sensor_checkpoint(),Value{Object{{"resumable",Value{false}},{"state",Value{}}}},runtime::spatial::checkpoint_identity(metadata));
+    assets.push_back(recording::json_asset("spatial/checkpoint_initial.json",runtime::spatial::encode_checkpoint(checkpoint)));
+    assets.push_back(recording::asset("model.mjb","application/x-mujoco",prepared.bootstrap.model.mjb));
+    assets.push_back(recording::json_asset("resolved_config.json",field(metadata,"resolved_config")));
+    return assets;
+}
+} // namespace
 std::vector<recording::Asset> physical_assets(const initialization::SetupRequest& request,const app::PreparedSimulation& prepared,
     const io::Value& metadata) {
     if(io::as_string(field(metadata,"model_sha256"),"model_sha256")!=prepared.bootstrap.model.sha256)
         throw std::invalid_argument("recording model differs from captured launch metadata");
     std::vector<recording::Asset> assets;
-    if(prepared.bootstrap.config.spatial) {
-        for(auto& a:research::snapshot_spatial_assets(request,prepared.bootstrap,metadata))
-            assets.push_back(recording::Asset{.name=std::move(a.name),.media_type=std::move(a.media_type),.sha256=std::move(a.sha256),.content=std::move(a.content)});
-        runtime::NativeRideRuntime initial(prepared.bootstrap);
-        const auto checkpoint=runtime::spatial::capture_checkpoint(initial,runtime::spatial::inactive_research_checkpoint(),
-            runtime::spatial::inactive_sensor_checkpoint(),Value{Object{{"resumable",Value{false}},{"state",Value{}}}},runtime::spatial::checkpoint_identity(metadata));
-        assets.push_back(recording::json_asset("spatial/checkpoint_initial.json",runtime::spatial::encode_checkpoint(checkpoint)));
-        assets.push_back(recording::asset("model.mjb","application/x-mujoco",prepared.bootstrap.model.mjb));
-        assets.push_back(recording::json_asset("resolved_config.json",field(metadata,"resolved_config")));
-        return assets;
-    }
+    if(prepared.bootstrap.config.spatial) return spatial_physical_assets(request,prepared,metadata);
     const auto source=terrain::dump_track(request.track);
     assets.push_back(recording::asset("track.toml","application/toml",std::vector<std::byte>(std::as_bytes(std::span{source.data(),source.size()}).begin(),std::as_bytes(std::span{source.data(),source.size()}).end())));
     const auto vertices=vertices_array(compiled_snapshot(prepared));

@@ -49,7 +49,7 @@ and the machine-readable [registry](../../migration/spatial3d/contracts.json).
    trees and explicit provider/compiler/engine/input identities. Cross-platform
    bitwise equality is not implied. Preserve `-ffp-contract=off`.
 5. **Version each boundary independently.** Spatial config1, runtime2,
-   writer3, bootstrap2, BKT3/v1, tyre-state1, checkpoint1, observation2,
+   writer3, bootstrap2, BKT3/v1, tyre-state1, checkpoint1, sensor2,
    policy ABI2, catalog2, container2 and replay4 are distinct domains. Select
    the decoder by its integer version, then validate exact keys and identities
    before live mutation. Historical planar readers and writers retain their
@@ -70,8 +70,10 @@ and the machine-readable [registry](../../migration/spatial3d/contracts.json).
 8. **Missing evidence fails closed.** Required null identities, missing
    fixtures, unsupported combinations and zero-check tests fail. Do not use
    `xfail`, skips, self-generated expected values or placeholder successful
-   runs to make the suite green. W05 accepts valid configuration for inspection
-   while reporting spatial execution unimplemented and qualification pending.
+   runs to make the suite green. W05 accepted valid configuration for inspection
+   while reporting spatial execution unimplemented; the later owners (W25, W31,
+   W36) connected the source dispatch rows, and `qualification_pending` stays
+   true until the assigned V tasks record evidence.
 9. **Resolve contract defects explicitly.** Record deviations from W00 in
    [the deviation log](../../migration/spatial3d/contract-deviations.md). C10
    requires old/new contracts, the concrete reason, affected tasks and a

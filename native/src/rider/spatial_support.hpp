@@ -18,7 +18,7 @@ struct ShoulderProfile {
 };
 ShoulderProfile read_shoulder_profile(const bike::io::Value&);
 struct SpatialSupportFrame {
-    bike::spatial::Vec3 normal_world, tangent_x_world, tangent_y_world;
+    bike::spatial::Vec3 normal_world{}, tangent_x_world{}, tangent_y_world{};
     bool valid = false;
 };
 SpatialSupportFrame support_frame(const bike::spatial::BodyPose&,

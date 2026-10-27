@@ -3,6 +3,7 @@
 #include "bike_viz_paths.hpp"
 #include <fstream>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 
@@ -57,6 +58,7 @@ const note=document.createElement('span');note.textContent='Wheel: zoom · drag:
 const dataButton=document.createElement('button');dataButton.textContent='Export data';dataButton.onclick=()=>save(JSON.stringify(report,null,2),'application/json','plot-data.json');toolbar.append(dataButton);
 const grid=document.createElement('div');grid.className='panels';grid.style.gridTemplateColumns=`repeat(${report.columns},minmax(0,1fr))`;section.append(grid);
 for(const p of report.panels){const box=document.createElement('article');grid.append(box);const title=document.createElement('h3');title.textContent=p.title;box.append(title);
+for(const text of p.notes){const note=document.createElement('p');note.className='note';note.textContent=text;box.append(note);}
 if(window.Plotly){const chart=document.createElement('div');chart.className='plotly-chart';box.append(chart);const traces=p.series.map((s,i)=>({x:s.x,y:s.y,name:s.name,type:s.style==='bars'?'bar':'scatter',mode:s.style==='points'?'markers':'lines',yaxis:s.secondary?'y2':'y',line:{color:s.color||colors[i%colors.length],width:1.4,dash:s.dashed?'dash':'solid',shape:s.style==='step'?'hv':'linear'},marker:{color:s.color||colors[i%colors.length]}}));
 const shapes=[],annotations=[];for(const m of p.markers){const common={line:{color:m.color,dash:'dot',width:1},xref:'x',yref:'paper'};if(m.kind==='horizontal')shapes.push({type:'line',xref:'paper',yref:'y',x0:0,x1:1,y0:m.first,y1:m.first,line:common.line});else if(m.kind==='band')shapes.push({...common,type:'rect',x0:m.first,x1:m.second,y0:0,y1:1,line:{width:0},fillcolor:m.color,opacity:.18,layer:'below'});else{shapes.push({...common,type:'line',x0:m.first,x1:m.first,y0:0,y1:1});if(m.label)annotations.push({xref:'x',yref:'paper',x:m.first,y:1,text:m.label,showarrow:false,textangle:-90,font:{color:m.color,size:9},xanchor:'left',yanchor:'top'});}}
 window.Plotly.newPlot(chart,traces,{paper_bgcolor:'#1a1e24',plot_bgcolor:'#22272e',font:{color:'#e6edf3'},hovermode:'x unified',height:360,margin:{l:70,r:70,t:24,b:65},xaxis:{title:{text:p.xlabel},range:p.xrange,gridcolor:'#484f58'},yaxis:{title:{text:p.ylabel},type:p.log?'log':'linear',range:p.yrange? (p.log?p.yrange.map(Math.log10):p.yrange):undefined,gridcolor:'#484f58',scaleanchor:p.equal_axes?'x':undefined,scaleratio:p.equal_axes?1:undefined},yaxis2:{title:{text:p.secondary_label},overlaying:'y',side:'right'},shapes,annotations},{responsive:true,displaylogo:false});continue;}
@@ -75,7 +77,7 @@ const local=e=>{const r=svg.getBoundingClientRect();return[(e.clientX-r.left)/r.
 svg.addEventListener('wheel',e=>{e.preventDefault();const [px]=local(e),q=Math.max(0,Math.min(1,(px-70)/850)),center=range[0]+q*(range[1]-range[0]),factor=Math.exp(Math.max(-1,Math.min(1,e.deltaY*.001)));range[0]=center+(range[0]-center)*factor;range[1]=center+(range[1]-center)*factor;draw();},{passive:false});
 svg.addEventListener('pointerdown',e=>{drag={x:local(e)[0],range:range.slice()};svg.setPointerCapture(e.pointerId);});svg.addEventListener('pointerup',()=>drag=null);svg.addEventListener('pointercancel',()=>drag=null);svg.addEventListener('dblclick',()=>{range=base.slice();draw();});
 svg.addEventListener('pointermove',e=>{const [px]=local(e);if(drag){const shift=(px-drag.x)/850*(drag.range[1]-drag.range[0]);range[0]=drag.range[0]-shift;range[1]=drag.range[1]-shift;draw();}const x=range[0]+(px-70)/850*(range[1]-range[0]);const lines=[p.xlabel+': '+fmt(x)];p.series.forEach((s,i)=>{if(hidden.has(i))return;let best=-1,d=Infinity;for(let k=0;k<s.x.length;k++)if(finite(s.x[k])&&Math.abs(s.x[k]-x)<d){d=Math.abs(s.x[k]-x);best=k;}lines.push(s.name+': '+(best<0?'—':fmt(s.y[best])));});tooltip.textContent=lines.join('\n');});
-for(const text of p.notes){const note=document.createElement('p');note.className='note';note.textContent=text;box.append(note);}draw();
+draw();
 }}
 })();
 )BIKEJS";

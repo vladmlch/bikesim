@@ -85,6 +85,14 @@ struct SpindleConfig {
     double return_foot_preload_n = 0.;
     double coasting_brake_d_nm_s_rad = 0.;
     double coasting_brake_limit_nm = 0.;
+    // Weld-press servo gain/limit and weld-imposed leg-velocity follow
+    // damping — the oracle reads these off its full ArticulatedConfig even
+    // for pure spindle fixtures, so the defaults must match
+    // physical_config.hpp's ArticulatedConfig fields. decode_spindle_config
+    // rebinds them from `legacy` when that optional engages.
+    double weld_servo_gain = .05;
+    double weld_servo_limit_nm = 25.;
+    double leg_track_damping_nms_rad = 0.;
     double joint_envelope_soft_k_nm_rad = 0.;
     double joint_envelope_soft_margin_rad = 0.;
     double arm_reach_fraction = 0.;
@@ -231,7 +239,8 @@ public:
             std::optional<double> dt_s = std::nullopt,
             bool steady_state = false,
             std::optional<std::array<bool,4>> support_available = std::nullopt,
-            bool pedal_recovery = false);
+            bool pedal_recovery = false,
+            std::optional<double> weld_crank_torque_nm = std::nullopt);
 
     // initialize()/initialize_velocity() — static-equilibrium-time pose
     // matching only; never inside the running step.
@@ -239,6 +248,15 @@ public:
     void initialize_velocity(mjData *data);
 
     void reset_activation();
+
+    // _coast_hold_nm — equilibrium_cache.py round-trips the weld-press
+    // servo integrator as part of the certified pose's material state.
+    [[nodiscard]] double coast_hold_nm() const noexcept {
+        return coast_hold_nm_;
+    }
+    void set_coast_hold_nm(double value) noexcept {
+        coast_hold_nm_ = value;
+    }
 
     // envelope_forces — (nv torque vector, summed stored energy).
     [[nodiscard]] std::pair<std::vector<double>, double>
@@ -290,6 +308,10 @@ public:
         NamedEntries<SoleGoalDiagnostics> sole_goal_diagnostics;
         std::optional<bike::rider::AllocationMemory> allocation_memory;
         std::optional<SpatialState> spatial;
+        // _coast_hold_nm — the weld-press servo integrator. Persistent
+        // compute state (not per-tick derived), so the bootstrap wire must
+        // round-trip it like the oracle's state_dict does.
+        double coast_hold_nm = 0.;
     };
     // Data captures the physical shoulder q/qd at the checkpoint; the
     // no-argument form retains the most recent controller observation.
@@ -426,6 +448,10 @@ private:
     bool command_enabled_ = true;
     std::vector<double> active_state_;
     std::optional<double> activation_time_s_;
+    // _coast_hold_nm — weld-press servo integrator. Compute state only;
+    // the oracle's state_dict does not serialize it, so State doesn't
+    // either. reset_activation() clears it.
+    double coast_hold_nm_ = 0.;
     NamedEntries<JointTerms> last_terms_;
     NamedEntries<std::array<double,2>> pd_split_;
     NamedEntries<bool> saturated_ik_{{"front", false}, {"rear", false}};

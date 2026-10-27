@@ -120,6 +120,7 @@ std::vector<double> StaticBrake::hold_qfrc(
 
 SpatialBrakeResult StaticBrake::apply_spatial(
     mjModel* model, std::span<const double, 2> rates, double front_demand,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) call sites keep the declared (front, rear) parameter order
     double rear_demand, double dt_s, std::int64_t interval, bool advance,
     std::span<double> qfrc) {
     if (model == nullptr || model->nv <= std::max(front_, rear_) ||
@@ -131,7 +132,7 @@ SpatialBrakeResult StaticBrake::apply_spatial(
         std::clamp(validation::finite(front_demand,"spatial.brake.front_demand"),0.,1.),
         std::clamp(validation::finite(rear_demand,"spatial.brake.rear_demand"),0.,1.)};
     validation::nonnegative(dt_s,"spatial.brake.dt_s");
-    for (double rate:rates) validation::finite(rate,"spatial.brake.relative_rate_radps");
+    for (const double rate:rates) validation::finite(rate,"spatial.brake.relative_rate_radps");
     if (advance && (dt_s == 0. || spatial_.interval_index ==
             std::numeric_limits<std::int64_t>::max() || interval != spatial_.interval_index+1))
         throw std::invalid_argument("spatial.brake.interval_index: duplicate or nonsequential advance");
@@ -208,6 +209,11 @@ void StaticBrake::restore_spatial_brake(const bike::spatial::BrakeState& state) 
     // Cold validation stages a complete owned value before publishing it.
     const auto staged=bike::spatial::decode_brake(bike::spatial::encode_brake(state));
     for (const auto& w:staged.wheel) {
+        // A latch can only have been created under a spec with a positive pad
+        // stiffness and torque; apply_spatial divides by the stiffness while a
+        // wheel is engaged, so such a state must be rejected here, cold.
+        if (w.engaged && !(hold_.stiffness_nm_rad>0. && hold_.torque_nm>0.))
+            throw std::invalid_argument("spatial.brake.engaged: hold spec cannot latch a pad");
         const double expected=w.engaged ? .5*hold_.stiffness_nm_rad*
             (w.unwrapped_angle_rad-w.latch_angle_rad)*
             (w.unwrapped_angle_rad-w.latch_angle_rad) : 0.;

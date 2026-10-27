@@ -186,6 +186,8 @@ namespace nativecfg {
             const auto* value = bike::io::find_member(object, key);
             if (value == nullptr)
                 detail::invalid(std::string(path) + "." + std::string(key), "missing required key");
+            // invalid() is [[noreturn]] — `value` is non-null on this path.
+            // cppcheck-suppress nullPointerRedundantCheck
             return *value;
         }
 
@@ -259,7 +261,7 @@ namespace nativecfg {
         if (schema3 || bike::io::find_member(*root, "spatial") != nullptr) {
             if (schema == nullptr) detail::invalid("config.schema", "missing required key");
             const auto version = bike::io::as_int64(*schema, "config.schema");
-            if (version == bike::spatial::kSpatialWriterSchema) {
+            if (std::cmp_equal(version, bike::spatial::kSpatialWriterSchema)) {
                 validate_spatial_writer_envelope(value);
                 const auto& tire=bike::io::as_object(spatial_member(*root,"tire","config"),"config.tire");
                 (void)runtime::decode_spatial_tire_config(spatial_member(tire,"pneumatic_3d","config.tire"));

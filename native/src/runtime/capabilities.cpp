@@ -1,7 +1,10 @@
 #include "capabilities.hpp"
 #include "../rider/allocation.hpp"
 #include <algorithm>
+#include <optional>
 #include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace runtime {
 CapabilityReport implemented_capabilities(
@@ -75,7 +78,7 @@ CapabilityReport implemented_capabilities(
         if(tires.backend=="pneumatic_3d") {
             out.paths.emplace_back("writers/pneumatic_3d_tire.cpp");
             out.paths.emplace_back("tyre:pneumatic_3d");
-            if(config.spatial->root==bike::spatial::RootKind::free6) {
+            if(config.spatial->root==bike::spatial::RootKind::free6) { // NOLINT(bugprone-unchecked-optional-access) a pneumatic_3d backend reaches the empty-rejections path only when spatial_requested holds
                 out.paths.emplace_back("startup:spatial_free");out.paths.emplace_back("ride:spatial_free");
             }
         }

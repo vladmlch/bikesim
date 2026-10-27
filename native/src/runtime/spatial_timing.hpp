@@ -14,7 +14,7 @@
 #include <limits>
 
 namespace runtime::spatial::timing {
-enum class Region : std::size_t {
+enum class Region : std::uint8_t {
     terrain_rays, tyre_elements, engine_step, rider_steer, accounting,
     sensors, recording, ui, count
 };
@@ -56,7 +56,7 @@ struct Collector {
         return result;
     }
 };
-inline thread_local Collector* current = nullptr;
+inline thread_local Collector* current = nullptr; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables) the Scope RAII binds through this thread-local slot
 
 class Binding {
 public:
@@ -64,6 +64,8 @@ public:
     ~Binding() { current = previous_; }
     Binding(const Binding&) = delete;
     Binding& operator=(const Binding&) = delete;
+    Binding(Binding&&) = delete;
+    Binding& operator=(Binding&&) = delete;
 private:
     Collector* previous_;
 };
@@ -81,6 +83,8 @@ public:
     ~Scope() { stop(); }
     Scope(const Scope&) = delete;
     Scope& operator=(const Scope&) = delete;
+    Scope(Scope&&) = delete;
+    Scope& operator=(Scope&&) = delete;
     void stop() noexcept {
         if (!collector_) return;
         const auto end = std::chrono::steady_clock::now();

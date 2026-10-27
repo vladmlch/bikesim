@@ -163,8 +163,10 @@ double RuntimeContactQuery::handlebar_load(const mjModel *model,
     // normal magnitude per handlebar-terrain row.
     if(model!=model_||data==nullptr)
         throw std::invalid_argument("handlebar query model/data owner mismatch");
-    if(data->ncon<0||data->ncon>std::numeric_limits<int>::max())
-        throw std::invalid_argument("handlebar contact row count exceeds MuJoCo index range");
+    // ncon is an int, so a row index can never leave int range; only a
+    // corrupted negative count needs rejecting before it reaches counted().
+    if(data->ncon<0)
+        throw std::invalid_argument("handlebar contact row count is negative");
     double load_n = 0.;
     const auto contacts = std::views::counted(data->contact, data->ncon);
     for (int i = 0; i < data->ncon; ++i) {
@@ -323,8 +325,12 @@ CrashDetector::CrashDetector(const mjModel *model,
     const int pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
     if(pitch<0) {
         const int root=mj_name2id(model,mjOBJ_JOINT,"root_free");
-        if(root>=0 && model->jnt_type[root]==mjJNT_FREE) {
-            spatial_body_=model->jnt_bodyid[root];
+        // counted views keep the bounds-checked idiom of this file; root is
+        // a valid joint index whenever mj_name2id returned it.
+        const auto joint_types=std::views::counted(model->jnt_type,model->njnt);
+        const auto joint_bodies=std::views::counted(model->jnt_bodyid,model->njnt);
+        if(root>=0 && joint_types[static_cast<std::size_t>(root)]==mjJNT_FREE) {
+            spatial_body_=joint_bodies[static_cast<std::size_t>(root)];
             nq_=model->nq;
             pitch_qposadr=root_x_qposadr=-1;
             pitch_limit_rad=pitch_limit_deg*(std::numbers::pi/180.);
@@ -353,14 +359,16 @@ std::optional<CrashEvent>
 CrashDetector::check(const mjData *data, const RuntimeContacts &contacts) {
     if (event_.has_value()) return event_;
     if(spatial_body_>=0) {
-        const auto offset=static_cast<std::size_t>(spatial_body_)*4;
-        const bike::spatial::Quat q{data->xquat[offset],data->xquat[offset+1],
-            data->xquat[offset+2],data->xquat[offset+3]};
+        const auto body=static_cast<std::ptrdiff_t>(spatial_body_);
+        const auto xquat=std::views::counted(data->xquat,4*body+4);
+        const auto xpos=std::views::counted(data->xpos,3*body+3);
+        const auto offset=static_cast<std::size_t>(4*body);
+        const bike::spatial::Quat q{xquat[offset],xquat[offset+1],xquat[offset+2],xquat[offset+3]};
         const auto attitude=bike::spatial::euler_zyx(q);
         const bool pitch_over=attitude.valid && std::abs(attitude.pitch_rad)>pitch_limit_rad;
         if(pitch_over || contacts.handlebar_in_contact())
             event_=CrashEvent{.cause=pitch_over?"pitch_over":"handlebar_contact", .time_s=data->time,
-                .position_m=data->xpos[3*spatial_body_], .pitch_rad=attitude.pitch_rad};
+                .position_m=xpos[static_cast<std::size_t>(3*body)], .pitch_rad=attitude.pitch_rad};
         return event_;
     }
     const auto qpos = std::views::counted(data->qpos, nq_);
@@ -495,7 +503,7 @@ std::vector<RoadSample> spatial_road_samples(
             throw std::invalid_argument("spatial.road_preview.wheels: unrepresentable separation");
         order.emplace_back(along, i);
     }
-    std::sort(order.begin(), order.end());
+    std::ranges::sort(order);
     std::vector<RoadSample> result;
     result.reserve(wheels.size() + count + 1);
     const auto append = [&](double x, double y, bool required) {

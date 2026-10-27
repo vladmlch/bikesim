@@ -85,7 +85,9 @@ std::shared_ptr<const EpisodeEvidence> make_research_evidence(std::int64_t id, r
         assets.push_back(json_asset("spatial/checkpoint_final.json",owner->checkpoint_final));
         const auto source=std::ranges::find_if(assets,[](const auto& a){return a.name=="spatial/terrain_source.json";});
         if(source==assets.end())throw std::invalid_argument("spatial research recording lacks terrain source");
-        const auto document=io::parse_recording_json(std::string(reinterpret_cast<const char*>(source->content.data()),source->content.size()));
+        std::string terrain_source;terrain_source.reserve(source->content.size());
+        for(const std::byte byte:source->content)terrain_source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
+        const auto document=io::parse_recording_json(terrain_source);
         const auto kind=io::as_string(value::require(document,"kind"),"terrain kind");
         const io::Value recipe{io::Value::Object{{"replay_contract_version",value::integer(4)},
             {"terrain_kind",value::text(kind)},{"terrain_sha256",value::require(initial.identity,"terrain_sha256")},

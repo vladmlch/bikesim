@@ -36,7 +36,8 @@ struct TorusGrid3d {
     double phi_min_rad = -70. * std::numbers::pi / 180.;
     double phi_max_rad = 70. * std::numbers::pi / 180.;
     std::vector<double> theta_fan, phi, w_theta, w_phi;
-    // it*n_phi+ip in the fan frame; area = r*(R+r*cos(phi))*dtheta*dphi.
+    // it*n_phi+ip in the fan frame. Area is the exact cell integral
+    // r*dtheta*(R*dphi + r*(sin(phi_hi)-sin(phi_lo))), not the midpoint product.
     std::vector<std::array<double, 3>> local_position_fan;
     std::vector<double> geometric_area_m2;
     std::size_t element_count() const noexcept;

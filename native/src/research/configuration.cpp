@@ -3,14 +3,17 @@
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
+#include "../platform/provenance.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <limits>
 #include <ranges>
 #include <stdexcept>
+#include <system_error>
 
 namespace bike::research {
 namespace {
@@ -269,10 +272,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         out.setup.seed_decimal = out.experiment.seed_decimal;
         const auto track_file = find(document, "track_file") ? std::optional(path(document, "track_file", base)) : std::nullopt;
         const auto generator_file = find(document, "generator_spec_file") ? std::optional(path(document, "generator_spec_file", base)) : std::nullopt;
-        out.setup.track = resolve_research_track(track_file, find(document, "scenario")
-            ? io::as_string(field(document, "scenario"), "scenario") : "rough_uphill", generator_file, out.setup.seed_decimal);
         out.road_resolution_m = number(document, "road_resolution_m", .005);
-        out.setup.model.field = research_field(out.setup.track, out.road_resolution_m);
         if (const auto* mode = find(document, "model_mode")) {
             const auto& name = io::as_string(*mode, "model_mode");
             if (name != "research" && name != "ride") throw std::invalid_argument("research model_mode must be research or ride");
@@ -289,7 +289,16 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         if (find(document, "speed_kph")) physics.initial_speed_mps = number(document, "speed_kph", 0.) / 3.6;
         physics.equilibrium_cache_enabled = boolean(document, "use_equilibrium_cache", false);
         if (find(document, "initial_state_file")) {
-            const auto state_file = path(document, "initial_state_file", base);
+            auto state_file = path(document, "initial_state_file", base);
+            // Same platform-keyed sibling convention as
+            // initialization/request.cpp: platform-bound captures inside a
+            // sibling directory named by the running platform supersede the
+            // shared spelling.
+            std::error_code keyed_error;
+            if (const auto keyed = state_file.parent_path() / platform::key() /
+                    state_file.filename();
+                std::filesystem::is_regular_file(keyed, keyed_error))
+                state_file = keyed;
             const auto bytes = io::read_numpy_bytes(state_file);
             std::string source;
             source.reserve(bytes.size());
@@ -305,6 +314,20 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         }
         configuration::post_init(physics);
         out.setup.model.physics = std::move(physics);
+        if(out.setup.model.physics->spatial &&
+           out.setup.model.physics->spatial->mode==bike::spatial::Mode::spatial3d) {
+            // Mirror the CLI spatial rule: the typed terrain owner supplies
+            // geometry and finish identity, so the planar selectors conflict.
+            // Only a name label remains on the request — it is never
+            // resolved, validated or serialized as a planar track.
+            if(track_file||generator_file||find(document,"scenario"))
+                throw std::invalid_argument("spatial_3d.terrain conflicts with track_file/scenario/generator_spec_file");
+            out.setup.track.name="spatial-terrain";
+        } else {
+            out.setup.track = resolve_research_track(track_file, find(document, "scenario")
+                ? io::as_string(field(document, "scenario"), "scenario") : "rough_uphill", generator_file, out.setup.seed_decimal);
+            out.setup.model.field = research_field(out.setup.track, out.road_resolution_m);
+        }
         if (const auto* mode = find(document, "capture_mode")) {
             const auto& value = io::as_string(*mode, "capture_mode");
             if (value == "off") out.capture_mode = runtime::ResearchCaptureMode::off;

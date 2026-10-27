@@ -31,6 +31,10 @@ void save_equilibrium_cache(const SetupContext&,const StateFile&);
 // writer's validated restore. Rejection restores the original owner;
 // fatal engine failures retain the Stepper poison contract.
 void restore_equilibrium_state(SetupContext&,const StateFile&);
+// equilibrium_cache.py restore_state's material scope — the released-settle
+// rollback path: rider contacts, tire stations, drive boundaries and the
+// weld-press latch. Pose/velocity/model rows stay with the caller.
+void restore_equilibrium_material(SetupContext&,const StateFile&);
 // Cold validation for initial-state transfer before its first model/data write.
 void validate_equilibrium_material(const SetupContext&,const StateFile&,
     std::span<const double> qpos,std::span<const double> qvel);

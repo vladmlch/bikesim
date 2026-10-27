@@ -133,7 +133,11 @@ the complete integrated trajectory uses the stated numerical tolerances.
 All cases use the same seed, articulated rider, initial perturbation, coefficient
 source pin, control period and TOML demand timestamps. The control period is
 0.005 s, an integer number of physical steps at every listed `dt`. Orientation
-is compared on this common observation clock. Contact topology, landing,
+is compared on this common observation clock. Each tier pins one closure time
+constant for all three members (fast 0.0025 s, detailed 0.001 s, at least `2*dt`
+at the coarsest `dt` of the tier), so only `dt` differs between the coarse, half
+and quarter runs; the selected production `dt` is qualified with that closure
+constant (`native/tests/spatial/timestep.cpp`). Contact topology, landing,
 airborne and rim events, and load extrema are inspected at every physical step.
 
 Each coarse and half-step result is compared against its tier's quarter-step

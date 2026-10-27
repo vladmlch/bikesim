@@ -1997,6 +1997,15 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
             if (key != "strength" && key != "strength_coordinates" && key != "envelopes")
                 members.emplace_back(key,member);
         config.legacy = decode_articulated_config(bio::Value{std::move(members)});
+        // The weld-servo/leg-track knobs are declared on the full
+        // ArticulatedConfig but dropped from the closed rider_controller
+        // wire; when `legacy` engages they rebind into the spindle-usable
+        // subset so the controller reads the same effective values the
+        // oracle does.
+        config.weld_servo_gain = config.legacy->weld_servo_gain;
+        config.weld_servo_limit_nm = config.legacy->weld_servo_limit_nm;
+        config.leg_track_damping_nms_rad =
+            config.legacy->leg_track_damping_nms_rad;
     }
     return config;
 }
@@ -2142,7 +2151,12 @@ SpindleController::State decode_spindle_state(const bio::Value &value,
     const Dict d = mapping(VNode{&value}, path);
     constexpr auto extension = keys("rider.spatial", "shoulder_swivel_l", "shoulder_swivel_r",
         "spatial_arm_branch", "shoulder_profile_sha256", "steer_torque_owner");
-    ncd::exact_at(d, kStateRequiredKeys, extension, path);
+    // coast_hold_nm joins the wire as optional: documents captured before the
+    // weld-press servo existed decode to the unset integrator (zero).
+    constexpr auto state_optional = keys("rider.spatial", "shoulder_swivel_l", "shoulder_swivel_r",
+        "spatial_arm_branch", "shoulder_profile_sha256", "steer_torque_owner",
+        "coast_hold_nm");
+    ncd::exact_at(d, kStateRequiredKeys, state_optional, path);
     SpindleController::State state;
     const bool spatial = d.contains("rider.spatial");
     for (const auto key : extension)
@@ -2174,6 +2188,8 @@ SpindleController::State decode_spindle_state(const bio::Value &value,
     state.command_enabled = d["command_enabled"].boolean(path);
     state.active_state = vector(d["active_state"], path);
     state.activation_time_s = d["activation_time_s"].optional_real(path);
+    if (d.contains("coast_hold_nm"))
+        state.coast_hold_nm = d["coast_hold_nm"].finite_real(path);
     decode_state_terms(d, path, state);
     decode_state_ik(d, path, state);
     decode_state_recovery(d, path, state);
@@ -2204,6 +2220,7 @@ bio::Value encode_spindle_state(const SpindleController::State &state) {
                      bio::Value{state.command_enabled});
     out.emplace_back("active_state", vector_value(state.active_state));
     set_or_none(out, "activation_time_s", state.activation_time_s);
+    out.emplace_back("coast_hold_nm", real_value(state.coast_hold_nm));
     out.emplace_back("last_terms", last_terms_value(state.last_terms));
     bio::Value::Object split;
     for(const auto&[name,pair]:state.pd_split)split.emplace_back(name,vector_value(pair));

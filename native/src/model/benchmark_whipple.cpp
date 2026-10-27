@@ -15,11 +15,11 @@ namespace {
 std::string real(double x){return configuration::detail::repr_double(x);}
 std::string xyz(double x,double y,double z){return real(x)+" "+real(y)+" "+real(z);}
 void validate(const WhippleParameters& p) {
-    for(double value:std::array{p.w_m,p.c_m,p.lambda_rad,p.g_mps2,p.v_mps,p.rR_m,p.mR_kg,p.IRxx,p.IRyy,
+    for(const double value:std::array{p.w_m,p.c_m,p.lambda_rad,p.g_mps2,p.v_mps,p.rR_m,p.mR_kg,p.IRxx,p.IRyy,
         p.xB_m,p.zB_m,p.mB_kg,p.IBxx,p.IBxz,p.IByy,p.IBzz,p.xH_m,p.zH_m,p.mH_kg,p.IHxx,p.IHxz,p.IHyy,
         p.IHzz,p.rF_m,p.mF_kg,p.IFxx,p.IFyy})
         if(!std::isfinite(value))throw std::invalid_argument("benchmark_whipple: nonfinite parameter");
-    for(double value:std::array{p.w_m,p.g_mps2,p.rR_m,p.mR_kg,p.IRxx,p.IRyy,p.mB_kg,p.IBxx,p.IByy,p.IBzz,
+    for(const double value:std::array{p.w_m,p.g_mps2,p.rR_m,p.mR_kg,p.IRxx,p.IRyy,p.mB_kg,p.IBxx,p.IByy,p.IBzz,
         p.mH_kg,p.IHxx,p.IHyy,p.IHzz,p.rF_m,p.mF_kg,p.IFxx,p.IFyy})
         if(value<=0.)throw std::invalid_argument("benchmark_whipple: nonpositive geometry, mass or inertia");
     if(p.c_m<0.||std::abs(p.lambda_rad)>=std::numbers::pi/2.||
@@ -30,7 +30,8 @@ void inertia(xml::Element& body,double mass,double x,double z,double xx,double y
     body.add("inertial",{{"mass",real(mass)},{"pos",xyz(x,0.,z)},
         {"fullinertia",real(xx)+" "+real(yy)+" "+real(zz)+" 0 "+real(xz)+" 0"}});
 }
-void wheel(xml::Element& parent,std::string name,double x,double z,double radius,double mass,double ix,double iy) {
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the reference API
+void wheel(xml::Element& parent,const std::string& name,double x,double z,double radius,double mass,double ix,double iy) {
     auto& w=parent.add("body",{{"name",name+"_wheel"},{"pos",xyz(x,0.,z)}});
     w.add("joint",{{"name",name+"_wheel_spin"},{"type","hinge"},{"axis","0 1 0"}});
     inertia(w,mass,0.,0.,ix,iy,ix,0.);

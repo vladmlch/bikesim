@@ -8,7 +8,7 @@
 namespace runtime::spatial {
 bool is_rotation_matrix(const Matrix3& r, double tolerance) noexcept {
     if (!std::isfinite(tolerance) || tolerance < 0.) return false;
-    for (double x : r) if (!std::isfinite(x)) return false;
+    for (const double x : r) if (!std::isfinite(x)) return false;
     for (std::size_t i = 0; i < 3; ++i)
         for (std::size_t j = 0; j < 3; ++j) {
             double dot = 0.;
@@ -57,7 +57,7 @@ ImuMountBinding bind_imu_mount(const mjModel& model, const bike::spatial::Config
     out.accel_adr = bind(out.accel_sensor_id, mjSENS_ACCELEROMETER);
     out.gyro_adr = bind(out.gyro_sensor_id, mjSENS_GYRO);
     const auto& a = config.imu.axis_misalignment_rad;
-    for (double x : a) if (!std::isfinite(x)) throw std::invalid_argument("spatial.imu.axis_misalignment_rad: nonfinite angle");
+    for (const double x : a) if (!std::isfinite(x)) throw std::invalid_argument("spatial.imu.axis_misalignment_rad: nonfinite angle");
     const double cx=std::cos(a[0]), sx=std::sin(a[0]), cy=std::cos(a[1]), sy=std::sin(a[1]), cz=std::cos(a[2]), sz=std::sin(a[2]);
     out.sensor_from_nominal = {cz*cy, cz*sy*sx-sz*cx, cz*sy*cx+sz*sx,
         sz*cy, sz*sy*sx+cz*cx, sz*sy*cx-cz*sx, -sy, cy*sx, cy*cx};

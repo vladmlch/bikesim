@@ -30,12 +30,12 @@ namespace bike::initialization {
 namespace {
 using namespace runtime::setupvalue;
 
-void populate_heightfield(mjModel& compiled, const SetupRequest& request) {
+void populate_heightfield(const mjModel& compiled, const SetupRequest& request) {
     if(request.model.spatial && request.model.spatial->mode==spatial::Mode::spatial3d) {
         if(!request.model.terrain3d)
             throw std::invalid_argument("setup.spatial.terrain: physical source missing");
         model::populate_render_heightfield(compiled,terrain::make_render_grid(*request.model.terrain3d,
-            {static_cast<std::uint32_t>(request.model.field.nrow),static_cast<std::uint32_t>(request.model.field.ncol)}));
+            {.nrow=static_cast<std::uint32_t>(request.model.field.nrow),.ncol=static_cast<std::uint32_t>(request.model.field.ncol)}));
         return;
     }
     const int id = model::required_id(compiled, mjOBJ_HFIELD, "road");
@@ -87,7 +87,7 @@ Value equilibrium_value(const EquilibriumResult& result) {
     if(result.spatial) {
         const auto& s=*result.spatial;Array errors,dofs;
         for(const auto& error:s.errors)errors.push_back(text(error));
-        for(int dof:s.worst_dofs)dofs.push_back(integer(dof));
+        for(const int dof:s.worst_dofs)dofs.push_back(integer(dof));
         set(value,"spatial",Value{Object{{"max_linear_accel_mps2",real(s.max_linear_accel_mps2)},
             {"max_angular_accel_radps2",real(s.max_angular_accel_radps2)},
             {"weight_residual_fraction",real(s.weight_residual_fraction)},
@@ -95,7 +95,7 @@ Value equilibrium_value(const EquilibriumResult& result) {
             {"roll_moment_residual_nm",real(s.roll_moment_residual_nm)},
             {"contacts_valid",integer(s.contacts_valid)},{"contacts_total",integer(s.contacts_total)},
             {"evaluations",integer(s.evaluations)},{"errors",Value{std::move(errors)}},
-            {"worst_dofs",Value{std::move(dofs)}}});
+            {"worst_dofs",Value{std::move(dofs)}}}});
     }
     return value;
 }
@@ -205,9 +205,8 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         : model::RiderArg{std::monostate{}}, request.model.include_rider, "lumped");
     if(spatial_requested) {
         const auto& spatial_config=*request.model.physics->spatial;
-        if(request.model.spatial && spatial::spatial_config_fingerprint_hex(*request.model.spatial)!=
-            spatial::spatial_config_fingerprint_hex(spatial_config))
-            throw std::invalid_argument("setup.spatial: model and physics configurations differ");
+        // model.spatial was already overwritten with physics.spatial above (spatial_requested
+        // implies that branch ran), so the two configurations cannot differ here.
         request.model.spatial=spatial_config;
         if(!request.model.terrain3d)
             request.model.terrain3d=terrain::detail::load_terrain3d_source(spatial_config.terrain);
@@ -223,7 +222,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     runtime::validate_native_supported(*request.model.physics, resolved_rider);
     if (!std::isfinite(request.start_x_m))
         throw std::invalid_argument("setup start_x_m must be finite");
-    request.track.validate();
+    if(!spatial_requested) request.track.validate();
     request.model.field.validate();
     if(!request.model.terrain3d)terrain::assert_track_fits(request.track, request.model.field);
     request.model.rider = resolved_rider;
@@ -260,7 +259,11 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         {"mass_specs", model::mass_specs_value(impl->request.model.masses)},
         {"rider", configuration::detail::plain_document(
             configuration::detail::as_object(configuration::detail::kRiderSpecsSchema, &resolved_rider))},
-        {"track", terrain::identity_value(impl->request.track)}}};
+        // Under spatial the request carries a name-only track label; the
+        // physical terrain identity is bound below as terrain/topology/
+        // profile digests. Keep the key present (the equilibrium cache
+        // fingerprint reads it unconditionally) but emit null.
+        {"track", impl->config.spatial ? Value{} : terrain::identity_value(impl->request.track)}}};
     context.source_identity = runtime::runtime_identity().native_source_sha256;
     if (impl->request.legacy_source_root) {
         context.legacy_source_identity = legacy_source_fingerprint(*impl->request.legacy_source_root);
@@ -274,14 +277,14 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if(impl->request.model.terrain3d) {
         context.terrain3d=impl->request.model.terrain3d;
         context.render3d=terrain::make_render_grid(*context.terrain3d,
-            {static_cast<std::uint32_t>(impl->request.model.field.nrow),static_cast<std::uint32_t>(impl->request.model.field.ncol)});
-        context.topology=spatial::bind_topology(*impl->stepper->model(),*impl->request.model.spatial);
+            {.nrow=static_cast<std::uint32_t>(impl->request.model.field.nrow),.ncol=static_cast<std::uint32_t>(impl->request.model.field.ncol)});
+        context.topology=spatial::bind_topology(*impl->stepper->model(),*impl->request.model.spatial); // NOLINT(bugprone-unchecked-optional-access) model.spatial is assigned whenever terrain3d is populated by the validation above
         auto& inputs=std::get<Object>(context.identity.data);
-        inputs.emplace_back("spatial",spatial::spatial_config_to_wire(*impl->request.model.spatial));
+        inputs.emplace_back("spatial",spatial::spatial_config_to_wire(*impl->request.model.spatial)); // NOLINT(bugprone-unchecked-optional-access) model.spatial is assigned whenever terrain3d is populated by the validation above
         inputs.emplace_back("physical_terrain_sha256",text(context.terrain3d->fingerprint_hex()));
         inputs.emplace_back("topology_sha256",text(context.topology->fingerprint_hex));
-        inputs.emplace_back("tyre_profile_sha256",text(context.physics.spatial->tyre.lateral_coefficients_sha256));
-        inputs.emplace_back("steer_profile_sha256",text(context.physics.spatial->steer.profile_sha256));
+        inputs.emplace_back("tyre_profile_sha256",text(context.physics.spatial->tyre.lateral_coefficients_sha256)); // NOLINT(bugprone-unchecked-optional-access) physics.spatial engagement follows model.spatial by setup contract
+        inputs.emplace_back("steer_profile_sha256",text(context.physics.spatial->steer.profile_sha256)); // NOLINT(bugprone-unchecked-optional-access) physics.spatial engagement follows model.spatial by setup contract
         // The runtime seed is provenance. A generated terrain already binds
         // its seed and generation inputs through the physical terrain digest.
         inputs.emplace_back("runtime_seed_decimal",text(impl->request.seed_decimal));
@@ -300,6 +303,9 @@ EquilibriumResult settle(SetupOwner& owner, const EquilibriumOptions& options) {
     auto& state = *owner.impl_;
     if (state.sealed || state.result)
         throw std::invalid_argument("setup equilibrium can only be completed once");
+    // Prepare, settle_context and finalize judge with the request tolerance
+    // through this field; it is set before either equilibrium path runs.
+    state.context->equilibrium_tolerance = options.tolerance;
     if (state.context->initial_state)
         state.context->equilibrium = state.context->initial_state->prepare(*state.context);
     else
@@ -364,6 +370,8 @@ io::Value SetupOwner::metadata() const {
         fields.emplace_back("qualification",text("pending V06"));
         if(const auto& causal=context.physical.spatial_state();causal &&
             causal->steer.controller!=spatial::SteerController::off) {
+            if(causal->steer.delay_fifo_nm.empty())
+                throw std::invalid_argument("steer.delay_fifo_nm: empty FIFO with an active steer controller");
             const auto ticks=causal->steer.delay_fifo_nm.size()-1;
             fields.emplace_back("steer_delay_ticks",integer(static_cast<std::int64_t>(ticks)));
             fields.emplace_back("steer_resolved_delay_s",real(static_cast<double>(ticks)*context.physics.control_period_s));

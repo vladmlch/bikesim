@@ -5,7 +5,13 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <limits>
+#include <numbers>
+#include <ranges>
+#include <span>
 
 namespace bike::pneumatic3d {
 using namespace detail;
@@ -22,11 +28,21 @@ struct PatchScratch {
 };
 // Frozen W00 has no workspace argument. This bounded scratch is isolated per
 // thread, cleared on entry, and contains no material/history state. See C10.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) thread_local scratch keeps the frozen entry signature free of workspace arguments
 constinit thread_local PatchScratch scratch;
-struct ScratchUse {bool& busy;explicit ScratchUse(bool& b) noexcept:busy(b){busy=true;}~ScratchUse(){busy=false;}};
+struct ScratchUse {
+    // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) RAII guard clears the scratch busy flag through a reference
+    bool& busy;
+    explicit ScratchUse(bool& b) noexcept:busy(b){busy=true;}
+    ScratchUse(const ScratchUse&)=delete;
+    ScratchUse& operator=(const ScratchUse&)=delete;
+    ScratchUse(ScratchUse&&)=delete;
+    ScratchUse& operator=(ScratchUse&&)=delete;
+    ~ScratchUse(){busy=false;}
+};
 std::size_t lateral_nodes(std::span<const ContactElement3d> elements) noexcept {
-    if (elements.size()==64U*7U) return 7;
-    if (elements.size()==256U*15U) return 15;
+    if (elements.size()==std::size_t{64}*7U) return 7;
+    if (elements.size()==std::size_t{256}*15U) return 15;
     // Small analytic unit fixtures may be one row. Production refinements
     // need an explicit shape in the future C10 contract.
     return elements.size();
@@ -61,9 +77,18 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
     auto& best_element=scratch.best_element;
     auto& used=scratch.used;auto& overlap=scratch.overlap;
     auto& component_weight=scratch.component_weight;auto& ids=scratch.ids;
-    queue.fill(0);first.fill(0);best_weight.fill(0.);used.fill(0);overlap.fill(Overlap{});
-    component_weight.fill(0.);ids.fill(0);
-    label.fill(absent); selected.fill(absent); winner.fill(absent);best_element.fill(absent);
+    // Only the first max(N, capacity) entries of each lane are ever indexed
+    // (elements by i < N, slots by s < capacity, components by c < min(N,
+    // capacity)). Clearing the whole 3840-entry worst case would touch ~280 KiB
+    // per wheel per step for the 448-element fast grid.
+    const std::size_t live=std::max(n,capacity);
+    const auto clear=[live](auto& lane,const auto& value) noexcept {
+        std::ranges::fill(std::span(lane).first(live),value);
+    };
+    clear(queue,std::uint32_t{0});clear(first,std::uint32_t{0});clear(best_weight,0.);
+    clear(used,std::uint8_t{0});clear(overlap,Overlap{});
+    clear(component_weight,0.);clear(ids,std::uint64_t{0});
+    clear(label,absent);clear(selected,absent);clear(winner,absent);clear(best_element,absent);
     const std::size_t width=lateral_nodes(elements);
     std::size_t components=0;
     const auto active=[&](std::size_t i) noexcept {
@@ -94,9 +119,12 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
     for (std::size_t i=0;i<n;++i) {
         const auto slot=state.element_to_patch_slot[i];
         if (label[i]!=absent && slot!=absent && state.slot_used[slot])
-            overlap[overlap_count++]={slot,label[i],static_cast<std::uint32_t>(i),normals[i].normal_load_n};
+            overlap[overlap_count++]={.slot=slot,.component=label[i],
+                .element=static_cast<std::uint32_t>(i),.load=normals[i].normal_load_n};
     }
-    std::sort(overlap.begin(),overlap.begin()+static_cast<std::ptrdiff_t>(overlap_count),
+    // Span-first sorts the live prefix without raw pointer arithmetic
+    // (clang -Wunsafe-buffer-usage rejects overlap.begin()+count).
+    std::ranges::sort(std::span(overlap).first(overlap_count),
         [](const Overlap& a,const Overlap& b) noexcept {
             if (a.slot!=b.slot) return a.slot<b.slot;
             if (a.component!=b.component) return a.component<b.component;
@@ -108,7 +136,7 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
         const auto s=overlap[i].slot, c=overlap[i].component;
         const auto element=overlap[i].element;
         double load=0.;
-        do { load+=overlap[i++].load; }
+        do { load+=overlap[i++].load; } // NOLINT(cppcoreguidelines-avoid-do-while) each sorted group has at least its first row
         while (i<overlap_count && overlap[i].slot==s && overlap[i].component==c);
         if (winner[s]==absent || load>best_weight[s] ||
             (load==best_weight[s] && first[c]<first[winner[s]])) {
@@ -137,9 +165,15 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
     // frozen Patch3d::elements view, reset before each call. No input contact
     // or committed-state memory is used as output scratch. C10 records that
     // this public span should have been mutable; the actual storage is not const.
+    // views::counted keeps the bound inside a span; the raw (pointer, size)
+    // span constructor and pointer indexing are rejected by clang
+    // -Wunsafe-buffer-usage.
     NATIVE_DIAG_PUSH
     NATIVE_DIAG_IGNORE("-Wcast-qual")
-    auto* indices=const_cast<std::uint32_t*>(out[0].elements.data());
+    const std::span<std::uint32_t> indices=std::views::counted(
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast) owner-backed writable storage; the frozen view type is const, see above
+        const_cast<std::uint32_t*>(out[0].elements.data()),
+        static_cast<std::ptrdiff_t>(out[0].elements.size()));
     NATIVE_DIAG_POP
     std::size_t offset=0;
     for (std::size_t c=0;c<components;++c) {
@@ -173,13 +207,13 @@ CoreStatus assign_patches(std::span<const ContactElement3d> elements,
             std::abs(norm(patch.longitudinal_world)-1.)>1e-8 ||
             std::abs(norm(patch.lateral_world)-1.)>1e-8)
             return CoreStatus::invalid_geometry;
-        patch.elements=std::span<const std::uint32_t>(indices+begin,offset-begin);
+        patch.elements=indices.subspan(begin,offset-begin);
         patch.valid=true; out[c]=patch;
     }
     for (std::size_t c=components;c<out.size();++c) out[c]={};
     if (advance) {
-        std::fill(state.ids.begin(),state.ids.end(),std::uint64_t{0});
-        std::fill(state.slot_used.begin(),state.slot_used.end(),std::uint8_t{0});
+        std::ranges::fill(state.ids,std::uint64_t{0});
+        std::ranges::fill(state.slot_used,std::uint8_t{0});
         for (std::size_t c=0;c<components;++c) {
             state.ids[selected[c]]=ids[c]; state.slot_used[selected[c]]=1;
         }

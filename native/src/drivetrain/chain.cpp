@@ -303,7 +303,7 @@ namespace drivetrain {
         model_access::require_id(rear,m->nbody,"geometry.rear");
         model_access::require_id(frame,m->nbody,"geometry.frame");
         const auto n=jacobian.size();
-        if(n!=static_cast<std::size_t>(m->nv)) throw std::invalid_argument("geometry workspace width");
+        if(std::cmp_not_equal(n,m->nv)) throw std::invalid_argument("geometry workspace width");
         const auto positions=model_access::readonly_buffer(d->xpos,3*m->nbody);
         const auto rotations=model_access::readonly_buffer(d->xmat,9*m->nbody);
         const auto sites=model_access::readonly_buffer(d->site_xpos,3*m->nsite);

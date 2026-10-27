@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <utility>
 
@@ -59,12 +60,12 @@ void size_state(TyreState3d& s,const TyreStateIdentity3d& id) {
         b.bristle_ux_m.assign(m,0.);b.bristle_uy_m.assign(m,0.);b.bristle_energy_j.assign(m,0.);
     }
 }
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 double surface_mu(const terrain::Terrain3dQueryView& view,std::uint32_t id,double speed) noexcept {
     const auto* material=view.surface(id);
     if(!material)return -1.;
-    if(material->stribeck_speed_mps<=0.)return speed==0.?material->mu_peak:material->mu_slide;
-    const double ratio=std::abs(speed)/material->stribeck_speed_mps;
-    return material->mu_slide+(material->mu_peak-material->mu_slide)*std::exp(-ratio*ratio);
+    // One Stribeck law for every resolved kernel (fast patch and bristles).
+    return detail::stribeck_mu(*material,speed);
 }
 }
 
@@ -83,13 +84,13 @@ struct Pneumatic3dModel::ElementWorkers {
         double dt=0.,pressure=0.;
     };
     static void geometry_work(void* raw,std::size_t begin,std::size_t end) noexcept {
-        auto& w=*static_cast<Work*>(raw);
+        const auto& w=*static_cast<Work*>(raw);
         const auto status=detail::query_geometry_range(*w.grid,*w.kin,*w.view,w.elements,begin,end);
         std::fill(w.statuses.begin()+static_cast<std::ptrdiff_t>(begin),
                   w.statuses.begin()+static_cast<std::ptrdiff_t>(end),static_cast<std::uint8_t>(status));
     }
     static void normal_work(void* raw,std::size_t begin,std::size_t end) noexcept {
-        auto& w=*static_cast<Work*>(raw);
+        const auto& w=*static_cast<Work*>(raw);
         const auto status=detail::evaluate_carcass_range(*w.carcass,w.elements,w.dt,*w.state,
             w.normals,w.pressure,begin,end);
         std::fill(w.statuses.begin()+static_cast<std::ptrdiff_t>(begin),
@@ -120,7 +121,7 @@ unsigned Pneumatic3dModel::worker_threads() const noexcept {
     return workers_?workers_->pool.worker_count()+1U:1U;
 }
 
-Pneumatic3dModel::Pneumatic3dModel(Pneumatic3dSpec spec,terrain::Terrain3dQueryView view,TyreStateIdentity3d identity)
+Pneumatic3dModel::Pneumatic3dModel(Pneumatic3dSpec spec,terrain::Terrain3dQueryView view,const TyreStateIdentity3d& identity)
     :spec_(std::move(spec)),view_(view) {
     if(!view.context || !view.sample_fn || !view.ray_fn)
         throw std::invalid_argument("pneumatic3d.terrain: bound immutable query view required");
@@ -175,7 +176,7 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
     for(std::size_t w=0;w<2;++w) {
         CoreStatus result=CoreStatus::ok;
         {
-            ::runtime::spatial::timing::Scope rays(::runtime::spatial::timing::Region::terrain_rays);
+            const ::runtime::spatial::timing::Scope rays(::runtime::spatial::timing::Region::terrain_rays);
             if(workers_) {
                 ElementWorkers::Work work;work.grid=&grid_[w];work.kin=&kin[w];work.view=&view_;
                 work.elements=elements_[w];
@@ -187,7 +188,7 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
         for(const auto& e:elements_[w])if(e.reason!=ReasonCode3d::none) {
             reason_=e.reason;return CoreStatus::invalid_geometry;
         }
-        ::runtime::spatial::timing::Scope tyre(::runtime::spatial::timing::Region::tyre_elements);
+        const ::runtime::spatial::timing::Scope tyre(::runtime::spatial::timing::Region::tyre_elements);
         if(workers_) {
             double pressure=0.;
             result=detail::prepare_carcass(spec_.carcass[w],elements_[w],dt,staging_.carcass[w],normals_[w],pressure);
@@ -252,7 +253,7 @@ CoreStatus Pneumatic3dModel::evaluate(const std::array<WheelKinematics3d,2>& kin
         }
         if(spec_.tier==spatial::TyreTier::fast) {
             // This branch is the fixed 64 x 7 fast grid (3.5 KiB scratch).
-            std::array<double,64U*7U> old_area{};
+            std::array<double,std::size_t{64}*7U> old_area{};
             const auto& old_map=committed_.patches[w].element_to_patch_slot;
             for(std::size_t i=0;i<old_map.size();++i)if(old_map[i]<previous_ids.size())
                 old_area[old_map[i]]+=grid_[w].geometric_area_m2[i];
@@ -354,7 +355,7 @@ CoreStatus Pneumatic3dModel::restore(const TyreState3d& state) noexcept {
     }
     copy_material(state,committed_);copy_material(state,staging_);last_advanced_interval_=state.accepted_interval;
     patch_count_.fill(0);reason_=ReasonCode3d::none;
-    for(auto& lane:wrench_)std::fill(lane.begin(),lane.end(),PatchWrench{});
+    for(auto& lane:wrench_)std::ranges::fill(lane,PatchWrench{});
     return CoreStatus::ok;
 }
 ReasonCode3d Pneumatic3dModel::last_reason() const noexcept {return reason_;}
@@ -363,7 +364,8 @@ double Pneumatic3dModel::stored_energy_j() const noexcept {
 }
 double Pneumatic3dModel::dissipated_j() const noexcept {
     double e=0.;for(std::size_t w=0;w<2;++w)e+=committed_.carcass[w].dissipated_j+committed_.brush[w].sliding_loss_j+
-        committed_.brush[w].convective_release_j;return e;
+        committed_.brush[w].convective_release_j;
+    return e;
 }
 const Pneumatic3dSpec& Pneumatic3dModel::spec() const noexcept {return spec_;}
 } // namespace bike::pneumatic3d

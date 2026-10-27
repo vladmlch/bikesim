@@ -7,6 +7,7 @@
 #include <span>
 #include <stdexcept>
 #include <string_view>
+#include <utility>
 
 namespace runtime::spatial {
 namespace {
@@ -27,7 +28,7 @@ void SensorObservationV2::validate() const {
     nonnegative(time_s,"observation_v2.time_s"); nonnegative(source_time_s,"observation_v2.source_time_s");
     if (source_time_s > time_s || (valid_mask & ~0x7ffU) != 0 || (!valid && valid_mask != 0))
         throw std::invalid_argument("observation_v2: future source time or invalid validity mask");
-    for (double x : values) if (!std::isfinite(x)) throw std::invalid_argument("observation_v2.values: nonfinite channel");
+    for (const double x : values) if (!std::isfinite(x)) throw std::invalid_argument("observation_v2.values: nonfinite channel");
 }
 WireObject SensorObservationV2::as_wire() const {
     validate();
@@ -58,16 +59,16 @@ SensorObservationV2 SensorObservationV2::from_wire(const WireObject& wire) {
 }
 void NoiseTapeV2::validate() const {
     if(noise.size()!=dropout_uniform.size())throw std::invalid_argument("noise_v2: shapes must be (count,11) and (count,)");
-    for(const auto& row:noise)for(double x:row)if(!std::isfinite(x))throw std::invalid_argument("noise_v2: nonfinite noise");
-    for(double x:dropout_uniform)if(!std::isfinite(x)||x<0.||x>=1.)throw std::invalid_argument("noise_v2.dropout_uniform: expected [0,1)");
+    for(const auto& row:noise)for(const double x:row)if(!std::isfinite(x))throw std::invalid_argument("noise_v2: nonfinite noise");
+    for(const double x:dropout_uniform)if(!std::isfinite(x)||x<0.||x>=1.)throw std::invalid_argument("noise_v2.dropout_uniform: expected [0,1)");
 }
 void SensorConfigV2::validate() const {
     nonnegative(latency_s,"sensors_v2.latency_s"); nonnegative(maximum_age_s,"sensors_v2.maximum_age_s");
     nonnegative(dropout_probability,"sensors_v2.dropout_probability");
     if(dropout_probability>1.)throw std::invalid_argument("sensors_v2.dropout_probability: exceeds one");
-    for(double x:{sample_period_s,maximum_read_period_s})if(!std::isfinite(x)||x<=0.)throw std::invalid_argument("sensors_v2.period: expected positive finite period");
-    for(const auto& bias:{acceleration_bias,gyro_bias})for(double x:bias)if(!std::isfinite(x))throw std::invalid_argument("sensors_v2.bias: nonfinite value");
-    for(const auto& stddev:{acceleration_std,gyro_std})for(double x:stddev)nonnegative(x,"sensors_v2.std");
+    for(const double x:{sample_period_s,maximum_read_period_s})if(!std::isfinite(x)||x<=0.)throw std::invalid_argument("sensors_v2.period: expected positive finite period");
+    for(const auto& bias:{acceleration_bias,gyro_bias})for(const double x:bias)if(!std::isfinite(x))throw std::invalid_argument("sensors_v2.bias: nonfinite value");
+    for(const auto& stddev:{acceleration_std,gyro_std})for(const double x:stddev)nonnegative(x,"sensors_v2.std");
     nonnegative(encoder_std,"sensors_v2.encoder_std");nonnegative(torque_std,"sensors_v2.torque_std");
     (void)capacity(*this);
 }
@@ -129,7 +130,7 @@ void SensorPipelineV2::import_state(SensorStateV2 next) {
     else if(!next.startup||!next.last_time||next.queue.empty())throw std::invalid_argument("sensors_v2.state: initialized state lacks clocks/startup/latest sample");
     const auto dropped=[&](double uniform){return uniform<config_.dropout_probability;};
     const auto consumed=std::span<const double>(tape_.dropout_uniform).first(next.cursor);
-    if(next.samples_dropped!=static_cast<std::size_t>(std::ranges::count_if(consumed,dropped)))
+    if(std::cmp_not_equal(next.samples_dropped,std::ranges::count_if(consumed,dropped)))
         throw std::invalid_argument("sensors_v2.state.samples_dropped: differs from consumed noise tape");
     if(next.last_time)nonnegative(*next.last_time,"sensors_v2.last_time");
     if(next.delivery_time)nonnegative(*next.delivery_time,"sensors_v2.delivery_time");
@@ -139,12 +140,14 @@ void SensorPipelineV2::import_state(SensorStateV2 next) {
             std::ranges::any_of(std::span<const double>(sample.values).first<6>(),[](double x){return x!=0.;})))
             throw std::invalid_argument("sensors_v2.state: disabled IMU channels must be canonical zero and invalid");
     };
-    if(next.startup){configured_sample(*next.startup);if(next.startup->source_time_s>*next.last_time||
-        (dropped(tape_.dropout_uniform.front())&&next.startup->valid)||
-        (next.startup->valid&&(next.startup->source_time_s+config_.latency_s>next.startup->time_s||
-         next.startup->time_s-next.startup->source_time_s>config_.maximum_age_s)))
-        throw std::invalid_argument("sensors_v2.state.startup: invalid startup sentinel");
-        if(next.delivery_time&&*next.delivery_time<next.startup->source_time_s)throw std::invalid_argument("sensors_v2.state.delivery_time: precedes startup");}
+    if(next.startup){configured_sample(*next.startup);
+        if(next.startup->source_time_s>*next.last_time||
+            (dropped(tape_.dropout_uniform.front())&&next.startup->valid)||
+            (next.startup->valid&&(next.startup->source_time_s+config_.latency_s>next.startup->time_s||
+             next.startup->time_s-next.startup->source_time_s>config_.maximum_age_s)))
+            throw std::invalid_argument("sensors_v2.state.startup: invalid startup sentinel");
+        if(next.delivery_time&&*next.delivery_time<next.startup->source_time_s)
+            throw std::invalid_argument("sensors_v2.state.delivery_time: precedes startup");}
     std::optional<double> previous;
     // read() discards only a prefix; retained slots map to the last queue.size()
     // attempts, including dropped attempts. A nondrop may still be invalid for
@@ -155,11 +158,12 @@ void SensorPipelineV2::import_state(SensorStateV2 next) {
             throw std::invalid_argument("sensors_v2.state.queue: dropped attempt cannot be valid");
         if((previous&&sample.source_time_s<=*previous)||!next.last_time||
         sample.source_time_s>*next.last_time||sample.source_time_s<next.startup->source_time_s)
-        throw std::invalid_argument("sensors_v2.state.queue: timestamps are not unique and ordered");previous=sample.source_time_s;}
+            throw std::invalid_argument("sensors_v2.state.queue: timestamps are not unique and ordered");
+        previous=sample.source_time_s;}
     if(next.last_time&&(!previous||*previous!=*next.last_time))
         throw std::invalid_argument("sensors_v2.state.queue: latest attempt is absent");
     // All validation and snapshot allocation happened before the live commit.
-    std::copy(next.queue.begin(),next.queue.end(),queue_storage_.begin());queue_head_=0;queue_count_=next.queue.size();
+    std::ranges::copy(next.queue,queue_storage_.begin());queue_head_=0;queue_count_=next.queue.size();
     last_time_=next.last_time;delivery_time_=next.delivery_time;startup_=next.startup;cursor_=next.cursor;
     samples_attempted_=next.samples_attempted;samples_dropped_=next.samples_dropped;
 }

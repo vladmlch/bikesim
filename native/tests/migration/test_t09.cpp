@@ -157,9 +157,15 @@ void checks_read_bootstrap(std::string_view name) {
     bt::require(boot->state.step == 0 && boot->state.generation >= 1,
                 "runtime scalars decode");
     // The decoded vector must be bitwise-identical to the f64 payload —
-    // the $array tag resolution ran the LE element decode.
+    // the $array tag resolution ran the LE element decode. The payload is
+    // the ref the wire carried: integration.f64 separately pins the native
+    // snapshot (the T25 golden) and may differ from the Python capture —
+    // native_start_welded's leg-ctrl slots are zero by design there.
+    const bio::Value state_doc = parse_doc(directory / "state.json");
+    const std::string &array_ref =
+        as_string(member(member(state_doc, "integration_state"), "$array"));
     require_bitwise(boot->state.integration_state,
-                    bt::read_f64(directory / "integration.f64"),
+                    bt::read_f64(bt::fixture(array_ref)),
                     "integration vector resolves bitwise");
     // The staged documents arrive owned — the welded captures all carry
     // rider_contacts as a staged Value (decoded later, against the live

@@ -1,5 +1,7 @@
 #pragma once
 #include "../io/value.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <optional>
@@ -21,8 +23,10 @@ struct Job {
     // User tokens before the native executable/output suffix is attached.
     std::optional<std::vector<std::string>> requested_argv{};
     // Spatial source identity; assigned before any child/output is created.
-    std::optional<std::string> key;
-    io::Value identity;
+    // Default member initializers keep designated-initializer callers free of
+    // missing-field diagnostics.
+    std::optional<std::string> key{};
+    io::Value identity{};
 };
 struct Result {
     std::string id;

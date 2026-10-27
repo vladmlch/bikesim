@@ -5,11 +5,21 @@
 #include "../recording/spatial_analysis.hpp"
 #include "../viz/spatial.hpp"
 #include "../recording/analysis_detail.hpp"
+#include <algorithm>
 #include <charconv>
+#include <cstdint>
 #include <iostream>
 #include <map>
+#include <memory>
+#include <optional>
+#include <ostream>
 #include <set>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 #include <system_error>
+#include <vector>
 
 namespace bike::cli {
 namespace {
@@ -187,9 +197,9 @@ int recording_command(std::span<const std::string_view> arguments, std::ostream&
                 if (kind == "imu" || (kind == "all" && viz::numeric(channels,"observations.time_s")))
                     append(viz::spatial_imu_plot(channels));
                 if (kind == "all" && !viz::numeric(channels,"spatial.front_wheel_x_m"))
-                    report.panels.front().notes.push_back("Wheel paths N/A: accepted force-stage axle transforms were not recorded.");
+                    report.panels.front().notes.emplace_back("Wheel paths N/A: accepted force-stage axle transforms were not recorded.");
                 if (kind == "all" && !viz::numeric(channels,"observations.time_s"))
-                    report.panels.front().notes.push_back("IMU N/A: no research observations were recorded.");
+                    report.panels.front().notes.emplace_back("IMU N/A: no research observations were recorded.");
                 viz::write_artifact(report,args.required("output"));
                 result = Value{Object{{"output",text(args.required("output"))},{"semantics",text("recorded spatial evidence; no simulator constructed")}}};
             }

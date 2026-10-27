@@ -29,9 +29,13 @@ Terrain3dKind Terrain3dSource::kind() const noexcept {
     return grid() ? Terrain3dKind::grid : Terrain3dKind::profile_extrusion;
 }
 Terrain3dQueryView Terrain3dSource::query_view() const noexcept {
-    if (const auto* owner = grid()) return {Terrain3dKind::grid, owner, sample_thunk<Grid3d>, ray_thunk<Grid3d>, owner->surfaces()};
+    if (const auto* owner = grid())
+        return {.kind = Terrain3dKind::grid, .context = owner, .sample_fn = sample_thunk<Grid3d>,
+                .ray_fn = ray_thunk<Grid3d>, .surface_table = owner->surfaces()};
     const auto* owner = extrusion();
-    return {Terrain3dKind::profile_extrusion, owner, sample_thunk<ProfileExtrusion3d>, ray_thunk<ProfileExtrusion3d>, owner->surfaces()};
+    return {.kind = Terrain3dKind::profile_extrusion, .context = owner,
+            .sample_fn = sample_thunk<ProfileExtrusion3d>, .ray_fn = ray_thunk<ProfileExtrusion3d>,
+            .surface_table = owner->surfaces()};
 }
 const Grid3d* Terrain3dSource::grid() const noexcept { return std::get_if<Grid3d>(&source_); }
 const ProfileExtrusion3d* Terrain3dSource::extrusion() const noexcept { return std::get_if<ProfileExtrusion3d>(&source_); }

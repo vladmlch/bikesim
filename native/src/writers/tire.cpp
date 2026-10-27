@@ -556,8 +556,11 @@ void TireWriter::prepare_state(std::span<const std::string> names,
 
 void TireWriter::commit_prepared_state() noexcept {
     states_ = prepared_states_;
-    // A restored state has not advanced under any interval yet — mirrors
-    // `applier.last_time_s = None` in the Python restore path.
+    // A restored state has not advanced under any interval yet — the clock
+    // resets the way the oracle's state-file restore does (applier.last_time_s
+    // = None). The material-only rollback path reaches the same value through
+    // the following restart_clock; the oracle's restore_state leaves the
+    // post-relax clock, which only the restarted consumers observe.
     last_time_s_ = std::nullopt;
 }
 

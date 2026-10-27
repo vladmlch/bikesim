@@ -123,8 +123,26 @@ void provenance_and_withheld() {
     const auto& profiles=io::as_array(member(registry,"profiles"),"profiles");
     bt::require(profiles.size()==2,"front and rear profiles are independently identified");
     const std::array expected{bike::configuration::kFrontTyre,bike::configuration::kRearTyre};
+    // The data file must describe the same identities and evidence as the
+    // production registry; the registry owns the value, so keep it alive.
+    const auto code_registry=bike::configuration::spatial_tyre_profile_registry();
+    const auto& code_profiles=io::as_array(member(code_registry,"profiles"),"registry.profiles");
+    bt::require(code_profiles.size()==profiles.size(),"data file and production registry list the same profiles");
+    // Null stays fail-closed (both sides must be null together); once V fills the
+    // digests, the values must agree too, not only their presence.
+    const auto same_digest=[](const io::Value& file,const io::Value& registry) {
+        if(io::is_null(file)||io::is_null(registry))return io::is_null(file)&&io::is_null(registry);
+        return io::as_string(file,"digest")==io::as_string(registry,"registry.digest");
+    };
     for(std::size_t i=0;i<profiles.size();++i) {
         const auto& p=profiles[i];const auto status=io::as_string(member(p,"status"),"status");
+        const auto& registered=code_profiles[i];
+        bt::require(io::as_string(member(p,"id"),"id")==io::as_string(member(registered,"id"),"registry.id")&&
+            status==io::as_string(member(registered,"status"),"registry.status")&&
+            io::as_int64(member(p,"source_measurements"),"source_measurements")==
+                io::as_int64(member(registered,"source_measurements"),"registry.source_measurements")&&
+            same_digest(member(p,"digest"),member(registered,"digest")),
+            "profile data file and production registry carry the same identity and unresolved evidence");
         const auto count=io::as_int64(member(p,"source_measurements"),"source_measurements");
         bt::require(status!="measured"||count>0,"provenance cannot promote invented coefficients");
         if(count==0)bt::require(status=="provisional"&&io::is_null(member(p,"digest")),

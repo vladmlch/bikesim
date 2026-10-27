@@ -2,10 +2,16 @@
 #include "catalog.hpp"
 #include "encoding.hpp"
 #include "../runtime/research.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <span>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace bike::recording {
 struct RunMetadata {

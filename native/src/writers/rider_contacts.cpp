@@ -215,6 +215,7 @@ namespace writers {
         jac_a_.assign(3 * static_cast<std::size_t>(model_->nv), 0.);
         jac_b_.assign(3 * static_cast<std::size_t>(model_->nv), 0.);
         qfrc_.assign(static_cast<std::size_t>(model_->nv), 0.);
+        transport_.assign(static_cast<std::size_t>(model_->nv), 0.);
         measure_qfrc_.assign(static_cast<std::size_t>(model_->nv), 0.);
         // Attachment discriminators (lines 84-95) and the conditional
         // equality resolution each link class performs.
@@ -488,7 +489,9 @@ namespace writers {
         const int nv = static_cast<int>(model_->nv);
         // `qfrc += jrel.T @ f` scratch — see the header contract: the
         // product must be a separately rounded vector before the +=.
-        std::vector<double> transport(static_cast<std::size_t>(nv));
+        // transport_ is sized at construction; each use site runs
+        // dgemv(beta=0) first, so no stale lanes reach the +=.
+        std::vector<double> &transport = transport_;
         double energy = 0.;
         double loss = w.pending_release_loss_j;
         double radial_power = 0.;
@@ -882,6 +885,13 @@ namespace writers {
             const std::optional<std::vector<double>> pull =
                 pull_of(t);
             try {
+                // A target carrying a rejected spatial frame lands on
+                // the same except-ValueError seam as an unobservable
+                // solve — the entry is skipped and the diagnostic is
+                // recorded, never propagated.
+                if (t.spatial_frame.has_value() && !t.spatial_frame->valid)
+                    throw std::invalid_argument(
+                        "invalid spatial attachment frame");
                 out.geometry.emplace_back(
                     t.out, rider::prepare_attachment_geometry(
                                model_, data, t.eq_id, t.rider_body,
@@ -1140,8 +1150,12 @@ namespace writers {
         target.point = vec3_at(site_xpos, ref.site);
         if (spatial_) {
             const auto pose = support > 0 ? support_pose(model_,data,ref.body) : support_geom_pose(model_,data,ref.geom);
+            // A degenerate basis stays on the target as valid == false —
+            // support_frame reports instead of throwing, and the
+            // measurement seams turn the flag into the oracle's
+            // '<out>:unobservable_attachment_wrench' entry rather than
+            // aborting the whole capture.
             target.spatial_frame = bike::rider::support_frame(pose,{0.,0.,1.});
-            if (!target.spatial_frame->valid) throw std::invalid_argument("rider.spatial.support: invalid support frame");
             target.normal=target.spatial_frame->normal_world;
         } else if (support > 0 && spindle_pedals_) {
             const std::span<const double> xmat =
@@ -1207,8 +1221,10 @@ namespace writers {
         if (spatial_) {
             const auto pose = support_pose(model_,data,steer_);
             const auto local = bike::spatial::rotate_world_to_body(pose.quat_world_from_body_wxyz,pull);
+            // Same deferred rejection as support_target: an invalid pull
+            // frame stays flagged on the target for the measurement
+            // seam instead of escaping it as an exception.
             target.spatial_frame = bike::rider::support_frame(pose,local);
-            if (!target.spatial_frame->valid) throw std::invalid_argument("rider.spatial.grip: invalid pull frame");
             target.normal=target.spatial_frame->normal_world;
         }
         return target;
@@ -1227,6 +1243,13 @@ namespace writers {
                           &out](const AttachmentTarget &t) {
             const std::optional<std::vector<double>> pull = pull_of(t);
             try {
+                // Same seam as prepare_attachment_raw's run: a target
+                // with a rejected spatial frame records
+                // '<out>:unobservable_attachment_wrench' instead of
+                // aborting the whole measurement.
+                if (t.spatial_frame.has_value() && !t.spatial_frame->valid)
+                    throw std::invalid_argument(
+                        "invalid spatial attachment frame");
                 if (raw) {
                     out.raws.emplace_back(
                         t.out,

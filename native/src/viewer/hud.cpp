@@ -1,10 +1,17 @@
 #include "hud.hpp"
 #include "../io/json.hpp"
+#include <array>
 #include <cmath>
+#include <cstdint>
+#include <initializer_list>
 #include <iomanip>
+#include <locale>
 #include <numbers>
 #include <sstream>
+#include <stdexcept>
+#include <string_view>
 #include <variant>
+#include <vector>
 
 namespace bike::viewer {
 namespace {

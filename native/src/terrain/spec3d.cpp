@@ -7,6 +7,7 @@
 #include <initializer_list>
 #include <limits>
 #include <string_view>
+#include <utility>
 
 namespace bike::terrain {
 namespace {
@@ -37,7 +38,7 @@ double real(const Value::Object& object, std::string_view key, std::string_view 
 }
 std::uint32_t id(const Value::Object& object, std::string_view key, std::string_view path) {
     const auto value = bike::io::as_int64(required(object, key, path), std::string(path) + "." + std::string(key));
-    if (value < 0 || static_cast<std::uint64_t>(value) > std::numeric_limits<std::uint32_t>::max())
+    if (value < 0 || std::cmp_greater(value, std::numeric_limits<std::uint32_t>::max()))
         throw std::invalid_argument(std::string(path) + "." + std::string(key) + ": outside uint32 range");
     return static_cast<std::uint32_t>(value);
 }
@@ -139,9 +140,10 @@ Track3dSpec read_track3d_spec(const Value& document) {
         out.generator_version = bike::io::as_string(*version, "terrain3d.generator_version");
     if (const auto* roughness = bike::io::find_member(table, "roughness")) {
         const auto& object = keys(*roughness, "terrain3d.roughness", {"sigma_m", "ell_m"});
-        out.roughness = {real(object, "sigma_m", "terrain3d.roughness"), real(object, "ell_m", "terrain3d.roughness")};
+        out.roughness = {.sigma_m = real(object, "sigma_m", "terrain3d.roughness"),
+                         .ell_m = real(object, "ell_m", "terrain3d.roughness")};
     }
-    auto entries = [&](std::string_view key) -> const Value::Array& {
+    const auto entries = [&](std::string_view key) -> const Value::Array& {
         static const Value::Array empty;
         const auto* value = bike::io::find_member(table, key);
         return value ? bike::io::as_array(*value, "terrain3d." + std::string(key)) : empty;
@@ -149,29 +151,34 @@ Track3dSpec read_track3d_spec(const Value& document) {
     for (const auto& entry : entries("banks")) {
         const auto path = "terrain3d.banks[" + std::to_string(out.banks.size()) + "]";
         const auto& object = keys(entry, path, {"start_x_m", "ramp_m", "angle_deg"});
-        out.banks.push_back({real(object, "start_x_m", path), real(object, "ramp_m", path), real(object, "angle_deg", path)});
+        out.banks.push_back({.start_x_m = real(object, "start_x_m", path), .ramp_m = real(object, "ramp_m", path),
+                             .angle_deg = real(object, "angle_deg", path)});
     }
     for (const auto& entry : entries("features")) {
         const auto path = "terrain3d.features[" + std::to_string(out.features.size()) + "]";
         const auto& object = keys(entry, path, {"kind", "x_m", "y_m", "amplitude_m", "radius_x_m", "radius_y_m", "yaw_rad"});
-        out.features.push_back({bike::io::as_string(required(object, "kind", path), path + ".kind"),
-            real(object, "x_m", path), real(object, "y_m", path), real(object, "amplitude_m", path),
-            real(object, "radius_x_m", path), real(object, "radius_y_m", path), real(object, "yaw_rad", path)});
+        out.features.push_back({.kind = bike::io::as_string(required(object, "kind", path), path + ".kind"),
+            .x_m = real(object, "x_m", path), .y_m = real(object, "y_m", path),
+            .amplitude_m = real(object, "amplitude_m", path), .radius_x_m = real(object, "radius_x_m", path),
+            .radius_y_m = real(object, "radius_y_m", path), .yaw_rad = real(object, "yaw_rad", path)});
     }
     for (const auto& entry : entries("surfaces")) {
         const auto path = "terrain3d.surfaces[" + std::to_string(out.surfaces.size()) + "]";
         const auto& object = keys(entry, path, {"id", "name", "mu_peak", "mu_slide", "slip_stiffness_per_load", "stribeck_speed_mps", "description"});
-        SurfaceSpec3d surface{id(object, "id", path), bike::io::as_string(required(object, "name", path), path + ".name"),
-            real(object, "mu_peak", path), real(object, "mu_slide", path), real(object, "slip_stiffness_per_load", path),
-            real(object, "stribeck_speed_mps", path), {}};
+        SurfaceSpec3d surface{.id = id(object, "id", path),
+            .name = bike::io::as_string(required(object, "name", path), path + ".name"),
+            .mu_peak = real(object, "mu_peak", path), .mu_slide = real(object, "mu_slide", path),
+            .slip_stiffness_per_load = real(object, "slip_stiffness_per_load", path),
+            .stribeck_speed_mps = real(object, "stribeck_speed_mps", path), .description = {}};
         if (const auto* description = bike::io::find_member(object, "description")) surface.description = bike::io::as_string(*description, path + ".description");
         out.surfaces.push_back(std::move(surface));
     }
     for (const auto& entry : entries("zones")) {
         const auto path = "terrain3d.zones[" + std::to_string(out.zones.size()) + "]";
         const auto& object = keys(entry, path, {"surface_id", "x0_m", "x1_m", "y0_m", "y1_m"});
-        out.zones.push_back({id(object, "surface_id", path), real(object, "x0_m", path), real(object, "x1_m", path),
-                            real(object, "y0_m", path), real(object, "y1_m", path)});
+        out.zones.push_back({.surface_id = id(object, "surface_id", path), .x0_m = real(object, "x0_m", path),
+                             .x1_m = real(object, "x1_m", path), .y0_m = real(object, "y0_m", path),
+                             .y1_m = real(object, "y1_m", path)});
     }
     validate(out);
     return out;
@@ -199,6 +206,6 @@ Value write_track3d_spec(const Track3dSpec& spec) {
         {"lead_out_m", detail::number(spec.lead_out_m)}, {"generator_version", Value{spec.generator_version}},
         {"banks", Value{std::move(banks)}}, {"roughness", Value{Value::Object{
             {"sigma_m", detail::number(spec.roughness.sigma_m)}, {"ell_m", detail::number(spec.roughness.ell_m)}}}},
-        {"features", Value{std::move(features)}}, {"surfaces", Value{std::move(surfaces)}}, {"zones", Value{std::move(zones)}}}}}};
+        {"features", Value{std::move(features)}}, {"surfaces", Value{std::move(surfaces)}}, {"zones", Value{std::move(zones)}}}}}}};
 }
 } // namespace bike::terrain

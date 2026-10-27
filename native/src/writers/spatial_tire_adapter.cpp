@@ -5,10 +5,15 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
-SpatialTireAdapter::SpatialTireAdapter(const mjModel& m,const bike::spatial::Topology& topology,
+namespace bike::pneumatic3d {
+SpatialTireEvaluationError::~SpatialTireEvaluationError() = default;
+}
+
+SpatialTireAdapter::SpatialTireAdapter(const mjModel& m,bike::spatial::Topology topology,
     bike::pneumatic3d::Pneumatic3dTireWriter& writer,bike::terrain::Terrain3dQueryView terrain)
-    :model_(&m),topology_(topology),writer_(&writer),terrain_(terrain),initial_(writer.state()),radii_(writer.model().spec().outer_radius_m) {
+    :model_(&m),topology_(std::move(topology)),writer_(&writer),terrain_(terrain),initial_(writer.state()),radii_(writer.model().spec().outer_radius_m) {
     const auto& dims=writer.state().identity.dims;
     const auto bound=std::max(static_cast<std::size_t>(writer.state().identity.patch_capacity),
         static_cast<std::size_t>(dims.n_theta_fan)*dims.n_phi);
@@ -30,7 +35,7 @@ CoreStatus SpatialTireAdapter::capture_motion(const mjData& data) noexcept {
         const mjData* data;
         std::span<const mjtNum> positions,rotations,mass_centers;
         bool valid=true;
-    } call{this,&data,{},{},{}};
+    } call{.self=this,.data=&data,.positions={},.rotations={},.mass_centers={}};
     try {
         call.positions=model_access::readonly_buffer(data.xpos,3*model_->nbody,"pneumatic_3d.xpos");
         call.rotations=model_access::readonly_buffer(data.xquat,4*model_->nbody,"pneumatic_3d.xquat");
@@ -67,6 +72,7 @@ CoreStatus SpatialTireAdapter::capture_motion(const mjData& data) noexcept {
     },&call,error))return CoreStatus::engine_failure;
     return call.valid?CoreStatus::ok:CoreStatus::invalid_geometry;
 }
+// NOLINTNEXTLINE(bugprone-exception-escape) patch lanes are cold-reserved to capacity in the ctor and every fallible call is a noexcept query
 CoreStatus SpatialTireAdapter::project(const mjData& data) noexcept {
     std::span<const mjtNum> positions;
     try {positions=model_access::readonly_buffer(data.xpos,3*model_->nbody,"pneumatic_3d.xpos");}
@@ -113,6 +119,7 @@ CoreStatus SpatialTireAdapter::project(const mjData& data) noexcept {
     probes_.swap(projection_stage_);probed_=true;
     return CoreStatus::ok;
 }
+// NOLINTNEXTLINE(bugprone-exception-escape) snapshot lanes are cold-reserved to capacity in the ctor and every fallible call is a noexcept query
 void SpatialTireAdapter::publish_probe(const mjData& data) noexcept {
     for(std::size_t w=0;w<2;++w) {
         auto& s=snapshots_[w];const auto& probe=probes_[w];
@@ -145,7 +152,7 @@ CoreStatus SpatialTireAdapter::try_compute_into(const mjData* data,double dt,std
     double old_brush=0.,old_radial=0.;
     for(std::size_t w=0;w<2;++w){old_brush+=writer_->state().brush[w].sliding_loss_j+writer_->state().brush[w].convective_release_j;
         old_radial+=writer_->state().carcass[w].dissipated_j;}
-    std::fill(out.begin(),out.end(),0.);
+    std::ranges::fill(out,0.);
     // Every fallible geometric/engine projection is a probe. Only after it
     // succeeds may the material owner commit; publication then copies into
     // pre-reserved fixed-capacity snapshot storage without another query.
@@ -153,7 +160,7 @@ CoreStatus SpatialTireAdapter::try_compute_into(const mjData* data,double dt,std
     if(probe!=CoreStatus::ok)return probe;
     const auto projected=project(*data);
     if(projected!=CoreStatus::ok)return projected;
-    std::fill(out.begin(),out.end(),0.);
+    std::ranges::fill(out,0.);
     const auto status=writer_->try_compute_into(data,dt,true,out);
     if(status!=CoreStatus::ok)return status;
     double brush=0.,radial=0.;
@@ -171,7 +178,7 @@ void SpatialTireAdapter::probe_compute_into(const mjData* d,double dt,std::span<
     const auto motion=d?capture_motion(*d):CoreStatus::invalid_input;
     if(motion==CoreStatus::engine_failure)throw engine::EngineFailure("pneumatic_3d: wheel motion query failed");
     if(motion!=CoreStatus::ok)throw bike::pneumatic3d::SpatialTireEvaluationError(motion,bike::pneumatic3d::ReasonCode3d::nonfinite_geometry);
-    std::fill(out.begin(),out.end(),0.);
+    std::ranges::fill(out,0.);
     const auto status=writer_->try_compute_into(d,dt,false,out);
     if(status==CoreStatus::engine_failure)throw engine::EngineFailure("pneumatic_3d: engine force probe failed");
     if(status!=CoreStatus::ok)throw bike::pneumatic3d::SpatialTireEvaluationError(status,writer_->last_reason());
@@ -192,13 +199,13 @@ std::array<std::optional<TireSnapshot>,2> SpatialTireAdapter::probe_snapshots() 
 std::array<std::optional<TireDiagnostics>,2> SpatialTireAdapter::diagnostics() const {
     std::array<std::optional<TireDiagnostics>,2> out{};if(committed_)for(std::size_t w=0;w<2;++w)out[w]=diagnostics_[w];return out;
 }
-void SpatialTireAdapter::set_state(std::span<const std::string>,std::span<const double>) {
+[[noreturn]] void SpatialTireAdapter::set_state(std::span<const std::string>,std::span<const double>) {
     throw std::invalid_argument("pneumatic_3d.state: use the versioned BKS3 codec");
 }
-void SpatialTireAdapter::prepare_state(std::span<const std::string>,std::span<const double>) {
+[[noreturn]] void SpatialTireAdapter::prepare_state(std::span<const std::string>,std::span<const double>) {
     throw std::invalid_argument("pneumatic_3d.state: planar column rows cannot restore spatial material");
 }
-std::vector<double> SpatialTireAdapter::state() const {
+[[noreturn]] std::vector<double> SpatialTireAdapter::state() const {
     throw std::invalid_argument("pneumatic_3d.state: use state_bytes, not planar columns");
 }
 void SpatialTireAdapter::invalidate_projection() noexcept {

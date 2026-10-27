@@ -63,23 +63,28 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             if (action == Action::close) { result.closed_by_user = true; window.request_close(); break; }
             if (action == Action::reset) {
                 if (!hooks.reset) continue;
-                if (pacing_measurement) {
-                    const auto observed = Clock::now();
-                    pacing_measurement->observe(observed, frame.state.time_s, pacer.debt_s_at(observed));
-                }
-                // The caller seals/drains the previous episode before reset.
-                hooks.reset();
-                ++result.resets; stopped = false; terminal_drawn = false;
-                input.apply(action);
-                if (hooks.brakes) hooks.brakes(0.,0.);
-                if (hooks.pause) hooks.pause(false);
-                frame = hooks.frame();
-                now = Clock::now(); pacer.set_paused(false); pacer.reset(now); rate.rebase(now,frame.state.time_s);
-                if (pacing_measurement) {
-                    pacing_measurement->reset(now, frame.state.time_s);
-                    pacing_generation = frame.state.generation;
-                }
-                renderer->reset_camera(); request_frame = true;
+                // The reset path stages a second RenderFrame; the lambda's own
+                // stack frame keeps run() under the 8 KiB budget.
+                const auto apply_reset = [&] {
+                    if (pacing_measurement) {
+                        const auto observed = Clock::now();
+                        pacing_measurement->observe(observed, frame.state.time_s, pacer.debt_s_at(observed));
+                    }
+                    // The caller seals/drains the previous episode before reset.
+                    hooks.reset();
+                    ++result.resets; stopped = false; terminal_drawn = false;
+                    input.apply(action);
+                    if (hooks.brakes) hooks.brakes(0.,0.);
+                    if (hooks.pause) hooks.pause(false);
+                    frame = hooks.frame();
+                    now = Clock::now(); pacer.set_paused(false); pacer.reset(now); rate.rebase(now,frame.state.time_s);
+                    if (pacing_measurement) {
+                        pacing_measurement->reset(now, frame.state.time_s);
+                        pacing_generation = frame.state.generation;
+                    }
+                    renderer->reset_camera(); request_frame = true;
+                };
+                apply_reset();
                 continue;
             }
             const auto previous_scale = input.scale;
@@ -104,11 +109,14 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         // the playground model. Rebase BEFORE computing a new target, so an
         // old generation's step count cannot leak into the new model.
         if (request_frame) {
-            auto observed = hooks.frame();
-            if (observed.state.generation != frame.state.generation || observed.state.step != frame.state.step) {
-                now = Clock::now(); pacer.reset(now); rate.rebase(now,observed.state.time_s);
-            }
-            frame = std::move(observed);
+            const auto refresh_frame = [&] {
+                auto observed = hooks.frame();
+                if (observed.state.generation != frame.state.generation || observed.state.step != frame.state.step) {
+                    now = Clock::now(); pacer.reset(now); rate.rebase(now,observed.state.time_s);
+                }
+                frame = std::move(observed);
+            };
+            refresh_frame();
         }
         now = Clock::now();
         const bool time_complete = options.duration_s && frame.state.time_s >= *options.duration_s;
@@ -122,24 +130,32 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             pacing_measurement->observe(now, frame.state.time_s, pacer.debt_s());
         }
         if (!result.terminal && !input.paused && decision.physics_steps != 0) {
-            const auto before = frame.state;
-            const auto room = std::numeric_limits<std::int64_t>::max() - before.step;
-            const auto count = std::min(decision.physics_steps,static_cast<std::uint64_t>(room));
-            auto target = before.step + static_cast<std::int64_t>(count);
-            if (options.duration_s) {
-                const double remaining = std::max(0.,*options.duration_s-before.time_s);
-                const double ticks = std::ceil(remaining/options.timestep_s);
-                if (ticks < static_cast<double>(count)) target = before.step + static_cast<std::int64_t>(ticks);
-            }
-            hooks.advance(target,kComputeSliceS);
-            auto after = hooks.frame();
-            const bool inspection_wrap=options.mode==Mode::inspection&&after.state.generation>before.generation;
-            const bool checked_rollback=options.mode==Mode::checked_replay&&after.state.generation>before.generation&&hooks.terminal();
-            if (!inspection_wrap&&!checked_rollback&&(after.state.generation != before.generation || after.state.step < before.step || after.state.step > target))
-                throw std::runtime_error("viewer advance violated generation/target-step boundary");
-            pacer.completed(inspection_wrap?count:checked_rollback?0:static_cast<std::uint64_t>(after.state.step-before.step));
-            frame = std::move(after);
-            result.terminal = hooks.terminal() || (options.duration_s && frame.state.time_s >= *options.duration_s);
+            // Copy only the scalars the boundary check needs: a whole
+            // RuntimeSnapshot owns the sample, wire view and state vectors.
+            // The post-advance frame lands in the lambda's frame, keeping
+            // run() under the 8 KiB budget.
+            const auto advance = [&] {
+                struct Before { int generation; std::int64_t step; double time_s; };
+                const Before before{.generation=frame.state.generation, .step=frame.state.step, .time_s=frame.state.time_s};
+                const auto room = std::numeric_limits<std::int64_t>::max() - before.step;
+                const auto count = std::min(decision.physics_steps,static_cast<std::uint64_t>(room));
+                auto target = before.step + static_cast<std::int64_t>(count);
+                if (options.duration_s) {
+                    const double remaining = std::max(0.,*options.duration_s-before.time_s);
+                    const double ticks = std::ceil(remaining/options.timestep_s);
+                    if (ticks < static_cast<double>(count)) target = before.step + static_cast<std::int64_t>(ticks);
+                }
+                hooks.advance(target,kComputeSliceS);
+                auto after = hooks.frame();
+                const bool inspection_wrap=options.mode==Mode::inspection&&after.state.generation>before.generation;
+                const bool checked_rollback=options.mode==Mode::checked_replay&&after.state.generation>before.generation&&hooks.terminal();
+                if (!inspection_wrap&&!checked_rollback&&(after.state.generation != before.generation || after.state.step < before.step || after.state.step > target))
+                    throw std::runtime_error("viewer advance violated generation/target-step boundary");
+                pacer.completed(inspection_wrap?count:checked_rollback?0:static_cast<std::uint64_t>(after.state.step-before.step));
+                frame = std::move(after);
+                result.terminal = hooks.terminal() || (options.duration_s && frame.state.time_s >= *options.duration_s);
+            };
+            advance();
         } else if (request_frame) frame = hooks.frame();
         // Stand model/rider changes are explicitly model-generation changes.
         // A renderer cannot accept a different digest merely because nq/nv fit.
@@ -206,12 +222,15 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         // If no terminal frame already froze the window, this is an early
         // close. A pending research interval drained by stop cannot turn an
         // operator interruption into successful GUI performance evidence.
-        const auto final_frame = hooks.frame();
-        const auto completed = Clock::now();
-        if (final_frame.state.generation != pacing_generation)
-            pacing_measurement->reset(completed, final_frame.state.time_s);
-        pacing_measurement->stop(completed, final_frame.state.time_s, pacer.debt_s_at(completed), false);
-        result.pacing = pacing_measurement->report();
+        const auto finalize_pacing = [&] {
+            const auto final_frame = hooks.frame();
+            const auto completed = Clock::now();
+            if (final_frame.state.generation != pacing_generation)
+                pacing_measurement->reset(completed, final_frame.state.time_s);
+            pacing_measurement->stop(completed, final_frame.state.time_s, pacer.debt_s_at(completed), false);
+            result.pacing = pacing_measurement->report();
+        };
+        finalize_pacing();
     }
     renderer->close();
     return result;

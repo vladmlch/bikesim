@@ -19,6 +19,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -54,6 +55,19 @@ _DIAGNOSTIC = re.compile(r"\b(?:warning|error):|fatal error:", re.IGNORECASE)
 _LOCATED_DIAGNOSTIC = re.compile(
     r"^(?P<origin>.*?):(?P<line>\d+):(?P<column>\d+):\s+"
     r"(?P<severity>warning|error):\s*(?P<message>.*?)(?:\s+\[(?P<checker>[^\]]+)\])?\s*$",
+    re.IGNORECASE,
+)
+# Clang echoes the offending source line under each diagnostic with a
+# "   <line> | <code>" gutter. Quoted code can contain text like "error:"
+# (a loop variable named error, a label, a string literal), so collected
+# diagnostic lines are not all severity-bearing headers.
+_SNIPPET_CONTEXT = re.compile(r"^\s*\d*\s*\|")
+# A severity token only counts where a diagnostic header can put it: after a
+# "file:line[:col]:" location, after a tool-name prefix ("clang++: error:"),
+# or at the start of the line ("error: unable to open output file").
+_DIAGNOSTIC_HEADER = re.compile(
+    r"^(?:.*?:\d+(?::\d+)?:|[^\s:][^:\n]*:)?\s*"
+    r"(?P<severity>warning|error|fatal error):",
     re.IGNORECASE,
 )
 _TARGET_FROM_OUTPUT = re.compile(r"(?:^|[/\\])CMakeFiles[/\\]([^/\\]+)\.dir(?:[/\\]|$)")
@@ -144,6 +158,21 @@ def apply_suppressions(
                 }
             )
     return remaining, matched
+
+
+def _diagnostic_severity(line: str) -> str | None:
+    """Return "warning" or "error" for a diagnostic header line, else None.
+
+    Snippet/context lines clang echoes beneath a diagnostic are excluded so
+    quoted source text cannot masquerade as a severity-bearing finding.
+    """
+    if _SNIPPET_CONTEXT.match(line):
+        return None
+    match = _DIAGNOSTIC_HEADER.match(line)
+    if match is None:
+        return None
+    severity = match.group("severity").lower()
+    return "error" if severity == "fatal error" else severity
 
 
 def _require_existing_path(
@@ -1232,37 +1261,52 @@ def run_header_sweep(build: Path) -> int:
     work_root = build_dir / "native_check_work" / kind / run_id
     work_root.mkdir(parents=True, exist_ok=True)
     log_directory = build_dir / "native_check_logs" / kind / run_id
-    records: list[dict[str, Any]] = []
-    tool_health_failed = False
-    blocking_findings = False
+
+    def _probe(job: tuple[int, Path, str, Mapping[str, Any]]) -> dict[str, Any]:
+        index, header, target, entry = job
+        with tempfile.TemporaryDirectory(prefix="header-", dir=work_root) as temporary:
+            probe = Path(temporary) / "header_probe.cpp"
+            probe.write_text(f'#include "{header.as_posix()}"\nint main() {{ return 0; }}\n')
+            argv = _replace_compile_source(entry, probe, syntax_only=True)
+            name = f"{index:04d}-{header.stem}-{target}"
+            record = _run_process(
+                argv,
+                cwd=entry["directory"],
+                log_directory=log_directory,
+                name=name,
+            )
+        record.update(
+            {
+                "pass": "header",
+                "source": str(header),
+                "target": target,
+            }
+        )
+        return record
+
+    jobs: list[tuple[int, Path, str, Mapping[str, Any]]] = []
     index = 0
     for header in headers:
         root = next(root for root in header_roots if _is_under(header, [root]))
         for target, entry in sorted(entries_by_root[root].items()):
-            with tempfile.TemporaryDirectory(prefix="header-", dir=work_root) as temporary:
-                probe = Path(temporary) / "header_probe.cpp"
-                probe.write_text(f'#include "{header.as_posix()}"\nint main() {{ return 0; }}\n')
-                argv = _replace_compile_source(entry, probe, syntax_only=True)
-                name = f"{index:04d}-{header.stem}-{target}"
-                record = _run_process(
-                    argv,
-                    cwd=entry["directory"],
-                    log_directory=log_directory,
-                    name=name,
-                )
-            record.update(
-                {
-                    "pass": "header",
-                    "source": str(header),
-                    "target": target,
-                }
-            )
+            jobs.append((index, header, target, entry))
+            index += 1
+
+    # The probes are independent subprocesses; a pool sized to the host keeps
+    # the ~10k-TU sweep bounded by compiler throughput rather than serial
+    # launch latency. pool.map preserves submission order, so records keep the
+    # deterministic header x target enumeration of the serial version.
+    workers = min(32, (os.cpu_count() or 4))
+    records: list[dict[str, Any]] = []
+    tool_health_failed = False
+    blocking_findings = False
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for record in pool.map(_probe, jobs):
             records.append(record)
             if record["process_health"] != "ok":
                 tool_health_failed = True
             if record["diagnostics"]:
                 blocking_findings = True
-            index += 1
 
     summary["records"] = records
     summary["tool_health"] = "failed" if tool_health_failed else "ok"
@@ -2800,7 +2844,7 @@ def run_context_checks(build: Path) -> int:
 
 def _report_alpha_findings(record: Mapping[str, Any], source: Path) -> None:
     diagnostic_lines = record.get("unsuppressed_diagnostics", record["diagnostics"])
-    lines = [line for line in diagnostic_lines if re.search(r"\bwarning:", line, re.IGNORECASE)]
+    lines = [line for line in diagnostic_lines if _diagnostic_severity(line) == "warning"]
     if lines:
         print(f"== alpha findings (report-only): {source}", file=sys.stderr)
         print("\n".join(lines), file=sys.stderr)
@@ -2954,8 +2998,8 @@ def run_sweep(kind: str, build: Path) -> int:
             records.append(record)
             if record["process_health"] != "ok":
                 tool_health_failed = True
-            has_warning = any(re.search(r"\bwarning:", line, re.IGNORECASE) for line in unsuppressed)
-            has_error = any(re.search(r"\b(?:error|fatal error):", line, re.IGNORECASE) for line in unsuppressed)
+            has_warning = any(_diagnostic_severity(line) == "warning" for line in unsuppressed)
+            has_error = any(_diagnostic_severity(line) == "error" for line in unsuppressed)
             if kind == "analyzer" and pass_name == "alpha":
                 if has_warning:
                     report_only_findings = True

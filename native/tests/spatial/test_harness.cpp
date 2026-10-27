@@ -1,5 +1,6 @@
 #include "support/migration_test.hpp"
 #include "spatial/support/spatial_fixture.hpp"
+#include "platform/argv.hpp"
 #include "platform/process.hpp"
 
 #include <bit>
@@ -40,15 +41,18 @@ private:
 } // namespace
 
 int main(int argc, char** argv) {
-    if (argc == 2 && std::string_view(argv[1]) == "--zero-checks")
+    // The shared entry-point wrapper keeps raw argv subscripting out of the
+    // test under -Wunsafe-buffer-usage.
+    const auto args = bike::platform::main_arguments(argc, argv);
+    if (args.size() == 2 && std::string_view(args[1]) == "--zero-checks")
         return bt::run([] {});
     return bt::run([&] {
-        bt::require(argc == 1, "unexpected spatial harness arguments");
+        bt::require(args.size() == 1, "unexpected spatial harness arguments");
         bt::require(std::bit_cast<std::uint64_t>(0.) !=
                     std::bit_cast<std::uint64_t>(-0.), "signed zero bit control");
         bt::invalid([] { throw std::invalid_argument("positive invalid control"); });
 
-        const auto self = std::filesystem::absolute(argv[0]);
+        const auto self = std::filesystem::absolute(args.front());
         bike::platform::ProcessOptions options;
         options.timeout_s = 10.;
         options.max_output_bytes = 4096;

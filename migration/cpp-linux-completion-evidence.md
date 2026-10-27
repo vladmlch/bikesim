@@ -7870,3 +7870,115 @@ documented 4-red baseline verbatim. L3 (`tools/run_tests.sh
 native`) not re-run — bounded merge-back scope per protocol;
 lane/e's own gate evidence is in `task-F5-report.md`. Unrelated
 documented reds reported, not fixed.
+
+## 2026-10-28 — lane/e batch 3.30 recording lifecycle/retention/capture/publication merge-back (merge `2077ec72`)
+
+Serialized merge; lane/e tip `e5c58bec` branched directly off the
+integration tip — `git merge-base impl/python-free-cpp e5c58bec` =
+`f65906c7`, the pre-merge HEAD. Fast-forwardable; merged `--no-ff`
+per convention (`merge: lane/e batch 3.30 recording
+lifecycle/retention/capture/publication`). **Zero conflicts** — the
+ort merge is a strict superset: all nine touched paths were
+lane/e-only edits against the shared base, so the merged tree is
+byte-identical to lane/e's for every changed file (verified:
+`git diff e5c58bec HEAD` empty; `migration/test-port-map.json`
+byte-equal to lane/e's blob).
+
+### Merge surface
+
+- `migration/test-port-map.json` (key-exact union verified
+  programmatically): 2,391 unique
+  (`source_path`,`source_symbol`,`line`) records on both sides —
+  identical key sets, zero lost/duplicate/contested. The only
+  content deltas are the 74 batch records' dispositions: 67
+  `planned`→`port`, 7 `planned`→`drop`; all 2,317 non-batch
+  records byte-identical to pre-merge. Headers unchanged: all 24
+  non-record top-level keys equal to base
+  (`static_test_functions`=2391, `top_level_test_functions`=2375,
+  `class_test_methods`=16).
+- `migration/python-removal.json`: the four source rows
+  (`test_native_recording_{lifecycle,retention}.py`,
+  `test_recording_{capture,publication}.py`) →
+  `status: replacement_landed`, `verification_ids` set to the
+  matching CTest ids; `deletion_gate` T63 text retained. No other
+  row touched (status census: `replacement_landed` 71→75).
+- `native/tests/reference/Phase3Ports.cmake`: lane/e appended a
+  4-registration block after the 3.26 registrations —
+  `native_recording_lifecycle`, `native_recording_retention`
+  (`LABELS t53 recording slow`), `recording_capture`,
+  `recording_publication` (86 → 90 `bike_add_reference_test`
+  calls); all integration-side registrations unchanged.
+- New files, no conflicts: `recording_test_support.hpp` +
+  `test_native_recording_lifecycle.cpp` (1019 lines),
+  `test_native_recording_retention.cpp` (564),
+  `test_recording_capture.cpp` (440),
+  `test_recording_publication.cpp` (101);
+  `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C330-report.md`.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new `Phase3Ports.cmake` registrations) + incremental
+  `cmake --build --target` for the four suites: green compile +
+  link.
+- `ctest -R 'recording'`: **4/4 PASS** (16.18 s) —
+  `native_recording_lifecycle` 9.68 s, `native_recording_retention`
+  2.29 s, `recording_capture` 1.69 s, `recording_publication`
+  2.51 s. Binary check counts: **PASS 297 / 2424 / 61 / 32
+  checks** respectively (publication's 32 checks cover its 2
+  records; identical to lane/e's own gate).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → `build root-clang` (8 edges; glob re-check
+  reconfigured for the new registrations): green.
+- `ctest root-clang -R 'recording'`: **4/4 PASS** (17.93 s) —
+  lifecycle 12.04 s, retention 1.47 s, capture 1.67 s,
+  publication 2.74 s. Binary check counts identical to darwin:
+  **PASS 297 / 2424 / 61 / 32 checks**.
+- `ctest root-clang -L reference -E 'reference\.coupled_rider_task'
+  -j8` (sweep minus the `reference.coupled_rider_task` carve-out —
+  the `native_coupled_rider_task` binary itself runs inside):
+  **95/99** — reds exactly the documented 4-red baseline verbatim
+  {`reference.golden_episode_tool` (`FAIL native recorder rows
+  reproduce Python oracle`), `reference.native_numeric_completion`
+  (`FAIL config.rider_controller.leg_track_damping_nms_rad:
+  missing required key`), `reference.pneumatic_tire_oracle`
+  (`FAIL fixture is not a regular file`),
+  `reference.native_pneumatic_tire` (`front.normal_load_n`
+  comparison, actual `0x407aec7c836e2edc` vs expected
+  `0x407aec7c97021dff`)} — identical hex values to the 3.26/F5
+  merge-back logs; all four recording registrations green inside
+  the sweep; `reference.native_coupled_rider_task` green
+  (298.36 s).
+
+### Ledger deltas (pre-merge `f65906c7` → post-merge `2077ec72`)
+
+- `test-port-map.json`: records 2391 → **2391** (key-exact union —
+  the lane edited dispositions in place). Dispositions: `port`
+  723 → **790** (+67), `drop` 78 → **85** (+7), `planned` 1243 →
+  **1169** (−74), `golden` 347 unchanged. All 85 `drop` records
+  carry non-empty evidence with an explicit `dropped —`
+  justification and `comparison_class` ∈ {`python-only`,
+  `contract`} — measured: 85/85 `python-only`, 0 missing/empty
+  evidence, 0 out-of-class. The 7 new drops: Python-frontend
+  viewer emission kinds (×2), fake-driver-only injection seam,
+  console-trailer text pin, `PhysicalRideDriver.export()` file
+  bundle (×2), Python runtime type-state rejection.
+- `python-removal.json`: 4 rows → `replacement_landed` (census
+  71→75); `planned` 464→460.
+- `Phase3Ports.cmake`: 86 → **90** registrations.
+
+### Assessment
+
+Trivially clean merge — the lane sat directly on the integration
+tip, so union degenerated to the lane's tree. The ported batch
+runs identically on both platforms (matching per-binary check
+counts, no goldens in this batch — every ported record is
+native-vs-native contract). The linux sweep reproduces the
+documented 4-red baseline verbatim with identical drift hex;
+no new reds introduced. `publication`'s "2" in the pre-merge
+estimate refers to its 2 source records — the binary asserts 32
+checks; both numbers recorded above. L3 (`tools/run_tests.sh
+native`) not re-run — bounded merge-back scope per protocol;
+lane/e's own gate evidence is in `task-C330-report.md`. Unrelated
+documented reds reported, not fixed.

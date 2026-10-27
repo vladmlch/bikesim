@@ -15891,7 +15891,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -15945,7 +15945,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -15963,7 +15963,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -15981,7 +15981,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -15999,7 +15999,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16017,7 +16017,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16035,7 +16035,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16053,7 +16053,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16089,7 +16089,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16107,7 +16107,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16125,7 +16125,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16143,7 +16143,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16161,7 +16161,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16179,7 +16179,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16197,7 +16197,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16215,7 +16215,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16233,7 +16233,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16251,7 +16251,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16288,7 +16288,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16324,7 +16324,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16342,7 +16342,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16360,7 +16360,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16378,7 +16378,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16396,7 +16396,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16414,7 +16414,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16432,7 +16432,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_lifecycle green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_lifecycle.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_lifecycle green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16450,7 +16450,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16468,7 +16468,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16486,7 +16486,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16504,7 +16504,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16522,7 +16522,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16540,7 +16540,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16558,7 +16558,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16576,7 +16576,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16594,7 +16594,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16612,7 +16612,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16630,7 +16630,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16648,7 +16648,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16666,7 +16666,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16684,7 +16684,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16702,7 +16702,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -16720,7 +16720,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.native_recording_retention green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25212,7 +25212,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25248,7 +25248,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25266,7 +25266,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25284,7 +25284,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25302,7 +25302,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25320,7 +25320,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25338,7 +25338,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25356,7 +25356,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25374,7 +25374,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25392,7 +25392,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25410,7 +25410,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25428,7 +25428,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25446,7 +25446,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25464,7 +25464,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25482,7 +25482,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25500,7 +25500,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25518,7 +25518,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25536,7 +25536,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25554,7 +25554,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25572,7 +25572,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25590,7 +25590,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25608,7 +25608,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -25626,7 +25626,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_capture green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_capture.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_capture green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -26025,7 +26025,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_publication.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_publication green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_publication.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_publication green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {
@@ -26043,7 +26043,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_publication.cpp; oracle green on darwin-arm64 (78 nodes); CTest reference.recording_publication green on darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_recording_publication.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.recording_publication green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)"
       ]
     },
     {

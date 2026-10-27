@@ -361,8 +361,8 @@ bike_add_reference_test(native_runtime_performance_contract ENGINE
 # tests/reference/test_native_recording_lifecycle.py,
 # test_native_recording_retention.py, test_recording_capture.py and
 # test_recording_publication.py. Publication fault injection goes through
-# FinalizeOptions::before_stage (the oracle's publisher monkeypatch); the
-# known live-oracle red families stay `planned` in the ledger.
+# FinalizeOptions::before_stage (the oracle's publisher monkeypatch).
+# 67 records ported; 7 Python-only records stay `drop` in the ledger.
 bike_add_reference_test(native_recording_lifecycle ENGINE
   SOURCES test_native_recording_lifecycle.cpp
   LIBRARIES bike_recording bike_cli

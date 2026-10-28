@@ -446,10 +446,11 @@ void test_native_source_encodes_missing_and_nonfinite_values() {
     // staged: nonfinite energy payloads stay nonfinite in the typed pieces
     // and missing optionals stay absent.
     auto channels = energy_channels();
-    auto &energy_object = const_cast<WireObject &>(sw::object(sw::required(channels, "energy")));
+    auto &energy_object = object_ref(channels, "energy");
     sw::set(energy_object, "mechanical_energy_j", Wire{std::numeric_limits<double>::infinity()});
     sw::set(energy_object, "external_work_j", Wire{-std::numeric_limits<double>::infinity()});
-    std::vector<SamplePtr> rows{sample_row(0, 0., .001, std::move(channels))};
+    std::vector<SamplePtr> rows{sample_row(0, 0., .001, {}, {}, {}, {},
+                                         std::move(channels))};
     const auto episode = std::make_shared<runtime::OwnedNativeEpisode>(make_episode(std::move(rows)));
     const auto source = rec::make_physical_source(episode, synthetic_catalog());
     const auto tables = collect_tables(*source, 4);

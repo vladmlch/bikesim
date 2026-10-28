@@ -121,12 +121,13 @@ std::vector<std::string> sealed_kinds(const rec::Recording &saved, std::int64_t 
 // row(interval_id, ...) — the frontend fakes' minimal channel rows.
 SamplePtr brake_row(std::int64_t id, bool contact, double brake) {
     auto sample = sample_row(id, static_cast<double>(id) * .00125, .00125,
-                             storable_channels(contact, brake));
+                             {}, {}, {}, {}, storable_channels(contact, brake));
     return sample;
 }
 
 SamplePtr channel_row(std::int64_t id, double dt_s, WireObject channels) {
-    return sample_row(id, static_cast<double>(id) * dt_s, dt_s, std::move(channels));
+    return sample_row(id, static_cast<double>(id) * dt_s, dt_s,
+                      {}, {}, {}, {}, std::move(channels));
 }
 
 void test_derived_transitions_carry_rule_version_and_interval() {

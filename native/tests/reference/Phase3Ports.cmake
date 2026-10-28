@@ -448,3 +448,35 @@ bike_add_reference_test(recording_publication ENGINE
   SOURCES test_recording_publication.cpp
   LIBRARIES bike_recording
   LABELS t53 recording)
+
+# T53 replay/view migration ports (Batch 3.32) — replay/session/manifest/
+# playback/view contracts from the nine Python sources.
+bike_add_reference_test(replay_manifest_v2 ENGINE
+  SOURCES test_replay_manifest_v2.cpp LIBRARIES bike_replay
+  LABELS t53 replay)
+bike_add_reference_test(replay_recording_v3 ENGINE
+  SOURCES test_replay_recording_v3.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 replay)
+bike_add_reference_test(replay_session ENGINE
+  SOURCES test_replay_session.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 replay)
+bike_add_reference_test(native_replay_recording_v3 ENGINE
+  SOURCES test_native_replay_recording_v3.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 replay)
+bike_add_reference_test(native_replay_session ENGINE
+  SOURCES test_native_replay_session.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 replay)
+bike_add_reference_test(pedelec_replay_contract ENGINE
+  SOURCES test_pedelec_replay_contract.cpp LIBRARIES bike_replay bike_recording bike_validation bike_cli
+  LABELS t53 replay)
+add_dependencies(reference.pedelec_replay_contract bike-validate)
+bike_add_reference_test(native_view_contracts ENGINE
+  SOURCES test_native_view_contracts.cpp LIBRARIES bike_app
+  LABELS t53 replay)
+bike_add_reference_test(replay_playback ENGINE
+  SOURCES ../integration/test_replay_playback.cpp LIBRARIES bike_replay bike_recording bike_app
+  LABELS t53 replay)
+add_dependencies(reference.replay_playback bike-replay)
+bike_add_reference_test(native_viewer_snapshot ENGINE
+  SOURCES test_native_viewer_snapshot.cpp LIBRARIES bike_replay bike_recording bike_app
+  LABELS t53 replay)

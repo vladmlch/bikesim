@@ -127,6 +127,16 @@ def _openblas_record(tmp_path: Path) -> dict:
             "lanes": 64,
             "distinguishing": 64,
         },
+        "distributions": {
+            "lowering": "separate",
+            "queries": 16384,
+            "distinguishing": 1470,
+        },
+        "scipy_correlate": {
+            "lowering": "separate",
+            "queries": 512,
+            "distinguishing": 128,
+        },
         "provider_config": {
             "openblas": {
                 "version": "0.3.34.0.0",
@@ -186,6 +196,16 @@ def _accelerate_record(tmp_path: Path) -> dict:
             "nan_winner": "scalar",
             "lanes": 64,
             "distinguishing": 64,
+        },
+        "distributions": {
+            "lowering": "contracted",
+            "queries": 16384,
+            "distinguishing": 1511,
+        },
+        "scipy_correlate": {
+            "lowering": "contracted",
+            "queries": 512,
+            "distinguishing": 128,
         },
         "provider_config": {
             "macos_build": "26A434",
@@ -1514,6 +1534,7 @@ def test_record_projection_keeps_only_the_committed_facts(tmp_path):
     assert set(entry["numerics"]) == {
         "backend", "blas_integer_bits", "lapack_integer_bits", "numpy_version",
         "symbols", "library_paths", "interp", "multiply_broadcast",
+        "distributions", "scipy_correlate",
     }
     assert entry["numerics"]["library_paths"][0] == {
         "path": ACCELERATE_BLAS_IMAGE,

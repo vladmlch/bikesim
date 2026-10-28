@@ -5,7 +5,7 @@ restore}.py` and `tests/reference/test_equilibrium_state_file.py`
 (63 records / 121 collected nodes: 61 T01-seeded records plus two
 equilibrium source tests added post-T01 by `8bb51212`; the
 parametrized restore relational matrix expands to 22 nodes and the
-bundle header/resolver sweeps to 20).
+bundle header/resolver sweeps to 19 parametrized nodes).
 CTest ids `reference.{native_state_bundle,native_state_restore,
 native_state_fuzz,equilibrium_state_file}`; labels `t53 state`;
 port-map rows carry `owner_task: T53`.
@@ -29,10 +29,10 @@ writer-side Python tooling contracts with no native owner.
 
 | Source file | records | collected nodes | port | golden | drop |
 |---|---|---|---|---|---|
-| `test_native_state_bundle.py` | 31 | 52 | 6 | 0 | 25 |
-| `test_native_state_restore.py` | 19 | 54 | 17 | 2 | 0 |
+| `test_native_state_bundle.py` | 31 | 46 | 6 | 0 | 25 |
+| `test_native_state_restore.py` | 19 | 59 | 17 | 2 | 0 |
 | `test_native_state_fuzz.py` | 2 | 2 | 2 | 0 | 0 |
-| `test_equilibrium_state_file.py` | 11 | 13 | 11 | 0 | 0 |
+| `test_equilibrium_state_file.py` | 11 | 14 | 11 | 0 | 0 |
 | **total** | **63** | **121** | **36** | **2** | **25** |
 
 ## What the ports reproduce
@@ -145,7 +145,7 @@ test by construction (no golden fuzz tests, per batch requirements).
 |---|---|
 | `19514baf` | test(reference): port state bundle/restore/fuzz/equilibrium-state-file suite (C3.27) — 4 CTest sources + `Phase3Ports.cmake` registration (`LABELS t53 state`; bundle links `bike_app` + `native_bench` dependency for the argv boundary; restore links `bike_golden` for the episode fixture) |
 | `6da60648` | docs(migration): C3.27 state batch ledger — `test-port-map.json` (36 port / 2 golden / 25 drop, 2 new post-T01 records, measured `collected_node_ids`, dated `assertions_capture`, per-record evidence) + `python-removal.json` (all four files → `replacement_landed`) |
-| (this commit) | docs(migration): C3.27 evidence + completion report (this report) |
+| `a3af30c3` | docs(migration): C3.27 state batch report (this report) — the evidence section itself landed in the fix round below |
 
 ## Deviations
 
@@ -270,3 +270,26 @@ newer fixture keys). After `cmake --build build/native-release -j8`
 4. Two new ledger records carry the 8bb51212 provenance note; consumers
    reconciling record counts against the T01 seed should expect 63 rows
    for this scope, not 61.
+
+## Fix round (2026-10-28, lane/d)
+
+Review-verified ledger/report repairs on top of `a3af30c3`; mechanical
+only — no ported assertion, disposition or verdict changed.
+
+| Finding | Resolution |
+|---|---|
+| Port-map header counters stale | `test-port-map.json`: the batch appended the two post-T01 equilibrium records (+2 — verified against `6da60648^`: all 9 seeded equilibrium rows retained, records 2390→2392, no dangling record replaced) but left the T01-era counters. `static_test_functions` 2390→**2392** (actual record count, measured by parsing the JSON: `len(records)` = 2392); `top_level_test_functions` 2374→**2376** (= 2392 − `class_test_methods` 16). Arithmetic reconciles exactly. |
+| Triage collected-node counts | Actual `collected_node_ids` sums: bundle **46** (not 52 — the four parametrized header/resolver sweeps expand to 19 nodes, not 20), restore **59** (not 54 — the 22-node relational matrix was undercounted), fuzz 2, equilibrium **14** (not 13 — field validation is parametrized ×4). Header prose "sweeps to 20" → **19 parametrized bundle nodes**; table updated; total still 121. |
+| `python-removal.json` equilibrium row stale | The row still carried the pre-`8bb51212` fingerprint (140 lines, `sha256` `17aaa639…`, `snapshot_sha256` `01a893e4…`). All four fields refreshed to the current file: `line_count`/`snapshot_line_count` = **209**, `sha256`/`snapshot_sha256` = `9d1fc156fde9f2d3a69aead02d502012a887f1fbdfb53ebdeecf9894c77de42c`. Canonical formatting preserved (indent=2, `ensure_ascii`, trailing LF); `git diff --stat` confined to the batch-scope row. |
+| Evidence section missing | `a3af30c3` shipped the report alone; the Commits-table unit claimed "C3.27 evidence + completion report". Real 3.27 qualification section appended to `migration/cpp-linux-completion-evidence.md` in prior-section format (Scope / What each port covers / Not ported / Verification / Ledger / Commits / Final gate); the Commits table above now names `a3af30c3` accurately. |
+
+### Fix-round commits
+
+| SHA | Unit |
+|---|---|
+| `bd0f966f` | docs(migration): C3.27 fix round — port-map header counters + equilibrium removal row |
+| (this fix-round commit) | docs(migration): C3.27 fix round — evidence section + report triage/node-count reconciliation |
+
+The two-platform qualification matrix, the 36/2/25 disposition split,
+the golden-fixture reuse and the final-gate results are unchanged by
+this round.

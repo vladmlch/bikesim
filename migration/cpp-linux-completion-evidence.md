@@ -7695,3 +7695,213 @@ ulp bits). L3 (`tools/run_tests.sh native`) not re-run — bounded
 merge-back scope per protocol; lane/d's own gate evidence is recorded
 in `task-C326-report.md`. Unrelated documented reds reported, not
 fixed.
+
+## 2026-10-28 — 3.27 qualification (lane/d): state bundles + state restoration
+
+### Scope
+
+Four `tests/reference/` files — `test_native_state_{bundle,restore,
+fuzz}.py` and `test_equilibrium_state_file.py` — **63 port-map records /
+121 collected nodes**: 61 T01-seeded records plus two equilibrium source
+tests appended post-T01 by `8bb51212`
+(`test_experiment_configs_produce_different_episode_keys`,
+`test_dirty_resettle_writes_the_episode_key_not_the_canonical_name`).
+Per-file split: bundle 31 records / 46 nodes (the four parametrized
+header/resolver sweeps — out-of-domain dimension ×5, hostile pointer
+name ×5, dimension-mismatch ×5, incomplete-bundle ×4 — expand to 19
+parametrized nodes), restore 19 / 59 (the
+`test_drive_restore_relational_rejection_is_atomic` matrix expands to
+22), fuzz 2 / 2, equilibrium 11 / 14 (field validation parametrized
+×4). Dispositions: **36 `port`**, **2 `golden`**, **25 `drop`** — all
+drops in the bundle file; no live-oracle reds in scope (the four source
+files are baseline-green on both platforms, so nothing stayed
+`planned`).
+
+New CTest nodes, all `bike_add_reference_test(... LABELS t53 state)`:
+`reference.native_state_bundle` (6 checks; links `bike_app`, depends on
+the `native_bench` executable for the argv boundary),
+`reference.native_state_restore` (17; links `bike_golden` for the
+episode fixture), `reference.native_state_fuzz` (2),
+`reference.equilibrium_state_file` (11 source records / 10 native
+checks — both post-T01 records port through the single
+`test_post_episode_lifecycle_writes_no_cache_entry` pin). One
+registration block appended to `Phase3Ports.cmake`; no duplicate
+registrations.
+
+### What each port covers
+
+- **native_state_bundle (6/6)**: the 80-byte BIKEST02 header static pin
+  plus a generated-image field walk (magic, version, flags, all five
+  u64 dims, payload extent, both crc64 slots at their documented
+  offsets); a valid `proto_native_bench::load_state` round trip with
+  bitwise section equality and retained declared checksums; the
+  out-of-domain u64 sweep over **all five** dimension fields (the
+  benchmark CLI test samples nq only); the declared model_crc64 lie
+  against intact model bytes; the full five-name hostile bundle-pointer
+  sweep through the `native_bench` argv boundary including the
+  exact-match `.`/`..` rejections the charset check would otherwise
+  allow; and a nonexistent bundle root. In-process reader calls link
+  the same `state_format.hpp` inline the consumer compiles; resolver
+  calls keep the executable boundary via the generated
+  `bike_native_bench_path.hpp` macro.
+- **native_state_restore (17/17)**: `Stepper::set_state`
+  snapshot-before-`mj_resetData` aliasing (own views in the destination
+  slots *and* a qpos view riding the qvel argument; `qacc` warmstart
+  included), width/finiteness/time validation ordering before mutation,
+  bitwise live-buffer preservation on every rejection arm, `set_inputs`
+  nonfinite rejection, replay of the 40-row `pinned_savage_40_f2`
+  platform episode with bitwise `qacc`, `qfrc_constraint` and
+  `efc_force` comparison against a separate `mjData` forward, and the
+  drive/policy restore relational guards — ratio/gear, rear-teeth,
+  coefficient width/drift, prepared-Jacobian, shift clock/count,
+  cooldown/cut relations, battery bounds, pending actuation ⇔ interval
+  pairing, nonpositive pending dt, orphaned vs accepted
+  `shift_pending`, cassette membership with shifter enabled, auxiliary
+  clutch/freewheel topology immutability, and the standalone
+  `DrivePolicies::set_state` relational matrix — every rejection leaves
+  the encoded state byte-identical.
+- **native_state_fuzz (2/2)**: deterministic seeded splitmix64 property
+  tests mirroring the Hypothesis mutation model — 150 drive-snapshot
+  examples (`set`/`del`/`add` ops over dict paths with recursive JSON
+  values) where rejection must stay inside the sanctioned contract set
+  (`invalid_argument`/`out_of_range`/`overflow_error`/`length_error`/
+  `runtime_error`) and leave canonical-JSON byte-identical state, plus
+  100 `set_state` examples over arbitrary-width double spans
+  (NaN/±Inf/subnormals/signed zero/extremes) where rejection leaves
+  every live buffer bitwise unchanged; both arms are required
+  non-vacuous.
+- **equilibrium_state_file (11/11 records)**: explicit state-file round
+  trip (recorded settle steps served, residual rechecked, read-only
+  file), precedence over a sentinel-poisoned canonical cache entry,
+  fingerprint/configuration mismatch, payload-fit (strict
+  all-or-nothing material check), residual-recheck rejection under a
+  +5 cm `root_z` shift, missing-file naming, blank/wrong-kind field
+  validation, TOML relative-path resolution against the declaring file,
+  `EquilibriumOptions` reach-through plus the nonfinite-tolerance and
+  nonpositive-budget guards, and the post-`8bb51212` lifecycle pin:
+  single-shot settle rejects a second call, and
+  settle→seal→advance→reset→advance→reset leaves exactly one
+  byte-identical canonical entry that a fresh consumer warm-loads —
+  the strictly stronger native equivalent of the episode-key
+  quarantine.
+
+### Not ported
+
+- **18 bundle reader/resolver rejection contracts** — dropped as
+  benchmark-covered: `--selftest` crc64 ECMA vector, legacy/bad magic,
+  unknown version/flags, all five dimension mismatches,
+  declared-payload-length mismatch, truncated header/payload, trailing
+  bytes, both payload-checksum mutation directions, mixed generation,
+  nonfinite stored scalar, and the resolve concrete/root-pointer/
+  malformed-pointer/missing-bundle/incomplete-bundle set — all gated
+  end to end by `reference.native_benchmark` through the real
+  consumer's `resolve_artifacts` + `load_state` executable path.
+- **7 writer-side Python tooling contracts** — dropped with no native
+  owner: npz/bin equality, pointer publication, name collision,
+  manifest provenance, nonfinite-snapshot write rejection, and the
+  `serialize_state` qfrc/xfrc extent guards. The writer, pointer
+  publisher, manifest author and `serialize_state` live in
+  `tools/proto_native_bench/state_format.py` and remove with the
+  Python tree at T63.
+- **`python-only` arms recorded per-record**: the kwargs-require-
+  physics constructor rejection (`RideSimulation(equilibrium_max_
+  steps=4000)`) has no native twin — the request type does not carry
+  those fields when unset, so the native `EquilibriumOptions` domain
+  guards and solve reach-through are ported instead; the fuzz
+  cast-layer sub-draws pass arbitrary JSON objects through the
+  nanobind cast layer (the typed C++ API has no counterpart — the
+  port covers the full f64-span domain, where every width/finiteness
+  check lives); the episode-key mechanism itself is `python-only` —
+  no native trigger exists, replaced by the strictly stronger
+  no-post-episode-write pin.
+
+### Verification
+
+- **Focused CTest** `ctest -R state`:
+  - darwin-arm64 `build/native-release` (AppleClang, Release): **4/4**
+    — bundle 0.24 s, restore 0.23 s, fuzz 0.09 s, equilibrium 4.95 s.
+  - linux-aarch64 container `bike-dev-pfc-lane-d` `/build/root-clang`
+    (clang-18, Release): **4/4** — bundle 0.10 s, restore 0.13 s,
+    fuzz 0.01 s, equilibrium 4.51 s.
+- **Golden capture**: none new — the two `golden` restore records
+  consume the pre-existing platform-qualified `pinned_savage_40_f2`
+  episode fixture (`tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  episode/`, captured post-F2); the fuzz port is a deterministic seeded
+  property test by construction (no golden fuzz tests).
+- **Static checks**: all four TUs compile warning-free under
+  AppleClang and clang — `test_equilibrium_state_file.cpp` carries the
+  established `NATIVE_DIAG_PUSH`/`-Wframe-larger-than` waiver for
+  whole decoded `StateFile` fixtures in automatic storage (same
+  precedent as the T22–T26 runtime ports); designated
+  `EquilibriumOptions` initializers name both members explicitly —
+  darwin accepted the partial form, the container's clang-18 sweep
+  does not.
+
+### Ledger
+
+- `migration/test-port-map.json`: 63 rows touched in place — 36 `port`
+  with `reference.{native_state_bundle,native_state_restore,
+  native_state_fuzz,equilibrium_state_file}::*` ids, measured
+  `collected_node_ids` (121 nodes over 63 symbols), dated
+  `assertions_capture`, per-record evidence with both platform
+  runtimes; 2 `golden` name the `pinned_savage_40_f2` fixture; 25
+  `drop` null the native ids (18 benchmark-covered + 7
+  writer-tooling). The two post-T01 equilibrium records were appended
+  beside the file's existing rows (+2 — no dangling pre-existing
+  record replaced) and carry the `8bb51212` provenance note.
+- `migration/python-removal.json`: all four source files →
+  `replacement_landed` with the covering CTest ids as
+  `verification_ids` (the bundle row also names
+  `reference.native_benchmark`, which carries the shared rejection
+  coverage); deletion gate stays T63.
+- `native/tests/reference/Phase3Ports.cmake`: one appended block,
+  four registrations, `LABELS t53 state`; dedup verified.
+- **Fix-round ledger reconciliation** (`bd0f966f`): port-map header
+  counters bumped — `static_test_functions` 2390→2392 (actual record
+  count; the batch appended the two post-T01 equilibrium records but
+  left the T01-era totals) and `top_level_test_functions` 2374→2376
+  (= 2392 − `class_test_methods` 16); `python-removal.json`
+  equilibrium row `sha256`/`line_count`/`snapshot_sha256`/
+  `snapshot_line_count` refreshed from the pre-`8bb51212` 140-line
+  fingerprint to the current file (209 lines, sha `9d1fc156…`).
+  Canonical formatting preserved (indent=2, ensure_ascii, trailing
+  LF); diff confined to batch-scope rows.
+
+### Commits
+
+| SHA | Unit |
+|---|---|
+| `19514baf` | test(reference): port state bundle/restore/fuzz/equilibrium-state-file suite (C3.27) — 4 CTest sources + `Phase3Ports.cmake` registration |
+| `6da60648` | docs(migration): C3.27 state batch ledger — 36 port, 2 golden, 25 drop |
+| `a3af30c3` | docs(migration): C3.27 state batch report — two-platform evidence, baseline-verbatim gate |
+| `bd0f966f` | docs(migration): C3.27 fix round — port-map header counters + equilibrium removal row |
+| (this commit) | docs(migration): C3.27 fix round — evidence section + report triage/node-count reconciliation |
+
+### Final gate
+
+`bash tools/run_tests.sh native` (selected build `native/build`,
+standalone `bike-native-checks` from `build/native-release`):
+
+- Configure + build green; **all nine static-analysis sweeps green**
+  (`frontends` none, `tidy` none, `analyzer` report-only alpha,
+  `cppcheck` none, `odr` none, `scripts` shellcheck clean, `headers`
+  none — 262-header probe set, `diagnostic-controls` 6/0, `context`
+  SDK controls passed).
+- `ctest --test-dir native/build`: **60/62** — reds `migration_T09`
+  (`post-advance integration vector matches the oracle`) and
+  `migration_T10` (`first transition matches the Python oracle`), the
+  documented frozen-oracle baseline pair verbatim; the
+  `contracts` checker standalone (the gate-abort skipped stage)
+  reports **all assertions passed**.
+- Native reference pytest tail under the gate's own runtime/env:
+  **3196 passed / 43 failed / 1 skipped / 1 deselected** — every
+  failure maps to a ledger record (39 `planned` + 3 `drop` +
+  1 `golden`, the same composition the previous lane gate recorded);
+  **zero failures in C3.27 scope**.
+- Full standalone-tree `ctest` (`build/native-release`, all 166
+  tests): **159/166** — the four C3.27 ids green (bundle 2.36 s,
+  restore 0.75 s, fuzz 0.22 s, equilibrium 8.80 s); 7 reds all
+  documented baseline (T09/T10 frozen-oracle pair, T56 shellcheck
+  environment drift, the four-red reference baseline
+  `golden_episode_tool`/`native_numeric_completion`/
+  `pneumatic_tire_oracle`/`native_pneumatic_tire`).

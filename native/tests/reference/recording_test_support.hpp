@@ -13,24 +13,31 @@
 
 #include "support/migration_test.hpp"
 #include "support/golden.hpp"
+#include "recording/analysis_detail.hpp"
 #include "recording/capture.hpp"
 #include "recording/catalog.hpp"
 #include "recording/contracts.hpp"
+#include "recording/duckdb.hpp"
+#include "recording/reader.hpp"
 #include "recording/value_util.hpp"
+#include "platform/files.hpp"
 #include "runtime/encode.hpp"
 #include "runtime/encoding_values.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
 #include "support/temporary_directory.hpp"
 #include "io/json.hpp"
+#include <algorithm>
 #include <csignal>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace recording_test {
@@ -65,15 +72,25 @@ inline const rec::Catalog &synthetic_catalog() {
 }
 
 // One canonical retained interval: qpos/qvel span the 8-coordinate
-// synthetic joint layout; channels carry only what callers stage.
+// synthetic joint layout; channels carry only what callers stage. The
+// _recording_support.sample_row parameter surface (start/dt/qpos/qvel/
+// forces/powers/channels) — forces and powers_w are per-component maps
+// the forces emitter explodes into long rows.
 inline SamplePtr sample_row(std::int64_t interval_id, double start_s,
-                            double dt_s = .00125, WireObject channels = {}) {
+                            double dt_s = .00125,
+                            std::vector<double> qpos = {},
+                            std::vector<double> qvel = {},
+                            runtime::ForceComponents forces = {},
+                            WireObject powers_w = {},
+                            WireObject channels = {}) {
     auto sample = std::make_shared<runtime::PhysicalSampleData>();
     sample->interval_id = interval_id;
     sample->time_s = start_s;
     sample->end_time_s = start_s + dt_s;
-    sample->qpos = std::vector<double>(8, 0.);
-    sample->qvel = std::vector<double>(8, 0.);
+    sample->qpos = qpos.empty() ? std::vector<double>(8, 0.) : std::move(qpos);
+    sample->qvel = qvel.empty() ? std::vector<double>(8, 0.) : std::move(qvel);
+    sample->forces = std::move(forces);
+    sample->powers_w = std::move(powers_w);
     sample->channels = std::move(channels);
     return SamplePtr(std::move(sample));
 }
@@ -172,6 +189,71 @@ inline WireObject storable_channels(bool contact, double brake) {
         {"drive", Wire{drive_channels(brake)}}};
 }
 
+// _recording_support.energy_channels(): the complete authored ``energy``
+// root plus the sibling ``component_work_j`` map. Every required leaf
+// appears so a published row survives storage validation; optional leaves
+// (elastic_energy_j, constraint_work_ratio, residual_j, source_interval_id,
+// source_time_s) are authored on the base row and removed per test.
+// ``energy_over`` merges into the ``energy`` member map; ``other_over``
+// merges at the channel-root level (the oracle's ``**overrides`` split).
+inline WireObject energy_channels(const WireObject &energy_over = {},
+                                  const WireObject &other_over = {}) {
+    WireObject energy{
+            {"mechanical_energy_j", Wire{12.5}},
+            {"elastic_energy_j", Wire{WireObject{{"fork_spring", Wire{.25}}}}},
+            {"active_work_j", Wire{1.5}},
+            {"external_work_j", Wire{-.5}},
+            {"loss_j", Wire{.25}},
+            {"loss_step_j", Wire{.001}},
+            {"solver_constraint_work_j", Wire{0.}},
+            {"energy_scale_j", Wire{10.}},
+            {"muscle_signed_j", Wire{1.}},
+            {"muscle_positive_j", Wire{1.25}},
+            {"motor_signed_j", Wire{.5}},
+            {"motor_positive_j", Wire{.5}},
+            {"source_positive_work_j", Wire{1.75}},
+            {"constraint_signed_j", Wire{0.}},
+            {"constraint_absolute_j", Wire{0.}},
+            {"closure_signed_j", Wire{0.}},
+            {"closure_absolute_j", Wire{0.}},
+            {"constraint_work_ratio", Wire{0.}},
+            {"constraint_work_ok", Wire{true}},
+            {"residual_j", Wire{-.001}},
+            {"electrical_work_j", Wire{.5}},
+            {"electrical_residual_j", Wire{0.}},
+            {"measured", Wire{true}},
+            {"source_interval_id", Wire{std::int64_t{0}}},
+            {"source_time_s", Wire{.001}}};
+    sw::merge(energy, WireObject{energy_over});
+    WireObject channels{
+        {"energy", Wire{std::move(energy)}},
+        {"component_work_j", Wire{WireObject{{"chain", Wire{.1}},
+                                             {"tires", Wire{-.2}}}}}};
+    sw::merge(channels, WireObject{other_over});
+    return channels;
+}
+
+// Mutable member lookup for staged channel overrides (sw::find is const).
+inline Wire &member_ref(WireObject &object, std::string_view key) {
+    for (auto &entry : object) if (entry.first == key) return entry.second;
+    throw std::invalid_argument("wire member missing: " + std::string(key));
+}
+inline WireObject &object_ref(Wire &wire, std::string_view field) {
+    auto *object = std::get_if<WireObject>(&wire.value);
+    bt::require(object != nullptr,
+                "wire member is not an object: " + std::string(field));
+    return *object;
+}
+inline WireObject &object_ref(WireObject &object, std::string_view key) {
+    return object_ref(member_ref(object, key), key);
+}
+// `del channels[...]` — the oracle's member-removal staging lane.
+inline void wire_erase(WireObject &object, std::string_view key) {
+    const auto it = std::ranges::find(
+        object, key, &std::pair<std::string, Wire>::first);
+    if (it != object.end()) object.erase(it);
+}
+
 // _recording_support.run_metadata(): deterministic synthetic metadata.
 inline rec::RunMetadata run_metadata(std::string backend = "native",
                                    std::string mode = "viewer") {
@@ -206,10 +288,14 @@ inline rec::InputEvent input_event(std::int64_t episode_id,
 
 // The TreePhysicalSource stand-in used by capture/publication tests: the
 // production source over synthetic retained rows, with the sealed episode
-// kept reachable for iter_derived_events-equivalent re-reads.
+// kept reachable for iter_derived_events-equivalent re-reads. ``catalog``
+// overrides the bound coordinate/alias map (coordinate-identity mismatch
+// ports); ``ordinary`` switches on the commands_applied projection.
 inline std::shared_ptr<const rec::PhysicalSource>
-make_source(std::shared_ptr<const runtime::OwnedNativeEpisode> episode) {
-    return rec::make_physical_source(std::move(episode), synthetic_catalog());
+make_source(std::shared_ptr<const runtime::OwnedNativeEpisode> episode,
+            const rec::Catalog &catalog = synthetic_catalog(),
+            bool ordinary = false) {
+    return rec::make_physical_source(std::move(episode), catalog, ordinary);
 }
 
 // storage-contract evidence: summary always carries the reviewed outcome /
@@ -217,13 +303,15 @@ make_source(std::shared_ptr<const runtime::OwnedNativeEpisode> episode) {
 inline std::shared_ptr<const rec::EpisodeEvidence>
 make_evidence(std::int64_t episode_id, int generation = 1,
               std::vector<SamplePtr> rows = {},
-              Value summary = Value{Value::Object{}}) {
+              Value summary = Value{Value::Object{}},
+              const rec::Catalog &catalog = synthetic_catalog(),
+              std::vector<rec::Asset> assets = {}) {
     auto evidence = std::make_shared<rec::EpisodeEvidence>();
     evidence->episode_id = episode_id;
     evidence->generation = generation;
     evidence->physical = make_source(
         std::make_shared<runtime::OwnedNativeEpisode>(
-            make_episode(std::move(rows), generation)));
+            make_episode(std::move(rows), generation)), catalog);
     if (io::as_object(summary, "summary").empty()) {
         summary = Value{Value::Object{
             {"outcome", Value{Value::Object{{"reason", text("synthetic")}}}},
@@ -231,7 +319,170 @@ make_evidence(std::int64_t episode_id, int generation = 1,
                                                  {"numerically_valid", Value{true}}}}}}};
     }
     evidence->summary = std::move(summary);
+    evidence->assets = std::move(assets);
     return evidence;
+}
+
+// ---- Batch 3.31 synthetic capture matrix (test_recording_storage.py) ----
+
+// _recording_support.value_case_rows(dt): the reviewed optional-leaf and
+// nonfinite matrix on energy.residual_j — NaN, explicit null and absent
+// leaf; explicit null and absent ``energy`` parent; +0.0, -0.0, +inf and
+// -inf. Every interval is self-measured so source/measurement provenance
+// stays consistent.
+inline std::vector<SamplePtr> value_case_rows(double dt = 1. / 8) {
+    std::vector<SamplePtr> rows;
+    for (std::int64_t i = 0; i < 9; ++i) {
+        auto channels = energy_channels(WireObject{
+            {"measured", Wire{true}},
+            {"source_interval_id", Wire{i}},
+            {"source_time_s", Wire{static_cast<double>(i + 1) * dt}}});
+        auto &energy = object_ref(channels, "energy");
+        switch (i) {
+            case 0: member_ref(energy, "residual_j") =
+                        Wire{std::numeric_limits<double>::quiet_NaN()}; break;
+            case 1: member_ref(energy, "residual_j") =
+                        Wire{nullptr}; break;
+            case 2: wire_erase(energy, "residual_j"); break;
+            case 3: member_ref(channels, "energy") =
+                        Wire{nullptr}; break;
+            case 4: wire_erase(channels, "energy"); break;
+            case 5: member_ref(energy, "residual_j") = Wire{0.}; break;
+            case 6: member_ref(energy, "residual_j") = Wire{-0.}; break;
+            case 7: member_ref(energy, "residual_j") =
+                        Wire{std::numeric_limits<double>::infinity()}; break;
+            default: member_ref(energy, "residual_j") =
+                        Wire{-std::numeric_limits<double>::infinity()}; break;
+        }
+        rows.push_back(sample_row(i, static_cast<double>(i) * dt, dt,
+                                  {}, {}, {}, {}, std::move(channels)));
+    }
+    return rows;
+}
+
+// _recording_support._with_forces(row): hand-computed per-component powers
+// (qfrc·qvel) and work (power·dt) — the chain/tires pair the forces table
+// and channel_energy.component_work_j share.
+inline SamplePtr with_forces(const runtime::PhysicalSampleData &row) {
+    runtime::ForceComponents qfrc{
+        {"chain", std::vector<double>(8, 0.)},
+        {"tires", std::vector<double>(8, 0.)}};
+    qfrc[0].second[0] = 3.;
+    qfrc[1].second[0] = -1.;
+    WireObject powers, work;
+    for (const auto &[name, vector] : qfrc) {
+        double power = 0.;
+        for (std::size_t k = 0; k < vector.size() && k < row.qvel.size(); ++k)
+            power += vector[k] * row.qvel[k];
+        powers.emplace_back(name, Wire{power});
+        work.emplace_back(name, Wire{power * (row.end_time_s - row.time_s)});
+    }
+    auto sample = std::make_shared<runtime::PhysicalSampleData>(row);
+    sample->forces = std::move(qfrc);
+    sample->powers_w = std::move(powers);
+    sw::set(sample->channels, "component_work_j", Wire{std::move(work)});
+    return SamplePtr(std::move(sample));
+}
+
+// _recording_support._forwarded(rows): all but the closing interval forward
+// the LAST interval's measurement provenance (measured=false); the closing
+// row keeps self-measurement.
+inline std::vector<SamplePtr> forwarded(const std::vector<SamplePtr> &rows) {
+    bt::require(!rows.empty(), "forwarded() needs a closing interval");
+    const auto &closing = *rows.back();
+    std::vector<SamplePtr> out;
+    out.reserve(rows.size());
+    for (const auto &ptr : rows) {
+        auto sample = std::make_shared<runtime::PhysicalSampleData>(*ptr);
+        WireObject energy;
+        if (const auto *existing = sw::find(sample->channels, "energy"))
+            if (const auto *object = std::get_if<WireObject>(&existing->value))
+                energy = *object;
+        sw::set(energy, "measured",
+                Wire{ptr->interval_id == closing.interval_id});
+        sw::set(energy, "source_interval_id", Wire{closing.interval_id});
+        sw::set(energy, "source_time_s", Wire{closing.end_time_s});
+        sw::set(sample->channels, "energy", Wire{std::move(energy)});
+        out.push_back(SamplePtr(std::move(sample)));
+    }
+    return out;
+}
+
+// _recording_support.synthetic_capture(): a reviewed RunCapture over
+// synthetic retained rows — the oracle's TreePhysicalSource seam is the
+// production OwnedNativeEpisode + make_physical_source pair natively.
+// ``episodes`` carries explicit per-episode row sets (Python's sequence
+// branch); ``episode_count`` shares ``rows`` over N episodes (the int
+// branch, 0 seals nothing). Summaries index-align when a per-episode
+// vector is staged, else the shared ``summary`` applies.
+struct SyntheticCapture {
+    std::vector<std::vector<SamplePtr>> episodes;
+    int episode_count = 1;
+    WireObject channels;
+    std::vector<rec::InputEvent> events;
+    std::vector<rec::Asset> assets;
+    std::vector<Value> summaries;
+    Value summary{Value::Object{}};
+    const rec::Catalog *catalog = nullptr;
+    bool forces = false, forwarded = false, value_cases = false;
+    bool enabled = true;
+    rec::RunMetadata metadata = run_metadata();
+};
+
+inline std::unique_ptr<rec::RunCapture>
+synthetic_capture(std::vector<SamplePtr> rows = {}, SyntheticCapture o = {}) {
+    auto capture = std::make_unique<rec::RunCapture>(std::move(o.metadata),
+                                                   o.enabled);
+    std::vector<std::vector<SamplePtr>> per_episode;
+    if (o.value_cases) per_episode = {value_case_rows()};
+    else if (!o.episodes.empty()) per_episode = std::move(o.episodes);
+    else for (int i = 0; i < o.episode_count; ++i)
+        per_episode.push_back(rows);
+    for (std::size_t index = 0; index < per_episode.size(); ++index) {
+        std::vector<SamplePtr> materialized;
+        materialized.reserve(per_episode[index].size());
+        for (const auto &ptr : per_episode[index]) {
+            auto sample = std::make_shared<runtime::PhysicalSampleData>(*ptr);
+            sw::merge(sample->channels, WireObject{o.channels});
+            materialized.push_back(
+                o.forces ? with_forces(*sample) : SamplePtr(std::move(sample)));
+        }
+        if (o.forwarded) materialized = forwarded(materialized);
+        Value episode_summary = index < o.summaries.size()
+            ? o.summaries[index] : o.summary;
+        capture->add_episode(make_evidence(
+            static_cast<std::int64_t>(index), static_cast<int>(index),
+            std::move(materialized), std::move(episode_summary),
+            o.catalog ? *o.catalog : synthetic_catalog(),
+            std::vector<rec::Asset>{o.assets}));
+    }
+    for (auto &event : o.events) capture->event(std::move(event));
+    return capture;
+}
+
+// open_recording for the RAII-less container owner Recording returns.
+inline std::unique_ptr<rec::Recording>
+sealed(const std::filesystem::path &path) { return rec::open_recording(path); }
+
+// The oracle's `duckdb.connect(...).execute(...); CHECKPOINT` + manifest
+// re-hash reseal path: write-mutate a sealed database, then re-cover the
+// payload checksum so only a semantic validator can still refuse it.
+inline void mutate_database(const std::filesystem::path &recording,
+                            std::string_view sql) {
+    {
+        rec::Database database(recording / "run.duckdb");
+        database.connection().execute(sql);
+        database.connection().execute("CHECKPOINT");
+    }
+    auto manifest = io::parse_recording_json(
+        bt::text(recording / "manifest.json"));
+    auto *hashes = const_cast<Value *>(
+        rec::detail::find(manifest, "file_sha256"));
+    bt::require(hashes != nullptr, "manifest owns file_sha256");
+    rec::detail::set(*hashes, "run.duckdb",
+                     text(bike::platform::file_sha256(recording / "run.duckdb")));
+    std::ofstream out(recording / "manifest.json", std::ios::trunc);
+    out << io::recording_json(manifest) << '\n';
 }
 
 // ---- captured-bootstrap runtime staging ------------------------------------
@@ -342,10 +593,14 @@ inline std::filesystem::path violating_physics(const std::filesystem::path &targ
 // RunCapture is non-movable, so the owner is heap-staged like the other
 // several-KB recording owners in this suite.
 inline std::unique_ptr<rec::RunCapture>
-capture_rows(std::vector<SamplePtr> rows, std::string mode = "viewer") {
+capture_rows(std::vector<SamplePtr> rows, std::string mode = "viewer",
+             Value summary = Value{Value::Object{}},
+             std::vector<rec::Asset> assets = {}) {
     auto capture = std::make_unique<rec::RunCapture>(
         run_metadata("native", std::move(mode)), true);
-    capture->add_episode(make_evidence(0, 1, std::move(rows)));
+    capture->add_episode(make_evidence(0, 1, std::move(rows),
+                                     std::move(summary), synthetic_catalog(),
+                                     std::move(assets)));
     return capture;
 }
 

@@ -449,6 +449,43 @@ bike_add_reference_test(recording_publication ENGINE
   LIBRARIES bike_recording
   LABELS t53 recording)
 
+# 3.31 T53 recording batch — field/coordinate catalog, the ordinary
+# bike-ride recording parser contract, report regeneration, storage and
+# optional-value masks, the analyst Value surface and the bike-recording
+# console of tests/reference/test_recording_{catalog,cli,report,storage,
+# values,analysis,analyst_cli}.py over the 3.30 synthetic-capture seam.
+# 66 records: 65 ported; the units/phases compare-schema record stays
+# `drop` (no native seam authors divergent field metadata — units derive
+# from joint_type inside build_catalog).
+bike_add_reference_test(recording_catalog ENGINE
+  SOURCES test_recording_catalog.cpp
+  LIBRARIES bike_recording
+  LABELS t53 recording)
+bike_add_reference_test(recording_cli ENGINE
+  SOURCES test_recording_cli.cpp
+  LIBRARIES bike_recording bike_cli
+  LABELS t53 recording)
+bike_add_reference_test(recording_report ENGINE
+  SOURCES test_recording_report.cpp
+  LIBRARIES bike_recording
+  LABELS t53 recording)
+bike_add_reference_test(recording_storage ENGINE
+  SOURCES test_recording_storage.cpp
+  LIBRARIES bike_recording
+  LABELS t53 recording)
+bike_add_reference_test(recording_values ENGINE
+  SOURCES test_recording_values.cpp
+  LIBRARIES bike_recording
+  LABELS t53 recording)
+bike_add_reference_test(recording_analysis ENGINE
+  SOURCES test_recording_analysis.cpp
+  LIBRARIES bike_recording bike_recording_cli
+  LABELS t53 recording)
+bike_add_reference_test(recording_analyst_cli ENGINE
+  SOURCES test_recording_analyst_cli.cpp
+  LIBRARIES bike_recording bike_recording_cli
+  LABELS t53 recording)
+
 # T53 replay/view migration ports (Batch 3.32) — replay/session/manifest/
 # playback/view contracts from the nine Python sources.
 bike_add_reference_test(replay_manifest_v2 ENGINE

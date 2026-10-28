@@ -16758,12 +16758,10 @@
       "native/tests/reference/test_recording_analysis.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_analysis"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e64805f417bf334dfdb0f47fa036df56fcb1d0b09a3ec7150da9a7171216237f",
     "snapshot_line_count": 301,
     "tracked": true,
@@ -16779,12 +16777,10 @@
       "native/tests/reference/test_recording_analyst_cli.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_analyst_cli"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "046a8691afe1e964b0ce5ccfe2a8b45765ef2902997b7ea4603446f718ad75bc",
     "snapshot_line_count": 124,
     "tracked": true,
@@ -16819,12 +16815,10 @@
       "native/tests/reference/test_recording_catalog.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_catalog"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "04b04d36ed893ca82440753d2434ca967843edc3b7c0ddf7daac1cf336dcb42f",
     "snapshot_line_count": 327,
     "tracked": true,
@@ -16840,12 +16834,10 @@
       "native/tests/reference/test_recording_cli.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_cli"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "0528e22368b271391da1d5cbf323877a294f56d93e2a7ba70e88d554875de06e",
     "snapshot_line_count": 126,
     "tracked": true,
@@ -16880,12 +16872,10 @@
       "native/tests/reference/test_recording_report.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_report"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "56a835fb0ffa0a01729916b75f7a24a4f527a98d374fc9572812b0c14e103f8a",
     "snapshot_line_count": 19,
     "tracked": true,
@@ -16901,12 +16891,10 @@
       "native/tests/reference/test_recording_storage.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_storage"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7381ffab1174c1516f0c31a63968580d59b54ca3b5a083177679b6ae0b41cf65",
     "snapshot_line_count": 209,
     "tracked": true,
@@ -16922,12 +16910,10 @@
       "native/tests/reference/test_recording_values.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.recording_values"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "3f5538bd2d1053b80e9911414e45d9e34b3e3e36a5df1a0e6e3e7cc13be41ae9",
     "snapshot_line_count": 121,
     "tracked": true,

@@ -15650,12 +15650,10 @@
       "native/tests/reference/test_native_replay_recording_v3.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_replay_recording_v3"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "755f31e1f9e1edc2df3d86b84e26509fb430e1781f1f836cf4e0d1bbf4fba9a9",
     "snapshot_line_count": 29,
     "tracked": true,
@@ -15671,12 +15669,10 @@
       "native/tests/reference/test_native_replay_session.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_replay_session"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "f7f3de530944794b799d5ab9856de4720917cbe5ce5a9a15c222f6c79d87ad18",
     "snapshot_line_count": 49,
     "tracked": true,
@@ -16294,12 +16290,10 @@
       "native/tests/reference/test_native_view_contracts.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_view_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "f1a9ca16fca1613796454c0482ae4182441d4faaa4fd9ff94a3793ab924968af",
     "snapshot_line_count": 187,
     "tracked": true,
@@ -16408,12 +16402,10 @@
       "native/tests/reference/test_pedelec_replay_contract.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.pedelec_replay_contract"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e21dfbd774a800f1e97dae07a4f0d65aae3f621a8c38d4650c8ff5615a5e237e",
     "snapshot_line_count": 44,
     "tracked": true,
@@ -16970,12 +16962,10 @@
       "native/tests/reference/test_replay_manifest_v2.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.replay_manifest_v2"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "1fc5e7bad6b4e6d20b28fca689ec71dd9529f24d0b7558aa8f1d976883e401e7",
     "snapshot_line_count": 201,
     "tracked": true,
@@ -16991,12 +16981,10 @@
       "native/tests/reference/test_replay_recording_v3.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.replay_recording_v3"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "88b9f3e0844ffbecbed5a93bbce2aceaf1c5695f351237a78d3107dfc88d4900",
     "snapshot_line_count": 113,
     "tracked": true,
@@ -17012,12 +17000,10 @@
       "native/tests/reference/test_replay_session.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.replay_session"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "559bb56dbfcac93d05d4b8a95ac7a5d19c982127ea52c2737297dabf9582a54f",
     "snapshot_line_count": 140,
     "tracked": true,
@@ -17468,12 +17454,10 @@
       "native/tests/integration/test_replay_playback.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.replay_playback"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ec5ffd0ee1311d8961878135fdca6f5fb30612014505d4bb836a13cb1ccde572",
     "snapshot_line_count": 137,
     "tracked": true,

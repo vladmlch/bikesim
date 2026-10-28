@@ -17153,13 +17153,17 @@
       "line": 18,
       "end_line": 36,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_recording_v3::test_native_replay_v3_and_suffix_capture",
+      "native_test_id": "reference.native_replay_recording_v3::test_native_replay_v3_and_suffix_capture",
       "native_source": "native/tests/reference/test_native_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_recording_v3.py::test_native_replay_v3_and_suffix_capture"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_replay_recording_v3.cpp; CTest reference.native_replay_recording_v3 green on darwin-arm64 (PASS 45 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_session.py",
@@ -17167,13 +17171,17 @@
       "line": 22,
       "end_line": 47,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_session::test_native_recording_replays_same_backend_and_restarts",
+      "native_test_id": "reference.native_replay_session::test_native_recording_replays_same_backend_and_restarts",
       "native_source": "native/tests/reference/test_native_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_session.py::test_native_recording_replays_same_backend_and_restarts"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_replay_session.cpp; CTest reference.native_replay_session green on darwin-arm64 (PASS 14 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_session.py",
@@ -17181,13 +17189,17 @@
       "line": 50,
       "end_line": 61,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_session::test_native_replay_rejects_a_missing_selected_extension",
-      "native_source": "native/tests/reference/test_native_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_session.py::test_native_replay_rejects_a_missing_selected_extension"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); no native counterpart",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: dropped \u2014 BIKE_NATIVE_BUILD_PATH nanobind artifact selection has no native counterpart in a statically linked build; recorded-identity rejection is covered by reference.native_replay_session::test_native_session_rejects_foreign_identity_before_any_plant"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_capture.py",
@@ -23292,13 +23304,17 @@
       "line": 51,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_view_props_retain_temporary_stepper_and_stay_read_only",
+      "native_test_id": "reference.native_view_contracts::test_view_props_retain_temporary_stepper_and_stay_read_only",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_view_props_retain_temporary_stepper_and_stay_read_only"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23306,13 +23322,17 @@
       "line": 70,
       "end_line": 78,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_view_retains_named_stepper_after_deletion",
+      "native_test_id": "reference.native_view_contracts::test_view_retains_named_stepper_after_deletion",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_view_retains_named_stepper_after_deletion"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23320,13 +23340,17 @@
       "line": 81,
       "end_line": 97,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_views_are_live_windows_matching_engine_state",
+      "native_test_id": "reference.native_view_contracts::test_views_are_live_windows_matching_engine_state",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_views_are_live_windows_matching_engine_state"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23334,13 +23358,17 @@
       "line": 100,
       "end_line": 123,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_efc_force_snapshot_survives_arena_growth",
+      "native_test_id": "reference.native_view_contracts::test_efc_force_snapshot_survives_arena_growth",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_efc_force_snapshot_survives_arena_growth"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23348,13 +23376,17 @@
       "line": 126,
       "end_line": 142,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_prepared_storage_reports_generations_not_addresses",
+      "native_test_id": "reference.native_view_contracts::test_prepared_storage_reports_generations_not_addresses",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_prepared_storage_reports_generations_not_addresses"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23362,13 +23394,17 @@
       "line": 145,
       "end_line": 147,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_prepared_storage_none_without_geometric_transmission",
+      "native_test_id": "reference.native_view_contracts::test_prepared_storage_none_without_geometric_transmission",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_prepared_storage_none_without_geometric_transmission"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23376,13 +23412,17 @@
       "line": 158,
       "end_line": 165,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_drive_core_rejects_unknown_kind_before_mutation",
+      "native_test_id": "reference.native_view_contracts::test_drive_core_rejects_unknown_kind_before_mutation",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_drive_core_rejects_unknown_kind_before_mutation"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23390,13 +23430,17 @@
       "line": 168,
       "end_line": 175,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_drive_core_kind_agnostic_on_bare_stepper",
+      "native_test_id": "reference.native_view_contracts::test_drive_core_kind_agnostic_on_bare_stepper",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_drive_core_kind_agnostic_on_bare_stepper"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_view_contracts.py",
@@ -23404,13 +23448,17 @@
       "line": 178,
       "end_line": 187,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_view_contracts::test_drive_core_rejected_with_installed_drive_writer",
+      "native_test_id": "reference.native_view_contracts::test_drive_core_rejected_with_installed_drive_writer",
       "native_source": "native/tests/reference/test_native_view_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_view_contracts.py::test_drive_core_rejected_with_installed_drive_writer"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "invariant",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_view_contracts.cpp; CTest reference.native_view_contracts green on darwin-arm64 (PASS 66 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_viewer_snapshot.py",
@@ -23418,13 +23466,17 @@
       "line": 17,
       "end_line": 39,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_viewer_snapshot::test_native_preview_matches_reference_and_is_owned",
+      "native_test_id": "reference.native_viewer_snapshot::test_native_preview_matches_reference_and_is_owned",
       "native_source": "native/tests/reference/test_native_viewer_snapshot.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_viewer_snapshot.py::test_native_preview_matches_reference_and_is_owned"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); cross-oracle parity is the planned red",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.32 lane/d: native-side ownership/pacing halves landed in native/tests/reference/test_native_viewer_snapshot.cpp (reference.native_viewer_snapshot PASS 12 checks on darwin-arm64); the Python-vs-native preview/endpoint/integration-state parity assertions remain planned red pending two-platform goldens"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_viewer_snapshot.py",
@@ -23432,13 +23484,17 @@
       "line": 42,
       "end_line": 58,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_viewer_snapshot::test_native_target_slice_does_not_flush_or_duplicate_request",
+      "native_test_id": "reference.native_viewer_snapshot::test_native_target_slice_does_not_flush_or_duplicate_request",
       "native_source": "native/tests/reference/test_native_viewer_snapshot.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
+      "collected_node_ids": [
+        "tests/reference/test_native_viewer_snapshot.py::test_native_target_slice_does_not_flush_or_duplicate_request"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); cross-oracle parity is the planned red",
+      "comparison_class": "bitwise-oracle",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.32 lane/d: native-side ownership/pacing halves landed in native/tests/reference/test_native_viewer_snapshot.cpp (reference.native_viewer_snapshot PASS 12 checks on darwin-arm64); the Python-vs-native preview/endpoint/integration-state parity assertions remain planned red pending two-platform goldens"
+      ]
     },
     {
       "source_path": "tests/reference/test_numba_kernels.py",
@@ -24001,13 +24057,20 @@
       "line": 9,
       "end_line": 11,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pedelec_replay_contract::test_motor_only_schedule_is_explicitly_unsupported",
+      "native_test_id": "reference.pedelec_replay_contract::test_motor_only_schedule_is_explicitly_unsupported",
       "native_source": "native/tests/reference/test_pedelec_replay_contract.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_pedelec_replay_contract.py::test_motor_only_schedule_is_explicitly_unsupported[0.0]",
+        "tests/reference/test_pedelec_replay_contract.py::test_motor_only_schedule_is_explicitly_unsupported[1.5]",
+        "tests/reference/test_pedelec_replay_contract.py::test_motor_only_schedule_is_explicitly_unsupported[3.0]",
+        "tests/reference/test_pedelec_replay_contract.py::test_motor_only_schedule_is_explicitly_unsupported[5.0]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 4 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_pedelec_replay_contract.cpp; CTest reference.pedelec_replay_contract green on darwin-arm64 (PASS 31 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pedelec_replay_contract.py",
@@ -24015,13 +24078,17 @@
       "line": 14,
       "end_line": 22,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pedelec_replay_contract::test_unsupported_motor_replay_reports_failure_before_building",
+      "native_test_id": "reference.pedelec_replay_contract::test_unsupported_motor_replay_reports_failure_before_building",
       "native_source": "native/tests/reference/test_pedelec_replay_contract.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_pedelec_replay_contract.py::test_unsupported_motor_replay_reports_failure_before_building"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_pedelec_replay_contract.cpp; CTest reference.pedelec_replay_contract green on darwin-arm64 (PASS 31 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pedelec_replay_contract.py",
@@ -24029,13 +24096,15 @@
       "line": 25,
       "end_line": 29,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pedelec_replay_contract::test_motor_only_cli_has_nonzero_exit_and_retains_error",
+      "native_test_id": "reference.pedelec_replay_contract::test_motor_only_cli_has_nonzero_exit_and_retains_error",
       "native_source": "native/tests/reference/test_pedelec_replay_contract.cpp",
       "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 0 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_pedelec_replay_contract.cpp; CTest reference.pedelec_replay_contract green on darwin-arm64 (PASS 31 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pedelec_replay_contract.py",
@@ -24043,13 +24112,17 @@
       "line": 32,
       "end_line": 35,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pedelec_replay_contract::test_motor_ramp_fidelity_rejects_before_loading_the_fixture",
+      "native_test_id": "reference.pedelec_replay_contract::test_motor_ramp_fidelity_rejects_before_loading_the_fixture",
       "native_source": "native/tests/reference/test_pedelec_replay_contract.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_pedelec_replay_contract.py::test_motor_ramp_fidelity_rejects_before_loading_the_fixture"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_pedelec_replay_contract.cpp; CTest reference.pedelec_replay_contract green on darwin-arm64 (PASS 31 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pedelec_replay_contract.py",
@@ -24057,13 +24130,17 @@
       "line": 38,
       "end_line": 44,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pedelec_replay_contract::test_unsupported_fidelity_case_cannot_report_pass",
+      "native_test_id": "reference.pedelec_replay_contract::test_unsupported_fidelity_case_cannot_report_pass",
       "native_source": "native/tests/reference/test_pedelec_replay_contract.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_pedelec_replay_contract.py::test_unsupported_fidelity_case_cannot_report_pass"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_pedelec_replay_contract.cpp; CTest reference.pedelec_replay_contract green on darwin-arm64 (PASS 31 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
@@ -27059,13 +27136,21 @@
       "line": 90,
       "end_line": 100,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_fixed_schema_compatibility_without_loading_extension",
+      "native_test_id": "reference.replay_manifest_v2::test_fixed_schema_compatibility_without_loading_extension",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_fixed_schema_compatibility_without_loading_extension[1-python-False]",
+        "tests/reference/test_replay_manifest_v2.py::test_fixed_schema_compatibility_without_loading_extension[2-python-False]",
+        "tests/reference/test_replay_manifest_v2.py::test_fixed_schema_compatibility_without_loading_extension[2-native-False]",
+        "tests/reference/test_replay_manifest_v2.py::test_fixed_schema_compatibility_without_loading_extension[2-python-True]",
+        "tests/reference/test_replay_manifest_v2.py::test_fixed_schema_compatibility_without_loading_extension[2-native-True]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 5 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27073,13 +27158,30 @@
       "line": 104,
       "end_line": 109,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_every_schema2_file_is_authenticated",
+      "native_test_id": "reference.replay_manifest_v2::test_every_schema2_file_is_authenticated",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[summary.json]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[commands_requested.jsonl]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[commands_applied.jsonl]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[observations.jsonl]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[transitions.jsonl]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[states.npz]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[terrain_vertices.npy]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[track.toml]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[trace.csv]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[episode_metrics.json]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[telemetry.csv]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[intervals.jsonl]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[rider_joint_envelope.json]",
+        "tests/reference/test_replay_manifest_v2.py::test_every_schema2_file_is_authenticated[rider_joint_strength.json]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 14 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27087,13 +27189,22 @@
       "line": 113,
       "end_line": 130,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_manifest_rejects_unlisted_fields_and_paths",
+      "native_test_id": "reference.replay_manifest_v2::test_manifest_rejects_unlisted_fields_and_paths",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_manifest_rejects_unlisted_fields_and_paths[missing]",
+        "tests/reference/test_replay_manifest_v2.py::test_manifest_rejects_unlisted_fields_and_paths[extra]",
+        "tests/reference/test_replay_manifest_v2.py::test_manifest_rejects_unlisted_fields_and_paths[traversal]",
+        "tests/reference/test_replay_manifest_v2.py::test_manifest_rejects_unlisted_fields_and_paths[upper_hash]",
+        "tests/reference/test_replay_manifest_v2.py::test_manifest_rejects_unlisted_fields_and_paths[unknown_top]",
+        "tests/reference/test_replay_manifest_v2.py::test_manifest_rejects_unlisted_fields_and_paths[bool_schema]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 6 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27101,13 +27212,17 @@
       "line": 133,
       "end_line": 139,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_schema1_does_not_silently_accept_schema2_checksum_set",
+      "native_test_id": "reference.replay_manifest_v2::test_schema1_does_not_silently_accept_schema2_checksum_set",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_schema1_does_not_silently_accept_schema2_checksum_set"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27115,13 +27230,20 @@
       "line": 143,
       "end_line": 157,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_summary_identity_and_referenced_bundles_are_cross_checked",
+      "native_test_id": "reference.replay_manifest_v2::test_summary_identity_and_referenced_bundles_are_cross_checked",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_summary_identity_and_referenced_bundles_are_cross_checked[missing_bundle]",
+        "tests/reference/test_replay_manifest_v2.py::test_summary_identity_and_referenced_bundles_are_cross_checked[bundle_digest]",
+        "tests/reference/test_replay_manifest_v2.py::test_summary_identity_and_referenced_bundles_are_cross_checked[execution]",
+        "tests/reference/test_replay_manifest_v2.py::test_summary_identity_and_referenced_bundles_are_cross_checked[malformed_physics]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 4 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27129,13 +27251,17 @@
       "line": 160,
       "end_line": 167,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_symlinked_recorded_file_is_rejected",
+      "native_test_id": "reference.replay_manifest_v2::test_symlinked_recorded_file_is_rejected",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_symlinked_recorded_file_is_rejected"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27143,13 +27269,19 @@
       "line": 172,
       "end_line": 176,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_duplicate_and_nonfinite_json_fields_are_rejected",
+      "native_test_id": "reference.replay_manifest_v2::test_duplicate_and_nonfinite_json_fields_are_rejected",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_duplicate_and_nonfinite_json_fields_are_rejected[{\"schema_version\":2,\"schema_version\":1}]",
+        "tests/reference/test_replay_manifest_v2.py::test_duplicate_and_nonfinite_json_fields_are_rejected[{\"schema_version\":NaN}]",
+        "tests/reference/test_replay_manifest_v2.py::test_duplicate_and_nonfinite_json_fields_are_rejected[{\"schema_version\":1e999}]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27157,13 +27289,18 @@
       "line": 180,
       "end_line": 200,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_execution_exact_shape_and_nullability",
+      "native_test_id": "reference.replay_manifest_v2::test_execution_exact_shape_and_nullability",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_execution_exact_shape_and_nullability[python]",
+        "tests/reference/test_replay_manifest_v2.py::test_execution_exact_shape_and_nullability[native]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -27171,13 +27308,17 @@
       "line": 229,
       "end_line": 245,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_native_source_manifest_has_stable_paths_and_tracks_headers",
+      "native_test_id": "reference.replay_manifest_v2::test_native_source_manifest_has_stable_paths_and_tracks_headers",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_native_source_manifest_has_stable_paths_and_tracks_headers"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_recording_v3.py",
@@ -27185,13 +27326,17 @@
       "line": 26,
       "end_line": 47,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_recording_v3::test_new_recording_requires_all_verification_before_report",
+      "native_test_id": "reference.replay_recording_v3::test_new_recording_requires_all_verification_before_report",
       "native_source": "native/tests/reference/test_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_recording_v3.py::test_new_recording_requires_all_verification_before_report"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_recording_v3.cpp; CTest reference.replay_recording_v3 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_recording_v3.py",
@@ -27199,13 +27344,17 @@
       "line": 50,
       "end_line": 57,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_recording_v3::test_multi_episode_selection_is_explicit",
+      "native_test_id": "reference.replay_recording_v3::test_multi_episode_selection_is_explicit",
       "native_source": "native/tests/reference/test_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_recording_v3.py::test_multi_episode_selection_is_explicit"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_recording_v3.cpp; CTest reference.replay_recording_v3 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_recording_v3.py",
@@ -27213,13 +27362,17 @@
       "line": 60,
       "end_line": 63,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_recording_v3::test_ordinary_recording_does_not_claim_checked_replay",
+      "native_test_id": "reference.replay_recording_v3::test_ordinary_recording_does_not_claim_checked_replay",
       "native_source": "native/tests/reference/test_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_recording_v3.py::test_ordinary_recording_does_not_claim_checked_replay"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_recording_v3.cpp; CTest reference.replay_recording_v3 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_recording_v3.py",
@@ -27227,13 +27380,17 @@
       "line": 66,
       "end_line": 74,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_recording_v3::test_new_replay_does_not_load_recorded_policy",
+      "native_test_id": "reference.replay_recording_v3::test_new_replay_does_not_load_recorded_policy",
       "native_source": "native/tests/reference/test_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_recording_v3.py::test_new_replay_does_not_load_recorded_policy"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_recording_v3.cpp; CTest reference.replay_recording_v3 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_recording_v3.py",
@@ -27241,13 +27398,17 @@
       "line": 77,
       "end_line": 101,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_recording_v3::test_resealed_final_state_tamper_fails_last_boundary_not_format_loading",
+      "native_test_id": "reference.replay_recording_v3::test_resealed_final_state_tamper_fails_last_boundary_not_format_loading",
       "native_source": "native/tests/reference/test_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_recording_v3.py::test_resealed_final_state_tamper_fails_last_boundary_not_format_loading"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_recording_v3.cpp; CTest reference.replay_recording_v3 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_recording_v3.py",
@@ -27255,13 +27416,17 @@
       "line": 104,
       "end_line": 113,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_recording_v3::test_new_checksum_failure_precedes_plant_construction",
+      "native_test_id": "reference.replay_recording_v3::test_new_checksum_failure_precedes_plant_construction",
       "native_source": "native/tests/reference/test_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_recording_v3.py::test_new_checksum_failure_precedes_plant_construction"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_recording_v3.cpp; CTest reference.replay_recording_v3 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -27269,13 +27434,18 @@
       "line": 28,
       "end_line": 53,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_python_headless_and_incremental_replay_share_checks",
+      "native_test_id": "reference.replay_session::test_python_headless_and_incremental_replay_share_checks",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_python_headless_and_incremental_replay_share_checks[0]",
+        "tests/reference/test_replay_session.py::test_python_headless_and_incremental_replay_share_checks[2]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -27283,13 +27453,17 @@
       "line": 56,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_early_close_never_finishes_a_pending_replay",
+      "native_test_id": "reference.replay_session::test_early_close_never_finishes_a_pending_replay",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_early_close_never_finishes_a_pending_replay"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -27297,13 +27471,17 @@
       "line": 70,
       "end_line": 88,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_last_frame_remains_unverified_until_final_state_comparison",
+      "native_test_id": "reference.replay_session::test_last_frame_remains_unverified_until_final_state_comparison",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_last_frame_remains_unverified_until_final_state_comparison"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -27311,13 +27489,17 @@
       "line": 91,
       "end_line": 99,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_recorded_policy_reference_is_never_loaded",
+      "native_test_id": "reference.replay_session::test_recorded_policy_reference_is_never_loaded",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_recorded_policy_reference_is_never_loaded"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -27325,13 +27507,19 @@
       "line": 106,
       "end_line": 126,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_resealed_semantic_tamper_still_fails_verification",
+      "native_test_id": "reference.replay_session::test_resealed_semantic_tamper_still_fails_verification",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_resealed_semantic_tamper_still_fails_verification[commands_applied.jsonl-0-step-applied commands]",
+        "tests/reference/test_replay_session.py::test_resealed_semantic_tamper_still_fails_verification[transitions.jsonl-0-physics_steps-transition]",
+        "tests/reference/test_replay_session.py::test_resealed_semantic_tamper_still_fails_verification[observations.jsonl-1-time_s-observation]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -27339,13 +27527,17 @@
       "line": 142,
       "end_line": 154,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_identity_mismatch_rejected_before_plant_construction",
+      "native_test_id": "reference.replay_session::test_identity_mismatch_rejected_before_plant_construction",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_identity_mismatch_rejected_before_plant_construction"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -29958,13 +30150,17 @@
       "line": 61,
       "end_line": 79,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_replay_playback::test_playback_loads_episode",
+      "native_test_id": "reference.replay_playback::test_playback_loads_episode",
       "native_source": "native/tests/integration/test_replay_playback.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_replay_playback.py::test_playback_loads_episode"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/integration/test_replay_playback.cpp; CTest reference.replay_playback green on darwin-arm64 (PASS 220 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/test_replay_playback.py",
@@ -29972,13 +30168,17 @@
       "line": 83,
       "end_line": 103,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_replay_playback::test_playback_pose_interpolates",
+      "native_test_id": "reference.replay_playback::test_playback_pose_interpolates",
       "native_source": "native/tests/integration/test_replay_playback.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_replay_playback.py::test_playback_pose_interpolates"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/integration/test_replay_playback.cpp; CTest reference.replay_playback green on darwin-arm64 (PASS 220 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/test_replay_playback.py",
@@ -29986,13 +30186,17 @@
       "line": 106,
       "end_line": 118,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_replay_playback::test_playback_rejects_bad_dir",
+      "native_test_id": "reference.replay_playback::test_playback_rejects_bad_dir",
       "native_source": "native/tests/integration/test_replay_playback.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_replay_playback.py::test_playback_rejects_bad_dir"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/integration/test_replay_playback.cpp; CTest reference.replay_playback green on darwin-arm64 (PASS 220 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/test_replay_playback.py",
@@ -30000,13 +30204,17 @@
       "line": 122,
       "end_line": 126,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_replay_playback::test_replay_view_dry_run",
+      "native_test_id": "reference.replay_playback::test_replay_view_dry_run",
       "native_source": "native/tests/integration/test_replay_playback.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_replay_playback.py::test_replay_view_dry_run"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/integration/test_replay_playback.cpp; CTest reference.replay_playback green on darwin-arm64 (PASS 220 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/test_replay_playback.py",
@@ -30014,13 +30222,17 @@
       "line": 129,
       "end_line": 137,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_replay_playback::test_replay_verify_still_default",
+      "native_test_id": "reference.replay_playback::test_replay_verify_still_default",
       "native_source": "native/tests/integration/test_replay_playback.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_replay_playback.py::test_replay_verify_still_default"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/integration/test_replay_playback.cpp; CTest reference.replay_playback green on darwin-arm64 (PASS 220 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/test_rider_welds.py",
@@ -39966,13 +40178,17 @@
       "line": 39,
       "end_line": 56,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_recording_v3::test_native_failed_recording_stays_analyzable_and_playable",
+      "native_test_id": "reference.native_replay_recording_v3::test_native_failed_recording_stays_analyzable_and_playable",
       "native_source": "native/tests/reference/test_native_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_recording_v3.py::test_native_failed_recording_stays_analyzable_and_playable"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_replay_recording_v3.cpp; CTest reference.native_replay_recording_v3 green on darwin-arm64 (PASS 45 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_recording_v3.py",
@@ -39980,13 +40196,17 @@
       "line": 59,
       "end_line": 85,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_recording_v3::test_native_playback_never_loads_artifact_or_identity",
+      "native_test_id": "reference.native_replay_recording_v3::test_native_playback_never_loads_artifact_or_identity",
       "native_source": "native/tests/reference/test_native_replay_recording_v3.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_recording_v3.py::test_native_playback_never_loads_artifact_or_identity"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_replay_recording_v3.cpp; CTest reference.native_replay_recording_v3 green on darwin-arm64 (PASS 45 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_session.py",
@@ -39994,13 +40214,17 @@
       "line": 64,
       "end_line": 91,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_session::test_native_session_gate_invoked_with_the_recorded_identity",
+      "native_test_id": "reference.native_replay_session::test_native_session_gate_invoked_with_the_recorded_identity",
       "native_source": "native/tests/reference/test_native_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_session.py::test_native_session_gate_invoked_with_the_recorded_identity"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_replay_session.cpp; CTest reference.native_replay_session green on darwin-arm64 (PASS 14 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_session.py",
@@ -40008,13 +40232,17 @@
       "line": 94,
       "end_line": 115,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_replay_session::test_native_session_rejects_foreign_identity_before_any_plant",
+      "native_test_id": "reference.native_replay_session::test_native_session_rejects_foreign_identity_before_any_plant",
       "native_source": "native/tests/reference/test_native_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_replay_session.py::test_native_session_rejects_foreign_identity_before_any_plant"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_native_replay_session.cpp; CTest reference.native_replay_session green on darwin-arm64 (PASS 14 checks); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_manifest_v2.py",
@@ -40022,13 +40250,18 @@
       "line": 204,
       "end_line": 226,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_manifest_v2::test_execution_v2_shape_and_nullability",
+      "native_test_id": "reference.replay_manifest_v2::test_execution_v2_shape_and_nullability",
       "native_source": "native/tests/reference/test_replay_manifest_v2.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_manifest_v2.py::test_execution_v2_shape_and_nullability[python]",
+        "tests/reference/test_replay_manifest_v2.py::test_execution_v2_shape_and_nullability[native]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_manifest_v2.cpp; CTest reference.replay_manifest_v2 green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/reference/test_replay_session.py",
@@ -40036,13 +40269,17 @@
       "line": 157,
       "end_line": 184,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_replay_session::test_identity_recheck_failure_advances_no_physics",
+      "native_test_id": "reference.replay_session::test_identity_recheck_failure_advances_no_physics",
       "native_source": "native/tests/reference/test_replay_session.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_replay_session.py::test_identity_recheck_failure_advances_no_physics"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.32 lane/d: ported to native/tests/reference/test_replay_session.cpp; CTest reference.replay_session green on darwin-arm64 (replay_manifest_v2+replay_recording_v3+replay_session PASS 112 checks (grouped invocation)); CTest green on linux-aarch64 (bike-dev-pfc-lane-d, /build/root-clang, 9/9 t53 replay targets Passed)"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",

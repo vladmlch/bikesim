@@ -48,6 +48,7 @@ io::Value summarize(std::span<const Job> jobs,std::span<const Result> results,do
     }
     Object codes;for(const auto& [code,count]:counts)codes.emplace_back(std::to_string(code),integer(count));
     Object policy;
+    // NOLINTNEXTLINE(concurrency-mt-unsafe) summarize runs after workers join; no concurrent setenv
     if(const char* threads=std::getenv("OPENBLAS_NUM_THREADS");threads&&*threads)
         policy.emplace_back("OPENBLAS_NUM_THREADS",text(threads));
     return Value{Object{{"jobs",integer(static_cast<std::int64_t>(results.size()))},{"exit_codes",Value{std::move(codes)}},

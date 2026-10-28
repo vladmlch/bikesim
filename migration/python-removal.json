@@ -18086,11 +18086,13 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_cmake_platform.cpp"
+      "native/tests/migration/migration_T53_portability.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T53_portability"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "76280859080c69721e2d95105d99031b3fe6a2bcd7f0a37e706b420a5a49119a",
     "snapshot_line_count": 424,
     "tracked": true,
@@ -18105,11 +18107,13 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_compiler_policy.cpp"
+      "native/tests/migration/migration_T53_portability.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T53_portability"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "94636ce71bc6c14968481b7b1a5bbe195edcdd63f86badcfe71117c1f2cb7577",
     "snapshot_line_count": 387,
     "tracked": true,
@@ -18402,11 +18406,13 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_provider_identity.cpp"
+      "native/tests/migration/migration_T53_portability.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T53_portability"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "80394aae88a6b02471985c627bed5b304999699f6246d91d2b751a2df805e846",
     "snapshot_line_count": 475,
     "tracked": true,
@@ -18459,11 +18465,13 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_root_configure.cpp"
+      "native/tests/migration/migration_T53_portability.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T53_portability"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "23708279fb28c70c018e8c409502d1c911848a767d598068d60a8b5502f1f948",
     "snapshot_line_count": 116,
     "tracked": true,

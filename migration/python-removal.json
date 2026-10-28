@@ -16355,8 +16355,8 @@
   },
   {
     "path": "tests/reference/test_period_buffer.py",
-    "sha256": "44ff20e06c9b9b4db7b47811e0c5008af40af7797036ca2843d0357f8d3ad496",
-    "line_count": 397,
+    "sha256": "2ba3b176541f407c844277a596fde79ccccce46aa4523d50a1e901db1c585572",
+    "line_count": 505,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [

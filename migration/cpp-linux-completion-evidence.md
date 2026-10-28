@@ -9322,3 +9322,86 @@ Both in-scope CTest cases green on both platforms with identical
 check counts (29 + 1095). L3 (`tools/run_tests.sh`) not re-run —
 bounded merge-back scope per protocol; integration-level `full` gate
 is the scheduled accumulation checkpoint after the pending merges.
+
+## 2026-10-28 — 3.22b lane/d qualification: recorder/HUD columns, period buffer, frozen arrays, plot markers (`recording`)
+
+### Scope and merge-back state
+
+Batch 3.22b landed on lane/a (`152aa0de`, merged `9c08ff17`) before
+this session; the lane/d task verified the merge-back at integration
+tip `7e683b75`, closed the ledger qualification gaps the lane/a edit
+left (empty `collected_node_ids`, T01-era `assertions_capture`
+placeholder), refreshed drifted file fingerprints, and ported one
+record the batch could not have covered: `e181666b` (F1 re-scope,
+post-merge) appended
+`test_equality_rows_charge_the_closure_channel_not_the_bound` to
+`tests/reference/test_period_buffer.py` without a ledger row — 11 live
+test functions vs 10 records.
+
+### Native port added on lane/d
+
+`native/tests/reference/test_period_buffer.cpp` gains
+`test_equality_rows_charge_the_closure_channel_not_the_bound` between
+the two slow runtime tests, preserving source order. The oracle calls
+`split_constraint_powers` + `step_work` as pure functions; natively the
+`equality:` name partition lives inside `raw_work` (anonymous
+namespace, `accounting.cpp:85-92`), so the partition is exercised
+end-to-end through the real path — a detached `PeriodAccounting`
+(`strictness_support::runtime_for_raws`, the fixture the energy-ledger
+port uses for the same raw path) fed by `neutral_raw` carrying the
+oracle's four named power rows in insertion order — and the verbatim
+`runtime::step_work` call is repeated at the oracle's `dt=.1` inputs.
+Expected values are written as the identical binary64 expressions
+(`.75*.1`, `3.*.1`), not the `.075`/`.3` literals — `pytest.approx`
+covers a 1-ulp spread the literals would fail on.
+
+### Verification
+
+- Oracle suite, all five files: **24 passed** darwin-arm64 (53.13 s,
+  `.venv/bin/python -m pytest`) and **24 passed** linux-aarch64
+  (64.62 s, `bike-dev-pfc-lane-d` container, fresh `uv` venv on
+  cpython-3.13.16); `--collect-only` reproduced the recorded node IDs
+  including the three `[stateN-…]` HUD parameterizations.
+- Focused CTest
+  `reference.(recorder_columns|hud_columns|period_buffer|frozen_force_arrays|ride_plots_html_markers)`:
+  **5/5 PASS** darwin-arm64 (`build/native-release`, Release; 5.53 s
+  total) and **5/5 PASS** linux-aarch64 (`bike-dev-pfc-lane-d`,
+  `/src/build/native-release`, clang, Release; 3.29 s total).
+- Binary check counts identical across platforms:
+  `recorder_columns` 297, `hud_columns` 44, `period_buffer`
+  **160268** (160264 prior + the 4 new checks — verified `PASS 160268`;
+  the earlier lane/a "160265" figure was a transcription error), `frozen_force_arrays`
+  8, `ride_plots_html_markers` 18.
+- Drop re-verified: `test_arm_highlight_uses_published_directional_capacity`
+  stays `drop` — `native/src/viewer/hud.hpp:6`
+  `struct HudColumn { std::string legend, text; }` carries no
+  styled-segment surface, and the shoulder-torque text it would have
+  colored is asserted in the ported arm column (`sh  +90`).
+- `a323585d`/`e181666b` post-merge oracle edits are already carried by
+  the port: golden JSON manifests hold the post-recapture darwin floors
+  (qpos 5e-11, qvel 5e-10, rider power 5e-9; linux 1e-12/1e-9 bitwise
+  floors) and `093633c4` grew the `AttachmentBudget` designated
+  initializers — no source edits needed beyond the new record.
+
+### Ledger
+
+- `migration/test-port-map.json`: 2393 → **2394** records (+1
+  post-inventory function); headers `static_test_functions`
+  2393→**2394**, `top_level_test_functions` 2377→**2378** (=
+  2394 − `class_test_methods` 16), matching the `bd0f966f` fix-round
+  precedent. Dispositions `port` 1062→**1063**, `drop` 125, `golden`
+  351, `planned` 855. All 22 batch records carry measured
+  `collected_node_ids` (24 nodes), dated `assertions_capture`, and
+  lane/d verification `evidence` appended to the lane/a entries; stale
+  `line`/`end_line` refreshed against the post-`e181666b` source.
+- `migration/python-removal.json`: `test_period_buffer.py` row
+  `sha256`/`line_count` refreshed to the live file (505 lines,
+  `2ba3b176…`, post-`a323585d`); the other four rows already matched
+  live; `snapshot_*` untouched; `replacement_landed` 117.
+- `native/tests/reference/Phase3Ports.cmake`: unchanged — the five
+  registrations (`t52 recording`, +`slow` where the source marks,
+  +`golden` on `period_buffer`) already exist from the lane/a merge.
+- Canonical serialization re-verified: `indent=2`, `ensure_ascii`,
+  trailing LF on both JSON ledgers; `git diff` confined to batch rows.
+
+Report: `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C322b-report.md`.

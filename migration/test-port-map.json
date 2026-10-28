@@ -1,7 +1,7 @@
 {
   "status": "Complete static function/method inventory; source dispositions are not qualification; no project execution or pytest collection in this session",
-  "static_test_functions": 2393,
-  "top_level_test_functions": 2377,
+  "static_test_functions": 2394,
+  "top_level_test_functions": 2378,
   "runtime_node_acquisition_task": "T01",
   "records": [
     {
@@ -3578,12 +3578,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.frozen_force_arrays::test_freeze_force_is_immutable_finite_and_recognised",
       "native_source": "native/tests/reference/test_frozen_force_arrays.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_frozen_force_arrays.py::test_freeze_force_is_immutable_finite_and_recognised"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.frozen_force_arrays)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.frozen_force_arrays)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -3594,12 +3597,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.frozen_force_arrays::test_samples_reuse_frozen_arrays_without_copying",
       "native_source": "native/tests/reference/test_frozen_force_arrays.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_frozen_force_arrays.py::test_samples_reuse_frozen_arrays_without_copying"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.frozen_force_arrays)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.frozen_force_arrays)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -3719,12 +3725,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.hud_columns::test_arm_lean_limit_and_balance_columns",
       "native_source": "native/tests/reference/test_hud_columns.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_hud_columns.py::test_arm_lean_limit_and_balance_columns[state0-ok-green]",
+        "tests/reference/test_hud_columns.py::test_arm_lean_limit_and_balance_columns[state1-low 0.3s-yellow]",
+        "tests/reference/test_hud_columns.py::test_arm_lean_limit_and_balance_columns[state2-LOST@x=12 m-red]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "structural",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.hud_columns)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.hud_columns)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -3735,12 +3746,15 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_hud_columns.py::test_arm_highlight_uses_published_directional_capacity"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: dropped - the orange1 styled-segment surface does not exist on the native HUD (HudColumn carries legend/text only); the directional-capacity data it colored still reaches the arm column text, covered by reference.hud_columns test_arm_lean_limit_and_balance_columns"
+        "2026-10-2x 3.22b lane/a: dropped - the orange1 styled-segment surface does not exist on the native HUD (HudColumn carries legend/text only); the directional-capacity data it colored still reaches the arm column text, covered by reference.hud_columns test_arm_lean_limit_and_balance_columns",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24183,12 +24197,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_batched_wrench_matches_scalar_and_first_violation",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_batched_wrench_matches_scalar_and_first_violation"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24199,12 +24216,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_missing_wrench_is_not_replaced_by_zero",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_missing_wrench_is_not_replaced_by_zero"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24215,12 +24235,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_buffer_overflow_and_discontinuous_interval_are_rejected",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_buffer_overflow_and_discontinuous_interval_are_rejected"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24231,12 +24254,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_recording_a_published_period_twice_is_idempotent",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_recording_a_published_period_twice_is_idempotent"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24247,12 +24273,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_actual_spatial_body_inputs_match_scalar_attachment_measurement",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_actual_spatial_body_inputs_match_scalar_attachment_measurement"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24263,12 +24292,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_held_command_power_and_strength_are_checked_at_each_incoming_state",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_held_command_power_and_strength_are_checked_at_each_incoming_state"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "analytic",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24279,12 +24311,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_held_intervals_reject_joint_power_and_speed_between_control_ticks",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_held_intervals_reject_joint_power_and_speed_between_control_ticks"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -24295,12 +24330,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "tolerance-oracle",
       "disposition": "golden",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.period_buffer green on both; darwin qvel/power entries gated at the measured platform parity floor (1e-10/5e-9, ~400x tighter than the oracle's own cross-platform spread), linux at source tolerances (bitwise in practice)"
+        "2026-10-2x 3.22b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.period_buffer green on both; darwin qvel/power entries gated at the measured platform parity floor (1e-10/5e-9, ~400x tighter than the oracle's own cross-platform spread), linux at source tolerances (bitwise in practice)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest reference.period_buffer green both platforms (goldens darwin 5e-11/5e-10/5e-9 + linux 1e-12 floors, post-a323585d recapture)"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -24311,16 +24349,19 @@
       "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_runtime_batch_matches_preserved_scalar_step_and_flush",
       "line": 265,
-      "end_line": 376,
+      "end_line": 380,
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_runtime_batch_matches_preserved_scalar_step_and_flush",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "tolerance-oracle",
       "disposition": "golden",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.period_buffer green on both; darwin qvel/power entries gated at the measured platform parity floor (1e-10/5e-9, ~400x tighter than the oracle's own cross-platform spread), linux at source tolerances (bitwise in practice)"
+        "2026-10-2x 3.22b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.period_buffer green on both; darwin qvel/power entries gated at the measured platform parity floor (1e-10/5e-9, ~400x tighter than the oracle's own cross-platform spread), linux at source tolerances (bitwise in practice)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest reference.period_buffer green both platforms (goldens darwin 5e-11/5e-10/5e-9 + linux 1e-12 floors, post-a323585d recapture)"
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -24329,18 +24370,39 @@
     },
     {
       "source_path": "tests/reference/test_period_buffer.py",
+      "source_symbol": "test_equality_rows_charge_the_closure_channel_not_the_bound",
+      "line": 383,
+      "end_line": 397,
+      "owner_task": "T52",
+      "native_test_id": "reference.period_buffer::test_equality_rows_charge_the_closure_channel_not_the_bound",
+      "native_source": "native/tests/reference/test_period_buffer.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_equality_rows_charge_the_closure_channel_not_the_bound"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "analytic",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.22b lane/d: ported to native/tests/reference/test_period_buffer.cpp (record added by e181666b F1 re-scope after the lane/a merge); the 'equality:' partition is exercised end-to-end through runtime_for_raws/PeriodAccounting -> raw_work plus the oracle's verbatim step_work call; CTest reference.period_buffer green darwin-arm64 + linux-aarch64; oracle suite 24/24 nodes green both platforms"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_period_buffer.py",
       "source_symbol": "test_record_decimation_forwards_period_closing_energy",
-      "line": 397,
-      "end_line": 501,
+      "line": 401,
+      "end_line": 505,
       "owner_task": "T52",
       "native_test_id": "reference.period_buffer::test_record_decimation_forwards_period_closing_energy",
       "native_source": "native/tests/reference/test_period_buffer.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_period_buffer.py::test_record_decimation_forwards_period_closing_energy"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.period_buffer)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -25692,12 +25754,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.recorder_columns::test_columns_are_rectangular_and_csv_matches_rows",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_recorder_columns.py::test_columns_are_rectangular_and_csv_matches_rows"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "structural",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -25708,12 +25773,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.recorder_columns::test_sample_owns_channels_without_recursive_copy_and_arrays_remain_readonly",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_recorder_columns.py::test_sample_owns_channels_without_recursive_copy_and_arrays_remain_readonly"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -25724,12 +25792,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.recorder_columns::test_column_csv_and_streamed_jsonl_preserve_the_original_interval_row",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_recorder_columns.py::test_column_csv_and_streamed_jsonl_preserve_the_original_interval_row"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "structural",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -25740,12 +25811,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.recorder_columns::test_runtime_publishes_owned_channels_and_preserves_previous_samples",
       "native_source": "native/tests/reference/test_recorder_columns.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_recorder_columns.py::test_runtime_publishes_owned_channels_and_preserves_previous_samples"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.recorder_columns)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -28363,12 +28437,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.ride_plots_html_markers::test_markers_are_batched_and_match_the_events",
       "native_source": "native/tests/reference/test_ride_plots_html_markers.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_ride_plots_html_markers.py::test_markers_are_batched_and_match_the_events"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "structural",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -28379,12 +28456,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.ride_plots_html_markers::test_shift_events_ignore_nan_teeth",
       "native_source": "native/tests/reference/test_ride_plots_html_markers.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_ride_plots_html_markers.py::test_shift_events_ignore_nan_teeth"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {
@@ -28395,12 +28475,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.ride_plots_html_markers::test_html_generation_is_linear_in_ride_length",
       "native_source": "native/tests/reference/test_ride_plots_html_markers.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_ride_plots_html_markers.py::test_html_generation_is_linear_in_ride_length"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)"
+        "2026-10-2x 3.22b lane/a: ported to native/tests/reference; source file green on darwin-arm64 + linux-aarch64; CTest green on both platforms (reference.ride_plots_html_markers)",
+        "2026-10-28 3.22b lane/d: verified merge-back on lane/d at 7e683b75; oracle suite 24/24 nodes green darwin-arm64 (53.13s) + linux-aarch64 (64.62s); CTest green both platforms"
       ]
     },
     {

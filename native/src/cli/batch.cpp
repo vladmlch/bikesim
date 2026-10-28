@@ -66,7 +66,10 @@ for(const auto& arg:job.argv)views.push_back(arg);
         }
         std::cout<<'['<<++done<<'/'<<jobs.size()<<"] "<<result.id<<" exit="<<result.exit_code<<" wall="<<result.wall_s<<"s\n";
     };
-    std::cout<<"workers="<<count<<" start_method=in-process\n";
+    // The oracle banner: "in-process" iff --serial or an explicit --jobs 1;
+    // every pooled run (including a discovered worker count) is "spawn".
+    const bool in_process=args.flag("serial")||(args.has("jobs")&&count==1);
+    std::cout<<"workers="<<count<<" start_method="<<(in_process?"in-process":"spawn")<<'\n';
     const auto results=batch::execute(jobs,static_cast<unsigned>(count),options);
     const auto elapsed=std::chrono::duration<double>(Clock::now()-started).count();
     results_file.close();

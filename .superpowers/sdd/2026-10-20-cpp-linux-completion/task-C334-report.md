@@ -43,8 +43,9 @@ Required source changes (contract gaps found during port):
 - `native/src/cli/batch.cpp` — worker count now resolves lazily
   (`--serial`/`--jobs` never calls `performance_cores()`, matching the
   monkeypatched-discovery contract) and is validated before the spec is
-  read; prints `workers=N start_method=in-process`; passes the count to
-  `batch::summarize`.
+  read; prints `workers=N start_method=in-process` under `--serial`/
+  `--jobs 1` and `start_method=spawn` for pooled runs (oracle parity —
+  review round 3.34); passes the count to `batch::summarize`.
 - `native/src/batch/summary.cpp` / `plan.hpp` — `summarize` gains a
   `workers` parameter and emits `workers` + `thread_policy`
   (`OPENBLAS_NUM_THREADS` when set) in the run report.
@@ -87,7 +88,8 @@ Not ported (Python-adapter plumbing, no native twin):
 
 ## Verification (darwin-arm64, `build/native-release`)
 
-- `reference.async_close` — PASS, 720 checks.
+- `reference.async_close` — PASS, 798 checks (final count after the
+  second-pass port additions; `reference.batch` count below).
 - `reference.batch` — PASS, 105 checks (real `bike-batch` +
   `bike-research` children, serial and 2-worker modes).
 - Both registered in `Phase3Ports.cmake` with `t53 frontend slow` labels;
@@ -226,3 +228,16 @@ repo-wide `planned` count (932) belongs to other owner tasks, not this
 batch. `bash tools/run_tests.sh` still not run on this lane (the
 lane's direct Darwin+Linux qualification constraint was honored
 instead).
+
+### Deviations (batch 3.34 review)
+
+- `test_pinned_samples_are_compressive_at_rest` reads `retained.front()`
+  for the compressive assertions: on the captured welded bootstrap the
+  ride drifts from rest within ~80 intervals, so the settled interval is
+  the oracle's own rest point; schema/closure checks still sample
+  `retained.back()` (documented in the test body).
+- `test_physical_driver_construction_owns_only_needed_worker` carries a
+  single `port` disposition over both `[python-True]`/`[native-False]`
+  params: the native test covers `[native-False]`; `[python-True]` is
+  python-backend adapter plumbing with no native twin (backend removed
+  at T63).

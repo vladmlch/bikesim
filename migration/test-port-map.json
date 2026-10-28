@@ -3495,7 +3495,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-28 3.34 lane/d: ported \u2014 PhysicalLiveCsv preview rows carry generation/'reset'/'requested_scale' markers; the seal-per-generation publish-once half is carried by the 3.30 RunCapture/EpisodeJournal lifecycle ports; CTest reference.frontend_windows green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+        "2026-10-28 3.34 lane/d: ported \u2014 PhysicalLiveCsv preview rows carry 'event'/'generation'/'reset' markers; the seal-per-generation publish-once half is carried by the 3.30 RunCapture/EpisodeJournal lifecycle ports; CTest reference.frontend_windows green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
       ]
     },
     {
@@ -30099,7 +30099,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30118,7 +30117,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30138,7 +30136,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30158,7 +30155,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30177,7 +30173,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30196,7 +30191,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30215,7 +30209,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30234,7 +30227,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30253,7 +30245,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30272,7 +30263,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30291,7 +30281,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -30310,7 +30299,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40467,7 +40455,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40502,7 +40489,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40521,7 +40507,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40560,7 +40545,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40656,7 +40640,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40675,7 +40658,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40848,7 +40830,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40867,7 +40848,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
@@ -40887,7 +40867,6 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
         "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },

@@ -7,7 +7,6 @@
 #include <stop_token>
 #include <string>
 #include <string_view>
-#include <string_view>
 #include <vector>
 
 namespace bike::batch {

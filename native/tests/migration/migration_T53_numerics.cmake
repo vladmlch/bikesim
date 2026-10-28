@@ -289,7 +289,9 @@ function(_ro_case name)
 endfunction()
 
 # _live_case(name) — LIVE configure with a stub checker.
-#   SYSTEM <s>, KEY <k> (the key the stub echoes), RECORD_FILE, DOC <f>
+#   SYSTEM <s>, KEY <k> (the key the stub echoes as its verdict; must equal
+#   the record key the lock was written with — darwin/linux-${_uname_m}),
+#   RECORD_FILE, DOC <f>
 #   CHECKER <path> (default: generated stub echoing KEY, exit 0)
 #   BACKEND <b>, EXTRA <text>
 function(_live_case name)
@@ -1273,7 +1275,7 @@ math(EXPR _case_count "${_case_count} + 1")
 _darwin_record(live-auto-d)
 file(WRITE "${SCRATCH_DIR}/live-auto-d-doc.json"
 "{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-auto-d-site\",\"library_paths\":[{\"build_id\":\"macos-26A434+accelerate-a697e7b98ff4356ca50764b38af1ccaa+sdk-26A425\"},{\"build_id\":\"macos-26A434+accelerate-a697e7b98ff4356ca50764b38af1ccaa+sdk-26A425\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-arm64"
+_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
            RECORD_FILE "${SCRATCH_DIR}/live-auto-d-lock.json"
            DOC "${SCRATCH_DIR}/live-auto-d-doc.json")
 if(NOT ${_c}_rc EQUAL 0)
@@ -1358,7 +1360,7 @@ math(EXPR _case_count "${_case_count} + 1")
 _darwin_record(live-mism)
 file(WRITE "${SCRATCH_DIR}/live-mism-doc.json"
 "{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-mism-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-arm64" BACKEND NUMPY_OPENBLAS
+_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}" BACKEND NUMPY_OPENBLAS
            RECORD_FILE "${SCRATCH_DIR}/live-mism-lock.json"
            DOC "${SCRATCH_DIR}/live-mism-doc.json")
 if(${_c}_rc EQUAL 0)
@@ -1372,7 +1374,7 @@ set(_c "live_rejects_missing_numerics_record")
 math(EXPR _case_count "${_case_count} + 1")
 _darwin_record(live-null)
 file(WRITE "${SCRATCH_DIR}/live-null-doc.json" "{\"numerics\":null}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-arm64"
+_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
            RECORD_FILE "${SCRATCH_DIR}/live-null-lock.json"
            DOC "${SCRATCH_DIR}/live-null-doc.json")
 if(${_c}_rc EQUAL 0)
@@ -1388,7 +1390,7 @@ _darwin_record(live-nospawn)
 set(_missing "${SCRATCH_DIR}/live-nospawn/no-such-python")
 file(WRITE "${SCRATCH_DIR}/live-nospawn-doc.json"
 "{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-nospawn-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-arm64" CHECKER "${_missing}"
+_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}" CHECKER "${_missing}"
            RECORD_FILE "${SCRATCH_DIR}/live-nospawn-lock.json"
            DOC "${SCRATCH_DIR}/live-nospawn-doc.json")
 if(${_c}_rc EQUAL 0)
@@ -1414,7 +1416,7 @@ exit 1
 ")
 file(WRITE "${SCRATCH_DIR}/live-stale-doc.json"
 "{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-stale-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-arm64" CHECKER "${_stub}"
+_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}" CHECKER "${_stub}"
            RECORD_FILE "${SCRATCH_DIR}/live-stale-lock.json"
            DOC "${SCRATCH_DIR}/live-stale-doc.json")
 if(${_c}_rc EQUAL 0)
@@ -1432,7 +1434,7 @@ math(EXPR _case_count "${_case_count} + 1")
 file(WRITE "${SCRATCH_DIR}/live-noentry-lock.json" "{\"schema_version\":1,\"records\":{}}\n")
 file(WRITE "${SCRATCH_DIR}/live-noentry-doc.json"
 "{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-noentry-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-arm64"
+_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
            RECORD_FILE "${SCRATCH_DIR}/live-noentry-lock.json"
            DOC "${SCRATCH_DIR}/live-noentry-doc.json")
 if(${_c}_rc EQUAL 0)
@@ -1502,7 +1504,7 @@ foreach(_i 0 1)
 "{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-bid-site\",\"library_paths\":[{\"build_id\":\"\"},{\"build_id\":\"x\"}]}}\n")
     set(_want "has an empty build_id")
   endif()
-  _live_case(${_c} SYSTEM Darwin KEY "darwin-arm64"
+  _live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
              RECORD_FILE "${SCRATCH_DIR}/live-bid-${_i}-lock.json"
              DOC "${SCRATCH_DIR}/live-bid-${_i}-doc.json")
   if(${_c}_rc EQUAL 0)

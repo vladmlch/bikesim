@@ -650,3 +650,11 @@ add_dependencies(reference.recording_platform_compat bike-recording bike-replay)
 bike_add_reference_test(async_recovery ENGINE
   SOURCES test_async_recovery.cpp LIBRARIES bike_app
   LABELS t53 platform runtime)
+# tests/reference/test_native_platform_recording.py port: exclusive-name
+# collision, crash staging, EACCES+retry, unicode output path, the deep
+# real-run payload, strict invalid prefix and the research publication
+# contract (viewer-pump records are covered by the lifecycle twins).
+bike_add_reference_test(native_platform_recording ENGINE
+  SOURCES test_native_platform_recording.cpp
+  LIBRARIES bike_app bike_recording bike_cli
+  LABELS t53 platform recording slow)

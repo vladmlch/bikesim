@@ -2568,6 +2568,7 @@ int run_contracts(const fs::path &build,
         // and trip -Wframe-larger-than under Debug -O0.
         [&]() {
             std::size_t index = 0;
+            std::set<std::string> expected_seen;
             for (const Value &entry: std::get<Array>(source_entries->data)) {
                 const bool valid =
                     std::holds_alternative<Object>(entry.data) &&
@@ -2583,8 +2584,13 @@ int run_contracts(const fs::path &build,
                 if (!valid)
                     throw ContractError("native source manifest entry " +
                                         std::to_string(index) + " is malformed");
-                expected.push_back(canonical_path(
-                    std::get<std::string>(member(entry, "path")->data)));
+                // The oracle builds `expected` as a set of resolved paths:
+                // one source manifested under several target contexts still
+                // counts once for manifest_selection.source_count.
+                fs::path resolved = canonical_path(
+                    std::get<std::string>(member(entry, "path")->data));
+                if (expected_seen.insert(resolved.string()).second)
+                    expected.push_back(std::move(resolved));
                 ++index;
             }
             try {

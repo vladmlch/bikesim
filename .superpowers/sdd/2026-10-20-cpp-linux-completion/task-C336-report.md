@@ -35,7 +35,7 @@ surfaces and the produced pin/record contracts.
 
 | Source file | records | port | drop | landing |
 |---|---|---|---|---|
-| `test_cmake_platform.py` | 12 | 12 | 0 | `migration_T53_portability::*` (14 cases: 3 Linux-only, 7 Darwin-only, 4 both) |
+| `test_cmake_platform.py` | 12 | 12 | 0 | `migration_T53_portability::*` (13 cases: 3 Linux-only, 7 Darwin-only, 3 both) |
 | `test_compiler_policy.py` | 10 | 10 | 0 | same (10 cases incl. per-compiler loop + glibc-only fortify) |
 | `test_dependency_policy.py` | 7 | 2 | 4 (+1 planned-red) | declared-pin file checks ported; `artifact.*` enforcement dropped (interpreter-scoped, T63); python-floor record red at HEAD |
 | `test_provider_identity.py` | 16 | 15 | 1 | pure cmake -P + Darwin probe cases ported; Python build-id spelling dropped |
@@ -95,8 +95,10 @@ live-oracle value comparisons).
   `root_fails_closed_on_python_bindings` (verbatim fail-closed needle).
 - `test_dependency_policy`: declared pins read from `pyproject.toml`
   (`mujoco==3.12.0`, `numpy==2.5.2`, `scipy/duckdb/pyarrow` exact pins,
-  `numba>=0.68`, `requires-python = ">=3.13"`, `threadpoolctl>=3.6`
-  floor / no `==` pin). The four `bike_sim.native.artifact`
+  `numba>=0.68`, `threadpoolctl>=3.6` floor / no `==` pin), each
+  scoped to its TOML section (`project.dependencies` vs
+  `dependency-groups.native`); the `requires-python` sub-assertion stays
+  `planned` (live-oracle red, see Status). The four `bike_sim.native.artifact`
   enforcement records are `drop`/`python-only`: that module is
   interpreter-side enforcement and dies at T63; no C++ subject exists
   (evidence strings name this per record).

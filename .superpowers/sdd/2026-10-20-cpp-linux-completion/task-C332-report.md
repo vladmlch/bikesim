@@ -36,12 +36,12 @@ documented reds pending two-platform goldens.
 
 | Source file | records | collected nodes | port | planned | drop |
 |---|---|---|---|---|---|
-| `test_replay_manifest_v2.py` | 10 | 30 | 10 | 0 | 0 |
+| `test_replay_manifest_v2.py` | 10 | 39 | 10 | 0 | 0 |
 | `test_replay_recording_v3.py` | 6 | 6 | 6 | 0 | 0 |
-| `test_replay_session.py` | 7 | 9 | 7 | 0 | 0 |
+| `test_replay_session.py` | 7 | 10 | 7 | 0 | 0 |
 | `test_native_replay_recording_v3.py` | 3 | 3 | 3 | 0 | 0 |
 | `test_native_replay_session.py` | 4 | 4 | 3 | 0 | 1 |
-| `test_pedelec_replay_contract.py` | 5 | 8 | 5 | 0 | 0 |
+| `test_pedelec_replay_contract.py` | 5 | 7 | 5 | 0 | 0 |
 | `test_native_view_contracts.py` | 9 | 9 | 9 | 0 | 0 |
 | `test_native_viewer_snapshot.py` | 2 | 2 | 0 | 2 | 0 |
 | `test_replay_playback.py` | 5 | 5 | 5 | 0 | 0 |
@@ -207,5 +207,5 @@ mutation after checksum updates, and the expected-exception helpers
 |---|---|
 | `322deec3` | feat(replay): strict schema-2 execution identity validation (C3.32) |
 | `433d39f7` | test(reference): port T53 replay/session/manifest/playback/view suite (C3.32) |
-| (next) | fix(reference): explicit ProcessOptions for linux missing-field-initializers |
-| (next) | docs(migration): 3.32 port-map/removal ledgers + C332 report |
+| `757ba213` | fix(reference): explicit ProcessOptions for linux missing-field-initializers |
+| `b6efa48e` | docs(migration): 3.32 port-map/removal ledgers + C332 report |

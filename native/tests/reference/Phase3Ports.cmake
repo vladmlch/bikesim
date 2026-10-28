@@ -480,3 +480,13 @@ add_dependencies(reference.replay_playback bike-replay)
 bike_add_reference_test(native_viewer_snapshot ENGINE
   SOURCES test_native_viewer_snapshot.cpp LIBRARIES bike_replay bike_recording bike_app
   LABELS t53 replay)
+# 3.34 frontends/realtime/async/batch batch — tests/test_batch.py port:
+# spec expansion, reserved/validated flags, CPU policy and the real
+# serial/pool episode equivalence through the bike-batch CLI artifact.
+bike_add_reference_test(batch ENGINE
+  SOURCES ../integration/test_batch.cpp LIBRARIES bike_app bike_cli
+  LABELS t53 frontend slow)
+add_dependencies(reference.batch bike-batch bike-research)
+bike_add_reference_test(async_close ENGINE
+  SOURCES ../integration/test_async_close.cpp LIBRARIES bike_app
+  LABELS t53 frontend slow)

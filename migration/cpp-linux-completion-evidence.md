@@ -9934,3 +9934,113 @@ re-qualified targets are `contract`-class ports with zero golden
 fixtures; no code merged. No `run_tests.sh` — bounded merge-back
 scope per protocol; the integration-level `full` gate remains the
 scheduled accumulation checkpoint after the pending merges.
+
+## 2026-10-28 — lane/e batch 3.33b research capture/frontend/lifecycle/sweep merge-back (merge `02025d42`)
+
+Lane/e tip `db4742c7` (base `842c2585`, three commits: the 3.33b
+native research ports `b239bf5d`, the ledger dispositions + task
+report `72f303a7`, and the sealed-episode coverage-claim correction)
+merged `--no-ff` into integration at tip `5308c55a`. The lane base
+was one merge behind — the lane/d 3.21b merge-back (`6d6bdad9`)
+landed on integration after the lane branched, so lane copies of
+non-batch ledger rows were stale by construction. Zero conflicts:
+`ort` auto-merged all nine files; both JSON ledgers unioned textually
+because the disjoint row edits sat in different regions. The required
+KEY-EXACT union was verified programmatically post-merge against both
+parents rather than trusted to the strategy.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records** in base order, headers
+  **2394/2378** (`class_test_methods` 16). Row-level union is exact:
+  lane's **18** batch rows (all `planned` → `port`, `contract`
+  class, `reference.native_research_*::<symbol>` nids) applied over
+  integration's copy, which itself carries lane/d's 18 qualified
+  rows. 0 mismatches / 0 missing / 0 extra vs the computed union;
+  every non-`records` section identical across all three versions.
+- `migration/python-removal.json` — auto-merged; verified: **535**
+  `path`-keyed rows in base order, union exact — lane's **4** landed
+  rows (`test_research_{capture,frontend,recording_lifecycle,sweep}.py`
+  → `replacement_landed`, `verification_ids` → the new
+  `reference.native_research_*` ctest names) over integration's 2
+  landed rows from lane/d. `sha256`/`line_count` are the live file
+  hashes — confirmed against `shasum -a 256` on the merged worktree
+  (`c8000eec…` 160, `c6ba5f3c…` 30, `4d4acb06…` 167, `7a45c998…` 30).
+- `native/tests/reference/Phase3Ports.cmake` — lane-only change;
+  merged file byte-identical to the lane's. Four registrations added
+  after `native_research_sensors` (`native_research_capture_contracts`
+  `bike_app`+`bike_cli`, `native_research_frontend_contracts`
+  `bike_app`, `native_research_recording_lifecycle`
+  `bike_app`+`bike_cli`+`bike_platform`, `native_research_sweep`
+  `bike_batch`+`bike_cli`+`bike_platform` +
+  `add_dependencies(… bike-research-sweep)`); all label `t53
+  research`, none `golden` — the anticipated EOF-append conflict did
+  not materialize (integration had not touched the file since base).
+- `native/tests/reference/research_reference_support.hpp` —
+  lane-only change; merged byte-identical to the lane's: new
+  `cli/physical_capture.hpp`, `recording/{analysis_detail,contracts,
+  reader,research_publication}.hpp`, `research/lifecycle.hpp`
+  includes plus the `RecordingLaunch`/`recording_env` fixture, the
+  `row_count` SQL probe and the `event_kinds` ordered-kind helper —
+  union resolved to lane's 3.33b additions over integration's 3.33a
+  version automatically.
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch
+  it; integration's version retained (this section is the merge-back
+  append).
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C333b-report.md`
+  — new lane file (+157).
+- `native/tests/reference/test_research_{capture,frontend,
+  recording_lifecycle,sweep}.cpp` — new lane files
+  (+345/+60/+369/+117).
+- `docs`/`task-*-report.md` untracked host files — outside merge
+  scope, untouched.
+
+### Ledger deltas (pre-merge `5308c55a` → merge `02025d42`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  qualification, no adds/removes); headers **2394/2378** unchanged
+  and equal to the actual count. Rows changed: exactly **18** — 7 in
+  `tests/reference/test_research_capture.py`, 1 in
+  `test_research_frontend.py`, 7 in
+  `test_research_recording_lifecycle.py`, 3 in
+  `test_research_sweep.py` — all `planned` → `port`, `contract`
+  class. Dispositions: `port` 1141 → **1159** (+18), `planned` 772 →
+  **754** (−18); `drop` 125, `golden` 356 unchanged. Empty
+  `collected_node_ids` 1220 → **1202** (−18); total collected nodes
+  2191 → **2209** (+18); `T01 records source assertions`
+  placeholders 441 → **423** (−18, replaced by dated 2026-10-28
+  measured lines).
+- `python-removal.json`: `replacement_landed` 124 → **128** (+4),
+  `planned` 411 → **407** (−4); `snapshot_*` fields untouched.
+
+### Merge-back verification
+
+- Darwin arm64 (`build/native-release`, AppleClang, Release):
+  `ctest --test-dir build/native-release -R
+  'reference\.native_research_' --output-on-failure` → **12/12 PASS**
+  (29.51 s): the 3.33a eight (`capture`, `environment`, `failures`,
+  `frontend`, `policy`, `programs`, `recording`, `sensors`) plus the
+  3.33b four (`capture_contracts` 7.21 s, `frontend_contracts`
+  1.03 s, `recording_lifecycle` 7.21 s, `sweep` 1.39 s). Direct
+  binaries: **PASS 73 + 8 + 30 + 19 checks**.
+- Linux aarch64 (container `bike-dev-python-free-cpp`, tip synced
+  via `tools/linux/container.sh sync` — merged
+  `test-port-map.json` sha256 `4cfb6d83…` identical host/container;
+  `/build/root-clang`, Ninja, clang++-18, Release): same selector →
+  **12/12 PASS** (23.29 s; `capture_contracts` 6.19 s,
+  `frontend_contracts` 0.41 s, `recording_lifecycle` 8.11 s,
+  `sweep` 0.11 s). Direct binaries: **PASS 73 + 8 + 30 + 19
+  checks** — identical counts on both platforms.
+
+### Assessment
+
+Clean auto-merge — zero conflicts, nine files, all invariants
+verified programmatically post-merge (JSON unions exact by
+record/path key, non-ledger files byte-identical to the owning
+parent). The merged batch is `contract`-class research ports with
+zero golden fixtures; scoped verification green on both platforms
+(12/12 = 3.33a 8 + 3.33b 4). No `run_tests.sh` — bounded merge-back
+scope per protocol; the integration-level `full` gate remains the
+scheduled accumulation checkpoint after the pending merges.

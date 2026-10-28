@@ -621,3 +621,11 @@ bike_add_reference_test(runtime_single_path ENGINE
 bike_add_reference_test(pneumatic_physical_runtime ENGINE
   SOURCES test_pneumatic_physical_runtime.cpp LIBRARIES bike_app bike_cli
   LABELS t53 frontend slow)
+
+# 3.35 platform batch — tests/test_execution_identity.py port: the data-only
+# identity-schema validation rules (legacy and identity_schema=2 records)
+# plus the native-executable execution gate's named-field verdicts through
+# replay::check_execution.
+bike_add_reference_test(execution_identity ENGINE
+  SOURCES test_execution_identity.cpp LIBRARIES bike_replay
+  LABELS t53 platform)

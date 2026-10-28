@@ -820,7 +820,13 @@ endif()
 _expect_squashed(${_c} "${${_c}_out}" "outside the selected NumPy provider root")
 
 # test_file_provider_must_be_a_file — a directory is not a provider image:
-# EXISTS passes but the content identity does not (sha of the empty read).
+# EXISTS passes but the content identity does not. The rejection message is
+# platform-split, so no single needle is portable and only the nonzero exit
+# is pinned: on Darwin file(SHA256) reads a directory as the empty stream
+# and the record-vs-file comparison rejects it ('numerics provider SHA-256
+# differs ... file e3b0c442...'); on Linux file(SHA256) itself refuses the
+# read ('file SHA256 failed to read file "...": Is a directory') — both
+# verified by direct execution on the qualified hosts.
 set(_c "record_only_linux_provider_must_be_a_file")
 math(EXPR _case_count "${_case_count} + 1")
 _deps_provider(ro-dir "libfixture-openblas.so")
@@ -987,6 +993,15 @@ foreach(_name "cblas_ddot" "scipy_cblas_ddot64_" "scipy_dgelsd_64_"
   _ro_case(${_c} SYSTEM Linux RECORD_FILE "${SCRATCH_DIR}/ro-sa-${_name}-lock.json"
            GLIBC ON DEPS_ROOT "${ro-sa-${_name}_root}" DEPS_LIB "${ro-sa-${_name}_lib}")
   _expect_absent(${_c} "${${_c}_out}" "not a safe identifier")
+  # The absent-check alone would also pass on an unrelated earlier configure
+  # failure, so a rejected vector must additionally name the backend spelling
+  # stage: every grammar-passing but unqualified 'ddot' spelling is rejected
+  # by the NUMPY_OPENBLAS spelling guard with the same message. rc=0 means
+  # the name WAS the qualified spelling — the accept contract either way.
+  if(NOT ${_c}_rc EQUAL 0)
+    _expect_squashed(${_c} "${${_c}_out}"
+      "for 'ddot' is not the qualified scipy-openblas ILP64")
+  endif()
 endforeach()
 
 # test_checked_symbol_rejects_unsafe_identifiers +
@@ -1473,6 +1488,15 @@ _expect_squashed(${_c} "${${_c}_out}"
 # reach a generated declaration.
 set(_c "live_cmake_guard_rejects_tampered_record_symbol")
 math(EXPR _case_count "${_case_count} + 1")
+# Self-contained fixtures — the case previously reused _site/_lsha from
+# live_cmake_guard_rejects_unqualified_record_width above, so reordering the
+# cases would silently break it. Identical provider bytes are copied
+# explicitly (the grammar guard fires before provider identity is read, but
+# the record still names this case's own site).
+set(_site "${SCRATCH_DIR}/live-ts-site")
+file(MAKE_DIRECTORY "${_site}/numpy.libs")
+file(WRITE "${_site}/numpy.libs/libfixture-openblas.so" "width guard provider\n")
+file(SHA256 "${_site}/numpy.libs/libfixture-openblas.so" _lsha)
 _openblas_numerics(_ln "numpy.libs/libfixture-openblas.so" "${_lsha}")
 _write_lock("${SCRATCH_DIR}/live-ts-lock.json" "linux-aarch64"
   "Linux" "aarch64" "\"glibc\"" "${_ln}")

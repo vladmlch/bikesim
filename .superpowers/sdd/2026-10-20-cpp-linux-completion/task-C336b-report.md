@@ -157,6 +157,40 @@ Negative proof: tampering the committed `ddot` spelling in
   `scipy_correlate` (committed facts added since the test was written);
   the file is green end-to-end (168 passed).
 
+## Review outcome
+
+Post-commit review of the landed fixture returned one HIGH and three LOW
+findings; a follow-up fix commit resolves the LOW nits.
+
+- **HIGH (refuted by direct execution)** — the review claimed
+  `record_only_missing_record_field[symbols dgelsd]` can never pass because
+  the `_member` fragment `symbols dgelsd` (a space, asserted verbatim)
+  supposedly never appears in configure output. Refuted:
+  `cmake -DREPO_ROOT=$PWD -DSCRATCH_DIR=/tmp/t53n -P
+  native/tests/migration/migration_T53_numerics.cmake` passes **109/109 on
+  darwin-arm64 as committed** (tip `32b837cb`). The needle DOES appear in
+  the captured `mf-89` output — the module's `FATAL_ERROR` propagates
+  `string(JSON)`'s `ERROR_VARIABLE` text verbatim:
+  `member 'records linux-arm64 numerics symbols dgelsd' not found` —
+  which contains the space-separated `symbols dgelsd` fragment (verified by
+  re-running the case's scratch configure; the same message also carries the
+  `'numerics;symbols;dgelsd'` spelling inside `missing required field`).
+- **LOW** — `record_only_linux_provider_must_be_a_file` pinned only the
+  nonzero exit: the emitted message is platform-split (Darwin
+  `file(SHA256)` reads a directory as the empty stream → `numerics provider
+  SHA-256 differs ... file e3b0c442...`; Linux `file(SHA256)` refuses the
+  read → `file SHA256 failed to read file "...": Is a directory`), verified
+  on darwin-arm64 (CMake 4.4.3) and linux-aarch64 (container
+  `bike-dev-pfc-lane-e`, CMake 3.28.3). Documented at the case; no portable
+  needle exists.
+- **LOW** — `record_only_symbol_identifier_accepts` could pass on an
+  unrelated earlier failure: a rejected vector now also pins the backend
+  spelling-stage marker `for 'ddot' is not the qualified scipy-openblas
+  ILP64` (verified against the `cblas_ddot` vector's real output).
+- **LOW** — `live_cmake_guard_rejects_tampered_record_symbol` order-coupled
+  `_site`/`_lsha` from the width-guard case: it now builds its own
+  `live-ts-site` fixtures (identical provider bytes, copied explicitly).
+
 ## Ledger
 
 - `migration/test-port-map.json`: all 113 records updated —

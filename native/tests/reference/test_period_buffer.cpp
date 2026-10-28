@@ -20,6 +20,7 @@
 #include "runtime/recording.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
+#include "strictness_reference_support.hpp"
 #include "terrain/trackfile.hpp"
 #include <mujoco/mujoco.h>
 #include <algorithm>
@@ -693,6 +694,60 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
     node.done();
 }
 
+// test_equality_rows_charge_the_closure_channel_not_the_bound — F1 re-scope
+// (e181666b added this record after the batch's first port): 'equality:*'
+// rows are soft spring-damper closures whose work is elastic exchange; limit
+// rows stay numerical constraint work. The oracle imports
+// split_constraint_powers for the name partition; the native partition is
+// raw_work's 'equality:' lift inside account_energy, exercised end-to-end
+// through a detached PeriodAccounting (the strictness_support
+// runtime_for_raws fixture the energy-ledger port uses for the same raw
+// path).
+void test_equality_rows_charge_the_closure_channel_not_the_bound() {
+    const auto accounting = strictness_support::runtime_for_raws();
+    auto step = strictness_support::neutral_raw(0);
+    // muscle=400 W (human_crank) and motor=100 W (mid_drive) at |qvel|=1 —
+    // the oracle's step_work(np.array([400.]), 100., ...) inputs through the
+    // raw's component fold.
+    step.qvel = {1.};
+    step.components = {{"human_crank", {400.}}, {"mid_drive", {100.}}};
+    // The oracle's powers dict in insertion order; split_constraint_powers
+    // keeps first-appearance order within each class, so the partitions are
+    // constraint [-.5, .25] and closure [2., -1.].
+    step.numerical_constraint_power_w = {{"equality:pedal_left", 2.},
+                                         {"joint_limit:hip", -.5},
+                                         {"equality:saddle", -1.},
+                                         {"tendon_limit:knee", .25}};
+    step.constraint_snapshot.qvel_start = step.qvel;
+    accounting->push(std::move(step));
+    accounting->flush();
+    const auto &energy = accounting->state().energy;
+    // dt=.0005: the limit pair lands in the numerical channels
+    // (signed -.25*.0005, absolute .75*.0005), the equality pair in the
+    // closure channels (signed 1.*.0005, absolute 3.*.0005).
+    bt::require(energy.solver_work_j == -.25 * .0005 &&
+                energy.constraint_absolute_j == .75 * .0005,
+                "limit rows stay numerical constraint work");
+    bt::require(energy.closure_signed_j == 1. * .0005 &&
+                energy.closure_absolute_j == 3. * .0005,
+                "equality rows charge the elastic closure channel");
+    bt::require(energy.muscle_positive_j == .2 &&
+                energy.motor_positive_j == .05,
+                "the muscle/motor folds feed the same step_work inputs");
+    // The direct step_work call the oracle makes at dt=.1; products are
+    // written as the identical binary64 expressions (0.07500000000000001 and
+    // 0.30000000000000004 are NOT the .075/.3 literals).
+    const std::array<double, 1> muscle{400.};
+    const std::array<double, 2> constraint{-.5, .25}, closure{2., -1.};
+    const auto work =
+        runtime::step_work(muscle, 100., constraint, closure, .1);
+    bt::require(work.constraint_signed_j == -.025 &&
+                work.constraint_absolute_j == .75 * .1 &&
+                work.closure_signed_j == .1 &&
+                work.closure_absolute_j == 3. * .1,
+                "step_work charges each channel like the oracle at dt=.1");
+}
+
 // test_record_decimation_forwards_period_closing_energy (slow): runtime-vs-
 // runtime invariants — a decimation-1 baseline and a decimation-80 run over
 // period*81+3 intervals, so the unmeasured flush tail exercises the
@@ -835,7 +890,7 @@ void test_record_decimation_forwards_period_closing_energy() {
 
 } // namespace
 
-// Ten test bodies plus the pair-model scaffolding inline into this one
+// Eleven test bodies plus the pair-model scaffolding inline into this one
 // dispatcher; the aggregate frame exceeds the 8 KiB policy even though each
 // callee stays within budget, so the suppression wraps main only.
 NATIVE_DIAG_PUSH
@@ -851,6 +906,7 @@ int main() {
         test_held_intervals_reject_joint_power_and_speed_between_control_ticks();
         test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms();
         test_runtime_batch_matches_preserved_scalar_step_and_flush();
+        test_equality_rows_charge_the_closure_channel_not_the_bound();
         test_record_decimation_forwards_period_closing_energy();
     });
 }

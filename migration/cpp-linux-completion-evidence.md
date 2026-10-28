@@ -10166,3 +10166,112 @@ darwin, 38/1 linux — identical to the lane's own runs). No
 `run_tests.sh` — bounded merge-back scope per protocol; the
 integration-level `full` gate remains the scheduled accumulation
 checkpoint after the pending merges.
+
+## 2026-10-28 — lane/e batch 3.36b numerics discovery merge-back (merge `541fba74`)
+
+Lane/e tip `4486b261` (base `4fe5ce7e`, five commits: the T53
+numerics fixture `e4109aea`, host-portable record keys `e3a60fe7`,
+ledger batch `07a8f5cd`, report `32b837cb`, review-nits fix
+`4486b261` — needle + self-contained cases) merged `--no-ff` into
+integration at tip `dc42013e`. The lane base was one merge behind —
+the lane/c 3.36-t1 merge-back (`938075b4` + evidence `dc42013e`)
+landed on integration after the lane branched, so lane copies of
+non-batch ledger rows were stale by construction. One conflict:
+`native/cmake/Checks.cmake`, a textbook adjacent-additions conflict
+resolved as union (both `migration_T53_portability` and
+`migration_T53_numerics` registrations kept, each self-contained).
+Both JSON ledgers and the source test auto-merged textually; the
+required KEY-EXACT union was verified programmatically post-merge
+against both parents rather than trusted to the strategy.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records** in base order, headers
+  **2394/2378** (`class_test_methods` 16), trailing LF intact.
+  Row-level union is exact: lane's **113** batch rows
+  (`tests/portability/test_numerics_discovery.py` — 70 `planned` →
+  `port` with `migration_T53_numerics::<case>` nids + measured
+  `collected_node_ids`, 43 `planned` → `drop`) applied over
+  integration's copy, which itself carries the lane/c tranche-1
+  qualified rows. 0 mismatches / 0 missing / 0 extra vs the
+  computed union; every non-`records` section identical across all
+  three versions.
+- `migration/python-removal.json` — auto-merged; verified: **535**
+  `path`-keyed rows, union exact — lane's **1** landed row
+  (`test_numerics_discovery.py` → `replacement_landed`,
+  `replacement_paths` →
+  `native/tests/migration/migration_T53_numerics.cmake`,
+  `verification_ids` → `migration_T53_numerics`) over integration's
+  copy; the four tranche-1 landed rows correctly resolved to
+  integration's newer values (lane copies stale by construction).
+  `sha256`/`line_count` are the live file hash — confirmed on the
+  merged worktree (`fb9ecb1d…`, 1981 lines); `snapshot_*` fields
+  (`30cee8e1…`, 1960) preserved.
+- `native/cmake/Checks.cmake` — CONFLICT, resolved union: lane's
+  `migration_T53_numerics` registration inserted after the
+  `migration_T53_portability` block, before `migration_T56`:
+  `add_test(migration_T53_numerics)` invoking `cmake -P` on the
+  fixture with `REPO_ROOT`/`SCRATCH_DIR` `-D`s (no `DEPS_ROOT` —
+  the fixture needs no dependency tree), plus the
+  `migration_T53_numerics` custom target wrapper. +18 lines.
+- `native/tests/migration/migration_T53_numerics.cmake` — new lane
+  file (+1552), byte-identical to the lane's: `cmake -P` port of
+  `tests/portability/test_numerics_discovery.py` —
+  `BikeNumerics.cmake` record/provider/ABI contract cases, scratch
+  configures plus committed-lock file invariants; needs no built
+  target.
+- `tests/portability/test_numerics_discovery.py` — auto-merged,
+  byte-identical to the lane's (+21): additive fixture repair
+  (distributions/scipy_correlate keys); no overlap with
+  integration's changes.
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch
+  it; integration's version retained (this section is the merge-back
+  append).
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C336b-report.md`
+  — new lane file (+215), byte-identical to the lane's: batch
+  report, 70 port / 43 drop, review FAIL → overturned (HIGH refuted
+  by direct execution) + nits fixed.
+- `docs`/`task-*-report.md` untracked host files — outside merge
+  scope, untouched.
+
+### Ledger deltas (pre-merge `dc42013e` → merge `541fba74`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  qualification, no adds/removes); headers **2394/2378** unchanged
+  and equal to the actual count. Rows changed: exactly **113**, all
+  in `tests/portability/test_numerics_discovery.py`. Dispositions:
+  `port` 1202 → **1272** (+70), `drop` 130 → **173** (+43),
+  `planned` 706 → **593** (−113); `golden` 356 unchanged. Empty
+  `collected_node_ids` 1158 → **1045** (−113); total collected nodes
+  2258 → **2426** (+168); `T01 records source assertions`
+  placeholders **423 → 423** unchanged.
+- `python-removal.json`: `replacement_landed` 132 → **133** (+1),
+  `planned` 403 → **402** (−1); exactly the 1 batch row changed.
+
+### Merge-back verification
+
+- Darwin arm64: `cmake -DREPO_ROOT=$PWD
+  -DSCRATCH_DIR=/tmp/t53n-merge -P
+  native/tests/migration/migration_T53_numerics.cmake` on the
+  merged worktree → **`migration_T53_numerics passed (109 cases)`**.
+- Linux aarch64 (container `bike-dev-python-free-cpp`, tip synced
+  via `tools/linux/container.sh sync` — merged `test-port-map.json`
+  sha256 `8cfbf861…`, fixture sha256 `0cb17170…`, `Checks.cmake`
+  sha256 `2d34e9a1…` identical host/container): same script
+  (`REPO_ROOT=/src`, `SCRATCH_DIR=/build/t53n-merge`) →
+  **`migration_T53_numerics passed (109 cases)`** — identical case
+  count on both platforms (no host-gated cases in this fixture).
+
+### Assessment
+
+One manual union resolution (`Checks.cmake`), all invariants
+verified programmatically post-merge (JSON unions exact by
+record/path key, non-ledger files byte-identical to the owning
+parent). The merged batch is `contract`-class numerics-discovery
+ports (70 port / 43 drop) with zero golden fixtures; the batch gate
+`migration_T53_numerics` is green on both platforms (109/109). No
+`run_tests.sh` — bounded merge-back scope per protocol; the
+integration-level `full` gate remains the scheduled accumulation
+checkpoint after the pending merges.

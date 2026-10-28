@@ -15382,10 +15382,11 @@
     "verification_ids": [
       "migration_T53",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_engine_errors"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "896675b0ce27be4c0c685adbfcbfcb0fbdb680822a6fcf28c154364fb3ebd034",
     "snapshot_line_count": 867,
     "tracked": true,
@@ -15425,27 +15426,17 @@
     "verification_ids": [
       "migration_T53",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_loader.test_native_contract_require_control_fails_in_selected_build",
+      "reference.native_loader.test_native_contract_executable_lists_registered_cases",
+      "reference.native_loader.test_contract_executable_source_is_in_cmake_manifest"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "518cf533a892593511f55ecf5d028fcd62cf6151f0aa2520baddd062b46702f2",
     "snapshot_line_count": 543,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "drop": 17,
-        "port": 3
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_native_numeric_completion.py",

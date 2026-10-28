@@ -120,6 +120,13 @@ numerical_constraint_powers(const mjModel *model, const mjData *data,
                             std::span<const double> incoming,
                             std::vector<double> &velocity);
 
+// physical_runtime.py _connect_equality_rows — equality rows owned by
+// connect equalities that are NOT rider attachments (connect_saddle,
+// connect_grip_*, connect_foot_* stay inside rider_contacts' weld
+// accounting). Re-derived from the live arena on every call.
+[[nodiscard]] std::vector<int> connect_equality_rows(const mjModel *model,
+                                                   const mjData *data);
+
 // telemetry_v2.py ForceSample — the interval-start force capture the
 // loss ledger reads back (engine_passive_loss_power takes its qpos).
 struct ForceSample {

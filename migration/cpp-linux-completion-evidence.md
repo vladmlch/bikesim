@@ -9223,3 +9223,102 @@ CTest node exists); `phase3_source_implementation` blocks removed;
 `snapshot_*` untouched. `replacement_landed` counter 112 → 117.
 
 Report: `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C324b-report.md`.
+
+## 2026-10-28 — lane/d batch 3.24b golden episodes/ride CLI merge-back (merge `51910100`)
+
+Trivial merge. Lane/d tip `486f5e8e` was a direct child of
+integration tip `c981bd70` (merge-base = integration tip;
+fast-forwardable, `--no-ff` used for the merge commit per protocol).
+Zero conflicts by construction; `git diff c981bd70..486f5e8e` is
+byte-identical to `git diff c981bd70..51910100` — the merge applies
+the lane's six-file batch verbatim, no hunks outside it.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — lane-side edits only; verified
+  programmatically post-merge: **2,393 unique
+  (`source_path`,`source_symbol`) records**, headers **2393/2377**
+  (`class_test_methods` 16) equal to the actual record count. The 22
+  batch rows carry lane/d's resolved versions: 11 `planned→port`/`drop`
+  transitions on `test_ride_backend_cli.py` (10 port + 1 drop) plus
+  11 in-place evidence/`collected_node_ids` enrichments on the
+  pre-dispositioned episode rows (9 port: `test_episode_compare.py`
+  ×3, `test_golden_episode.py` ×2, `test_golden_episode_v2.py` ×4;
+  2 drop: `test_divergence_horizon.py` ×2). Batch accounting 19 port
+  / 3 drop / 26 measured collected nodes matches the lane ledger
+  commit. `native_test_id` renames
+  `ported::tests::reference::test_ride_backend_cli::*` →
+  `reference.ride_backend_cli::*` ×10, `null` on the dropped
+  python-backend guard; the nine episode rows already named
+  `reference.golden_episode_regressions::*` at base.
+- `migration/python-removal.json` — lane-side edits only; 535 rows,
+  five `planned→replacement_landed`
+  (`test_{divergence_horizon,episode_compare,golden_episode,
+  golden_episode_v2,ride_backend_cli}.py`), `verification_ids` naming
+  `reference.golden_episode_regressions` (×3) /
+  `reference.ride_backend_cli` (×1) / generic triplet kept on the
+  all-drop `test_divergence_horizon.py`;
+  `phase3_source_implementation` triage blocks removed;
+  `snapshot_*` untouched.
+- `native/tests/reference/Phase3Ports.cmake` — lane-side append:
+  one `bike_add_reference_test(ride_backend_cli …)` registration
+  (labels `t52 episode`) + `add_dependencies` on
+  `bike-ride`/`bike-research`/`bike-replay` + generated
+  `bike_ride_cli_paths.hpp` (`file(GENERATE)` / `$<TARGET_FILE:…>` —
+  the `bike_native_bench_path.hpp` pattern). Registrations 127→128.
+- Lane-only files verified byte-equal to the lane tip: new TU
+  `native/tests/reference/test_ride_backend_cli.cpp`,
+  `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C324b-report.md`;
+  `migration/cpp-linux-completion-evidence.md` lane append sits
+  directly above this section.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new `Phase3Ports.cmake` registration) + `cmake
+  --build -j8 --target reference.ride_backend_cli
+  reference.golden_episode_regressions`: green compile + link;
+  `add_dependencies` pulled `bike-ride`/`bike-research`/`bike-replay`
+  link-fresh.
+- `ctest -R 'reference\.(ride_backend_cli|golden_episode_regressions)'`:
+  **2/2 PASS** (11.81 s) — `golden_episode_regressions` 7.75 s,
+  `ride_backend_cli` 4.05 s. Binary check counts: **PASS 29 checks**
+  (`ride_backend_cli`) + **PASS 1095 checks**
+  (`golden_episode_regressions`).
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `tools/linux/container.sh sync` → `container.sh build root-clang
+  reference.ride_backend_cli reference.golden_episode_regressions`:
+  ninja re-ran the configure (Phase3Ports.cmake regen), 6/6 steps
+  green including `bike-ride`/`bike-replay` relinks.
+- `ctest -R` (same regex) in `/build/root-clang`: **2/2 PASS**
+  (11.79 s) — `golden_episode_regressions` 10.06 s,
+  `ride_backend_cli` 1.73 s. Binary check counts: **PASS 29 checks**
+  + **PASS 1095 checks** — identical to darwin.
+
+### Ledger deltas (pre-merge `c981bd70` → post-merge `51910100`)
+
+- `test-port-map.json`: 2393 → **2393** records (in-place batch
+  edits, no inserts/deletes); headers 2393/2377/16 unchanged and
+  equal to the actual record count. `port` 1052 → **1062** (+10),
+  `drop` 124 → **125** (+1), `golden` 351 (unchanged), `planned`
+  866 → **855** (−11).
+- `python-removal.json`: `replacement_landed` 112 → **117** (+5);
+  `planned` 423 → **418**; 535 rows.
+- `Phase3Ports.cmake`: 127 → **128** `bike_add_reference_test`
+  registrations.
+
+### Assessment
+
+Trivial merge — the lane tip was a direct child of the integration
+tip, so the `--no-ff` merge is a tree-preserving serialization with
+zero hunks outside the lane's six files. Every ledger invariant
+verified programmatically post-merge: canonical serialization
+(`indent=2`, `ensure_ascii`, trailing LF) byte-verified on both JSON
+ledgers; 2,393 unique port-map keys; disposition arithmetic closes
++10 port / +1 drop / −11 planned (the remaining 9 port + 2 drop
+batch rows were pre-dispositioned and carry refreshed evidence).
+Both in-scope CTest cases green on both platforms with identical
+check counts (29 + 1095). L3 (`tools/run_tests.sh`) not re-run —
+bounded merge-back scope per protocol; integration-level `full` gate
+is the scheduled accumulation checkpoint after the pending merges.

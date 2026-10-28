@@ -8207,3 +8207,92 @@ L3 (`tools/run_tests.sh native`) not re-run — bounded merge-back
 scope per protocol; lane/c's own gate evidence is in
 `task-C323-report.md`. Unrelated documented reds reported, not
 fixed.
+
+## 2026-10-28 — lane/e batch 3.29a engine errors/loader merge-back (merge `c0d25e17`)
+
+Serialized merge (only merge in flight). Lane/e tip `d55d1557` sat
+directly on integration tip `0195b091` (`git merge-base` = `0195b091`)
+— clean FF-able; merged `--no-ff` per convention (`merge: lane/e batch
+3.29a engine errors/loader`). Zero conflicts; merged tree is
+byte-identical to lane/e's.
+
+### Merge surface
+
+- `migration/test-port-map.json` — audited programmatically: **2,391
+  unique (`source_path`,`source_symbol`) records — key-exact union** vs
+  the pre-merge tip; zero lost/duplicate/contested. Headers
+  `static_test_functions`=2391, `top_level_test_functions`=2375
+  untouched. Lane/e edited exactly the **44 batch records**:
+  24 `test_native_engine_errors.py` records (disposition + port
+  metadata) and 20 `test_native_loader.py` records (measured
+  `collected_node_ids`/`assertions_capture` + evidence backfill —
+  loader dispositions were already set by the earlier loader merge at
+  `ef66e96a`, so the net disposition delta is the 24 engine_errors
+  records only). All 20 `drop` records (3 engine_errors + 17 loader)
+  keep per-function justifications + measured capture lines.
+- `migration/python-removal.json` — 535 rows; 2 rows
+  `planned`→`replacement_landed`
+  (`tests/reference/test_native_engine_errors.py` +
+  `tests/reference/test_native_loader.py`) with real `reference.*`
+  verification ids; the loader row's stale
+  `phase3_source_implementation` block removed (landed-row
+  convention). Deletion stays gated at T63.
+- `native/tests/reference/Phase3Ports.cmake` — +17 lines, clean union:
+  98 → **99 `bike_add_reference_test` registrations**
+  (`native_engine_errors ENGINE … LABELS t53 checks` +
+  `add_dependencies(… native_contract_tests)` + `file(GENERATE)`
+  `bike_engine_errors_paths.hpp`, same pattern as
+  `bike_native_bench_path.hpp`).
+- `native/tests/reference/test_native_engine_errors.cpp` — new file,
+  774 lines.
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C329a-report.md`
+  — lane report, new file.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new registration) + incremental `cmake --build
+  --target reference.native_engine_errors native_contract_tests`:
+  green compile + link.
+- `ctest -R 'reference\.(native_engine_errors|native_loader)'`:
+  **4/4 PASS** — `reference.native_engine_errors` 9.29 s plus the 3
+  `reference.native_loader.*` cmake -P script cases (pre-registered at
+  `ef66e96a`).
+- `ctest -N -L checks`: **exactly 4 cases** — the label is the batch.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → reconfigure + `cmake --build --target
+  reference.native_engine_errors native_contract_tests -j8`: green.
+- `ctest -R 'reference\.(native_engine_errors|native_loader)'`:
+  **4/4 PASS** (engine_errors 1.41 s). `ctest -N -L checks`: exactly 4.
+- `ctest -L reference -E 'reference\.coupled_rider_task' -j8`:
+  **104/108** — reds exactly the documented 4-red baseline verbatim
+  {`reference.golden_episode_tool`, `reference.native_numeric_completion`,
+  `reference.pneumatic_tire_oracle`, `reference.native_pneumatic_tire`};
+  +1 test vs the prior 107 is the new batch registration; all batch
+  cases green inside the sweep.
+
+### Ledger deltas (pre-merge `0195b091` → post-merge `c0d25e17`)
+
+- `test-port-map.json`: 2391 → **2391** records. `port` 837 → **858**
+  (+21), `drop` 85 → **88** (+3), `planned` 1120 → **1096** (−24),
+  `golden` 349 unchanged. Note: the batch spec's ~861/~105/~1076
+  forecast assumed the loader's 20 records were still `planned`;
+  they were dispositioned earlier at `ef66e96a`, so the correct
+  post-merge numbers are the ones above.
+- `python-removal.json`: 2 rows → `replacement_landed` (census
+  82 → **84**); `planned` 453 → **451**.
+- `Phase3Ports.cmake`: 98 → **99** registrations.
+
+### Assessment
+
+Trivial descendant merge — no conflicts, merged tree byte-identical to
+lane/e. The new `checks` label holds exactly the 4 batch cases on both
+platforms and all are green; the linux `-L reference` sweep reproduces
+the documented 4-red baseline verbatim (108 = 107 + 1 new case). The
+one spec deviation: expected ledger deltas were computed against a
+pre-`ef66e96a` baseline — actual deltas (+21 port / +3 drop / −24
+planned) are the 24 engine_errors records, and the loader's 20 record
+edits are evidence backfill only. L3 (`tools/run_tests.sh native`) not
+re-run — bounded merge-back scope per protocol; lane/e's own gate
+evidence is in `task-C329a-report.md`.

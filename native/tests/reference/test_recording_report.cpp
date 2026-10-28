@@ -48,8 +48,8 @@ void test_report_regeneration_is_read_only_and_idempotent() {
     bt::require(snapshot(path) == before,
                 "rendering never writes into the sealed container");
     for (const std::string_view marker :
-         {"saved", "Episode 0", "first_failure", "SELECT",
-          "channel_energy`.residual_j"})
+         {"not a claim that the model is calibrated", "Episode 0",
+          "first failure", "SELECT", "channel_energy`.residual_j"})
         bt::require(regenerated.find(marker) != std::string::npos,
                     "report keeps the reviewed evidence language: " +
                         std::string(marker));

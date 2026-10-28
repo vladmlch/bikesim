@@ -390,9 +390,10 @@ void test_unknown_fields_fail_with_a_named_error() {
     // The oracle's UnknownFieldError names the leaf member; the native
     // contract names the offending claim root ("channel_energy.energy")
     // with the same channel-members error class.
-    throws<std::invalid_argument>([&] { (void)rec::encode_rows(spec, rows, 0); },
-                                  "unknown channel members",
-                                  "unclaimed channel member names a channel error");
+    throws<std::invalid_argument>(
+        [&] { (void)rec::encode_rows(spec, rows, 0); },
+        "channel_energy.energy: unknown channel members",
+        "unclaimed channel member names a channel error");
     // The oracle's TreePhysicalSource walked claims and raised on the
     // unknown root. The native optimized projector defers that check to the
     // reviewed generic adapter, so the port probes encode_rows and the

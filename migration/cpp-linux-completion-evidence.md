@@ -7876,7 +7876,8 @@ documented reds reported, not fixed.
 
 Seven `tests/reference/test_recording_{catalog,cli,report,storage,
 values,analysis,analyst_cli}.py` files — 66 port-map records / 80
-collected nodes (`test_recording_analysis.py` parametrizes ×30).
+collected nodes (`test_recording_analysis.py` collects 25 nodes:
+14 plain + 8 sql-parametrized + 3 delta-parametrized).
 Dispositions: **65 `port`** (`contract`), **1 `drop`**
 (`python-only`: `test_exact_comparison_rejects_incompatible_
 units_and_phases` — units/phases derive from `joint_type` inside
@@ -7906,12 +7907,92 @@ against it and stay green inside the focused scope.
   `uv run pytest tests/reference/test_recording_*.py` — **80
   passed** (38.88 s). Linux oracle run not required: zero
   live-oracle/golden comparison sites in the batch.
-- **Focused CTest** (`ctest -R 'reference\.(recording_|native_recording)'`):
-  - darwin-arm64 `build/native-release`: **11/11** (44.55 s;
-    includes the 3.30 lifecycle/retention/capture/publication
-    regression scope).
-  - linux-aarch64 container `bike-dev-pfc-lane-a` (committed tree
-    synced via `git archive`): **11/11** (47.42 s).
+- **Focused CTest** (`ctest -R 'reference\.(recording_|native_recording)'`),
+  re-executed verbatim in the 3.31 review round after rebuilding the
+  touched `reference.recording_{report,catalog,analyst_cli}` targets:
+  darwin-arm64 `build/native-release` **11/11** (70.75 s; includes
+  the 3.30 lifecycle/retention/capture/publication regression
+  scope); linux-aarch64 container `bike-dev-pfc-lane-a`
+  (`git archive` tree plus the review-round test-source edits,
+  targets rebuilt in place) **11/11** (76.79 s).
+
+darwin-arm64:
+
+```text
+Test project /Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-a/build/native-release
+      Start 162: reference.native_recording_lifecycle
+ 1/11 Test #162: reference.native_recording_lifecycle ...   Passed   16.56 sec
+      Start 163: reference.native_recording_retention
+ 2/11 Test #163: reference.native_recording_retention ...   Passed    3.49 sec
+      Start 164: reference.recording_capture
+ 3/11 Test #164: reference.recording_capture ............   Passed    2.39 sec
+      Start 165: reference.recording_publication
+ 4/11 Test #165: reference.recording_publication ........   Passed    3.84 sec
+      Start 166: reference.recording_catalog
+ 5/11 Test #166: reference.recording_catalog ............   Passed    1.24 sec
+      Start 167: reference.recording_cli
+ 6/11 Test #167: reference.recording_cli ................   Passed    0.50 sec
+      Start 168: reference.recording_report
+ 7/11 Test #168: reference.recording_report .............   Passed    1.65 sec
+      Start 169: reference.recording_storage
+ 8/11 Test #169: reference.recording_storage ............   Passed    6.40 sec
+      Start 170: reference.recording_values
+ 9/11 Test #170: reference.recording_values .............   Passed    2.25 sec
+      Start 171: reference.recording_analysis
+10/11 Test #171: reference.recording_analysis ...........   Passed   23.75 sec
+      Start 172: reference.recording_analyst_cli
+11/11 Test #172: reference.recording_analyst_cli ........   Passed    8.65 sec
+
+100% tests passed out of 11
+
+Label Time Summary:
+recording    =  70.73 sec*proc (11 tests)
+reference    =  70.73 sec*proc (11 tests)
+slow         =   3.49 sec*proc (1 test)
+t53          =  70.73 sec*proc (11 tests)
+
+Total Test time (real) =  70.75 sec
+```
+
+linux-aarch64 (`bike-dev-pfc-lane-a`):
+
+```text
+Internal ctest changing into directory: /src/build/native-release
+Test project /src/build/native-release
+      Start 163: reference.native_recording_lifecycle
+ 1/11 Test #163: reference.native_recording_lifecycle ...   Passed   18.86 sec
+      Start 164: reference.native_recording_retention
+ 2/11 Test #164: reference.native_recording_retention ...   Passed    2.39 sec
+      Start 165: reference.recording_capture
+ 3/11 Test #165: reference.recording_capture ............   Passed    2.74 sec
+      Start 166: reference.recording_publication
+ 4/11 Test #166: reference.recording_publication ........   Passed    4.60 sec
+      Start 167: reference.recording_catalog
+ 5/11 Test #167: reference.recording_catalog ............   Passed    0.35 sec
+      Start 168: reference.recording_cli
+ 6/11 Test #168: reference.recording_cli ................   Passed    0.09 sec
+      Start 169: reference.recording_report
+ 7/11 Test #169: reference.recording_report .............   Passed    1.06 sec
+      Start 170: reference.recording_storage
+ 8/11 Test #170: reference.recording_storage ............   Passed    8.06 sec
+      Start 171: reference.recording_values
+ 9/11 Test #171: reference.recording_values .............   Passed    2.33 sec
+      Start 172: reference.recording_analysis
+10/11 Test #172: reference.recording_analysis ...........   Passed   27.43 sec
+      Start 173: reference.recording_analyst_cli
+11/11 Test #173: reference.recording_analyst_cli ........   Passed    8.87 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Label Time Summary:
+recording    =  76.78 sec*proc (11 tests)
+reference    =  76.78 sec*proc (11 tests)
+slow         =   2.39 sec*proc (1 test)
+t53          =  76.78 sec*proc (11 tests)
+
+Total Test time (real) =  76.79 sec
+```
+
 - **Static**: all seven new TUs compile warning-free under
   AppleClang and the linux toolchain (`std::array` instead of C
   arrays, explicit `static_cast<double>` on index math,

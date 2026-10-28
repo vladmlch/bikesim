@@ -175,7 +175,7 @@ void test_csv_export_writes_bounded_rows_and_refuses_overwrite() {
         std::vector<std::string> lines;
         for (std::string line; std::getline(in, line);) lines.push_back(line);
         bt::require(lines.size() == 4 &&
-                    lines[0].find("episode_id") != std::string::npos,
+                    lines[0].starts_with("episode_id"),
                     "csv carries a header plus one line per row");
         const auto header = lines[0];
         const auto interval_at = header.find("interval_id");

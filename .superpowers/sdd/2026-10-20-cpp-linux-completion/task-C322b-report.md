@@ -62,8 +62,9 @@ zero `planned` records in the batch.
   **5/5 PASS** darwin-arm64 (`build/native-release`, Release; 5.53 s)
   and **5/5 PASS** linux-aarch64 (`/src/build/native-release`,
   clang, Release; 3.29 s). Check counts identical across platforms:
-  297 / 44 / **160268** / 8 / 18 (`period_buffer` = 160265 lane/a
-  + 3 new checks).
+  297 / 44 / **160268** / 8 / 18 (`period_buffer` = 160264 prior
+  + 4 new checks; the earlier "160265" figure in the lane/a evidence
+  section was a transcription error — verified `PASS 160268`).
 - No `run_tests.sh` per lane restriction; no pytest files edited (no
   new capture sites needed).
 

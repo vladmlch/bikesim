@@ -9369,7 +9369,8 @@ covers a 1-ulp spread the literals would fail on.
   `/src/build/native-release`, clang, Release; 3.29 s total).
 - Binary check counts identical across platforms:
   `recorder_columns` 297, `hud_columns` 44, `period_buffer`
-  **160268** (160265 lane/a + the 3 new checks), `frozen_force_arrays`
+  **160268** (160264 prior + the 4 new checks — verified `PASS 160268`;
+  the earlier lane/a "160265" figure was a transcription error), `frozen_force_arrays`
   8, `ride_plots_html_markers` 18.
 - Drop re-verified: `test_arm_highlight_uses_published_directional_capacity`
   stays `drop` — `native/src/viewer/hud.hpp:6`

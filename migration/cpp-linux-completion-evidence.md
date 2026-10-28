@@ -9019,3 +9019,111 @@ ledgers post-merge. All 9 in-scope cases green on both platforms. L3
 (`tools/run_tests.sh native`) not re-run — bounded merge-back scope
 per protocol; lane/a's own gate evidence is in `task-C331-report.md`
 (baseline-blocked clean on the documented T09/T10 pair).
+
+## 2026-10-28 — lane/d batch 3.34 frontends/realtime/async/batch merge-back (merge `d31f4fab`)
+
+Serialized merge. Lane/d tip `33216a3a` over base `e38e1c8a`;
+integration tip `fe5edb2a` sat 2 commits ahead (the 3.31 merge-back
+pair). Zero content conflicts — the lane did not touch
+`cpp-linux-completion-evidence.md`, and every shared file merged
+cleanly; the two JSON ledgers and `Phase3Ports.cmake` auto-merged and
+were verified programmatically anyway.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — clean auto-merge; verified
+  programmatically: **2,393 unique (`source_path`,`source_symbol`)
+  records — key-exact union** of both sides vs base; **0 lost / 0
+  duplicate / 0 contested-misresolved / 0 unexplained deletions**.
+  Headers **`2393/2377`** (`class_test_methods` 16) match the actual
+  record count. 120 records differed between the sides with **zero key
+  overlap**: the **54 batch rows resolved to lane/d's enriched
+  versions** (45 `planned→port` + 9 `planned→drop`), the other **66
+  resolved to integration's** (3.31-era edits the lane carried stale
+  base copies of).
+- `migration/python-removal.json` — clean auto-merge; verified union:
+  535 rows, 0 missing/extra/duplicate; the sides' row edits were
+  disjoint (integration's 7 `test_recording_*` rows vs lane/d's 9
+  batch rows). `replacement_landed` **103→112** (+9:
+  `test_{async_close,batch}.py` + the seven
+  `test_{frontend_windows,native_ride_frontend,physical_view,
+  pinned_measurement,pneumatic_physical_runtime,
+  realtime_deferred_checks,runtime_single_path}.py` rows, each
+  carrying its `reference.*` CTest id in `verification_ids`);
+  `planned` 432→**423**. Live `sha256`/`line_count` verified against
+  the current files: eight of nine rows exact;
+  `test_pneumatic_physical_runtime.py` carried a stale pre-existing
+  fingerprint (`5cbf0da6…`/111 — the file grew 111→117 lines under
+  `8bb51212` without a row refresh, already stale at merge-base);
+  **refreshed to live (`09c8f2f4…`/117) inside the merge resolution**;
+  `snapshot_*` fields keep the pre-port oracle image per convention.
+- `native/tests/reference/Phase3Ports.cmake` — clean auto-merge;
+  verified union: **119→128 `bike_add_reference_test`
+  registrations** (base 112 + integration's seven 3.31 + lane/d's
+  nine 3.34); the auto-merge re-placed the 3.31 block ahead of 3.32
+  and kept lane/d's 3.34 blocks at the tail — **ascending batch
+  order, no duplicate targets or SOURCES**.
+- `migration/cpp-linux-completion-evidence.md` — untouched by lane/d;
+  no conflict. This section is the merge-back append.
+- Lane-only files verified byte-equal to the lane tip:
+  `native/src/cli/batch.cpp`, `native/src/batch/{plan.hpp,
+  summary.cpp}`, `native/src/runtime/step.{cpp,hpp}` (integration made
+  no `native/src/` edits since base); new TUs
+  `native/tests/integration/test_{batch,async_close}.cpp`, the seven
+  `native/tests/reference/test_*.cpp`, `pinned_test_support.hpp`,
+  `task-C334-report.md`.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new `Phase3Ports.cmake` registrations) + `cmake
+  --build -j8 --target` for the nine batch suites: green compile +
+  link (one cosmetic `ignoring duplicate libraries` ld warning —
+  `libbike_app.a` reaches the `pneumatic_physical_runtime` link twice;
+  pre-existing shape, no action).
+- `ctest -R 'reference\.(batch|async_close|frontend_windows|
+  physical_view|pinned_measurement|realtime_deferred_checks|
+  native_ride_frontend|runtime_single_path|
+  pneumatic_physical_runtime)$'`: **9/9 PASS** (19.90 s) —
+  `batch` 2.44 s, `async_close` 3.91 s, `frontend_windows` 1.14 s,
+  `physical_view` 1.15 s, `pinned_measurement` 0.88 s,
+  `realtime_deferred_checks` 0.73 s, `native_ride_frontend` 2.14 s,
+  `runtime_single_path` 2.58 s, `pneumatic_physical_runtime` 1.20 s.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → `configure root-clang root` → `build
+  root-clang` (the nine batch targets): green (122 ninja steps, clean
+  compile + link including the `bike-batch`/`bike-research` CLI
+  dependencies `reference.batch` consumes).
+- `ctest -R` (same regex): **9/9 PASS** (11.76 s) — `batch` 3.04 s,
+  `async_close` 3.33 s, `frontend_windows` 0.22 s, `physical_view`
+  0.53 s, `pinned_measurement` 0.33 s, `realtime_deferred_checks`
+  0.15 s, `native_ride_frontend` 1.91 s, `runtime_single_path` 1.71 s,
+  `pneumatic_physical_runtime` 0.53 s.
+
+### Ledger deltas (pre-merge `fe5edb2a` → post-merge `d31f4fab`)
+
+- `test-port-map.json`: 2393 → **2393** records (in-place batch
+  edits, no inserts/deletes); headers 2393/2377/16 unchanged and equal
+  to the actual record count. `port` 1007 → **1052** (+45), `drop`
+  115 → **124** (+9), `golden` 351 (unchanged), `planned` 920 →
+  **866** (−54).
+- `python-removal.json`: `replacement_landed` 103 → **112** (+9);
+  `planned` 432 → **423**; 535 rows.
+- `Phase3Ports.cmake`: 119 → **128** registrations.
+
+### Assessment
+
+Clean union — no conflicts at all; the audited auto-merges checked
+out semantically. Every ledger invariant verified programmatically:
+port-map key-exact union (2,393 unique keys; lane's 54 enriched batch
+rows and integration's 66 differing non-batch rows each
+byte-preserved; disposition arithmetic closes +45 port / +9 drop /
+−54 planned), removal-ledger union (535 rows, exactly the 9 batch
+rows flipped, live fingerprints verified — one stale batch-row
+fingerprint refreshed in the resolution), canonical serialization
+(`indent=2`, `ensure_ascii`, trailing LF) byte-verified on both
+ledgers post-merge and post-repair. All 9 in-scope cases green on
+both platforms. L3 (`tools/run_tests.sh native`) not re-run —
+bounded merge-back scope per protocol; integration-level `full` gate
+is the scheduled accumulation checkpoint after the pending merges.

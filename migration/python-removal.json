@@ -18253,22 +18253,22 @@
   },
   {
     "path": "tests/portability/test_numerics_discovery.py",
-    "sha256": "30cee8e14c6447869e15ef28f3be7778fe6cd2bc182b857d250ac58b5e5674ce",
-    "line_count": 1960,
+    "sha256": "fb9ecb1d39fed6f1b5dcc84c2e3c07e76cb6541be3b6825da836cbccf21eb653",
+    "line_count": 1981,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_numerics_discovery.cpp"
+      "native/tests/migration/migration_T53_numerics.cmake"
     ],
-    "verification_ids": [],
-    "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "verification_ids": [
+      "migration_T53_numerics"
+    ],
+    "deletion_gate": "T63 after T61/T62 and row-specific evidence",
+    "status": "replacement_landed",
     "snapshot_sha256": "30cee8e14c6447869e15ef28f3be7778fe6cd2bc182b857d250ac58b5e5674ce",
     "snapshot_line_count": 1960,
     "tracked": true,
-    "presence": "tracked",
-    "inventory_note": "Digest identifies the delivered text after CRLF-to-LF and terminal-LF normalization. Original Git blob/tracking was not independently verified; qualification and deletion gates remain open.",
-    "repomix_input_text_sha256": "0fd3db0f70ca61cf732927ec7a4c433297be687f77c14c245589fdcb85cf02e3"
+    "presence": "tracked"
   },
   {
     "path": "tests/portability/test_offline_bundle.py",

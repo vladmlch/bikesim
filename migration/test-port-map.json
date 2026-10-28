@@ -14188,14 +14188,181 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_suspension_domain_is_shared",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location0-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location1--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location2-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location3-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location4-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location5-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location6--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location7-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location8-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location9-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location10-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location11--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location12-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location13-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location14-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location15-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location16--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location17-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location18-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location19-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location20-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location21--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location22-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location23-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location24-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location25-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location26--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location27-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location28-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location29-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location30--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location31-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location32-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location33-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location34--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location35-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location36-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location37-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location38-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location39--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location40-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location41-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location42-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location43-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location44--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location45-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location46-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location47-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location48-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location49--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location50-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location51-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location52-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location53-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location54--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location55-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location56-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location57-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location58-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location59--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location60-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location61-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location62-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location63-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location64--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location65-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location66-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location67-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location68-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location69--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location70-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location71-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location72-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location73-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location74--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location75-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location76-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location77-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location78-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location79--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location80-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location81-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location82-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location83-0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location84--1]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location85-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location86-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location87-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location88--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location89-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location90-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location91-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location92--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location93-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location94-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location95-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location96--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location97-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location98-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location99-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location100--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location101-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location102-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location103-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location104--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location105-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location106-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location107-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location108--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location109-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location110-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location111-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location112--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location113-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location114-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location115-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location116--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location117-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location118-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location119-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location120--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location121-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location122-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location123-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location124--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location125-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location126-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location127-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location128--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location129-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location130-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location131-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location132--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location133-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location134-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location135-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location136-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location137--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location138-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location139-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location140-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location141-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location142--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location143-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location144-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location145-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location146-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location147--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location148-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location149-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location150-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location151-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location152--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location153-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location154-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location155-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location156--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location157-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location158-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location159-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location160--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location161-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location162-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location163-True]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location164--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location165-nan]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location166-inf]",
+        "tests/reference/test_native_numeric_domains.py::test_suspension_domain_is_shared[location167-True]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 168 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14206,14 +14373,16 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_damper_invalid_parameters_rejected",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_damper_invalid_parameters_rejected[max_lsc]",
+        "tests/reference/test_native_numeric_domains.py::test_damper_invalid_parameters_rejected[v_knee_comp]",
+        "tests/reference/test_native_numeric_domains.py::test_damper_invalid_parameters_rejected[c_hsc_min]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14224,14 +14393,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_air_pressure_intermediate_overflow_is_shared",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_air_pressure_intermediate_overflow_is_shared"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14242,14 +14411,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_activated_zero_hbo_denominator_rejected",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_activated_zero_hbo_denominator_rejected[False]",
+        "tests/reference/test_native_numeric_domains.py::test_activated_zero_hbo_denominator_rejected[True]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14260,14 +14430,24 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_mutated_policy_configs_are_rejected",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[pedaling-stop_time_s-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[pedaling-coast_cadence_tau_s--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[pedaling-effort_slew_nm_s--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[shifting-shift_cooldown_s--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[shifting-torque_factor-1.1]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[shifting-cadence_smoothing_tau_s--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[assist-tau-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[assist-slew-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[assist-gain--1.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[assist-taper_width_mps-0.0]",
+        "tests/reference/test_native_numeric_domains.py::test_mutated_policy_configs_are_rejected[battery-energy_j--1.0]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 11 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14278,14 +14458,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_policy_derived_overflow_is_shared",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_policy_derived_overflow_is_shared[assist_step-args0]",
+        "tests/reference/test_native_numeric_domains.py::test_policy_derived_overflow_is_shared[battery_draw-args1]",
+        "tests/reference/test_native_numeric_domains.py::test_policy_derived_overflow_is_shared[electrical_power-args2]",
+        "tests/reference/test_native_numeric_domains.py::test_policy_derived_overflow_is_shared[freehub_torque-args3]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14296,14 +14479,16 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_cruise_longitudinal_topology_is_shared",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_cruise_longitudinal_topology_is_shared[hinge-1 0 0]",
+        "tests/reference/test_native_numeric_domains.py::test_cruise_longitudinal_topology_is_shared[slide-0 1 0]",
+        "tests/reference/test_native_numeric_domains.py::test_cruise_longitudinal_topology_is_shared[ball-0 0 1]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14314,14 +14499,17 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_brake_wheel_topology_and_actuator_target_are_shared",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_brake_wheel_topology_and_actuator_target_are_shared[slide-0 1 0-front_wheel_spin]",
+        "tests/reference/test_native_numeric_domains.py::test_brake_wheel_topology_and_actuator_target_are_shared[ball-0 1 0-front_wheel_spin]",
+        "tests/reference/test_native_numeric_domains.py::test_brake_wheel_topology_and_actuator_target_are_shared[hinge-0 0 1-front_wheel_spin]",
+        "tests/reference/test_native_numeric_domains.py::test_brake_wheel_topology_and_actuator_target_are_shared[hinge-0 1 0-rear_wheel_spin]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14332,14 +14520,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_coil_force_overflow_before_publication",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_coil_force_overflow_before_publication[1e+308]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -14350,14 +14538,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_numeric_domains::test_rolling_and_drag_computed_overflow",
       "native_source": "native/tests/reference/test_native_numeric_domains.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_domains.py::test_rolling_and_drag_computed_overflow"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-source-review.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_numeric_domains.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_numeric_domains green on darwin-arm64 + linux-aarch64 (406 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -23997,14 +24185,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_directional_capacity_matches_python"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: drop (D14) - @given(max_examples=1000) equivalence of the numba-JIT directional_capacity against its _directional_capacity_py twin; both sides of the comparison are Python and remove at T63, so no native subject remains. Native kernel coverage: reference.native_kernel_contracts (error-path contract + analytic boundaries) and migration kernel_properties/test_t23/test_t30. The native analytic controls are not a reproduction of the 1000-example Hypothesis comparison; oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24015,14 +24203,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_kernel_contracts::test_directional_capacity_error_paths_match",
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_directional_capacity_error_paths_match"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_kernel_contracts.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_kernel_contracts green on darwin-arm64 + linux-aarch64 (180 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24033,14 +24221,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_brush_step_matches_python"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: drop (D14) - @given(max_examples=1000) equivalence of the numba-JIT _brush_step against its _brush_step_py twin; both sides of the comparison are Python and remove at T63, so no native subject remains. Native kernel coverage: reference.native_kernel_contracts (error-path contract + energy/friction boundaries) and migration kernel_properties/test_t23/test_t30. The native analytic controls are not a reproduction of the 1000-example Hypothesis comparison; oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24051,14 +24239,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_kernel_contracts::test_brush_step_error_paths_match",
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_brush_step_error_paths_match"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_kernel_contracts.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_kernel_contracts green on darwin-arm64 + linux-aarch64 (180 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24069,14 +24257,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_normal_contact_matches_python"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: drop (D14) - @given(max_examples=1000) equivalence of the numba-JIT _normal_contact against its _normal_contact_py twin; both sides of the comparison are Python and remove at T63, so no native subject remains. Native kernel coverage: reference.native_kernel_contracts (error-path contract + physical boundaries) and migration kernel_properties/test_t23/test_t30. The native analytic controls are not a reproduction of the 1000-example Hypothesis comparison; oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24087,14 +24275,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_kernel_contracts::test_normal_contact_error_paths_match",
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_normal_contact_error_paths_match"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_kernel_contracts.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_kernel_contracts green on darwin-arm64 + linux-aarch64 (180 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24105,14 +24293,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_box_pad_contact_matches_python"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: drop (D14) - @given(max_examples=1000) equivalence of the numba-JIT _box_pad_contact against its _box_pad_contact_py twin; both sides of the comparison are Python and remove at T63, so no native subject remains. Native kernel coverage: reference.native_kernel_contracts (deterministic inside/tie cases) and migration kernel_properties/test_t23/test_t30. The native analytic controls are not a reproduction of the 1000-example Hypothesis comparison; oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {
@@ -24123,14 +24311,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_kernel_contracts::test_box_pad_contact_inside_and_tie_cases",
       "native_source": "native/tests/reference/test_native_kernel_contracts.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_numba_kernels.py::test_box_pad_contact_inside_and_tie_cases"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "D14: four randomized Numba/Python-twin comparisons lose their subject after qualified Phase-4 removal; native arithmetic backstops are reference.native_kernel_contracts and migration kernel_properties/T23/T30. Three overflow/domain functions and all twelve deterministic box inside/tie cases retain named native assertions. No 1000-example Hypothesis run is claimed.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.21b lane/d: covered by native/tests/reference/test_native_kernel_contracts.cpp (pre-existing Phase-3 port qualified this batch); CTest reference.native_kernel_contracts green on darwin-arm64 + linux-aarch64 (180 checks); oracle suite 206/206 nodes green on both platforms"
       ]
     },
     {

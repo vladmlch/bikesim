@@ -15674,12 +15674,10 @@
       "native/tests/reference/test_native_research_failures.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_failures"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ab43346091c94dc0464577c384e56b906c9088b74d95332e3bac8d84346af774",
     "snapshot_line_count": 69,
     "tracked": true,
@@ -15695,12 +15693,10 @@
       "native/tests/reference/test_native_research_frontend.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_frontend"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "193558139b513ee56ca2018c93c3d6946fbaf70e228cf67c97d9d28d47a561cf",
     "snapshot_line_count": 25,
     "tracked": true,
@@ -15716,12 +15712,10 @@
       "native/tests/reference/test_native_research_policy.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_policy"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "bb51cf1ec77f73721f535eb659d69850bc1f4b9f2205379970529323a6731ac5",
     "snapshot_line_count": 170,
     "tracked": true,
@@ -15729,20 +15723,18 @@
   },
   {
     "path": "tests/reference/test_native_research_programs.py",
-    "sha256": "65ae2c0805dd098e7bb2af094e8e2342e223915db6541ded446737ab237715d7",
-    "line_count": 50,
+    "sha256": "2c93e73ca0d17bd9bc867d6365e379f28d9ff13fabd9138388b2828a35874e8f",
+    "line_count": 78,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_research_programs.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_programs"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "bd9eafd702b792c947651eaa3fe0445e0fe72c61280bfd96872598c87fd5d7c9",
     "snapshot_line_count": 50,
     "tracked": true,
@@ -15750,8 +15742,8 @@
   },
   {
     "path": "tests/reference/test_native_research_recording.py",
-    "sha256": "2b939f4033e49f0fcb9fbfc25d8ee2d7af678babd3e475f7aaed8daf3c4b7334",
-    "line_count": 142,
+    "sha256": "bf8a81f24bf2e8f642b945a515e0051e23c45f06b38cc764668a94463e0e3054",
+    "line_count": 152,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -15771,20 +15763,18 @@
   },
   {
     "path": "tests/reference/test_native_research_sensors.py",
-    "sha256": "b4f2e5c2f1c116c9893d5bdad118b86a000de9dd189ed4396142a99d7900ab56",
-    "line_count": 154,
+    "sha256": "e1015c640e3f85181d05ef62dd2d5db855d943f01ecfdecd75783d94b11c5f5a",
+    "line_count": 199,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_research_sensors.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_sensors"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e9980483b53ba0a41fc4b90b42dfbbfdbdd0a36ebabecfccc34814f0abdf64c2",
     "snapshot_line_count": 154,
     "tracked": true,

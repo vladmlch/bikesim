@@ -45,8 +45,9 @@ unchanged since T01 for all four).
   off vs full capture produce bitwise-identical step results,
   `integration_state` and pipeline counters while off retains no
   history; sealed evidence survives `reset()`/`close()`, returns the
-  identical object on re-seal, forbids array mutation, and rejects
-  `begin_control` on a sealed episode; the verify cursor re-delivers an
+  identical object on re-seal, forbids array mutation (the
+  `begin_control`-on-sealed leg has no native twin — no access guard
+  exists after seal — and is dropped, documented in the TU); the verify cursor re-delivers an
   un-acked prefix and only consumes after `acknowledge_applied` (the
   boxing-failure analog: the native read is const, so an un-acked
   suffix cannot be lost by construction), with stale/out-of-domain

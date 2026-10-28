@@ -9405,3 +9405,97 @@ covers a 1-ulp spread the literals would fail on.
   trailing LF on both JSON ledgers; `git diff` confined to batch rows.
 
 Report: `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C322b-report.md`.
+
+## 2026-10-28 — lane/d batch 3.22b gap-closure merge-back (merge `a107644b`)
+
+Trivial merge. Lane/d tip `ccc96f80` was a direct child of
+integration tip `7e683b75` (merge-base = integration tip;
+fast-forwardable, `--no-ff` used for the merge commit per protocol).
+Zero conflicts by construction; `git diff 7e683b75..ccc96f80` is
+byte-identical to `git diff 7e683b75..a107644b` — the merge applies
+the lane's five-file batch verbatim, no hunks outside it.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — lane-side edits only; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records**, headers **2394/2378**
+  (`class_test_methods` 16) equal to the actual record count. The
+  batch touched 22 records across five files: +1 new `port` row
+  (`test_equality_rows_charge_the_closure_channel_not_the_bound`,
+  T52, `reference.period_buffer::…`, 1 node, `analytic`
+  comparison class) plus 21 in-place gap-closure edits —
+  `collected_node_ids` `[]`→measured, `assertions_capture`
+  T01-placeholder→dated `2026-10-28: measured`, lane/d verification
+  `evidence` lines appended after the lane/a entries, and the
+  post-`e181666b` `line`/`end_line` refresh on
+  `test_record_decimation_forwards_period_closing_energy`
+  (397/501→401/505). Per-file: `test_period_buffer.py` 10
+  (+1 new = 11), `test_recorder_columns.py` 4,
+  `test_ride_plots_html_markers.py` 3, `test_frozen_force_arrays.py`
+  2, `test_hud_columns.py` 2 (incl. the `drop` row, which keeps its
+  pytest node id). Batch accounting 19 port / 2 golden / 1 drop,
+  24 collected nodes, matches the lane ledger commit.
+- `migration/python-removal.json` — lane-side edits only; 535 rows,
+  statuses unchanged (`replacement_landed` 117 / `planned` 418).
+  Single fingerprint refresh on the `test_period_buffer.py` row:
+  `sha256` `44ff20e0…`→`2ba3b176…`, `line_count` 397→505 (the
+  post-`e181666b`/`a323585d` source); the other four batch rows
+  already matched live; `snapshot_*` untouched.
+- `native/tests/reference/test_period_buffer.cpp` — lane-side
+  append: `test_equality_rows_charge_the_closure_channel_not_the_bound`
+  (+58) between the two slow runtime tests, preserving source order;
+  the `equality:` partition is exercised end-to-end via
+  `runtime_for_raws`/`PeriodAccounting` → `raw_work` plus the
+  verbatim `step_work` call. `Phase3Ports.cmake` unchanged (five
+  registrations pre-exist from the lane/a merge).
+- Lane-only files verified byte-equal to the lane tip:
+  `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C322b-report.md`;
+  `migration/cpp-linux-completion-evidence.md` lane append sits
+  directly above this section.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- `cmake --build build/native-release -j8 --target
+  reference.period_buffer`: clean recompile + link (only TU in the
+  batch); other four binaries unaffected.
+- `ctest -R 'reference\.(recorder_columns|hud_columns|period_buffer|frozen_force_arrays|ride_plots_html_markers)'`:
+  **5/5 PASS** (9.73 s). Binary check counts: **297 / 44 /
+  160268 / 8 / 18** — `period_buffer` 160268 = 160264 prior + 4 new
+  checks, matching the corrected lane/d decomposition.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `/build/root-clang` Release)
+
+- `tools/linux/container.sh sync` (tip `a107644b`) →
+  `container.sh build root-clang reference.period_buffer`: ninja
+  2/2 steps green (TU recompile + link).
+- `ctest -R` (same regex): **5/5 PASS** (5.98 s). Binary check
+  counts: **297 / 44 / 160268 / 8 / 18** — identical to darwin.
+
+### Ledger deltas (pre-merge `7e683b75` → post-merge `a107644b`)
+
+- `test-port-map.json`: 2393 → **2394** records (+1 new row);
+  headers 2393/2377 → **2394/2378**, both equal to the actual count
+  (static = top + `class_test_methods` 16). Dispositions `port`
+  1062 → **1063** (+1), `drop` 125, `golden` 351, `planned` 855
+  (unchanged). Empty `collected_node_ids` 1354 → **1333** (−21
+  backfills); T01 `assertions_capture` placeholders 545 → **524**
+  (−21); total collected nodes recorded 1820 → **1844** (+24).
+- `python-removal.json`: 535 rows, statuses unchanged; one
+  fingerprint refresh (`test_period_buffer.py` → 505 lines,
+  `2ba3b176…`).
+- `Phase3Ports.cmake`: unchanged — 128 registrations.
+
+### Assessment
+
+Trivial merge — the lane tip was a direct child of the integration
+tip, so the `--no-ff` merge is a tree-preserving serialization with
+zero hunks outside the lane's five files. Every ledger invariant
+verified programmatically post-merge: canonical serialization
+(`indent=2`, `ensure_ascii`, trailing LF) byte-verified on both JSON
+ledgers; 2,394 unique port-map keys; disposition arithmetic closes
++1 port / −21 placeholders. All five in-scope CTest cases green on
+both platforms with identical check counts (297/44/160268/8/18).
+L3 (`tools/run_tests.sh`) not re-run — bounded merge-back scope per
+protocol; integration-level `full` gate is the scheduled
+accumulation checkpoint after the pending merges.

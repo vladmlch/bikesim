@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n5-random]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 40,
+  "node": "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n5-random]",
+  "offset": 40,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.queries",
+  "nbytes": 856,
+  "node": "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n5-random]",
+  "offset": 80,
+  "rtol": null,
+  "shape": [
+   107
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "np.interp n5-random",
+  "nbytes": 856,
+  "node": "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n5-random]",
+  "offset": 936,
+  "rtol": null,
+  "shape": [
+   107
+  ]
+ }
+]

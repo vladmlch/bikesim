@@ -677,3 +677,20 @@ bike_add_reference_test(native_platform_linkage ENGINE
   SOURCES test_native_platform_linkage.cpp
   LIBRARIES bike_platform bike_cli
   LABELS t53 platform)
+# tests/reference/test_native_numeric_portability.py port: every
+# platform-sensitive numerical lowering replayed bitwise from captured
+# goldens through the SAME production helpers the debug bindings call
+# (np_tanh/hypot, python_vector_norm, min/max, multiply_broadcast,
+# numpy_sum, sin/cos, np_interp, spindle-linalg mirrors).
+bike_add_reference_test(native_numeric_portability ENGINE
+  SOURCES test_native_numeric_portability.cpp
+  LIBRARIES bike_app
+  LABELS t53 platform numerics)
+# tests/reference/test_native_platform_blas.py port: blas::ddot/dgemv/
+# dgemm replayed bitwise from captured stored-byte operands through the
+# same layout→entry-point rules the debug surface applies (the
+# import-order record is a Python-subprocess drop).
+bike_add_reference_test(native_platform_blas
+  SOURCES test_native_platform_blas.cpp
+  LIBRARIES bike_native_numerics
+  LABELS t53 platform numerics)

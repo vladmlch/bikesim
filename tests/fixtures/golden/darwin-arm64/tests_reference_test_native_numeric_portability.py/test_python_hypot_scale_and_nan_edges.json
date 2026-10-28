@@ -1,0 +1,44 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 104,
+  "node": "tests/reference/test_native_numeric_portability.py::test_python_hypot_scale_and_nan_edges",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   13
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 104,
+  "node": "tests/reference/test_native_numeric_portability.py::test_python_hypot_scale_and_nan_edges",
+  "offset": 104,
+  "rtol": null,
+  "shape": [
+   13
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "math.hypot edges",
+  "nbytes": 104,
+  "node": "tests/reference/test_native_numeric_portability.py::test_python_hypot_scale_and_nan_edges",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   13
+  ]
+ }
+]

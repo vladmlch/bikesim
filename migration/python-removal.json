@@ -14712,23 +14712,11 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "9e5ebf8e642051275dc478dd735956c6ad4e966f5a97912d90630c94fa76792d",
     "snapshot_line_count": 39,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "drop": 2
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_drivetrain_policy_clone.py",
@@ -14778,28 +14766,14 @@
       "native/tests/reference/test_golden_episode_regressions.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.golden_episode_regressions"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "99260f97a3e23a1c539c95e505d7fd95ad9863bc5eae92133c9e0a1d6196d4e2",
     "snapshot_line_count": 51,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 3
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_equilibrium_state_file.py",
@@ -14868,28 +14842,14 @@
       "native/tests/reference/test_golden_episode_regressions.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.golden_episode_regressions"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b20011ac8f86c2a429471a3dfe4a2c0d19b45a7cefd116c9d8e6d8e8c8cdc7fe",
     "snapshot_line_count": 37,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 2
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_golden_episode_v2.py",
@@ -14901,28 +14861,14 @@
       "native/tests/reference/test_golden_episode_regressions.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.golden_episode_regressions"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "2710e6931ad9ba0fec7b5336714482a4f6246cd04854e314a2561f3af480827b",
     "snapshot_line_count": 112,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 4
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_hud_columns.py",
@@ -17069,20 +17015,18 @@
   },
   {
     "path": "tests/reference/test_ride_backend_cli.py",
-    "sha256": "e20eec6f207c37fabb368dcd72d921559f29a26f3fbe2cf410c5459443fd18a2",
-    "line_count": 152,
+    "sha256": "134655e55786d362c1d1b916caed9e854a93dac0cc0af673a9c3fc317a963c2d",
+    "line_count": 155,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_ride_backend_cli.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.ride_backend_cli"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "9cecb4b0409954c314cf11b4d55c2bc66dc84aad921f8db8b20982edaa0a4916",
     "snapshot_line_count": 152,
     "tracked": true,

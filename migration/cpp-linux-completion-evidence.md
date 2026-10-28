@@ -9127,3 +9127,96 @@ ledgers post-merge and post-repair. All 9 in-scope cases green on
 both platforms. L3 (`tools/run_tests.sh native`) not re-run —
 bounded merge-back scope per protocol; integration-level `full` gate
 is the scheduled accumulation checkpoint after the pending merges.
+
+## 2026-10-28 — 3.24b qualification (lane/d): golden episodes + ride backend CLI (`episode`)
+
+### Scope
+
+Five pytest files, 22 port-map records / 26 collected nodes:
+`tests/reference/test_golden_episode.py` (2),
+`test_golden_episode_v2.py` (4), `test_episode_compare.py` (3),
+`test_divergence_horizon.py` (2), `test_ride_backend_cli.py` (11).
+Dispositions: **19 port / 3 drop / 0 golden** — no `planned` remains
+in the batch; no golden fixtures captured (no live-oracle comparison
+in any record). The nine golden-episode records triage to the
+pre-existing `native/tests/reference/test_golden_episode_regressions.cpp`
+(`Phase3Ports.cmake:159`, labels `t52 episode golden slow`) — the
+3.24b plan note's `reference.golden_episode_tool` is the 3.03
+recorder-tool contract, a different subject (documented baseline red);
+no duplicate C++ was written.
+
+### Native port — `reference.ride_backend_cli`
+
+`native/tests/reference/test_ride_backend_cli.cpp` (new): 10 check
+functions for the 10 ported records. Parse/resolve seam
+(`cli::parse_arguments` + `cli::resolve_ride`, the pair
+`cli::dispatch` reaches in every executable `main`) for the
+backend/timestep/time-scale/legacy/research records; produced
+`bike-ride`/`bike-research`/`bike-replay` binaries spawned through
+`bike::platform::run` for the replay-ordering, preflight-ordering,
+missing-input and route-dispatch records. Executable paths via
+generated `bike_ride_cli_paths.hpp` (`file(GENERATE)` +
+`$<TARGET_FILE:...>` — the `bike_native_bench_path.hpp` pattern);
+`add_dependencies` on the three executables; registered at
+`Phase3Ports.cmake:339`, labels `t52 episode`.
+
+Oracle→native deltas discharged at the assertions: native `--backend`
+declares the single `native` choice so `--backend python` is an
+invalid choice at parse (the structural form of the oracle's
+backend/`test_python_command_never_loads_the_extension` checks — that
+record drops with the parse-level rejection asserted inside
+`test_default_backend_and_profile_timestep`); argparse `SystemExit(2)`
+maps to `cli::ArgumentError`/dispatch exit 2; the extension-artifact
+diagnostic maps to a missing required input file exiting 1 and naming
+the requested path; route dispatch pins the emission contract
+(`"reason":"duration_reached"`, `"backend":"native"`,
+`"drive_mode":"articulated_effort"`, `"timestep_s":0.00125` /
+`"outcome":"duration"`, `"recording":"off"`) while the headless/research
+exit code is admitted in `{0,2}` (both qualified platforms produce 2 —
+the welded profile's constraint-work violation marks the run
+model-invalid; a clean run is 0).
+
+### Verification
+
+- Oracle suite, all five files: **26 passed** darwin-arm64 (11.60 s)
+  and **26 passed** linux-aarch64 (13.04 s), `uv run --frozen
+  --group native python -m pytest -q`; `--collect-only` reproduced the
+  recorded node IDs including `[v1]`/`[v2]` and `[1]/[2]/[4]/[8]`.
+- Focused CTest `reference.(golden_episode_regressions|ride_backend_cli)`:
+  **2/2 PASS** darwin-arm64 (`build/native-release`, AppleClang,
+  Release; 9.36 s + ~1.9 s) and **2/2 PASS** linux-aarch64
+  (`bike-dev-pfc-lane-d`, clang++-18, `/build/root-clang`, Release;
+  13.79 s + 1.78 s).
+- Check counts identical across platforms:
+  `reference.ride_backend_cli` **PASS 29 checks** both;
+  `reference.golden_episode_regressions` **PASS 1095 checks** both.
+- Darwin L1 `ctest -L reference -j8`: batch tests pass; reds are the
+  documented baseline set — `golden_episode_tool` (`native recorder
+  rows reproduce Python oracle`), `pneumatic_tire_oracle`,
+  `native_numeric_completion`, `native_pneumatic_tire` — plus
+  `native_spindle_controller` (0.02 s stale `input.*` fixture capture,
+  unrelated to this diff) and 24 `Not Run` unbuilt executables in this
+  incremental build tree.
+- Linux stale-binary hazard retired: `/build/root-clang` CLI targets
+  rebuilt before probing; identical deterministic CLI behavior both
+  platforms. No `run_tests.sh` per lane constraint; no pytest files
+  edited (no capture sites needed).
+
+### Ledger
+
+`migration/test-port-map.json` — 22 rows qualified in place: measured
+`collected_node_ids` (26), dated `assertions_capture`,
+`native_test_id` `reference.golden_episode_regressions::<symbol>` ×9 /
+`reference.ride_backend_cli::<symbol>` ×10 / `null` ×3 drops,
+`comparison_class` kept `invariant`/`contract` on episode records +
+`contract`/`python-only` elsewhere, dated lane/d `evidence`; zero
+stale "source disposition only" placeholders.
+`migration/python-removal.json` — five rows `replacement_landed` with
+live `sha256`/`line_count`; `verification_ids` =
+`reference.golden_episode_regressions` (×3) / `reference.ride_backend_cli`
+/ generic triplet kept on `test_divergence_horizon.py` (first all-drop
+row to land — `action delete_with_python`, `replacement_paths []`, no
+CTest node exists); `phase3_source_implementation` blocks removed;
+`snapshot_*` untouched. `replacement_landed` counter 112 → 117.
+
+Report: `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C324b-report.md`.

@@ -28428,13 +28428,17 @@
       "line": 22,
       "end_line": 38,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_python_on_off_capture_does_not_change_state_noise_or_results",
+      "native_test_id": "reference.native_research_capture_contracts::test_python_on_off_capture_does_not_change_state_noise_or_results",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_python_on_off_capture_does_not_change_state_noise_or_results"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -28442,13 +28446,17 @@
       "line": 41,
       "end_line": 60,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_sealed_python_source_survives_reset_close_and_forbids_array_mutation",
+      "native_test_id": "reference.native_research_capture_contracts::test_sealed_python_source_survives_reset_close_and_forbids_array_mutation",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_sealed_python_source_survives_reset_close_and_forbids_array_mutation"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -28456,13 +28464,17 @@
       "line": 63,
       "end_line": 85,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_python_verify_suffix_is_consumed_only_after_freezing",
+      "native_test_id": "reference.native_research_capture_contracts::test_python_verify_suffix_is_consumed_only_after_freezing",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_python_verify_suffix_is_consumed_only_after_freezing"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -28470,13 +28482,17 @@
       "line": 88,
       "end_line": 108,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_two_episode_launch_writes_only_after_finalization",
+      "native_test_id": "reference.native_research_capture_contracts::test_two_episode_launch_writes_only_after_finalization",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_two_episode_launch_writes_only_after_finalization"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -28484,13 +28500,17 @@
       "line": 111,
       "end_line": 129,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_incomplete_window_and_failed_policy_remain_analyzable",
+      "native_test_id": "reference.native_research_capture_contracts::test_incomplete_window_and_failed_policy_remain_analyzable",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_incomplete_window_and_failed_policy_remain_analyzable"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -28498,13 +28518,17 @@
       "line": 132,
       "end_line": 141,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_policy_failure_before_first_request_seals_zero_step_evidence",
+      "native_test_id": "reference.native_research_capture_contracts::test_policy_failure_before_first_request_seals_zero_step_evidence",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_policy_failure_before_first_request_seals_zero_step_evidence"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_capture.py",
@@ -28512,13 +28536,17 @@
       "line": 144,
       "end_line": 160,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_capture::test_interruption_drains_only_the_already_accepted_control",
+      "native_test_id": "reference.native_research_capture_contracts::test_interruption_drains_only_the_already_accepted_control",
       "native_source": "native/tests/reference/test_research_capture.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_capture.py::test_interruption_drains_only_the_already_accepted_control"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_capture.cpp; CTest reference.native_research_capture_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_frontend.py",
@@ -28526,13 +28554,17 @@
       "line": 16,
       "end_line": 30,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_frontend::test_partial_ticks_call_policy_once_and_stop_does_not_start_another",
+      "native_test_id": "reference.native_research_frontend_contracts::test_partial_ticks_call_policy_once_and_stop_does_not_start_another",
       "native_source": "native/tests/reference/test_research_frontend.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_frontend.py::test_partial_ticks_call_policy_once_and_stop_does_not_start_another"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_frontend.cpp; CTest reference.native_research_frontend_contracts green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28540,13 +28572,17 @@
       "line": 30,
       "end_line": 39,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_research_parser_defaults_off_and_resolves_check_policy",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_research_parser_defaults_off_and_resolves_check_policy",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_research_parser_defaults_off_and_resolves_check_policy"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28554,13 +28590,17 @@
       "line": 42,
       "end_line": 57,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_policy_import_failure_publishes_zero_step_evidence",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_policy_import_failure_publishes_zero_step_evidence",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_policy_import_failure_publishes_zero_step_evidence"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28568,13 +28608,17 @@
       "line": 60,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_out_without_record_never_publishes",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_out_without_record_never_publishes",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_out_without_record_never_publishes"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28582,13 +28626,17 @@
       "line": 70,
       "end_line": 92,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_finish_second_ctrl_c_during_seal_journals_and_publishes",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_finish_second_ctrl_c_during_seal_journals_and_publishes",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_finish_second_ctrl_c_during_seal_journals_and_publishes"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28596,13 +28644,17 @@
       "line": 95,
       "end_line": 113,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28610,13 +28662,17 @@
       "line": 116,
       "end_line": 150,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_finish_off_main_thread_shield_degrades_but_records",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_finish_off_main_thread_shield_degrades_but_records",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_finish_off_main_thread_shield_degrades_but_records"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_recording_lifecycle.py",
@@ -28624,13 +28680,17 @@
       "line": 153,
       "end_line": 167,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_recording_lifecycle::test_frontend_failure_between_windows_is_not_replay_eligible",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_frontend_failure_between_windows_is_not_replay_eligible",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_recording_lifecycle.py::test_frontend_failure_between_windows_is_not_replay_eligible"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_recording_lifecycle.cpp; CTest reference.native_research_recording_lifecycle green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_sweep.py",
@@ -28638,13 +28698,17 @@
       "line": 10,
       "end_line": 16,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_sweep::test_dry_run_lists_one_command_per_seed",
+      "native_test_id": "reference.native_research_sweep::test_dry_run_lists_one_command_per_seed",
       "native_source": "native/tests/reference/test_research_sweep.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_sweep.py::test_dry_run_lists_one_command_per_seed"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_sweep.cpp; CTest reference.native_research_sweep green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_sweep.py",
@@ -28652,13 +28716,17 @@
       "line": 19,
       "end_line": 22,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_sweep::test_seed_ranges_and_lists_parse",
+      "native_test_id": "reference.native_research_sweep::test_seed_ranges_and_lists_parse",
       "native_source": "native/tests/reference/test_research_sweep.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_sweep.py::test_seed_ranges_and_lists_parse"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_sweep.cpp; CTest reference.native_research_sweep green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_research_sweep.py",
@@ -28666,13 +28734,17 @@
       "line": 25,
       "end_line": 30,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_research_sweep::test_summary_records_return_codes",
+      "native_test_id": "reference.native_research_sweep::test_summary_records_return_codes",
       "native_source": "native/tests/reference/test_research_sweep.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_research_sweep.py::test_summary_records_return_codes"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); C++ port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33b lane/e: ported to native/tests/reference/test_research_sweep.cpp; CTest reference.native_research_sweep green darwin-arm64 (build/native-release) + linux-aarch64 (bike-dev-pfc-lane-e, /build/root-ref)"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",

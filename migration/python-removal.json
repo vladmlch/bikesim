@@ -16929,12 +16929,10 @@
       "native/tests/reference/test_research_capture.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_capture_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e040cb339c177d81674cedd2f4f976ba557fac5f98bd86d31b5fd259fc1f50e7",
     "snapshot_line_count": 160,
     "tracked": true,
@@ -16950,12 +16948,10 @@
       "native/tests/reference/test_research_frontend.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_frontend_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ea12e2fbb91410173ddfc2dc1a8a683f097dc2e3a97089119ffd4ac94cb7df7e",
     "snapshot_line_count": 30,
     "tracked": true,
@@ -16971,12 +16967,10 @@
       "native/tests/reference/test_research_recording_lifecycle.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_recording_lifecycle"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "070ee8398960d7d59c69bfc0c22f6c83fa18379e84e0ac333cfd40687e979462",
     "snapshot_line_count": 167,
     "tracked": true,
@@ -16992,12 +16986,10 @@
       "native/tests/reference/test_research_sweep.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_research_sweep"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "db23541f31f1ccec0f8e33cb88db71237a87285ea96fc3516f6d7a216e39c449",
     "snapshot_line_count": 30,
     "tracked": true,

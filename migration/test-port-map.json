@@ -32117,13 +32117,18 @@
       "line": 395,
       "end_line": 409,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_cross_compiling_configure_is_refused",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::cross_compiling_configure_is_refused_BikePlatform,cross_compiling_configure_is_refused_BikeHostTarget",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_cross_compiling_configure_is_refused[BikePlatform]",
+        "tests/portability/test_cmake_platform.py::test_cross_compiling_configure_is_refused[BikeHostTarget]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::cross_compiling_configure_is_refused_BikePlatform,cross_compiling_configure_is_refused_BikeHostTarget); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32131,13 +32136,17 @@
       "line": 412,
       "end_line": 424,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_host_dispatch_names_the_configured_host",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::host_dispatch_names_the_configured_host",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_host_dispatch_names_the_configured_host"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::host_dispatch_names_the_configured_host); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32145,13 +32154,17 @@
       "line": 100,
       "end_line": 127,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_linux_configure_never_invokes_apple_tools",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::linux_configure_never_invokes_apple_tools",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_linux_configure_never_invokes_apple_tools"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 8 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::linux_configure_never_invokes_apple_tools); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32159,13 +32172,17 @@
       "line": 146,
       "end_line": 155,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_linux_rejects_foreign_system_name",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::linux_rejects_foreign_system_name",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_linux_rejects_foreign_system_name"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::linux_rejects_foreign_system_name); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32173,13 +32190,17 @@
       "line": 131,
       "end_line": 142,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_linux_rejects_osx_sysroot_option",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::linux_rejects_osx_sysroot_option",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_linux_rejects_osx_sysroot_option"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::linux_rejects_osx_sysroot_option); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32187,13 +32208,17 @@
       "line": 296,
       "end_line": 330,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_default_falls_back_from_link_incompatible_sdk",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_default_falls_back_from_link_incompatible_sdk",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_default_falls_back_from_link_incompatible_sdk"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 6 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_default_falls_back_from_link_incompatible_sdk); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32201,13 +32226,17 @@
       "line": 203,
       "end_line": 218,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_default_sdk_resolves_via_xcrun",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_default_sdk_resolves_via_xcrun",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_default_sdk_resolves_via_xcrun"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 6 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_default_sdk_resolves_via_xcrun); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32215,13 +32244,17 @@
       "line": 334,
       "end_line": 357,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_explicit_link_incompatible_sdk_is_fatal",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_explicit_link_incompatible_sdk_is_fatal",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_explicit_link_incompatible_sdk_is_fatal"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_explicit_link_incompatible_sdk_is_fatal); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32229,13 +32262,17 @@
       "line": 246,
       "end_line": 265,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_explicit_sdk_alias_is_canonicalized",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_explicit_sdk_alias_is_canonicalized",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_explicit_sdk_alias_is_canonicalized"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 5 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_explicit_sdk_alias_is_canonicalized); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32243,13 +32280,17 @@
       "line": 222,
       "end_line": 242,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_explicit_sdk_name_is_resolved",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_explicit_sdk_name_is_resolved",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_explicit_sdk_name_is_resolved"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 6 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_explicit_sdk_name_is_resolved); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32257,13 +32298,17 @@
       "line": 269,
       "end_line": 279,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_missing_explicit_sdk_path_fails",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_missing_explicit_sdk_path_fails",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_missing_explicit_sdk_path_fails"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_missing_explicit_sdk_path_fails); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_cmake_platform.py",
@@ -32271,13 +32316,17 @@
       "line": 283,
       "end_line": 292,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_cmake_platform::test_macos_unavailable_sdk_name_fails",
-      "native_source": "native/tests/reference/test_cmake_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::macos_unavailable_sdk_name_fails",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_cmake_platform.py::test_macos_unavailable_sdk_name_fails"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::macos_unavailable_sdk_name_fails); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32285,13 +32334,17 @@
       "line": 343,
       "end_line": 349,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_cxx23_library_features_are_probed",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_cxx23_library_features_probed",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_cxx23_library_features_are_probed"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_cxx23_library_features_probed); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32299,13 +32352,17 @@
       "line": 250,
       "end_line": 262,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_every_first_party_command_keeps_strict_cpp23_and_fp_contract",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_strict_cpp23_and_fp_contract",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_every_first_party_command_keeps_strict_cpp23_and_fp_contract"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 7 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_strict_cpp23_and_fp_contract); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32313,13 +32370,17 @@
       "line": 353,
       "end_line": 361,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_fortify_source_follows_optimized_configs",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_fortify_source_follows_optimized_configs",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_fortify_source_follows_optimized_configs"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_fortify_source_follows_optimized_configs); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32327,13 +32388,17 @@
       "line": 296,
       "end_line": 313,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_host_dispatch_applies_the_platform_flags",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_host_dispatch_applies_platform_flags",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_host_dispatch_applies_the_platform_flags"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 9 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_host_dispatch_applies_platform_flags); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32341,13 +32406,17 @@
       "line": 231,
       "end_line": 247,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_linux_x86_policy_has_no_arm_or_apple_flags",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_linux_x86_no_arm_or_apple_flags",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_linux_x86_policy_has_no_arm_or_apple_flags"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 10 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_linux_x86_no_arm_or_apple_flags); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32355,13 +32424,17 @@
       "line": 279,
       "end_line": 288,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_missing_required_numeric_flag_fails_configuration",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_missing_required_flag_fails_configuration",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_missing_required_numeric_flag_fails_configuration"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_missing_required_flag_fails_configuration); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32369,13 +32442,19 @@
       "line": 370,
       "end_line": 387,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_policy_under_each_available_compiler",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_under_each_available_compiler",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_policy_under_each_available_compiler[/usr/bin/c++]",
+        "tests/portability/test_compiler_policy.py::test_policy_under_each_available_compiler[/usr/bin/clang++]",
+        "tests/portability/test_compiler_policy.py::test_policy_under_each_available_compiler[/usr/bin/g++]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s) on darwin-arm64, 8 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_under_each_available_compiler); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32383,13 +32462,17 @@
       "line": 316,
       "end_line": 323,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_simulated_aarch64_keeps_branch_protection",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_simulated_aarch64_keeps_branch_protection",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_simulated_aarch64_keeps_branch_protection"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_simulated_aarch64_keeps_branch_protection); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32397,13 +32480,17 @@
       "line": 326,
       "end_line": 340,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_stdlib_hardening_dispatch",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_stdlib_hardening_dispatch",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_stdlib_hardening_dispatch"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 5 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_stdlib_hardening_dispatch); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_compiler_policy.py",
@@ -32411,13 +32498,17 @@
       "line": 265,
       "end_line": 276,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_compiler_policy::test_unsupported_optional_warning_is_omitted_and_recorded",
-      "native_source": "native/tests/reference/test_compiler_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::policy_unsupported_warning_omitted_and_recorded",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_compiler_policy.py::test_unsupported_optional_warning_is_omitted_and_recorded"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::policy_unsupported_warning_omitted_and_recorded); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32425,13 +32516,15 @@
       "line": 57,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dependency_policy::test_check_dependencies_enforces_exact_native_pins",
-      "native_source": "native/tests/reference/test_dependency_policy.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: drop: artifact.check_dependencies is interpreter-side enforcement before extension load and has no C++ subject; dies with the interpreter at T63"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32439,13 +32532,15 @@
       "line": 79,
       "end_line": 82,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dependency_policy::test_fallback_mirrors_the_exact_native_pins",
-      "native_source": "native/tests/reference/test_dependency_policy.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: drop: asserts two Python constants of the deleted artifact module stay in sync; no C++ behavior is lost"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32453,13 +32548,17 @@
       "line": 19,
       "end_line": 24,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dependency_policy::test_native_scientific_versions_are_pinned",
-      "native_source": "native/tests/reference/test_dependency_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::native_scientific_versions_are_pinned",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_native_scientific_versions_are_pinned"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::native_scientific_versions_are_pinned); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32469,11 +32568,15 @@
       "owner_task": "T53",
       "native_test_id": "ported::tests::portability::test_dependency_policy::test_preserved_scientific_pins_and_python_floor",
       "native_source": "native/tests/reference/test_dependency_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_preserved_scientific_pins_and_python_floor"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
       "comparison_class": "unassigned",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.36 lane/c: live-oracle red at HEAD \u2014 the oracle asserts requires-python == \">=3.13\" verbatim while pyproject.toml carries \">=3.13,<3.14\" (uv-run pytest -x test_preserved_scientific_pins_and_python_floor: FAILED, '>=3.13,<3.14' != '>=3.13'); retained planned pending upstream resolution of assertion vs pin. The four declared-pin checks that do hold are covered by migration_T53_portability::preserved_scientific_pins"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32481,13 +32584,15 @@
       "line": 70,
       "end_line": 76,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dependency_policy::test_required_dependencies_fallback_is_retained",
-      "native_source": "native/tests/reference/test_dependency_policy.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: drop: the bundled fallback table is a Python constant of the deleted artifact module; no C++ behavior is lost"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32495,13 +32600,15 @@
       "line": 49,
       "end_line": 54,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dependency_policy::test_required_dependencies_returns_direct_exact_native_pins",
-      "native_source": "native/tests/reference/test_dependency_policy.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: drop: the enforced map lives in bike_sim.native.artifact, an interpreter-side module deleted at T63; dependency identity is owned natively by the produced check context (migration_T56 context cases)"
+      ]
     },
     {
       "source_path": "tests/portability/test_dependency_policy.py",
@@ -32509,13 +32616,17 @@
       "line": 38,
       "end_line": 46,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dependency_policy::test_threadpoolctl_is_a_tooling_floor_not_an_exact_pin",
-      "native_source": "native/tests/reference/test_dependency_policy.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::threadpoolctl_tooling_floor_not_exact_pin",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_threadpoolctl_is_a_tooling_floor_not_an_exact_pin"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body; declared floor ported; the artifact.required_dependencies() side is interpreter-scoped and dies at T63",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::threadpoolctl_tooling_floor_not_exact_pin); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -37795,13 +37906,17 @@
       "line": 327,
       "end_line": 333,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_build_id_vectors_are_present_and_cover_both_outcomes",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::build_id_vectors_present_and_cover_both_outcomes",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_build_id_vectors_are_present_and_cover_both_outcomes"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::build_id_vectors_present_and_cover_both_outcomes); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37809,13 +37924,17 @@
       "line": 350,
       "end_line": 383,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_cmake_build_id_matches_the_shared_vectors",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::cmake_build_id_matches_the_shared_vectors",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_cmake_build_id_matches_the_shared_vectors"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::cmake_build_id_matches_the_shared_vectors); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37823,13 +37942,17 @@
       "line": 43,
       "end_line": 63,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_committed_provider_records_qualify_every_bound_operation",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::committed_provider_records_qualify_bound_operations",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_committed_provider_records_qualify_every_bound_operation"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 6 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::committed_provider_records_qualify_bound_operations); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37837,13 +37960,17 @@
       "line": 235,
       "end_line": 250,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_declarations_reject_a_build_id_count_that_does_not_match",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::declarations_reject_build_id_count_mismatch",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_declarations_reject_a_build_id_count_that_does_not_match"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::declarations_reject_build_id_count_mismatch); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37851,13 +37978,17 @@
       "line": 253,
       "end_line": 268,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_declarations_reject_a_record_that_lists_other_providers",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::declarations_reject_record_lists_other_providers",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_declarations_reject_a_record_that_lists_other_providers"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::declarations_reject_record_lists_other_providers); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37865,13 +37996,17 @@
       "line": 194,
       "end_line": 216,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_declarations_reproduce_the_accelerate_identity",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::declarations_reproduce_accelerate_identity",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_declarations_reproduce_the_accelerate_identity"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::declarations_reproduce_accelerate_identity); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37879,13 +38014,17 @@
       "line": 219,
       "end_line": 232,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_declarations_write_a_missing_build_id_as_null",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::declarations_missing_build_id_as_null",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_declarations_write_a_missing_build_id_as_null"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::declarations_missing_build_id_as_null); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37893,13 +38032,17 @@
       "line": 310,
       "end_line": 320,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_probe_fails_configure_when_a_required_image_is_not_loaded",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::probe_fails_when_required_image_not_loaded",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_probe_fails_configure_when_a_required_image_is_not_loaded"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::probe_fails_when_required_image_not_loaded); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37907,13 +38050,17 @@
       "line": 295,
       "end_line": 306,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_probe_reports_the_loaded_accelerate_images",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::probe_reports_the_loaded_accelerate_images",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_probe_reports_the_loaded_accelerate_images"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::probe_reports_the_loaded_accelerate_images); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37921,13 +38068,17 @@
       "line": 158,
       "end_line": 166,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_probe_text_fails_for_an_image_it_did_not_report",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::probe_text_fails_for_unreported_image",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_probe_text_fails_for_an_image_it_did_not_report"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::probe_text_fails_for_unreported_image); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37935,13 +38086,17 @@
       "line": 169,
       "end_line": 177,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_probe_text_fails_for_an_image_without_an_lc_uuid",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::probe_text_fails_for_no_lc_uuid",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_probe_text_fails_for_an_image_without_an_lc_uuid"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::probe_text_fails_for_no_lc_uuid); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37949,13 +38104,19 @@
       "line": 185,
       "end_line": 191,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_probe_text_rejects_a_malformed_uuid",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::probe_text_rejects_malformed_uuid",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_probe_text_rejects_a_malformed_uuid[a697e7b9-8ff4-356c-a507-64b38af1cca]",
+        "tests/portability/test_provider_identity.py::test_probe_text_rejects_a_malformed_uuid[A697E7B9-8FF4-356C-A507-64B38AF1CCAA]",
+        "tests/portability/test_provider_identity.py::test_probe_text_rejects_a_malformed_uuid[a697e7b98ff4356ca50764b38af1ccaa]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s) on darwin-arm64, 2 assert statement(s) in source body; one cmake case loops the three vectors",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::probe_text_rejects_malformed_uuid); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37963,13 +38124,17 @@
       "line": 145,
       "end_line": 155,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_probe_text_yields_the_reported_uuid",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::probe_text_yields_the_reported_uuid",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_probe_text_yields_the_reported_uuid"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::probe_text_yields_the_reported_uuid); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37977,13 +38142,15 @@
       "line": 337,
       "end_line": 347,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_python_build_id_matches_the_shared_vectors",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
       "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: drop: the Python build-id spelling lives in bike_sim.native.provider_build_id, deleted at T63; the surviving CMake spelling is covered by cmake_build_id_matches_the_shared_vectors over the same vectors"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -37991,13 +38158,17 @@
       "line": 468,
       "end_line": 475,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_root_identity_equals_the_legacy_graph_on_this_host",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::root_identity_equals_the_legacy_graph",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_root_identity_equals_the_legacy_graph_on_this_host"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 1 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::root_identity_equals_the_legacy_graph); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_provider_identity.py",
@@ -38005,13 +38176,17 @@
       "line": 386,
       "end_line": 403,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_provider_identity::test_the_build_id_spelling_has_one_home_per_language",
-      "native_source": "native/tests/reference/test_provider_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::build_id_spelling_has_one_home_per_language",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_provider_identity.py::test_the_build_id_spelling_has_one_home_per_language"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 1 assert statement(s) in source body",
+      "comparison_class": "structural",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::build_id_spelling_has_one_home_per_language); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_qualification_report.py",
@@ -39097,13 +39272,17 @@
       "line": 58,
       "end_line": 69,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_root_configure::test_interpreter_shim_records_a_spawn_by_name",
-      "native_source": "native/tests/reference/test_root_configure.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::interpreter_shim_records_a_spawn_by_name",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_root_configure.py::test_interpreter_shim_records_a_spawn_by_name"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::interpreter_shim_records_a_spawn_by_name); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_root_configure.py",
@@ -39111,13 +39290,17 @@
       "line": 74,
       "end_line": 87,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_root_configure::test_root_configure_starts_no_interpreter",
-      "native_source": "native/tests/reference/test_root_configure.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::root_configure_starts_no_interpreter",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_root_configure.py::test_root_configure_starts_no_interpreter"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::root_configure_starts_no_interpreter); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_root_configure.py",
@@ -39125,13 +39308,17 @@
       "line": 106,
       "end_line": 116,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_root_configure::test_root_fails_closed_on_python_bindings",
-      "native_source": "native/tests/reference/test_root_configure.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::root_fails_closed_on_python_bindings",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_root_configure.py::test_root_fails_closed_on_python_bindings"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 2 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::root_fails_closed_on_python_bindings); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_root_configure.py",
@@ -39139,13 +39326,17 @@
       "line": 90,
       "end_line": 101,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_root_configure::test_root_refuses_a_cross_compiling_toolchain",
-      "native_source": "native/tests/reference/test_root_configure.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::root_refuses_a_cross_compiling_toolchain",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_root_configure.py::test_root_refuses_a_cross_compiling_toolchain"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 4 assert statement(s) in source body",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.36 lane/c: ported to native/tests/migration/migration_T53_portability.cmake (migration_T53_portability::root_refuses_a_cross_compiling_toolchain); CTest green darwin-arm64 (build/native-release ctest, 340.80s, 44 cases pass / 1 linux-gated skip) and linux-aarch64 (bike-dev-pfc-lane-c /build/root-clang ctest, 102.56s, 38 cases pass / 1 darwin-gated skip)"
+      ]
     },
     {
       "source_path": "tests/portability/test_viewer_launch_platform.py",

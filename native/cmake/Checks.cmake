@@ -84,6 +84,29 @@ if(NOT TARGET check_contracts)
     VERBATIM)
 endif()
 
+# --- migration_T53_portability: portability/tooling contract (batch 3.36) -
+# cmake -P script cases: scratch configures against the real Bike*.cmake
+# modules (platform dispatch, compiler policy, provider identity, root
+# configure guards, declared pin policy). Runs no produced binaries.
+if(BUILD_TESTING)
+  add_test(NAME migration_T53_portability
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T53_portability"
+      -D "DEPS_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/.deps"
+      -P "${_checks_native_dir}/tests/migration/migration_T53_portability.cmake")
+  # The case list includes scratch configures and real compiler builds;
+  # give the whole script a generous budget.
+  set_tests_properties(migration_T53_portability PROPERTIES
+    LABELS "migration;t53;portability" TIMEOUT 3600)
+  if(NOT TARGET migration_T53_portability)
+    add_custom_target(migration_T53_portability
+      COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
+              -R "^migration_T53_portability$" --no-tests=error --output-on-failure
+      USES_TERMINAL)
+  endif()
+endif()
+
 # --- migration_T56: fixture contract for the produced orchestrator --------
 if(BUILD_TESTING)
   add_test(NAME migration_T56

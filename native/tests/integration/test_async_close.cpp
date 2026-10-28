@@ -11,8 +11,12 @@
 #include "../support/migration_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "../reference/runtime_reference_support.hpp"
+#include "research/environment.hpp"
+#include "research/lifecycle.hpp"
+#include "research/policy_session.hpp"
 #include "runtime/accounting.hpp"
 #include "runtime/async_close.hpp"
+#include "runtime/research_io.hpp"
 #include "runtime/runtime.hpp"
 #include <atomic>
 #include <memory>
@@ -364,6 +368,203 @@ std::vector<std::shared_ptr<const std::vector<RawStep>>> disable_phase_preserve(
             "model_status travels identically through the worker");
     }
 }
+
+// --- research owner / driver close records -----------------------------------
+// The Python adapter's _window/_closed/_replay_assets_owner session state maps
+// onto PolicySession (policy + environment owners), the unconditional
+// NativeResearchRuntime::close discard, and the FailureReport note plumbing in
+// research/lifecycle. AsyncCloseRunner is constructed inside PeriodAccounting
+// only when async_telemetry is set — that is the "owns only needed worker"
+// boundary the [native-False] driver record pins.
+namespace res = bike::research;
+
+// The failing worker-close owner: close() throws once; the call count proves
+// whether a close path retried the failed owner.
+class FailingClosePolicy final : public res::Policy {
+public:
+    explicit FailingClosePolicy(std::shared_ptr<int> closes) : closes_(std::move(closes)) {}
+    ~FailingClosePolicy() override;
+    FailingClosePolicy(const FailingClosePolicy&) = delete;
+    FailingClosePolicy& operator=(const FailingClosePolicy&) = delete;
+    FailingClosePolicy(FailingClosePolicy&&) = delete;
+    FailingClosePolicy& operator=(FailingClosePolicy&&) = delete;
+    void reset(std::string_view) override {}
+    [[nodiscard]] runtime::RideControl act(const runtime::SensorObservation&,
+                                           std::optional<double>) override {
+        runtime::RideControl control;
+        control.motor_torque_nm = 0.;
+        return control;
+    }
+    void close() override {
+        ++*closes_;
+        throw std::runtime_error("worker cleanup");
+    }
+private:
+    std::shared_ptr<int> closes_;
+};
+FailingClosePolicy::~FailingClosePolicy() = default;
+
+class ResetFailurePolicy final : public res::Policy {
+public:
+    ~ResetFailurePolicy() override;
+    ResetFailurePolicy(const ResetFailurePolicy&) = delete;
+    ResetFailurePolicy& operator=(const ResetFailurePolicy&) = delete;
+    ResetFailurePolicy(ResetFailurePolicy&&) = delete;
+    ResetFailurePolicy& operator=(ResetFailurePolicy&&) = delete;
+    ResetFailurePolicy() = default;
+    [[noreturn]] void reset(std::string_view) override {
+        throw std::runtime_error("injected constructor reset failure");
+    }
+    [[noreturn]] runtime::RideControl act(const runtime::SensorObservation&,
+                                          std::optional<double>) override {
+        throw std::runtime_error("act must not run after reset failure");
+    }
+};
+ResetFailurePolicy::~ResetFailurePolicy() = default;
+
+[[nodiscard]] [[gnu::noinline]]
+std::unique_ptr<res::PreparedEnvironment> research_seed(bool async_telemetry) {
+    auto request = std::make_unique<res::ResearchRequest>(
+        res::read_research_request(bt::fixture("requests/research_delay.toml")));
+    request->experiment.async_telemetry = async_telemetry;
+    return res::prepare_environment(std::move(request));
+}
+
+// test_research_close_keeps_active_window_guard_and_discards_without_steps —
+// the adapter's 'active interval' guard lives on PolicySession::close(): an
+// accepted but unfinished window makes close() throw before either owner runs,
+// the window and worker survive, and the unconditional environment close is
+// the discard_pending twin — it abandons the pending interval without
+// consuming steps.
+[[gnu::noinline]] void research_close_keeps_active_window_guard_and_discards_without_steps() {
+    const auto closes = std::make_shared<int>(0);
+    auto seed = research_seed(false);
+    res::PolicySession session(runtime::make_research(seed->bootstrap),
+        std::make_unique<FailingClosePolicy>(closes));
+    session.begin_advance();
+    bt::require(session.pending(), "the accepted policy interval is active");
+    bool guarded = false;
+    try { session.close(); }
+    catch (const std::runtime_error& error) {
+        guarded = std::string(error.what()).find("policy interval") != std::string::npos;
+    }
+    bt::require(guarded && *closes == 0,
+        "the window guard fires before either owner close runs");
+    bt::require(session.pending() && !session.environment().closed(),
+        "the window and the environment survive the rejected close");
+    bt::require(session.environment().snapshot().step == 0,
+        "the pending window consumed no steps");
+    session.environment().close();
+    bt::require(session.environment().closed(),
+        "the discard close releases the environment without finishing the window");
+}
+
+// test_research_close_attempts_both_owners_preserving_first_failure —
+// PolicySession::close() attempts policy->close() then environment->close(),
+// rethrows the first failure and records a second as a cleanup note. The
+// secondary-note arm ("environment close also failed") is reachable only
+// through a re-entrant environment close (ResearchGuard) — no public seam
+// injects it; the close_environment wrapper proves primary preservation and
+// the cleanup_notes->secondary merge instead. Where the oracle retries a
+// failed owner, the native close latches closed: failure is recorded, not
+// retried.
+// close_environment lifts a failing session close into FailureReport: the
+// first failure stays rethrowable and session cleanup notes append as
+// secondaries (the oracle's exception __notes__ twin). noinline keeps the
+// session frame out of the caller (-Wframe-larger-than=8192).
+[[gnu::noinline]] void close_environment_wraps_first_failure() {
+    const auto closes = std::make_shared<int>(0);
+    auto seed = research_seed(false);
+    res::PolicySession session(runtime::make_research(seed->bootstrap),
+        std::make_unique<FailingClosePolicy>(closes));
+    res::FailureReport report;
+    res::close_environment(session, report);
+    bool preserved = false;
+    try { report.rethrow_if_failed(); }
+    catch (const std::runtime_error& error) {
+        preserved = std::string(error.what()).find("worker cleanup") != std::string::npos;
+    }
+    bt::require(preserved && session.environment().closed(),
+        "the report preserves the first failure after attempting both owners");
+}
+
+[[gnu::noinline]] void research_close_attempts_both_owners_preserving_first_failure() {
+    const auto closes = std::make_shared<int>(0);
+    auto seed = research_seed(false);
+    res::PolicySession session(runtime::make_research(seed->bootstrap),
+        std::make_unique<FailingClosePolicy>(closes));
+    bool primary = false;
+    try { session.close(); }
+    catch (const std::runtime_error& error) {
+        primary = std::string(error.what()).find("worker cleanup") != std::string::npos;
+    }
+    bt::require(primary, "the policy-owner failure is the preserved primary");
+    bt::require(session.environment().closed() && *closes == 1,
+        "the environment owner close is still attempted exactly once");
+    session.close();
+    bt::require(*closes == 1,
+        "a latched close does not retry the failed owner");
+    close_environment_wraps_first_failure();
+}
+
+// test_research_constructor_failure_releases_worker — PolicySession restores
+// named environment ownership when start_policy throws, so the caller still
+// closes the worker-owning runtime (async_telemetry makes the worker live at
+// construction; the close joins it inside accounting teardown).
+[[gnu::noinline]] void research_constructor_failure_releases_worker() {
+    auto seed = research_seed(true);
+    auto environment = runtime::make_research(seed->bootstrap);
+    bool primary = false;
+    try {
+        res::PolicySession const failed(std::move(environment),
+            std::make_unique<ResetFailurePolicy>());
+    } catch (const std::runtime_error& error) {
+        primary = std::string(error.what()).find("injected constructor reset failure")
+            != std::string::npos;
+    }
+    bt::require(primary, "the constructor failure propagates");
+    // NOLINTNEXTLINE(bugprone-use-after-move) asserting restored ownership is the test's purpose
+    bt::require(environment != nullptr,
+        "caller environment ownership is restored on constructor failure");
+    environment->close();
+    bt::require(environment->closed(),
+        "the restored environment releases its async worker on close");
+}
+
+// test_physical_driver_construction_owns_only_needed_worker[native-False] —
+// a synchronous session owns no AsyncCloseRunner; async_telemetry constructs
+// exactly the one worker it needs. The [python-True] parametrization pins the
+// python-backend adapter seam and is a documented drop.
+[[gnu::noinline]] void construction_owns_only_needed_worker() {
+    runtime::PeriodAccounting sync_only(synthetic_config(), synthetic_state(), 1,
+        nullptr, nullptr);
+    bt::require(!sync_only.asynchronous(),
+        "a synchronous session owns no async worker");
+    runtime::AccountingConfig async_config = synthetic_config();
+    async_config.async_telemetry = true;
+    runtime::PeriodAccounting async_owner(async_config, synthetic_state(), 1,
+        nullptr, nullptr);
+    bt::require(async_owner.asynchronous(),
+        "async telemetry constructs exactly the worker it needs");
+}
+
+// test_python_driver_close_releases_worker_once — the driver-close twin on
+// the owned runtime: close() latches and a second close is a no-op, so the
+// async worker is released exactly once.
+[[gnu::noinline]] void driver_close_releases_worker_once() {
+    namespace rr = runtime_reference;
+    auto docs = rr::resolved_docs(rr::welded_dir());
+    rr::set_member(docs.config, "async_telemetry", rr::bio::Value{true});
+    auto ride = rr::compose_runtime(docs);
+    ride->close();
+    bool latched = false;
+    try { (void)ride->snapshot(); }
+    catch (const std::logic_error& error) {
+        latched = std::string(error.what()).find("closed") != std::string::npos;
+    }
+    bt::require(latched, "the first close latches the runtime");
+    ride->close(); // idempotent — the worker was released exactly once
+}
 } // namespace
 
 int main() {
@@ -377,5 +578,10 @@ int main() {
         resource_close_never_publishes_or_drains();
         disabling_worker_preserves_publication_error_and_closes();
         async_close_publishes_identical_samples();
+        research_close_keeps_active_window_guard_and_discards_without_steps();
+        research_close_attempts_both_owners_preserving_first_failure();
+        research_constructor_failure_releases_worker();
+        construction_owns_only_needed_worker();
+        driver_close_releases_worker_once();
     });
 }

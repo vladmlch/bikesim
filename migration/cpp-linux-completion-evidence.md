@@ -9019,3 +9019,136 @@ ledgers post-merge. All 9 in-scope cases green on both platforms. L3
 (`tools/run_tests.sh native`) not re-run — bounded merge-back scope
 per protocol; lane/a's own gate evidence is in `task-C331-report.md`
 (baseline-blocked clean on the documented T09/T10 pair).
+
+## 2026-10-28 — 3.33a qualification (lane/a): native research capture/environment/failures/frontend/policy/programs/recording/sensors
+
+### Scope
+
+Eight `tests/reference/test_native_research_*.py` files — 41 port-map
+records / 78 collected nodes (policy collects `[python]`+`[native]`
+fixture params; `test_noise_latency_...` expands to 18 nodes,
+`test_program_knots_...` to 6). Dispositions: **24 `port`**, **5
+`golden`**, **12 `planned`** (all live-oracle parity legs on the
+documented welded baseline drift, plus two Python-adapter-only
+surfaces: the injected `_transition` publication failure and the
+`rider_behavior` callback object — row-specific evidence on each).
+
+New CTest nodes, all `bike_add_reference_test(... LABELS t53
+research)` in `Phase3Ports.cmake` (the two golden targets also carry
+`golden`): `reference.native_research_capture` (1),
+`reference.native_research_environment` (4),
+`reference.native_research_failures` (1),
+`reference.native_research_frontend` (1),
+`reference.native_research_policy` (7),
+`reference.native_research_programs` (3),
+`reference.native_research_recording` (6),
+`reference.native_research_sensors` (5). New shared seam
+`research_reference_support.{hpp,cpp}` — environment_factory knobs →
+the established flat-track recipe, staged reseed, sensor flatteners,
+`CountingPolicy`, fragment helpers.
+
+### Golden capture
+
+- darwin-arm64: `BIKE_GOLDEN_CAPTURE=tests/fixtures/golden
+  NATIVE_TEST_BUILD_PATH=$PWD/native/build PYTHONPATH=tests/reference
+  uv run --frozen python -m pytest
+  test_native_research_{programs,sensors}.py -q` — **31 passed**; 27
+  node pairs under `tests/fixtures/golden/darwin-arm64/`.
+- linux-aarch64 (`bike-dev-pfc-lane-a`): same files under
+  `/opt/bike-venv` + a container-built
+  `bike_native.cpython-313-aarch64-linux-gnu.so` — **31 passed**;
+  `linux-aarch64` dirs `docker cp`'d back and committed.
+
+### Verification
+
+darwin-arm64 (`build/native-release`, AppleClang, Release):
+
+```text
+Test project .../pfc-lane-a/build/native-release
+    Start 195: reference.native_research_capture
+1/8 Test #195: reference.native_research_capture .......   Passed    0.39 sec
+    Start 196: reference.native_research_environment
+2/8 Test #196: reference.native_research_environment ...   Passed    1.44 sec
+    Start 197: reference.native_research_failures
+3/8 Test #197: reference.native_research_failures ......   Passed    0.38 sec
+    Start 198: reference.native_research_frontend
+4/8 Test #198: reference.native_research_frontend ......   Passed    0.39 sec
+    Start 199: reference.native_research_policy
+5/8 Test #199: reference.native_research_policy ........   Passed    2.52 sec
+    Start 200: reference.native_research_programs
+6/8 Test #200: reference.native_research_programs ......   Passed    0.04 sec
+    Start 201: reference.native_research_recording
+7/8 Test #201: reference.native_research_recording .....   Passed    3.47 sec
+    Start 202: reference.native_research_sensors
+8/8 Test #202: reference.native_research_sensors .......   Passed    0.05 sec
+
+100% tests passed out of 8
+
+Label Time Summary:
+golden       =   0.09 sec*proc (2 tests)
+reference    =   8.68 sec*proc (8 tests)
+research     =   8.68 sec*proc (8 tests)
+t53          =   8.68 sec*proc (8 tests)
+
+Total Test time (real) =   8.69 sec
+```
+
+linux-aarch64 (`bike-dev-pfc-lane-a`, clang++-18, ninja Release):
+
+```text
+Test project /src/build/native-release
+    Start 174: reference.native_research_capture
+1/8 Test #174: reference.native_research_capture .......   Passed    0.31 sec
+    Start 175: reference.native_research_environment
+2/8 Test #175: reference.native_research_environment ...   Passed    0.85 sec
+    Start 176: reference.native_research_failures
+3/8 Test #176: reference.native_research_failures ......   Passed    0.31 sec
+    Start 177: reference.native_research_frontend
+4/8 Test #177: reference.native_research_frontend ......   Passed    0.31 sec
+    Start 178: reference.native_research_policy
+5/8 Test #178: reference.native_research_policy ........   Passed    1.96 sec
+    Start 179: reference.native_research_programs
+6/8 Test #179: reference.native_research_programs ......   Passed    0.00 sec
+    Start 180: reference.native_research_recording
+7/8 Test #180: reference.native_research_recording .....   Passed    2.83 sec
+    Start 181: reference.native_research_sensors
+8/8 Test #181: reference.native_research_sensors .......   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 8
+
+Label Time Summary:
+golden       =   0.02 sec*proc (2 tests)
+reference    =   6.59 sec*proc (8 tests)
+research     =   6.59 sec*proc (8 tests)
+t53          =   6.59 sec*proc (8 tests)
+
+Total Test time (real) =   6.59 sec
+```
+
+- **Red→green proof (golden byte-flip)**: darwin
+  `test_program_knots_...[None-None].bin` byte 100 `^0x01` → `FAIL ...
+  label 'program_at' element 12`, exit 1; restored → `PASS 1255
+  checks`. linux `test_same_seed_....bin` byte 40 `^0x02` → `FAIL ...
+  label 'sequence' element 5`, exit 1; restored → `PASS 27839 checks`.
+- **Static**: AppleClang + clang++-18 both clean in-source (weak
+  vtables, missing field initializers, unsafe buffer usage, dangling
+  gsl — zero suppressions).
+
+### Ledger
+
+- `migration/test-port-map.json`: 41 rows touched in place — 24
+  `port`, 5 `golden`, 12 `planned` with row-specific evidence; the
+  stale `ported::tests::reference::*` id form corrected to
+  `reference.native_research_*` on all 41; `collected_node_ids`
+  populated (78). Counters: `port` 1007 → **1031** (+24), `golden`
+  351 → **356** (+5), `planned` 920 → **891** (−29), `drop` 115.
+- `migration/python-removal.json`: `replacement_landed` 103 →
+  **108** (+5: failures, frontend, policy, programs, sensors);
+  capture/environment/recording stay `planned` on outstanding
+  live-parity records; `sha256`/`line_count` refreshed on the three
+  files touched since inventory.
+- `Phase3Ports.cmake`: 119 → **127** registrations.
+
+### Commits
+
+See `task-C333a-report.md` §Commits.

@@ -17207,13 +17207,17 @@
       "line": 17,
       "end_line": 39,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_capture::test_native_off_full_are_passive_and_full_records_every_interval",
+      "native_test_id": "reference.native_research_capture::test_native_off_full_are_passive_and_full_records_every_interval",
       "native_source": "native/tests/reference/test_native_research_capture.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: assert_tree step transitions and bitwise integration_state equality between the welded reference and both capture modes \u2014 blocked on the documented welded baseline drift; the verify-cursor sibling was ported."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_capture.py",
@@ -17221,13 +17225,17 @@
       "line": 42,
       "end_line": 62,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_capture::test_native_verify_boxing_failure_does_not_acknowledge_suffix",
+      "native_test_id": "reference.native_research_capture::test_native_verify_boxing_failure_does_not_acknowledge_suffix",
       "native_source": "native/tests/reference/test_native_research_capture.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_capture.py::test_native_verify_boxing_failure_does_not_acknowledge_suffix"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_capture.cpp; CTest reference.native_research_capture green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17235,13 +17243,17 @@
       "line": 19,
       "end_line": 38,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_native_research_matches_every_external_transition",
+      "native_test_id": "reference.native_research_environment::test_native_research_matches_every_external_transition",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_native_research_matches_every_external_transition"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: step-for-step transition equality with the Python oracle on the rough-track assist fixture \u2014 blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17249,13 +17261,17 @@
       "line": 41,
       "end_line": 63,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_one_second_pair_with_one_e_minus_nine_gate",
+      "native_test_id": "reference.native_research_environment::test_one_second_pair_with_one_e_minus_nine_gate",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_one_second_pair_with_one_e_minus_nine_gate"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: per-step bitwise integration_state and identical outcome classification across one simulated second \u2014 blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17263,13 +17279,17 @@
       "line": 66,
       "end_line": 100,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_one_second_pair_complete_episode_gate",
+      "native_test_id": "reference.native_research_environment::test_one_second_pair_complete_episode_gate",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_one_second_pair_complete_episode_gate"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: the complete 800-step episode must match bitwise under the raised energy gate \u2014 blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17277,13 +17297,20 @@
       "line": 104,
       "end_line": 125,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_delay_full_commands_immediate_brakes_and_recording",
+      "native_test_id": "reference.native_research_environment::test_delay_full_commands_immediate_brakes_and_recording",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_delay_full_commands_immediate_brakes_and_recording[1]",
+        "tests/reference/test_native_research_environment.py::test_delay_full_commands_immediate_brakes_and_recording[7]",
+        "tests/reference/test_native_research_environment.py::test_delay_full_commands_immediate_brakes_and_recording[20]",
+        "tests/reference/test_native_research_environment.py::test_delay_full_commands_immediate_brakes_and_recording[80]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: per-command transition equality plus recorder.columns and episode_metrics bitwise comparison at four decimations \u2014 the physics-dependent legs are blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17291,13 +17318,17 @@
       "line": 128,
       "end_line": 141,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_scripted_rider_and_demand_are_sampled_at_physics_rate",
+      "native_test_id": "reference.native_research_environment::test_scripted_rider_and_demand_are_sampled_at_physics_rate",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_scripted_rider_and_demand_are_sampled_at_physics_rate"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: scripted rider/demand transitions compared to the oracle step-for-step \u2014 blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17305,13 +17336,17 @@
       "line": 144,
       "end_line": 162,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_zero_budget_retains_single_window_and_no_tail_flush",
+      "native_test_id": "reference.native_research_environment::test_zero_budget_retains_single_window_and_no_tail_flush",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_zero_budget_retains_single_window_and_no_tail_flush"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_environment.cpp; CTest reference.native_research_environment green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17319,13 +17354,17 @@
       "line": 165,
       "end_line": 180,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_publication_failure_retry_does_not_advance_twice",
+      "native_test_id": "reference.native_research_environment::test_publication_failure_retry_does_not_advance_twice",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_publication_failure_retry_does_not_advance_twice"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 the probe injects a failure into the Python adapter _transition publication hook (monkeypatch on bike_sim.native.research._transition); no such hook exists in NativeResearchRuntime \u2014 the retained committed-step contract is covered by the ported zero-budget and invalid-boundary twins."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17333,13 +17372,17 @@
       "line": 183,
       "end_line": 191,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_native_loop_never_calls_python_interval_or_rng",
+      "native_test_id": "reference.native_research_environment::test_native_loop_never_calls_python_interval_or_rng",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_native_loop_never_calls_python_interval_or_rng"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_environment.cpp; CTest reference.native_research_environment green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17347,13 +17390,17 @@
       "line": 194,
       "end_line": 222,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_reset_seed_generation_snapshot_and_facade_ownership",
+      "native_test_id": "reference.native_research_environment::test_reset_seed_generation_snapshot_and_facade_ownership",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_reset_seed_generation_snapshot_and_facade_ownership"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity legs: assert_tree reset(seed=73) transition equality plus episode_metrics/metadata bitwise comparison \u2014 blocked on the documented welded baseline drift; the facade-ownership legs (snapshot write guards, AttributeError on sim attributes) are nanobind-only."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17361,13 +17408,17 @@
       "line": 225,
       "end_line": 246,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_invalid_boundary_calls_do_not_change_state",
+      "native_test_id": "reference.native_research_environment::test_invalid_boundary_calls_do_not_change_state",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_invalid_boundary_calls_do_not_change_state"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_environment.cpp; CTest reference.native_research_environment green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17375,13 +17426,17 @@
       "line": 262,
       "end_line": 275,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_custom_rider_callback_runs_once_per_external_boundary",
+      "native_test_id": "reference.native_research_environment::test_custom_rider_callback_runs_once_per_external_boundary",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_custom_rider_callback_runs_once_per_external_boundary"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 rider_behavior is a Python adapter object (bike_sim.native.research); NativeResearchRuntime has no behavior-callback hook \u2014 the port waits on a native equivalent."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17389,13 +17444,18 @@
       "line": 279,
       "end_line": 309,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_strict_and_diagnostic_outcomes_remain_visible",
+      "native_test_id": "reference.native_research_environment::test_strict_and_diagnostic_outcomes_remain_visible",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_strict_and_diagnostic_outcomes_remain_visible[False]",
+        "tests/reference/test_native_research_environment.py::test_strict_and_diagnostic_outcomes_remain_visible[True]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: InvalidReferenceRun failure equality plus reference_monitor.first_failure bitwise comparison \u2014 blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17403,13 +17463,20 @@
       "line": 322,
       "end_line": 344,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_differing_control_and_sensor_periods_match_python",
+      "native_test_id": "reference.native_research_environment::test_differing_control_and_sensor_periods_match_python",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_differing_control_and_sensor_periods_match_python[0.01-0.005-8-4]",
+        "tests/reference/test_native_research_environment.py::test_differing_control_and_sensor_periods_match_python[0.0125-0.0025-10-2]",
+        "tests/reference/test_native_research_environment.py::test_differing_control_and_sensor_periods_match_python[0.005-0.00375-4-3]",
+        "tests/reference/test_native_research_environment.py::test_differing_control_and_sensor_periods_match_python[0.00375-0.00625-3-5]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: per-step bitwise integration_state equality across four control/sensor period combinations \u2014 blocked on the documented welded baseline drift."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17417,13 +17484,17 @@
       "line": 347,
       "end_line": 357,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_environment::test_stop_on_ended_episode_preserves_original_reason",
+      "native_test_id": "reference.native_research_environment::test_stop_on_ended_episode_preserves_original_reason",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_environment.py::test_stop_on_ended_episode_preserves_original_reason"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_environment.cpp; CTest reference.native_research_environment green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_failures.py",
@@ -17431,13 +17502,17 @@
       "line": 15,
       "end_line": 69,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_failures::test_engine_failure_preserves_prefix_and_reset_recovers",
+      "native_test_id": "reference.native_research_failures::test_engine_failure_preserves_prefix_and_reset_recovers",
       "native_source": "native/tests/reference/test_native_research_failures.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_failures.py::test_engine_failure_preserves_prefix_and_reset_recovers"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_failures.cpp; CTest reference.native_research_failures green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_frontend.py",
@@ -17445,13 +17520,17 @@
       "line": 11,
       "end_line": 25,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_frontend::test_native_partial_ticks_latch_policy_until_external_boundary",
+      "native_test_id": "reference.native_research_frontend::test_native_partial_ticks_latch_policy_until_external_boundary",
       "native_source": "native/tests/reference/test_native_research_frontend.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_frontend.py::test_native_partial_ticks_latch_policy_until_external_boundary"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_frontend.cpp; CTest reference.native_research_frontend green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17459,13 +17538,18 @@
       "line": 33,
       "end_line": 58,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_one_act_per_window_and_queued_pause_brakes",
+      "native_test_id": "reference.native_research_policy::test_one_act_per_window_and_queued_pause_brakes",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_one_act_per_window_and_queued_pause_brakes[python]",
+        "tests/reference/test_native_research_policy.py::test_one_act_per_window_and_queued_pause_brakes[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17473,13 +17557,18 @@
       "line": 61,
       "end_line": 81,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_one_act_per_window_across_budget_yields",
+      "native_test_id": "reference.native_research_policy::test_one_act_per_window_across_budget_yields",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_one_act_per_window_across_budget_yields[python]",
+        "tests/reference/test_native_research_policy.py::test_one_act_per_window_across_budget_yields[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17487,13 +17576,18 @@
       "line": 84,
       "end_line": 102,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_pause_and_resume_do_not_advance_simulated_time",
+      "native_test_id": "reference.native_research_policy::test_pause_and_resume_do_not_advance_simulated_time",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_pause_and_resume_do_not_advance_simulated_time[python]",
+        "tests/reference/test_native_research_policy.py::test_pause_and_resume_do_not_advance_simulated_time[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17501,13 +17595,18 @@
       "line": 105,
       "end_line": 128,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_stop_and_reset_are_deferred_to_external_boundary",
+      "native_test_id": "reference.native_research_policy::test_stop_and_reset_are_deferred_to_external_boundary",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_stop_and_reset_are_deferred_to_external_boundary[python]",
+        "tests/reference/test_native_research_policy.py::test_stop_and_reset_are_deferred_to_external_boundary[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17515,13 +17614,18 @@
       "line": 131,
       "end_line": 142,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_invalid_operator_values_do_not_call_policy",
+      "native_test_id": "reference.native_research_policy::test_invalid_operator_values_do_not_call_policy",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_invalid_operator_values_do_not_call_policy[python]",
+        "tests/reference/test_native_research_policy.py::test_invalid_operator_values_do_not_call_policy[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17529,13 +17633,18 @@
       "line": 145,
       "end_line": 158,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_policy_failure_has_no_manufactured_transition",
+      "native_test_id": "reference.native_research_policy::test_policy_failure_has_no_manufactured_transition",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_policy_failure_has_no_manufactured_transition[python]",
+        "tests/reference/test_native_research_policy.py::test_policy_failure_has_no_manufactured_transition[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_policy.py",
@@ -17543,13 +17652,18 @@
       "line": 161,
       "end_line": 170,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_policy::test_policy_cannot_smuggle_rider_inputs",
+      "native_test_id": "reference.native_research_policy::test_policy_cannot_smuggle_rider_inputs",
       "native_source": "native/tests/reference/test_native_research_policy.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_policy.py::test_policy_cannot_smuggle_rider_inputs[python]",
+        "tests/reference/test_native_research_policy.py::test_policy_cannot_smuggle_rider_inputs[native]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_policy.cpp; CTest reference.native_research_policy green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_programs.py",
@@ -17557,13 +17671,22 @@
       "line": 17,
       "end_line": 32,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_programs::test_program_knots_optional_fields_and_association",
+      "native_test_id": "reference.native_research_programs::test_program_knots_optional_fields_and_association",
       "native_source": "native/tests/reference/test_native_research_programs.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[None-None]",
+        "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[None-offsets1]",
+        "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[0.0-None]",
+        "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[0.0-offsets1]",
+        "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[12.5-None]",
+        "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[12.5-offsets1]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: golden replay in native/tests/reference/test_native_research_programs.cpp; BIKE_GOLDEN_CAPTURE sites added in tests/reference/test_native_research_programs.py; goldens captured darwin-arm64 + linux-aarch64; CTest reference.native_research_programs green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_programs.py",
@@ -17571,13 +17694,17 @@
       "line": 35,
       "end_line": 38,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_programs::test_no_program_preserves_none_and_explicit_zero",
+      "native_test_id": "reference.native_research_programs::test_no_program_preserves_none_and_explicit_zero",
       "native_source": "native/tests/reference/test_native_research_programs.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_programs.py::test_no_program_preserves_none_and_explicit_zero"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_programs.cpp; CTest reference.native_research_programs green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_programs.py",
@@ -17585,13 +17712,17 @@
       "line": 41,
       "end_line": 50,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_programs::test_reject_mixed_effort_and_policy_posture",
+      "native_test_id": "reference.native_research_programs::test_reject_mixed_effort_and_policy_posture",
       "native_source": "native/tests/reference/test_native_research_programs.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_programs.py::test_reject_mixed_effort_and_policy_posture"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_programs.cpp; CTest reference.native_research_programs green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17599,13 +17730,17 @@
       "line": 19,
       "end_line": 73,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_shared_export_native_rows_and_complete_provenance",
+      "native_test_id": "reference.native_research_recording::test_shared_export_native_rows_and_complete_provenance",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_shared_export_native_rows_and_complete_provenance"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
       "disposition": "planned",
-      "evidence": []
+      "evidence": [
+        "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: native.save vs Python save shared-export row equality and complete provenance \u2014 blocked on the documented welded baseline drift; the six contract legs (empty/no-overwrite, staging seal, manifest seal, opaque policy, pending window, changed identity) were ported."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17613,13 +17748,17 @@
       "line": 76,
       "end_line": 85,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_empty_recording_and_no_overwrite",
+      "native_test_id": "reference.native_research_recording::test_empty_recording_and_no_overwrite",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_empty_recording_and_no_overwrite"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_recording.cpp; CTest reference.native_research_recording green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17627,13 +17766,17 @@
       "line": 88,
       "end_line": 100,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_failed_staging_does_not_destroy_existing_recording",
+      "native_test_id": "reference.native_research_recording::test_failed_staging_does_not_destroy_existing_recording",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_failed_staging_does_not_destroy_existing_recording"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_recording.cpp; CTest reference.native_research_recording green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17641,13 +17784,17 @@
       "line": 103,
       "end_line": 113,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_manifest_is_the_publication_seal",
+      "native_test_id": "reference.native_research_recording::test_manifest_is_the_publication_seal",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_manifest_is_the_publication_seal"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_recording.cpp; CTest reference.native_research_recording green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17655,13 +17802,17 @@
       "line": 116,
       "end_line": 126,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_validation_never_resolves_the_recorded_policy",
+      "native_test_id": "reference.native_research_recording::test_validation_never_resolves_the_recorded_policy",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_validation_never_resolves_the_recorded_policy"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_recording.cpp; CTest reference.native_research_recording green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17669,13 +17820,17 @@
       "line": 129,
       "end_line": 135,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_save_refuses_pending_control_window",
+      "native_test_id": "reference.native_research_recording::test_save_refuses_pending_control_window",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_save_refuses_pending_control_window"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_recording.cpp; CTest reference.native_research_recording green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_recording.py",
@@ -17683,13 +17838,19 @@
       "line": 139,
       "end_line": 152,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_recording::test_changed_execution_is_not_relabelled_as_startup_identity",
+      "native_test_id": "reference.native_research_recording::test_changed_execution_is_not_relabelled_as_startup_identity",
       "native_source": "native/tests/reference/test_native_research_recording.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_recording.py::test_changed_execution_is_not_relabelled_as_startup_identity[native_source_sha256]",
+        "tests/reference/test_native_research_recording.py::test_changed_execution_is_not_relabelled_as_startup_identity[extension_sha256]",
+        "tests/reference/test_native_research_recording.py::test_changed_execution_is_not_relabelled_as_startup_identity[mujoco_library_sha256]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_recording.cpp; CTest reference.native_research_recording green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_sensors.py",
@@ -17697,13 +17858,34 @@
       "line": 22,
       "end_line": 44,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_sensors::test_noise_latency_dropout_and_stale_match_python",
+      "native_test_id": "reference.native_research_sensors::test_noise_latency_dropout_and_stale_match_python",
       "native_source": "native/tests/reference/test_native_research_sensors.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-0.0-0.0]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-0.0-0.003]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-0.0-0.02]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-0.4-0.0]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-0.4-0.003]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-0.4-0.02]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-1.0-0.0]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-1.0-0.003]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[False-1.0-0.02]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-0.0-0.0]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-0.0-0.003]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-0.0-0.02]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-0.4-0.0]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-0.4-0.003]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-0.4-0.02]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-1.0-0.0]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-1.0-0.003]",
+        "tests/reference/test_native_research_sensors.py::test_noise_latency_dropout_and_stale_match_python[True-1.0-0.02]"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: golden replay in native/tests/reference/test_native_research_sensors.cpp; BIKE_GOLDEN_CAPTURE sites added in tests/reference/test_native_research_sensors.py; goldens captured darwin-arm64 + linux-aarch64; CTest reference.native_research_sensors green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_sensors.py",
@@ -17711,13 +17893,17 @@
       "line": 47,
       "end_line": 59,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_sensors::test_imported_startup_row_is_not_drawn_twice",
+      "native_test_id": "reference.native_research_sensors::test_imported_startup_row_is_not_drawn_twice",
       "native_source": "native/tests/reference/test_native_research_sensors.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_sensors.py::test_imported_startup_row_is_not_drawn_twice"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: golden replay in native/tests/reference/test_native_research_sensors.cpp; BIKE_GOLDEN_CAPTURE sites added in tests/reference/test_native_research_sensors.py; goldens captured darwin-arm64 + linux-aarch64; CTest reference.native_research_sensors green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_sensors.py",
@@ -17725,13 +17911,17 @@
       "line": 62,
       "end_line": 85,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_sensors::test_invalid_operations_and_exhaustion_preserve_state",
+      "native_test_id": "reference.native_research_sensors::test_invalid_operations_and_exhaustion_preserve_state",
       "native_source": "native/tests/reference/test_native_research_sensors.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_sensors.py::test_invalid_operations_and_exhaustion_preserve_state"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_sensors.cpp; CTest reference.native_research_sensors green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_sensors.py",
@@ -17739,13 +17929,17 @@
       "line": 88,
       "end_line": 104,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_sensors::test_irregular_delivery_schedule_matches_python",
+      "native_test_id": "reference.native_research_sensors::test_irregular_delivery_schedule_matches_python",
       "native_source": "native/tests/reference/test_native_research_sensors.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: golden replay in native/tests/reference/test_native_research_sensors.cpp; BIKE_GOLDEN_CAPTURE sites added in tests/reference/test_native_research_sensors.py; goldens captured darwin-arm64 + linux-aarch64; CTest reference.native_research_sensors green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_sensors.py",
@@ -17753,13 +17947,17 @@
       "line": 107,
       "end_line": 137,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_sensors::test_same_seed_reset_repeats_and_different_seeds_differ",
+      "native_test_id": "reference.native_research_sensors::test_same_seed_reset_repeats_and_different_seeds_differ",
       "native_source": "native/tests/reference/test_native_research_sensors.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_sensors.py::test_same_seed_reset_repeats_and_different_seeds_differ"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: golden replay in native/tests/reference/test_native_research_sensors.cpp; BIKE_GOLDEN_CAPTURE sites added in tests/reference/test_native_research_sensors.py; goldens captured darwin-arm64 + linux-aarch64; CTest reference.native_research_sensors green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_research_sensors.py",
@@ -17767,13 +17965,17 @@
       "line": 140,
       "end_line": 154,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_research_sensors::test_native_owns_noise_and_validates_empty_shape",
+      "native_test_id": "reference.native_research_sensors::test_native_owns_noise_and_validates_empty_shape",
       "native_source": "native/tests/reference/test_native_research_sensors.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_research_sensors.py::test_native_owns_noise_and_validates_empty_shape"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.33a lane/a: ported to native/tests/reference/test_native_research_sensors.cpp; CTest reference.native_research_sensors green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_ride_frontend.py",

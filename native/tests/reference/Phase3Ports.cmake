@@ -571,6 +571,32 @@ bike_add_reference_test(native_research_sensors ENGINE
   SOURCES test_native_research_sensors.cpp LIBRARIES bike_app bike_random
   LABELS t53 research golden)
 
+# 3.33b T53 research batch — capture-mode parity, sealed-evidence ownership,
+# the verify consume cursor and the two-episode/failure/interrupt
+# finalization contracts (test_research_capture.py); the policy-session
+# partial-tick pacing contract (test_research_frontend.py); CLI opt-in,
+# zero-step policy failure and the deferred-SIGINT lifecycle probes
+# (test_research_recording_lifecycle.py — real signal delivery runs in
+# isolated child processes); and the bike-research-sweep fan-out
+# (test_research_sweep.py, driven against the bike-research-sweep artifact).
+bike_add_reference_test(native_research_capture_contracts ENGINE
+  SOURCES test_research_capture.cpp research_reference_support.cpp
+  LIBRARIES bike_app bike_cli
+  LABELS t53 research)
+bike_add_reference_test(native_research_frontend_contracts ENGINE
+  SOURCES test_research_frontend.cpp research_reference_support.cpp
+  LIBRARIES bike_app
+  LABELS t53 research)
+bike_add_reference_test(native_research_recording_lifecycle ENGINE
+  SOURCES test_research_recording_lifecycle.cpp research_reference_support.cpp
+  LIBRARIES bike_app bike_cli bike_platform
+  LABELS t53 research)
+bike_add_reference_test(native_research_sweep ENGINE
+  SOURCES test_research_sweep.cpp
+  LIBRARIES bike_batch bike_cli bike_platform
+  LABELS t53 research)
+add_dependencies(reference.native_research_sweep bike-research-sweep)
+
 # 3.34 frontends/realtime/async/batch batch — tests/test_batch.py port:
 # spec expansion, reserved/validated flags, CPU policy and the real
 # serial/pool episode equivalence through the bike-batch CLI artifact.

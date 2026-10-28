@@ -8506,3 +8506,112 @@ standalone `bike-native-checks` from `build/native-release`):
   environment drift, the four-red reference baseline
   `golden_episode_tool`/`native_numeric_completion`/
   `pneumatic_tire_oracle`/`native_pneumatic_tire`).
+
+## 2026-10-28 — lane/d batch 3.27 state bundle/restore/fuzz/equilibrium merge-back (merge `40b93541`)
+
+Serialized merge (only merge in flight). Lane/d tip `72c62ac1` over
+base `41d5e081` (post-M23, pre-M24); integration tip `fe849692` sat 4
+merges ahead (F5 spindle, 3.30 recording, 3.23 monitors/energy/
+acceptance, 3.29a engine errors/loader). Three content conflicts, all
+resolved as audited unions; `migration/python-removal.json` auto-merged
+and was verified programmatically anyway.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — header counters conflicted
+  (`2391/2375` vs `2392/2376`); resolved to **`2393/2377`** (lane/d's
+  headers + the F5 insert already inside integration's records). The
+  `records` array auto-merged line-wise; audited programmatically:
+  **2,393 unique (`source_path`,`source_symbol`) records — key-exact
+  union** of both sides vs base; **0 lost / 0 duplicate / 0 contested /
+  0 unexplained deletions**. Lane/d touched exactly its **63 batch
+  keys** (61 T01-seeded edits + 2 appended equilibrium records:
+  `test_experiment_configs_produce_different_episode_keys` line 158→182
+  and `test_dirty_resettle_writes_the_episode_key_not_the_canonical_name`
+  line 184→209, both `port` →
+  `reference.equilibrium_state_file::test_post_episode_lifecycle_writes_no_cache_entry`
+  — the shared native id is lane/d's committed intent: one C++ test
+  covers both oracle functions). Batch-scope dispositions **36 `port` +
+  2 `golden` + 25 `drop` + 0 `planned`**; integration's F5 insert
+  `test_spindle_rear_chain_effort_matches_python` (`golden`) and all
+  non-batch records byte-preserved. All 25 lane/d drops keep
+  `evidence` justifications (`dropped — covered by
+  reference.native_benchmark::…`) and `python-only` class.
+- `native/tests/reference/Phase3Ports.cmake` — EOF-append conflict;
+  union: lane/d's 3.27 `t53 state` block placed before integration's
+  3.30 recording block (ascending batch order at the tail), inserted
+  block byte-identical to lane/d. **99 → 103 `bike_add_reference_test`
+  registrations; no duplicate SOURCES.**
+- `migration/cpp-linux-completion-evidence.md` — EOF-append conflict;
+  union: integration's 5 appended sections kept, lane/d's
+  `## 2026-10-28 — 3.27 qualification` section appended after them.
+- `migration/python-removal.json` — clean auto-merge; verified union:
+  535 rows, 0 missing/extra/mismatch. `replacement_landed` **84 → 88**
+  (lane/d's 4 rows: `test_native_state_bundle.py` `b36bfc26`/519,
+  `test_native_state_restore.py` `239c11f9`/421,
+  `test_native_state_fuzz.py` `64c2a6f2`/116,
+  `test_equilibrium_state_file.py` refreshed sha `9d1fc156`/209);
+  `planned` 451 → 447.
+- `tests/reference/test_equilibrium_state_file.py` — **no resolution
+  needed**: identical blob `fec5fca6` on base, integration and lane/d.
+  Spec expected lane/d .py appends; the two functions actually entered
+  via `8bb51212`, already an ancestor of the merge base — the port-map
+  records correctly reference their lines.
+- 4 new C++ TUs (`test_native_state_bundle.cpp` 567,
+  `test_native_state_restore.cpp` 910, `test_native_state_fuzz.cpp`
+  406, `test_equilibrium_state_file.cpp` 447) + `task-C327-report.md`
+  — new files, taken as-is.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new registrations) + `cmake --build --target
+  reference.native_state_bundle reference.native_state_restore
+  reference.native_state_fuzz reference.equilibrium_state_file -j8`:
+  green compile + link.
+- `ctest -R 'reference\.(native_state_bundle|native_state_restore|native_state_fuzz|equilibrium_state_file)$'`:
+  **4/4 PASS** (bundle 1.27 s, restore 0.74 s, fuzz 0.95 s,
+  equilibrium 6.25 s). Label check inside the run: `state` = exactly
+  the 4 batch cases.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → reconfigure + `cmake --build --target` (4
+  batch targets + `native_bench` dep) `-j8`: green.
+- `ctest -R 'reference\.(native_state_bundle|native_state_restore|native_state_fuzz|equilibrium_state_file)$'`:
+  **4/4 PASS** (0.18/0.14/0.04/5.78 s).
+- `ctest -L reference -E 'reference\.coupled_rider_task' -j8`:
+  **108/112** — reds exactly the documented 4-red baseline verbatim
+  {`reference.golden_episode_tool`, `reference.native_numeric_completion`,
+  `reference.pneumatic_tire_oracle`, `reference.native_pneumatic_tire`};
+  112 = 108 + 4 new batch registrations, all batch cases green inside
+  the sweep. No new reds attributable to the merge.
+- Golden spot: `episode/pinned_savage_40_f2/` fixtures present on both
+  platforms — shared layer (`physics.toml`, `request.toml`,
+  `freeze.py`) plus `darwin-arm64/` and `linux-aarch64/`
+  (`model.mjb`, `episode.npz`, `manifest.json`, `wire.json`).
+
+### Ledger deltas (pre-merge `fe849692` → post-merge `40b93541`)
+
+- `test-port-map.json`: 2391 → **2393** records; headers 2391/2375 →
+  **2393/2377**. `port` 858 → **894** (+36), `golden` 349 → **351**
+  (+2), `drop` 88 → **113** (+25), `planned` 1096 → **1035** (−61 =
+  −63 dispositioned + 2 new records landing directly in `port`). The
+  spec's ~894/~351/~113/~1035 forecast matches exactly.
+- `python-removal.json`: `replacement_landed` 84 → **88** (+4);
+  `planned` 451 → **447**.
+- `Phase3Ports.cmake`: 99 → **103** registrations.
+
+### Assessment
+
+Union merge with three expected ledger conflicts, every resolution
+verified programmatically rather than by eye: the port-map is a
+key-exact union with zero lost/duplicate/contested records and the
+headers count records, not guesses. All 4 batch cases green on both
+platforms; the linux `-L reference` sweep reproduces the documented
+4-red baseline verbatim with no merge-attributable reds. Two spec
+deviations, both benign: the equilibrium `.py` edits were already in
+the merge base via `8bb51212` (no take-side decision required), and
+integration was 4 merges ahead rather than 2 — irrelevant to the
+outcome since the union is computed key-by-key. L3
+(`tools/run_tests.sh native`) not re-run — bounded merge-back scope
+per protocol; lane/d's own gate evidence is in `task-C327-report.md`.

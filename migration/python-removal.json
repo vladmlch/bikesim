@@ -14809,8 +14809,8 @@
   },
   {
     "path": "tests/reference/test_equilibrium_state_file.py",
-    "sha256": "17aaa639f3f404d698b1f3ceabe2b248dcdd933ffaf577c79a1fe51fbfe1e1cd",
-    "line_count": 140,
+    "sha256": "9d1fc156fde9f2d3a69aead02d502012a887f1fbdfb53ebdeecf9894c77de42c",
+    "line_count": 209,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
@@ -14821,8 +14821,8 @@
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
     "status": "replacement_landed",
-    "snapshot_sha256": "01a893e4af72ccd2110152a9e43fffea5067b093f135bce70f589ac70b7d81e8",
-    "snapshot_line_count": 140,
+    "snapshot_sha256": "9d1fc156fde9f2d3a69aead02d502012a887f1fbdfb53ebdeecf9894c77de42c",
+    "snapshot_line_count": 209,
     "tracked": true,
     "presence": "tracked"
   },

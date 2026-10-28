@@ -8202,7 +8202,7 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-28 3.29b lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_contract_base); CTest migration_T56 green on darwin-arm64 (build/native-release, 1213.50s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1291.08s)"
+        "2026-10-28 3.29b lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_contract_base); partial-port coverage \u2014 only ~3 of 9 oracle asserts exercised (returncode 0 plus selected_build and imported_extension via the --kind contracts loader_provenance surface); the coverage_provenance.json surface (report_object, profile_count, native_test_count==5, report_paths text/export existence, TOTAL line) is unexercised because native RunCoverage.cmake writes no coverage provenance file; CTest migration_T56 green on darwin-arm64 (build/native-release, 1213.50s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1291.08s)"
       ]
     },
     {

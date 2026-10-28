@@ -220,7 +220,10 @@ function(expect_json_equal name file)
       set(_sep ${_i})
     endif()
   endforeach()
-  if(_sep LESS 3 OR _sep EQUAL ${ARGC})
+  # '=' must sit after at least one path-a member (index >= 3) and leave at
+  # least one path-b member, i.e. at ARGC-1 or earlier.
+  math(EXPR _last_arg "${ARGC} - 1")
+  if(_sep LESS 3 OR _sep EQUAL ${_last_arg})
     message(FATAL_ERROR "expect_json_equal needs '<path-a> = <path-b>'")
   endif()
   set(_a "")
@@ -1845,7 +1848,9 @@ string(JSON _sup_count ERROR_VARIABLE _sup_err2 LENGTH "${_sup_doc}" suppression
 if(_sup_err2)
   set(_failures
     "${_failures}\n  b29_suppression_manifest: suppressions is not a list")
-else()
+elseif(_sup_count GREATER 0)
+  # An empty list is valid (zero suppressions); guard the RANGE loop —
+  # 'foreach(RANGE 0 -1)' would otherwise iterate indices 0 and -1.
   math(EXPR _sup_last "${_sup_count} - 1")
   foreach(_i RANGE 0 ${_sup_last})
     foreach(_field checker origin message tool_version reason reproducer

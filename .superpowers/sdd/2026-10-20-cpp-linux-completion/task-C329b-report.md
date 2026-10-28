@@ -102,6 +102,44 @@ paths** via an `expected_seen` set: one source selected under several
 target contexts counts once, matching the oracle's accounting instead of
 inflating per context.
 
+## Port substitutions and limitations
+
+Disclosures from the 3.29b review round (PASS-with-reservations); no
+code semantics changed by this round.
+
+- **Coverage-provenance records are partial ports onto a substituted
+  surface.** `test_coverage_provenance_supports_a_custom_build_and_exact_report_object`
+  → `b29_contract_base` exercises only ~3 of the 9 oracle asserts: the
+  exit code plus `selected_build`/`imported_extension` — read through
+  the **`--kind contracts`** `loader_provenance` surface
+  (`native_test_provenance.json`), **not** the coverage path. The
+  `coverage_provenance.json` surface (`report_object`, `profile_count`,
+  `native_test_count == 5`, `report_paths.{text,export}` existence, the
+  `TOTAL` line in the text report) is **unexercised**: native
+  `RunCoverage.cmake` writes no coverage-provenance file at all (zero
+  `provenance` references; the file is emitted only by
+  `tools/native_coverage.py`), so there is no native provenance
+  validation on the coverage path to port against. The record keeps
+  `disposition: port` with the partial-port coverage stated in its
+  ledger `evidence` string.
+- **`b29_prov_count` weakened trigger.** The oracle's case rejects a
+  *missing* `native_test_count`; the C++ record treats the field as
+  optional-but-validated, so the fixture plants `"unknown"` to reach the
+  same reject path (disclosed inline at
+  `migration_T56_check.cmake` ~2281). Rejection of an *absent*
+  `native_test_count` is not covered natively.
+- **Produced-diagnostic convention.** Where the produced checker emits
+  its own stable diagnostic instead of the oracle's Python wording, the
+  fixture asserts the produced needle:
+
+  | oracle needle / field | produced needle / field |
+  |---|---|
+  | `CTest registration is incomplete` | `native_contract_tests is not registered with CTest` |
+  | `missing stdlib hardening definition` | `missing libc++ hardening definition` |
+  | `imported extension does not match selected build artifact` | `imported extension does not match selected artifact` |
+  | `no nonempty profraw files` | `no raw coverage profiles` |
+  | `controls[].diagnostics` | `controls[].matched_diagnostics` |
+
 ## Verification evidence
 
 - **Oracle green (darwin-arm64)**: `uv run pytest
@@ -143,6 +181,10 @@ inflating per context.
   `missing source file`); harness `_failures` aggregation verified by
   construction during bring-up (malformed-JSON and ordering faults each
   surfaced as named failures before their fixes).
+- **Run-log retention limitation**: no in-tree `migration_T56` run logs
+  are retained — the ~20-minute dual-platform runs' evidence lives in
+  the ledger `evidence` strings and the timings recorded above, so
+  downstream verification rests on the lane runs themselves.
 
 ## Ledger
 
@@ -155,6 +197,9 @@ inflating per context.
   858 → **912**, `planned` 1096 → **1042**, `golden` 349, `drop` 88 —
   diff verified to touch exactly the 54 batch records; canonical
   serializer formatting byte-stable under load/dump round-trip.
+  Review round: the `b29_contract_base` record's `evidence` string was
+  amended to state its partial-port coverage (see above); still
+  canonical (indent=2, ensure_ascii, trailing LF).
 - `migration/python-removal.json`: **unchanged** — both source files
   retain `planned` rows (51 + 5), so neither row qualifies for
   `replacement_landed`. Deletion stays gated at T63.
@@ -193,9 +238,38 @@ All fixed in-batch (inside `feec6f54`); none outstanding.
    above; without it `b29_multi_context` (and the real orchestrator's
    multi-context builds) overcounts `source_count`.
 
+Out-of-batch edits to **pre-existing** T56 cases, also inside
+`feec6f54` — legitimate repairs, disclosed in the review round:
+
+- **`t56_scripts_depth2_bad`** — planted trigger changed
+  `for f in $UNQUOTED; do echo $f; done` → `local unquoted=$UNQUOTED`
+  (deterministic SC2168 under shellcheck 0.11) and the asserted needle
+  changed `linux/bad.sh` → `shellcheck: rc=1` (the shellcheck-0.11
+  diagnostic-format drift already documented inline at
+  `migration_T56_check.cmake` ~831–837).
+- **`t56_audit_doc_bad` / `t56_audit_doc_clean`** — `\`` escaped
+  backticks in the planted markdown fences → literal backticks: CMake
+  3.x keeps the escape while 4.x strips it, which produced different
+  fence bytes per platform; written unescaped for byte parity.
+
+Review-round harness nits fixed (no run semantics change; verified by
+extracted-block `cmake -P` drivers plus a full-script `cmake -P` parse
+check):
+
+- **`expect_json_equal` separator guard** — `if(_sep … EQUAL ${ARGC})`
+  was unreachable (`_sep` is bounded to `ARGC-1` by the scan loop); the
+  guard now compares against `ARGC-1`, so a trailing `=` (empty
+  path-b) is rejected as intended.
+- **`b29_suppression_manifest` RANGE guard** — `foreach(_i RANGE 0 -1)`
+  iterates indices `0` and `-1` on an empty `suppressions` list, so the
+  loop is now guarded by `_sup_count GREATER 0` (the convention already
+  used by `expect_json_item_names`). The in-repo manifest is non-empty,
+  so the bug never fired in the lane runs.
+
 ## Commits
 
 | SHA | Unit |
 |---|---|
 | `feec6f54` | 3.29b T53: 54-record port into migration_T56 + `check_contracts` unique-source fix + ledger update (darwin + linux `ctest -R migration_T56` green) |
-| (this report) | task-C329b-report.md |
+| `7f32cf8a` | task-C329b-report.md (gate evidence + triage/dispositions) |
+| (this commit) | docs(3.29b): review round — coverage substitutions + out-of-batch edits disclosed; `expect_json_equal`/`b29_suppression_manifest` guard nits |

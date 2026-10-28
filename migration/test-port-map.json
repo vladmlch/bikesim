@@ -1,7 +1,7 @@
 {
   "status": "Complete static function/method inventory; source dispositions are not qualification; no project execution or pytest collection in this session",
-  "static_test_functions": 2391,
-  "top_level_test_functions": 2375,
+  "static_test_functions": 2393,
+  "top_level_test_functions": 2377,
   "runtime_node_acquisition_task": "T01",
   "records": [
     {
@@ -3267,13 +3267,17 @@
       "line": 41,
       "end_line": 53,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_state_file_round_trip_loads_the_pose_without_settling",
+      "native_test_id": "reference.equilibrium_state_file::test_state_file_round_trip",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_state_file_round_trip_loads_the_pose_without_settling"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3281,13 +3285,17 @@
       "line": 56,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_state_file_wins_over_the_auto_cache",
+      "native_test_id": "reference.equilibrium_state_file::test_state_file_wins_over_the_auto_cache",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_state_file_wins_over_the_auto_cache"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3295,13 +3303,17 @@
       "line": 70,
       "end_line": 76,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_state_file_rejects_a_different_configuration",
+      "native_test_id": "reference.equilibrium_state_file::test_state_file_rejects_a_different_configuration",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_state_file_rejects_a_different_configuration"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3309,13 +3321,17 @@
       "line": 79,
       "end_line": 86,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_state_file_rejects_a_state_payload_that_does_not_fit",
+      "native_test_id": "reference.equilibrium_state_file::test_state_file_rejects_payload_that_does_not_fit",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_state_file_rejects_a_state_payload_that_does_not_fit"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3323,13 +3339,17 @@
       "line": 89,
       "end_line": 97,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_state_file_rechecks_the_residual",
+      "native_test_id": "reference.equilibrium_state_file::test_state_file_rechecks_the_residual",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_state_file_rechecks_the_residual"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3337,13 +3357,17 @@
       "line": 100,
       "end_line": 103,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_state_file_names_a_missing_file",
+      "native_test_id": "reference.equilibrium_state_file::test_state_file_names_a_missing_file",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_state_file_names_a_missing_file"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3351,13 +3375,20 @@
       "line": 107,
       "end_line": 109,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_equilibrium_state_field_validation",
+      "native_test_id": "reference.equilibrium_state_file::test_equilibrium_state_field_validation",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_equilibrium_state_field_validation[]",
+        "tests/reference/test_equilibrium_state_file.py::test_equilibrium_state_field_validation[   ]",
+        "tests/reference/test_equilibrium_state_file.py::test_equilibrium_state_field_validation[3.5]",
+        "tests/reference/test_equilibrium_state_file.py::test_equilibrium_state_field_validation[value3]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3365,13 +3396,17 @@
       "line": 112,
       "end_line": 123,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_toml_state_file_resolves_relative_to_the_config",
+      "native_test_id": "reference.equilibrium_state_file::test_toml_state_file_resolves_relative_to_the_config",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_toml_state_file_resolves_relative_to_the_config"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_equilibrium_state_file.py",
@@ -3379,13 +3414,53 @@
       "line": 126,
       "end_line": 140,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_equilibrium_state_file::test_equilibrium_override_kwargs_reach_the_solve",
+      "native_test_id": "reference.equilibrium_state_file::test_equilibrium_override_kwargs_reach_the_solve",
       "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_equilibrium_override_kwargs_reach_the_solve"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_equilibrium_state_file.cpp; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s); the source's RideSimulation kwargs-require-physics ctor rejection has no native twin (python-only arm); EquilibriumOptions guards + solve are ported"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_equilibrium_state_file.py",
+      "source_symbol": "test_experiment_configs_produce_different_episode_keys",
+      "line": 158,
+      "end_line": 182,
+      "owner_task": "T53",
+      "native_test_id": "reference.equilibrium_state_file::test_post_episode_lifecycle_writes_no_cache_entry",
+      "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_experiment_configs_produce_different_episode_keys"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: source test added by 8bb51212 post-T01; ported to native/tests/reference/test_equilibrium_state_file.cpp; the native surface is strictly stronger \u2014 no post-episode settle exists (single-shot settle, reset() replays the sealed bootstrap), so the port pins byte-identical canonical bytes and a single cache entry across settle/seal/advance/reset cycles; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s); the episode-key namespace is python-only \u2014 no post-episode write can reach ANY cache name natively"
+      ]
+    },
+    {
+      "source_path": "tests/reference/test_equilibrium_state_file.py",
+      "source_symbol": "test_dirty_resettle_writes_the_episode_key_not_the_canonical_name",
+      "line": 184,
+      "end_line": 209,
+      "owner_task": "T53",
+      "native_test_id": "reference.equilibrium_state_file::test_post_episode_lifecycle_writes_no_cache_entry",
+      "native_source": "native/tests/reference/test_equilibrium_state_file.cpp",
+      "collected_node_ids": [
+        "tests/reference/test_equilibrium_state_file.py::test_dirty_resettle_writes_the_episode_key_not_the_canonical_name"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: source test added by 8bb51212 post-T01; ported to native/tests/reference/test_equilibrium_state_file.cpp; the native surface is strictly stronger \u2014 no post-episode settle exists (single-shot settle, reset() replays the sealed bootstrap), so the port pins byte-identical canonical bytes and a single cache entry across settle/seal/advance/reset cycles; CTest reference.equilibrium_state_file green on darwin-arm64 (build/native-release, 4.95s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 4.51s); the quarantined episode write has no native trigger \u2014 the canonical entry is the only name the loader reads"
+      ]
     },
     {
       "source_path": "tests/reference/test_frontend_windows.py",
@@ -21746,13 +21821,17 @@
       "line": 130,
       "end_line": 135,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_crc64_ecma_check_vector",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_crc64_ecma_check_vector"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (the published CRC64-ECMA check vector is asserted inside the production executable; covered by reference.native_benchmark::test_selftest_prints_crc64_check_vector)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 the published CRC64-ECMA check vector is asserted inside the production executable; covered by reference.native_benchmark::test_selftest_prints_crc64_check_vector"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21760,13 +21839,17 @@
       "line": 138,
       "end_line": 140,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_header_is_exactly_80_bytes",
+      "native_test_id": "reference.native_state_bundle::test_header_is_exactly_80_bytes",
       "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_header_is_exactly_80_bytes"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_bundle.cpp; CTest reference.native_state_bundle green on darwin-arm64 (build/native-release, 0.24s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.1s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21774,13 +21857,17 @@
       "line": 147,
       "end_line": 156,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_bundle_npz_matches_bin",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_bundle_npz_matches_bin"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (state.npz/state.bin writer byte-equality is a Python tooling contract \u2014 the native consumer reads state.bin through proto_native_bench::load_state and only checks member existence; no native owner exists)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 state.npz/state.bin writer byte-equality is a Python tooling contract \u2014 the native consumer reads state.bin through proto_native_bench::load_state and only checks member existence; no native owner exists"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21788,13 +21875,17 @@
       "line": 159,
       "end_line": 178,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_read_state_roundtrip_values",
+      "native_test_id": "reference.native_state_bundle::test_read_state_roundtrip_values",
       "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_read_state_roundtrip_values"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_bundle.cpp; CTest reference.native_state_bundle green on darwin-arm64 (build/native-release, 0.24s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.1s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21802,13 +21893,17 @@
       "line": 181,
       "end_line": 194,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_write_bundle_publishes_pointer",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_write_bundle_publishes_pointer"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (current.json pointer publication is a writer-side tooling contract with no native writer; the resolver half is covered by reference.native_benchmark::test_pointer_root_resolves_to_bundle)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 current.json pointer publication is a writer-side tooling contract with no native writer; the resolver half is covered by reference.native_benchmark::test_pointer_root_resolves_to_bundle"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21816,13 +21911,17 @@
       "line": 197,
       "end_line": 203,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_bundle_name_collision_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_bundle_name_collision_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (bundle-name immutability is a writer-side tooling contract \u2014 no native bundle writer exists)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 bundle-name immutability is a writer-side tooling contract \u2014 no native bundle writer exists"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21830,13 +21929,17 @@
       "line": 206,
       "end_line": 228,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_manifest_records_provenance",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_manifest_records_provenance"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (manifest.json provenance fields are written by the Python tooling; the native consumer checks member existence only)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 manifest.json provenance fields are written by the Python tooling; the native consumer checks member existence only"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21844,13 +21947,17 @@
       "line": 245,
       "end_line": 260,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_legacy_magic_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_legacy_magic_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_legacy_state_format_is_rejected_with_hint \u2014 the retired 0xBEA0 payload is rejected through the real consumer end to end)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_legacy_state_format_is_rejected_with_hint \u2014 the retired 0xBEA0 payload is rejected through the real consumer end to end"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21858,13 +21965,17 @@
       "line": 263,
       "end_line": 270,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_bad_magic_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_bad_magic_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_bad_state_magic_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_bad_state_magic_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21872,13 +21983,17 @@
       "line": 273,
       "end_line": 280,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_unknown_version_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_unknown_version_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_unknown_state_version_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_unknown_state_version_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21886,13 +22001,17 @@
       "line": 283,
       "end_line": 290,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_unknown_flags_are_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_unknown_flags_are_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_unknown_state_flags_are_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_unknown_state_flags_are_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21900,13 +22019,21 @@
       "line": 294,
       "end_line": 304,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_dimension_mismatch_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_dimension_mismatch_is_rejected[nq]",
+        "tests/reference/test_native_state_bundle.py::test_dimension_mismatch_is_rejected[nv]",
+        "tests/reference/test_native_state_bundle.py::test_dimension_mismatch_is_rejected[na]",
+        "tests/reference/test_native_state_bundle.py::test_dimension_mismatch_is_rejected[nu]",
+        "tests/reference/test_native_state_bundle.py::test_dimension_mismatch_is_rejected[nbody]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 5 node(s); record dropped (covered by reference.native_benchmark::test_state_model_dimension_mismatch_is_rejected \u2014 all five header dimension fields are swept through the executable)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_state_model_dimension_mismatch_is_rejected \u2014 all five header dimension fields are swept through the executable"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21914,13 +22041,21 @@
       "line": 308,
       "end_line": 317,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_out_of_domain_dimension_is_rejected",
+      "native_test_id": "reference.native_state_bundle::test_out_of_domain_dimension_is_rejected",
       "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_out_of_domain_dimension_is_rejected[nq]",
+        "tests/reference/test_native_state_bundle.py::test_out_of_domain_dimension_is_rejected[nv]",
+        "tests/reference/test_native_state_bundle.py::test_out_of_domain_dimension_is_rejected[na]",
+        "tests/reference/test_native_state_bundle.py::test_out_of_domain_dimension_is_rejected[nu]",
+        "tests/reference/test_native_state_bundle.py::test_out_of_domain_dimension_is_rejected[nbody]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 5 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_bundle.cpp; CTest reference.native_state_bundle green on darwin-arm64 (build/native-release, 0.24s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.1s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21928,13 +22063,17 @@
       "line": 320,
       "end_line": 327,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_declared_payload_length_mismatch_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_declared_payload_length_mismatch_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_declared_payload_length_lie_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_declared_payload_length_lie_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21942,13 +22081,17 @@
       "line": 330,
       "end_line": 336,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_truncated_header_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_truncated_header_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_truncated_state_header_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_truncated_state_header_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21956,13 +22099,17 @@
       "line": 339,
       "end_line": 345,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_truncated_payload_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_truncated_payload_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_truncated_state_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_truncated_state_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21970,13 +22117,17 @@
       "line": 348,
       "end_line": 354,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_trailing_bytes_are_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_trailing_bytes_are_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_trailing_state_bytes_are_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_trailing_state_bytes_are_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21984,13 +22135,17 @@
       "line": 357,
       "end_line": 367,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_payload_checksum_corruption_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_payload_checksum_corruption_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_payload_checksum_corruption_is_rejected and ::test_declared_state_checksum_lie_is_rejected \u2014 both payload-mutation directions)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_payload_checksum_corruption_is_rejected and ::test_declared_state_checksum_lie_is_rejected \u2014 both payload-mutation directions"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -21998,13 +22153,17 @@
       "line": 370,
       "end_line": 379,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_model_checksum_corruption_is_rejected",
+      "native_test_id": "reference.native_state_bundle::test_model_checksum_corruption_is_rejected",
       "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_model_checksum_corruption_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_bundle.cpp; CTest reference.native_state_bundle green on darwin-arm64 (build/native-release, 0.24s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.1s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22012,13 +22171,17 @@
       "line": 382,
       "end_line": 395,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_mixed_generation_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_mixed_generation_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_state_from_other_generation_is_rejected \u2014 cross-generation model/state crc mismatch through the consumer)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_state_from_other_generation_is_rejected \u2014 cross-generation model/state crc mismatch through the consumer"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22026,13 +22189,17 @@
       "line": 398,
       "end_line": 414,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_nonfinite_stored_scalar_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_nonfinite_stored_scalar_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_nonfinite_state_scalar_is_rejected \u2014 a NaN inside a self-consistent file is caught at decode)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_nonfinite_state_scalar_is_rejected \u2014 a NaN inside a self-consistent file is caught at decode"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22040,13 +22207,17 @@
       "line": 421,
       "end_line": 424,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_concrete_bundle_dir",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_concrete_bundle_dir"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_concrete_bundle_dir_resolves_directly)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_concrete_bundle_dir_resolves_directly"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22054,13 +22225,17 @@
       "line": 427,
       "end_line": 430,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_root_uses_pointer",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_root_uses_pointer"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_pointer_root_resolves_to_bundle)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_pointer_root_resolves_to_bundle"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22068,13 +22243,17 @@
       "line": 433,
       "end_line": 441,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_malformed_pointer_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_malformed_pointer_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_malformed_pointer_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_malformed_pointer_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22082,13 +22261,17 @@
       "line": 444,
       "end_line": 452,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_pointer_to_missing_bundle_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_pointer_to_missing_bundle_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (covered by reference.native_benchmark::test_pointer_to_missing_bundle_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 covered by reference.native_benchmark::test_pointer_to_missing_bundle_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22096,13 +22279,21 @@
       "line": 456,
       "end_line": 466,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_pointer_name_cannot_escape",
+      "native_test_id": "reference.native_state_bundle::test_resolve_pointer_name_cannot_escape",
       "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_pointer_name_cannot_escape[../escape]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_pointer_name_cannot_escape[/abs]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_pointer_name_cannot_escape[a/b]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_pointer_name_cannot_escape[..]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_pointer_name_cannot_escape[.]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 5 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_bundle.cpp; CTest reference.native_state_bundle green on darwin-arm64 (build/native-release, 0.24s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.1s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22110,13 +22301,20 @@
       "line": 470,
       "end_line": 475,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_incomplete_bundle_is_rejected",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_incomplete_bundle_is_rejected[model.mjb]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_incomplete_bundle_is_rejected[state.bin]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_incomplete_bundle_is_rejected[state.npz]",
+        "tests/reference/test_native_state_bundle.py::test_resolve_incomplete_bundle_is_rejected[manifest.json]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); record dropped (each missing member is covered by the four reference.native_benchmark missing-member tests (::test_missing_state_bin_is_rejected, ::test_missing_state_npz_is_rejected, ::test_missing_manifest_is_rejected, ::test_missing_model_mjb_is_rejected))",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 each missing member is covered by the four reference.native_benchmark missing-member tests (::test_missing_state_bin_is_rejected, ::test_missing_state_npz_is_rejected, ::test_missing_manifest_is_rejected, ::test_missing_model_mjb_is_rejected)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22124,13 +22322,17 @@
       "line": 478,
       "end_line": 482,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_resolve_missing_dir_is_rejected",
+      "native_test_id": "reference.native_state_bundle::test_resolve_missing_dir_is_rejected",
       "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_resolve_missing_dir_is_rejected"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_bundle.cpp; CTest reference.native_state_bundle green on darwin-arm64 (build/native-release, 0.24s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.1s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22138,13 +22340,17 @@
       "line": 489,
       "end_line": 499,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_write_bundle_rejects_nonfinite_snapshot",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_write_bundle_rejects_nonfinite_snapshot"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (writer-side nonfinite snapshot rejection with no-pointer/no-bundle cleanup \u2014 a Python tooling contract; the reader-side finiteness gate is covered by reference.native_benchmark::test_nonfinite_state_scalar_is_rejected)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 writer-side nonfinite snapshot rejection with no-pointer/no-bundle cleanup \u2014 a Python tooling contract; the reader-side finiteness gate is covered by reference.native_benchmark::test_nonfinite_state_scalar_is_rejected"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22152,13 +22358,17 @@
       "line": 502,
       "end_line": 509,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_serialize_rejects_mismatched_qfrc_extent",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_serialize_rejects_mismatched_qfrc_extent"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (serialize_state qfrc_applied extent validation is a Python-writer contract \u2014 the native reader validates the decoded widths against the model instead)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 serialize_state qfrc_applied extent validation is a Python-writer contract \u2014 the native reader validates the decoded widths against the model instead"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_bundle.py",
@@ -22166,13 +22376,17 @@
       "line": 512,
       "end_line": 519,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_bundle::test_serialize_rejects_bad_xfrc_extent",
-      "native_source": "native/tests/reference/test_native_state_bundle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_state_bundle.py::test_serialize_rejects_bad_xfrc_extent"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); record dropped (serialize_state xfrc_applied 6*nbody extent validation is a Python-writer contract \u2014 the native reader validates the decoded widths against the model instead)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: dropped \u2014 serialize_state xfrc_applied 6*nbody extent validation is a Python-writer contract \u2014 the native reader validates the decoded widths against the model instead"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_fuzz.py",
@@ -22180,13 +22394,17 @@
       "line": 86,
       "end_line": 97,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_fuzz::test_drive_state_restore_fuzz",
+      "native_test_id": "reference.native_state_fuzz::test_drive_state_restore_fuzz",
       "native_source": "native/tests/reference/test_native_state_fuzz.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_fuzz.py::test_drive_state_restore_fuzz"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_fuzz.cpp; CTest reference.native_state_fuzz green on darwin-arm64 (build/native-release, 0.09s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.01s); deterministic seeded splitmix64 property test, no hypothesis, no golden fixture"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_fuzz.py",
@@ -22194,13 +22412,17 @@
       "line": 103,
       "end_line": 116,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_fuzz::test_set_state_fuzz",
+      "native_test_id": "reference.native_state_fuzz::test_set_state_fuzz",
       "native_source": "native/tests/reference/test_native_state_fuzz.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_fuzz.py::test_set_state_fuzz"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_fuzz.cpp; CTest reference.native_state_fuzz green on darwin-arm64 (build/native-release, 0.09s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.01s); deterministic seeded property test; the source's non-array JSON sub-draws exercise the binding cast layer with no typed-API counterpart (python-only sub-draw, noted in the port header)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22208,13 +22430,17 @@
       "line": 17,
       "end_line": 41,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_state_snapshots_own_views_before_reset",
+      "native_test_id": "reference.native_state_restore::test_set_state_snapshots_own_views_before_reset",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_state_snapshots_own_views_before_reset"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22222,13 +22448,21 @@
       "line": 59,
       "end_line": 77,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_forward_on_stored_state_is_bitwise",
+      "native_test_id": "reference.native_state_restore::test_forward_on_stored_state_is_bitwise",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_forward_on_stored_state_is_bitwise"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; replays the platform-qualified pinned_savage_40_f2 episode fixture under tests/fixtures/golden/<platform>/episode/ and compares the native forward bitwise against a live MuJoCo mjData oracle; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22236,13 +22470,21 @@
       "line": 80,
       "end_line": 95,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_state_size_mismatch_raises_and_keeps_state",
+      "native_test_id": "reference.native_state_restore::test_set_state_size_mismatch_raises_and_keeps_state",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_state_size_mismatch_raises_and_keeps_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; replays the platform-qualified pinned_savage_40_f2 episode fixture under tests/fixtures/golden/<platform>/episode/ and compares the native forward bitwise against a live MuJoCo mjData oracle; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22250,13 +22492,17 @@
       "line": 125,
       "end_line": 142,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_state_rejection_preserves_buffers",
+      "native_test_id": "reference.native_state_restore::test_state_rejection_preserves_buffers",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_state_rejection_preserves_buffers"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22264,13 +22510,22 @@
       "line": 147,
       "end_line": 161,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_state_nonfinite_span_rejects_atomically",
+      "native_test_id": "reference.native_state_restore::test_set_state_nonfinite_span_rejects_atomically",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[nan-qvel]",
+        "tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[nan-act]",
+        "tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[nan-warmstart]",
+        "tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[inf-qvel]",
+        "tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[inf-act]",
+        "tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[inf-warmstart]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 6 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22278,13 +22533,19 @@
       "line": 165,
       "end_line": 174,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_state_bad_time_rejects_atomically",
+      "native_test_id": "reference.native_state_restore::test_set_state_bad_time_rejects_atomically",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_state_bad_time_rejects_atomically[-0.5]",
+        "tests/reference/test_native_state_restore.py::test_set_state_bad_time_rejects_atomically[nan]",
+        "tests/reference/test_native_state_restore.py::test_set_state_bad_time_rejects_atomically[inf]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 3 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22292,13 +22553,20 @@
       "line": 179,
       "end_line": 187,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_inputs_nonfinite_rejects_atomically",
+      "native_test_id": "reference.native_state_restore::test_set_inputs_nonfinite_rejects_atomically",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_inputs_nonfinite_rejects_atomically[nan-ctrl]",
+        "tests/reference/test_native_state_restore.py::test_set_inputs_nonfinite_rejects_atomically[nan-qfrc_applied]",
+        "tests/reference/test_native_state_restore.py::test_set_inputs_nonfinite_rejects_atomically[-inf-ctrl]",
+        "tests/reference/test_native_state_restore.py::test_set_inputs_nonfinite_rejects_atomically[-inf-qfrc_applied]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 4 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22306,13 +22574,17 @@
       "line": 190,
       "end_line": 209,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_state_accepts_cross_buffer_alias",
+      "native_test_id": "reference.native_state_restore::test_set_state_accepts_cross_buffer_alias",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_state_accepts_cross_buffer_alias"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22320,13 +22592,17 @@
       "line": 212,
       "end_line": 235,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_set_state_rejection_with_aliased_buffers_preserves_state",
+      "native_test_id": "reference.native_state_restore::test_set_state_rejection_with_aliased_buffers_preserves_state",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_set_state_rejection_with_aliased_buffers_preserves_state"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22334,13 +22610,38 @@
       "line": 270,
       "end_line": 294,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_relational_rejection_is_atomic",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_relational_rejection_is_atomic",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[ideal_hub.ratio-x1.5-ratio/gear-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[ideal_hub.ratio-x1.5-ratio/gear-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[ideal_hub.rear_teeth-i28-rear-teeth-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[ideal_hub.rear_teeth-i28-rear-teeth-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[ideal_hub.coefficients-short-coefficient width-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[ideal_hub.coefficients-short-coefficient width-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.rear_teeth-i25-ratio/gear-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.rear_teeth-i25-ratio/gear-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.direction-up-shift clock/count-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.direction-up-shift clock/count-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.cooldown_s-half-shift clock/count-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.cooldown_s-half-shift clock/count-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.cut_remaining_s-half-shift clock/count-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.shifting.cut_remaining_s-half-shift clock/count-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[shift_time_s-half-shift clock/count-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[shift_time_s-half-shift clock/count-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.battery.energy_j-over-battery energy-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.battery.energy_j-over-battery energy-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.battery.drawn_energy_j-over-battery energy-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.battery.drawn_energy_j-over-battery energy-geometric_ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.battery.initial_energy_j-over-battery energy-ideal_mid_drive]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[policies.battery.initial_energy_j-over-battery energy-geometric_ideal_mid_drive]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 22 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22348,13 +22649,18 @@
       "line": 301,
       "end_line": 307,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_rejects_coefficient_drift",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_rejects_coefficient_drift",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_coefficient_drift[ideal_mid_drive-coefficient/ratio]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_coefficient_drift[geometric_ideal_mid_drive-coefficients/prepared Jacobian]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 2 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22362,13 +22668,17 @@
       "line": 310,
       "end_line": 315,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_rejects_geometric_prepared_jacobian_drift",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_rejects_geometric_prepared_jacobian_drift",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_geometric_prepared_jacobian_drift"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22376,13 +22686,17 @@
       "line": 318,
       "end_line": 333,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_rejects_pending_actuation_without_interval",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_rejects_pending_actuation_without_interval",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_pending_actuation_without_interval"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22390,13 +22704,18 @@
       "line": 337,
       "end_line": 342,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_rejects_nonpositive_pending_dt",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_rejects_nonpositive_pending_dt",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_nonpositive_pending_dt[0.0]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_nonpositive_pending_dt[-0.002]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 2 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22404,13 +22723,17 @@
       "line": 345,
       "end_line": 351,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22418,13 +22741,17 @@
       "line": 354,
       "end_line": 361,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_geometric_shift_pending_accepted",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_geometric_shift_pending_accepted",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_geometric_shift_pending_accepted"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22432,13 +22759,17 @@
       "line": 364,
       "end_line": 373,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_cassette_membership_when_shifter_enabled",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_cassette_membership_when_shifter_enabled",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_cassette_membership_when_shifter_enabled"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22446,13 +22777,24 @@
       "line": 383,
       "end_line": 393,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_restore_rejects_auxiliary_transmission_drift",
+      "native_test_id": "reference.native_state_restore::test_drive_restore_rejects_auxiliary_transmission_drift",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[ratio-1.5-clutch-clutch]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[ratio-1.5-rotor-freewheel]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[rear_teeth-4-clutch-clutch]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[rear_teeth-4-rotor-freewheel]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[coefficients-value2-clutch-clutch]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[coefficients-value2-rotor-freewheel]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[coefficients-value3-clutch-clutch]",
+        "tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[coefficients-value3-rotor-freewheel]"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 8 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_state_restore.py",
@@ -22460,13 +22802,17 @@
       "line": 396,
       "end_line": 421,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_state_restore::test_drive_policies_set_state_relational_rejections",
+      "native_test_id": "reference.native_state_restore::test_drive_policies_set_state_relational_rejections",
       "native_source": "native/tests/reference/test_native_state_restore.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_state_restore.py::test_drive_policies_set_state_relational_rejections"
+      ],
+      "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-27 3.27 lane/d: ported to native/tests/reference/test_native_state_restore.cpp; CTest reference.native_state_restore green on darwin-arm64 (build/native-release, 0.23s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.13s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_static_brake.py",

@@ -10,7 +10,7 @@ nodes (`tests/reference/test_golden_episode.py` 2,
 
 - `9e7b1156` — feat(3.24b): port `test_ride_backend_cli.py` to
   `reference.ride_backend_cli` (native TU + Phase3Ports registration).
-- `<ledger sha>` — ledger(3.24b): port-map dispositions (19 port /
+- `6afcb8a1` — ledger(3.24b): port-map dispositions (19 port /
   3 drop) + removal rows `replacement_landed` + this report.
 
 ## Dispositions
@@ -118,17 +118,21 @@ identical on both platforms.
 - Linux aarch64 (`bike-dev-pfc-lane-d`, clang++-18, `/build/root-clang`
   Release): same selector → **2/2 PASS** —
   `golden_episode_regressions` 13.79 s, `ride_backend_cli` 1.78 s.
-- Darwin L1 `ctest -L reference -j8`: my two tests pass; the sweep's
-  reds are the documented-baseline set — `golden_episode_tool`
+- Darwin L1 `ctest -L reference -j8` (139 tests, ~40 min wall):
+  **105 passed / 5 failed / 29 Not Run**. Both batch tests pass
+  (`golden_episode_regressions` 9.36 s, `ride_backend_cli` ~1.9 s).
+  The 5 reds are the documented-baseline family — `golden_episode_tool`
   (baseline `native recorder rows reproduce Python oracle`, 3.03
   capture pending), `pneumatic_tire_oracle` + `native_numeric_completion`
   + `native_pneumatic_tire` (documented fixture/settle baselines),
   `native_spindle_controller` (0.02 s fixture-content mismatch —
-  stale `input.*` capture in this worktree, unrelated to this diff),
-  plus 24 `Not Run` entries for executables this incremental build
-  tree has never produced (`recording_*`, `replay_*`,
-  `native_viewer_snapshot`, …). Final tallies reported when
-  `reference.leg_loop` completes.
+  stale `input.*` capture in this worktree, unrelated to this diff).
+  The 29 `Not Run` entries are executables this incremental build
+  tree has never produced (verified `NOT-BUILT` on disk:
+  `recording_*`, `replay_*`, `native_viewer_snapshot`, monitors, …).
+  `reference.coupled_rider_task` passed in 1693.25 s inside its
+  documented ~25–36 min budget (`TIMEOUT 5400` pin,
+  `Phase3Ports.cmake:265`).
 - Linux stale-binary hazard observed in the prior session (unknown
   `ArticulatedConfig` fields from a pre-weld CLI build) is retired:
   `/build/root-clang` `bike-ride`/`bike-research`/`bike-replay` were

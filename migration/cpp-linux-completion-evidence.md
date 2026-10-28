@@ -9190,13 +9190,16 @@ model-invalid; a clean run is 0).
 - Check counts identical across platforms:
   `reference.ride_backend_cli` **PASS 29 checks** both;
   `reference.golden_episode_regressions` **PASS 1095 checks** both.
-- Darwin L1 `ctest -L reference -j8`: batch tests pass; reds are the
-  documented baseline set — `golden_episode_tool` (`native recorder
-  rows reproduce Python oracle`), `pneumatic_tire_oracle`,
-  `native_numeric_completion`, `native_pneumatic_tire` — plus
-  `native_spindle_controller` (0.02 s stale `input.*` fixture capture,
-  unrelated to this diff) and 24 `Not Run` unbuilt executables in this
-  incremental build tree.
+- Darwin L1 `ctest -L reference -j8` (139 tests, ~40 min wall):
+  **105 passed / 5 failed / 29 Not Run** — both batch tests pass; the
+  5 reds are the documented baseline family (`golden_episode_tool`
+  `native recorder rows reproduce Python oracle`,
+  `pneumatic_tire_oracle`, `native_numeric_completion`,
+  `native_pneumatic_tire`) plus `native_spindle_controller` (0.02 s
+  stale `input.*` fixture capture, unrelated to this diff); the 29
+  `Not Run` entries are unbuilt executables in this incremental build
+  tree. `reference.coupled_rider_task` passed 1693.25 s inside its
+  documented ~25–36 min `TIMEOUT 5400` budget.
 - Linux stale-binary hazard retired: `/build/root-clang` CLI targets
   rebuilt before probing; identical deterministic CLI behavior both
   platforms. No `run_tests.sh` per lane constraint; no pytest files

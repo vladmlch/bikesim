@@ -428,7 +428,8 @@ std::vector<std::string> EffortContext::strength_violations(
 
 PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState initial,
                                      int generation, rider::SpindleController *controller,
-                                     writers::RiderContactWriter *contacts)
+                                     writers::RiderContactWriter *contacts,
+                                     std::function<void(std::uint64_t)> before_close)
     : config_(config), state_(std::move(initial)), generation_(generation),
       buffer_(config_.period_steps, next_interval(state_.history), state_.history.last_end),
       workspace_(static_cast<rider::lapack_int>(config_.max_dofs), 6, 1),
@@ -445,7 +446,8 @@ PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState init
             {"energy_scale_j", Wire(state_.energy.energy_scale_j)}};
     if (config_.async_telemetry) {
         if (controller_) effort_context_.emplace(*controller_, config_.max_qpos, config_.max_dofs);
-        async_ = std::make_unique<AsyncCloseRunner>(config_, state_, generation_, effort_context_);
+        async_ = std::make_unique<AsyncCloseRunner>(config_, state_, generation_,
+            effort_context_, std::move(before_close));
     }
 }
 

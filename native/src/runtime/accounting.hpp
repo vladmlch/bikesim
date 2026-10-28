@@ -2,6 +2,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
@@ -128,7 +129,10 @@ class PeriodAccounting {
 public:
     PeriodAccounting(AccountingConfig config, AccountingState initial, int generation,
                      rider::SpindleController *controller,
-                     writers::RiderContactWriter *contacts);
+                     writers::RiderContactWriter *contacts,
+                     // Test-only worker fault injection, forwarded to the
+                     // AsyncCloseRunner seam. Production passes an empty hook.
+                     std::function<void(std::uint64_t)> before_close = {});
     ~PeriodAccounting();
     PeriodAccounting(const PeriodAccounting&) = delete;
     PeriodAccounting& operator=(const PeriodAccounting&) = delete;

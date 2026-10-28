@@ -640,7 +640,13 @@ add_dependencies(reference.native_platform_replay bike-replay)
 # and recorded-frame playback (subprocess CLI + in-process loaders) split
 # from the checked-replay identity gate.
 bike_add_reference_test(recording_platform_compat ENGINE
-  SOURCES ../integration/test_recording_platform_compat.cpp
+  SOURCES test_recording_platform_compatibility.cpp
   LIBRARIES bike_replay bike_recording
   LABELS t53 platform replay slow)
 add_dependencies(reference.recording_platform_compat bike-recording bike-replay)
+# tests/test_async_recovery.py port: detach/replay recovery ownership at
+# the PeriodAccounting boundary (the _close_queues records are dropped —
+# Python multiprocessing transport mechanics).
+bike_add_reference_test(async_recovery ENGINE
+  SOURCES test_async_recovery.cpp LIBRARIES bike_app
+  LABELS t53 platform runtime)

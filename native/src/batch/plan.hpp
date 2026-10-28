@@ -7,7 +7,6 @@
 #include <stop_token>
 #include <string>
 #include <string_view>
-#include <string_view>
 #include <vector>
 
 namespace bike::batch {
@@ -44,6 +43,7 @@ struct ExecuteOptions {
 [[nodiscard]] std::vector<std::string> parse_seeds(std::string_view);
 [[nodiscard]] io::Value result_record(const Job&, const Result&);
 [[nodiscard]] io::Value summarize(std::span<const Job>, std::span<const Result>,
-    double elapsed_s, const std::filesystem::path&, bool interrupted);
+    double elapsed_s, const std::filesystem::path&, bool interrupted,
+    unsigned workers = 0);
 [[nodiscard]] int research_sweep(std::span<const std::string_view>, const std::filesystem::path& executable);
 } // namespace bike::batch

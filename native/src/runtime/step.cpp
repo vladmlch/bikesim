@@ -547,31 +547,6 @@ std::vector<double> shock_joint_limit_qfrc(const mjModel *model,
     return qfrc;
 }
 
-// _connect_equality_rows — equality rows owned by connect equalities that
-// are NOT rider attachments (connect_saddle/grip_/foot_ stay inside
-// rider_contacts' weld accounting).
-std::vector<int> connect_equality_rows(const mjModel *model,
-                                       const mjData *data) {
-    const auto efc_type = ibuf(data->efc_type, data->nefc);
-    const auto efc_id = ibuf(data->efc_id, data->nefc);
-    const auto eq_type = ibuf(model->eq_type, model->neq);
-    std::vector<int> rows;
-    for (int i = 0; i < data->nefc; ++i) {
-        if (efc_type[static_cast<std::size_t>(i)] != mjCNSTR_EQUALITY)
-            continue;
-        const int eq = efc_id[static_cast<std::size_t>(i)];
-        if (eq_type[static_cast<std::size_t>(eq)] != mjEQ_CONNECT)
-            continue;
-        const char *name = mj_id2name(model, mjOBJ_EQUALITY, eq);
-        const std::string_view n = name != nullptr ? name : "";
-        if (n.starts_with("connect_saddle") ||
-            n.starts_with("connect_grip_") || n.starts_with("connect_foot_"))
-            continue;
-        rows.push_back(i);
-    }
-    return rows;
-}
-
 // engine_passive_loss_power — damping/fluid loss after refunding the
 // explicit joint springs (their energy is a stored term, not a loss).
 double engine_passive_loss_power(const mjModel *model,
@@ -982,6 +957,32 @@ numerical_constraint_powers(const mjModel *model, const mjData *data,
             powers.emplace_back(key, power);
     }
     return powers;
+}
+
+// _connect_equality_rows — equality rows owned by connect equalities that
+// are NOT rider attachments (connect_saddle/grip_/foot_ stay inside
+// rider_contacts' weld accounting). Published on step.hpp so the
+// pinned-measurement port audits the mask against the live arena.
+std::vector<int> connect_equality_rows(const mjModel *model,
+                                       const mjData *data) {
+    const auto efc_type = ibuf(data->efc_type, data->nefc);
+    const auto efc_id = ibuf(data->efc_id, data->nefc);
+    const auto eq_type = ibuf(model->eq_type, model->neq);
+    std::vector<int> rows;
+    for (int i = 0; i < data->nefc; ++i) {
+        if (efc_type[static_cast<std::size_t>(i)] != mjCNSTR_EQUALITY)
+            continue;
+        const int eq = efc_id[static_cast<std::size_t>(i)];
+        if (eq_type[static_cast<std::size_t>(eq)] != mjEQ_CONNECT)
+            continue;
+        const char *name = mj_id2name(model, mjOBJ_EQUALITY, eq);
+        const std::string_view n = name != nullptr ? name : "";
+        if (n.starts_with("connect_saddle") ||
+            n.starts_with("connect_grip_") || n.starts_with("connect_foot_"))
+            continue;
+        rows.push_back(i);
+    }
+    return rows;
 }
 
 // ---- construction ------------------------------------------------------

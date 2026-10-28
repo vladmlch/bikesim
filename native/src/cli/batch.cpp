@@ -17,6 +17,11 @@
 namespace bike::cli {
 int batch_command(const Arguments& args) {
     using Clock=std::chrono::steady_clock;
+    // An explicit --serial/--jobs never performs CPU discovery and is
+    // validated before the spec is opened or any output exists.
+    const auto count=args.flag("serial")?1
+        :args.has("jobs")?args.integer("jobs"):args.integer("jobs",batch::performance_cores());
+    if(count<1||std::cmp_greater(count,std::numeric_limits<unsigned>::max()))throw ArgumentError("--jobs must be positive");
     const auto bytes=io::read_numpy_bytes(args.text("spec"));
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) byte-to-char aliasing is the designed idiom for raw file bytes
     const std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
@@ -33,8 +38,6 @@ for(const auto& arg:job.argv)views.push_back(arg);
         for(const auto& job:jobs) {std::cout<<job.id<<": bike-research";for(const auto& arg:job.argv)std::cout<<' '<<arg;std::cout<<'\n';}
         std::cout<<jobs.size()<<" job(s)\n";return 0;
     }
-    const auto count=args.flag("serial")?1:args.integer("jobs",batch::performance_cores());
-    if(count<1||std::cmp_greater(count,std::numeric_limits<unsigned>::max()))throw ArgumentError("--jobs must be positive");
     const auto root=std::filesystem::absolute(args.text("out"));
     if(std::filesystem::exists(root)&&!std::filesystem::is_empty(root)&&!args.flag("overwrite"))throw ArgumentError("output exists; choose another --out or pass --overwrite: "+root.string());
     std::filesystem::create_directories(root);
@@ -63,10 +66,15 @@ for(const auto& arg:job.argv)views.push_back(arg);
         }
         std::cout<<'['<<++done<<'/'<<jobs.size()<<"] "<<result.id<<" exit="<<result.exit_code<<" wall="<<result.wall_s<<"s\n";
     };
+    // The oracle banner: "in-process" iff --serial or an explicit --jobs 1;
+    // every pooled run (including a discovered worker count) is "spawn".
+    const bool in_process=args.flag("serial")||(args.has("jobs")&&count==1);
+    std::cout<<"workers="<<count<<" start_method="<<(in_process?"in-process":"spawn")<<'\n';
     const auto results=batch::execute(jobs,static_cast<unsigned>(count),options);
     const auto elapsed=std::chrono::duration<double>(Clock::now()-started).count();
     results_file.close();
-    std::cout<<io::recording_json(batch::summarize(jobs,results,elapsed,results_path,interrupt.deferred()!=0))<<'\n';
+    std::cout<<io::recording_json(batch::summarize(jobs,results,elapsed,results_path,
+        interrupt.deferred()!=0,static_cast<unsigned>(count)))<<'\n';
     return interrupt.deferred()?130:std::ranges::all_of(results,[](const auto& r){return r.exit_code==0;})?0:1;
 }
 } // namespace bike::cli

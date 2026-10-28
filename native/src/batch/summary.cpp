@@ -3,6 +3,7 @@
 #include "../io/json.hpp"
 #include "../runtime/setup_values.hpp"
 #include <cmath>
+#include <cstdlib>
 #include <map>
 
 namespace bike::batch {
@@ -34,7 +35,7 @@ io::Value result_record(const Job& job,const Result& result) {
     return record;
 }
 io::Value summarize(std::span<const Job> jobs,std::span<const Result> results,double elapsed,
-    const std::filesystem::path& path,bool interrupted) {
+    const std::filesystem::path& path,bool interrupted,unsigned workers) {
     if(jobs.size()!=results.size())throw std::invalid_argument("batch summary identity mismatch");
     std::map<int,std::int64_t> counts;double wall=0.,sim=0.;
     for(std::size_t i=0;i<jobs.size();++i) {
@@ -46,7 +47,12 @@ io::Value summarize(std::span<const Job> jobs,std::span<const Result> results,do
         } else sim+=duration?io::as_double(*duration,"job.duration"):3.;
     }
     Object codes;for(const auto& [code,count]:counts)codes.emplace_back(std::to_string(code),integer(count));
+    Object policy;
+    if(const char* threads=std::getenv("OPENBLAS_NUM_THREADS");threads&&*threads)
+        policy.emplace_back("OPENBLAS_NUM_THREADS",text(threads));
     return Value{Object{{"jobs",integer(static_cast<std::int64_t>(results.size()))},{"exit_codes",Value{std::move(codes)}},
+        {"workers",integer(static_cast<std::int64_t>(workers))},
+        {"thread_policy",Value{std::move(policy)}},
         {"elapsed_s",real(std::round(elapsed*100.)/100.)},{"worker_wall_s",real(std::round(wall*100.)/100.)},
         {"requested_sim_seconds",real(std::round(sim*1000.)/1000.)},
         {"throughput_x",elapsed>0.?real(std::round(wall/elapsed*100.)/100.):Value{}},

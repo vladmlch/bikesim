@@ -517,3 +517,53 @@ add_dependencies(reference.replay_playback bike-replay)
 bike_add_reference_test(native_viewer_snapshot ENGINE
   SOURCES test_native_viewer_snapshot.cpp LIBRARIES bike_replay bike_recording bike_app
   LABELS t53 replay)
+# 3.34 frontends/realtime/async/batch batch — tests/test_batch.py port:
+# spec expansion, reserved/validated flags, CPU policy and the real
+# serial/pool episode equivalence through the bike-batch CLI artifact.
+bike_add_reference_test(batch ENGINE
+  SOURCES ../integration/test_batch.cpp LIBRARIES bike_app bike_cli
+  LABELS t53 frontend slow)
+add_dependencies(reference.batch bike-batch bike-research)
+bike_add_reference_test(async_close ENGINE
+  SOURCES ../integration/test_async_close.cpp LIBRARIES bike_app
+  LABELS t53 frontend slow)
+# 3.34 frontend/runtime batch — the seven remaining Python reference files.
+# frontend_windows ports the fake-window key/pacer/preview/viewer-gate
+# contracts; the two GUI/import-only nodes stay `drop` in the ledger.
+bike_add_reference_test(frontend_windows ENGINE
+  SOURCES test_frontend_windows.cpp LIBRARIES bike_app bike_viewer
+  LABELS t53 frontend)
+# physical_view ports RenderOwner apply/ownership/reject-before-mutate plus
+# the live frame's HUD schema.
+bike_add_reference_test(physical_view ENGINE
+  SOURCES test_physical_view.cpp LIBRARIES bike_app bike_viewer
+  LABELS t53 frontend)
+# pinned_measurement ports EqualityReactions force/torque, the closure-row
+# mask and the RiderContactWriter settle/sample face on the pinned plant.
+bike_add_reference_test(pinned_measurement ENGINE
+  SOURCES test_pinned_measurement.cpp LIBRARIES bike_app
+  LABELS t53 frontend slow)
+# realtime_deferred_checks ports the bulk road_samples parity, the deferred
+# unexplained-wrench first-failure attribution and the eager/deferred
+# identical-sample contract.
+bike_add_reference_test(realtime_deferred_checks ENGINE
+  SOURCES test_realtime_deferred_checks.cpp LIBRARIES bike_app
+  LABELS t53 frontend)
+# native_ride_frontend ports the real measurement driver
+# (advance/reason/export/summary) plus per-generation seal dedupe/conflict
+# through RunCapture and the physical_assets name set.
+bike_add_reference_test(native_ride_frontend ENGINE
+  SOURCES test_native_ride_frontend.cpp LIBRARIES bike_app bike_cli bike_recording bike_realtime_measurement
+  LABELS t53 frontend slow)
+# runtime_single_path ports the accounted HUD real-time factor /
+# first-failure marker and the configured-dt measurement driver; the
+# adapter-only records stay `drop`.
+bike_add_reference_test(runtime_single_path ENGINE
+  SOURCES test_runtime_single_path.cpp LIBRARIES bike_app bike_viewer bike_cli bike_realtime_measurement
+  LABELS t53 frontend slow)
+# pneumatic_physical_runtime ports the end-to-end pneumatic ride record on
+# the repository pneumatic profile; the two codec records stay `contract`
+# (reference.pneumatic_tire_forces + reference.equilibrium_state_file).
+bike_add_reference_test(pneumatic_physical_runtime ENGINE
+  SOURCES test_pneumatic_physical_runtime.cpp LIBRARIES bike_app bike_cli
+  LABELS t53 frontend slow)

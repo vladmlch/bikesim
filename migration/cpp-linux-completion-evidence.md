@@ -8615,3 +8615,119 @@ integration was 4 merges ahead rather than 2 — irrelevant to the
 outcome since the union is computed key-by-key. L3
 (`tools/run_tests.sh native`) not re-run — bounded merge-back scope
 per protocol; lane/d's own gate evidence is in `task-C327-report.md`.
+
+## 2026-10-28 — lane/d batch 3.32 replay/view merge-back (merge `3c1c35ed`)
+
+Serialized merge (only merge in flight). Lane/d tip `296a9033`
+branched directly at integration tip `1601b5a7` — merge-base == HEAD,
+so `--no-ff` produced a **zero-conflict** merge and the post-merge
+tree is byte-identical to lane/d's tip (`git diff 296a9033 HEAD` =
+empty). The union invariants were still verified programmatically
+rather than assumed from the clean fast-forward shape.
+
+### Merge surface
+
+- `migration/test-port-map.json` — **2,393 records, all
+  `(source_path, source_symbol)` keys unique**; headers
+  `static_test_functions=2393` / `top_level_test_functions=2377`
+  (records count, both sides identical). Lane/d edited exactly its
+  **51 batch records** across the 9 batch files
+  (`test_replay_playback.py` 5, `test_replay_manifest_v2.py` 10,
+  `test_replay_recording_v3.py` 6, `test_replay_session.py` 7,
+  `test_native_replay_recording_v3.py` 3,
+  `test_native_replay_session.py` 4, `test_native_view_contracts.py`
+  9, `test_native_viewer_snapshot.py` 2,
+  `test_pedelec_replay_contract.py` 5). Transitions: **48
+  `planned→port`**, **1 `planned→drop`**
+  (`test_native_replay_rejects_a_missing_selected_extension` —
+  `python-only`: `BIKE_NATIVE_BUILD_PATH` nanobind artifact selection
+  has no native counterpart in a statically linked build; the
+  recorded-identity rejection is covered by
+  `reference.native_replay_session::test_native_session_rejects_foreign_identity_before_any_plant`),
+  **2 `planned→planned`** (the two `test_native_viewer_snapshot.py`
+  records — evidence refreshed, stay `planned`/`bitwise-oracle`
+  pending two-platform goldens). Dispositions: `port` 894→**942**
+  (+48), `drop` 113→**114** (+1), `golden` 351 (unchanged), `planned`
+  1035→**986** (−49) — the spec forecast matches exactly.
+- `migration/python-removal.json` — 535 rows; `replacement_landed`
+  88→**96** (+8: `test_replay_playback.py`,
+  `test_replay_manifest_v2.py`, `test_replay_recording_v3.py`,
+  `test_replay_session.py`, `test_native_replay_recording_v3.py`,
+  `test_native_replay_session.py`, `test_native_view_contracts.py`,
+  `test_pedelec_replay_contract.py`, each carrying its `reference.*`
+  CTest id in `verification_ids`); `planned` 447→**439**.
+  `test_native_viewer_snapshot.py` stays `planned` until the two
+  parity reds land; deletion stays gated at T63.
+- `native/tests/reference/Phase3Ports.cmake` — +32 lines: nine `t53
+  replay` registrations, **103→112 `bike_add_reference_test`
+  entries, no duplicate SOURCES**. `replay_playback` sources
+  `../integration/test_replay_playback.cpp`; `add_dependencies` on
+  `bike-validate` (`pedelec_replay_contract` subprocess) and
+  `bike-replay` (`replay_playback` subprocess).
+- `native/src/replay/legacy.cpp` +82 — strict identity-schema-2
+  execution validation (`nonempty`, `hashes`, `validate_platform`,
+  `validate_libraries`, `validate_numerics`, `validate_context_v2`,
+  `validate_versioned`) mirroring `execution_identity.py`'s persisted
+  contract (Darwin↔ACCELERATE, Linux↔NUMPY_OPENBLAS pairings, BLAS
+  32/LAPACK 64 vs 64/64 integer ABI); dispatched on the
+  `identity_schema` discriminator — the legacy schema-2 path is
+  preserved unchanged for records without the field.
+- 9 new test TUs (8 reference + `tests/integration/
+  test_replay_playback.cpp`) + `replay_reference_support.hpp` (568
+  lines) + `task-C332-report.md` — new files, taken as-is.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new registrations) + `cmake --build --target` (9 batch
+  targets + `bike-validate` + `bike-replay`) `-j8`: green compile +
+  link, zero warnings relevant to the merge.
+- `ctest -R 'replay|view'`: **9/9 PASS** (41.06 s) —
+  `replay_manifest_v2` 0.86 s, `replay_recording_v3` 9.15 s,
+  `replay_session` 11.06 s, `native_replay_recording_v3` 5.98 s,
+  `native_replay_session` 4.69 s, `pedelec_replay_contract` 1.77 s,
+  `native_view_contracts` 0.56 s, `replay_playback` 5.68 s,
+  `native_viewer_snapshot` 1.30 s. Per-binary check counts:
+  manifest 1270, recording 24, session 112, native pair 45+14,
+  pedelec 31, view 66, playback 220, snapshot 12 — matching the spec
+  expectations verbatim.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → `configure root-clang root` → `build
+  root-clang` (9 batch targets + `bike-validate` + `bike-replay`):
+  green (24 ninja steps, clean compile + link).
+- `ctest -R 'replay|view'`: **9/9 PASS** (31.90 s) — same nine tests,
+  all green.
+- `ctest -L reference -E 'reference\.coupled_rider_task' -j8`:
+  **117/121** — reds exactly the documented 4-red baseline verbatim
+  {`reference.golden_episode_tool`, `reference.native_numeric_completion`,
+  `reference.pneumatic_tire_oracle`, `reference.native_pneumatic_tire`};
+  121 = 112 + 9 new batch registrations, all batch cases green inside
+  the sweep. No `reference.native_loader.*` env-failures observed;
+  no new reds attributable to the merge.
+
+### Ledger deltas (pre-merge `1601b5a7` → post-merge `3c1c35ed`)
+
+- `test-port-map.json`: 2393 → **2393** records (in-place batch
+  edits, no inserts/deletes); headers 2393/2377 unchanged. `port` 894
+  → **942** (+48), `golden` 351 (unchanged), `drop` 113 → **114**
+  (+1), `planned` 1035 → **986** (−49). The spec's ~942/~114/~986
+  forecast matches exactly.
+- `python-removal.json`: `replacement_landed` 88 → **96** (+8);
+  `planned` 447 → **439**.
+- `Phase3Ports.cmake`: 103 → **112** registrations.
+
+### Assessment
+
+Clean `--no-ff` merge with zero conflicts — the lightest possible
+shape since lane/d branched at the integration tip. Every ledger
+invariant audited programmatically anyway: port-map keys unique and
+headers honest, the 51-record batch scope touches only the 9 batch
+files, disposition arithmetic closes (+48 port, +1 drop, −49
+planned), and `python-removal` flipped exactly the 8 covered rows
+while `test_native_viewer_snapshot.py` correctly stays `planned`.
+All 9 batch cases green on both platforms; the linux `-L reference`
+sweep reproduces the documented 4-red baseline verbatim with no
+merge-attributable reds. L3 (`tools/run_tests.sh native`) not re-run
+— bounded merge-back scope per protocol; lane/d's own gate evidence
+is in `task-C332-report.md`.

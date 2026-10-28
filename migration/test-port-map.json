@@ -11398,13 +11398,17 @@
       "line": 73,
       "end_line": 88,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_stock_binding_raises_fatal_error_and_survives",
+      "native_test_id": "reference.native_engine_errors::test_stock_binding_raises_fatal_error_and_survives",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_stock_binding_raises_fatal_error_and_survives"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11412,13 +11416,18 @@
       "line": 92,
       "end_line": 117,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_native_fatal_constructor_preserves_process",
+      "native_test_id": "reference.native_engine_errors::test_native_fatal_constructor_preserves_process",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_native_fatal_constructor_preserves_process[mujoco_first]",
+        "tests/reference/test_native_engine_errors.py::test_native_fatal_constructor_preserves_process[native_first]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11426,13 +11435,17 @@
       "line": 120,
       "end_line": 135,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_valid_solver_still_constructs_and_forwards",
+      "native_test_id": "reference.native_engine_errors::test_valid_solver_still_constructs_and_forwards",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_valid_solver_still_constructs_and_forwards"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11440,13 +11453,17 @@
       "line": 138,
       "end_line": 173,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_runtime_fatal_poisons_stepper_until_reset",
+      "native_test_id": "reference.native_engine_errors::test_runtime_fatal_poisons_stepper_until_reset",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_runtime_fatal_poisons_stepper_until_reset"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11454,13 +11471,17 @@
       "line": 176,
       "end_line": 210,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_set_const_fatal_poisons_owner_and_preserves_process",
+      "native_test_id": "reference.native_engine_errors::test_set_const_fatal_poisons_owner_and_preserves_process",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_set_const_fatal_poisons_owner_and_preserves_process"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11468,13 +11489,17 @@
       "line": 213,
       "end_line": 256,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_valid_set_state_can_recover_after_rejected_restore",
+      "native_test_id": "reference.native_engine_errors::test_valid_set_state_can_recover_after_rejected_restore",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_valid_set_state_can_recover_after_rejected_restore"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11482,13 +11507,18 @@
       "line": 260,
       "end_line": 292,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_configured_owner_recovery_clears_pending_drive_state",
+      "native_test_id": "reference.native_engine_errors::test_configured_owner_recovery_clears_pending_drive_state",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_configured_owner_recovery_clears_pending_drive_state[reset]",
+        "tests/reference/test_native_engine_errors.py::test_configured_owner_recovery_clears_pending_drive_state[set_state]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11496,13 +11526,18 @@
       "line": 296,
       "end_line": 329,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_realtime_status_path_reports_fatal_without_throwing_inside_marked_region",
+      "native_test_id": "reference.native_engine_errors::test_realtime_status_path_reports_fatal_without_throwing_inside_marked_region",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_realtime_status_path_reports_fatal_without_throwing_inside_marked_region[forward]",
+        "tests/reference/test_native_engine_errors.py::test_realtime_status_path_reports_fatal_without_throwing_inside_marked_region[step]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11510,13 +11545,17 @@
       "line": 332,
       "end_line": 365,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_installed_python_callback_is_rejected_before_native_construction",
+      "native_test_id": "reference.native_engine_errors::test_installed_python_callback_is_rejected_before_native_construction",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_installed_python_callback_is_rejected_before_native_construction"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11524,13 +11563,17 @@
       "line": 368,
       "end_line": 406,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_stock_time_callback_error_preserves_python_exception",
-      "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_stock_time_callback_error_preserves_python_exception"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only vendor-interop, unrepresentable natively)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: dropped \u2014 vendor trampoline exception propagation: the record asserts a Python callable's exception text survives through the stock binding's mjcb_time into the native constructor \u2014 pure interpreter/nanobind machinery. The native half (foreign timer rejected before construction) is ported as test_ctypes_time_callback_is_rejected_before_native_construction."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11538,13 +11581,17 @@
       "line": 409,
       "end_line": 438,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_installed_callback_rejects_runtime_call_without_poison",
+      "native_test_id": "reference.native_engine_errors::test_installed_callback_rejects_runtime_call_without_poison",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_installed_callback_rejects_runtime_call_without_poison"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11552,13 +11599,17 @@
       "line": 441,
       "end_line": 469,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_python_time_callback_is_rejected_before_marked_runtime_step",
+      "native_test_id": "reference.native_engine_errors::test_python_time_callback_is_rejected_before_marked_runtime_step",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_python_time_callback_is_rejected_before_marked_runtime_step"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11566,13 +11617,17 @@
       "line": 472,
       "end_line": 503,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_ctypes_time_callback_is_rejected_before_native_construction",
+      "native_test_id": "reference.native_engine_errors::test_ctypes_time_callback_is_rejected_before_native_construction",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_ctypes_time_callback_is_rejected_before_native_construction"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11580,13 +11635,17 @@
       "line": 506,
       "end_line": 550,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_ctypes_time_callback_is_rejected_before_native_recovery",
+      "native_test_id": "reference.native_engine_errors::test_ctypes_time_callback_is_rejected_before_native_recovery",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_ctypes_time_callback_is_rejected_before_native_recovery"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11594,13 +11653,17 @@
       "line": 553,
       "end_line": 591,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_simulate_owned_time_callback_is_accepted_for_runtime_steps",
+      "native_test_id": "reference.native_engine_errors::test_simulate_owned_time_callback_is_accepted_for_runtime_steps",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_simulate_owned_time_callback_is_accepted_for_runtime_steps"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11608,13 +11671,17 @@
       "line": 594,
       "end_line": 608,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_unsupported_callback_rejected_before_drive_restore",
+      "native_test_id": "reference.native_engine_errors::test_unsupported_callback_rejected_before_drive_restore",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_unsupported_callback_rejected_before_drive_restore"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11622,13 +11689,17 @@
       "line": 611,
       "end_line": 631,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_stock_timer_installed_after_native_construction_is_allowed",
+      "native_test_id": "reference.native_engine_errors::test_stock_timer_installed_after_native_construction_is_allowed",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_stock_timer_installed_after_native_construction_is_allowed"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11636,13 +11707,17 @@
       "line": 634,
       "end_line": 688,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_stock_fatal_handler_nests_inside_native_timer_callback",
-      "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_stock_fatal_handler_nests_inside_native_timer_callback"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only vendor-interop, unrepresentable natively)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: dropped \u2014 stock-binding FatalError recovery nested inside a timer callback during a native framed call \u2014 requires the vendored Python binding inside a foreign callback, which the Python-free core rejects by address before invocation. The native frame-nesting contract is covered by native_contract_tests nested_engine_frames."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11650,13 +11725,17 @@
       "line": 691,
       "end_line": 734,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_nested_stock_native_warning_does_not_recurse",
-      "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_nested_stock_native_warning_does_not_recurse"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only vendor-interop, unrepresentable natively)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: dropped \u2014 stock->native warning forwarding exactly once through nested frames \u2014 the stock handler's Python owner has no Python-free analog. Native warning forwarding to the previous TLS handler is covered by native_contract_tests previous_tls_handler_restored."
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11664,13 +11743,17 @@
       "line": 737,
       "end_line": 762,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_plugin_model_is_rejected_before_native_engine_loading",
+      "native_test_id": "reference.native_engine_errors::test_plugin_model_is_rejected_before_native_engine_loading",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_plugin_model_is_rejected_before_native_engine_loading"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11678,13 +11761,17 @@
       "line": 765,
       "end_line": 789,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_invalid_history_timestep_rejected_before_make_data",
+      "native_test_id": "reference.native_engine_errors::test_invalid_history_timestep_rejected_before_make_data",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_invalid_history_timestep_rejected_before_make_data"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11692,13 +11779,19 @@
       "line": 793,
       "end_line": 812,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_bad_model_file_raises_without_exiting",
+      "native_test_id": "reference.native_engine_errors::test_bad_model_file_raises_without_exiting",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_bad_model_file_raises_without_exiting[None]",
+        "tests/reference/test_native_engine_errors.py::test_bad_model_file_raises_without_exiting[]",
+        "tests/reference/test_native_engine_errors.py::test_bad_model_file_raises_without_exiting[not an MJB]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11706,13 +11799,19 @@
       "line": 822,
       "end_line": 848,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_actual_engine_allocation_error_is_caught_in_c_contract",
+      "native_test_id": "reference.native_engine_errors::test_actual_engine_allocation_error_is_caught_in_c_contract",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_actual_engine_allocation_error_is_caught_in_c_contract[--load-allocation-failure]",
+        "tests/reference/test_native_engine_errors.py::test_actual_engine_allocation_error_is_caught_in_c_contract[--make-data-allocation-failure]",
+        "tests/reference/test_native_engine_errors.py::test_actual_engine_allocation_error_is_caught_in_c_contract[--late-data-allocation-failure]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_engine_errors.py",
@@ -11720,13 +11819,17 @@
       "line": 851,
       "end_line": 877,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_engine_errors::test_configure_rejects_unsupported_installed_mujoco_version",
+      "native_test_id": "reference.native_engine_errors::test_configure_rejects_unsupported_installed_mujoco_version",
       "native_source": "native/tests/reference/test_native_engine_errors.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_engine_errors.py::test_configure_rejects_unsupported_installed_mujoco_version"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64; linux oracle run not required (no live-oracle/golden comparisons in batch)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.29a lane/e: ported to native/tests/reference/test_native_engine_errors.cpp; CTest reference.native_engine_errors green on darwin-arm64 (build/native-release, 7.75s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref, 1.54s); source suite 31/31 green on darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_input_contracts.py",
@@ -12269,14 +12372,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_selected_build_loads_the_exact_imported_extension"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 extension-loading machinery: asserts the selected build's exact bike_native .so is imported; the Python-free graph has no extension to import \u2014 the selected build IS the CTest execution root."
       ]
     },
     {
@@ -12287,14 +12393,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_load_native_records_selected_build_and_imported_extension"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 load_native() import provenance fields on the imported module; module provenance is interpreter machinery with no native surface."
       ]
     },
     {
@@ -12305,14 +12414,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_pytest_reporter_records_selected_native_count_and_provenance"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 pytest plugin reporter counting native items and recording provenance; harness-internal reporting, removed with the pytest loader."
       ]
     },
     {
@@ -12323,14 +12435,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_pytest_reporter_does_not_count_native_tool_tests"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 pytest reporter item classification (tool tests excluded); harness-internal, no native surface."
       ]
     },
     {
@@ -12341,14 +12456,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_repeated_load_after_collection_preserves_native_count"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 repeated load_native() idempotence + reporter count preservation; import-caching and reporter state are Python-only."
       ]
     },
     {
@@ -12359,14 +12477,19 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_loader_discards_invalid_or_other_artifact_test_counts[False-True-7]",
+        "tests/reference/test_native_loader.py::test_loader_discards_invalid_or_other_artifact_test_counts[True-False-7]",
+        "tests/reference/test_native_loader.py::test_loader_discards_invalid_or_other_artifact_test_counts[True-True-True]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 reporter count-file validation incl. foreign-artifact rejection; a pytest sidecar format \u2014 Python-only."
       ]
     },
     {
@@ -12377,14 +12500,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_custom_absolute_build_path_loads_its_extension"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 custom BIKE_NATIVE_BUILD_PATH extension import; the Python-free graph selects its build with cmake -S/-B \u2014 no extension exists."
       ]
     },
     {
@@ -12395,14 +12521,20 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_legacy_build_selector_resolves_only_known_builds[-build]",
+        "tests/reference/test_native_loader.py::test_legacy_build_selector_resolves_only_known_builds[asan-build/asan]",
+        "tests/reference/test_native_loader.py::test_legacy_build_selector_resolves_only_known_builds[rtsan-build/rtsan]",
+        "tests/reference/test_native_loader.py::test_legacy_build_selector_resolves_only_known_builds[coverage-build/coverage]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 4 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 legacy build-name selector resolution for extension builds; loader env-surface machinery."
       ]
     },
     {
@@ -12413,14 +12545,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_conflicting_build_selectors_fail_in_a_child_process"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 mutually exclusive build-selector envs fail inside a Python child; loader env-surface machinery."
       ]
     },
     {
@@ -12431,14 +12566,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_relative_build_path_is_rejected_in_a_child_process"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 relative build-path rejection in a Python child process; loader env-surface machinery."
       ]
     },
     {
@@ -12449,14 +12587,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_preimported_module_from_another_build_is_rejected"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 sys.modules provenance check rejecting a pre-imported extension from another build; interpreter module-cache machinery."
       ]
     },
     {
@@ -12467,14 +12608,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_missing_extension_fails_without_import_fallback"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 missing .so import failure with no fallback; extension-loading machinery with no native surface."
       ]
     },
     {
@@ -12485,14 +12629,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_ambiguous_extensions_fail_before_import"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 multiple candidate .so files rejected pre-import; extension-loading machinery."
       ]
     },
     {
@@ -12503,14 +12650,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_rider_forces_import_rejects_an_earlier_wrong_build"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 a second import forcing rejects an earlier wrong build inside the interpreter; import machinery."
       ]
     },
     {
@@ -12521,14 +12671,17 @@
       "owner_task": "T53",
       "native_test_id": "reference.native_loader.test_native_contract_require_control_fails_in_selected_build",
       "native_source": "native/tests/reference/test_native_loader_contracts.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_native_contract_require_control_fails_in_selected_build"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); native contract executable green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: CTest script case executes native/tests/reference/test_native_loader_contracts.cmake; green on darwin-arm64 (build/native-release) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref)"
       ]
     },
     {
@@ -12539,14 +12692,17 @@
       "owner_task": "T53",
       "native_test_id": "reference.native_loader.test_native_contract_executable_lists_registered_cases",
       "native_source": "native/tests/reference/test_native_loader_contracts.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_native_contract_executable_lists_registered_cases"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); native contract executable green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: CTest script case executes native/tests/reference/test_native_loader_contracts.cmake; green on darwin-arm64 (build/native-release) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref)"
       ]
     },
     {
@@ -12557,14 +12713,17 @@
       "owner_task": "T53",
       "native_test_id": "reference.native_loader.test_contract_executable_source_is_in_cmake_manifest",
       "native_source": "native/tests/reference/test_native_loader_contracts.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_contract_executable_source_is_in_cmake_manifest"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); native contract executable green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: CTest script case executes native/tests/reference/test_native_loader_contracts.cmake; green on darwin-arm64 (build/native-release) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-ref)"
       ]
     },
     {
@@ -12575,14 +12734,18 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_native_profile_reporter_rejects_zero_native_items[test_empty_compilation_database_fails_for_expected_sources]",
+        "tests/reference/test_native_loader.py::test_native_profile_reporter_rejects_zero_native_items[codex_no_such_native_item]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 pytest profile reporter rejects a run collecting zero native items; harness-internal reporting."
       ]
     },
     {
@@ -12593,14 +12756,18 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_child_confirms_selected_asan_runtime_is_loaded[False]",
+        "tests/reference/test_native_loader.py::test_child_confirms_selected_asan_runtime_is_loaded[True]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 DYLD_INSERT_LIBRARIES/LD_PRELOAD sanitizer-runtime verification inside a Python child; the root build links sanitizer runtimes directly \u2014 no preload shim exists natively."
       ]
     },
     {
@@ -12611,14 +12778,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_native_loader.py::test_child_rejects_wrong_preload_when_selected_runtime_is_missing"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); record dropped (python-only construction, unrepresentable natively)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md",
         "D14 function-by-function review: preserve native executable negative control, exact registered case list and source manifest owner; only extension loading, Python pytest reporter and interpreter preload assertions are scheduled for removal.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained.",
+        "2026-10-28 3.29a lane/e: dropped \u2014 wrong-preload rejection inside a Python child; sanitizer preload is interpreter machinery \u2014 the root build links runtimes in."
       ]
     },
     {

@@ -517,3 +517,39 @@ add_dependencies(reference.replay_playback bike-replay)
 bike_add_reference_test(native_viewer_snapshot ENGINE
   SOURCES test_native_viewer_snapshot.cpp LIBRARIES bike_replay bike_recording bike_app
   LABELS t53 replay)
+
+# 3.33a T53 research batch — the NativeResearchRuntime external-boundary,
+# capture-cursor, failure/reset, PolicySession lifecycle, program
+# interpolation, legacy-export publication and sensor-delivery contracts
+# from the eight test_native_research_*.py sources. The live-parity legs
+# (welded-physics step/recorder/record comparisons plus one capture/
+# recording oracle node) stay `planned` on the documented baseline drift;
+# the program/sensor oracle legs replay per-platform goldens captured at
+# the _golden sites added in this batch (task-C333a-report.md).
+bike_add_reference_test(native_research_capture ENGINE
+  SOURCES test_native_research_capture.cpp LIBRARIES bike_app
+  LABELS t53 research)
+bike_add_reference_test(native_research_environment ENGINE
+  SOURCES test_native_research_environment.cpp LIBRARIES bike_app
+  LABELS t53 research)
+bike_add_reference_test(native_research_failures ENGINE
+  SOURCES test_native_research_failures.cpp LIBRARIES bike_app
+  LABELS t53 research)
+bike_add_reference_test(native_research_frontend ENGINE
+  SOURCES test_native_research_frontend.cpp research_reference_support.cpp
+  LIBRARIES bike_app
+  LABELS t53 research)
+bike_add_reference_test(native_research_policy ENGINE
+  SOURCES test_native_research_policy.cpp research_reference_support.cpp
+  LIBRARIES bike_app
+  LABELS t53 research)
+bike_add_reference_test(native_research_programs ENGINE
+  SOURCES test_native_research_programs.cpp LIBRARIES bike_app
+  LABELS t53 research golden)
+bike_add_reference_test(native_research_recording ENGINE
+  SOURCES test_native_research_recording.cpp research_reference_support.cpp
+  LIBRARIES bike_app bike_replay bike_recording
+  LABELS t53 research)
+bike_add_reference_test(native_research_sensors ENGINE
+  SOURCES test_native_research_sensors.cpp LIBRARIES bike_app bike_random
+  LABELS t53 research golden)

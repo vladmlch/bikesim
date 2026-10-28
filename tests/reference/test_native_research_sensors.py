@@ -2,6 +2,7 @@ from copy import deepcopy
 from dataclasses import asdict, replace
 import numpy as np
 import pytest
+import _golden
 from native_loader import load_native
 from bike_sim.sim.research.sensor_noise import build_noise_tape
 from bike_sim.sim.research.sensors import SensorConfig, SensorObservation, SensorPipeline
@@ -9,6 +10,36 @@ from bike_sim.sim.research.sensors import SensorConfig, SensorObservation, Senso
 
 # The selected-artifact import doubles as the sanitizer-runtime check.
 bike_native = load_native()
+
+
+def _flat_obs(obs):
+    """12-wide f8 row: time_s, source_time_s, valid, then the 9 channel values.
+
+    The C++ port's flatten_observation emits the same order.
+    """
+    d = obs if isinstance(obs, dict) else asdict(obs)
+    return [d['time_s'], d['source_time_s'], float(d['valid']),
+            *d['specific_force_body_mps2'], d['pitch_rate_up_rad_s'],
+            d['front_wheel_rad_s'], d['rear_wheel_rad_s'], d['crank_rad_s'],
+            d['motor_torque_nm'], d['human_torque_nm']]
+
+
+def _flat_state(state):
+    """The flattened state_dict row the C++ port's flatten_state mirrors."""
+    def opt(value):
+        return [float(value is not None), value if value is not None else 0.]
+    row = (opt(state['last_time']) + opt(state['delivery_time'])
+           + [float(state['cursor']), float(state['samples_attempted']),
+              float(state['samples_dropped'])])
+    startup = state['startup']
+    row.append(float(startup is not None))
+    if startup is not None:
+        row += _flat_obs(startup)
+    queue = state['queue']
+    row.append(float(len(queue)))
+    for sample in queue:
+        row += _flat_obs(sample)
+    return row
 
 
 def native_pipeline(module, config, *, count=32, seed=41):
@@ -35,13 +66,18 @@ def test_noise_latency_dropout_and_stale_match_python(native_module, raw_sensor,
         expected = reference.read(time_s)
         actual = SensorObservation(**native.read(time_s))
         assert_tree(actual, expected, atol=0., rtol=0.)
+        _golden.record(np.asarray(_flat_obs(expected)), 'read')
         before = native.state_dict()
         assert_tree(native.read(time_s), asdict(actual), atol=0., rtol=0.)
         assert_tree(native.state_dict(), before, atol=0., rtol=0.)
         assert_tree(native.state_dict(), reference.state_dict(), atol=0., rtol=0.)
+        _golden.record(np.asarray(_flat_state(reference.state_dict())), 'state')
     assert not native.read(1.)['valid']
-    assert not reference.read(1.).valid
+    stale = reference.read(1.)
+    assert not stale.valid
+    _golden.record(np.asarray(_flat_obs(stale)), 'read')
     assert_tree(native.state_dict(), reference.state_dict(), atol=0., rtol=0.)
+    _golden.record(np.asarray(_flat_state(reference.state_dict())), 'state')
 
 
 def test_imported_startup_row_is_not_drawn_twice(native_module, raw_sensor, assert_tree):
@@ -49,13 +85,17 @@ def test_imported_startup_row_is_not_drawn_twice(native_module, raw_sensor, asse
     reference = SensorPipeline(config, seed=41)
     reference.reset(raw_sensor())
     expected_initial = reference.read(0.)
+    _golden.record(np.asarray(_flat_state(reference.state_dict())), 'input.state')
     native = native_pipeline(native_module, config)
     native.import_state(reference.state_dict())
     assert_tree(native.read(0.), asdict(expected_initial), atol=0., rtol=0.)
+    _golden.record(np.asarray(_flat_obs(expected_initial)), 'imported_read')
     assert native.state_dict()['cursor'] == 1
     reference.push(raw_sensor(.005))
     native.push(asdict(raw_sensor(.005)))
-    assert_tree(native.read(.005), asdict(reference.read(.005)), atol=0., rtol=0.)
+    expected = reference.read(.005)
+    assert_tree(native.read(.005), asdict(expected), atol=0., rtol=0.)
+    _golden.record(np.asarray(_flat_obs(expected)), 'read')
     assert native.state_dict()['cursor'] == 2
 
 
@@ -100,8 +140,11 @@ def test_irregular_delivery_schedule_matches_python(native_module, raw_sensor, a
             raw = raw_sensor(pushes.pop(0))
             reference.push(raw)
             native.push(asdict(raw))
-        assert_tree(native.read(read_at), asdict(reference.read(read_at)), atol=0., rtol=0.)
+        expected = reference.read(read_at)
+        assert_tree(native.read(read_at), asdict(expected), atol=0., rtol=0.)
+        _golden.record(np.asarray(_flat_obs(expected)), 'read')
         assert_tree(native.state_dict(), reference.state_dict(), atol=0., rtol=0.)
+        _golden.record(np.asarray(_flat_state(reference.state_dict())), 'state')
 
 
 def test_same_seed_reset_repeats_and_different_seeds_differ(native_module, raw_sensor, assert_tree):
@@ -128,6 +171,8 @@ def test_same_seed_reset_repeats_and_different_seeds_differ(native_module, raw_s
     native = native_pipeline(native_module, config, count=6, seed=7)
     first_reference = python_sequence(reference)
     first_native = native_sequence(native)
+    _golden.record(np.asarray(
+        [value for obs in first_reference for value in _flat_obs(obs)]), 'sequence')
     # Reset replays the same seed: identical tape, identical deliveries.
     assert_tree(python_sequence(reference), first_reference, atol=0., rtol=0.)
     assert_tree(native_sequence(native), first_native, atol=0., rtol=0.)

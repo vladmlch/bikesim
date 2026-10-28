@@ -8,6 +8,82 @@ using namespace detail;
 constexpr std::array files{"summary.json", "commands_requested.jsonl", "commands_applied.jsonl", "observations.jsonl",
     "transitions.jsonl", "states.npz", "terrain_vertices.npy", "track.toml"};
 constexpr std::array more_files{"trace.csv", "episode_metrics.json", "telemetry.csv", "intervals.jsonl"};
+bool nonempty(const io::Value& value) {
+    return string(value).find_first_not_of(" \t\r\n") != std::string::npos;
+}
+void hashes(const io::Value& execution, const std::string& backend) {
+    for (auto key : {"python_source_sha256", "native_source_sha256", "extension_sha256", "mujoco_library_sha256"}) {
+        const bool expected_null = backend == "python" && std::string_view(key) != "python_source_sha256";
+        if (expected_null) { if (!io::is_null(field(execution, key))) throw recording::RecordingError(std::string("Python execution.") + key + " must be null"); }
+        else digest(field(execution, key), key);
+    }
+}
+// identity_schema=2 platform/numerics context, mirroring
+// execution_identity.py's persisted-record contract. Only the qualified
+// Darwin+ACCELERATE and Linux+NUMPY_OPENBLAS pairings validate.
+void validate_platform(const io::Value& platform) {
+    exact_keys(platform, {"system", "machine", "libc", "os_build", "python_version", "python_soabi"}, "build_context.platform");
+    const auto system = string(field(platform, "system"));
+    if (system != "Darwin" && system != "Linux") throw recording::RecordingError("build_context.platform.system must be one of [Darwin, Linux]");
+    const auto machine = string(field(platform, "machine"));
+    if (!std::regex_match(machine, std::regex("[a-z0-9_.+-]+"))) throw recording::RecordingError("build_context.platform.machine must be a normalized architecture token");
+    const auto& libc = field(platform, "libc");
+    exact_keys(libc, {"name", "version"}, "build_context.platform.libc");
+    for (auto key : {"name", "version"})
+        if (!nonempty(field(libc, key))) throw recording::RecordingError(std::string("build_context.platform.libc.") + key + " must be a nonempty string");
+    for (auto key : {"os_build", "python_version", "python_soabi"})
+        if (!nonempty(field(platform, key))) throw recording::RecordingError(std::string("build_context.platform.") + key + " must be a nonempty string");
+}
+void validate_libraries(const io::Value& libraries, const std::string& backend) {
+    const auto& entries = io::as_array(libraries, "build_context.numerics.libraries");
+    if (entries.empty()) throw recording::RecordingError("build_context.numerics.libraries must be a nonempty list");
+    const auto expected_kind = backend == "ACCELERATE" ? "apple-system" : "file";
+    for (const auto& entry : entries) {
+        exact_keys(entry, {"role", "identity_kind", "sha256", "build_id"}, "build_context.numerics.libraries[]");
+        if (string(field(entry, "role")) != "blas_lapack") throw recording::RecordingError("build_context.numerics.libraries[].role must be 'blas_lapack'");
+        const auto kind = string(field(entry, "identity_kind"));
+        if (kind != "file" && kind != "apple-system") throw recording::RecordingError("build_context.numerics.libraries[].identity_kind must be one of [file, apple-system]");
+        if (kind != expected_kind) throw recording::RecordingError("build_context.numerics.libraries[].identity_kind does not match the numerics backend");
+        if (kind == "file") { digest(field(entry, "sha256"), "build_context.numerics.libraries[].sha256");
+            if (!io::is_null(field(entry, "build_id"))) throw recording::RecordingError("build_context.numerics.libraries[].build_id must be null for a file identity"); }
+        else { if (!io::is_null(field(entry, "sha256"))) throw recording::RecordingError("build_context.numerics.libraries[].sha256 must be null for an apple-system identity");
+            if (!nonempty(field(entry, "build_id"))) throw recording::RecordingError("build_context.numerics.libraries[].build_id must be a nonempty string for an apple-system identity"); }
+    }
+}
+void validate_numerics(const io::Value& numerics) {
+    exact_keys(numerics, {"backend", "numpy_version", "blas_integer_bits", "lapack_integer_bits", "cpu_profile", "threading", "libraries"}, "build_context.numerics");
+    const auto backend = string(field(numerics, "backend"));
+    if (backend != "ACCELERATE" && backend != "NUMPY_OPENBLAS") throw recording::RecordingError("build_context.numerics.backend must be one of [ACCELERATE, NUMPY_OPENBLAS]");
+    if (!nonempty(field(numerics, "numpy_version"))) throw recording::RecordingError("build_context.numerics.numpy_version must be a nonempty string");
+    const auto blas = count(field(numerics, "blas_integer_bits")), lapack = count(field(numerics, "lapack_integer_bits"));
+    const auto expected_blas = backend == "ACCELERATE" ? 32 : 64;
+    if (blas != expected_blas || lapack != 64) throw recording::RecordingError("build_context.numerics: unqualified BLAS/LAPACK integer ABI for backend " + backend);
+    if (!nonempty(field(numerics, "cpu_profile"))) throw recording::RecordingError("build_context.numerics.cpu_profile must be a nonempty string");
+    const auto& threading = field(numerics, "threading");
+    exact_keys(threading, {"implementation", "num_threads"}, "build_context.numerics.threading");
+    if (!nonempty(field(threading, "implementation"))) throw recording::RecordingError("build_context.numerics.threading.implementation must be a nonempty string");
+    if (count(field(threading, "num_threads")) < 1) throw recording::RecordingError("build_context.numerics.threading.num_threads must be a positive integer");
+    validate_libraries(field(numerics, "libraries"), backend);
+}
+void validate_context_v2(const io::Value& context, const std::string& backend) {
+    std::set<std::string> expected{"platform", "numerics"};
+    if (backend == "native") for (auto key : {"build_type", "compiler_id", "compiler_version", "numerical_flags"}) expected.insert(key);
+    exact_keys(context, expected, "identity-schema-2 build_context");
+    if (backend == "native") for (auto key : {"build_type", "compiler_id", "compiler_version", "numerical_flags"})
+        if (!nonempty(field(context, key))) throw recording::RecordingError(std::string("empty build_context.") + key);
+    validate_platform(field(context, "platform")); validate_numerics(field(context, "numerics"));
+    const auto paired = string(field(field(context, "platform"), "system")) == "Darwin" ? "ACCELERATE" : "NUMPY_OPENBLAS";
+    if (string(field(field(context, "numerics"), "backend")) != paired)
+        throw recording::RecordingError("build_context.platform.system cannot host numerics.backend — the qualified pairing differs");
+}
+void validate_versioned(const io::Value& execution, const std::string& backend) {
+    exact_keys(execution, {"backend", "runtime_schema", "python_source_sha256", "native_source_sha256", "extension_sha256", "mujoco_version",
+        "mujoco_library_sha256", "build_context", "identity_schema"}, "identity-schema-2 execution");
+    if (backend != "native" && backend != "python") throw recording::RecordingError("unsupported recorded execution backend");
+    if (count(field(execution, "runtime_schema")) != 1 || string(field(execution, "mujoco_version")).empty())
+        throw recording::RecordingError("unsupported recorded runtime schema/version");
+    hashes(execution, backend); validate_context_v2(field(execution, "build_context"), backend);
+}
 }
 void validate_execution(const io::Value& execution) {
     const auto backend = string(field(execution, "backend"));
@@ -21,16 +97,17 @@ void validate_execution(const io::Value& execution) {
         for (auto key : {"numeric_provider", "source_identity_scope"}) if (string(field(execution, key)).empty()) throw recording::RecordingError(std::string(key) + " must be nonempty");
         return;
     }
+    if (const auto* schema = find(execution, "identity_schema")) {
+        if (count(*schema) != 2) throw recording::RecordingError("unsupported identity_schema; expected integer 2");
+        validate_versioned(execution, backend);
+        return;
+    }
     exact_keys(execution, {"backend", "runtime_schema", "python_source_sha256", "native_source_sha256", "extension_sha256", "mujoco_version",
         "mujoco_library_sha256", "build_context"}, "schema-2 execution");
     if (backend != "native" && backend != "python") throw recording::RecordingError("unsupported recorded execution backend");
     if (count(field(execution, "runtime_schema")) != 1 || string(field(execution, "mujoco_version")).empty())
         throw recording::RecordingError("unsupported recorded runtime schema/version");
-    for (auto key : {"python_source_sha256", "native_source_sha256", "extension_sha256", "mujoco_library_sha256"}) {
-        const bool expected_null = backend == "python" && std::string_view(key) != "python_source_sha256";
-        if (expected_null) { if (!io::is_null(field(execution, key))) throw recording::RecordingError(std::string("Python execution.") + key + " must be null"); }
-        else digest(field(execution, key), key);
-    }
+    hashes(execution, backend);
     const auto& context = field(execution, "build_context");
     if (backend == "python") { if (!io::is_null(context)) throw recording::RecordingError("Python execution.build_context must be null"); }
     else {

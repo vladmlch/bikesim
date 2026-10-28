@@ -8076,3 +8076,134 @@ singletons; ±ulp C++↔oracle drift on unported records; set shrank
 64→43 as sibling ports landed). Zero failures in the batch's surface.
 The tail embeds the designed ~80-min 9,198-TU headers re-sweep inside
 `test_native_check_tools.py::test_standalone_header_sweep_compiles_first_party_headers`.
+
+## 2026-10-28 — lane/c batch 3.23 monitors/energy/acceptance merge-back (merge `5af460cd`)
+
+Serialized merge (only merge in flight). Lane/c tip `f3428d70` sat on
+base `934fc9da` (post-3.15) — four integration merges behind (3.25
+`74d4d422`, F5 spindle `c398df09`, 3.26 `3d228c72`, 3.30 `2077ec72`).
+`git merge-base` = `934fc9da`. Merged `--no-ff` per convention
+(`merge: lane/c batch 3.23 monitors/energy/acceptance`).
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — expected conflict site, but ort
+  auto-merged textually (the two sides edited disjoint record spans).
+  Audited programmatically, not trusted on sight: **2,391 unique
+  (`source_path`,`source_symbol`) records — key-exact union**; zero
+  lost/duplicate/contested. All 53 lane/c batch records carry lane/c's
+  content verbatim; integration's 189 edited records + F5's +1 insert
+  (`test_spindle_rear_chain_effort_matches_python`, predates lane/c
+  base — retained, not regressed) carry integration's content; all
+  2,148 untouched records byte-identical to base. Record order =
+  integration's. Headers `static_test_functions`=2391,
+  `top_level_test_functions`=2375. File re-serializes byte-exact
+  through the canonical writer (`json.dumps(indent=2,
+  ensure_ascii=True)+\n`).
+- `migration/python-removal.json` — ort auto-merged; audited: 535
+  rows, disjoint edit sets unioned exactly. 7 lane/c rows
+  `planned`→`replacement_landed` with `reference.*` verification ids;
+  `test_realistic_pedelec_acceptance.py` snapshot refresh only, stays
+  `planned` (Task-3.09 stop rule); integration's 10 rows intact.
+- `native/tests/reference/Phase3Ports.cmake` — real EOF-append
+  conflict: both sides added registrations after the
+  `native_benchmark` block. Resolved union in batch order: lane/c's 8
+  `t52 physics` registrations placed before integration's 3.25/3.26/
+  3.30 blocks — 78 base + 12 + 8 = **98 `bike_add_reference_test`
+  calls**, zero duplicate SOURCES.
+- `migration/cpp-linux-completion-evidence.md` — real EOF-append
+  conflict: integration's 3.25→3.30 sections kept in place, lane/c's
+  3.23 batch section appended at tail (union at EOF).
+- `native/src/runtime/step.{cpp,hpp}` — integration untouched since
+  base; merged bytes identical to lane/c's (`git diff lane/c` empty).
+  Verified post-merge: exactly ONE `runtime::`-namespace definition
+  each of `constraint_components` (step.cpp:905) and
+  `numerical_constraint_powers` (step.cpp:947); the second
+  anonymous namespace holds only `acc_input_count`/`same_bits`/
+  `acc_input_views` — no duplicate helper copies.
+- Auto-merged lane/c-only files verified identical to lane/c blobs:
+  the 8 `test_*.cpp` ports + 2 support headers, the 3 oracle-harness
+  repairs (`test_energy_ledger.py`, `test_monitor_strictness.py`,
+  `test_sensor_noise.py`), `task-C323-report.md`.
+- Golden fixtures: 10 node pairs per platform under
+  `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  tests_reference_test_sensor_noise.py/`; no path collisions with
+  integration's fixture adds; **all 10 `.bin` payloads `cmp`-verified
+  byte-identical across platforms** (spec asked to spot-check 2 —
+  all 10 checked).
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new registrations) + incremental `cmake --build` of the
+  8 targets: green compile + link (step.cpp rebuilt into `bike_app`).
+- `ctest -R 'monitor|energy|sensor_noise|pedelec|lean|interval'`:
+  **10/10 PASS** — the 8 batch suites plus the two `*_clean_control`
+  binaries the regex incidentally matches (`clean` contains `lean`).
+  Binary check counts identical to lane/c's own gate:
+  `reference_monitor` **19**, `balance_monitor` **120**,
+  `monitor_strictness` **174**, `sensor_noise` **12905**,
+  `acceptance_interval_capture` **2**, `lean_limit` **3**,
+  `energy_ledger` **340**, `realistic_pedelec_acceptance` **7859**
+  (23.47 s; pedelec 14.88 s). Savage measurand reproduces the recorded
+  darwin abort `attachment normal has no planar component` —
+  documented Task-3.09 evidence, records stay `planned`.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → `build root-clang` (115 edges; Ninja
+  regenerated for the new registrations): green.
+- `ctest root-clang -R 'monitor|energy|sensor_noise|pedelec|lean|interval'`:
+  **10/10 PASS** (41.04 s; pedelec 38.54 s). Check counts
+  identical to darwin except `realistic_pedelec_acceptance` **13850**
+  — exactly lane/c's recorded linux count; savage completes
+  (`x=58.318 m`, `balance_lost=1`, 22095 violations,
+  `crash:loop_out`) — the recorded platform divergence, unchanged.
+- `ctest root-clang -L reference -E 'reference\.coupled_rider_task'
+  -j8`: **103/107** — reds exactly the documented 4-red baseline
+  verbatim {`reference.golden_episode_tool` (`FAIL native recorder
+  rows reproduce Python oracle`), `reference.native_numeric_completion`
+  (`FAIL config.rider_controller.leg_track_damping_nms_rad: missing
+  required key`), `reference.pneumatic_tire_oracle` (`FAIL fixture is
+  not a regular file`), `reference.native_pneumatic_tire`
+  (`front.normal_load_n`, actual `0x407aec7c836e2edc` vs expected
+  `0x407aec7c97021dff` — identical hex to the 3.30 merge-back log)};
+  all 8 batch registrations green inside the sweep;
+  `reference.native_coupled_rider_task` green (302.03 s).
+
+### Ledger deltas (pre-merge `2e98c0a6` → post-merge `5af460cd`)
+
+- `test-port-map.json`: records 2391 → **2391** (key-exact union —
+  the lane edited dispositions in place; F5's +1 insert retained).
+  Dispositions: `port` 790 → **837** (+47), `golden` 347 → **349**
+  (+2 — `test_exact_legacy_call_order`,
+  `test_pipeline_matches_frozen_pre_refactor_sensor_trace`, both
+  `golden_platforms` = darwin-arm64 + linux-aarch64), `planned`
+  1169 → **1120** (−49), `drop` 85 unchanged. The 4
+  `test_realistic_pedelec_acceptance.py` records stay `planned`
+  (Task-3.09 stop rule). `comparison_class`: T01 catch-all
+  `source-specific` 412 → **359** (−53 reclassified) → `contract`
+  +44, `analytic` +7, `bitwise-oracle` +2; all other classes
+  unchanged.
+- `python-removal.json`: 7 rows → `replacement_landed` (census
+  75→**82**); `planned` 460→**453**; pedelec row `planned` with
+  refreshed `snapshot_sha256`.
+- `Phase3Ports.cmake`: 90 → **98** registrations.
+- Golden fixture dirs: 37 → **38** per platform
+  (`tests_reference_test_sensor_noise.py`, 10 node pairs).
+
+### Assessment
+
+Clean union merge with two mechanical EOF conflicts; every
+auto-merge audited semantically, not just textually. The ported
+batch reproduces lane/c's gate numbers verbatim on both platforms
+(matching per-binary check counts, byte-identical sensor-noise
+`.bin` goldens, recorded pedelec platform divergence). The linux
+sweep reproduces the documented 4-red baseline verbatim with
+identical drift hex; no new reds. The four pedelec records remain
+`planned` under the Task-3.09 stop rule — the batch's two NEW
+parity gaps (darwin savage planar-normal abort, flat-ride
+`rider_strength.*` violations) are recorded evidence, not hidden.
+L3 (`tools/run_tests.sh native`) not re-run — bounded merge-back
+scope per protocol; lane/c's own gate evidence is in
+`task-C323-report.md`. Unrelated documented reds reported, not
+fixed.

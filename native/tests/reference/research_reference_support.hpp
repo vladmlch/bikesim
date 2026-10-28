@@ -12,11 +12,17 @@
 // task-C333a-report.md.
 #pragma once
 #include "support/migration_test.hpp"
+#include "cli/physical_capture.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/rider_spec.hpp"
 #include "random/numpy_compat.hpp"
+#include "recording/analysis_detail.hpp"
+#include "recording/contracts.hpp"
+#include "recording/reader.hpp"
+#include "recording/research_publication.hpp"
 #include "research/environment.hpp"
 #include "research/evidence.hpp"
+#include "research/lifecycle.hpp"
 #include "research/policy.hpp"
 #include "research/policy_session.hpp"
 #include "runtime/research.hpp"
@@ -396,6 +402,50 @@ void throws_runtime(F &&action, std::string_view fragment = {}) {
         bt::require(message.find(fragment) != std::string::npos,
                     "expected message fragment '" + std::string(fragment) +
                         "' in '" + message + "'");
+}
+
+// ---------------------------------------------------------------------------
+// 3.33b recording-launch fixture — ResearchRun(env, out_root, enabled=True,
+// mode='test'). The prepared environment supplies the catalog and run
+// metadata the same way cli::run_research freezes them before stepping; only
+// test binaries that link bike_cli may call recording_env (model_catalog is
+// the cli metadata seam).
+// ---------------------------------------------------------------------------
+struct RecordingLaunch {
+    std::unique_ptr<runtime::NativeResearchRuntime> env;
+    std::shared_ptr<research::ResearchPublication> publication;
+};
+[[nodiscard]] inline RecordingLaunch recording_env(const std::filesystem::path &root,
+                                                   const Knobs &knobs = {}) {
+    auto full = knobs;
+    full.capture = runtime::ResearchCaptureMode::full;
+    auto prepared = research::prepare_environment(request(full));
+    auto publication = bike::recording::make_research_publication(
+        bike::recording::make_run_metadata("native", "test", prepared->metadata),
+        bike::cli::model_catalog(prepared->bootstrap.ride.model), root);
+    return {runtime::make_research(
+                std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap))),
+            std::move(publication)};
+}
+
+// reader.rows('SELECT count(*) AS n FROM <table>')[0]['n'] — the row-count
+// probe the Python sources use on every stream table.
+[[nodiscard]] inline std::int64_t row_count(bike::recording::Recording &reader,
+                                            const char *sql) {
+    return bike::io::as_int64(
+        bike::recording::detail::field(reader.rows(sql).front(), "n"), "n");
+}
+
+// _event_kinds(path): the ordered kind column the SIGINT lifecycle tests pin.
+[[nodiscard]] inline std::vector<std::string>
+event_kinds(const std::filesystem::path &path) {
+    bike::recording::Recording saved(path);
+    std::vector<std::string> kinds;
+    for (const auto &row : saved.rows(
+             "SELECT kind FROM events ORDER BY episode_id,event_id"))
+        kinds.push_back(bike::io::as_string(
+            bike::recording::detail::field(row, "kind"), "kind"));
+    return kinds;
 }
 
 // Temporary per-test directory (replay_reference_support's Directory twin).

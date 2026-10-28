@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "sequence",
+  "nbytes": 480,
+  "node": "tests/reference/test_native_research_sensors.py::test_same_seed_reset_repeats_and_different_seeds_differ",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   60
+  ]
+ }
+]

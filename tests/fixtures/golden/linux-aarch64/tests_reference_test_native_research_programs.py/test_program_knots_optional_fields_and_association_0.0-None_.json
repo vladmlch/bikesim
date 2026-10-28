@@ -1,0 +1,17 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "program_at",
+  "nbytes": 1440,
+  "node": "tests/reference/test_native_research_programs.py::test_program_knots_optional_fields_and_association[0.0-None]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   10,
+   18
+  ]
+ }
+]

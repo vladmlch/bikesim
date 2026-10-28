@@ -1,0 +1,226 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 96,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 456,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 816,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 912,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 1272,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 1368,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 1728,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 1824,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 2088,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 2184,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 2544,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 360,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 2640,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 3000,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 264,
+  "node": "tests/reference/test_native_research_sensors.py::test_irregular_delivery_schedule_matches_python",
+  "offset": 3096,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ }
+]

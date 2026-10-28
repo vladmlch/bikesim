@@ -101,13 +101,15 @@ void view_dry_run() {
     const auto publication = rr::record_container(tmp.path);
     const auto binary = replay_binary();
     bt::require(std::filesystem::exists(binary), "the bike-replay artifact is built");
+    bike::platform::ProcessOptions options;
+    options.timeout_s = 300.;
     const auto ok = bike::platform::run({binary.string(), publication.directory.string(),
-        "--view", "--dry-run"}, tmp.path, {.timeout_s = 300.});
+        "--view", "--dry-run"}, tmp.path, options);
     bt::require(ok.exit_code == 0 && ok.out.find("frames=") != std::string::npos,
         "dry-run inspection walks the stored trajectory and reports 0");
+    options.timeout_s = 60.;
     const auto missing = bike::platform::run({binary.string(),
-        (tmp.path / "nonexistent").string(), "--view", "--dry-run"}, tmp.path,
-        {.timeout_s = 60.});
+        (tmp.path / "nonexistent").string(), "--view", "--dry-run"}, tmp.path, options);
     bt::require(missing.exit_code == 1 && missing.err.find("REPLAY ERROR") != std::string::npos,
         "a missing recording reports 1 on the dry-run path");
 }
@@ -119,14 +121,17 @@ void verify_still_default() {
     rr::Directory tmp;
     const auto binary = replay_binary();
     bt::require(std::filesystem::exists(binary), "the bike-replay artifact is built");
-    const auto bare = bike::platform::run({binary.string()}, tmp.path, {.timeout_s = 30.});
+    bike::platform::ProcessOptions options;
+    options.timeout_s = 30.;
+    const auto bare = bike::platform::run({binary.string()}, tmp.path, options);
     bt::require(bare.exit_code != 0, "a missing positional argument fails nonzero");
     const auto missing = bike::platform::run({binary.string(),
-        (tmp.path / "nonexistent").string()}, tmp.path, {.timeout_s = 30.});
+        (tmp.path / "nonexistent").string()}, tmp.path, options);
     bt::require(missing.exit_code != 0, "a missing recording fails nonzero");
     const auto publication = rr::record_container(tmp.path);
+    options.timeout_s = 300.;
     const auto verified = bike::platform::run({binary.string(),
-        publication.directory.string()}, tmp.path, {.timeout_s = 300.});
+        publication.directory.string()}, tmp.path, options);
     bt::require(verified.exit_code == 0,
         "the default checked path verifies a sealed container to exit 0");
 }

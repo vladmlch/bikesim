@@ -48,12 +48,13 @@ void cli_exit() {
     const auto binary = bike::platform::executable_path()
         .parent_path().parent_path().parent_path().parent_path() / "bin" / "bike-validate";
     bt::require(std::filesystem::exists(binary), "the bike-validate artifact is built");
+    bike::platform::ProcessOptions options;
+    options.timeout_s = 120.;
     const auto result = bike::platform::run({binary.string(), "rider-replay",
         "--mode", "open-loop", "--physics-config", (tmp.path / "missing.toml").string(),
         "--track", (tmp.path / "missing-track.toml").string(),
         "--output", (tmp.path / "failure.json").string(),
-        "--root", rr::repo_root().string()}, tmp.path,
-        {.timeout_s = 120.});
+        "--root", rr::repo_root().string()}, tmp.path, options);
     bt::require(result.exit_code == 1, "a failed case reports exit 1");
     bt::require(result.out.find("motor-only open-loop") != std::string::npos,
         "the printed report retains the motor-only diagnosis");

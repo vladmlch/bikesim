@@ -10044,3 +10044,125 @@ zero golden fixtures; scoped verification green on both platforms
 (12/12 = 3.33a 8 + 3.33b 4). No `run_tests.sh` — bounded merge-back
 scope per protocol; the integration-level `full` gate remains the
 scheduled accumulation checkpoint after the pending merges.
+
+## 2026-10-28 — lane/c batch 3.36 tranche-1 portability merge-back (merge `938075b4`)
+
+Lane/c tip `cc457b37` (base `842c2585`, two commits: the 3.36
+portability tooling port `51058bc6` and the review-round fix
+`cc457b37` — assertion tightening + canonicality) merged `--no-ff`
+into integration at tip `4fe5ce7e`. The lane base was two merges
+behind — the lane/d 3.21b (`6d6bdad9`) and lane/e 3.33b (`02025d42`)
+merge-backs landed on integration after the lane branched, so lane
+copies of non-batch ledger rows were stale by construction. Zero
+conflicts: `ort` auto-merged all five files; both JSON ledgers
+unioned textually because the disjoint row edits sat in different
+regions. The required KEY-EXACT union was verified programmatically
+post-merge against both parents rather than trusted to the strategy.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records** in base order, headers
+  **2394/2378** (`class_test_methods` 16), trailing LF intact.
+  Row-level union is exact: lane's **49** batch rows (43 `planned` →
+  `port` with `migration_T53_portability::<case>` nids + measured
+  `collected_node_ids`, 5 `planned` → `drop`, 1 left `planned` with
+  the dated live-oracle-red note) applied over integration's copy,
+  which itself carries lane/d's 18 + lane/e's 18 qualified rows
+  (both evidence sets confirmed present post-merge). 0 mismatches /
+  0 missing / 0 extra vs the computed union; every non-`records`
+  section identical across all three versions.
+- `migration/python-removal.json` — auto-merged; verified: **535**
+  `path`-keyed rows in base order, union exact — lane's **4** landed
+  rows (`test_{cmake_platform,compiler_policy,provider_identity,
+  root_configure}.py` → `replacement_landed`, `replacement_paths` →
+  `native/tests/migration/migration_T53_portability.cmake`,
+  `verification_ids` → `migration_T53_portability`) over
+  integration's copy. `sha256`/`line_count` are the live file hashes
+  — confirmed against `shasum -a 256` + line counts on the merged
+  worktree (`76280859…` 424, `94636ce7…` 387, `80394aae…` 475,
+  `23708279…` 116); `snapshot_*` fields equal the live values.
+- `native/cmake/Checks.cmake` — lane-only change; merged file
+  byte-identical to the lane's. One registration inserted before
+  the `migration_T56` block: `add_test(migration_T53_portability)`
+  invoking `cmake -P` on the fixture with `REPO_ROOT`/`SCRATCH_DIR`/
+  `DEPS_ROOT` `-D`s, `LABELS "migration;t53;portability" TIMEOUT
+  3600`, plus the `migration_T53_portability` custom target wrapper.
+- `native/tests/migration/migration_T53_portability.cmake` — new
+  lane file (+1534): `cmake -P` port of
+  `tests/portability/{test_cmake_platform,test_compiler_policy,
+  test_provider_identity,test_root_configure,test_dependency_policy}.py`
+  — scratch configures against the real `Bike*.cmake` modules, the
+  compiler-policy probe build, the provider-identity harness and the
+  root-configure guards; case blocks are host-gated, so the counted
+  set differs per platform (44 cases counted on darwin incl. the
+  counted linux-gated skip, 38 on linux incl. the counted
+  darwin-gated skip).
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch
+  it; integration's version retained (this section is the merge-back
+  append).
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C336-report.md`
+  — new lane file (+182).
+- `docs`/`task-*-report.md` untracked host files — outside merge
+  scope, untouched.
+
+### Ledger deltas (pre-merge `4fe5ce7e` → merge `938075b4`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  qualification, no adds/removes); headers **2394/2378** unchanged
+  and equal to the actual count. Rows changed: exactly **49** — 16 in
+  `tests/portability/test_provider_identity.py`, 12 in
+  `test_cmake_platform.py`, 10 in `test_compiler_policy.py`, 7 in
+  `test_dependency_policy.py`, 4 in `test_root_configure.py`.
+  Dispositions: `port` 1159 → **1202** (+43), `drop` 125 → **130**
+  (+5), `planned` 754 → **706** (−48); `golden` 356 unchanged. Empty
+  `collected_node_ids` 1202 → **1158** (−44); total collected nodes
+  2209 → **2258** (+49); `T01 records source assertions` placeholders
+  **423 → 423** unchanged — the batch rows carried `completion 3.02
+  AST inventory` capture strings, now replaced by dated 2026-10-28
+  measured lines. The residual `planned` row is
+  `test_dependency_policy.py::test_preserved_scientific_pins_and_python_floor`
+  — live-oracle red at HEAD (the oracle asserts `requires-python ==
+  ">=3.13"` verbatim while `pyproject.toml` carries `">=3.13,<3.14"`);
+  left `planned` per batch spec pending tranche-2 disposition.
+- `python-removal.json`: `replacement_landed` 128 → **132** (+4),
+  `planned` 407 → **403** (−4); exactly the 4 batch rows changed.
+
+### Merge-back verification
+
+- Fixture parse: `cmake -P
+  native/tests/migration/migration_T53_portability.cmake` (no `-D`s)
+  reaches the required-inputs `FATAL_ERROR`
+  (`migration_T53_portability requires -DREPO_ROOT`) — parses clean.
+- Registration: `ctest -N -R migration_T53` after reconfigure —
+  `Test #14: migration_T53_portability` (`build/native-release`),
+  `Test #15: migration_T53_portability` (container
+  `/build/root-clang`).
+- Darwin arm64 (`build/native-release`, AppleClang, Release,
+  reconfigured post-merge): `ctest --test-dir build/native-release
+  -R '^migration_T53_portability$' --output-on-failure` → **PASS,
+  258.88 s; 44 cases pass / 1 linux-gated skip**
+  (`policy_fortify_source_follows_optimized_configs`: glibc fortify
+  gating is a Linux property).
+- Linux aarch64 (container `bike-dev-python-free-cpp`, tip synced
+  via `tools/linux/container.sh sync` + `configure root-clang root`
+  — merged `test-port-map.json` sha256 `986a8a27…` and fixture
+  sha256 `25c16b32…` identical host/container; `/build/root-clang`,
+  Ninja, clang++-18, Release): same selector → **PASS, 52.60 s;
+  38 cases pass / 1 darwin-gated skip**
+  (`root_identity_equals_the_legacy_graph`: requires Darwin, .deps,
+  and the pinned scientific environment).
+
+### Assessment
+
+Clean auto-merge — zero conflicts, five files, all invariants
+verified programmatically post-merge (JSON unions exact by
+record/path key, non-ledger files byte-identical to the owning
+parent). The merged batch is `contract`-class portability tooling
+ports with zero golden fixtures; the batch gate
+`migration_T53_portability` is green on both platforms (44/1
+darwin, 38/1 linux — identical to the lane's own runs). No
+`run_tests.sh` — bounded merge-back scope per protocol; the
+integration-level `full` gate remains the scheduled accumulation
+checkpoint after the pending merges.

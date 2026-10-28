@@ -1,0 +1,296 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 1032,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 2056,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 2056,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 2064,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 3088,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 3088,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 3096,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 4120,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 4120,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 4128,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 5152,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 5152,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 5160,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 6184,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 6184,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1024,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 6192,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 7216,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "np.sum len=128",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+  "offset": 7216,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ }
+]

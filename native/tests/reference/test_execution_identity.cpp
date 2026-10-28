@@ -333,46 +333,67 @@ void field_type_and_null_rules() {
         bt::invalid([&] { replay::validate_execution(value); });
     }
 }
+// One mutation case per call keeps each frame under the 8 KiB warning cap.
+void expect_nested_invalid(Value (*make)(), const Path& path, const Value& bad) {
+    auto value = make();
+    set_at(member(value, "build_context"), path, bad);
+    bt::invalid([&] { replay::validate_execution(value); });
+}
 // test_nested_field_rules_fail_closed — every platform/numerics mutation of
 // the ACCELERATE record fails validation.
 void nested_field_rules_fail_closed() {
-    // static: the 27-entry table would otherwise exceed the 8 KiB frame cap.
-    static const std::vector<std::pair<Path, Value>> cases{
-        {Path{{"platform", "system"}}, text("FreeBSD")},
-        {Path{{"platform", "machine"}}, text("")},
-        {Path{{"platform", "machine"}}, text("ARM 64")},
-        {Path{{"platform", "libc"}}, Value{Object{{"name", text("glibc")}}}},
-        {Path{{"platform", "libc"}}, Value{Object{{"name", text("glibc")},
-            {"version", text("2.39")}, {"x", integer(1)}}}},
-        {Path{{"platform", "libc", "name"}}, text("")},
-        {Path{{"platform", "os_build"}}, text("   ")},
-        {Path{{"platform", "python_version"}}, text("")},
-        {Path{{"platform", "python_soabi"}}, Value{}},
-        {Path{{"platform", "extra"}}, text("untracked")},
-        {Path{{"numerics", "extra"}}, text("untracked")},
-        {Path{{"numerics", "backend"}}, text("MKL")},
-        {Path{{"numerics", "numpy_version"}}, text("")},
-        {Path{{"numerics", "blas_integer_bits"}}, Value{true}},
-        {Path{{"numerics", "blas_integer_bits"}}, integer(64)},
-        {Path{{"numerics", "lapack_integer_bits"}}, integer(32)},
-        {Path{{"numerics", "cpu_profile"}}, text("")},
-        {Path{{"numerics", "threading"}},
-            Value{Object{{"implementation", text("accelerate")}}}},
-        {Path{{"numerics", "threading", "num_threads"}}, integer(0)},
-        {Path{{"numerics", "threading", "num_threads"}}, Value{true}},
-        {Path{{"numerics", "libraries"}}, Value{Array{}}},
-        {Path{{"numerics", "libraries", std::size_t{0}, "role"}}, text("blas")},
-        {Path{{"numerics", "libraries", std::size_t{0}, "identity_kind"}}, text("file")},
-        {Path{{"numerics", "libraries", std::size_t{0}, "sha256"}},
-            text(std::string(64, 'f'))},
-        {Path{{"numerics", "libraries", std::size_t{0}, "build_id"}}, Value{}},
-        {Path{{"numerics", "libraries", std::size_t{0}, "build_id"}}, text("")},
-        {Path{{"numerics", "libraries", std::size_t{0}, "extra"}}, text("untracked")},
-    };
+    // emplace_back rather than a braced table: an initializer_list backing
+    // array of 27 Path/Value pairs exceeds the 8 KiB frame cap.
+    static const std::vector<std::pair<Path, Value>> cases = [] {
+        std::vector<std::pair<Path, Value>> out;
+        out.reserve(27);
+        out.emplace_back(Path{{"platform", "system"}}, text("FreeBSD"));
+        out.emplace_back(Path{{"platform", "machine"}}, text(""));
+        out.emplace_back(Path{{"platform", "machine"}}, text("ARM 64"));
+        out.emplace_back(Path{{"platform", "libc"}},
+            Value{Object{{"name", text("glibc")}}});
+        out.emplace_back(Path{{"platform", "libc"}},
+            Value{Object{{"name", text("glibc")}, {"version", text("2.39")},
+                {"x", integer(1)}}});
+        out.emplace_back(Path{{"platform", "libc", "name"}}, text(""));
+        out.emplace_back(Path{{"platform", "os_build"}}, text("   "));
+        out.emplace_back(Path{{"platform", "python_version"}}, text(""));
+        out.emplace_back(Path{{"platform", "python_soabi"}}, Value{});
+        out.emplace_back(Path{{"platform", "extra"}}, text("untracked"));
+        out.emplace_back(Path{{"numerics", "extra"}}, text("untracked"));
+        out.emplace_back(Path{{"numerics", "backend"}}, text("MKL"));
+        out.emplace_back(Path{{"numerics", "numpy_version"}}, text(""));
+        out.emplace_back(Path{{"numerics", "blas_integer_bits"}}, Value{true});
+        out.emplace_back(Path{{"numerics", "blas_integer_bits"}}, integer(64));
+        out.emplace_back(Path{{"numerics", "lapack_integer_bits"}}, integer(32));
+        out.emplace_back(Path{{"numerics", "cpu_profile"}}, text(""));
+        out.emplace_back(Path{{"numerics", "threading"}},
+            Value{Object{{"implementation", text("accelerate")}}});
+        out.emplace_back(Path{{"numerics", "threading", "num_threads"}},
+            integer(0));
+        out.emplace_back(Path{{"numerics", "threading", "num_threads"}},
+            Value{true});
+        out.emplace_back(Path{{"numerics", "libraries"}}, Value{Array{}});
+        out.emplace_back(Path{{"numerics", "libraries", std::size_t{0}, "role"}},
+            text("blas"));
+        out.emplace_back(
+            Path{{"numerics", "libraries", std::size_t{0}, "identity_kind"}},
+            text("file"));
+        out.emplace_back(Path{{"numerics", "libraries", std::size_t{0}, "sha256"}},
+            text(std::string(64, 'f')));
+        out.emplace_back(
+            Path{{"numerics", "libraries", std::size_t{0}, "build_id"}},
+            Value{});
+        out.emplace_back(
+            Path{{"numerics", "libraries", std::size_t{0}, "build_id"}},
+            text(""));
+        out.emplace_back(
+            Path{{"numerics", "libraries", std::size_t{0}, "extra"}},
+            text("untracked"));
+        return out;
+    }();
     for (const auto& [path, bad] : cases) {
-        auto value = v2_native();
-        set_at(member(value, "build_context"), path, bad);
-        bt::invalid([&] { replay::validate_execution(value); });
+        expect_nested_invalid(v2_native, path, bad);
     }
 }
 // test_linux_file_identity_rules — the NUMPY_OPENBLAS file identity pins a
@@ -389,9 +410,7 @@ void linux_file_identity_rules() {
             text("fabricated")},
     };
     for (const auto& [path, bad] : cases) {
-        auto value = v2_native_linux();
-        set_at(member(value, "build_context"), path, bad);
-        bt::invalid([&] { replay::validate_execution(value); });
+        expect_nested_invalid(v2_native_linux, path, bad);
     }
 }
 
@@ -400,9 +419,11 @@ void linux_file_identity_rules() {
 // qualified backend; any mutation makes the record unqualified, so the
 // diagnostic is the validation error itself.
 void integer_abi_named_failure() {
-    for (const auto& [make, key] : {std::pair{v2_native, "blas_integer_bits"},
-             std::pair{v2_native, "lapack_integer_bits"},
-             std::pair{v2_native_linux, "blas_integer_bits"}}) {
+    const std::vector<std::pair<Value (*)(), const char*>> cases{
+        {v2_native, "blas_integer_bits"},
+        {v2_native, "lapack_integer_bits"},
+        {v2_native_linux, "blas_integer_bits"}};
+    for (const auto& [make, key] : cases) {
         auto value = make();
         auto context = field(value, "build_context");
         auto numerics = field(context, "numerics");

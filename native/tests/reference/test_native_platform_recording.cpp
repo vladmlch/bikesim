@@ -19,6 +19,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <grp.h>  // glibc declares setgroups here, not in unistd.h
+#endif
 #include <pwd.h>
 #include <set>
 
@@ -198,9 +201,10 @@ void assert_published(const std::filesystem::path& dir) {
     const auto pid = ::fork();
     bt::require(pid >= 0, "fork for the nobody probe");
     if (pid == 0) {
-        ::setgroups(0, nullptr);
-        ::setgid(account->pw_gid);
-        ::setuid(account->pw_uid);
+        if (::setgroups(0, nullptr) != 0 || ::setgid(account->pw_gid) != 0 ||
+            ::setuid(account->pw_uid) != 0) {
+            ::_exit(4);
+        }
         if (::geteuid() == 0) ::_exit(3);
         ::_exit(eacces_probe(sandbox) ? 0 : 1);
     }

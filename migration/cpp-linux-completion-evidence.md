@@ -9839,3 +9839,98 @@ report); not re-run here — bounded merge-back scope per protocol.
 L3 (`tools/run_tests.sh native`) not re-run — same protocol;
 integration-level `full` gate is the scheduled accumulation
 checkpoint after the pending merges.
+
+## 2026-10-28 — lane/d batch 3.21b numeric domains/Numba kernel contracts merge-back (merge `6d6bdad9`)
+
+Lane/d tip `7b23537e` (base `dfe8db96`, two commits: the T52 ledger
+qualification `90b311a4` and the C321b task report) merged `--no-ff`
+into integration at tip `842c2585`. The lane base was two merges
+behind — the lane/a 3.33a (`3ce20132`) and lane/e 3.29b (`88ee180a`)
+merge-backs landed on integration after the lane branched, so lane
+copies of non-batch ledger rows were stale by construction. Zero
+conflicts: `ort` auto-merged cleanly; the required KEY-EXACT union
+was verified programmatically post-merge against both parents rather
+than trusted to the strategy.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records** in integration order,
+  headers **2394/2378** (`class_test_methods` 16) equal to the
+  actual record count. Lane changed exactly **18** records vs the
+  merge-base, integration **95**, with **zero key overlap** — so
+  every batch row is byte-equivalent to the lane version and every
+  other row byte-equivalent to the pre-merge integration version
+  (integration's newer M34/M35-qualified rows win over the lane's
+  stale copies, as required). Canonical serialization (`indent=2`,
+  `ensure_ascii`, trailing LF) intact; top-level metadata identical
+  to integration's.
+- `migration/python-removal.json` — auto-merged; **535** unique
+  `path` rows in integration order. Lane's **2** rows
+  (`tests/reference/test_native_numeric_domains.py`,
+  `tests/reference/test_numba_kernels.py`) byte-equal to the lane
+  version — `replacement_landed`, `verification_ids` =
+  `reference.native_numeric_domains` /
+  `reference.native_kernel_contracts`; all other 533 rows byte-equal
+  to integration. Live `sha256` re-verified against the working-tree
+  files: `bf192eff…` (numeric_domains) and `ace705a8…`
+  (numba_kernels) match `shasum -a 256` output.
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch
+  it; integration's version retained (this section is the merge-back
+  append).
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C321b-report.md`
+  — new lane file (+153).
+- `native/tests/reference/Phase3Ports.cmake` — untouched by 3.21b;
+  both registrations pre-exist (`Phase3Ports.cmake:65` /
+  `:70`, `t52 numerics`, `bike_app`). No code conflict — the batch
+  carries no C++ changes (both ports landed in Phase 3).
+- `docs`/`task-*-report.md` untracked host files — outside merge
+  scope, untouched.
+
+### Ledger deltas (pre-merge `842c2585` → merge `6d6bdad9`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  qualification, no adds/removes); headers **2394/2378** unchanged
+  and equal to the actual count. Rows changed: exactly **18** — 10
+  in `tests/reference/test_native_numeric_domains.py` (all
+  `port`/`contract`, `reference.native_numeric_domains::<symbol>`
+  nids, 198 nodes incl. the 168-case suspension-domain expansion),
+  8 in `tests/reference/test_numba_kernels.py` (4 `port`/`contract`
+  → `reference.native_kernel_contracts::*`, 4 `drop`/`python-only`
+  Hypothesis JIT-vs-twin equivalences, nid `null`). Disposition
+  counters unchanged — `port` 1141, `drop` 125, `golden` 356,
+  `planned` 772 (dispositions were pre-assigned by the Phase-3
+  source review; this batch qualifies them). Empty
+  `collected_node_ids` 1238 → **1220** (−18); total collected nodes
+  recorded 1985 → **2191** (+206); "Source assertions reviewed"
+  placeholders 116 → **98** (−18, replaced by dated 2026-10-28
+  both-platform measured lines).
+- `python-removal.json`: `replacement_landed` 122 → **124** (+2),
+  `planned` 413 → **411**; `snapshot_*` fields untouched.
+
+### Merge-back verification
+
+- Darwin arm64 (`build/native-release`, AppleClang):
+  `ctest --test-dir build/native-release -R
+  'reference\.(native_numeric_domains|native_kernel_contracts)'
+  --output-on-failure` → **2/2 PASS** (`native_numeric_domains`
+  0.67 s, `native_kernel_contracts` 0.69 s). Direct binaries:
+  **PASS 406 checks** + **PASS 180 checks**.
+- Linux aarch64 (container `bike-dev-python-free-cpp`, tip synced
+  via `tools/linux/container.sh sync`; `/build/root-clang`,
+  clang++-18): same selector → **2/2 PASS** (0.14 s + 0.03 s).
+  Direct binaries: **PASS 406 checks** + **PASS 180 checks** —
+  identical counts on both platforms, matching the lane's
+  qualification.
+
+### Assessment
+
+Clean auto-merge — zero hunks outside the lane's three files, ledger
+union exact (18 lane-qualified rows over integration's newer copies
+of everything else; the lane's stale non-batch rows lost as
+required), all invariants verified programmatically post-merge. The
+re-qualified targets are `contract`-class ports with zero golden
+fixtures; no code merged. No `run_tests.sh` — bounded merge-back
+scope per protocol; the integration-level `full` gate remains the
+scheduled accumulation checkpoint after the pending merges.

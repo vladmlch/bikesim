@@ -3468,13 +3468,17 @@
       "line": 168,
       "end_line": 183,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_frontend_windows::test_physical_window_bounds_rendering_and_leaves_no_files_when_off",
+      "native_test_id": "reference.frontend_windows::test_physical_window_bounds_rendering_and_leaves_no_files_when_off",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_frontend_windows.py::test_physical_window_bounds_rendering_and_leaves_no_files_when_off"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the >=1/60 sync bound lands on Pacer's render-interval request_frame gate; key handling (F6/F7/F8 -> speed, R -> pause/brake-clearing reset, Q/Esc -> close) via action_for_key + InputState::apply; BIKE_BUILD_GUI=OFF construction throws before any frame/advance hook so no artifact paths are touched; CTest reference.frontend_windows green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_frontend_windows.py",
@@ -3482,13 +3486,17 @@
       "line": 186,
       "end_line": 208,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_frontend_windows::test_physical_window_recording_publishes_once_and_writes_preview",
+      "native_test_id": "reference.frontend_windows::test_physical_window_recording_publishes_once_and_writes_preview",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_frontend_windows.py::test_physical_window_recording_publishes_once_and_writes_preview"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 PhysicalLiveCsv preview rows carry generation/'reset'/'requested_scale' markers; the seal-per-generation publish-once half is carried by the 3.30 RunCapture/EpisodeJournal lifecycle ports; CTest reference.frontend_windows green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_frontend_windows.py",
@@ -3496,13 +3504,17 @@
       "line": 211,
       "end_line": 228,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_frontend_windows::test_physical_window_skips_ride_html_when_plotly_is_absent",
-      "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_frontend_windows.py::test_physical_window_skips_ride_html_when_plotly_is_absent"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 the absent-plotly degradation is a Python optional-import seam; native HTML plotting is compiled in (viz::plot_physical_ride_html) and the nearest opt-out is --no-plots, not an import failure"
+      ]
     },
     {
       "source_path": "tests/reference/test_frontend_windows.py",
@@ -3510,13 +3522,17 @@
       "line": 231,
       "end_line": 243,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_frontend_windows::test_window_construction_error_still_accounts_and_closes",
+      "native_test_id": "reference.frontend_windows::test_window_construction_error_still_accounts_and_closes",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_frontend_windows.py::test_window_construction_error_still_accounts_and_closes"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the 'viewer unavailable' construction throw precedes every frame/advance hook; the caller-owned runtime stays usable and closes after the failure; CTest reference.frontend_windows green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_frontend_windows.py",
@@ -3524,13 +3540,17 @@
       "line": 268,
       "end_line": 274,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_frontend_windows::test_replay_window_close_is_incomplete_not_success",
-      "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_frontend_windows.py::test_replay_window_close_is_incomplete_not_success"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 close-before-done -> exit-2 lives inside the Python window loop; the exit-code mapping is covered by reference.t49's replay_exit_code table and the report-only-on-complete branch is caller-side selection no headless seam can reach"
+      ]
     },
     {
       "source_path": "tests/reference/test_frontend_windows.py",
@@ -3538,13 +3558,17 @@
       "line": 277,
       "end_line": 291,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_frontend_windows::test_viewer_import_failure_still_closes_physical_and_replay_owners",
+      "native_test_id": "reference.frontend_windows::test_viewer_import_failure_still_closes_physical_and_replay_owners",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_frontend_windows.py::test_viewer_import_failure_still_closes_physical_and_replay_owners"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 both the physical and the replay viewer entry points reject the unavailable GUI before touching their owners; CTest reference.frontend_windows green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_frozen_force_arrays.py",
@@ -17781,13 +17805,17 @@
       "line": 14,
       "end_line": 44,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_ride_frontend::test_native_physical_driver_finishes_exports_and_retains_owned_snapshot",
+      "native_test_id": "reference.native_ride_frontend::test_native_physical_driver_finishes_exports_and_retains_owned_snapshot",
       "native_source": "native/tests/reference/test_native_ride_frontend.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_ride_frontend.py::test_native_physical_driver_finishes_exports_and_retains_owned_snapshot"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 runtime::measurement::NativeDriver advance/terminal reason/export/physical_summary through the real resolve/prepare pipeline plus the retained owned snapshot; benchmark mode stands in for strict because the welded baseline trips the documented energy.constraint_work monitor; CTest reference.native_ride_frontend green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_ride_frontend.py",
@@ -17795,13 +17823,17 @@
       "line": 47,
       "end_line": 78,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_ride_frontend::test_native_driver_seals_episodes_that_survive_reset_and_close",
+      "native_test_id": "reference.native_ride_frontend::test_native_driver_seals_episodes_that_survive_reset_and_close",
       "native_source": "native/tests/reference/test_native_ride_frontend.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_native_ride_frontend.py::test_native_driver_seals_episodes_that_survive_reset_and_close"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 per-generation seal dedupe/conflict and evidence-survives-close land on recording::RunCapture::add_episode, the production journal the driver's seal feeds; physical_assets names the real cli export set; CTest reference.native_ride_frontend green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_rider_contact_math.py",
@@ -24316,13 +24348,17 @@
       "line": 16,
       "end_line": 29,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_physical_view::test_existing_preview_and_hud_remain_equal",
+      "native_test_id": "reference.physical_view::test_existing_preview_and_hud_remain_equal",
       "native_source": "native/tests/reference/test_physical_view.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_physical_view.py::test_existing_preview_and_hud_remain_equal"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the native HUD/preview schema surface plus preview-row ownership on the runtime frame; the python-vs-python parity pair collapses to the single native schema (3.22b hud_columns port covers the column parity); CTest reference.physical_view green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_physical_view.py",
@@ -24330,13 +24366,17 @@
       "line": 32,
       "end_line": 50,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_physical_view::test_replica_only_updates_geometry_and_never_live_state",
+      "native_test_id": "reference.physical_view::test_replica_only_updates_geometry_and_never_live_state",
       "native_source": "native/tests/reference/test_physical_view.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_physical_view.py::test_replica_only_updates_geometry_and_never_live_state"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 RenderOwner::apply is kinematic-only and writes only its own copied model/data; live runtime state is untouched; CTest reference.physical_view green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_physical_view.py",
@@ -24344,13 +24384,17 @@
       "line": 53,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_physical_view::test_frame_owns_nested_fields_after_reset",
+      "native_test_id": "reference.physical_view::test_frame_owns_nested_fields_after_reset",
       "native_source": "native/tests/reference/test_physical_view.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_physical_view.py::test_frame_owns_nested_fields_after_reset"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 RenderFrame carries owned state/presentation vectors that stay valid after runtime reset+close; CTest reference.physical_view green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_physical_view.py",
@@ -24358,13 +24402,17 @@
       "line": 70,
       "end_line": 79,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_physical_view::test_incompatible_frame_is_rejected_before_model_mutation",
+      "native_test_id": "reference.physical_view::test_incompatible_frame_is_rejected_before_model_mutation",
       "native_source": "native/tests/reference/test_physical_view.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_physical_view.py::test_incompatible_frame_is_rejected_before_model_mutation"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 apply() stages the whole frame and throws on invalid model fields/digest/state before touching the replica; CTest reference.physical_view green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pinned_measurement.py",
@@ -24372,13 +24420,17 @@
       "line": 13,
       "end_line": 57,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pinned_measurement::test_spindle_force_sign_and_torque_match_native_body_jacobians",
+      "native_test_id": "reference.pinned_measurement::test_spindle_force_sign_and_torque_match_native_body_jacobians",
       "native_source": "native/tests/reference/test_pinned_measurement.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_pinned_measurement.py::test_spindle_force_sign_and_torque_match_native_body_jacobians"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 rider::EqualityReactions spindle force/torque checked against MuJoCo body-Jacobian/mj_applyFT math on the compiled pinned plant; CTest reference.pinned_measurement green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pinned_measurement.py",
@@ -24386,13 +24438,17 @@
       "line": 60,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pinned_measurement::test_linkage_closure_rows_exclude_rider_connects",
+      "native_test_id": "reference.pinned_measurement::test_linkage_closure_rows_exclude_rider_connects",
       "native_source": "native/tests/reference/test_pinned_measurement.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_pinned_measurement.py::test_linkage_closure_rows_exclude_rider_connects"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 runtime::connect_equality_rows (published on step.hpp for this audit) excludes connect_saddle/connect_grip_*/connect_foot_* rows against the live efc arena; CTest reference.pinned_measurement green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pinned_measurement.py",
@@ -24400,13 +24456,17 @@
       "line": 71,
       "end_line": 85,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pinned_measurement::test_pinned_samples_are_compressive_at_rest",
+      "native_test_id": "reference.pinned_measurement::test_pinned_samples_are_compressive_at_rest",
       "native_source": "native/tests/reference/test_pinned_measurement.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_pinned_measurement.py::test_pinned_samples_are_compressive_at_rest"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the settled pinned rest ride retains attachment samples; the first retained sample is compressive at both feet (the final row leaves rest under the bilateral connects, same as the oracle's drift), moments/saddle load/crank torque finite, linkage closure and no unobservable-wrench violations; CTest reference.pinned_measurement green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pinned_topology.py",
@@ -24774,13 +24834,17 @@
       "line": 25,
       "end_line": 53,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pneumatic_physical_runtime::test_pneumatic_backend_runs_a_physical_ride_end_to_end",
+      "native_test_id": "reference.pneumatic_physical_runtime::test_pneumatic_backend_runs_a_physical_ride_end_to_end",
       "native_source": "native/tests/reference/test_pneumatic_physical_runtime.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_pneumatic_physical_runtime.py::test_pneumatic_backend_runs_a_physical_ride_end_to_end"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the oracle-faithful flat/coast/lumped pneumatic plant (minimal physics TOML through resolve_ride; the shipped profile carries seated_climb + a legacy-provenance pose that are a different plant); native settle inside the equilibrium envelope, 400 committed steps, live-sample tires.backend='pneumatic' with positive normal loads + patches + positive carcass elastic energy; CTest reference.pneumatic_physical_runtime green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pneumatic_physical_runtime.py",
@@ -24788,13 +24852,17 @@
       "line": 56,
       "end_line": 83,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pneumatic_physical_runtime::test_pneumatic_tire_state_round_trips_through_the_cache_codec",
-      "native_source": "native/tests/reference/test_pneumatic_physical_runtime.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_pneumatic_physical_runtime.py::test_pneumatic_tire_state_round_trips_through_the_cache_codec"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 covered contract: the same state_tire_wire names/row round-trip and strict rejections (missing key, short row, unknown column) run under reference.pneumatic_tire_forces::test_state_wire_names_and_round_trip"
+      ]
     },
     {
       "source_path": "tests/reference/test_pneumatic_physical_runtime.py",
@@ -24802,13 +24870,17 @@
       "line": 86,
       "end_line": 111,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_pneumatic_physical_runtime::test_pneumatic_tire_wire_round_trips_through_the_npz_cache_file",
-      "native_source": "native/tests/reference/test_pneumatic_physical_runtime.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_pneumatic_physical_runtime.py::test_pneumatic_tire_wire_round_trips_through_the_npz_cache_file"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 covered contract: reference.equilibrium_state_file's npz coverage already rides state_tire_wire_* keys through the real save/load payload (test_state_file_round_trip plus the payload-fit validator)"
+      ]
     },
     {
       "source_path": "tests/reference/test_pneumatic_tire_config.py",
@@ -25418,13 +25490,17 @@
       "line": 15,
       "end_line": 23,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_realtime_deferred_checks::test_bulk_road_queries_match_two_hundred_scalar_windows",
+      "native_test_id": "reference.realtime_deferred_checks::test_bulk_road_queries_match_two_hundred_scalar_windows",
       "native_source": "native/tests/reference/test_realtime_deferred_checks.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_realtime_deferred_checks.py::test_bulk_road_queries_match_two_hundred_scalar_windows"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 200 road windows compare native bulk road_samples against the scalar interpolation/grade formulas; CTest reference.realtime_deferred_checks green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_realtime_deferred_checks.py",
@@ -25432,13 +25508,17 @@
       "line": 26,
       "end_line": 45,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_realtime_deferred_checks::test_deferred_unexplained_wrench_is_rejected_at_its_original_interval",
+      "native_test_id": "reference.realtime_deferred_checks::test_deferred_unexplained_wrench_is_rejected_at_its_original_interval",
       "native_source": "native/tests/reference/test_realtime_deferred_checks.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_realtime_deferred_checks.py::test_deferred_unexplained_wrench_is_rejected_at_its_original_interval"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the corrupted bike jacobian raises 'does not explain' eagerly; the deferred raw survives capture and PeriodAccounting latches foot_front:unobservable_attachment_wrench at the original interval end (.00125); CTest reference.realtime_deferred_checks green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_realtime_deferred_checks.py",
@@ -25446,13 +25526,17 @@
       "line": 64,
       "end_line": 90,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_realtime_deferred_checks::test_two_hundred_steps_match_scalar_validation_oracle",
+      "native_test_id": "reference.realtime_deferred_checks::test_two_hundred_steps_match_scalar_validation_oracle",
       "native_source": "native/tests/reference/test_realtime_deferred_checks.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_realtime_deferred_checks.py::test_two_hundred_steps_match_scalar_validation_oracle"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 eager attachment_sample vs deferred attachment_raw_from_geometry + evaluate_attachments produce field-identical AttachmentSample rows on a valid wrench; CTest reference.realtime_deferred_checks green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_realtime_gate.py",
@@ -28910,13 +28994,17 @@
       "line": 11,
       "end_line": 14,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_runtime_single_path::test_runtime_has_one_accounted_step_and_viewer_uses_it",
-      "native_source": "native/tests/reference/test_runtime_single_path.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_runtime_single_path.py::test_runtime_has_one_accounted_step_and_viewer_uses_it"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 a Python source-inspection pin on PhysicalRuntime._step_preview/viewer source text; the native runtime has no preview path to inspect"
+      ]
     },
     {
       "source_path": "tests/reference/test_runtime_single_path.py",
@@ -28924,13 +29012,17 @@
       "line": 17,
       "end_line": 21,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_runtime_single_path::test_preview_mode_cannot_select_an_unaccounted_path",
-      "native_source": "native/tests/reference/test_runtime_single_path.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_runtime_single_path.py::test_preview_mode_cannot_select_an_unaccounted_path"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 preview_mode() is a Python-only adapter API; no native unaccounted-path selector exists to reject"
+      ]
     },
     {
       "source_path": "tests/reference/test_runtime_single_path.py",
@@ -28938,13 +29030,17 @@
       "line": 24,
       "end_line": 38,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_runtime_single_path::test_accounted_hud_displays_realtime_factor_without_repeated_failure",
+      "native_test_id": "reference.runtime_single_path::test_accounted_hud_displays_realtime_factor_without_repeated_failure",
       "native_source": "native/tests/reference/test_runtime_single_path.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_runtime_single_path.py::test_accounted_hud_displays_realtime_factor_without_repeated_failure"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 the accounted HUD renders the real-time factor and the generic invalid marker while the first-failure text prints once, not per line; CTest reference.runtime_single_path green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_runtime_single_path.py",
@@ -28952,13 +29048,17 @@
       "line": 41,
       "end_line": 74,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_runtime_single_path::test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush",
+      "native_test_id": "reference.runtime_single_path::test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush",
       "native_source": "native/tests/reference/test_runtime_single_path.cpp",
-      "collected_node_ids": [],
+      "collected_node_ids": [
+        "tests/reference/test_runtime_single_path.py::test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: ported \u2014 NativeDriver honors the configured timestep/decimation and reports the diagnostic posture (benchmark mode is the relaxed-monitor twin \u2014 strict aborts on the welded baseline energy.constraint_work violation); measure_run counts the terminal flush inside wall clock; CTest reference.runtime_single_path green on darwin-arm64 (build/native-release) + linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang)"
+      ]
     },
     {
       "source_path": "tests/reference/test_runtime_single_path.py",
@@ -28966,13 +29066,17 @@
       "line": 150,
       "end_line": 157,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_runtime_single_path::test_terminal_viewer_tail_is_accounted_before_announcement_hud_and_live_csv",
-      "native_source": "native/tests/reference/test_runtime_single_path.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_runtime_single_path.py::test_terminal_viewer_tail_is_accounted_before_announcement_hud_and_live_csv"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 monkeypatched viewer-window terminal-tail ordering (flush before announcement/hud/live_csv) is a Python window-loop seam with no headless native twin"
+      ]
     },
     {
       "source_path": "tests/reference/test_runtime_single_path.py",
@@ -28980,13 +29084,17 @@
       "line": 161,
       "end_line": 167,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_runtime_single_path::test_exceptional_viewer_exit_flushes_tail_without_masking_original_error",
-      "native_source": "native/tests/reference/test_runtime_single_path.cpp",
-      "collected_node_ids": [],
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_runtime_single_path.py::test_exceptional_viewer_exit_flushes_tail_without_masking_original_error"
+      ],
       "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.34 lane/d: dropped \u2014 the exceptional-exit tail flush and __notes__ cleanup-failure plumbing are Python window-loop seams with no headless native twin"
+      ]
     },
     {
       "source_path": "tests/reference/test_savage_track_surface.py",

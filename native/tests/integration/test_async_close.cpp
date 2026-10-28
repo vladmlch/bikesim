@@ -15,6 +15,7 @@
 #include "runtime/async_close.hpp"
 #include "runtime/runtime.hpp"
 #include <atomic>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
@@ -120,7 +121,9 @@ using runtime::RawStep;
 
 // test_worker_roundtrip_publishes_period — one submitted period publishes
 // ten ordered samples with the aggregated loss; acknowledgement consumes it.
-void worker_roundtrip_publishes_period() {
+// [[gnu::noinline]] keeps each test's frame out of main's lambda — the
+// -Wframe-larger-than=8192 limit is per function (test_t30 precedent).
+[[gnu::noinline]] void worker_roundtrip_publishes_period() {
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt);
     runner.submit(period(0));
     const auto result = runner.peek(true);
@@ -136,7 +139,7 @@ void worker_roundtrip_publishes_period() {
 
 // test_worker_reports_publication_error — a worker-side failure surfaces as
 // AsyncPublicationError exactly once, then drains empty after detach.
-void worker_reports_publication_error() {
+[[gnu::noinline]] void worker_reports_publication_error() {
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
         always_fail);
     runner.submit(period(0));
@@ -157,7 +160,7 @@ void worker_reports_publication_error() {
 // test_worker_loss_preserves_consumed_but_unapplied_prefix — after a
 // successful acknowledged prefix, a later failure preserves the consumed but
 // unapplied periods for synchronous replay.
-void worker_loss_preserves_consumed_but_unapplied_prefix() {
+[[gnu::noinline]] void worker_loss_preserves_consumed_but_unapplied_prefix() {
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
         [](std::uint64_t sequence) {
             if (sequence == 1) throw std::runtime_error("worker died mid-period");
@@ -182,7 +185,7 @@ void worker_loss_preserves_consumed_but_unapplied_prefix() {
 
 // test_bad_reply_preserves_all_unapplied_periods — a failure on the very
 // first job preserves every unapplied period, not just the tail.
-void bad_reply_preserves_all_unapplied_periods() {
+[[gnu::noinline]] void bad_reply_preserves_all_unapplied_periods() {
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
         always_fail);
     runner.submit(period(0));
@@ -199,7 +202,7 @@ void bad_reply_preserves_all_unapplied_periods() {
 // test_publication_error_applies_successful_prefix_exactly_once — the ready
 // prefix applies once at the accounting owner before the error propagates;
 // the failed and later periods survive for replay.
-void publication_error_applies_successful_prefix_exactly_once() {
+[[gnu::noinline]] void publication_error_applies_successful_prefix_exactly_once() {
     runtime::AccountingConfig config = synthetic_config();
     config.async_telemetry = true;
     runtime::PeriodAccounting accounting(config, synthetic_state(), 1,
@@ -217,7 +220,7 @@ void publication_error_applies_successful_prefix_exactly_once() {
 
 // test_explicit_drain_applies_prefix_before_publication_error — a blocking
 // collect applies every ready publication before the failure surfaces.
-void explicit_drain_applies_prefix_before_publication_error() {
+[[gnu::noinline]] void explicit_drain_applies_prefix_before_publication_error() {
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
         [](std::uint64_t sequence) {
             if (sequence == 1) throw std::runtime_error("second period fails");
@@ -237,7 +240,7 @@ void explicit_drain_applies_prefix_before_publication_error() {
 
 // test_resource_close_never_publishes_or_drains — a resource-only close
 // discards in-flight work; nothing reaches the owner, acknowledged or not.
-void resource_close_never_publishes_or_drains() {
+[[gnu::noinline]] void resource_close_never_publishes_or_drains() {
     std::atomic<bool> release{false};
     std::atomic<bool> entered{false};
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
@@ -262,11 +265,11 @@ void resource_close_never_publishes_or_drains() {
 // test_disabling_worker_preserves_publication_error_and_closes —
 // collect() propagates the publication error; detach_async() then replays
 // the preserved periods synchronously and async telemetry stays off.
-void disabling_worker_preserves_publication_error_and_closes() {
-    runtime::AccountingConfig config = synthetic_config();
-    config.async_telemetry = true;
-    // The runner fault seam is reached through the accounting ctor: inject
-    // by failing the second job via a runner created directly.
+// The runner fault seam is reached through the accounting ctor: inject by
+// failing the second job via a runner created directly. Heap-returned so the
+// caller phase keeps a small frame (-Wframe-larger-than=8192).
+[[nodiscard]] [[gnu::noinline]]
+std::vector<std::shared_ptr<const std::vector<RawStep>>> disable_phase_preserve() {
     auto runner = std::make_unique<AsyncCloseRunner>(synthetic_config(),
         synthetic_state(), 1, std::nullopt,
         [](std::uint64_t sequence) {
@@ -281,28 +284,39 @@ void disabling_worker_preserves_publication_error_and_closes() {
     try { (void)runner->peek(true); }
     catch (const AsyncPublicationError&) { failed = true; }
     bt::require(failed, "the publication error is preserved");
-    const auto preserved = runner->detach_pending();
+    auto preserved = runner->detach_pending();
     bt::require(preserved.size() == 1 && preserved[0]->front().interval_id == 10,
         "disabling the worker preserves the failed period");
     runner->close();
-    runner.reset();
+    return preserved;
+}
 
-    runtime::PeriodAccounting accounting(config, synthetic_state(), 1, nullptr, nullptr);
-    bt::require(accounting.asynchronous(),
-        "async telemetry is enabled at construction");
-    // Replay the preserved period into a fresh synchronous evaluator — the
-    // "worker closed, error preserved, periods retried" terminal state. The
-    // replay resumes at the acknowledged prefix (last_id 9, end 0.005 s).
-    runtime::AccountingConfig sync_config = synthetic_config();
+// Replay the preserved period into a fresh synchronous evaluator — the
+// "worker closed, error preserved, periods retried" terminal state. The
+// replay resumes at the acknowledged prefix (last_id 9, end 0.005 s).
+[[gnu::noinline]] void disable_phase_replay(
+    const std::vector<std::shared_ptr<const std::vector<RawStep>>>& preserved) {
     auto resumed = synthetic_state();
     resumed.history.last_id = 9;
     resumed.history.last_end = 10 * .0005;
-    runtime::PeriodAccounting replay(sync_config, resumed, 1, nullptr, nullptr);
-    for (const auto& step : *preserved[0]) replay.push(step);
-    replay.close_period();
-    replay.collect(true);
-    bt::require(replay.pending_samples().size() == 10,
+    auto replay = std::make_unique<runtime::PeriodAccounting>(
+        synthetic_config(), resumed, 1, nullptr, nullptr);
+    for (const auto& step : *preserved[0]) replay->push(step);
+    replay->close_period();
+    replay->collect(true);
+    bt::require(replay->pending_samples().size() == 10,
         "the preserved period replays synchronously");
+}
+
+[[gnu::noinline]] void disabling_worker_preserves_publication_error_and_closes() {
+    const auto preserved = disable_phase_preserve();
+    runtime::AccountingConfig config = synthetic_config();
+    config.async_telemetry = true;
+    const auto accounting = std::make_unique<runtime::PeriodAccounting>(
+        config, synthetic_state(), 1, nullptr, nullptr);
+    bt::require(accounting->asynchronous(),
+        "async telemetry is enabled at construction");
+    disable_phase_replay(preserved);
 }
 
 // test_async_close_publishes_identical_samples +
@@ -310,7 +324,7 @@ void disabling_worker_preserves_publication_error_and_closes() {
 // runtime publishes bitwise-identical samples through the async worker and
 // the synchronous path (the lumped twin shares this contract: the worker
 // applies publish_close verbatim on the same raws).
-void async_close_publishes_identical_samples() {
+[[gnu::noinline]] void async_close_publishes_identical_samples() {
     namespace rr = runtime_reference;
     auto docs = rr::resolved_docs(rr::welded_dir());
     rr::set_member(docs.config, "async_telemetry", rr::bio::Value{true});

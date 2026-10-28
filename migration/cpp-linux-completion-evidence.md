@@ -8915,3 +8915,107 @@ reds**; detail in task-C331-report.md §Final gate.
 - Verdict: single-command exit-0 unreachable while the documented
   T09/T10 baseline pair is red (same exit-8-at-ctest as the prior
   lane gates); nothing C3.31 introduced failed.
+
+## 2026-10-28 — lane/a batch 3.31 recording catalog/CLI/report/storage/values/analysis/analyst-CLI merge-back (merge `889ae8e6`)
+
+Serialized merge. Lane/a tip `7f038ce6` over base `2077ec72` — the
+3.30 merge it branched directly off; integration tip `e38e1c8a` sat 4
+merges ahead (3.23 monitors/energy/acceptance, 3.29a engine
+errors/loader, 3.27 state bundle/restore/fuzz/equilibrium, 3.32
+replay/view). Two content conflicts, both resolved as audited unions;
+`migration/test-port-map.json` and `migration/python-removal.json`
+auto-merged and were verified programmatically anyway.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — clean auto-merge; verified
+  programmatically: **2,393 unique (`source_path`,`source_symbol`)
+  records — key-exact union** of both sides vs base; **0 lost / 0
+  duplicate / 0 contested-misresolved / 0 unexplained deletions**.
+  Headers **`2393/2377`** (`class_test_methods` 16) match the actual
+  record count. 275 records differed between the sides: the **66 batch
+  rows resolved to lane/a's enriched versions** (dispositions 65
+  `port` + 1 `drop` — the units/phases compare-schema record stays
+  `drop`/`python-only`), the other **209 resolved to integration's**
+  (3.23/3.27/3.29a/3.32-era edits); integration's 2 head-only records
+  (lane/d's equilibrium pair) preserved. Batch-scope transitions:
+  **65 `planned→port` + 1 `planned→drop`**.
+- `migration/python-removal.json` — clean auto-merge; verified union:
+  535 rows, 0 missing/extra/duplicate. `replacement_landed` **96→103**
+  (+7: the seven `test_recording_{catalog,cli,report,storage,values,
+  analysis,analyst_cli}.py` rows, each carrying its
+  `reference.recording_*` CTest id in `verification_ids`); `planned`
+  439→**432**. Live `sha256`/`line_count` verified against the current
+  files — all seven match the lane snapshot exactly (sources unchanged
+  since lane capture); **no refresh needed**.
+- `native/tests/reference/Phase3Ports.cmake` — EOF-append conflict;
+  union: lane/a's 3.31 `t53 recording` block (7 registrations) placed
+  **before** integration's 3.32 replay/view block — ascending batch
+  order at the tail, same resolution as the 3.27 merge. **112→119
+  `bike_add_reference_test` registrations; no duplicate targets or
+  SOURCES.**
+- `migration/cpp-linux-completion-evidence.md` — EOF-append conflict;
+  union: integration's 7 appended sections kept, lane/a's
+  `## 2026-10-28 — 3.31 qualification` section appended after them
+  (same convention as the 3.27 merge-back).
+- New/edited files, no conflicts: 7 new test TUs
+  (`test_recording_{catalog,cli,report,storage,values,analysis,
+  analyst_cli}.cpp`), lane edits to `recording_test_support.hpp` +
+  `test_native_recording_{lifecycle,retention}.cpp`,
+  `task-C331-report.md`.
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new `Phase3Ports.cmake` registrations) + `cmake
+  --build -j8 --target` for the seven batch suites: green compile +
+  link (one cosmetic `ignoring duplicate libraries` ld warning on
+  `recording_cli` — `bike_recording` reaches the link twice through
+  `bike_cli`; pre-existing shape, no action).
+- `ctest -R 'reference\.recording_'`: **9/9 PASS** (52.52 s) —
+  `recording_catalog` 1.23 s, `recording_cli` 0.88 s,
+  `recording_report` 1.57 s, `recording_storage` 7.03 s,
+  `recording_values` 2.73 s, `recording_analysis` 24.37 s,
+  `recording_analyst_cli` 8.33 s, plus the two 3.30 suites under the
+  same regex (`recording_capture` 2.52 s, `recording_publication`
+  3.85 s) — no regressions.
+- Note on build dir: `reference.*` CTest nodes exist only in the
+  standalone `build/native-release` graph (root `CMakeLists.txt:649`
+  `add_subdirectory(native/tests/reference)`); the binding-graph
+  `native/build` does not register them (lane's own qualification
+  recorded the same). The spec'd `native/build` path was therefore
+  resolved to the standalone graph — identical to every prior
+  merge-back section.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `container.sh sync` → `configure root-clang root` → `build
+  root-clang` (the seven batch targets): green (22 ninja steps, clean
+  compile + link).
+- `ctest -R 'reference\.recording_'`: **9/9 PASS** (62.60 s) — same
+  nine tests, all green.
+
+### Ledger deltas (pre-merge `e38e1c8a` → post-merge `889ae8e6`)
+
+- `test-port-map.json`: 2393 → **2393** records (in-place batch
+  edits, no inserts/deletes); headers 2393/2377/16 unchanged and equal
+  to the actual record count. `port` 942 → **1007** (+65), `drop` 114
+  → **115** (+1), `golden` 351 (unchanged), `planned` 986 → **920**
+  (−66).
+- `python-removal.json`: `replacement_landed` 96 → **103** (+7);
+  `planned` 439 → **432**; 535 rows.
+- `Phase3Ports.cmake`: 112 → **119** registrations.
+
+### Assessment
+
+Clean union modulo the two analyzed EOF-append conflicts and the
+audited auto-merges. Every ledger invariant checked programmatically:
+port-map key-exact union (2,393 unique keys; lane's 66 enriched batch
+rows and integration's 209 differing non-batch rows each
+byte-preserved; disposition arithmetic closes +65 port / +1 drop /
+−66 planned), removal-ledger union (535 rows, exactly the 7 batch
+rows flipped, live fingerprints still exact), canonical serialization
+(`indent=2`, `ensure_ascii`, trailing LF) byte-verified on both
+ledgers post-merge. All 9 in-scope cases green on both platforms. L3
+(`tools/run_tests.sh native`) not re-run — bounded merge-back scope
+per protocol; lane/a's own gate evidence is in `task-C331-report.md`
+(baseline-blocked clean on the documented T09/T10 pair).

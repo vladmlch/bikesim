@@ -629,3 +629,10 @@ bike_add_reference_test(pneumatic_physical_runtime ENGINE
 bike_add_reference_test(execution_identity ENGINE
   SOURCES test_execution_identity.cpp LIBRARIES bike_replay
   LABELS t53 platform)
+# test_native_platform_replay.py port: same-host checked replay, foreign
+# identity rejection before plant construction, recorded-frame playback of
+# the refused file, and the never-consulted gate for inspection paths.
+bike_add_reference_test(native_platform_replay ENGINE
+  SOURCES test_native_platform_replay.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 platform replay)
+add_dependencies(reference.native_platform_replay bike-replay)

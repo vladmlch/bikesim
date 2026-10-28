@@ -9632,3 +9632,113 @@ Total Test time (real) =   6.59 sec
 ### Commits
 
 See `task-C333a-report.md` §Commits.
+
+## 2026-10-28 — lane/a batch 3.33a native research merge-back (merge `3ce20132`)
+
+Serialized merge. Lane/a tip `cbb01e79` over base `fe5edb2a`;
+integration tip `dfe8db96` sat 23 commits ahead (the 3.34 / 3.24b /
+3.22b merge-back pairs plus their lane/d batch commits). Two EOF-append conflicts
+(`cpp-linux-completion-evidence.md`, `Phase3Ports.cmake`) resolved by
+union; both JSON ledgers auto-merged and were verified
+programmatically anyway.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — clean auto-merge; verified
+  programmatically: **2,394 unique (`source_path`,`source_symbol`)
+  records — key-exact union** of both sides vs base; **0 lost / 0
+  duplicate / 0 contested-misresolved / 0 unexplained deletions**.
+  Headers **`2394/2378`** (`class_test_methods` 16) match the actual
+  record count. 138 records differed between the sides with **zero key
+  overlap**: the **41 batch rows resolved to lane/a's enriched
+  versions** (24 `planned→port` + 5 `planned→golden` + 12 `planned`
+  carrying row-specific evidence, `collected_node_ids` populated to 78
+  measured nodes, `ported::tests::reference::*` id form corrected to
+  `reference.native_research_*`), the other **97 resolved to
+  integration's** (3.34/3.24b/3.22b-era edits the lane carried stale
+  base copies of — including the +1
+  `test_equality_rows_charge_the_closure_channel_not_the_bound`
+  `reference.period_buffer` record the lane lacks).
+- `migration/python-removal.json` — clean auto-merge; verified union:
+  535 rows, 0 missing/extra/duplicate; 21 rows differed — **6 resolved
+  to lane/a** (the batch files), **15 to integration's**, **0
+  neither-side**. `replacement_landed` **117→122** (+5:
+  `test_native_research_{failures,frontend,policy,programs,sensors}.py`,
+  each carrying its `reference.*` CTest id in `verification_ids`);
+  `planned` 418→**413**; capture/environment/recording stay `planned`
+  on the outstanding live-parity records per the lane ledger. Live
+  `sha256`/`line_count` verified against the current files on all
+  eight batch rows — every fingerprint exact; `snapshot_*` untouched.
+- `native/tests/reference/Phase3Ports.cmake` — EOF-append conflict
+  (the only code conflict): both sides had appended at file tail.
+  Resolved as **union in ascending batch order** — lane/a's eight
+  `native_research_*` registrations (3.33a block, labels `t53
+  research`, +`golden` on programs/sensors) placed before
+  integration's nine 3.34 registrations. **128→136
+  `bike_add_reference_test` registrations, no duplicate targets or
+  SOURCES.**
+- `migration/cpp-linux-completion-evidence.md` — EOF-append conflict:
+  both sides had appended sections at file tail. Resolved by
+  **append-merge keeping both runs in order** — integration's
+  3.34/3.24b/3.22b sections, then lane/a's 3.33a qualification
+  section; this section is the merge-back append.
+- `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/` — union of
+  trees, no path conflicts: **108 new fixture files** (54 per
+  platform) under
+  `tests_reference_test_native_research_{programs,sensors}.py/`.
+- Lane-only files verified byte-equal to the lane tip: the eight new
+  TUs `native/tests/reference/test_native_research_*.cpp`, the new
+  shared seam `research_reference_support.{hpp,cpp}`,
+  `task-C333a-report.md`, and the two in-place pytest edits
+  (`test_native_research_{programs,sensors}.py` golden-capture sites).
+
+### Merge-back verification — darwin-arm64 (`build/native-release`, AppleClang, Release)
+
+- Reconfigure (new `Phase3Ports.cmake` registrations) + `cmake
+  --build -j8 --target` for the eight batch suites: green compile +
+  link (one cosmetic `ignoring duplicate libraries` ld warning —
+  `libbike_random.a` reaches the `native_research_sensors` link twice;
+  pre-existing shape, no action).
+- `ctest -R 'reference\.native_research_'`: **8/8 PASS** (20.57 s) —
+  `capture` 1.91 s, `environment` 3.31 s, `failures` 1.13 s,
+  `frontend` 1.29 s, `policy` 4.41 s, `programs` 0.76 s, `recording`
+  6.96 s, `sensors` 0.76 s.
+
+### Merge-back verification — Linux aarch64 (`bike-dev-python-free-cpp`, clang++-18, `root-clang` Release)
+
+- `tools/linux/container.sh sync` (tip `3ce20132`) → `container.sh
+  build root-clang` (the eight batch targets): ninja re-ran the
+  configure (Phase3Ports.cmake regen), 19/19 steps green.
+- `ctest -R` (same regex) in `/build/root-clang`: **8/8 PASS**
+  (8.00 s) — `capture` 0.41 s, `environment` 1.62 s, `failures`
+  0.38 s, `frontend` 0.37 s, `policy` 2.22 s, `programs` 0.00 s,
+  `recording` 2.98 s, `sensors` 0.02 s.
+
+### Ledger deltas (pre-merge `dfe8db96` → post-merge `3ce20132`)
+
+- `test-port-map.json`: 2394 → **2394** records (in-place batch
+  edits, no inserts/deletes); headers 2394/2378/16 unchanged and equal
+  to the actual record count. `port` 1063 → **1087** (+24), `drop`
+  125 (unchanged), `golden` 351 → **356** (+5), `planned` 855 →
+  **826** (−29).
+- `python-removal.json`: `replacement_landed` 117 → **122** (+5);
+  `planned` 418 → **413**; 535 rows.
+- `Phase3Ports.cmake`: 128 → **136** registrations.
+- Golden fixtures: +108 files (54 `darwin-arm64` + 54
+  `linux-aarch64`).
+
+### Assessment
+
+Clean union modulo the two analyzed EOF-append conflicts and the
+audited auto-merges. Every ledger invariant checked programmatically:
+port-map key-exact union (2,394 unique keys; lane's 41 enriched batch
+rows and integration's 97 differing non-batch rows each
+byte-preserved; disposition arithmetic closes +24 port / +5 golden /
+−29 planned), removal-ledger union (535 rows, exactly the 5 batch
+rows flipped, live fingerprints still exact on all eight batch
+files), canonical serialization (`indent=2`, `ensure_ascii`, trailing
+LF) byte-verified on both ledgers post-merge. All 8 in-scope cases
+green on both platforms. L3 (`tools/run_tests.sh native`) not re-run
+— bounded merge-back scope per protocol; integration-level `full`
+gate is the scheduled accumulation checkpoint after the pending
+merges.

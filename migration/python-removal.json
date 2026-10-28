@@ -17404,20 +17404,18 @@
   },
   {
     "path": "tests/test_async_close.py",
-    "sha256": "1ae72136cae70e63b8559f5986c0f2220b71c36561b84d1e36cf23c7ee2c6c6a",
-    "line_count": 164,
+    "sha256": "b59efaf27bbbe70d5e2ea38aef0366f4c711c9ca1659529a1c9f01141c92fed1",
+    "line_count": 430,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/integration/test_async_close.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.async_close"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "3b0b4a846984d631199bd339a8b90c5bd73d8b77a35915bb0c081974361c16d6",
     "snapshot_line_count": 164,
     "tracked": true,
@@ -17425,20 +17423,18 @@
   },
   {
     "path": "tests/test_batch.py",
-    "sha256": "6ff4f8a943c701de0c3f63778399bbeee1f7b10b08cb4fa696e28c146d635e33",
-    "line_count": 96,
+    "sha256": "f9ee7a59b4e822c28d81b57310d98987bc82ce2b2f08c946ee2f872522666167",
+    "line_count": 171,
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/integration/test_batch.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.batch"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "653c33be21c7e64f85aa09a698c4a3e716416384d03f282644ebbf22d1ed712f",
     "snapshot_line_count": 96,
     "tracked": true,

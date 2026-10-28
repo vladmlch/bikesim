@@ -29982,16 +29982,17 @@
       "line": 75,
       "end_line": 82,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_async_close_publishes_identical_samples",
+      "native_test_id": "reference.async_close::test_async_close_publishes_identical_samples",
       "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_async_close_publishes_identical_samples"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30000,16 +30001,17 @@
       "line": 86,
       "end_line": 94,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_async_close_articulated_episode_completes",
+      "native_test_id": "reference.async_close::test_async_close_articulated_episode_completes",
       "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_async_close_articulated_episode_completes"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30018,17 +30020,18 @@
       "line": 136,
       "end_line": 154,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_worker_roundtrip_publishes_period",
+      "native_test_id": "reference.async_close::test_worker_roundtrip_publishes_period",
       "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_worker_roundtrip_publishes_period[None]",
         "tests/test_async_close.py::test_worker_roundtrip_publishes_period[spawn]"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30037,17 +30040,18 @@
       "line": 158,
       "end_line": 172,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_worker_reports_publication_error",
+      "native_test_id": "reference.async_close::test_worker_reports_publication_error",
       "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_worker_reports_publication_error[None]",
         "tests/test_async_close.py::test_worker_reports_publication_error[spawn]"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30056,16 +30060,17 @@
       "line": 23,
       "end_line": 28,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_grid_cartesian_product_and_order",
+      "native_test_id": "reference.batch::test_grid_cartesian_product_and_order",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_grid_cartesian_product_and_order"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30074,16 +30079,17 @@
       "line": 31,
       "end_line": 34,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_bool_flags_and_job_overrides",
+      "native_test_id": "reference.batch::test_bool_flags_and_job_overrides",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_bool_flags_and_job_overrides"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30092,16 +30098,17 @@
       "line": 37,
       "end_line": 41,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_range_tables",
+      "native_test_id": "reference.batch::test_range_tables",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_range_tables"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30110,16 +30117,17 @@
       "line": 44,
       "end_line": 47,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_out_is_reserved_everywhere",
+      "native_test_id": "reference.batch::test_out_is_reserved_everywhere",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_out_is_reserved_everywhere"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30128,16 +30136,17 @@
       "line": 50,
       "end_line": 59,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_bad_values_and_sections_are_named",
+      "native_test_id": "reference.batch::test_bad_values_and_sections_are_named",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_bad_values_and_sections_are_named"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30146,16 +30155,17 @@
       "line": 62,
       "end_line": 65,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_slug_reflects_overrides",
+      "native_test_id": "reference.batch::test_slug_reflects_overrides",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_slug_reflects_overrides"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30164,16 +30174,17 @@
       "line": 68,
       "end_line": 72,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_validate_rejects_flags_research_does_not_know",
+      "native_test_id": "reference.batch::test_validate_rejects_flags_research_does_not_know",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_validate_rejects_flags_research_does_not_know"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -30182,16 +30193,17 @@
       "line": 76,
       "end_line": 99,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_serial_two_job_episode",
+      "native_test_id": "reference.batch::test_serial_two_job_episode",
       "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_serial_two_job_episode"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40337,17 +40349,18 @@
       "line": 199,
       "end_line": 204,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_bad_reply_preserves_all_unapplied_periods",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": "reference.async_close::test_bad_reply_preserves_all_unapplied_periods",
+      "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_bad_reply_preserves_all_unapplied_periods[reply0-out of order]",
         "tests/test_async_close.py::test_bad_reply_preserves_all_unapplied_periods[reply1-invalid result status]"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40356,13 +40369,15 @@
       "line": 386,
       "end_line": 430,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_close_reaps_forced_worker_and_preserves_interrupt",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node; dropped \u2014 no native twin",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-30 3.34 lane/d: dropped \u2014 native AsyncCloseRunner::close() is noexcept unconditional cooperative join (std::thread has no terminate/kill escalation; the worker exits on stopping_ between jobs); the Python reap-escalation sequence and KeyboardInterrupt __notes__ propagation have no faithful native twin"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -40370,16 +40385,17 @@
       "line": 251,
       "end_line": 269,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_disabling_worker_preserves_publication_error_and_closes",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": "reference.async_close::test_disabling_worker_preserves_publication_error_and_closes",
+      "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_disabling_worker_preserves_publication_error_and_closes"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40388,16 +40404,17 @@
       "line": 224,
       "end_line": 231,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_explicit_drain_applies_prefix_before_publication_error",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": "reference.async_close::test_explicit_drain_applies_prefix_before_publication_error",
+      "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_explicit_drain_applies_prefix_before_publication_error"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40406,13 +40423,19 @@
       "line": 337,
       "end_line": 369,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_physical_driver_construction_owns_only_needed_worker",
-      "native_source": "native/tests/reference/test_async_close.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.async_close::test_physical_driver_construction_owns_only_needed_worker",
+      "native_source": "native/tests/integration/test_async_close.cpp",
+      "collected_node_ids": [
+        "tests/test_async_close.py::test_physical_driver_construction_owns_only_needed_worker[python-True]",
+        "tests/test_async_close.py::test_physical_driver_construction_owns_only_needed_worker[native-False]"
+      ],
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-30 3.34 lane/d: ported \u2014 [native-False] covered by construction_owns_only_needed_worker (PeriodAccounting builds AsyncCloseRunner only under async_telemetry); [python-True] param is python-backend adapter plumbing with no native twin (backend removed at T63)",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -40420,16 +40443,17 @@
       "line": 207,
       "end_line": 221,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_publication_error_applies_successful_prefix_exactly_once",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": "reference.async_close::test_publication_error_applies_successful_prefix_exactly_once",
+      "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_publication_error_applies_successful_prefix_exactly_once"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40438,13 +40462,18 @@
       "line": 372,
       "end_line": 383,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_python_driver_close_releases_worker_once",
-      "native_source": "native/tests/reference/test_async_close.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.async_close::test_python_driver_close_releases_worker_once",
+      "native_source": "native/tests/integration/test_async_close.cpp",
+      "collected_node_ids": [
+        "tests/test_async_close.py::test_python_driver_close_releases_worker_once"
+      ],
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-30 3.34 lane/d: ported \u2014 NativeRideRuntime::close() latches closed and is idempotent; the async worker releases exactly once (second close no-ops)",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -40452,13 +40481,18 @@
       "line": 287,
       "end_line": 311,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_research_close_attempts_both_owners_preserving_first_failure",
-      "native_source": "native/tests/reference/test_async_close.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.async_close::test_research_close_attempts_both_owners_preserving_first_failure",
+      "native_source": "native/tests/integration/test_async_close.cpp",
+      "collected_node_ids": [
+        "tests/test_async_close.py::test_research_close_attempts_both_owners_preserving_first_failure"
+      ],
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-30 3.34 lane/d: ported \u2014 PolicySession::close() attempts policy then environment close and rethrows the first failure; close_environment wraps it into FailureReport (the __notes__ twin). The 'environment close also failed' note arm has no public injection seam (environment close can only fail re-entrantly via ResearchGuard); native latches closed rather than retrying the failed owner \u2014 documented semantic difference",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -40466,13 +40500,18 @@
       "line": 272,
       "end_line": 284,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_research_close_keeps_active_window_guard_and_discards_without_steps",
-      "native_source": "native/tests/reference/test_async_close.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.async_close::test_research_close_keeps_active_window_guard_and_discards_without_steps",
+      "native_source": "native/tests/integration/test_async_close.cpp",
+      "collected_node_ids": [
+        "tests/test_async_close.py::test_research_close_keeps_active_window_guard_and_discards_without_steps"
+      ],
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-30 3.34 lane/d: ported \u2014 PolicySession::close() throws 'finish the accepted policy interval' on an accepted window before either owner runs; NativeResearchRuntime::close() is the unconditional discard_pending twin",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -40480,13 +40519,19 @@
       "line": 315,
       "end_line": 333,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_research_constructor_failure_releases_worker",
-      "native_source": "native/tests/reference/test_async_close.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "reference.async_close::test_research_constructor_failure_releases_worker",
+      "native_source": "native/tests/integration/test_async_close.cpp",
+      "collected_node_ids": [
+        "tests/test_async_close.py::test_research_constructor_failure_releases_worker[failure0]",
+        "tests/test_async_close.py::test_research_constructor_failure_releases_worker[failure1]"
+      ],
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-30 3.34 lane/d: ported \u2014 PolicySession ctor restores caller environment ownership when start_policy throws; async_telemetry keeps a live AsyncCloseRunner in the restored env, released by close()",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
+      ]
     },
     {
       "source_path": "tests/test_async_close.py",
@@ -40494,16 +40539,17 @@
       "line": 234,
       "end_line": 248,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_resource_close_never_publishes_or_drains",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": "reference.async_close::test_resource_close_never_publishes_or_drains",
+      "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_resource_close_never_publishes_or_drains"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40512,16 +40558,17 @@
       "line": 188,
       "end_line": 194,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_close::test_worker_loss_preserves_consumed_but_unapplied_prefix",
-      "native_source": "native/tests/reference/test_async_close.cpp",
+      "native_test_id": "reference.async_close::test_worker_loss_preserves_consumed_but_unapplied_prefix",
+      "native_source": "native/tests/integration/test_async_close.cpp",
       "collected_node_ids": [
         "tests/test_async_close.py::test_worker_loss_preserves_consumed_but_unapplied_prefix"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_async_close.cpp; CTest reference.async_close green darwin-arm64 (720 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.async_close Passed, binary PASS 798 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40684,16 +40731,17 @@
       "line": 136,
       "end_line": 171,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_actual_two_worker_batch_matches_serial_jobs",
-      "native_source": "native/tests/reference/test_batch.cpp",
+      "native_test_id": "reference.batch::test_actual_two_worker_batch_matches_serial_jobs",
+      "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_actual_two_worker_batch_matches_serial_jobs"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40702,16 +40750,17 @@
       "line": 111,
       "end_line": 132,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_explicit_serial_job_count_avoids_discovery_and_reports_threads",
-      "native_source": "native/tests/reference/test_batch.cpp",
+      "native_test_id": "reference.batch::test_explicit_serial_job_count_avoids_discovery_and_reports_threads",
+      "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_explicit_serial_job_count_avoids_discovery_and_reports_threads"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {
@@ -40720,17 +40769,18 @@
       "line": 103,
       "end_line": 108,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_batch::test_nonpositive_worker_count_is_rejected_before_output",
-      "native_source": "native/tests/reference/test_batch.cpp",
+      "native_test_id": "reference.batch::test_nonpositive_worker_count_is_rejected_before_output",
+      "native_source": "native/tests/integration/test_batch.cpp",
       "collected_node_ids": [
         "tests/test_batch.py::test_nonpositive_worker_count_is_rejected_before_output[0]",
         "tests/test_batch.py::test_nonpositive_worker_count_is_rejected_before_output[-2]"
       ],
-      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port landed darwin-arm64 green; linux-aarch64 pending",
+      "assertions_capture": "2026-10-30: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
-        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane"
+        "2026-10-30 3.34 lane/d: ported to native/tests/integration/test_batch.cpp; CTest reference.batch green darwin-arm64 (105 checks); linux-aarch64 pending bike-dev-pfc-lane",
+        "2026-10-30 3.34 lane/d: linux-aarch64 verified \u2014 bike-dev-pfc-lane-d /build/root-clang CTest reference.batch Passed, binary PASS 105 checks (darwin-arm64 build/native-release identical count); disposition planned\u2192port"
       ]
     },
     {

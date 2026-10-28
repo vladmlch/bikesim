@@ -636,3 +636,11 @@ bike_add_reference_test(native_platform_replay ENGINE
   SOURCES test_native_platform_replay.cpp LIBRARIES bike_replay bike_recording
   LABELS t53 platform replay)
 add_dependencies(reference.native_platform_replay bike-replay)
+# tests/test_recording_platform_compatibility.py port: portable inspection
+# and recorded-frame playback (subprocess CLI + in-process loaders) split
+# from the checked-replay identity gate.
+bike_add_reference_test(recording_platform_compat ENGINE
+  SOURCES ../integration/test_recording_platform_compat.cpp
+  LIBRARIES bike_replay bike_recording
+  LABELS t53 platform replay slow)
+add_dependencies(reference.recording_platform_compat bike-recording bike-replay)

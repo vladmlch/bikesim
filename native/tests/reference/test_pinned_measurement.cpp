@@ -173,8 +173,9 @@ void test_linkage_closure_rows_exclude_rider_connects() {
 // interval/accounting path.
 void test_pinned_samples_are_compressive_at_rest() {
     auto rig = rt::welded_runtime();
-    const runtime::RideControl control{.motor_torque_nm = 0.,
-                                       .human_torque_nm = 0.};
+    runtime::RideControl control{};
+    control.motor_torque_nm = 0.;
+    control.human_torque_nm = 0.;
     const auto result =
         rig->runtime->advance(80, control, 1., 1., std::nullopt);
     bt::require(result.step == 80, "the rest ride commits 80 intervals");

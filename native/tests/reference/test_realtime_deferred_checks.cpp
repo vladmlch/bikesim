@@ -95,6 +95,54 @@ void test_bulk_road_queries_match_two_hundred_scalar_windows() {
 // explained: eager validation raises 'does not explain', the deferred raw
 // survives capture, and period close attributes the violation to the
 // interval that produced it — (.00125, ('foot_front:unobservable...',)).
+// [[gnu::noinline]] keeps the RawStep literal staging out of the test
+// body's frame — Linux -Wframe-larger-than=8192 counts the channel/diag
+// WireObject temporaries against whoever inlines them.
+[[gnu::noinline]] runtime::RawStep staged_raw(const mjModel *m,
+                                              rider::AttachmentRaw captured) {
+    runtime::RawStep raw;
+    raw.interval_id = 0;
+    raw.time_s = 0.;
+    raw.end_time_s = .00125;
+    raw.qpos.assign(static_cast<std::size_t>(m->nq), 0.);
+    raw.qvel.assign(static_cast<std::size_t>(m->nv), 0.);
+    raw.attachment_raw = {{"foot_front", std::move(captured)}};
+    raw.electrical_power_w = runtime::Wire(0.);
+    raw.mechanical_energy_j = 1.;
+    raw.elastic_energy_j = runtime::WireObject{};
+    raw.constraint_snapshot = {.interval_start_s = 0.,
+                               .interval_end_s = .00125,
+                               .qvel_start = raw.qvel,
+                               .components = {}};
+    raw.diagnostics = {
+        {"endpoint_mass", runtime::Wire(runtime::WireObject{})},
+        {"rider", runtime::Wire(runtime::WireObject{})},
+        {"rider_welds", runtime::Wire(runtime::WireObject{})},
+        {"rider_ik_saturation", runtime::Wire(nullptr)},
+        {"rider_support_targets", runtime::Wire(nullptr)},
+        {"rider_intent", runtime::Wire(nullptr)},
+        {"inclination_rad", runtime::Wire(0.)},
+        {"rider_allocation", runtime::Wire(runtime::WireObject{})},
+    };
+    // The retained-row contract validates channels.tires patches on commit
+    // (WorkHistory::add) — stage one terrain patch per wheel.
+    const auto tire = [](double load) {
+        return runtime::Wire{runtime::WireObject{
+            {"patches", runtime::Wire{runtime::WireArray{
+                runtime::Wire{runtime::WireObject{
+                    {"normal_load_n", runtime::Wire{load}},
+                    {"source_geom", runtime::Wire{"terrain"}},
+                }},
+            }}},
+        }};
+    };
+    raw.channels = {{"tires", runtime::Wire{runtime::WireObject{
+        {"front", tire(350.)},
+        {"rear", tire(350.)},
+    }}}};
+    return raw;
+}
+
 void test_deferred_unexplained_wrench_is_rejected_at_its_original_interval() {
     auto plant = pt::pinned();
     mjModel *m = plant.model.get();
@@ -150,47 +198,7 @@ void test_deferred_unexplained_wrench_is_rejected_at_its_original_interval() {
     state.energy.energy_scale_j = 1.;
     runtime::PeriodAccounting accounting(config, std::move(state), 1,
                                          nullptr, nullptr);
-    runtime::RawStep raw;
-    raw.interval_id = 0;
-    raw.time_s = 0.;
-    raw.end_time_s = .00125;
-    raw.qpos.assign(static_cast<std::size_t>(m->nq), 0.);
-    raw.qvel.assign(static_cast<std::size_t>(m->nv), 0.);
-    raw.attachment_raw = {{"foot_front", captured}};
-    raw.electrical_power_w = runtime::Wire(0.);
-    raw.mechanical_energy_j = 1.;
-    raw.elastic_energy_j = runtime::WireObject{};
-    raw.constraint_snapshot = {.interval_start_s = 0.,
-                               .interval_end_s = .00125,
-                               .qvel_start = raw.qvel,
-                               .components = {}};
-    raw.diagnostics = {
-        {"endpoint_mass", runtime::Wire(runtime::WireObject{})},
-        {"rider", runtime::Wire(runtime::WireObject{})},
-        {"rider_welds", runtime::Wire(runtime::WireObject{})},
-        {"rider_ik_saturation", runtime::Wire(nullptr)},
-        {"rider_support_targets", runtime::Wire(nullptr)},
-        {"rider_intent", runtime::Wire(nullptr)},
-        {"inclination_rad", runtime::Wire(0.)},
-        {"rider_allocation", runtime::Wire(runtime::WireObject{})},
-    };
-    // The retained-row contract validates channels.tires patches on commit
-    // (WorkHistory::add) — stage one terrain patch per wheel.
-    const auto tire = [](double load) {
-        return runtime::Wire{runtime::WireObject{
-            {"patches", runtime::Wire{runtime::WireArray{
-                runtime::Wire{runtime::WireObject{
-                    {"normal_load_n", runtime::Wire{load}},
-                    {"source_geom", runtime::Wire{"terrain"}},
-                }},
-            }}},
-        }};
-    };
-    raw.channels = {{"tires", runtime::Wire{runtime::WireObject{
-        {"front", tire(350.)},
-        {"rear", tire(350.)},
-    }}}};
-    accounting.push(std::move(raw));
+    accounting.push(staged_raw(m, captured));
     accounting.close_period();
     const auto &first = accounting.state().monitor.first_failure;
     bt::require(first.has_value(),

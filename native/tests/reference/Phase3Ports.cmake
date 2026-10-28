@@ -658,3 +658,22 @@ bike_add_reference_test(native_platform_recording ENGINE
   SOURCES test_native_platform_recording.cpp
   LIBRARIES bike_app bike_recording bike_cli
   LABELS t53 platform recording slow)
+# tests/reference/test_native_linux_headless.py port: the real bike-ride
+# executable under a scrubbed display environment keeps its stepping and
+# outcome contracts (the python-param/frontend/bootstrap records are
+# Python-surface drops). Headless is platform-neutral natively — no GL
+# or display dependency exists to make the behavior Linux-only.
+bike_add_reference_test(native_linux_headless ENGINE
+  SOURCES test_native_linux_headless.cpp
+  LIBRARIES bike_platform bike_io bike_cli
+  LABELS t53 platform slow)
+# tests/reference/test_native_platform_linkage.py port: every published
+# bin/ artifact executes under a scrubbed link environment and every
+# engine consumer's link table resolves the pinned MuJoCo image plus the
+# configured numerics provider without rescue (otool -L on Darwin,
+# readelf -d + ldd on Linux). The bike_native-import record is a
+# Python-extension drop.
+bike_add_reference_test(native_platform_linkage ENGINE
+  SOURCES test_native_platform_linkage.cpp
+  LIBRARIES bike_platform bike_cli
+  LABELS t53 platform)

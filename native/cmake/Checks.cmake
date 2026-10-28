@@ -107,6 +107,24 @@ if(BUILD_TESTING)
   endif()
 endif()
 
+# --- migration_T53_numerics: BikeNumerics.cmake record/provider/ABI -------
+# Contract fixture for batch 3.36b (tests/portability/test_numerics_discovery).
+# Script-mode: scratch configures of the real module plus committed-lock file
+# invariants; needs no built target.
+if(BUILD_TESTING)
+  add_test(NAME migration_T53_numerics
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T53_numerics"
+      -P "${_checks_native_dir}/tests/migration/migration_T53_numerics.cmake")
+  if(NOT TARGET migration_T53_numerics)
+    add_custom_target(migration_T53_numerics
+      COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
+              -R "^migration_T53_numerics$" --no-tests=error --output-on-failure
+      USES_TERMINAL)
+  endif()
+endif()
+
 # --- migration_T56: fixture contract for the produced orchestrator --------
 if(BUILD_TESTING)
   add_test(NAME migration_T56

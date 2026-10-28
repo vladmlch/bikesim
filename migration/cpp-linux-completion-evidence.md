@@ -9147,7 +9147,7 @@ Total Test time (real) =   6.59 sec
   capture/environment/recording stay `planned` on outstanding
   live-parity records; `sha256`/`line_count` refreshed on the three
   files touched since inventory.
-- `Phase3Ports.cmake`: 119 → **127** registrations.
+- `Phase3Ports.cmake`: 118 → **126** registrations.
 
 ### Commits
 

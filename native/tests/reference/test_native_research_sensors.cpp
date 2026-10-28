@@ -60,11 +60,15 @@ unflatten_state(std::span<const double> row) {
     out.samples_attempted = static_cast<std::size_t>(next());
     out.samples_dropped = static_cast<std::size_t>(next());
     if (next() != 0.) {
+        bt::require(offset + 12 <= row.size(),
+                    "the recorded sensor state row carries a full startup observation");
         out.startup = unflatten_observation(row.subspan(offset, 12));
         offset += 12;
     }
     const auto count = static_cast<std::size_t>(next());
     for (std::size_t index = 0; index < count; ++index) {
+        bt::require(offset + 12 <= row.size(),
+                    "the recorded sensor state row carries every queued observation");
         out.queue.push_back(unflatten_observation(row.subspan(offset, 12)));
         offset += 12;
     }

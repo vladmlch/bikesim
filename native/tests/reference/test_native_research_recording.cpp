@@ -12,11 +12,13 @@
 //  * FileExistsError on a nonempty destination ↔ recording::RecordingError
 //    ("refusing to overwrite nonempty legacy output") — the native error
 //    class the refusal is raised under.
-//  * RuntimeError on a pending window ↔ recording::RecordingError — the
-//    adapter's Python pre-check classifies the same guard differently; the
-//    native export throws the invalid_argument-family refusal. The pinned
-//    'boundary' fragment survives verbatim in the native message
-//    ("...before exporting its boundary").
+//  * RuntimeError on a pending window ↔ std::runtime_error — the adapter's
+//    Python pre-check guards env.control_pending with its own '...at its
+//    boundary' wording; exporting a live environment reaches the same
+//    refusal inside legacy_snapshot() as a plain std::runtime_error
+//    ("finish the external control interval before exporting"). The
+//    RecordingError "...its boundary" twin fires only in capture_legacy()
+//    on an already-detached episode.
 //  * monkeypatched _write_episode/OSError ↔ a deterministic mid-write
 //    failure (a destination parent that is a regular file fails inside
 //    create_directories) plus a symlink destination refusal; the

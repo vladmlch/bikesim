@@ -64,7 +64,12 @@ each carries a row-specific evidence string in
   no-Python-calls half is vacuous in pure C++); rejected boundary
   calls (out-of-domain brake, double begin, negative/NaN budgets,
   reset while pending) never touch state and the queued stop resolves
-  to `operator_stop`; the zero-budget poll keeps the window latched
+  to `operator_stop` — the source's `close()`-while-pending
+  `RuntimeError` leg is dropped: `NativeResearch.close` guards
+  `control_pending` adapter-side (research.py:450), while
+  `NativeResearchRuntime::close()` (research.cpp:606-611) has no
+  pending guard and permits deferred close by design; the zero-budget
+  poll keeps the window latched
   with `step == 0`, `recorded_rows == 0`, one requested + one
   observation and no tail flush, then the window commits and a
   further `advance_control` is refused; a stop after a

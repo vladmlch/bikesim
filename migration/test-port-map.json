@@ -2896,14 +2896,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_divergence_horizon.py::test_perturbation_diverges_within_episode"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "Completion 3.24b / ADR-0002 removes this tool after oracle retirement. ADR-0003 still requires live Python parity now; no Python source is removed in this change.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: drop - tools/divergence_horizon.py measures a perturbation horizon between two live Python-oracle episode runs; no subject remains without the Python oracle (ADR-0002); oracle removes at T63"
       ]
     },
     {
@@ -2914,14 +2914,14 @@
       "owner_task": "T52",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_divergence_horizon.py::test_unperturbed_never_diverges"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "Completion 3.24b / ADR-0002 removes this tool after oracle retirement. ADR-0003 still requires live Python parity now; no Python source is removed in this change.",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: drop - tools/divergence_horizon.py measures a perturbation horizon between two live Python-oracle episode runs; no subject remains without the Python oracle (ADR-0002); oracle removes at T63"
       ]
     },
     {
@@ -3215,14 +3215,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_replay_matches_golden_bitwise",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_episode_compare.py::test_replay_matches_golden_bitwise"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3233,14 +3233,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_compare_episode_on_saved_artifact",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_episode_compare.py::test_compare_episode_on_saved_artifact"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3251,14 +3251,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_compare_reports_first_divergence",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_episode_compare.py::test_compare_reports_first_divergence"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3610,14 +3610,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_capture_is_deterministic",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_golden_episode.py::test_capture_is_deterministic"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3628,14 +3628,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_saved_artifact_roundtrips",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_golden_episode.py::test_saved_artifact_roundtrips"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3646,14 +3646,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_v2_state_and_forces_recorded",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_golden_episode_v2.py::test_v2_state_and_forces_recorded"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3664,14 +3664,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_v2_roundtrip_and_determinism",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_golden_episode_v2.py::test_v2_roundtrip_and_determinism"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3682,14 +3682,14 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_exit_total_is_captured_independently_of_components",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_golden_episode_v2.py::test_exit_total_is_captured_independently_of_components"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -3700,14 +3700,15 @@
       "owner_task": "T52",
       "native_test_id": "reference.golden_episode_regressions::test_load_old_artifact_without_exit_total",
       "native_source": "native/tests/reference/test_golden_episode_regressions.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "Source assertions reviewed; pytest collection and project execution prohibited in this session",
+      "collected_node_ids": [
+        "tests/reference/test_golden_episode_v2.py::test_load_old_artifact_without_exit_total[v1]",
+        "tests/reference/test_golden_episode_v2.py::test_load_old_artifact_without_exit_total[v2]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/cpp-linux-phase3-episode-ports.md",
-        "2026-10-21: source disposition only; no build, runtime collection, oracle acquisition or CTest qualification performed; Python is retained."
+        "2026-10-28 3.24b lane/d: covered by native/tests/reference/test_golden_episode_regressions.cpp; CTest reference.golden_episode_regressions green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
       ]
     },
     {
@@ -28159,13 +28160,17 @@
       "line": 10,
       "end_line": 14,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_default_backend_and_profile_timestep",
+      "native_test_id": "reference.ride_backend_cli::test_default_backend_and_profile_timestep",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_default_backend_and_profile_timestep"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28173,13 +28178,17 @@
       "line": 17,
       "end_line": 21,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_native_visual_scale_keeps_all_physics_settings",
+      "native_test_id": "reference.ride_backend_cli::test_native_visual_scale_keeps_all_physics_settings",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_native_visual_scale_keeps_all_physics_settings"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28187,13 +28196,20 @@
       "line": 25,
       "end_line": 28,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_explicit_scale_is_invalid_headless_even_one",
+      "native_test_id": "reference.ride_backend_cli::test_explicit_scale_is_invalid_headless_even_one",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_explicit_scale_is_invalid_headless_even_one[1]",
+        "tests/reference/test_ride_backend_cli.py::test_explicit_scale_is_invalid_headless_even_one[2]",
+        "tests/reference/test_ride_backend_cli.py::test_explicit_scale_is_invalid_headless_even_one[4]",
+        "tests/reference/test_ride_backend_cli.py::test_explicit_scale_is_invalid_headless_even_one[8]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28201,13 +28217,17 @@
       "line": 31,
       "end_line": 34,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_legacy_scale_and_native_rejected",
+      "native_test_id": "reference.ride_backend_cli::test_legacy_scale_and_native_rejected",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_legacy_scale_and_native_rejected"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28215,13 +28235,17 @@
       "line": 37,
       "end_line": 41,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_headless_native_profile_does_not_replace_timestep",
+      "native_test_id": "reference.ride_backend_cli::test_headless_native_profile_does_not_replace_timestep",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_headless_native_profile_does_not_replace_timestep"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28229,13 +28253,17 @@
       "line": 44,
       "end_line": 49,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_research_cli_has_backend_but_no_playback_scale",
+      "native_test_id": "reference.ride_backend_cli::test_research_cli_has_backend_but_no_playback_scale",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_research_cli_has_backend_but_no_playback_scale"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28243,13 +28271,17 @@
       "line": 52,
       "end_line": 56,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_replay_requires_viewer_for_explicit_scale",
+      "native_test_id": "reference.ride_backend_cli::test_replay_requires_viewer_for_explicit_scale",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_replay_requires_viewer_for_explicit_scale"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28257,13 +28289,17 @@
       "line": 59,
       "end_line": 69,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_native_preflight_failure_precedes_ride_setup",
+      "native_test_id": "reference.ride_backend_cli::test_native_preflight_failure_precedes_ride_setup",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_native_preflight_failure_precedes_ride_setup"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28271,13 +28307,17 @@
       "line": 72,
       "end_line": 86,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_missing_artifact_names_directory_commands_and_code",
+      "native_test_id": "reference.ride_backend_cli::test_missing_artifact_names_directory_commands_and_code",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_missing_artifact_names_directory_commands_and_code"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28285,13 +28325,17 @@
       "line": 89,
       "end_line": 100,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_python_command_never_loads_the_extension",
-      "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_python_command_never_loads_the_extension"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: drop - the oracle stubs bike_sim.native.artifact.load_native_extension and asserts the default Python-backend command path never imports it; natively 'python' is not a spellable backend (the contract declares the single 'native' choice) - the parse-level rejection is asserted in reference.ride_backend_cli::test_default_backend_and_profile_timestep; oracle removes at T63"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_backend_cli.py",
@@ -28299,13 +28343,17 @@
       "line": 103,
       "end_line": 155,
       "owner_task": "T52",
-      "native_test_id": "ported::tests::reference::test_ride_backend_cli::test_cli_dispatches_every_live_and_headless_route",
+      "native_test_id": "reference.ride_backend_cli::test_cli_dispatches_every_live_and_headless_route",
       "native_source": "native/tests/reference/test_ride_backend_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_ride_backend_cli.py::test_cli_dispatches_every_live_and_headless_route"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.24b lane/d: ported to native/tests/reference/test_ride_backend_cli.cpp; CTest reference.ride_backend_cli green on darwin-arm64 + linux-aarch64; oracle suite 26/26 nodes green on both platforms"
+      ]
     },
     {
       "source_path": "tests/reference/test_ride_plots_html_markers.py",

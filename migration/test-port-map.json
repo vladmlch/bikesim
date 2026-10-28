@@ -24895,13 +24895,17 @@
       "line": 23,
       "end_line": 37,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_json_boundary_preserves_nonfinite_signed_zero_and_reserved_objects",
+      "native_test_id": "reference.test_recording_analysis::test_recording_json_boundary_round_trips_typed_literals",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_json_boundary_preserves_nonfinite_signed_zero_and_reserved_objects"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24909,13 +24913,17 @@
       "line": 40,
       "end_line": 49,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_window_is_start_inclusive_end_exclusive_and_reports_partial_overlap",
+      "native_test_id": "reference.test_recording_analysis::test_window_returns_interval_overlap_and_selected_fields",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_window_is_start_inclusive_end_exclusive_and_reports_partial_overlap"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24923,13 +24931,17 @@
       "line": 52,
       "end_line": 63,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_bounded_query_and_full_export_are_separate",
+      "native_test_id": "reference.test_recording_analysis::test_bounded_query_and_export_report_truncation_and_row_totals",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_bounded_query_and_full_export_are_separate"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24937,13 +24949,24 @@
       "line": 72,
       "end_line": 76,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_sql_cannot_mutate_export_or_access_external_inputs",
+      "native_test_id": "reference.test_recording_analysis::test_sql_cannot_mutate_through_the_reader",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[DELETE FROM physics]",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[CREATE TABLE forbidden(x INTEGER)]",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[SELECT 1; SELECT 2]",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[COPY physics TO 'forbidden.csv']",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[SELECT * FROM read_csv('/etc/passwd')]",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[SELECT * FROM read_parquet('https://example.invalid/a.parquet')]",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[INSTALL httpfs]",
+        "tests/reference/test_recording_analysis.py::test_sql_cannot_mutate_export_or_access_external_inputs[LOAD httpfs]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24951,13 +24974,17 @@
       "line": 79,
       "end_line": 88,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_refuses_mismatched_clocks_but_summary_is_available",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_refuses_mismatched_clocks_before_values",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_refuses_mismatched_clocks_but_summary_is_available"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24965,13 +24992,17 @@
       "line": 91,
       "end_line": 98,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_matching_nonfinite_evidence_is_not_silently_valid",
+      "native_test_id": "reference.test_recording_analysis::test_matching_nonfinite_values_are_agreeing_invalid_evidence",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_matching_nonfinite_evidence_is_not_silently_valid"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24979,13 +25010,17 @@
       "line": 101,
       "end_line": 109,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_report_excludes_forwarded_energy_extrema",
+      "native_test_id": "reference.test_recording_analysis::test_report_excludes_forwarded_energy_extrema",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_report_excludes_forwarded_energy_extrema"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -24993,13 +25028,17 @@
       "line": 112,
       "end_line": 130,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_reports_first_mismatch_with_stable_keys",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_reports_first_mismatch_with_stable_keys",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_reports_first_mismatch_with_stable_keys"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25007,13 +25046,17 @@
       "line": 133,
       "end_line": 143,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_reports_prefix_extent_mismatch",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_reports_prefix_extent_mismatch",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_reports_prefix_extent_mismatch"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25021,13 +25064,17 @@
       "line": 146,
       "end_line": 174,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_rejects_incompatible_units_and_phases",
-      "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_rejects_incompatible_units_and_phases"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: dropped \u2014 units/phases derive from joint_type inside build_catalog with no native seam to author divergent field metadata between two sealed recordings; the schema-coherence check is exercised natively through the coordinate-identity record instead (test_exact_comparison_rejects_incompatible_dof_coordinate_identity)"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25035,13 +25082,17 @@
       "line": 177,
       "end_line": 193,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_rejects_incompatible_dof_coordinate_identity",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_rejects_incompatible_dof_coordinate_identity",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_rejects_incompatible_dof_coordinate_identity"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25049,13 +25100,17 @@
       "line": 196,
       "end_line": 208,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_rejects_differing_measurement_provenance",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_rejects_differing_measurement_provenance",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_rejects_differing_measurement_provenance"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25063,13 +25118,19 @@
       "line": 216,
       "end_line": 235,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_numeric_tolerance_boundary",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_numeric_tolerance_boundary",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_numeric_tolerance_boundary[5e-10-True]",
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_numeric_tolerance_boundary[1.000000001e-09-True]",
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_numeric_tolerance_boundary[1e-08-False]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25077,13 +25138,17 @@
       "line": 238,
       "end_line": 255,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_distinguishes_null_from_missing",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_distinguishes_null_from_missing",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_distinguishes_null_from_missing"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25091,13 +25156,17 @@
       "line": 258,
       "end_line": 277,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_exact_comparison_reports_categorical_change",
+      "native_test_id": "reference.test_recording_analysis::test_exact_comparison_reports_categorical_change",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_exact_comparison_reports_categorical_change"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analysis.py",
@@ -25105,13 +25174,17 @@
       "line": 280,
       "end_line": 301,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analysis::test_summary_mode_reports_parameter_changes_without_alignment",
+      "native_test_id": "reference.test_recording_analysis::test_summary_mode_reports_parameter_changes_without_alignment",
       "native_source": "native/tests/reference/test_recording_analysis.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analysis.py::test_summary_mode_reports_parameter_changes_without_alignment"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analysis.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analysis green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analyst_cli.py",
@@ -25119,13 +25192,17 @@
       "line": 30,
       "end_line": 42,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analyst_cli::test_empty_result_sets_are_successful_and_typed",
+      "native_test_id": "reference.test_recording_analyst_cli::test_empty_result_sets_are_stable_json_envelopes",
       "native_source": "native/tests/reference/test_recording_analyst_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analyst_cli.py::test_empty_result_sets_are_successful_and_typed"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analyst_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analyst_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analyst_cli.py",
@@ -25133,13 +25210,17 @@
       "line": 45,
       "end_line": 53,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analyst_cli::test_unknown_field_exits_nonzero_with_an_explicit_message",
+      "native_test_id": "reference.test_recording_analyst_cli::test_failures_surface_recording_error_without_a_traceback",
       "native_source": "native/tests/reference/test_recording_analyst_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analyst_cli.py::test_unknown_field_exits_nonzero_with_an_explicit_message"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analyst_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analyst_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analyst_cli.py",
@@ -25147,13 +25228,17 @@
       "line": 56,
       "end_line": 73,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analyst_cli::test_multi_episode_recording_selects_each_episode",
+      "native_test_id": "reference.test_recording_analyst_cli::test_multi_episode_selection_stays_episode_scoped",
       "native_source": "native/tests/reference/test_recording_analyst_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analyst_cli.py::test_multi_episode_recording_selects_each_episode"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analyst_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analyst_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analyst_cli.py",
@@ -25161,13 +25246,17 @@
       "line": 76,
       "end_line": 97,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analyst_cli::test_csv_export_is_explicit_bounded_and_never_overwrites",
+      "native_test_id": "reference.test_recording_analyst_cli::test_csv_export_writes_bounded_rows_and_refuses_overwrite",
       "native_source": "native/tests/reference/test_recording_analyst_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analyst_cli.py::test_csv_export_is_explicit_bounded_and_never_overwrites"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analyst_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analyst_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analyst_cli.py",
@@ -25175,13 +25264,17 @@
       "line": 100,
       "end_line": 108,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analyst_cli::test_nonzero_exit_codes_for_bad_sql_and_missing_run",
+      "native_test_id": "reference.test_recording_analyst_cli::test_bad_sql_and_missing_recordings_fail_with_recording_error",
       "native_source": "native/tests/reference/test_recording_analyst_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analyst_cli.py::test_nonzero_exit_codes_for_bad_sql_and_missing_run"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analyst_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analyst_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_analyst_cli.py",
@@ -25189,13 +25282,17 @@
       "line": 111,
       "end_line": 124,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_analyst_cli::test_sql_output_is_bounded_with_a_truncation_indicator",
+      "native_test_id": "reference.test_recording_analyst_cli::test_sql_json_marks_the_truncation_boundary",
       "native_source": "native/tests/reference/test_recording_analyst_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_analyst_cli.py::test_sql_output_is_bounded_with_a_truncation_indicator"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_analyst_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_analyst_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_capture.py",
@@ -25635,13 +25732,17 @@
       "line": 33,
       "end_line": 50,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_catalog_tables_are_finite_and_fully_described",
+      "native_test_id": "reference.test_recording_catalog::test_catalog_tables_are_finite_and_fully_described",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_catalog_tables_are_finite_and_fully_described"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25649,13 +25750,17 @@
       "line": 53,
       "end_line": 67,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_coordinate_catalog_maps_qpos_and_dof_addresses",
+      "native_test_id": "reference.test_recording_catalog::test_coordinate_catalog_maps_qpos_and_dof_addresses",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_coordinate_catalog_maps_qpos_and_dof_addresses"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25663,13 +25768,17 @@
       "line": 70,
       "end_line": 103,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_legacy_flat_aliases_resolve_to_canonical_fields",
+      "native_test_id": "reference.test_recording_catalog::test_legacy_flat_aliases_resolve_to_canonical_fields",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_legacy_flat_aliases_resolve_to_canonical_fields"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25677,13 +25786,17 @@
       "line": 106,
       "end_line": 126,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_r10_presence_and_exceptional_values_round_trip",
+      "native_test_id": "reference.test_recording_catalog::test_r10_presence_and_exceptional_values_round_trip",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_r10_presence_and_exceptional_values_round_trip"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25691,13 +25804,17 @@
       "line": 129,
       "end_line": 144,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_false_zero_empty_and_signed_values_survive_encoding",
+      "native_test_id": "reference.test_recording_catalog::test_false_zero_empty_and_signed_values_survive_encoding",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_false_zero_empty_and_signed_values_survive_encoding"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25705,13 +25822,17 @@
       "line": 147,
       "end_line": 157,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_nonfinite_doubles_are_not_null",
+      "native_test_id": "reference.test_recording_catalog::test_nonfinite_doubles_are_not_null",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_nonfinite_doubles_are_not_null"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25719,13 +25840,17 @@
       "line": 160,
       "end_line": 178,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_nullable_parent_objects_carry_their_own_presence",
+      "native_test_id": "reference.test_recording_catalog::test_nullable_parent_objects_carry_their_own_presence",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_nullable_parent_objects_carry_their_own_presence"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25733,13 +25858,17 @@
       "line": 181,
       "end_line": 194,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_empty_lists_round_trip_separately_from_absent",
+      "native_test_id": "reference.test_recording_catalog::test_empty_lists_round_trip_separately_from_absent",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_empty_lists_round_trip_separately_from_absent"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25747,13 +25876,17 @@
       "line": 197,
       "end_line": 212,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_vector_fields_keep_shape_axes_and_units",
+      "native_test_id": "reference.test_recording_catalog::test_vector_fields_keep_shape_axes_and_units",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_vector_fields_keep_shape_axes_and_units"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25761,13 +25894,17 @@
       "line": 225,
       "end_line": 239,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_unknown_fields_fail_with_a_named_error",
+      "native_test_id": "reference.test_recording_catalog::test_unknown_fields_fail_with_a_named_error",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_unknown_fields_fail_with_a_named_error"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25775,13 +25912,17 @@
       "line": 242,
       "end_line": 271,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_source_backed_catalog_entries_for_reviewed_semantics",
+      "native_test_id": "reference.test_recording_catalog::test_source_backed_catalog_entries_for_reviewed_semantics",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_source_backed_catalog_entries_for_reviewed_semantics"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25789,13 +25930,17 @@
       "line": 274,
       "end_line": 290,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_tree_physical_source_emits_typed_batches_through_the_catalog",
+      "native_test_id": "reference.test_recording_catalog::test_tree_physical_source_emits_typed_batches_through_the_catalog",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_tree_physical_source_emits_typed_batches_through_the_catalog"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25803,13 +25948,17 @@
       "line": 293,
       "end_line": 310,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_forces_explode_per_component_with_vector_and_power",
+      "native_test_id": "reference.test_recording_catalog::test_forces_explode_per_component_with_vector_and_power",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_forces_explode_per_component_with_vector_and_power"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25817,13 +25966,17 @@
       "line": 313,
       "end_line": 319,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_tree_source_rejects_batch_arguments_and_bad_intervals",
+      "native_test_id": "reference.test_recording_catalog::test_tree_source_rejects_batch_arguments_and_bad_intervals",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_tree_source_rejects_batch_arguments_and_bad_intervals"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_catalog.py",
@@ -25831,13 +25984,17 @@
       "line": 322,
       "end_line": 327,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_catalog::test_catalog_rejects_malformed_joint_descriptors",
+      "native_test_id": "reference.test_recording_catalog::test_catalog_rejects_malformed_joint_descriptors",
       "native_source": "native/tests/reference/test_recording_catalog.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_catalog.py::test_catalog_rejects_malformed_joint_descriptors"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_catalog.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_catalog green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25845,13 +26002,17 @@
       "line": 25,
       "end_line": 30,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_record_defaults_off_and_check_policy_defaults_unset",
+      "native_test_id": "reference.test_recording_cli::test_record_defaults_off_and_check_policy_defaults_unset",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_record_defaults_off_and_check_policy_defaults_unset"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25859,13 +26020,17 @@
       "line": 33,
       "end_line": 36,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_out_alone_never_enables_recording",
+      "native_test_id": "reference.test_recording_cli::test_out_alone_never_enables_recording",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_out_alone_never_enables_recording"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25873,13 +26038,18 @@
       "line": 40,
       "end_line": 47,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_record_is_accepted_for_physical_native_runs",
+      "native_test_id": "reference.test_recording_cli::test_record_is_accepted_for_physical_native_runs",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_record_is_accepted_for_physical_native_runs[False]",
+        "tests/reference/test_recording_cli.py::test_record_is_accepted_for_physical_native_runs[True]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25887,13 +26057,17 @@
       "line": 50,
       "end_line": 53,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_record_rejected_for_python_backend",
+      "native_test_id": "reference.test_recording_cli::test_record_rejected_for_python_backend",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_record_rejected_for_python_backend"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25901,13 +26075,17 @@
       "line": 56,
       "end_line": 58,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_record_rejected_for_legacy_physics",
+      "native_test_id": "reference.test_recording_cli::test_record_rejected_for_legacy_physics",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_record_rejected_for_legacy_physics"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25915,13 +26093,18 @@
       "line": 62,
       "end_line": 66,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_record_accepted_for_research",
+      "native_test_id": "reference.test_recording_cli::test_record_accepted_for_research",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_record_accepted_for_research[python]",
+        "tests/reference/test_recording_cli.py::test_record_accepted_for_research[native]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25929,13 +26112,17 @@
       "line": 69,
       "end_line": 71,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_record_rejected_for_preview",
+      "native_test_id": "reference.test_recording_cli::test_record_rejected_for_preview",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_record_rejected_for_preview"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25943,13 +26130,17 @@
       "line": 74,
       "end_line": 87,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_check_policy_resolved_before_runtime_and_independent_of_record",
+      "native_test_id": "reference.test_recording_cli::test_check_policy_resolved_before_runtime_and_independent_of_record",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_check_policy_resolved_before_runtime_and_independent_of_record"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25957,13 +26148,17 @@
       "line": 90,
       "end_line": 93,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_check_policy_accepted_for_python_backend_physical_runs",
+      "native_test_id": "reference.test_recording_cli::test_check_policy_accepted_for_python_backend_physical_runs",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_check_policy_accepted_for_python_backend_physical_runs"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25971,13 +26166,18 @@
       "line": 97,
       "end_line": 103,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_check_policy_rejected_outside_physical_and_research",
+      "native_test_id": "reference.test_recording_cli::test_check_policy_rejected_outside_physical_and_research",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_check_policy_rejected_outside_physical_and_research[strict]",
+        "tests/reference/test_recording_cli.py::test_check_policy_rejected_outside_physical_and_research[diagnostic]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25985,13 +26185,17 @@
       "line": 106,
       "end_line": 112,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_time_scale_remains_interactive_only",
+      "native_test_id": "reference.test_recording_cli::test_time_scale_remains_interactive_only",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_time_scale_remains_interactive_only"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_cli.py",
@@ -25999,13 +26203,17 @@
       "line": 115,
       "end_line": 126,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_cli::test_unsupported_combination_names_itself",
+      "native_test_id": "reference.test_recording_cli::test_unsupported_combination_names_itself",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_cli.py::test_unsupported_combination_names_itself"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_cli.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_cli green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_publication.py",
@@ -26052,13 +26260,17 @@
       "line": 8,
       "end_line": 19,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_report::test_report_regeneration_is_read_only_and_identical",
+      "native_test_id": "reference.test_recording_report::test_report_regeneration_is_read_only_and_idempotent",
       "native_source": "native/tests/reference/test_recording_report.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_report.py::test_report_regeneration_is_read_only_and_identical"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_report.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_report green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26066,13 +26278,17 @@
       "line": 21,
       "end_line": 41,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_roundtrip_typed_nonfinite_presence_and_owned_asset",
+      "native_test_id": "reference.test_recording_storage::test_roundtrip_typed_nonfinite_presence_and_owned_asset",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_roundtrip_typed_nonfinite_presence_and_owned_asset"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26080,13 +26296,17 @@
       "line": 44,
       "end_line": 51,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_default_publisher_handles_empty_run_and_zero_step_episode",
+      "native_test_id": "reference.test_recording_storage::test_default_publisher_handles_empty_run_and_zero_step_episode",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_default_publisher_handles_empty_run_and_zero_step_episode"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26094,13 +26314,17 @@
       "line": 54,
       "end_line": 57,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_disabled_capture_does_not_create_output",
+      "native_test_id": "reference.test_recording_storage::test_disabled_capture_does_not_create_output",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_disabled_capture_does_not_create_output"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26108,13 +26332,17 @@
       "line": 60,
       "end_line": 68,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_publication_collision_does_not_adopt_even_an_empty_directory",
+      "native_test_id": "reference.test_recording_storage::test_publication_collision_does_not_adopt_even_an_empty_directory",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_publication_collision_does_not_adopt_even_an_empty_directory"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26122,13 +26350,17 @@
       "line": 71,
       "end_line": 80,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_report_failure_publishes_valid_database_with_explicit_status",
+      "native_test_id": "reference.test_recording_storage::test_report_failure_publishes_valid_database_with_explicit_status",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_report_failure_publishes_valid_database_with_explicit_status"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26136,13 +26368,17 @@
       "line": 83,
       "end_line": 104,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_manifest_is_last_and_failed_link_keeps_owned_evidence_retryable",
+      "native_test_id": "reference.test_recording_storage::test_manifest_is_last_and_failed_link_keeps_owned_evidence_retryable",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_manifest_is_last_and_failed_link_keeps_owned_evidence_retryable"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26150,13 +26386,19 @@
       "line": 108,
       "end_line": 120,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_reader_rejects_unsealed_or_tampered_payload",
+      "native_test_id": "reference.test_recording_storage::test_reader_rejects_unsealed_or_tampered_payload",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_reader_rejects_unsealed_or_tampered_payload[missing_manifest]",
+        "tests/reference/test_recording_storage.py::test_reader_rejects_unsealed_or_tampered_payload[changed_database]",
+        "tests/reference/test_recording_storage.py::test_reader_rejects_unsealed_or_tampered_payload[symlink_database]"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 3 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26164,13 +26406,17 @@
       "line": 123,
       "end_line": 136,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_resealed_catalog_tamper_is_rejected_before_analysis",
+      "native_test_id": "reference.test_recording_storage::test_resealed_catalog_tamper_is_rejected_before_analysis",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_resealed_catalog_tamper_is_rejected_before_analysis"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26178,13 +26424,17 @@
       "line": 139,
       "end_line": 144,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_assets_are_verified_before_publication",
+      "native_test_id": "reference.test_recording_storage::test_assets_are_verified_before_publication",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_assets_are_verified_before_publication"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26192,13 +26442,17 @@
       "line": 147,
       "end_line": 184,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_multi_episode_round_trip_keeps_extents_and_events_isolated",
+      "native_test_id": "reference.test_recording_storage::test_multi_episode_round_trip_keeps_extents_and_events_isolated",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_multi_episode_round_trip_keeps_extents_and_events_isolated"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_storage.py",
@@ -26206,13 +26460,17 @@
       "line": 187,
       "end_line": 209,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_storage::test_forces_round_trip_records_components_and_checks_qfrc_width",
+      "native_test_id": "reference.test_recording_storage::test_forces_round_trip_records_components_and_checks_qfrc_width",
       "native_source": "native/tests/reference/test_recording_storage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_storage.py::test_forces_round_trip_records_components_and_checks_qfrc_width"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_storage.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_storage green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_values.py",
@@ -26220,13 +26478,17 @@
       "line": 16,
       "end_line": 31,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_values::test_optional_leaf_and_nullable_parent_have_separate_masks",
+      "native_test_id": "reference.test_recording_values::test_optional_leaf_and_nullable_parent_have_separate_masks",
       "native_source": "native/tests/reference/test_recording_values.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_values.py::test_optional_leaf_and_nullable_parent_have_separate_masks"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_values.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_values green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_values.py",
@@ -26234,13 +26496,17 @@
       "line": 34,
       "end_line": 58,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_values::test_synthetic_value_cases_cover_the_reviewed_optional_matrix",
+      "native_test_id": "reference.test_recording_values::test_synthetic_value_cases_cover_the_reviewed_optional_matrix",
       "native_source": "native/tests/reference/test_recording_values.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_values.py::test_synthetic_value_cases_cover_the_reviewed_optional_matrix"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_values.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_values green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_values.py",
@@ -26248,13 +26514,17 @@
       "line": 61,
       "end_line": 74,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_values::test_resealed_presence_contradiction_is_rejected",
+      "native_test_id": "reference.test_recording_values::test_resealed_presence_contradiction_is_rejected_before_readout",
       "native_source": "native/tests/reference/test_recording_values.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_values.py::test_resealed_presence_contradiction_is_rejected"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_values.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_values green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_values.py",
@@ -26262,13 +26532,17 @@
       "line": 77,
       "end_line": 93,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_values::test_export_reads_each_native_batch_once_without_legacy_columns",
+      "native_test_id": "reference.test_recording_values::test_export_reads_each_native_batch_once_without_legacy_columns",
       "native_source": "native/tests/reference/test_recording_values.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_values.py::test_export_reads_each_native_batch_once_without_legacy_columns"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_values.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_values green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_recording_values.py",
@@ -26276,13 +26550,17 @@
       "line": 96,
       "end_line": 121,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_recording_values::test_ordinary_commands_tolerate_explicit_null_optional_drive",
+      "native_test_id": "reference.test_recording_values::test_ordinary_commands_tolerate_explicit_null_optional_drive",
       "native_source": "native/tests/reference/test_recording_values.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_recording_values.py::test_ordinary_commands_tolerate_explicit_null_optional_drive"
+      ],
+      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (80 nodes across the seven 3.31 sources)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.31 lane/a: ported to native/tests/reference/test_recording_values.cpp; oracle green on darwin-arm64 (80 nodes across the seven 3.31 sources); no golden capture needed (synthetic-capture seam, no fixture comparisons); CTest reference.test_recording_values green on darwin-arm64 and linux-aarch64 (bike-dev-pfc-lane-a), 11/11 tests in the batch scope"
+      ]
     },
     {
       "source_path": "tests/reference/test_reference_monitor.py",

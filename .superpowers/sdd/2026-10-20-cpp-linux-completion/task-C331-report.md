@@ -175,6 +175,56 @@ live-oracle red family exists in this batch.
   `status: replacement_landed`, `verification_ids` set to the CTest
   ids; deletion stays gated at T63.
 
+## Final gate
+
+`bash tools/run_tests.sh native` (`native/build`, AppleClang,
+darwin-arm64) — **does not exit 0; the outcome is baseline-blocked,
+fully mapped, zero unexpected reds.**
+
+- Single run: configure + build green; all six sweep targets green —
+  `frontends` (findings: none), `tidy` (findings: none), `analyzer`
+  (report-only, nonblocking; suppressions `cplusplus.Move=3`,
+  `cplusplus.NewDelete=2`), `cppcheck` (333 sources / 334 TUs,
+  findings: none), `odr` (g++-16, findings: none), `scripts`
+  (shellcheck clean).
+- `headers`: 263 headers / 9198 header TUs probed, findings none.
+  `diagnostic-controls`: 6 controls, 0 failed, health ok. `context`:
+  5 SDK controls, all passed, health ok.
+- `ctest --test-dir native/build`: **60/62** — the only reds are the
+  documented baseline pair `migration_T09` (`post-advance
+  integration vector matches the oracle`) + `migration_T10`
+  (`first transition matches the Python oracle`), the same
+  frozen-oracle pair and the same 60/62 every prior lane gate
+  recorded (`migration/cpp-linux-completion-evidence.md`). Zero
+  unexpected reds; the profile stops at this stage (exit 8) per
+  documented gate-abort behavior.
+- Remaining gate phases run as a resumed sequence with the gate's
+  own commands (`tools/native_runtime.py run --build native/build`):
+  - extension load: `native/build/bike_native.cpython-313-darwin.so`.
+  - `contracts`: all 12 assertions passed
+    (`pure_core_python_free`, `hot_kernel_dependency_free`,
+    `ctest_contract_cases`, …).
+  - pytest tail (`test_native_*.py` + `test_golden_episode*.py`,
+    `-p native_test_reporter`): **3204 passed / 41 failed /
+    1 skipped** in 1h47m. Every one of the 41 failed nodes maps to
+    a ledger record (35 unique records): 31 `planned`
+    (distributed/pneumatic tire, numeric completion, research
+    capture/environment/recording, ride frontend, runtime
+    commands/rollout/step, viewer snapshot — the native↔oracle
+    bitwise divergence family), 3 `drop` with native-side coverage,
+    1 `golden` (`test_tire_channel_parity_across_backends`) whose
+    authoritative golden CTest is green. Inside the tail,
+    `test_standalone_header_sweep_compiles_first_party_headers`
+    re-ran the serial legacy sweep — passed (~85 min).
+- The seven C3.31 CTests live in the standalone
+  `build/native-release` graph (`ctest -R
+  'reference\.(recording_|native_recording)'` = 11/11, recorded in
+  the evidence above); the binding-graph `native/build` ctest set
+  does not include `reference.*` nodes.
+- Verdict: single-command exit-0 is unreachable while the
+  documented T09/T10 baseline pair remains red (identical outcome
+  to the prior lane gates); **nothing C3.31 introduced failed**.
+
 ## Commits
 
 | SHA | Unit |

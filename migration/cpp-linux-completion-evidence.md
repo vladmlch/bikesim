@@ -9742,3 +9742,100 @@ green on both platforms. L3 (`tools/run_tests.sh native`) not re-run
 — bounded merge-back scope per protocol; integration-level `full`
 gate is the scheduled accumulation checkpoint after the pending
 merges.
+
+## 2026-10-28 — lane/e batch 3.29b check tools/contract checks merge-back (merge `88ee180a`)
+
+Lane/e tip `b5f6ef6d` (base `fe849692`, three commits: the T56
+fixture port, the C329b task report, and the review-round doc) merged
+`--no-ff` into integration. The scheduled base tip `dfe8db96` had
+already advanced to `3ce20132` — the lane/a batch 3.33a merge-back
+landed concurrently in this worktree while this merge was being
+prepared (its evidence commit `3e095f6a` subsequently landed on top
+of this merge). Zero conflicts: `ort` auto-merged cleanly because
+every lane hunk is disjoint from integration-side edits — the lane
+touched only its four batch files and its 54 ledger rows share no
+key or line region with the 316 rows integration modified since the
+merge-base.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge against both parents: **2,394 unique
+  (`source_path`,`source_symbol`) records** (union = integration key
+  set, lane added/removed none), headers **2394/2378**
+  (`class_test_methods` 16) equal to the actual record count, record
+  order preserved. All **54 batch rows byte-equal to the lane
+  versions** (`disposition` `planned`→`port`, `native_test_id` →
+  `migration_T56::*` case ids, dated lane/e evidence lines,
+  `collected_node_ids` populated); every non-batch row byte-equal to
+  the pre-merge integration version. Canonical serialization
+  (`indent=2`, `ensure_ascii`, trailing LF) byte-verified.
+- `native/tests/migration/migration_T56_check.cmake` — lane-only
+  evolution since the merge-base (integration's copy was unchanged
+  at `c9036331`); merged blob `8e861609` = lane tip verbatim —
+  the 68-case fixture + review/fix-round guards, 2661 lines.
+- `native/src/tools/check_contracts.cpp` — lane-only change
+  (+10/−2): `run_contracts` builds `expected` through a
+  `expected_seen` set so one source manifested under several target
+  contexts counts once for `manifest_selection.source_count`
+  (oracle parity). Merged blob = lane tip verbatim.
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C329b-report.md`
+  — new lane file (+275).
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch
+  it; integration's version retained (this section is the merge-back
+  append).
+- `native/tests/reference/Phase3Ports.cmake` — untouched by 3.29b
+  (T56 registers via `native/cmake/Checks.cmake`); integration's
+  post-3.33a version retained, 126 registrations.
+- `migration/python-removal.json` — untouched by the batch; diff
+  empty pre→post merge.
+
+### Ledger deltas (pre-merge `3ce20132` → merge `88ee180a`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  enrichment, no adds/removes); headers **2394/2378** unchanged and
+  equal to the actual count. Rows changed: exactly **54** — 37 in
+  `tests/reference/test_native_check_tools.py`, 17 in
+  `tests/reference/test_native_contract_checks.py`, all owner
+  `T53`, all `disposition` `planned`→`port` with
+  `native_test_id` `migration_T56::*` and per-row lane evidence.
+  Dispositions: `port` 1087 → **1141** (+54), `planned` 826 →
+  **772** (−54), `golden` 356, `drop` 125 (unchanged). Empty
+  `collected_node_ids` 1292 → **1238** (−54); total collected
+  nodes recorded 1923 → **1985** (+62); T01 `assertions_capture`
+  placeholders 495 → **441** (−54).
+
+### Merge-back verification — darwin arm64 (`build/native-release`, AppleClang)
+
+- `cmake -P native/tests/migration/migration_T56_check.cmake`
+  (no `-D` inputs): fails at line 14
+  `migration_T56 requires -DCHECKS_BINARY` — script parses clean,
+  guard ordering intact.
+- `ctest -N -R 'migration_T5[0-9]'`: **4 tests** registered
+  (migration_T50/T51/T54/T56); T56 invokes the source-tree script
+  via `-P`, so the merged fixture applies without reconfigure.
+- `cmake --build build/native-release --target bike-native-checks`:
+  recompiled the merged `check_contracts.cpp` + relink, clean.
+- One b29 case end-to-end (`b29_shared_source`, replicated fixture:
+  one `shared.cpp` manifested under `bike_native` +
+  `native_contract_tests` contexts, two-variant compile DB,
+  `mock-tidy` driver): `bike-native-checks --kind tidy` exit **0**;
+  `tidy.json` `unique_source_count` **1** / `translation_unit_count`
+  **2** — the dedup the lane fix serves, observed green.
+- `bike-native-checks --kind contracts --build build/native-release
+  --repo-root .` on the real tree: **all domains pass** —
+  `manifest_selection`, `contract_source_manifest_membership`,
+  `ctest_contract_cases`, +8 more `passed`, `loader_provenance`
+  `not-applicable` (11.1 s).
+
+### Assessment
+
+Clean auto-merge — zero hunks outside the lane's four batch files,
+ledger union exact (54 lane-enriched rows over integration's newer
+copies of everything else), all invariants verified
+programmatically post-merge. The T56 68-case fixture run itself was
+qualified on the lane both-platforms (~20 min each, per C329b
+report); not re-run here — bounded merge-back scope per protocol.
+L3 (`tools/run_tests.sh native`) not re-run — same protocol;
+integration-level `full` gate is the scheduled accumulation
+checkpoint after the pending merges.

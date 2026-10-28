@@ -15409,28 +15409,14 @@
       "native/tests/reference/test_native_numeric_domains.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_numeric_domains"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "24cd093fcab61085c0c79f731cc4038d8fb633a33170d57c0575fb1438e0f8b4",
     "snapshot_line_count": 229,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "port": 10
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_native_pneumatic_brush.py",
@@ -16264,37 +16250,22 @@
   },
   {
     "path": "tests/reference/test_numba_kernels.py",
-    "sha256": "f6aec64c519b789e8c5f76ddd73912927d6d58d4567d2fdbdc76f2fe60d4c7eb",
-    "line_count": 178,
+    "sha256": "ace705a8a97e4f1f3ab64958758acb181a98d4e0a3fb78fcbcc0ab1d260764f9",
+    "line_count": 181,
     "owner_task": "T52",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
       "native/tests/reference/test_native_kernel_contracts.cpp"
     ],
     "verification_ids": [
-      "migration_T52",
-      "source_assertion_map",
-      "release_capability_matrix"
+      "reference.native_kernel_contracts"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "d3e2c718112c1705efe5f180d8d4ed52ed2c8adbbc2ba2616feee9bea45786f9",
     "snapshot_line_count": 178,
     "tracked": true,
-    "presence": "tracked",
-    "phase3_source_implementation": {
-      "date": "2026-10-21",
-      "status": "source_triaged",
-      "counts": {
-        "drop": 4,
-        "port": 4
-      },
-      "evidence": [
-        "migration/cpp-linux-phase3-source-review.md",
-        "migration/test-port-map.json"
-      ],
-      "verification": "Not executed; deletion gates remain open"
-    }
+    "presence": "tracked"
   },
   {
     "path": "tests/reference/test_pedal_waveform.py",

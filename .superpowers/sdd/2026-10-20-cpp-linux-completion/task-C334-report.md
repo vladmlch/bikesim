@@ -1,6 +1,9 @@
 # Task C334 report — Batch 3.34 frontends / realtime / async / batch
 
-Branch `impl/python-free-cpp` (lane `pfc-lane-d` / `lane/d`), base `e38e1c8a`.
+Worktree `.worktrees/pfc-lane-d`, branch `lane/d`, base `7e677f03`.
+(The header above the continuation section previously read
+`impl/python-free-cpp` / `e38e1c8a` — stale; no commits were made to
+`impl/python-free-cpp`.)
 
 ## SHAs
 
@@ -125,3 +128,101 @@ policy — linux-aarch64 evidence on `bike-dev-pfc-lane` is still required.
   test resolves the repo root from `bt::fixture`.
 - No forced-kill/async reap seam exists natively; the Python interrupt-
   preserving record has no faithful native twin (documented above).
+
+---
+
+## Continuation — remaining 3.34 sources (lane/d, 2026-10-28)
+
+The second pass implemented the seven surveyed-but-unported files and
+closed the async_close stragglers. All nine 3.34 source files are now
+fully dispositioned (`port`/`drop`/`golden` — none left `planned`).
+
+### SHAs (lane/d)
+
+- `12c345df` — `fix(reference): noinline async_close test bodies + split
+  disable phases for linux -Wframe-larger-than (C3.34)`
+- `62de65b1` — `test(reference): port research/driver async_close
+  records — session window guard, both-owner close, ctor worker release
+  (C3.34)`
+- `8805ac0c` — `ledger(migration): 3.34 batch+async_close — 26 ports,
+  1 drop, both-platform evidence (C3.34)`
+- `439e0edd` — `test(reference): port frontend_windows/physical_view/
+  pinned_measurement/realtime_deferred/native_ride_frontend/
+  runtime_single_path/pneumatic records (C3.34)`
+- `e609aac9` — `fix(reference): linux -Wframe-larger-than +
+  -Wmissing-field-initializers for 3.34 ports (C3.34)`
+- `f75d9a32` — `ledger(migration): 3.34 frontend/runtime batch —
+  19 ports, 8 drops, both-platform evidence (C3.34)`
+
+### tests/test_async_close.py — remaining records (6)
+
+Five ported (`62de65b1`): the PolicySession window guard
+('finish the accepted policy interval'), both-owner close with
+first-failure rethrow + `FailureReport` notes, ctor worker release,
+construction-owns-only-needed-worker `[native-False]`, and the
+idempotent driver close. One dropped (`8805ac0c`):
+`test_close_reaps_forced_worker_and_preserves_interrupt` — native
+`close()` is a noexcept unconditional join; no terminate/kill
+escalation or interrupt-note seam exists.
+
+### Per-file dispositions, second pass (27 records: 19 port / 8 drop)
+
+| Source file | port | drop | Notes |
+|---|---|---|---|
+| test_frontend_windows.py | 4 | 2 | keys (F6-F8/R/Q/Esc → InputState), Pacer render-interval gate, PhysicalLiveCsv preview markers, GUI-off rejection before callbacks. Drops: absent-plotly optional-import seam; replay window-loop exit-2 mapping (exit table covered by reference.t49) |
+| test_physical_view.py | 4 | 0 | RenderOwner apply/ownership, frame lifetime across reset+close, reject-before-mutation, HUD/preview schema |
+| test_pinned_measurement.py | 3 | 0 | EqualityReactions spindle force/torque vs body-Jacobian math, published `runtime::connect_equality_rows` mask (new step.hpp export, implementation moved unchanged), settled pinned rest-ride retained samples |
+| test_realtime_deferred_checks.py | 3 | 0 | 200-window bulk road_samples scalar parity, deferred unexplained-wrench first_failure attribution through PeriodAccounting, eager/deferred field-identical samples |
+| test_native_ride_frontend.py | 2 | 0 | measurement NativeDriver advance/reason/export/summary + RunCapture seal dedupe/conflict/evidence-survives-close (benchmark mode — welded baseline energy.constraint_work trips strict) |
+| test_pneumatic_physical_runtime.py | 1 | 2 | end-to-end ride on oracle-faithful flat/coast/lumped plant (minimal physics TOML through resolve_ride — the shipped profile is a different plant: articulated rider + seated_climb + legacy-provenance pose). Drops: both codec records, covered contract by reference.pneumatic_tire_forces + reference.equilibrium_state_file |
+| test_runtime_single_path.py | 2 | 4 | accounted HUD RTF + first-failure marker, configured-dt measurement driver + flush accounting. Drops: source-inspection pin, preview_mode adapter API, two monkeypatched window-loop tail seams |
+
+### Verification — darwin-arm64 (`build/native-release`)
+
+```
+ctest -R 'reference\.(frontend_windows|physical_view|pinned_measurement|realtime_deferred_checks|native_ride_frontend|runtime_single_path|pneumatic_physical_runtime)$'
+1/7 reference.frontend_windows ..............   Passed  (44 checks)
+2/7 reference.physical_view .................   Passed  (79 checks)
+3/7 reference.pinned_measurement ............   Passed  (137 checks)
+4/7 reference.realtime_deferred_checks ......   Passed  (4248 checks)
+5/7 reference.native_ride_frontend ..........   Passed  (52 checks)
+6/7 reference.runtime_single_path ...........   Passed  (23 checks)
+7/7 reference.pneumatic_physical_runtime ....   Passed  (19 checks)
+100% tests passed out of 7
+```
+
+### Verification — linux-aarch64 (`bike-dev-pfc-lane-d`, `/build/root-clang`, clang-18)
+
+```
+1/7 Test #191: reference.frontend_windows .............   Passed    0.29 sec
+2/7 Test #192: reference.physical_view ................   Passed    0.76 sec
+3/7 Test #193: reference.pinned_measurement ...........   Passed    1.02 sec
+4/7 Test #194: reference.realtime_deferred_checks .....   Passed    0.20 sec
+5/7 Test #195: reference.native_ride_frontend .........   Passed    2.62 sec
+6/7 Test #196: reference.runtime_single_path ..........   Passed    2.56 sec
+7/7 Test #197: reference.pneumatic_physical_runtime ...   Passed    0.73 sec
+100% tests passed, 0 tests failed out of 7
+```
+
+Linux-only fixes (`e609aac9`): `staged_raw` noinline helper keeps the
+deferred-rejection test under `-Wframe-larger-than=8192`; `RideControl`
+field assignment on a default-constructed value satisfies
+`-Wmissing-field-initializers` against the grown control shape.
+
+### Ledger state
+
+`migration/test-port-map.json`: 27 records planned→port (19) /
+planned→drop (8) with measured `collected_node_ids`, `comparison_class`,
+`native_test_id`/`native_source`, and both-platform evidence strings.
+Counters: port 987 / planned 932 / golden 351 / drop 123.
+`migration/python-removal.json`: the seven source files flip
+`planned`→`replacement_landed` with their CTest verification ids
+(earlier `8805ac0c` did the same for test_batch + test_async_close).
+
+### Remaining planned records (3.34 scope)
+
+None — all nine batch source files carry explicit dispositions. The
+repo-wide `planned` count (932) belongs to other owner tasks, not this
+batch. `bash tools/run_tests.sh` still not run on this lane (the
+lane's direct Darwin+Linux qualification constraint was honored
+instead).

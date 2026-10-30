@@ -693,6 +693,8 @@ bike_add_reference_test(native_linux_headless ENGINE
   SOURCES test_native_linux_headless.cpp
   LIBRARIES bike_platform bike_io bike_cli
   LABELS t53 platform slow)
+# The ported subprocess probe drives the real bike-ride executable.
+add_dependencies(reference.native_linux_headless bike-ride)
 # tests/reference/test_native_platform_linkage.py port: every published
 # bin/ artifact executes under a scrubbed link environment and every
 # engine consumer's link table resolves the pinned MuJoCo image plus the
@@ -703,6 +705,11 @@ bike_add_reference_test(native_platform_linkage ENGINE
   SOURCES test_native_platform_linkage.cpp
   LIBRARIES bike_platform bike_cli
   LABELS t53 platform)
+# The link-table probe enumerates the published bin/ artifacts.
+add_dependencies(reference.native_platform_linkage
+  bike-sim bike-playground bike-export bike-ride bike-settle bike-research
+  bike-replay bike-batch bike-recording bike-research-sweep bike-validate
+  bike-measure-realtime bike-test-child)
 # tests/reference/test_native_numeric_portability.py port: every
 # platform-sensitive numerical lowering replayed bitwise from captured
 # goldens through the SAME production helpers the debug bindings call

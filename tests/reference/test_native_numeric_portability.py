@@ -42,6 +42,7 @@ import math
 import numpy as np
 import pytest
 
+import _golden
 from _bits import assert_bitwise_equal
 from native_loader import load_native
 
@@ -150,8 +151,12 @@ def test_tanh_and_hypot_match_local_array_ufunc(length):
     ys = np.resize(np.concatenate([pool[::-1], corpus(40, seed=SEED ^ 1)]),
                    length).copy()
     got = bike_native._debug_pneumatic_math(xs, ys)
+    _golden.record(xs, "input.xs")
+    _golden.record(ys, "input.ys")
     with np.errstate(all="ignore"):
         expected = {"tanh": np.tanh(xs), "hypot": np.hypot(xs, ys)}
+    _golden.record(expected["tanh"], "tanh")
+    _golden.record(expected["hypot"], "hypot")
     for name in expected:
         assert got[name].dtype == expected[name].dtype
         np.testing.assert_array_equal(got[name].view(np.uint64),
@@ -163,6 +168,10 @@ def test_tanh_and_hypot_adversarial_fixture():
     xs = corpus(256)
     ys = corpus(256, seed=SEED ^ 2)
     got = bike_native._debug_pneumatic_math(xs, ys)
+    _golden.record(xs, "input.xs")
+    _golden.record(ys, "input.ys")
+    with np.errstate(all="ignore"):
+        expected = {"tanh": np.tanh(xs), "hypot": np.hypot(xs, ys)}
     with np.errstate(all="ignore"):
         assert_bitwise_equal(np.asarray(got["tanh"]), np.tanh(xs),
                              "np.tanh adversarial")
@@ -178,6 +187,10 @@ def test_tanh_and_hypot_strided_oracle(stride):
     ys = corpus(192, seed=SEED ^ 3)[::stride]
     got = bike_native._debug_pneumatic_math(
         np.ascontiguousarray(xs), np.ascontiguousarray(ys))
+    _golden.record(np.ascontiguousarray(xs), "input.xs")
+    _golden.record(np.ascontiguousarray(ys), "input.ys")
+    with np.errstate(all="ignore"):
+        expected = {"tanh": np.tanh(xs), "hypot": np.hypot(xs, ys)}
     with np.errstate(all="ignore"):
         assert_bitwise_equal(np.asarray(got["tanh"]), np.tanh(xs),
                              f"np.tanh stride={stride}")
@@ -201,6 +214,10 @@ def test_tanh_and_hypot_layout_views():
         ys = corpus(xs.size, seed=SEED ^ 4)
         got = bike_native._debug_pneumatic_math(
             np.ascontiguousarray(xs), ys)
+        _golden.record(np.ascontiguousarray(xs), "input.xs")
+        _golden.record(ys, "input.ys")
+        with np.errstate(all="ignore"):
+            expected = {"tanh": np.tanh(xs), "hypot": np.hypot(xs, ys)}
         with np.errstate(all="ignore"):
             assert_bitwise_equal(np.asarray(got["tanh"]), np.tanh(xs),
                                  f"np.tanh {label}")
@@ -214,10 +231,12 @@ def test_tanh_and_hypot_layout_views():
 # --------------------------------------------------------------------
 
 def _contract(name, xs, ys):
+    xs = np.ascontiguousarray(xs, dtype=np.float64)
+    ys = np.ascontiguousarray(ys, dtype=np.float64)
+    _golden.record(xs, "input.xs")
+    _golden.record(ys, "input.ys")
     return np.asarray(
-        bike_native._debug_numeric_contract(
-            name, np.ascontiguousarray(xs, dtype=np.float64),
-            np.ascontiguousarray(ys, dtype=np.float64)))
+        bike_native._debug_numeric_contract(name, xs, ys))
 
 
 def test_python_hypot_matches_math_hypot():
@@ -493,6 +512,9 @@ def test_interp_matches_np_interp_general_table(label):
     queries = _interp_queries(xs)
     got = np.asarray(
         [bike_native._debug_interp(float(q), xs, ys) for q in queries])
+    _golden.record(xs, "input.xs")
+    _golden.record(ys, "input.ys")
+    _golden.record(queries, "input.queries")
     with np.errstate(all="ignore"):
         expected = np.interp(queries, xs, ys)
     assert_bitwise_equal(got, expected, f"np.interp {label}")
@@ -549,6 +571,8 @@ def test_rider_linalg_3d_matches_numpy(op_name):
     is_matmul = op_name in ("matmul", "mat_t_mul")
     for a, b in _rider_operands(rng, 3, is_matmul, 64):
         got = np.asarray(bike_native._debug_rider_linalg(op_name, a, b))
+        _golden.record(a, "input.a")
+        _golden.record(b, "input.b")
         with np.errstate(all="ignore"):
             expected = oracle(a, b)
         assert_bitwise_equal(got, np.asarray(expected),
@@ -561,6 +585,8 @@ def test_rider_linalg_2d_matches_numpy(op_name):
     rng = np.random.default_rng(SEED ^ 0x2A3E)
     for a, b in _rider_operands(rng, 2, False, 64):
         got = np.asarray(bike_native._debug_rider_linalg(op_name, a, b))
+        _golden.record(a, "input.a")
+        _golden.record(b, "input.b")
         with np.errstate(all="ignore"):
             expected = oracle(a, b)
         assert_bitwise_equal(got, np.asarray(expected),
@@ -579,6 +605,7 @@ def test_rider_linalg_norm_matches_np_linalg_norm(length):
         got = np.float64(
             bike_native._debug_rider_linalg(
                 "norm", v, np.zeros(0)))
+        _golden.record(v, "input.a")
         with np.errstate(all="ignore"):
             expected = np.float64(np.linalg.norm(v))
         assert_bitwise_equal(np.asarray(got), np.asarray(expected),

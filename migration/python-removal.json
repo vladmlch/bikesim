@@ -18558,9 +18558,11 @@
     "replacement_paths": [
       "native/tests/reference/test_native_linux_headless.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.native_linux_headless"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "19cd0a4f4ba3e5b2675120ca87d5145c44f3e1a70e2dd098ea6ac368cde021a4",
     "snapshot_line_count": 336,
     "tracked": true,
@@ -18577,9 +18579,11 @@
     "replacement_paths": [
       "native/tests/reference/test_native_numeric_portability.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.native_numeric_portability"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "1dd160fe9fa15971be8f3d86b0f05015e419befde9e8d438f6ffcfcaf7ad0215",
     "snapshot_line_count": 609,
     "tracked": true,
@@ -18596,9 +18600,11 @@
     "replacement_paths": [
       "native/tests/reference/test_native_platform_blas.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.native_platform_blas"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "95b721b4a9c35754db6adb1ca6427427d206894d9d1c4e1e2b64d67a34c06b86",
     "snapshot_line_count": 176,
     "tracked": true,
@@ -18615,9 +18621,11 @@
     "replacement_paths": [
       "native/tests/reference/test_native_platform_linkage.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.native_platform_linkage"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "18e0f73ed9661ef9ba24abc3a89cb6742a4f7058117ea8336fc392d75cea3b2b",
     "snapshot_line_count": 301,
     "tracked": true,
@@ -18634,9 +18642,11 @@
     "replacement_paths": [
       "native/tests/reference/test_native_platform_recording.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.native_platform_recording"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "d9ad5b846add89e0e4ff09f6bb0ead72b6bc08bda6947d810cd6b58ce1b0ce26",
     "snapshot_line_count": 679,
     "tracked": true,
@@ -18653,9 +18663,11 @@
     "replacement_paths": [
       "native/tests/reference/test_native_platform_replay.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.native_platform_replay"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "7a9e7614e6219d4a5cade5e61c52c1378bdd5e1053947b2f87346dd6b06e1b51",
     "snapshot_line_count": 181,
     "tracked": true,
@@ -18672,9 +18684,12 @@
     "replacement_paths": [
       "native/tests/reference/test_async_recovery.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.async_recovery",
+      "reference.async_close"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b896baa2a2511f07dc79146b0829dd891f6d0d2f93cb3b98bb3608c9d34ebd14",
     "snapshot_line_count": 254,
     "tracked": true,
@@ -18691,9 +18706,11 @@
     "replacement_paths": [
       "native/tests/reference/test_execution_identity.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.execution_identity"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b579065b6825dd46beb23ba38d2d4cb4f14157b9b332b66710e0dd5acc28b304",
     "snapshot_line_count": 442,
     "tracked": true,
@@ -18710,9 +18727,11 @@
     "replacement_paths": [
       "native/tests/reference/test_recording_platform_compatibility.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "reference.recording_platform_compat"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ade34dca8d893e015bae59e96b1e5ee06484f89e614080031c3f55de07f043ed",
     "snapshot_line_count": 518,
     "tracked": true,

@@ -41225,13 +41225,18 @@
       "line": 315,
       "end_line": 349,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_linux_headless::test_failed_native_model_construction_cleans_bootstrap_without_rendering",
-      "native_source": "native/tests/reference/test_native_linux_headless.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_linux_headless.py::test_failed_native_model_construction_cleans_bootstrap_without_rendering[ValueError]",
+        "tests/reference/test_native_linux_headless.py::test_failed_native_model_construction_cleans_bootstrap_without_rendering[KeyboardInterrupt]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 Python bootstrap tempdir cleanup; native failure-path staging is covered by reference.native_platform_recording"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_linux_headless.py",
@@ -41239,13 +41244,19 @@
       "line": 63,
       "end_line": 94,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_linux_headless::test_four_step_driver_without_rendering",
+      "native_test_id": "reference.native_linux_headless::test_four_step_driver_without_rendering",
       "native_source": "native/tests/reference/test_native_linux_headless.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_linux_headless.py::test_four_step_driver_without_rendering[python]",
+        "tests/reference/test_native_linux_headless.py::test_four_step_driver_without_rendering[native]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_linux_headless.cpp; CTest reference.native_linux_headless green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_linux_headless in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_linux_headless.py",
@@ -41253,13 +41264,22 @@
       "line": 297,
       "end_line": 311,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_linux_headless::test_headless_frontend_closes_without_initializing_rendering",
-      "native_source": "native/tests/reference/test_native_linux_headless.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_linux_headless.py::test_headless_frontend_closes_without_initializing_rendering[None-duration_reached-0-python]",
+        "tests/reference/test_native_linux_headless.py::test_headless_frontend_closes_without_initializing_rendering[None-duration_reached-0-native]",
+        "tests/reference/test_native_linux_headless.py::test_headless_frontend_closes_without_initializing_rendering[RuntimeError-simulation_error-1-python]",
+        "tests/reference/test_native_linux_headless.py::test_headless_frontend_closes_without_initializing_rendering[RuntimeError-simulation_error-1-native]",
+        "tests/reference/test_native_linux_headless.py::test_headless_frontend_closes_without_initializing_rendering[KeyboardInterrupt-operator_stop-130-python]",
+        "tests/reference/test_native_linux_headless.py::test_headless_frontend_closes_without_initializing_rendering[KeyboardInterrupt-operator_stop-130-native]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 6 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 Python frontend close/GL-avoidance mechanics; no native frontend exists"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_linux_headless.py",
@@ -41267,13 +41287,19 @@
       "line": 170,
       "end_line": 253,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_linux_headless::test_native_cli_without_display_retains_real_outcome",
+      "native_test_id": "reference.native_linux_headless::test_native_cli_without_display_retains_real_outcome",
       "native_source": "native/tests/reference/test_native_linux_headless.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_linux_headless.py::test_native_cli_without_display_retains_real_outcome[ordinary-strict-0.04]",
+        "tests/reference/test_native_linux_headless.py::test_native_cli_without_display_retains_real_outcome[diagnostic-baseline-0.01]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_linux_headless.cpp; CTest reference.native_linux_headless green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_linux_headless in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41281,13 +41307,21 @@
       "line": 445,
       "end_line": 448,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_contract_rejects_unknown_name",
+      "native_test_id": "reference.native_numeric_portability::test_contract_rejects_unknown_name",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_contract_rejects_unknown_name"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41295,13 +41329,28 @@
       "line": 491,
       "end_line": 498,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_interp_matches_np_interp_general_table",
+      "native_test_id": "reference.native_numeric_portability::test_interp_matches_np_interp_general_table",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n17-random]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n2-random]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n3-nan-y]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n3-random]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n4-constant]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n4-inf-y]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n5-random]",
+        "tests/reference/test_native_numeric_portability.py::test_interp_matches_np_interp_general_table[n9-random]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 8 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41309,13 +41358,21 @@
       "line": 501,
       "end_line": 505,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_interp_rejects_mismatched_or_empty_tables",
+      "native_test_id": "reference.native_numeric_portability::test_interp_rejects_mismatched_or_empty_tables",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_interp_rejects_mismatched_or_empty_tables"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41323,13 +41380,22 @@
       "line": 254,
       "end_line": 262,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_minmax_matches_elementwise_ufunc",
+      "native_test_id": "reference.native_numeric_portability::test_minmax_matches_elementwise_ufunc",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_minmax_matches_elementwise_ufunc[minimum]",
+        "tests/reference/test_native_numeric_portability.py::test_minmax_matches_elementwise_ufunc[maximum]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41337,13 +41403,22 @@
       "line": 282,
       "end_line": 289,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_minmax_scalar_broadcast_shape",
+      "native_test_id": "reference.native_numeric_portability::test_minmax_scalar_broadcast_shape",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_minmax_scalar_broadcast_shape[minimum]",
+        "tests/reference/test_native_numeric_portability.py::test_minmax_scalar_broadcast_shape[maximum]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41351,13 +41426,22 @@
       "line": 266,
       "end_line": 278,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_minmax_signed_zero_and_nan_fixture",
+      "native_test_id": "reference.native_numeric_portability::test_minmax_signed_zero_and_nan_fixture",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_minmax_signed_zero_and_nan_fixture[minimum]",
+        "tests/reference/test_native_numeric_portability.py::test_minmax_signed_zero_and_nan_fixture[maximum]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41365,13 +41449,21 @@
       "line": 302,
       "end_line": 310,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_multiply_broadcast_matches_scalar_ufunc",
+      "native_test_id": "reference.native_numeric_portability::test_multiply_broadcast_matches_scalar_ufunc",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_multiply_broadcast_matches_scalar_ufunc"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41379,13 +41471,21 @@
       "line": 313,
       "end_line": 333,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_multiply_broadcast_nan_class_fixture",
+      "native_test_id": "reference.native_numeric_portability::test_multiply_broadcast_nan_class_fixture",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_multiply_broadcast_nan_class_fixture"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41393,13 +41493,21 @@
       "line": 223,
       "end_line": 232,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_python_hypot_matches_math_hypot",
+      "native_test_id": "reference.native_numeric_portability::test_python_hypot_matches_math_hypot",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_python_hypot_matches_math_hypot"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41407,13 +41515,21 @@
       "line": 235,
       "end_line": 250,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_python_hypot_scale_and_nan_edges",
+      "native_test_id": "reference.native_numeric_portability::test_python_hypot_scale_and_nan_edges",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_python_hypot_scale_and_nan_edges"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41421,13 +41537,22 @@
       "line": 559,
       "end_line": 567,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_rider_linalg_2d_matches_numpy",
+      "native_test_id": "reference.native_numeric_portability::test_rider_linalg_2d_matches_numpy",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_2d_matches_numpy[mat_t_vec2]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_2d_matches_numpy[matvec2]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41435,13 +41560,25 @@
       "line": 546,
       "end_line": 555,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_rider_linalg_3d_matches_numpy",
+      "native_test_id": "reference.native_numeric_portability::test_rider_linalg_3d_matches_numpy",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_3d_matches_numpy[mat_t_mul]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_3d_matches_numpy[mat_t_vec]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_3d_matches_numpy[mat_t_vec_xz]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_3d_matches_numpy[matmul]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_3d_matches_numpy[matvec]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41449,13 +41586,25 @@
       "line": 571,
       "end_line": 585,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_rider_linalg_norm_matches_np_linalg_norm",
+      "native_test_id": "reference.native_numeric_portability::test_rider_linalg_norm_matches_np_linalg_norm",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_norm_matches_np_linalg_norm[1]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_norm_matches_np_linalg_norm[2]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_norm_matches_np_linalg_norm[3]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_norm_matches_np_linalg_norm[5]",
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_norm_matches_np_linalg_norm[8]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41463,13 +41612,21 @@
       "line": 588,
       "end_line": 609,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_rider_linalg_rejects_bad_inputs",
+      "native_test_id": "reference.native_numeric_portability::test_rider_linalg_rejects_bad_inputs",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_rider_linalg_rejects_bad_inputs"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41477,13 +41634,22 @@
       "line": 407,
       "end_line": 413,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_sin_cos_edge_fixture",
+      "native_test_id": "reference.native_numeric_portability::test_sin_cos_edge_fixture",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_sin_cos_edge_fixture[sin]",
+        "tests/reference/test_native_numeric_portability.py::test_sin_cos_edge_fixture[cos]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41491,13 +41657,22 @@
       "line": 391,
       "end_line": 403,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_sin_cos_match_local_ufunc",
+      "native_test_id": "reference.native_numeric_portability::test_sin_cos_match_local_ufunc",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_sin_cos_match_local_ufunc[sin]",
+        "tests/reference/test_native_numeric_portability.py::test_sin_cos_match_local_ufunc[cos]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41505,13 +41680,22 @@
       "line": 417,
       "end_line": 442,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_sin_cos_nonfinite_scalar_array_agreement",
+      "native_test_id": "reference.native_numeric_portability::test_sin_cos_nonfinite_scalar_array_agreement",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_sin_cos_nonfinite_scalar_array_agreement[sin]",
+        "tests/reference/test_native_numeric_portability.py::test_sin_cos_nonfinite_scalar_array_agreement[cos]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41519,13 +41703,21 @@
       "line": 374,
       "end_line": 387,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_sum_cancellation_fixture",
+      "native_test_id": "reference.native_numeric_portability::test_sum_cancellation_fixture",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_sum_cancellation_fixture"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41533,13 +41725,49 @@
       "line": 360,
       "end_line": 371,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_sum_matches_np_sum",
+      "native_test_id": "reference.native_numeric_portability::test_sum_matches_np_sum",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[0]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[1]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[2]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[3]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[7]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[8]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[9]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[15]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[16]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[17]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[31]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[32]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[33]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[63]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[64]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[65]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[127]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[128]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[129]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[130]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[131]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[135]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[136]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[255]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[256]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[257]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[511]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[512]",
+        "tests/reference/test_native_numeric_portability.py::test_sum_matches_np_sum[513]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 29 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41547,13 +41775,21 @@
       "line": 161,
       "end_line": 170,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_tanh_and_hypot_adversarial_fixture",
+      "native_test_id": "reference.native_numeric_portability::test_tanh_and_hypot_adversarial_fixture",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_adversarial_fixture"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41561,13 +41797,21 @@
       "line": 188,
       "end_line": 209,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_tanh_and_hypot_layout_views",
+      "native_test_id": "reference.native_numeric_portability::test_tanh_and_hypot_layout_views",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_layout_views"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41575,13 +41819,30 @@
       "line": 145,
       "end_line": 158,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_tanh_and_hypot_match_local_array_ufunc",
+      "native_test_id": "reference.native_numeric_portability::test_tanh_and_hypot_match_local_array_ufunc",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[1]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[2]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[3]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[7]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[8]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[9]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[31]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[32]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[33]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_match_local_array_ufunc[65]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 10 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_numeric_portability.py",
@@ -41589,13 +41850,24 @@
       "line": 174,
       "end_line": 185,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_numeric_portability::test_tanh_and_hypot_strided_oracle",
+      "native_test_id": "reference.native_numeric_portability::test_tanh_and_hypot_strided_oracle",
       "native_source": "native/tests/reference/test_native_numeric_portability.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[2]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[3]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[-1]",
+        "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[-2]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_numeric_portability.cpp; CTest reference.native_numeric_portability green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41603,13 +41875,18 @@
       "line": 158,
       "end_line": 176,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_debug_binding_import_order",
-      "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_debug_binding_import_order[numpy-first]",
+        "tests/reference/test_native_platform_blas.py::test_blas_debug_binding_import_order[native-first]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 fresh-interpreter subprocess import ordering is Python-extension mechanics; the native port is itself the native-first image"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41617,13 +41894,31 @@
       "line": 35,
       "end_line": 40,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_dot_matches_numpy",
+      "native_test_id": "reference.native_platform_blas::test_blas_dot_matches_numpy",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[7]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[16]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[17]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[127]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[128]",
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[129]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 11 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41631,13 +41926,21 @@
       "line": 104,
       "end_line": 107,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_dot_zero_size",
+      "native_test_id": "reference.native_platform_blas::test_blas_dot_zero_size",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_dot_zero_size"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41645,13 +41948,60 @@
       "line": 63,
       "end_line": 73,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_matmul_matches_numpy",
+      "native_test_id": "reference.native_platform_blas::test_blas_matmul_matches_numpy",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-0-0-0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-0-3-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-2-0-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-1-1-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-2-3-4]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-3-2-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-3-17-5]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-16-17-64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-127-1-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-C-129-64-7]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-0-0-0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-0-3-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-2-0-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-1-1-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-2-3-4]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-3-2-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-3-17-5]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-16-17-64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-127-1-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[C-F-129-64-7]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-0-0-0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-0-3-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-2-0-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-1-1-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-2-3-4]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-3-2-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-3-17-5]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-16-17-64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-127-1-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-C-129-64-7]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-0-0-0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-0-3-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-2-0-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-1-1-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-2-3-4]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-3-2-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-3-17-5]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-16-17-64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-127-1-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_matches_numpy[F-F-129-64-7]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 40 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41659,13 +42009,21 @@
       "line": 95,
       "end_line": 101,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_matmul_transposed_view_matches_numpy",
+      "native_test_id": "reference.native_platform_blas::test_blas_matmul_transposed_view_matches_numpy",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_matmul_transposed_view_matches_numpy"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41673,13 +42031,42 @@
       "line": 47,
       "end_line": 54,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_matvec_matches_numpy",
+      "native_test_id": "reference.native_platform_blas::test_blas_matvec_matches_numpy",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-0-0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-0-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-1-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-2-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-3-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-3-17]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-16-16]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-17-129]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-64-127]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-128-64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[C-129-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-0-0]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-0-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-1-1]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-2-3]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-3-2]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-3-17]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-16-16]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-17-129]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-64-127]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-128-64]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_matches_numpy[F-129-1]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 22 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41687,13 +42074,22 @@
       "line": 77,
       "end_line": 92,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_matvec_transposed_view_matches_numpy",
+      "native_test_id": "reference.native_platform_blas::test_blas_matvec_transposed_view_matches_numpy",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_transposed_view_matches_numpy[C]",
+        "tests/reference/test_native_platform_blas.py::test_blas_matvec_transposed_view_matches_numpy[F]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41701,13 +42097,21 @@
       "line": 26,
       "end_line": 31,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_rectangular_matmul_matches_selected_numpy",
+      "native_test_id": "reference.native_platform_blas::test_blas_rectangular_matmul_matches_selected_numpy",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_rectangular_matmul_matches_selected_numpy"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41715,13 +42119,21 @@
       "line": 128,
       "end_line": 143,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_rejects_noncontiguous_operands",
+      "native_test_id": "reference.native_platform_blas::test_blas_rejects_noncontiguous_operands",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_rejects_noncontiguous_operands"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41729,13 +42141,21 @@
       "line": 116,
       "end_line": 125,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_rejects_shape_mismatch",
+      "native_test_id": "reference.native_platform_blas::test_blas_rejects_shape_mismatch",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_rejects_shape_mismatch"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41743,13 +42163,21 @@
       "line": 110,
       "end_line": 113,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_rejects_unknown_operation",
+      "native_test_id": "reference.native_platform_blas::test_blas_rejects_unknown_operation",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_rejects_unknown_operation"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_blas.py",
@@ -41757,13 +42185,21 @@
       "line": 146,
       "end_line": 154,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_blas::test_blas_rejects_wrong_rank_and_dtype",
+      "native_test_id": "reference.native_platform_blas::test_blas_rejects_wrong_rank_and_dtype",
       "native_source": "native/tests/reference/test_native_platform_blas.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_blas.py::test_blas_rejects_wrong_rank_and_dtype"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
+      "comparison_class": "bitwise-oracle",
+      "disposition": "golden",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_blas.cpp; CTest reference.native_platform_blas green on darwin-arm64; native goldens captured darwin-arm64 and linux-aarch64 in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_linkage.py",
@@ -41771,13 +42207,18 @@
       "line": 216,
       "end_line": 276,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_linkage::test_engine_consumers_record_resolvable_engine_image",
+      "native_test_id": "reference.native_platform_linkage::test_engine_consumers_record_resolvable_engine_image",
       "native_source": "native/tests/reference/test_native_platform_linkage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_linkage.py::test_engine_consumers_record_resolvable_engine_image"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_linkage.cpp; CTest reference.native_platform_linkage green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_linkage in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_linkage.py",
@@ -41785,13 +42226,18 @@
       "line": 141,
       "end_line": 165,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_linkage::test_every_ctest_executable_runs_directly",
+      "native_test_id": "reference.native_platform_linkage::test_every_ctest_executable_runs_directly",
       "native_source": "native/tests/reference/test_native_platform_linkage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_linkage.py::test_every_ctest_executable_runs_directly"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_linkage.cpp; CTest reference.native_platform_linkage green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_linkage in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_linkage.py",
@@ -41799,13 +42245,17 @@
       "line": 279,
       "end_line": 301,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_linkage::test_extension_imports_without_environment_rescue",
-      "native_source": "native/tests/reference/test_native_platform_linkage.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_linkage.py::test_extension_imports_without_environment_rescue"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 bike_native CPython extension import under scrubbed env \u2014 the extension leaves with the Python removal; its linkage is inspected as a consumer in record 2"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41813,13 +42263,18 @@
       "line": 352,
       "end_line": 375,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_exclusive_names_collide_without_overwrite",
+      "native_test_id": "reference.native_platform_recording::test_exclusive_names_collide_without_overwrite",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_exclusive_names_collide_without_overwrite"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41827,13 +42282,18 @@
       "line": 378,
       "end_line": 428,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_finalization_crash_leaves_no_readable_run",
+      "native_test_id": "reference.native_platform_recording::test_finalization_crash_leaves_no_readable_run",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_finalization_crash_leaves_no_readable_run"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41841,13 +42301,18 @@
       "line": 547,
       "end_line": 562,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_headless_native_record_off_with_out_writes_nothing",
+      "native_test_id": "reference.native_platform_recording::test_headless_native_record_off_with_out_writes_nothing",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_headless_native_record_off_with_out_writes_nothing"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41855,13 +42320,18 @@
       "line": 434,
       "end_line": 502,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_headless_native_record_publishes_real_run",
+      "native_test_id": "reference.native_platform_recording::test_headless_native_record_publishes_real_run",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_headless_native_record_publishes_real_run"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41869,13 +42339,18 @@
       "line": 505,
       "end_line": 544,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_headless_native_record_strict_stop_keeps_invalid_prefix",
+      "native_test_id": "reference.native_platform_recording::test_headless_native_record_strict_stop_keeps_invalid_prefix",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_headless_native_record_strict_stop_keeps_invalid_prefix"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41883,13 +42358,18 @@
       "line": 565,
       "end_line": 583,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_headless_native_record_under_spaced_unicode_path",
+      "native_test_id": "reference.native_platform_recording::test_headless_native_record_under_spaced_unicode_path",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_headless_native_record_under_spaced_unicode_path"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41897,13 +42377,17 @@
       "line": 586,
       "end_line": 596,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_headless_python_record_rejected_before_setup",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_headless_python_record_rejected_before_setup"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 Python-frontend headless record entry point; the native CLI has no python frontend surface"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41911,13 +42395,17 @@
       "line": 599,
       "end_line": 609,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_model_construction_failure_leaves_no_files",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_model_construction_failure_leaves_no_files"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 covered by crash staging record \u2014 a failed construct never publishes a readable run (reference.native_platform_recording::crash_leaves_no_readable_run)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41925,13 +42413,18 @@
       "line": 269,
       "end_line": 310,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_publication_permission_denied_then_retry",
+      "native_test_id": "reference.native_platform_recording::test_publication_permission_denied_then_retry",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_publication_permission_denied_then_retry"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41939,13 +42432,18 @@
       "line": 664,
       "end_line": 708,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_research_native_run_publishes_sealed_recording",
+      "native_test_id": "reference.native_platform_recording::test_research_native_run_publishes_sealed_recording",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_research_native_run_publishes_sealed_recording"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41953,13 +42451,18 @@
       "line": 711,
       "end_line": 738,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_research_policy_failure_after_capture_publishes_evidence",
+      "native_test_id": "reference.native_platform_recording::test_research_policy_failure_after_capture_publishes_evidence",
       "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_research_policy_failure_after_capture_publishes_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_recording.cpp; CTest reference.native_platform_recording green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_recording in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41967,13 +42470,17 @@
       "line": 222,
       "end_line": 241,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_ctrl_c_inside_finalize_is_noted_and_published",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_ctrl_c_inside_finalize_is_noted_and_published"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 viewer-pump Ctrl-C mechanics covered by the native lifecycle twins (integration async_close/recording lifecycle ports)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41981,13 +42488,17 @@
       "line": 171,
       "end_line": 193,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_ctrl_c_seals_operator_stop_and_publishes",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_ctrl_c_seals_operator_stop_and_publishes"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 viewer-pump operator-stop seal covered by the lifecycle twins"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -41995,13 +42506,17 @@
       "line": 612,
       "end_line": 658,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_native_reset_twice_publishes_owned_episodes",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_native_reset_twice_publishes_owned_episodes"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 viewer reset-pump episode ownership covered by the lifecycle twins"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -42009,13 +42524,17 @@
       "line": 159,
       "end_line": 168,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_recording_disabled_with_out_writes_nothing",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_recording_disabled_with_out_writes_nothing"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 covered by record_off_writes_nothing (same disabled-capture contract)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -42023,13 +42542,17 @@
       "line": 103,
       "end_line": 156,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_reset_twice_publishes_all_episode_ids",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_reset_twice_publishes_all_episode_ids"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 covered by the lifecycle twins"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -42037,13 +42560,17 @@
       "line": 196,
       "end_line": 219,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_second_ctrl_c_during_seal_journals_and_publishes",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_second_ctrl_c_during_seal_journals_and_publishes"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 viewer-pump second-interrupt journal covered by the lifecycle twins"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_recording.py",
@@ -42051,13 +42578,17 @@
       "line": 244,
       "end_line": 263,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_recording::test_viewer_simulation_error_publishes_owned_prefix",
-      "native_source": "native/tests/reference/test_native_platform_recording.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_recording.py::test_viewer_simulation_error_publishes_owned_prefix"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 viewer-pump error prefix covered by strict_stop_keeps_invalid_prefix at the headless boundary"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_replay.py",
@@ -42065,13 +42596,18 @@
       "line": 37,
       "end_line": 42,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_replay::test_native_checked_replay_passes_for_a_same_host_recording",
+      "native_test_id": "reference.native_platform_replay::test_native_checked_replay_passes_for_a_same_host_recording",
       "native_source": "native/tests/reference/test_native_platform_replay.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_replay.py::test_native_checked_replay_passes_for_a_same_host_recording"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_replay.cpp; CTest reference.native_platform_replay green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_replay in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_replay.py",
@@ -42079,13 +42615,18 @@
       "line": 110,
       "end_line": 129,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_replay::test_native_recorded_playback_supports_the_foreign_recording",
+      "native_test_id": "reference.native_platform_replay::test_native_recorded_playback_supports_the_foreign_recording",
       "native_source": "native/tests/reference/test_native_platform_replay.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_replay.py::test_native_recorded_playback_supports_the_foreign_recording"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_replay.cpp; CTest reference.native_platform_replay green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_replay in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_replay.py",
@@ -42093,13 +42634,18 @@
       "line": 85,
       "end_line": 107,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_replay::test_native_replay_recheck_still_fires_on_drift_during_replay",
+      "native_test_id": "reference.native_platform_replay::test_native_replay_recheck_still_fires_on_drift_during_replay",
       "native_source": "native/tests/reference/test_native_platform_replay.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_replay.py::test_native_replay_recheck_still_fires_on_drift_during_replay"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_replay.cpp; CTest reference.native_platform_replay green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_replay in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_replay.py",
@@ -42107,13 +42653,18 @@
       "line": 66,
       "end_line": 82,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_replay::test_native_replay_rejects_a_foreign_runtime_with_the_named_field",
+      "native_test_id": "reference.native_platform_replay::test_native_replay_rejects_a_foreign_runtime_with_the_named_field",
       "native_source": "native/tests/reference/test_native_platform_replay.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_replay.py::test_native_replay_rejects_a_foreign_runtime_with_the_named_field"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_replay.cpp; CTest reference.native_platform_replay green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_replay in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_replay.py",
@@ -42121,13 +42672,18 @@
       "line": 45,
       "end_line": 63,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_replay::test_native_replay_rejects_a_recording_authored_on_another_host",
+      "native_test_id": "reference.native_platform_replay::test_native_replay_rejects_a_recording_authored_on_another_host",
       "native_source": "native/tests/reference/test_native_platform_replay.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_replay.py::test_native_replay_rejects_a_recording_authored_on_another_host"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_replay.cpp; CTest reference.native_platform_replay green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_replay in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_platform_replay.py",
@@ -42135,13 +42691,18 @@
       "line": 132,
       "end_line": 181,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_platform_replay::test_native_verify_machinery_is_never_called_for_inspection_or_playback",
+      "native_test_id": "reference.native_platform_replay::test_native_verify_machinery_is_never_called_for_inspection_or_playback",
       "native_source": "native/tests/reference/test_native_platform_replay.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/reference/test_native_platform_replay.py::test_native_verify_machinery_is_never_called_for_inspection_or_playback"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_native_platform_replay.cpp; CTest reference.native_platform_replay green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.native_platform_replay in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_replay_recording_v3.py",
@@ -42480,13 +43041,18 @@
       "line": 69,
       "end_line": 78,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_empty_replay_leaves_publication_state_untouched",
+      "native_test_id": "reference.async_recovery::test_empty_replay_leaves_publication_state_untouched",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_empty_replay_leaves_publication_state_untouched"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42494,13 +43060,18 @@
       "line": 95,
       "end_line": 107,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_failure_before_publication_restores_prefix_without_repeating_it",
+      "native_test_id": "reference.async_recovery::test_failure_before_publication_restores_prefix_without_repeating_it",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_failure_before_publication_restores_prefix_without_repeating_it"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42508,13 +43079,17 @@
       "line": 216,
       "end_line": 221,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_queue_cleanup_attempts_all_operations_on_success",
-      "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_queue_cleanup_attempts_all_operations_on_success"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 Python multiprocessing queue transport mechanics (closed via _close_queues); the native AsyncCloseRunner owns shutdown \u2014 covered by reference.async_close"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42522,13 +43097,20 @@
       "line": 225,
       "end_line": 235,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_queue_cleanup_attempts_remaining_operations_after_each_failure",
-      "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_queue_cleanup_attempts_remaining_operations_after_each_failure[in-cancel_join_thread]",
+        "tests/test_async_recovery.py::test_queue_cleanup_attempts_remaining_operations_after_each_failure[in-close]",
+        "tests/test_async_recovery.py::test_queue_cleanup_attempts_remaining_operations_after_each_failure[out-cancel_join_thread]",
+        "tests/test_async_recovery.py::test_queue_cleanup_attempts_remaining_operations_after_each_failure[out-close]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 same as above \u2014 mp.Queue close/join/cancel ordering has no native surface"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42536,13 +43118,17 @@
       "line": 238,
       "end_line": 254,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_queue_cleanup_preserves_initial_interrupt_and_notes_later_failures",
-      "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_queue_cleanup_preserves_initial_interrupt_and_notes_later_failures"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); record dropped",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: dropped \u2014 same as above \u2014 Python interrupt-note bookkeeping inside _close_queues"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42550,13 +43136,18 @@
       "line": 59,
       "end_line": 66,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_replay_does_not_carry_constraints_from_an_old_publication_window",
+      "native_test_id": "reference.async_recovery::test_replay_does_not_carry_constraints_from_an_old_publication_window",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_replay_does_not_carry_constraints_from_an_old_publication_window"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42564,13 +43155,18 @@
       "line": 44,
       "end_line": 56,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_replay_retains_every_period_and_previously_published_prefix",
+      "native_test_id": "reference.async_recovery::test_replay_retains_every_period_and_previously_published_prefix",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_replay_retains_every_period_and_previously_published_prefix"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42578,13 +43174,18 @@
       "line": 81,
       "end_line": 92,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_strict_rejection_keeps_published_prefix_and_stops_before_later_periods",
+      "native_test_id": "reference.async_recovery::test_strict_rejection_keeps_published_prefix_and_stops_before_later_periods",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_strict_rejection_keeps_published_prefix_and_stops_before_later_periods"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42592,13 +43193,20 @@
       "line": 142,
       "end_line": 159,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_submission_recovery_publishes_pending_and_current_periods_once",
+      "native_test_id": "reference.async_recovery::test_submission_recovery_publishes_pending_and_current_periods_once",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_submission_recovery_publishes_pending_and_current_periods_once[context]",
+        "tests/test_async_recovery.py::test_submission_recovery_publishes_pending_and_current_periods_once[submit]",
+        "tests/test_async_recovery.py::test_submission_recovery_publishes_pending_and_current_periods_once[registration]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42606,13 +43214,18 @@
       "line": 178,
       "end_line": 191,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_transport_cleanup_error_still_preserves_recovered_rows",
+      "native_test_id": "reference.async_recovery::test_transport_cleanup_error_still_preserves_recovered_rows",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_transport_cleanup_error_still_preserves_recovered_rows"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_async_recovery.py",
@@ -42620,13 +43233,18 @@
       "line": 162,
       "end_line": 175,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_async_recovery::test_transport_recovery_preserves_every_period_without_a_second_replay",
+      "native_test_id": "reference.async_recovery::test_transport_recovery_preserves_every_period_without_a_second_replay",
       "native_source": "native/tests/reference/test_async_recovery.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_async_recovery.py::test_transport_recovery_preserves_every_period_without_a_second_replay"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_async_recovery.cpp; CTest reference.async_recovery green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.async_recovery in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_batch.py",
@@ -42689,13 +43307,18 @@
       "line": 390,
       "end_line": 394,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_differences_validate_both_sides",
+      "native_test_id": "reference.execution_identity::test_differences_validate_both_sides",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_differences_validate_both_sides"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42703,13 +43326,25 @@
       "line": 203,
       "end_line": 208,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_field_type_and_null_rules",
+      "native_test_id": "reference.execution_identity::test_field_type_and_null_rules",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-runtime_schema-True]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-runtime_schema-2]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[native-python_source_sha256-not-a-digest]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-extension_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-native_source_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-mujoco_library_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[native-extension_sha256-None]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[native-mujoco_version-]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 8 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42717,13 +43352,20 @@
       "line": 328,
       "end_line": 337,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_integer_abi_change_is_a_named_failure",
+      "native_test_id": "reference.execution_identity::test_integer_abi_change_is_a_named_failure",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_integer_abi_change_is_a_named_failure[v2_native-path0]",
+        "tests/test_execution_identity.py::test_integer_abi_change_is_a_named_failure[v2_native-path1]",
+        "tests/test_execution_identity.py::test_integer_abi_change_is_a_named_failure[v2_native_linux-path2]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42731,13 +43373,18 @@
       "line": 106,
       "end_line": 107,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_legacy_native_read_stays_valid",
+      "native_test_id": "reference.execution_identity::test_legacy_native_read_stays_valid",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_native_read_stays_valid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42745,13 +43392,18 @@
       "line": 100,
       "end_line": 103,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_legacy_read_stays_valid",
+      "native_test_id": "reference.execution_identity::test_legacy_read_stays_valid",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_read_stays_valid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42759,13 +43411,18 @@
       "line": 160,
       "end_line": 164,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_legacy_rejects_the_v2_field_set",
+      "native_test_id": "reference.execution_identity::test_legacy_rejects_the_v2_field_set",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_rejects_the_v2_field_set"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42773,13 +43430,18 @@
       "line": 382,
       "end_line": 387,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_legacy_vs_v2_reports_the_missing_identity_fields",
+      "native_test_id": "reference.execution_identity::test_legacy_vs_v2_reports_the_missing_identity_fields",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_vs_v2_reports_the_missing_identity_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42787,13 +43449,18 @@
       "line": 372,
       "end_line": 379,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_library_list_length_difference_is_indexed",
+      "native_test_id": "reference.execution_identity::test_library_list_length_difference_is_indexed",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_library_list_length_difference_is_indexed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42801,13 +43468,22 @@
       "line": 257,
       "end_line": 264,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_linux_file_identity_rules",
+      "native_test_id": "reference.execution_identity::test_linux_file_identity_rules",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path0-32]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path1-apple-system]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path2-None]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path3-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path4-fabricated]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42815,13 +43491,18 @@
       "line": 272,
       "end_line": 277,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_mismatch_names_the_field",
+      "native_test_id": "reference.execution_identity::test_mismatch_names_the_field",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_mismatch_names_the_field"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42829,13 +43510,23 @@
       "line": 170,
       "end_line": 178,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_native_context_requires_exactly_six_keys",
+      "native_test_id": "reference.execution_identity::test_native_context_requires_exactly_six_keys",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[build_type]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[compiler_id]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[compiler_version]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[numerical_flags]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[platform]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[numerics]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 6 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42843,13 +43534,44 @@
       "line": 240,
       "end_line": 247,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_nested_field_rules_fail_closed",
+      "native_test_id": "reference.execution_identity::test_nested_field_rules_fail_closed",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path0-FreeBSD]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path1-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path2-ARM 64]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path3-bad3]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path4-bad4]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path5-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path6-   ]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path7-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path8-None]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path9-untracked]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path10-untracked]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path11-MKL]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path12-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path13-True]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path14-64]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path15-32]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path16-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path17-bad17]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path18-0]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path19-True]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path20-bad20]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path21-blas]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path22-file]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path23-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path24-None]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path25-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path26-untracked]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 27 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42857,13 +43579,24 @@
       "line": 139,
       "end_line": 143,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_noncanonical_identity_schema_fails",
+      "native_test_id": "reference.execution_identity::test_noncanonical_identity_schema_fails",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[True]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[False]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[1]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[3]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[2]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[2.0]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[None]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 7 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42871,13 +43604,18 @@
       "line": 353,
       "end_line": 360,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_os_and_backend_pairing_change_reports_the_fields",
+      "native_test_id": "reference.execution_identity::test_os_and_backend_pairing_change_reports_the_fields",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_os_and_backend_pairing_change_reports_the_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42885,13 +43623,18 @@
       "line": 340,
       "end_line": 350,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_os_change_is_a_named_failure",
+      "native_test_id": "reference.execution_identity::test_os_change_is_a_named_failure",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_os_change_is_a_named_failure"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42899,13 +43642,18 @@
       "line": 363,
       "end_line": 369,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_provider_hash_names_the_indexed_library_path",
+      "native_test_id": "reference.execution_identity::test_provider_hash_names_the_indexed_library_path",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_provider_hash_names_the_indexed_library_path"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42913,13 +43661,18 @@
       "line": 181,
       "end_line": 185,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_python_v2_context_is_only_platform_and_numerics",
+      "native_test_id": "reference.execution_identity::test_python_v2_context_is_only_platform_and_numerics",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_python_v2_context_is_only_platform_and_numerics"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42927,13 +43680,18 @@
       "line": 402,
       "end_line": 404,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_require_execution_compatible_accepts_identity",
+      "native_test_id": "reference.execution_identity::test_require_execution_compatible_accepts_identity",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_require_execution_compatible_accepts_identity"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42941,13 +43699,18 @@
       "line": 407,
       "end_line": 416,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_require_execution_compatible_raises_with_named_fields",
+      "native_test_id": "reference.execution_identity::test_require_execution_compatible_raises_with_named_fields",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_require_execution_compatible_raises_with_named_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42955,13 +43718,18 @@
       "line": 419,
       "end_line": 421,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_require_execution_compatible_rejects_legacy_recorded",
+      "native_test_id": "reference.execution_identity::test_require_execution_compatible_rejects_legacy_recorded",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_require_execution_compatible_rejects_legacy_recorded"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42969,13 +43737,34 @@
       "line": 307,
       "end_line": 320,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_single_field_mismatch_reports_the_dotted_key",
+      "native_test_id": "reference.execution_identity::test_single_field_mismatch_reports_the_dotted_key",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path0-x86_64]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path1-musl]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path2-26B001]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path3-3.14.4]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path4-cpython-315-darwin]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path5-26B001]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path6-2.5.3]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path7-Apple M3]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path8-8]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path9-openmp]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path10-macos-26B001+accelerate-00000000-0000-4000-8000-000000000000+sdk-26A425]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native_linux-path11-9999999999999999999999999999999999999999999999999999999999999999]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path12--O3 -ffp-contract=off -ffast-math]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path13-21.0.1]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path14-9999999999999999999999999999999999999999999999999999999999999999]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path15-9999999999999999999999999999999999999999999999999999999999999999]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path16-3.12.1]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 17 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42983,13 +43772,18 @@
       "line": 131,
       "end_line": 135,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_unknown_identity_schema_is_not_guessed",
+      "native_test_id": "reference.execution_identity::test_unknown_identity_schema_is_not_guessed",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_unknown_identity_schema_is_not_guessed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -42997,13 +43791,20 @@
       "line": 111,
       "end_line": 115,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_v2_records_validate",
+      "native_test_id": "reference.execution_identity::test_v2_records_validate",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_v2_records_validate[v2_python]",
+        "tests/test_execution_identity.py::test_v2_records_validate[v2_native]",
+        "tests/test_execution_identity.py::test_v2_records_validate[v2_native_linux]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -43011,13 +43812,19 @@
       "line": 147,
       "end_line": 157,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_v2_rejects_missing_and_extra_top_level_keys",
+      "native_test_id": "reference.execution_identity::test_v2_rejects_missing_and_extra_top_level_keys",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_v2_rejects_missing_and_extra_top_level_keys[v2_python]",
+        "tests/test_execution_identity.py::test_v2_rejects_missing_and_extra_top_level_keys[v2_native]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -43025,13 +43832,18 @@
       "line": 118,
       "end_line": 123,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_validation_does_not_mutate_the_record",
+      "native_test_id": "reference.execution_identity::test_validation_does_not_mutate_the_record",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_validation_does_not_mutate_the_record"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_execution_identity.py",
@@ -43039,13 +43851,22 @@
       "line": 431,
       "end_line": 442,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_execution_identity::test_validation_imports_nothing",
+      "native_test_id": "reference.execution_identity::test_validation_imports_nothing",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_validation_imports_nothing[legacy_python]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[legacy_native]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[v2_python]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[v2_native]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[v2_native_linux]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_execution_identity.cpp; CTest reference.execution_identity green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.execution_identity in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43053,13 +43874,18 @@
       "line": 230,
       "end_line": 254,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_checked_replay_still_demands_an_explicit_episode",
+      "native_test_id": "reference.recording_platform_compat::test_checked_replay_still_demands_an_explicit_episode",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_checked_replay_still_demands_an_explicit_episode"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43067,13 +43893,18 @@
       "line": 364,
       "end_line": 377,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_corrupted_assets_fail_closed",
+      "native_test_id": "reference.recording_platform_compat::test_corrupted_assets_fail_closed",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_corrupted_assets_fail_closed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43081,13 +43912,18 @@
       "line": 289,
       "end_line": 303,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_failed_runs_stay_playable_but_never_replayable",
+      "native_test_id": "reference.recording_platform_compat::test_failed_runs_stay_playable_but_never_replayable",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_failed_runs_stay_playable_but_never_replayable"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43095,13 +43931,19 @@
       "line": 395,
       "end_line": 404,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_foreign_identity_cannot_be_checked_replayed",
+      "native_test_id": "reference.recording_platform_compat::test_foreign_identity_cannot_be_checked_replayed",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_foreign_identity_cannot_be_checked_replayed[True]",
+        "tests/test_recording_platform_compatibility.py::test_foreign_identity_cannot_be_checked_replayed[False]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43109,13 +43951,18 @@
       "line": 426,
       "end_line": 440,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_foreign_identity_rejects_checked_replay_with_the_named_field",
+      "native_test_id": "reference.recording_platform_compat::test_foreign_identity_rejects_checked_replay_with_the_named_field",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_foreign_identity_rejects_checked_replay_with_the_named_field"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43123,13 +43970,18 @@
       "line": 460,
       "end_line": 493,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_inspection_and_dry_run_run_without_artifact_or_stepping",
+      "native_test_id": "reference.recording_platform_compat::test_inspection_and_dry_run_run_without_artifact_or_stepping",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_inspection_and_dry_run_run_without_artifact_or_stepping"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43137,13 +43989,18 @@
       "line": 320,
       "end_line": 331,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_inspection_and_playback_never_mutate_the_source",
+      "native_test_id": "reference.recording_platform_compat::test_inspection_and_playback_never_mutate_the_source",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_inspection_and_playback_never_mutate_the_source"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43151,13 +44008,18 @@
       "line": 191,
       "end_line": 213,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_inspection_commands_open_recordings_without_any_native_artifact",
+      "native_test_id": "reference.recording_platform_compat::test_inspection_commands_open_recordings_without_any_native_artifact",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_inspection_commands_open_recordings_without_any_native_artifact"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43165,13 +44027,18 @@
       "line": 216,
       "end_line": 227,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_inspection_reads_a_recording_authored_on_another_host",
+      "native_test_id": "reference.recording_platform_compat::test_inspection_reads_a_recording_authored_on_another_host",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_inspection_reads_a_recording_authored_on_another_host"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43179,13 +44046,18 @@
       "line": 407,
       "end_line": 423,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_legacy_identity_report_names_the_missing_fields",
+      "native_test_id": "reference.recording_platform_compat::test_legacy_identity_report_names_the_missing_fields",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_legacy_identity_report_names_the_missing_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43193,13 +44065,18 @@
       "line": 380,
       "end_line": 386,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_missing_episode_is_a_named_error",
+      "native_test_id": "reference.recording_platform_compat::test_missing_episode_is_a_named_error",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_missing_episode_is_a_named_error"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43207,13 +44084,18 @@
       "line": 501,
       "end_line": 518,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_platform_recording_fixture_manifests_are_wellformed",
+      "native_test_id": "reference.recording_platform_compat::test_platform_recording_fixture_manifests_are_wellformed",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_platform_recording_fixture_manifests_are_wellformed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43221,13 +44103,18 @@
       "line": 306,
       "end_line": 317,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_playback_rejects_recordings_without_the_authored_contract",
+      "native_test_id": "reference.recording_platform_compat::test_playback_rejects_recordings_without_the_authored_contract",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_playback_rejects_recordings_without_the_authored_contract"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43235,13 +44122,18 @@
       "line": 275,
       "end_line": 286,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_recorded_playback_never_claims_physical_verification",
+      "native_test_id": "reference.recording_platform_compat::test_recorded_playback_never_claims_physical_verification",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_recorded_playback_never_claims_physical_verification"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43249,13 +44141,18 @@
       "line": 262,
       "end_line": 272,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_recorded_playback_supports_a_foreign_host_recording",
+      "native_test_id": "reference.recording_platform_compat::test_recorded_playback_supports_a_foreign_host_recording",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_recorded_playback_supports_a_foreign_host_recording"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43263,13 +44160,18 @@
       "line": 334,
       "end_line": 361,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_recording_survives_a_directory_move",
+      "native_test_id": "reference.recording_platform_compat::test_recording_survives_a_directory_move",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_recording_survives_a_directory_move"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     },
     {
       "source_path": "tests/test_recording_platform_compatibility.py",
@@ -43277,13 +44179,18 @@
       "line": 443,
       "end_line": 452,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::test_recording_platform_compatibility::test_unknown_identity_schema_fails_the_recipe_before_stepping",
+      "native_test_id": "reference.recording_platform_compat::test_unknown_identity_schema_fails_the_recipe_before_stepping",
       "native_source": "native/tests/reference/test_recording_platform_compatibility.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "collected_node_ids": [
+        "tests/test_recording_platform_compatibility.py::test_unknown_identity_schema_fails_the_recipe_before_stepping"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); native port green darwin-arm64 + linux-aarch64",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-28 3.35 lane/d: ported to native/tests/reference/test_recording_platform_compatibility.cpp; CTest reference.recording_platform_compat green on darwin-arm64",
+        "2026-10-28 3.35 lane/d: linux-aarch64 build+CTest green for reference.recording_platform_compat in bike-dev-pfc-lane-d /src/build/native-release (43f8c4b1)"
+      ]
     }
   ],
   "checkout_reconciliation": {

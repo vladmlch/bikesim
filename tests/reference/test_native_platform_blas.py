@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import _golden
 from native_loader import load_native
 bike_native = load_native()
 
@@ -23,11 +24,28 @@ from _bits import assert_bitwise_equal
 DIMS = (0, 1, 2, 3, 7, 16, 17, 64, 127, 128, 129)
 
 
+def _stored(a) -> np.ndarray:
+    """The operand's physical byte stream — tobytes('A') keeps the
+    stored order (C bytes for a C operand, F bytes for an F operand) so
+    the replayed port can feed the same packed storage to the adapter's
+    NoTrans/Trans entry points."""
+    return np.frombuffer(a.tobytes(order="A"), dtype=np.float64)
+
+
+def _blas(a, b, operation):
+    """Record the stored operand streams and return the debug surface's
+    actual — assert_bitwise_equal captures the oracle itself, so the
+    port replays a/b through blas:: wrappers and compares against it."""
+    _golden.record(_stored(a), "input.a")
+    _golden.record(_stored(b), "input.b")
+    return bike_native._debug_platform_blas(a, b, operation)
+
+
 def test_blas_rectangular_matmul_matches_selected_numpy():
     rng = np.random.default_rng(6021)
     a = rng.normal(size=(3, 17))
     b = rng.normal(size=(17, 5))
-    actual = bike_native._debug_platform_blas(a, b, "matmul")
+    actual = _blas(a, b, "matmul")
     assert_bitwise_equal(actual, a @ b)
 
 
@@ -36,7 +54,7 @@ def test_blas_dot_matches_numpy(n):
     rng = np.random.default_rng(9000 + n)
     a = rng.normal(size=n)
     b = rng.normal(size=n)
-    actual = bike_native._debug_platform_blas(a, b, "dot")
+    actual = _blas(a, b, "dot")
     assert_bitwise_equal(actual, a @ b)
 
 
@@ -50,7 +68,7 @@ def test_blas_matvec_matches_numpy(m, n, layout):
     x = rng.normal(size=n)
     if layout == "F":
         a = np.asfortranarray(a)
-    actual = bike_native._debug_platform_blas(a, x, "matvec")
+    actual = _blas(a, x, "matvec")
     assert_bitwise_equal(actual, a @ x)
 
 
@@ -69,7 +87,7 @@ def test_blas_matmul_matches_numpy(m, k, n,
         a = np.asfortranarray(a)
     if layout_b == "F":
         b = np.asfortranarray(b)
-    actual = bike_native._debug_platform_blas(a, b, "matmul")
+    actual = _blas(a, b, "matmul")
     assert_bitwise_equal(actual, a @ b)
 
 
@@ -88,7 +106,7 @@ def test_blas_matvec_transposed_view_matches_numpy(layout_a):
     # row-major NoTrans kernel, so cross-layout bitwise equality is not a
     # provider contract.
     transposed = a.T if layout_a == "F" else np.ascontiguousarray(a.T)
-    actual = bike_native._debug_platform_blas(transposed, x, "matvec")
+    actual = _blas(transposed, x, "matvec")
     assert_bitwise_equal(actual, transposed @ x)
 
 
@@ -97,13 +115,12 @@ def test_blas_matmul_transposed_view_matches_numpy():
     rng = np.random.default_rng(8080)
     local = rng.normal(size=(4, 3))
     r = rng.normal(size=(3, 3))
-    actual = bike_native._debug_platform_blas(local, r.T, "matmul")
+    actual = _blas(local, r.T, "matmul")
     assert_bitwise_equal(actual, local @ r.T)
 
 
 def test_blas_dot_zero_size():
-    actual = bike_native._debug_platform_blas(
-        np.empty(0), np.empty(0), "dot")
+    actual = _blas(np.empty(0), np.empty(0), "dot")
     assert_bitwise_equal(actual, np.empty(0) @ np.empty(0))
 
 

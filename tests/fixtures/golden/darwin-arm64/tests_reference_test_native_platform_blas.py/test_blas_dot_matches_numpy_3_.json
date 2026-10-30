@@ -1,0 +1,42 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[3]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[3]",
+  "offset": 24,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_platform_blas.py::test_blas_dot_matches_numpy[3]",
+  "offset": 48,
+  "rtol": null,
+  "shape": []
+ }
+]

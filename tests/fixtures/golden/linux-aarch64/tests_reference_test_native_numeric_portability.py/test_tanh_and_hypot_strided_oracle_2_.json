@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 768,
+  "node": "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[2]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 768,
+  "node": "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[2]",
+  "offset": 768,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "np.tanh stride=2",
+  "nbytes": 768,
+  "node": "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[2]",
+  "offset": 1536,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "np.hypot stride=2",
+  "nbytes": 768,
+  "node": "tests/reference/test_native_numeric_portability.py::test_tanh_and_hypot_strided_oracle[2]",
+  "offset": 2304,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ }
+]

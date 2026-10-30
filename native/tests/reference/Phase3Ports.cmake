@@ -647,3 +647,76 @@ bike_add_reference_test(runtime_single_path ENGINE
 bike_add_reference_test(pneumatic_physical_runtime ENGINE
   SOURCES test_pneumatic_physical_runtime.cpp LIBRARIES bike_app bike_cli
   LABELS t53 frontend slow)
+
+# 3.35 platform batch — tests/test_execution_identity.py port: the data-only
+# identity-schema validation rules (legacy and identity_schema=2 records)
+# plus the native-executable execution gate's named-field verdicts through
+# replay::check_execution.
+bike_add_reference_test(execution_identity ENGINE
+  SOURCES test_execution_identity.cpp LIBRARIES bike_replay
+  LABELS t53 platform)
+# test_native_platform_replay.py port: same-host checked replay, foreign
+# identity rejection before plant construction, recorded-frame playback of
+# the refused file, and the never-consulted gate for inspection paths.
+bike_add_reference_test(native_platform_replay ENGINE
+  SOURCES test_native_platform_replay.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 platform replay)
+add_dependencies(reference.native_platform_replay bike-replay)
+# tests/test_recording_platform_compatibility.py port: portable inspection
+# and recorded-frame playback (subprocess CLI + in-process loaders) split
+# from the checked-replay identity gate.
+bike_add_reference_test(recording_platform_compat ENGINE
+  SOURCES test_recording_platform_compatibility.cpp
+  LIBRARIES bike_replay bike_recording
+  LABELS t53 platform replay slow)
+add_dependencies(reference.recording_platform_compat bike-recording bike-replay)
+# tests/test_async_recovery.py port: detach/replay recovery ownership at
+# the PeriodAccounting boundary (the _close_queues records are dropped —
+# Python multiprocessing transport mechanics).
+bike_add_reference_test(async_recovery ENGINE
+  SOURCES test_async_recovery.cpp LIBRARIES bike_app
+  LABELS t53 platform runtime)
+# tests/reference/test_native_platform_recording.py port: exclusive-name
+# collision, crash staging, EACCES+retry, unicode output path, the deep
+# real-run payload, strict invalid prefix and the research publication
+# contract (viewer-pump records are covered by the lifecycle twins).
+bike_add_reference_test(native_platform_recording ENGINE
+  SOURCES test_native_platform_recording.cpp
+  LIBRARIES bike_app bike_recording bike_cli
+  LABELS t53 platform recording slow)
+# tests/reference/test_native_linux_headless.py port: the real bike-ride
+# executable under a scrubbed display environment keeps its stepping and
+# outcome contracts (the python-param/frontend/bootstrap records are
+# Python-surface drops). Headless is platform-neutral natively — no GL
+# or display dependency exists to make the behavior Linux-only.
+bike_add_reference_test(native_linux_headless ENGINE
+  SOURCES test_native_linux_headless.cpp
+  LIBRARIES bike_platform bike_io bike_cli
+  LABELS t53 platform slow)
+# tests/reference/test_native_platform_linkage.py port: every published
+# bin/ artifact executes under a scrubbed link environment and every
+# engine consumer's link table resolves the pinned MuJoCo image plus the
+# configured numerics provider without rescue (otool -L on Darwin,
+# readelf -d + ldd on Linux). The bike_native-import record is a
+# Python-extension drop.
+bike_add_reference_test(native_platform_linkage ENGINE
+  SOURCES test_native_platform_linkage.cpp
+  LIBRARIES bike_platform bike_cli
+  LABELS t53 platform)
+# tests/reference/test_native_numeric_portability.py port: every
+# platform-sensitive numerical lowering replayed bitwise from captured
+# goldens through the SAME production helpers the debug bindings call
+# (np_tanh/hypot, python_vector_norm, min/max, multiply_broadcast,
+# numpy_sum, sin/cos, np_interp, spindle-linalg mirrors).
+bike_add_reference_test(native_numeric_portability ENGINE
+  SOURCES test_native_numeric_portability.cpp
+  LIBRARIES bike_app
+  LABELS t53 platform numerics)
+# tests/reference/test_native_platform_blas.py port: blas::ddot/dgemv/
+# dgemm replayed bitwise from captured stored-byte operands through the
+# same layout→entry-point rules the debug surface applies (the
+# import-order record is a Python-subprocess drop).
+bike_add_reference_test(native_platform_blas
+  SOURCES test_native_platform_blas.cpp
+  LIBRARIES bike_native_numerics
+  LABELS t53 platform numerics)

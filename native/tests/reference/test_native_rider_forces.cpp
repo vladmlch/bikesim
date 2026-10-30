@@ -44,6 +44,7 @@
 #include "terrain/profile.hpp"
 #include "writer_config.hpp"
 #include "writers/resistance.hpp"
+#include "writers/rider_forces.hpp"
 #include "writers/tire_common.hpp"
 
 namespace {
@@ -218,11 +219,29 @@ void rider_forces_sweep(bt::oracle::Node &golden) {
     // act = np.zeros(model.na) in the source (empty when na==0).
     const std::vector<double> zeros_a(
         static_cast<std::size_t>(model->na), 0.);
+    const auto bitwise_eq = [](double a, double b) {
+        return std::bit_cast<std::uint64_t>(a) ==
+               std::bit_cast<std::uint64_t>(b);
+    };
     auto compare = [&](const std::vector<double> &qpos,
                        const std::vector<double> &qvel,
                        const std::string &label) {
         st.set_state(qpos, qvel, zeros_a, zeros_v, 0.);
-        golden.f64(st.rider_forces_qfrc(), "rider_forces " + label);
+        const auto row = st.rider_forces_qfrc();
+        // Overwrite check: two identical compute_into calls into
+        // differently dirtied caller buffers must bitwise reproduce the
+        // recorded row — untouched DOFs are sentinel-proofed so a missing
+        // fill or an accumulating write is caught here.
+        std::vector<double> first(row.size(), -77.5),
+                second(row.size(), 313.25);
+        st.rider_forces().compute_into(st.data(), first);
+        st.rider_forces().compute_into(st.data(), second);
+        bt::require(std::ranges::equal(first, second, bitwise_eq) &&
+                        std::ranges::equal(first, row, bitwise_eq),
+                    "compute_into overwrites caller storage at "
+                    "rider_forces " +
+                            label);
+        golden.f64(first, "rider_forces " + label);
     };
     for (const PathSpec &p : paths) {
         const double bound = p.preload + p.offset;

@@ -266,10 +266,11 @@ void bind_research(nb::module_ &module) {
             new (self) NativeResearchRuntime(std::move(ride), std::move(config), std::move(tape), std::move(startup));
         }, nb::arg("model_path"), nb::arg("config"), nb::arg("state"), nb::arg("research"),
            nb::arg("noise"), nb::arg("dropout_uniform"), nb::arg("sensor_state"))
-        .def("begin_control", [](NativeResearchRuntime &self, nb::handle control, nb::handle front, nb::handle rear) {
+        .def("begin_control", [](NativeResearchRuntime &self, nb::handle control,
+                                 nb::handle front_brake_demand, nb::handle rear_brake_demand) {
             const auto command = rider::parse_intent_control(control, "control");
-            self.begin_control(command, wire::finite_real(front, "front_brake_demand"),
-                               wire::finite_real(rear, "rear_brake_demand"));
+            self.begin_control(command, wire::finite_real(front_brake_demand, "front_brake_demand"),
+                               wire::finite_real(rear_brake_demand, "rear_brake_demand"));
         }, nb::arg("control"), nb::arg("front_brake_demand") = 0., nb::arg("rear_brake_demand") = 0.)
         .def("advance_control", [](NativeResearchRuntime &self, nb::handle wall_budget,
                                   nb::handle target) -> nb::object {

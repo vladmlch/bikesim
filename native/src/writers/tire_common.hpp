@@ -48,7 +48,10 @@ struct TireSnapshot {
     std::int64_t interval_id{};
     std::string backend;
     bool geometric_contact{};
-    std::array<double, 3> wheel_axis_m{};
+    // Contact reference position — the geom_xpos point the contact patches
+    // are measured against, not the wheel's literal axis or hub. The wire key
+    // keeps the historical `wheel_axis_m` spelling; see step.cpp.
+    std::array<double, 3> reference_position_world_m{};
     std::vector<TirePatch> patches;
     double effective_radius_m{};
 };

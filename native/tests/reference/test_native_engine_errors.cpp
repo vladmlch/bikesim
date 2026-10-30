@@ -686,7 +686,7 @@ void test_actual_engine_allocation_error_is_caught_in_c_contract() {
             BIKE_ENGINE_ERRORS_REPO_ROOT, options);
         bt::require(result.exit_code == 0,
                     (std::string("allocation probe exits cleanly: ") += operation).c_str());
-        bt::require(result.out.find("fatal allocation") != std::string::npos,
+        bt::require(result.stdout_text.find("fatal allocation") != std::string::npos,
                     (std::string("allocation probe reports the C-contract verdict: ") +=
                      operation)
                         .c_str());
@@ -728,7 +728,7 @@ void test_configure_rejects_unsupported_installed_mujoco_version() {
          "-DBIKE_BUILD_PYTHON_BINDINGS=OFF",
          "-DBIKE_BUILD_GUI=OFF"},
         BIKE_ENGINE_ERRORS_REPO_ROOT, options);
-    const std::string combined = result.out + result.err;
+    const std::string combined = result.stdout_text + result.stderr_text;
     bt::require(result.exit_code != 0,
                 "configure refuses a wrong-version MuJoCo dependency root");
     bt::require(combined.find("mujoco") != std::string::npos,

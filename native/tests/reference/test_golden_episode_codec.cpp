@@ -122,7 +122,7 @@ void artifact_contract() {
     bool exists_rejected = false;
     try { golden::save(episode, scratch.root / "saved"); } catch (const std::system_error &) { exists_rejected = true; }
     bt::require(exists_rejected, "save refuses an existing artifact directory");
-    auto old = io::parse_npz(io::read_numpy_bytes(scratch.root / "saved/episode.npz"));
+    auto old = io::parse_npz(io::read_bounded_file_bytes(scratch.root / "saved/episode.npz"));
     std::erase_if(old, [](const auto &item) { return item.first == "qfrc_applied"; });
     const auto bytes = io::encode_npz(old);
     std::filesystem::remove(scratch.root / "saved/episode.npz");

@@ -8,7 +8,6 @@ from bike_sim.physics.freehub import Freehub
 from bike_sim.physics.motor import AssistController
 from bike_sim.physics.pedaling import human_crank_torque, PedalingPolicy
 from bike_sim.physics.shifting import CadenceShifter
-from bike_sim.physics.battery import Battery, limit_torque_by_energy, motor_electrical_power
 from bike_sim.physics.checks import derived, derived_array, scalar
 from bike_sim.sim.ride.physical_mapping import resolve_id
 from bike_sim.sim.ride.ideal_freehub import IdealFreehubConstraint
@@ -83,7 +82,6 @@ class DrivetrainForceApplier:
         self.shifting = CadenceShifter(config.gearing, config.shifting)
         self.shift_time_s = None
         self.assist = AssistController(**asdict(config.assist))
-        self.battery = Battery(config.battery.energy_j)
         self.last_time_s = None
         self.reference = None
         self.last = {}
@@ -154,12 +152,12 @@ class DrivetrainForceApplier:
             _, self.psi = chain_geometry(cf, cr, rf, rr, up_xz=up)
             self.reference = chain_extension(cf,cr,rf,rr,tf,tr,0.,up_xz=up,psi_reference=self.psi)
             self.hub.reset()
-        self.assist.reset(); self.battery.reset()
+        self.assist.reset()
         self.pedaling.reset()
         self.pending_actuation = None
         self.last_time_s = None
         self.last = {'chain_energy_j':0., 'freehub_energy_j':0., 'motor_torque_nm':0.,
-                     'human_torque_nm':0., 'electrical_power_w':0., 'freehub_torque_nm':0.,
+                     'human_torque_nm':0., 'freehub_torque_nm':0.,
                      'motor_freewheel_engaged':False, 'motor_freewheel_torque_nm':0.,
                      'motor_freewheel_dissipation_power_w':0.}
         self.last.update(self._shift_diagnostics())
@@ -238,10 +236,10 @@ class DrivetrainForceApplier:
                 'freehub': .5*self.hub.k*max(phi-boundary, 0.)**2}
 
     def settle_actuation(self, model, data):
-        """Debit only delivered, solved shaft effort at the saved input velocity.
+        """Settle the solved shaft effort against the reserved ceiling.
 
         Stage then publish, in the native writer's order: pending validation
-        and the detached battery debit happen before any solve, telemetry
+        happens before any solve, telemetry
         accumulates on a detached dict, and every live field moves only
         after validation has fully passed — a rejected settle or a boxing
         failure leaves the drivetrain exactly as found.
@@ -250,24 +248,14 @@ class DrivetrainForceApplier:
         # solves: a rejected settle publishes nothing, not even the
         # transmissions' own solve telemetry.
         pending = self.pending_actuation
-        torque = delivered_power = 0.
-        store = None
+        torque = 0.
         if pending is not None:
-            requested, omega, dt, enabled = pending
+            requested, omega, enabled = pending
             aid = self.actuators['mid_drive']
             torque = float(data.actuator_force[aid]) if aid >= 0 else 0.
             if torque < -1e-10 or torque > requested+1e-8:
                 raise ArithmeticError('solved motor effort violates the reserved effort ceiling')
             torque = max(torque, 0.)
-            cfg = self.config.battery
-            power = motor_electrical_power(torque, omega, cfg.copper_w_per_nm2,
-                cfg.speed_w_per_rad_s2, cfg.idle_w, enabled and torque > 0.)
-            if cfg.enabled:
-                if power*dt > self.battery.energy_j+max(1e-10, self.battery.energy_j*1e-12):
-                    raise ArithmeticError('solved motor energy exceeds available battery storage')
-                delivered_power, store = self.battery.debit(power, dt)
-            else:
-                delivered_power = power
         # Phase 2 — solves plus staged telemetry. The geometric hub stages
         # its own candidate so a failure in any later step publishes
         # nothing — not even the transmissions' solve telemetry (the ideal
@@ -312,14 +300,12 @@ class DrivetrainForceApplier:
             staged.update(hub_solve[1] if hub_solve is not None
                           else getattr(self.ideal_hub,'diagnostics',{}))
         if pending is not None:
-            energy_j = store[0] if store is not None else self.battery.energy_j
             staged.update(motor_torque_nm=torque, motor_shaft_power_w=torque*omega,
-                          electrical_power_w=delivered_power, battery_energy_j=energy_j,
-                          motor_enabled=enabled and torque > 0., battery_empty=energy_j == 0.)
+                          motor_enabled=enabled and torque > 0.)
         new_last = dict(self.last)
         new_last.update(staged)
         # Phase 3 — publish in the native commit's order: transmission
-        # candidates, telemetry, battery, assist, pending release. Every
+        # candidates, telemetry, assist, pending release. Every
         # store below is a plain attribute/reference write — nothing left
         # can fail mid-publication.
         if hub_solve is not None:
@@ -327,8 +313,6 @@ class DrivetrainForceApplier:
         self.last = new_last
         if pending is None:
             return transmission
-        if store is not None:
-            self.battery.publish(store)
         self.assist.torque = torque
         self.pending_actuation = None
         return transmission
@@ -354,7 +338,6 @@ class DrivetrainForceApplier:
             probe = copy.copy(self)
             probe.hub = copy.deepcopy(self.hub)
             probe.assist = copy.deepcopy(self.assist)
-            probe.battery = copy.deepcopy(self.battery)
             probe.pedaling = copy.deepcopy(self.pedaling)
             probe.shifting = copy.deepcopy(self.shifting)
             probe.pending_actuation = None
@@ -430,20 +413,12 @@ class DrivetrainForceApplier:
         request = (assist.step(assist_sensor,cadence,speed_mps,braking,dt,
                                torque_request_nm=control.motor_torque_nm,shaft_rpm=shaft_rpm)
                    if active and self.drive_mode in ('crank_effort','articulated_effort') else 0.)
-        battery_cfg = self.config.battery
-        a,b,idle = battery_cfg.copper_w_per_nm2,battery_cfg.speed_w_per_rad_s2,battery_cfg.idle_w
-        budget = self.battery.energy_j/dt
         safety_request = request if control.motor_limit_nm is None else min(request, control.motor_limit_nm)
         limited_request = safety_request
-        delivered = (limit_torque_by_energy(limited_request,omega_shaft,a,b,idle,budget)
-                     if battery_cfg.enabled else limited_request)
+        delivered = limited_request
         enabled = active and delivered > 0. and not braking
         if not enabled:
             delivered = 0.
-        electrical = motor_electrical_power(delivered,omega_shaft,a,b,idle,enabled)
-        if battery_cfg.enabled and electrical > budget+max(1e-10,abs(budget)*1e-12):
-            raise ArithmeticError('delivered motor torque exceeds the battery budget')
-        actual_electrical = 0.  # settled from data.actuator_force after mj_step
         for name, force in components.items():
             derived_array(force, f'DrivetrainForceApplier.{name}')
         if not self.simplified:
@@ -451,7 +426,7 @@ class DrivetrainForceApplier:
             deflection = max(float(data.qpos[qc]-data.qpos[qw])-hub.boundary,0.)
         chain_loss = max(0., derived((tension-self.config.chain_k_n_m*max(extension,0.))*extension_rate, 'DrivetrainForceApplier.chain_dissipation'))
         hub_loss = (0. if self.simplified else max(0., derived((torque-hub.k*deflection)*relative_rate, 'DrivetrainForceApplier.freehub_dissipation')))
-        pending = (delivered, omega_shaft, dt, enabled) if active else None
+        pending = (delivered, omega_shaft, enabled) if active else None
         ctrl_writes = [(self.actuators[name], value)
                        for name, value in (('human_crank',human),('mid_drive',delivered))]
         if self.simplified:
@@ -485,9 +460,7 @@ class DrivetrainForceApplier:
             'motor_limit_nm':control.motor_limit_nm,
             'motor_control_source':'assist' if control.motor_torque_nm is None else 'external_request',
             'safety_limited':safety_request < request,
-            'motor_shaft_power_w':delivered*omega_shaft, 'electrical_power_w':actual_electrical,
-            'battery_energy_j':self.battery.energy_j, 'motor_enabled':enabled,
-            'energy_limited':delivered < limited_request, 'battery_empty':self.battery.energy_j==0.,
+            'motor_shaft_power_w':delivered*omega_shaft, 'motor_enabled':enabled,
             'assist_mode':assist.mode, 'assist_gain':assist.last_gain,
         }
         last.update(self._shift_diagnostics())
@@ -519,7 +492,6 @@ class DrivetrainForceApplier:
                      'shift_count', 'direction', 'from_teeth', 'cadence_ema',
                      'required_ema'),
         'assist': ('torque', 'pedaling', 'last_gain'),
-        'battery': ('initial_energy_j', 'energy_j', 'drawn_energy_j'),
         'hub': ('boundary', 'energy_j', 'torque_nm'),
     }
 
@@ -575,7 +547,7 @@ class DrivetrainForceApplier:
             'last': copy.deepcopy(self.last),
             'probe_last': copy.deepcopy(getattr(self, 'probe_last', None)),
             'pending_actuation': (None if pending is None else dict(zip(
-                ('requested', 'omega', 'dt', 'enabled'), pending))),
+                ('requested', 'omega', 'enabled'), pending))),
             'ideal_hub': self._transmission_state(self.ideal_hub, 'ideal_hub', model),
             'clutch': self._transmission_state(self.clutch, 'clutch', model),
             'freewheel': self._transmission_state(self.freewheel, 'freewheel', model),

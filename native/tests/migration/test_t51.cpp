@@ -138,7 +138,29 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         bt::invalid([] { (void)batch::expand_spec(bike::io::parse_json(R"({"junk":{}})")); });
         bt::require(batch::parse_seeds("1-3,7,2") == std::vector<std::string>{"1", "2", "3", "7"}, "sweep seed order deduplicates without scheduling");
         bt::require(batch::parse_seeds("18446744073709551616-18446744073709551617") == std::vector<std::string>{"18446744073709551616", "18446744073709551617"}, "wide seeds do not pass through double/int64");
-        bt::require(bike::io::canonical_json(batch::tail_json("diagnostic\n{\"outcome\":\"ok\"}\n")) == R"({"outcome":"ok"})", "worker JSON tail extraction");
+        bt::require(batch::parse_stdout_summary("progress\n").status ==
+            batch::SummaryStatus::missing, "no summary candidate");
+        bt::require(batch::parse_stdout_summary("progress\n{broken}\n").status ==
+            batch::SummaryStatus::malformed, "candidate was rejected");
+        const auto parsed = batch::parse_stdout_summary("progress\n{\"outcome\":\"ok\"}\n");
+        bt::require(parsed.status == batch::SummaryStatus::valid &&
+            bike::io::canonical_json(parsed.value) == R"({"outcome":"ok"})",
+            "terminal summary preserves exact parsed value");
+        // Terminal-tail selection stays intact: a candidate is the last line
+        // that begins '{' plus the stream remainder; valid JSON followed by
+        // trailing text is malformed, not an earlier "convenient" document.
+        bt::require(batch::parse_stdout_summary("{\"a\":1}\n{\"b\":2}\n").status ==
+            batch::SummaryStatus::valid &&
+            bike::io::canonical_json(batch::parse_stdout_summary("{\"a\":1}\n{\"b\":2}\n").value) ==
+            "{\"b\":2}", "the last candidate wins even when earlier lines are also valid JSON");
+        bt::require(batch::parse_stdout_summary("{\"a\":1}\n{broken}\n").status ==
+            batch::SummaryStatus::malformed, "a rejected last candidate never falls back to an earlier valid document");
+        bt::require(batch::parse_stdout_summary("progress\n{\"a\":1}\ntrailing\n").status ==
+            batch::SummaryStatus::malformed, "trailing text after valid JSON is malformed");
+        bt::require(batch::parse_stdout_summary("").status == batch::SummaryStatus::missing &&
+            batch::parse_stdout_summary("{}\n").status == batch::SummaryStatus::valid,
+            "empty stdout is missing while a bare document line is valid");
+        bt::require(batch::default_worker_count() >= 1, "worker discovery always returns at least one");
         bt::require(argc == 2, "native test child is supplied by CTest");
         Directory const output;
         const auto supplied=bike::platform::main_arguments(argc,argv);
@@ -151,11 +173,68 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         const std::string literal = "Путь с пробелами `literal` $(literal)";
         const std::vector<batch::Job> echo{{.id="literal", .argv={child, "echo", literal}}, {.id="missing", .argv={(output.path / "missing-binary").string()}}};
         const auto echoed = batch::execute(echo, 2, options);
-        bt::require(echoed[0].out == literal + "\n" && echoed[1].exit_code == -1, "argv is literal and spawn failure is a result");
+        bt::require(echoed[0].stdout_text == literal + "\n" && echoed[1].exit_code == -1, "argv is literal and spawn failure is a result");
         const auto file = output.path / "exclusive output.txt";
         const std::vector<batch::Job> write{{.id="write", .argv={child, "write", file.string(), "first"}}};
         bt::require(batch::execute(write, 1, options)[0].exit_code == 0, "exclusive child output succeeds once");
         bt::require(batch::execute(write, 1, options)[0].exit_code == 2 && bt::text(file) == "first", "collision preserves prior output");
+        // Worker stdout/stderr stay separate result fields, including failure.
+        const std::vector<batch::Job> streams{{.id="out", .argv={child, "echo", "stdout-bytes"}},
+            {.id="err", .argv={child, "bogus-mode", "x"}}};
+        const auto captured = batch::execute(streams, 2, options);
+        bt::require(captured[0].stdout_text == "stdout-bytes\n" && captured[0].stderr_text.empty() &&
+            captured[1].stdout_text.empty() && captured[1].exit_code == 2 &&
+            captured[1].stderr_text.find("unknown child operation") != std::string::npos,
+            "worker stdout and stderr stay separate, including on failure");
+        // Parse status propagates per result: a {broken} tail line is a
+        // malformed candidate, a {ok} tail parses, and a spawn failure has no
+        // candidate at all — none of these change the recorded exit code.
+        const std::vector<batch::Job> summaries{
+            {.id="malformed", .argv={child, "echo", "{broken}"}},
+            {.id="valid", .argv={child, "echo", R"({"outcome":"ok"})"}},
+            {.id="spawn-fail", .argv={(output.path / "missing-binary-2").string()}}};
+        const auto parsed_results = batch::execute(summaries, 2, options);
+        bt::require(parsed_results[0].summary_status == batch::SummaryStatus::malformed &&
+            bike::io::is_null(parsed_results[0].summary) &&
+            parsed_results[1].summary_status == batch::SummaryStatus::valid &&
+            bike::io::canonical_json(parsed_results[1].summary) == R"({"outcome":"ok"})" &&
+            parsed_results[2].summary_status == batch::SummaryStatus::missing &&
+            parsed_results[2].exit_code == -1,
+            "summary_status separates malformed/valid/missing without redefining the business result");
+        // Serialized result contract: "out" is the job output *path* (not the
+        // captured stdout), "wall_s" the rounded monotonic duration, and the
+        // failure tail selects "stderr_tail" vs "error" by exit sign.
+        batch::Job recorded; recorded.id = "job-7"; recorded.index = 7;
+        recorded.argv = {"--seed", "7"}; recorded.output = output.path / "job-7";
+        recorded.params = bike::io::parse_json(R"({"duration":"0.5"})");
+        batch::Result outcome; outcome.id = "job-7"; outcome.exit_code = 3;
+        outcome.wall_duration_s = 1.23456; outcome.stdout_text = "OUT\n"; outcome.stderr_text = "ERR\n";
+        outcome.summary = bike::io::parse_json(R"({"outcome":"failed","metrics":{"x":1}})");
+        const auto record = batch::result_record(recorded, outcome);
+        bt::require(bike::io::as_int64(member(record, "index"), "index") == 7 &&
+            bike::io::as_string(member(record, "name"), "name") == "job-7" &&
+            bike::io::as_int64(member(record, "exit"), "exit") == 3 &&
+            bike::io::as_double(member(record, "wall_s"), "wall_s") == 1.235 &&
+            bike::io::as_string(member(record, "out"), "out") == recorded.output.string() &&
+            bike::io::as_string(member(record, "stderr_tail"), "stderr_tail") == "ERR\n" &&
+            bike::io::as_string(member(record, "outcome"), "outcome") == "failed" &&
+            bike::io::canonical_json(member(record, "params")) == R"({"duration":"0.5"})" &&
+            bike::io::as_array(member(record, "argv"), "argv").size() == 2,
+            "result_record preserves the external name/index/out/exit/wall_s/params/argv keys");
+        batch::Result spawned = outcome; spawned.exit_code = -1;
+        const auto spawn_record = batch::result_record(recorded, spawned);
+        bt::require(bike::io::as_string(member(spawn_record, "error"), "error") == "ERR\n" &&
+            !bike::io::find_member(bike::io::as_object(spawn_record, "record"), "stderr_tail"),
+            "a negative exit records 'error', never 'stderr_tail'");
+        const std::vector<batch::Job> sum_jobs{recorded};
+        const std::vector<batch::Result> sum_results{outcome};
+        const auto summary = batch::summarize(sum_jobs, sum_results, 2.5,
+            output.path / "batch_results.jsonl", false, 4);
+        for (const auto key : {"jobs", "exit_codes", "workers", "thread_policy",
+                "elapsed_s", "worker_wall_s", "requested_sim_seconds",
+                "throughput_x", "results", "interrupted"})
+            bt::require(bike::io::find_member(bike::io::as_object(summary, "summary"), key) != nullptr,
+                std::string("batch summary keeps the serialized key: ") + key);
         std::stop_source cancellation; options.cancellation = cancellation.get_token();
         std::jthread const cancel([&] { std::this_thread::sleep_for(std::chrono::milliseconds(50)); cancellation.request_stop(); });
         const std::vector<batch::Job> sleepers{{.id="running", .argv={child, "sleep", "1000"}}, {.id="queued", .argv={child, "sleep", "1000"}}};

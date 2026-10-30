@@ -216,7 +216,6 @@ cfg::SimulationPhysicsConfig welded_profile() {
     assist.torque_curve = std::vector<std::array<double, 2>>{
         {0.0, 85.0}, {120.0, 85.0}, {120.1, 47.7}, {180.0, 0.0}};
     assist.engage_torque_nm = 4.0;
-    c.drive.battery.enabled = false;
     c.drive.gearing.front_teeth = 22;
     c.drive.gearing.rear_teeth = 51;
     auto& shifting = c.drive.shifting;
@@ -629,7 +628,6 @@ void test_defaults() {
                     c.drive.assist.max_power == 500. &&
                     c.drive.assist.tau == .05 &&
                     !c.drive.assist.torque_curve.has_value() &&
-                    c.drive.battery.enabled &&
                     !c.drive.pedaling.enabled &&
                     !c.drive.shifting.enabled &&
                     c.drive.shifting.cassette.size() == 12,
@@ -717,7 +715,7 @@ void test_schema() {
     bt::require(io::as_array(tires, "fields.tires.fields").size() == 9,
                 "tires field count");
     const Value& drive = member(fields[7], "fields", "fields.drive");
-    bt::require(io::as_array(drive, "fields.drive.fields").size() == 22,
+    bt::require(io::as_array(drive, "fields.drive.fields").size() == 21,
                 "drive field count");
     bt::require(fields_named(fields[9], "articulated").size() == 70,
                 "articulated field count");

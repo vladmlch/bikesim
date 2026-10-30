@@ -302,7 +302,7 @@ class PhysicalRideDriver:
                 crashed=bool(frame.outcome and frame.outcome.startswith('crash')),
                 balance_lost=balance is not None, balance_lost_at_m=balance),
             equilibrium=self.equilibrium, energy=accounting['energy'],
-            model_status=frame.model_status, battery_energy_j=endpoint['battery_energy_j'],
+            model_status=frame.model_status,
             component_work_j=history['work_j'], airtime_threshold_s=history['airtime_s'],
             duration_s=history['duration_s']))
 

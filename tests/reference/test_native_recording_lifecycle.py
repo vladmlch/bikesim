@@ -490,20 +490,16 @@ def test_derived_transitions_cover_shift_coast_and_limiter_gates():
     episode = FakeEpisode(1, [
         drive_row(0, shift_active=False, shift_direction='none',
                   freehub_engaged=True, coasting_reason=None,
-                  safety_limited=False, energy_limited=False,
-                  motor_enabled=True, battery_empty=False),
+                  safety_limited=False, motor_enabled=True),
         drive_row(1, shift_active=True, shift_direction='down',
                   freehub_engaged=False, coasting_reason='shift',
-                  safety_limited=False, energy_limited=False,
-                  motor_enabled=True, battery_empty=False),
+                  safety_limited=False, motor_enabled=True),
         drive_row(2, shift_active=False, shift_direction='none',
                   freehub_engaged=False, coasting_reason='coast',
-                  safety_limited=True, energy_limited=False,
-                  motor_enabled=False, battery_empty=False),
+                  safety_limited=True, motor_enabled=False),
         drive_row(3, shift_active=False, shift_direction='none',
                   freehub_engaged=True, coasting_reason=None,
-                  safety_limited=False, energy_limited=True,
-                  motor_enabled=False, battery_empty=True),
+                  safety_limited=False, motor_enabled=False),
     ])
     events = list(iter_derived_events(episode, 0, start_event_id=0,
                                       received_wall_s=0.))
@@ -528,9 +524,7 @@ def test_derived_transitions_cover_shift_coast_and_limiter_gates():
     assert [e.values['interval_id'] for e in limits] == [2, 3]
     assert limits[0].values['changes'] == {'safety_limited': True,
                                            'motor_enabled': False}
-    assert limits[1].values['changes'] == {'safety_limited': False,
-                                           'energy_limited': True,
-                                           'battery_empty': True}
+    assert limits[1].values['changes'] == {'safety_limited': False}
     assert all(e.values['classification'] == 'derived_transition'
                for e in events)
     assert all(e.values['derivation_rule'] == DERIVED_TRANSITION_RULE

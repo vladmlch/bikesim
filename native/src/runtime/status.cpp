@@ -165,9 +165,7 @@ bool energy_quality_ok(const WireObject &energy) {
                           ? read("source_positive_work_j", 0.) : read("active_work_j", 0.));
     if (scale == 0.) throw std::invalid_argument("energy quality requires a nonzero scale");
     const double ratio = std::abs(read("residual_j", 0.)) / scale;
-    const double electrical = read("electrical_residual_j", 0.);
-    const double budget = std::max(1., std::abs(read("electrical_work_j", 0.)));
-    return ratio <= .05 && std::abs(electrical) <= 1e-7 * budget;
+    return ratio <= .05;
 }
 
 void ModelStatus::observe(std::int64_t interval_id, double time_s,

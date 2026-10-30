@@ -35,16 +35,15 @@ SCHEMAS = {
     'tire.surface_map.sections': ('start_m end_m surface', ''),
     'rider_forces': ('paths', ''),
     'rider_forces.paths': ('name joint stiffness_n_m damping_ns_m preload_deflection_m offset_m unilateral', ''),
-    'drive': ('gearing pedaling shifting assist battery hub_stiffness_nm_rad hub_damping_nm_s drive_mode transmission_model human_torque_nm torque_ripple crank_phase_rad chain_k_n_m chain_c_ns_m bearing_c_nms_rad rotor_inertia_kgm2 motor_clutch brake_ceiling_nm',
+    'drive': ('gearing pedaling shifting assist hub_stiffness_nm_rad hub_damping_nm_s drive_mode transmission_model human_torque_nm torque_ripple crank_phase_rad chain_k_n_m chain_c_ns_m bearing_c_nms_rad rotor_inertia_kgm2 motor_clutch brake_ceiling_nm',
               'brake_hold_torque_nm brake_hold_stiffness_nm_rad brake_hold_damping_nms_rad brake_hold_engage_radps brake_hold_release_radps'),
-    'policies': ('gearing pedaling shifting assist battery hub_stiffness_nm_rad hub_damping_nm_s', ''),
+    'policies': ('gearing pedaling shifting assist hub_stiffness_nm_rad hub_damping_nm_s', ''),
     'drive.gearing': ('front_teeth rear_teeth chain_pitch_m', ''),
     'drive.pedaling': ('enabled coast_above_rpm resume_below_rpm stop_time_s coast_cadence_tau_s mash_cadence_rpm mash_torque_nm effort_slew_nm_s rollback_brake rollback_engage_mps rollback_release_mps rollback_demand', ''),
     'drive.shifting': ('enabled cassette target_cadence_min_rpm target_cadence_max_rpm shift_cooldown_s shift_cut_duration_s torque_factor cadence_smoothing_tau_s upshift_slip_limit_mps upshift_slip_mode', ''),
     'drive.assist': ('gain max_torque max_power tau slew engage_torque_nm gate_min_crank_rad_s cutoff_mps taper_width_mps mode', 'profile torque_curve'),
     'drive.assist.profile': ('mode_gains emtb_full_gain_at_nm', ''),
     'drive.assist.profile.mode_gains': ('eco tour emtb turbo', ''),
-    'drive.battery': ('enabled energy_j copper_w_per_nm2 speed_w_per_rad_s2 idle_w', ''),
     'rider_contacts': ('arm_reach_m saddle_patch_half_length_m pedal_patch_half_length_m support_pad_radius_m support_k_n_m support_c_ns_m pedal_c_ns_m support_tangent_k_n_m support_mu support_length_m grip_k_n_m grip_c_ns_m grip_release_distance_m grip_capture_distance_m grip_capture_speed_mps pedal_attachment saddle_attachment grip_attachment', 'grip_pair_force_limit_n'),
 }
 BOOLEAN = frozenset('enabled lockout_firm legacy_behavior unilateral motor_clutch rollback_brake discretised_brush'.split())
@@ -112,7 +111,7 @@ def validate_mapping(value, name, path):
     for key, item in value.items():
         child = f'{path}.{key}'
         nested = f'{name}.{key}' if name not in ('config', 'policies') else key
-        if name == 'policies' and key in ('gearing', 'pedaling', 'shifting', 'assist', 'battery'):
+        if name == 'policies' and key in ('gearing', 'pedaling', 'shifting', 'assist'):
             nested = f'drive.{key}'
         if key in ('sections', 'paths'):
             for index, row in enumerate(sequence(item, child)):

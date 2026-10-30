@@ -59,7 +59,7 @@ namespace golden = bike::golden;
 
 [[nodiscard]] std::vector<std::byte> fixture_bytes(
         const std::filesystem::path &path) {
-    auto bytes = io::read_numpy_bytes(path);
+    auto bytes = io::read_bounded_file_bytes(path);
     bt::require(!bytes.empty(),
                 "fixture artifact missing or empty: " + path.string());
     return bytes;

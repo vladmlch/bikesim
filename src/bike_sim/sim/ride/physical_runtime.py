@@ -521,8 +521,6 @@ class PhysicalRuntime:
         self._last_endpoint_mass=mass
         self.initial_energy_j=total
         self.energy_scale_j=max(1.,mass['kinetic_energy_j']+sum(elastic.values()))
-        self.initial_battery_j=self.drive.battery.energy_j
-        self.electrical_work_j=0.
         self.energy = {'mechanical_energy_j':total,'elastic_energy_j':elastic,
                       'residual_j':0.,'energy_scale_j':self.energy_scale_j}
         sim._update_compiled_com_marker()
@@ -791,8 +789,6 @@ class PhysicalRuntime:
                 rider_control_terms=self._held_rider_terms,
                 numerical_constraint_power_w=constraint_powers,
                 loss_step_j=loss_step, mechanical_energy_j=total, elastic_energy_j=elastic,
-                battery_energy_j=self.drive.battery.energy_j,
-                electrical_power_w=self.drive.last.get('electrical_power_w',0.),
                 invalid_controller=bool(self.rider_control is not None and
                     self.rider_control.allocation_diagnostics.get('invalid_controller')),
                 effort_base={} if self.rider_control is None else dict(self.rider_control.effort_diagnostics),
@@ -930,8 +926,6 @@ class PhysicalRuntime:
                 '_last_measurement_source': getattr(self, '_last_measurement_source', None),
                 'initial_energy_j': self.initial_energy_j,
                 'energy_scale_j': self.energy_scale_j,
-                'initial_battery_j': self.initial_battery_j,
-                'electrical_work_j': self.electrical_work_j,
                 'loss_j': self.loss_j, 'active_work_j': self.active_work_j,
                 'external_work_j': self.external_work_j,
                 'solver_work_j': self.solver_work_j,

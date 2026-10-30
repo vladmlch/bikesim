@@ -43,10 +43,10 @@ void test_dry_run_lists_one_command_per_seed() {
         {sweep.string(), "--out", directory.path.string(), "--seeds", "3-5",
          "--dry-run", "--", "--duration", "1"},
         directory.path);
-    bt::require(result.exit_code == 0, "a dry run exits 0: " + result.err);
+    bt::require(result.exit_code == 0, "a dry run exits 0: " + result.stderr_text);
     // lines = [l for l in capsys...out.splitlines() if 'bike-research' in l]
     std::vector<std::string> lines;
-    std::istringstream stream(result.out);
+    std::istringstream stream(result.stdout_text);
     for (std::string line; std::getline(stream, line);)
         if (line.find("bike-research") != std::string::npos) lines.push_back(line);
     bt::require(lines.size() == 3, "one listed command per seed");
@@ -104,6 +104,82 @@ void test_summary_records_return_codes() {
                      io::as_int64(rd::field(row, "returncode"), "returncode"));
     bt::require(runs == std::map<std::int64_t, std::int64_t>({{1, 3}, {2, 0}}),
                 "the summary records every seed's return code");
+    // Silent child: both stream artifacts still land, empty, and the combined
+    // seed-*.log form is gone.
+    for (const auto seed : {"1", "2"}) {
+        const auto job_log = directory.path / "out" / (std::string("seed-") + seed);
+        bt::require(std::filesystem::exists(job_log.string() + ".stdout.log") &&
+            std::filesystem::exists(job_log.string() + ".stderr.log") &&
+            !std::filesystem::exists(job_log.string() + ".log"),
+            "per-seed artifacts split by stream for every seed");
+    }
+}
+
+// Stream-separated per-seed artifacts keep each stream's exact bytes, even
+// without trailing newlines or ASCII-only content.
+void test_stream_artifacts_stay_separate() {
+    Directory directory;
+    const auto stub = directory.path / "stub-noisy.sh";
+    {
+        std::ofstream script(stub);
+        // stdout: "OUT" with no newline; stderr: a UTF-8 tail with no newline.
+        script << "#!/bin/sh\nprintf %s OUT\nprintf %s 'сбой-поток' >&2\n"
+                  "case \" $* \" in *\" --seed 7 \"*) exit 0;; *) exit 4;; esac\n";
+    }
+    std::filesystem::permissions(stub, std::filesystem::perms::owner_all);
+    const auto out = (directory.path / "out").string();
+    const std::array<std::string_view, 6> argv{
+        "--out", std::string_view{out}, "--seeds", "7-8", "--jobs", "1"};
+    std::ostringstream captured_out, captured_err;
+    auto *const restore_out = std::cout.rdbuf(captured_out.rdbuf());
+    auto *const restore_err = std::cerr.rdbuf(captured_err.rdbuf());
+    const auto code = bike::batch::research_sweep(argv, stub);
+    std::cout.rdbuf(restore_out);
+    std::cerr.rdbuf(restore_err);
+    bt::require(code == 1, "the mixed exit codes still drive the sweep exit");
+    const auto root = directory.path / "out";
+    bt::require(bt::text(root / "seed-7.stdout.log") == "OUT" &&
+        bt::text(root / "seed-7.stderr.log") == "сбой-поток" &&
+        bt::text(root / "seed-8.stdout.log") == "OUT" &&
+        bt::text(root / "seed-8.stderr.log") == "сбой-поток",
+        "each raw artifact holds exactly its own stream's bytes, newline or not");
+    bt::require(captured_err.str().find("batch.summary.malformed") == std::string::npos,
+        "a missing optional summary does not warn");
+}
+
+// A child that prints a broken terminal JSON line reports one diagnostic
+// event per job and still records the job's own exit code.
+void test_malformed_summary_warns_once() {
+    Directory directory;
+    const auto stub = directory.path / "stub-broken.sh";
+    {
+        std::ofstream script(stub);
+        script << "#!/bin/sh\nprintf '%s\\n' 'progress' '{broken}'\nexit 0\n";
+    }
+    std::filesystem::permissions(stub, std::filesystem::perms::owner_all);
+    const auto out = (directory.path / "out").string();
+    const std::array<std::string_view, 6> argv{
+        "--out", std::string_view{out}, "--seeds", "5", "--jobs", "1"};
+    std::ostringstream captured_out, captured_err;
+    auto *const restore_out = std::cout.rdbuf(captured_out.rdbuf());
+    auto *const restore_err = std::cerr.rdbuf(captured_err.rdbuf());
+    const auto code = bike::batch::research_sweep(argv, stub);
+    std::cout.rdbuf(restore_out);
+    std::cerr.rdbuf(restore_err);
+    bt::require(code == 0, "a malformed summary does not turn exit 0 into failure");
+    const auto diagnostics = captured_err.str();
+    bt::require(diagnostics.find("WARN batch.summary.malformed") != std::string::npos &&
+        diagnostics.find("batch.summary.malformed") ==
+        diagnostics.rfind("batch.summary.malformed"),
+        "a malformed expected summary emits exactly one warning event");
+    bt::require(diagnostics.find("{broken}") == std::string::npos,
+        "the warning does not repeat raw worker stdout");
+    const auto summary =
+        io::parse_recording_json(bt::text(directory.path / "out" / "sweep.json"));
+    const auto &runs = io::as_array(rd::field(summary, "runs"), "runs");
+    bt::require(runs.size() == 1 &&
+        io::as_int64(rd::field(runs[0], "returncode"), "returncode") == 0,
+        "sweep.json keeps the external returncode key for the malformed job");
 }
 
 } // namespace
@@ -113,5 +189,7 @@ int main() {
         test_dry_run_lists_one_command_per_seed();
         test_seed_ranges_and_lists_parse();
         test_summary_records_return_codes();
+        test_stream_artifacts_stay_separate();
+        test_malformed_summary_warns_once();
     });
 }

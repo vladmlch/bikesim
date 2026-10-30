@@ -47,7 +47,6 @@ def make_physical_view(sim, *, requested_scale=1, achieved_rtf=None):
         z_m=float(sim.data.xpos[sim._frame_body_id, 2]),
         torso_pitch_deg=hud._rider_body_pitch_deg(sim, 'rider_torso'),
         root_x_dofadr=int(sim.root_x_dofadr), rider_joint_angles_rad=joints,
-        battery_energy_j=float(sim.physical.drive.battery.energy_j),
         balance_lost_at_m=None if sim.physical.balance_monitor.event is None else
             float(sim.physical.balance_monitor.event.position_m))
     return PhysicalViewState(channels={} if sample is None else sample.channels,

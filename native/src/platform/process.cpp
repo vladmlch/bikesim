@@ -186,7 +186,7 @@ ProcessResult run(const std::vector<std::string> &argv,
                   const ProcessOptions &options) {
     const std::string &cwd_text = cwd.native();
     validate_run_inputs(argv, cwd_text, cwd, options);
-    if (options.cancellation.stop_requested()) return {.exit_code=130, .out={}, .err={}};
+    if (options.cancellation.stop_requested()) return {.exit_code=130, .stdout_text={}, .stderr_text={}};
 
     // On platforms without an atomic pipe(O_CLOEXEC), another concurrent
     // platform::run must not spawn between pipe() and fcntl(). Such a child
@@ -281,8 +281,8 @@ ProcessResult run(const std::vector<std::string> &argv,
     };
     ProcessResult result;
     std::array<DrainEnd, 2> drains {
-        {DrainEnd{.fd = out_read.fd, .owner = &out_read, .sink = &result.out},
-         DrainEnd{.fd = err_read.fd, .owner = &err_read, .sink = &result.err}}};
+        {DrainEnd{.fd = out_read.fd, .owner = &out_read, .sink = &result.stdout_text},
+         DrainEnd{.fd = err_read.fd, .owner = &err_read, .sink = &result.stderr_text}}};
 
     int status = 0;
     int open_fds = 2;

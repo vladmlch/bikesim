@@ -112,7 +112,7 @@ void test_activated_zero_hbo_denominator_rejected() {
 }
 void test_mutated_policy_configs_are_rejected() {
     const auto original = drive_reference::projected_policies(drive_reference::turbo_source());
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < 10; ++i) {
         auto candidate = original;
         switch (i) {
         case 0: candidate.pedaling.stop_time_s = 0.; break;
@@ -125,7 +125,6 @@ void test_mutated_policy_configs_are_rejected() {
         case 7: candidate.assist.slew = 0.; break;
         case 8: candidate.assist.gain = -1.; break;
         case 9: candidate.assist.taper_width_mps = 0.; break;
-        case 10: candidate.battery.energy_j = -1.; break;
         default: throw std::logic_error("invalid fixture case");
         }
         bt::invalid([&] { drivetrain::validate(candidate); });
@@ -135,9 +134,6 @@ void test_mutated_policy_configs_are_rejected() {
 void test_policy_derived_overflow_is_shared() {
     drivetrain::PolicySet policies(drive_reference::projected_policies(drive_reference::turbo_source()));
     overflow([&] { (void)policies.assist.step(1e308, 80., 0., false, .001); });
-    overflow([&] { (void)policies.battery.draw(1e308, 10.); });
-    const auto& battery = policies.config.battery;
-    overflow([&] { (void)drivetrain::motor_electrical_power(1e308, 1., battery.copper_w_per_nm2, battery.speed_w_per_rad_s2, battery.idle_w, true); });
     policies.hub.set_state({.boundary = 0., .energy_j = 0., .torque_nm = 0.});
     overflow([&] { (void)policies.hub.update(1e308, 0., 0., 0.); });
 }

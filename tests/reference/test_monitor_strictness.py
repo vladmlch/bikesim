@@ -17,19 +17,18 @@ from bike_sim.physics.physical_config import ArticulatedConfig
 def runtime_for_raws(*, strict=True, decimation=1):
     runtime = PhysicalRuntime.__new__(PhysicalRuntime)
     runtime.sim = SimpleNamespace(steps=0)
-    runtime.cfg = SimpleNamespace(articulated=ArticulatedConfig(),
-        drive=SimpleNamespace(battery=SimpleNamespace(enabled=False)))
+    runtime.cfg = SimpleNamespace(articulated=ArticulatedConfig())
     runtime.control_clock = ControlClock(.0005, .005)
     runtime._buffer = PeriodBuffer(10)
     runtime.rider_control = runtime.rider_contacts = None
     runtime.model_status = ModelStatus()
     runtime.history = WorkHistory()
-    runtime.initial_energy_j = runtime.initial_battery_j = 0.
+    runtime.initial_energy_j = 0.
     runtime.energy_scale_j = 1.
     for name in ('loss_j', 'muscle_signed_j', 'muscle_positive_j', 'motor_signed_j',
                  'motor_positive_j', 'constraint_absolute_j', 'solver_work_j',
                  'closure_signed_j', 'closure_absolute_j',
-                 'active_work_j', 'external_work_j', 'electrical_work_j'):
+                 'active_work_j', 'external_work_j'):
         setattr(runtime, name, 0.)
     runtime.set_measurement_decimation(decimation)
     runtime.set_strict(strict)
@@ -40,8 +39,8 @@ def neutral_raw(i, *, violation=(), components=None, qvel=None):
     return RawStep(i, i*.0005, (i+1)*.0005, np.zeros(1),
         np.zeros(1) if qvel is None else np.asarray(qvel), components or {}, {},
         np.zeros(0), np.zeros(1), {}, dict(
-            loss_step_j=0., electrical_power_w=0., mechanical_energy_j=0.,
-            elastic_energy_j={}, battery_energy_j=0., attachment_errors=violation,
+            loss_step_j=0., mechanical_energy_j=0.,
+            elastic_energy_j={}, attachment_errors=violation,
             rider_control_terms={}, full=False, constraint_snapshot=None,
             numerical_constraint_power_w={name:float(force@np.asarray(qvel))
                 for name,force in (components or {}).items() if name in

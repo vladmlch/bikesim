@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
         for (const auto child : {"--failure-child", "--interrupt-child"}) {
             const auto result = bike::platform::run({bike::platform::executable_path().string(), child},
                 std::filesystem::temp_directory_path(), {.cancellation = {}, .timeout_s = 300., .max_output_bytes = std::size_t{1024U} * std::size_t{1024U}});
-            bt::require(result.exit_code == 0, std::string(child) + ": " + result.err + result.out);
+            bt::require(result.exit_code == 0, std::string(child) + ": " + result.stderr_text + result.stdout_text);
         }
     });
 }

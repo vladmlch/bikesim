@@ -109,8 +109,7 @@ FullPlant full_plant(bool clutch = false, double inertia = 0., double speed_kph 
     const auto old = std::make_unique<cfg::PhysicalDriveConfig>(physics.drive);
     physics.drive = cfg::PhysicalDriveConfig{};
     physics.drive.pedaling = old->pedaling; physics.drive.assist = old->assist;
-    physics.drive.battery = old->battery; physics.drive.gearing = old->gearing;
-    physics.drive.shifting = old->shifting;
+    physics.drive.gearing = old->gearing; physics.drive.shifting = old->shifting;
     physics.drive.transmission_model = "ideal_mid_drive";
     physics.drive.motor_clutch = clutch; physics.drive.rotor_inertia_kgm2 = inertia;
     if (inertia > 0.) physics.drive.human_torque_nm = 20.;

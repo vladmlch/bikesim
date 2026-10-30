@@ -6,7 +6,7 @@ import tomllib
 from bike_sim.physics.model_config import SimulationPhysicsConfig, EndStopConfig
 from bike_sim.physics.physical_config import (
     TireParameters,TireBackendConfig,PneumaticTireConfig,PhysicalDriveConfig,AssistConfig,
-    BatteryConfig,ResistanceConfig,ArticulatedConfig,PedalingConfig,ShiftingConfig,
+    ResistanceConfig,ArticulatedConfig,PedalingConfig,ShiftingConfig,
 )
 from bike_sim.physics.tire import TireSpec
 from bike_sim.physics.tyre import TyreSpecs
@@ -27,7 +27,7 @@ CHILDREN={
                            'rear_material':DistributedWheelMaterial},
     DistributedWheelMaterial:{'density':HingeDensity},
     TireParameters:{'material':TireSpec},
-    PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,'battery':BatteryConfig,
+    PhysicalDriveConfig:{'gearing':DrivetrainSpecs,'assist':AssistConfig,
                          'pedaling':PedalingConfig,'shifting':ShiftingConfig},
 }
 

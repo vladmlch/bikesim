@@ -44,17 +44,11 @@ namespace drivetrain {
         std::string mode;
     };
 
-    struct BatteryConfig {
-        bool enabled{};
-        double energy_j{}, copper_w_per_nm2{}, speed_w_per_rad_s2{}, idle_w{};
-    };
-
     struct DrivePolicyConfig {
         GearingConfig gearing;
         PedalingConfig pedaling;
         ShiftingConfig shifting;
         AssistConfig assist;
-        BatteryConfig battery;
         double hub_stiffness_nm_rad{}, hub_damping_nm_s{};
     };
 
@@ -75,10 +69,6 @@ namespace drivetrain {
     struct AssistSnapshot {
         double torque{}, last_gain{};
         bool pedaling{};
-    };
-
-    struct BatterySnapshot {
-        double initial_energy_j{}, energy_j{}, drawn_energy_j{};
     };
 
     struct FreehubSnapshot {

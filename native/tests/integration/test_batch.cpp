@@ -274,11 +274,11 @@ void explicit_serial_job_count_avoids_discovery_and_reports_threads() {
     const auto ran = bike::platform::run({binary.string(), "--spec", spec_path.string(),
         "--out", out.string(), "--jobs", "1"}, tmp, options);
     bt::require(ran.exit_code == 0 || ran.exit_code == 1,
-        "the explicit worker count runs without discovery: " + ran.err);
-    bt::require(ran.out.find("workers=1") != std::string::npos &&
-        ran.out.find("start_method=in-process") != std::string::npos,
+        "the explicit worker count runs without discovery: " + ran.stderr_text);
+    bt::require(ran.stdout_text.find("workers=1") != std::string::npos &&
+        ran.stdout_text.find("start_method=in-process") != std::string::npos,
         "the run announces workers=1 start_method=in-process");
-    const auto report = bike::io::parse_recording_json(ran.out.substr(ran.out.rfind("\n{") + 1));
+    const auto report = bike::io::parse_recording_json(ran.stdout_text.substr(ran.stdout_text.rfind("\n{") + 1));
     const auto& fields = bike::io::as_object(report, "report");
     bt::require(bike::io::as_double(*bike::io::find_member(fields, "workers"), "workers") == 1.,
         "the report records workers=1");
@@ -326,7 +326,7 @@ void actual_two_worker_batch_matches_serial_jobs() {
             "--out", out.string()};
         argv.insert(argv.end(), mode.second.begin(), mode.second.end());
         const auto ran = bike::platform::run(argv, tmp, options);
-        const auto diagnostic = ran.out + ran.err;
+        const auto diagnostic = ran.stdout_text + ran.stderr_text;
         bt::require(ran.exit_code == 0 || ran.exit_code == 1,
             "batch completes in " + std::string(mode.first) + " mode: " + diagnostic);
         const auto rows = read_results(out / "batch_results.jsonl");

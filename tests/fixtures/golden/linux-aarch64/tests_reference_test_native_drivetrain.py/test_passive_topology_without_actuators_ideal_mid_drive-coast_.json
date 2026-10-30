@@ -171,12 +171,12 @@
   "index": 12,
   "kind": "bitwise",
   "label": "$.last#keys",
-  "nbytes": 1066,
+  "nbytes": 993,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
   "offset": 539,
   "rtol": null,
   "shape": [
-   1066
+   993
   ]
  },
  {
@@ -187,7 +187,7 @@
   "label": "$.last.assist_demand_gated",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1605,
+  "offset": 1532,
   "rtol": null,
   "shape": [
    4
@@ -201,7 +201,7 @@
   "label": "$.last.assist_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1609,
+  "offset": 1536,
   "rtol": null,
   "shape": []
  },
@@ -213,7 +213,7 @@
   "label": "$.last.assist_mode",
   "nbytes": 7,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1617,
+  "offset": 1544,
   "rtol": null,
   "shape": [
    7
@@ -227,30 +227,140 @@
   "label": "$.last.assist_sensor_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1624,
+  "offset": 1551,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.last.battery_empty",
-  "nbytes": 5,
+  "label": "$.last.cadence_rpm",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1632,
+  "offset": 1559,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 18,
   "kind": "bitwise",
-  "label": "$.last.battery_energy_j",
+  "label": "$.last.chain_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1567,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.last.chain_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1575,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1583,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_rate_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1591,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "$.last.chain_tension_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1599,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "$.last.coasting_reason",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1607,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "$.last.crank_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1617,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "$.last.crank_target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1625,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.last.crank_target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1629,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.last.drive_shaft_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
   "offset": 1637,
@@ -260,9 +370,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 19,
+  "index": 28,
   "kind": "bitwise",
-  "label": "$.last.cadence_rpm",
+  "label": "$.last.freehub_deflection_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
   "offset": 1645,
@@ -272,9 +382,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 20,
+  "index": 29,
   "kind": "bitwise",
-  "label": "$.last.chain_dissipation_power_w",
+  "label": "$.last.freehub_dissipation_power_w",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
   "offset": 1653,
@@ -284,9 +394,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 21,
+  "index": 30,
   "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
   "offset": 1661,
@@ -295,125 +405,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 22,
-  "kind": "bitwise",
-  "label": "$.last.chain_extension_m",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1669,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 23,
-  "kind": "bitwise",
-  "label": "$.last.chain_extension_rate_mps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1677,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 24,
-  "kind": "bitwise",
-  "label": "$.last.chain_tension_n",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1685,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 25,
-  "kind": "bitwise",
-  "label": "$.last.coasting_reason",
-  "nbytes": 10,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1693,
-  "rtol": null,
-  "shape": [
-   10
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 26,
-  "kind": "bitwise",
-  "label": "$.last.crank_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1703,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 27,
-  "kind": "bitwise",
-  "label": "$.last.crank_target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1711,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.last.crank_target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1715,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.last.drive_shaft_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1723,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1731,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
   "index": 31,
   "kind": "bitwise",
-  "label": "$.last.energy_limited",
+  "label": "$.last.freehub_engaged",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1739,
+  "offset": 1669,
   "rtol": null,
   "shape": [
    5
@@ -424,34 +422,36 @@
   "dtype": "<f8",
   "index": 32,
   "kind": "bitwise",
-  "label": "$.last.freehub_deflection_rad",
+  "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1744,
+  "offset": 1674,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 33,
   "kind": "bitwise",
-  "label": "$.last.freehub_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.last.gear_front_teeth",
+  "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1752,
+  "offset": 1682,
   "rtol": null,
-  "shape": []
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 34,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
+  "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1760,
+  "offset": 1684,
   "rtol": null,
   "shape": []
  },
@@ -460,13 +460,13 @@
   "dtype": "|u1",
   "index": 35,
   "kind": "bitwise",
-  "label": "$.last.freehub_engaged",
-  "nbytes": 5,
+  "label": "$.last.gear_rear_teeth",
+  "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1768,
+  "offset": 1692,
   "rtol": null,
   "shape": [
-   5
+   2
   ]
  },
  {
@@ -474,86 +474,34 @@
   "dtype": "<f8",
   "index": 36,
   "kind": "bitwise",
-  "label": "$.last.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1773,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.last.gear_front_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1781,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 38,
-  "kind": "bitwise",
-  "label": "$.last.gear_ratio",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1783,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 39,
-  "kind": "bitwise",
-  "label": "$.last.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1791,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 40,
-  "kind": "bitwise",
   "label": "$.last.human_command_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1793,
+  "offset": 1694,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.last.human_sensor_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1801,
+  "offset": 1702,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 38,
   "kind": "bitwise",
   "label": "$.last.human_setpoint_nm",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1809,
+  "offset": 1710,
   "rtol": null,
   "shape": [
    4
@@ -562,24 +510,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 43,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.last.human_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1813,
+  "offset": 1714,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 44,
+  "index": 40,
   "kind": "bitwise",
   "label": "$.last.motor_control_source",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1821,
+  "offset": 1722,
   "rtol": null,
   "shape": [
    8
@@ -588,15 +536,67 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 45,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.last.motor_enabled",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1829,
+  "offset": 1730,
   "rtol": null,
   "shape": [
    5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1735,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1743,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1748,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "$.last.motor_limit_nm",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1756,
+  "rtol": null,
+  "shape": [
+   4
   ]
  },
  {
@@ -604,124 +604,72 @@
   "dtype": "<f8",
   "index": 46,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "label": "$.last.motor_limited_request_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1834,
+  "offset": 1760,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "$.last.motor_request_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
+  "offset": 1768,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 48,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
+  "label": "$.last.motor_setpoint_nm",
+  "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1842,
+  "offset": 1776,
   "rtol": null,
   "shape": [
-   5
+   4
   ]
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1847,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 49,
   "kind": "bitwise",
-  "label": "$.last.motor_limit_nm",
-  "nbytes": 4,
+  "label": "$.last.motor_shaft_power_w",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1855,
+  "offset": 1780,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 50,
   "kind": "bitwise",
-  "label": "$.last.motor_limited_request_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1859,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "$.last.motor_request_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1867,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "$.last.motor_setpoint_nm",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1875,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "$.last.motor_shaft_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1879,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 54,
-  "kind": "bitwise",
   "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1887,
+  "offset": 1788,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.last.omits_suspension_coupling",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1895,
+  "offset": 1796,
   "rtol": null,
   "shape": [
    4
@@ -730,24 +678,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.last.required_cadence_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1899,
+  "offset": 1800,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.last.rider_mode",
   "nbytes": 10,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1907,
+  "offset": 1808,
   "rtol": null,
   "shape": [
    10
@@ -756,12 +704,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 58,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.last.safety_limited",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1917,
+  "offset": 1818,
   "rtol": null,
   "shape": [
    5
@@ -770,12 +718,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1922,
+  "offset": 1823,
   "rtol": null,
   "shape": [
    5
@@ -784,12 +732,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 60,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1927,
+  "offset": 1828,
   "rtol": null,
   "shape": [
    1
@@ -798,12 +746,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1928,
+  "offset": 1829,
   "rtol": null,
   "shape": [
    6
@@ -812,12 +760,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 62,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1934,
+  "offset": 1835,
   "rtol": null,
   "shape": [
    2
@@ -826,12 +774,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 63,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1936,
+  "offset": 1837,
   "rtol": null,
   "shape": [
    4
@@ -840,24 +788,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 64,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1940,
+  "offset": 1841,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 61,
   "kind": "bitwise",
   "label": "$.last.transmission_model",
   "nbytes": 17,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1948,
+  "offset": 1849,
   "rtol": null,
   "shape": [
    17
@@ -866,24 +814,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 66,
+  "index": 62,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1965,
+  "offset": 1866,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.pending_actuation",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1973,
+  "offset": 1874,
   "rtol": null,
   "shape": [
    4
@@ -892,26 +840,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 68,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.policies#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 1977,
+  "offset": 1878,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 69,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2025,
+  "offset": 1916,
   "rtol": null,
   "shape": [
    33
@@ -920,24 +868,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 70,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2058,
+  "offset": 1949,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 71,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2066,
+  "offset": 1957,
   "rtol": null,
   "shape": [
    5
@@ -946,74 +894,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 72,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2071,
+  "offset": 1962,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 73,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2079,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 74,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2127,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 75,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2135,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 76,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2143,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 77,
+  "index": 69,
   "kind": "bitwise",
   "label": "$.policies.hub",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2151,
+  "offset": 1970,
   "rtol": null,
   "shape": [
    4
@@ -1022,12 +920,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 78,
+  "index": 70,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2155,
+  "offset": 1974,
   "rtol": null,
   "shape": [
    98
@@ -1036,12 +934,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 79,
+  "index": 71,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2253,
+  "offset": 2072,
   "rtol": null,
   "shape": [
    4
@@ -1050,24 +948,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 80,
+  "index": 72,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2257,
+  "offset": 2076,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 81,
+  "index": 73,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2265,
+  "offset": 2084,
   "rtol": null,
   "shape": [
    5
@@ -1076,24 +974,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 82,
+  "index": 74,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2270,
+  "offset": 2089,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 83,
+  "index": 75,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2278,
+  "offset": 2097,
   "rtol": null,
   "shape": [
    4
@@ -1102,24 +1000,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 84,
+  "index": 76,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2282,
+  "offset": 2101,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 85,
+  "index": 77,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2290,
+  "offset": 2109,
   "rtol": null,
   "shape": [
    113
@@ -1128,12 +1026,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 86,
+  "index": 78,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2403,
+  "offset": 2222,
   "rtol": null,
   "shape": [
    4
@@ -1142,36 +1040,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 87,
+  "index": 79,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2407,
+  "offset": 2226,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 88,
+  "index": 80,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2415,
+  "offset": 2234,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 89,
+  "index": 81,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2423,
+  "offset": 2242,
   "rtol": null,
   "shape": [
    6
@@ -1180,12 +1078,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 90,
+  "index": 82,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2429,
+  "offset": 2248,
   "rtol": null,
   "shape": [
    2
@@ -1194,12 +1092,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 91,
+  "index": 83,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2431,
+  "offset": 2250,
   "rtol": null,
   "shape": [
    2
@@ -1208,12 +1106,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 92,
+  "index": 84,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2433,
+  "offset": 2252,
   "rtol": null,
   "shape": [
    4
@@ -1222,12 +1120,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 93,
+  "index": 85,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2437,
+  "offset": 2256,
   "rtol": null,
   "shape": [
    1
@@ -1236,12 +1134,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 94,
+  "index": 86,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2438,
+  "offset": 2257,
   "rtol": null,
   "shape": [
    4
@@ -1250,12 +1148,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 95,
+  "index": 87,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2442,
+  "offset": 2261,
   "rtol": null,
   "shape": [
    4
@@ -1264,24 +1162,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 96,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2446,
+  "offset": 2265,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 97,
+  "index": 89,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_passive_topology_without_actuators[ideal_mid_drive-coast]",
-  "offset": 2454,
+  "offset": 2273,
   "rtol": null,
   "shape": [
    4

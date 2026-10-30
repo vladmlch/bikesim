@@ -35,8 +35,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] void energy_contract() {
     runtime::WireObject energy{{"energy_scale_j", 50.}, {"external_work_j", -25.},
         {"source_positive_work_j", 25.}, {"active_work_j", 1e30}, {"residual_j", -4.},
-        {"material_loss_j", 1e30}, {"constraint_work_j", 1e30},
-        {"electrical_work_j", 20.}, {"electrical_residual_j", 0.}};
+        {"material_loss_j", 1e30}, {"constraint_work_j", 1e30}};
     const auto quality = energy_quality(energy);
     bt::require(quality.residual_ratio == .04 && quality.acceptable,
         "initial, external and positive source work define the energy denominator");
@@ -44,10 +43,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(!energy_quality(energy).acceptable,
         "loss, constraint work and an overridden active-work field cannot hide residuals");
     wire::set(energy, "source_positive_work_j", 25.);
-    wire::set(energy, "electrical_residual_j", 1e-7 * 20.);
-    bt::require(energy_quality(energy).acceptable, "electrical acceptance includes its exact boundary");
-    wire::set(energy, "electrical_residual_j", 1e-7 * 21.);
-    bt::require(!energy_quality(energy).acceptable, "electrical rejection is independent of the mechanical ratio");
     bt::invalid([&] { (void)energy_quality(energy, 0.); });
     bt::invalid([&] { (void)energy_quality(energy, std::numeric_limits<double>::infinity()); });
     wire::set(energy, "residual_j", std::numeric_limits<double>::quiet_NaN());

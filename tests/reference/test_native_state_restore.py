@@ -262,10 +262,6 @@ def _reject_drive_state(n, mutate, match):
     ('policies.shifting.cooldown_s', 'half', 'shift clock/count'),
     ('policies.shifting.cut_remaining_s', 'half', 'shift clock/count'),
     ('shift_time_s', 'half', 'shift clock/count'),
-    # The store is sized by the config and only ever drains.
-    ('policies.battery.energy_j', 'over', 'battery energy'),
-    ('policies.battery.drawn_energy_j', 'over', 'battery energy'),
-    ('policies.battery.initial_energy_j', 'over', 'battery energy'),
 ])
 def test_drive_restore_relational_rejection_is_atomic(tmp_path, kind, path,
                                                       spec, match):
@@ -288,8 +284,6 @@ def test_drive_restore_relational_rejection_is_atomic(tmp_path, kind, path,
             parent[key] = 'up'
         elif spec == 'half':
             parent[key] = .5
-        elif spec == 'over':
-            parent[key] = parent['initial_energy_j'] + 1.
 
     _reject_drive_state(n, mutate, match)
 
@@ -323,7 +317,7 @@ def test_drive_restore_rejects_pending_actuation_without_interval(tmp_path):
     assert state['pending_actuation'] is None and state['last_time_s'] is None
     _reject_drive_state(
         n, lambda b: b.update(pending_actuation={
-            'requested': 1., 'omega': 2., 'dt': .002, 'enabled': True}),
+            'requested': 1., 'omega': 2., 'enabled': True}),
         'live interval')
     n.drive_components({}, .002, 2.)
     state = n.drive_state()
@@ -331,15 +325,6 @@ def test_drive_restore_rejects_pending_actuation_without_interval(tmp_path):
         state['last_time_s'] is not None
     _reject_drive_state(n, lambda b: b.update(last_time_s=None),
                         'live interval')
-
-
-@pytest.mark.parametrize('dt', [0., -.002])
-def test_drive_restore_rejects_nonpositive_pending_dt(tmp_path, dt):
-    _, _, _, n = drive_pair(tmp_path)
-    n.drive_components({}, .002, 2.)
-    assert n.drive_state()['pending_actuation'] is not None
-    _reject_drive_state(
-        n, lambda b: b['pending_actuation'].update(dt=dt), 'pending')
 
 
 def test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub(tmp_path):
@@ -395,7 +380,7 @@ def test_drive_restore_rejects_auxiliary_transmission_drift(tmp_path, topology,
 
 def test_drive_policies_set_state_relational_rejections(tmp_path):
     """The standalone policy binding repeats the same relational guards:
-    shift clock/count, cassette membership, battery bounds."""
+    shift clock/count and cassette membership."""
     from bike_sim.physics.physical_config import ShiftingConfig
     from tools.native_config import project_drive_policies
     _, _, p, _ = drive_pair(tmp_path, kind='ideal_mid_drive',
@@ -408,14 +393,10 @@ def test_drive_policies_set_state_relational_rejections(tmp_path):
         ('shifting', 'cooldown_s', .5),
         ('shifting', 'cut_remaining_s', .1),
         ('shifting', 'rear_teeth', 25),      # outside the cassette
-        ('battery', 'energy_j', 'over'),
-        ('battery', 'drawn_energy_j', 'over'),
-        ('battery', 'initial_energy_j', 'over'),
     ]
     for section, key, value in cases:
         bad = copy.deepcopy(before)
-        bad[section][key] = (before['battery']['initial_energy_j'] + 1.
-                             if value == 'over' else value)
+        bad[section][key] = value
         with pytest.raises(ValueError):
             native.set_state(bad)
         assert freeze(native.state()) == freeze(before), (section, key)

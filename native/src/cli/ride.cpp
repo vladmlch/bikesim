@@ -5,6 +5,7 @@
 #include "../configuration/load.hpp"
 #include "../initialization/sag_fit.hpp"
 #include "../initialization/source_json.hpp"
+#include "../io/diagnostics.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
@@ -32,6 +33,14 @@
 namespace bike::cli {
 namespace {
 using namespace runtime::setupvalue;
+// Cold-path drain: pending reference warnings go to the human stream until
+// the source is empty. One owner for headless, viewer and finalization —
+// warning delivery never depends on the HUD being enabled.
+void drain_pending_warnings(runtime::NativeRideRuntime& runtime) {
+    while (const auto warning = runtime.take_pending_warning())
+        (void)io::write_diagnostic(std::cerr, io::Severity::warning,
+            "physical.reference.warning", *warning);
+}
 viz::Channels plot_columns(const runtime::SampleColumns& columns) {
     viz::Channels out;for(const auto& [name,values]:columns)out.emplace_back(name,values);return out;
 }
@@ -58,7 +67,7 @@ std::optional<std::string> ride_track_seed(const Arguments& args) {
     if(name=="alpine_rocky")return std::to_string(terrain::ROCKY_PRESET_SEED);
     const auto names=terrain::available_presets();
     if(std::ranges::find(names,name)!=names.end())return {};
-    const auto bytes=io::read_numpy_bytes(name);std::string source;source.reserve(bytes.size());
+    const auto bytes=io::read_bounded_file_bytes(name);std::string source;source.reserve(bytes.size());
     for(const std::byte byte:bytes)source.push_back(static_cast<char>(byte));
     const auto document=terrain::parse_track_toml(source,name);
     const auto* generator=io::find_member(io::as_object(document,"track"),"generator");
@@ -177,7 +186,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
                 const auto step=runtime->snapshot().step;
                 (void)runtime->advance(std::min(max_steps,step+4000),{},0.,0.,.02);
                 runtime->release_samples();
-                if(const auto warning=runtime->take_pending_warning())std::cerr<<"WARNING: "<<*warning<<'\n';
+                drain_pending_warnings(*runtime);
             }
         } else {
             double front=0.,rear=0.;
@@ -188,43 +197,57 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
                 if(preview&&preview->due(frame.state.time_s,frame.state.generation))
                     preview->write(frame.state.time_s,frame.state.generation,preview_row(frame,request.track,achieved));
             };
-            hooks.advance=[&](std::int64_t target,double budget){(void)runtime->advance(std::min(target,max_steps),{},front,rear,budget);runtime->release_samples();};
+            hooks.advance=[&](std::int64_t target,double budget){(void)runtime->advance(std::min(target,max_steps),{},front,rear,budget);runtime->release_samples();drain_pending_warnings(*runtime);};
             hooks.brakes=[&](double f,double r){front=f;rear=r;(void)journal->emit("brakes",wall(),runtime->snapshot().step,{},Value{Object{{"front",real(f)},{"rear",real(r)}}});};
             hooks.pause=[&](bool paused){(void)journal->emit(paused?"pause":"resume",wall(),runtime->snapshot().step);};
-            hooks.reset=[&]{seal("reset");runtime->reset();++episode_id;sealed=false;reason.clear();episode_started=platform::monotonic_seconds();journal=std::make_unique<recording::EpisodeJournal>(capture,episode_id);(void)journal->emit("episode_started",wall(),0);};
+            hooks.reset=[&]{seal("reset");drain_pending_warnings(*runtime);runtime->reset();++episode_id;sealed=false;reason.clear();episode_started=platform::monotonic_seconds();journal=std::make_unique<recording::EpisodeJournal>(capture,episode_id);(void)journal->emit("episode_started",wall(),0);};
             hooks.stop=[&]{if(reason.empty())reason="viewer_closed";};
             const auto options=ride_viewer_options(args,dt);
             (void)viewer::run(std::move(hooks),runtime->model_image(),options);
             if(reason.empty())reason="viewer_closed";
         }
     } catch(...) {failure=std::current_exception();reason="simulation_error";}
-    // A strict trailing flush can report an already committed rejection once.
-    // Retry only the seal over that prefix; no physics advance is retried.
-    try {seal(reason);}catch(...){if(!failure)failure=std::current_exception();try{seal(reason);}catch(const std::exception& error){std::cerr<<"recording seal failed: "<<error.what()<<'\n';}}
-    if(preview) {
-        try {
-            const auto frame=runtime->render_frame();
-            preview->write(frame.state.time_s,frame.state.generation,preview_row(frame,request.track,{}));
-            preview->write_marker("run ended; "+reason+"; t="+geometry::detail::py_fixed(frame.state.time_s,6)+"s");
-            preview->close();
-        } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"preview finalization also failed\n";}
-    }
-    if(capture.enabled()&&sealed) {
-        try {publication=recording::finalize(capture,args.text("out","output/ride"));}
-        catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"recording finalization also failed\n";}
-    }
-    if(publication) {
-        try {
-            if(preview){const auto bytes=preview_bytes.str();platform::write_exclusive(publication->directory/"preview.csv",std::as_bytes(std::span(bytes)));}
-            if(!args.flag("no_plots")) {
-                const auto columns=plot_columns(runtime->recorded_columns());
-                if(!columns.empty())for(const auto& report:viz::physical_ride_plots(columns))viz::write_artifact(report,publication->directory/(report.title+".png"));
-                if(preview)(void)viz::plot_physical_ride_html(viz::load_ride_csv(publication->directory/"preview.csv"),publication->directory);
-            }
-        } catch(...) {if(!failure)failure=std::current_exception();else std::cerr<<"plot/preview publication also failed\n";}
-    }
-    runtime->close();
-    if(failure)std::rethrow_exception(failure);
+    // The finalization order lives in finalize_physical_run: seal (at most
+    // one retry over the committed prefix; a strict trailing flush can report
+    // an already committed rejection once — never a physics advance),
+    // preview, recording, plots, close. Every later failure lands as a
+    // secondary "operation: cause" note instead of masking the primary.
+    PhysicalFinalizationActions finalization;
+    finalization.seal=[&]{
+        seal(reason);
+        // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: warning delivery is advisory and must never trigger a seal retry
+        try { drain_pending_warnings(*runtime); } catch (...) {}
+    };
+    if(preview)finalization.preview_close=[&]{
+        const auto frame=runtime->render_frame();
+        preview->write(frame.state.time_s,frame.state.generation,preview_row(frame,request.track,{}));
+        preview->write_marker("run ended; "+reason+"; t="+geometry::detail::py_fixed(frame.state.time_s,6)+"s");
+        preview->close();
+    };
+    finalization.recording_publish=[&]{
+        if(capture.enabled()&&sealed)publication=recording::finalize(capture,args.text("out","output/ride"));
+    };
+    finalization.plot_publish=[&]{
+        if(!publication)return;
+        if(preview){const auto bytes=preview_bytes.str();platform::write_exclusive(publication->directory/"preview.csv",std::as_bytes(std::span(bytes)));}
+        if(!args.flag("no_plots")) {
+            const auto columns=plot_columns(runtime->recorded_columns());
+            if(!columns.empty())for(const auto& report:viz::physical_ride_plots(columns))viz::write_artifact(report,publication->directory/(report.title+".png"));
+            if(preview)(void)viz::plot_physical_ride_html(viz::load_ride_csv(publication->directory/"preview.csv"),publication->directory);
+        }
+    };
+    finalization.runtime_close=[&]{
+        // Warnings pending at finalization drain before close.
+        // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: warning delivery is advisory so a drain failure cannot displace the close
+        try { drain_pending_warnings(*runtime); } catch (...) {}
+        runtime->close();
+    };
+    const auto final_report=finalize_physical_run(finalization,failure);
+    // The physical command owner emits each secondary once; the primary is
+    // rethrown so the dispatcher reports it exactly once.
+    for(const auto& note:final_report.secondary)
+        (void)io::write_diagnostic(std::cerr,io::Severity::error,"ride.finalize.secondary",note);
+    final_report.rethrow_if_failed();
     std::cout<<io::recording_json(summary)<<'\n';
     if(publication)std::cout<<"[bike-ride] recording: "<<publication->directory<<'\n';
     if(reason=="operator_stop")return 130;

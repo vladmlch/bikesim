@@ -428,7 +428,6 @@ def test_native_contract_executable_lists_registered_cases() -> None:
         'pedaling_ctor_domain',
         'shifter_ctor_domain',
         'assist_ctor_domain',
-        'battery_ctor_domain',
         'freehub_ctor_domain',
         'writer_config_domains',
         'transmission_lifecycle_invariants',

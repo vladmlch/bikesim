@@ -75,12 +75,12 @@
   "index": 5,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 1066,
+  "nbytes": 993,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
   "offset": 260,
   "rtol": null,
   "shape": [
-   1066
+   993
   ]
  },
  {
@@ -91,7 +91,7 @@
   "label": "$.assist_demand_gated",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1326,
+  "offset": 1253,
   "rtol": null,
   "shape": [
    4
@@ -105,7 +105,7 @@
   "label": "$.assist_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1330,
+  "offset": 1257,
   "rtol": null,
   "shape": []
  },
@@ -117,7 +117,7 @@
   "label": "$.assist_mode",
   "nbytes": 7,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1338,
+  "offset": 1265,
   "rtol": null,
   "shape": [
    7
@@ -131,30 +131,140 @@
   "label": "$.assist_sensor_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1345,
+  "offset": 1272,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 10,
   "kind": "bitwise",
-  "label": "$.battery_empty",
-  "nbytes": 5,
+  "label": "$.cadence_rpm",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1353,
+  "offset": 1280,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 11,
   "kind": "bitwise",
-  "label": "$.battery_energy_j",
+  "label": "$.chain_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1288,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.chain_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1296,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "$.chain_extension_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1304,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "$.chain_extension_rate_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1312,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.chain_tension_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1320,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.coasting_reason",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1328,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.crank_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1338,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.crank_target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1346,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.crank_target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1350,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.drive_shaft_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
   "offset": 1358,
@@ -164,9 +274,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 12,
+  "index": 21,
   "kind": "bitwise",
-  "label": "$.cadence_rpm",
+  "label": "$.freehub_deflection_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
   "offset": 1366,
@@ -176,9 +286,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 13,
+  "index": 22,
   "kind": "bitwise",
-  "label": "$.chain_dissipation_power_w",
+  "label": "$.freehub_dissipation_power_w",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
   "offset": 1374,
@@ -188,9 +298,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 14,
+  "index": 23,
   "kind": "bitwise",
-  "label": "$.chain_energy_j",
+  "label": "$.freehub_energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
   "offset": 1382,
@@ -199,125 +309,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 15,
-  "kind": "bitwise",
-  "label": "$.chain_extension_m",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1390,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 16,
-  "kind": "bitwise",
-  "label": "$.chain_extension_rate_mps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1398,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 17,
-  "kind": "bitwise",
-  "label": "$.chain_tension_n",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1406,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 18,
-  "kind": "bitwise",
-  "label": "$.coasting_reason",
-  "nbytes": 10,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1414,
-  "rtol": null,
-  "shape": [
-   10
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.crank_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1424,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 20,
-  "kind": "bitwise",
-  "label": "$.crank_target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1432,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 21,
-  "kind": "bitwise",
-  "label": "$.crank_target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1436,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 22,
-  "kind": "bitwise",
-  "label": "$.drive_shaft_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1444,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 23,
-  "kind": "bitwise",
-  "label": "$.electrical_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1452,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
   "index": 24,
   "kind": "bitwise",
-  "label": "$.energy_limited",
+  "label": "$.freehub_engaged",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1460,
+  "offset": 1390,
   "rtol": null,
   "shape": [
    5
@@ -328,34 +326,36 @@
   "dtype": "<f8",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.freehub_deflection_rad",
+  "label": "$.freehub_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1465,
+  "offset": 1395,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 26,
   "kind": "bitwise",
-  "label": "$.freehub_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.gear_front_teeth",
+  "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1473,
+  "offset": 1403,
   "rtol": null,
-  "shape": []
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 27,
   "kind": "bitwise",
-  "label": "$.freehub_energy_j",
+  "label": "$.gear_ratio",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1481,
+  "offset": 1405,
   "rtol": null,
   "shape": []
  },
@@ -364,10 +364,88 @@
   "dtype": "|u1",
   "index": 28,
   "kind": "bitwise",
-  "label": "$.freehub_engaged",
+  "label": "$.gear_rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1413,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.human_command_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1415,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.human_sensor_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1423,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.human_setpoint_nm",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1431,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.human_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1435,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.motor_control_source",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1443,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.motor_enabled",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1489,
+  "offset": 1451,
   "rtol": null,
   "shape": [
    5
@@ -376,73 +454,137 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 29,
+  "index": 35,
   "kind": "bitwise",
-  "label": "$.freehub_torque_nm",
+  "label": "$.motor_freewheel_dissipation_power_w",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1494,
+  "offset": 1456,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 30,
+  "index": 36,
   "kind": "bitwise",
-  "label": "$.gear_front_teeth",
-  "nbytes": 2,
+  "label": "$.motor_freewheel_engaged",
+  "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1502,
+  "offset": 1464,
   "rtol": null,
   "shape": [
-   2
+   5
   ]
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 31,
+  "index": 37,
   "kind": "bitwise",
-  "label": "$.gear_ratio",
+  "label": "$.motor_freewheel_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1504,
+  "offset": 1469,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 32,
+  "index": 38,
   "kind": "bitwise",
-  "label": "$.gear_rear_teeth",
-  "nbytes": 2,
+  "label": "$.motor_limit_nm",
+  "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1512,
+  "offset": 1477,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 33,
+  "index": 39,
   "kind": "bitwise",
-  "label": "$.human_command_nm",
+  "label": "$.motor_limited_request_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1514,
+  "offset": 1481,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 34,
+  "index": 40,
   "kind": "bitwise",
-  "label": "$.human_sensor_nm",
+  "label": "$.motor_request_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1489,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.motor_setpoint_nm",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1497,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.motor_shaft_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1501,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$.motor_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1509,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.omits_suspension_coupling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
+  "offset": 1517,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
   "offset": 1522,
@@ -452,206 +594,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.human_setpoint_nm",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1530,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.human_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1534,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.motor_control_source",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1542,
-  "rtol": null,
-  "shape": [
-   8
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 38,
-  "kind": "bitwise",
-  "label": "$.motor_enabled",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1550,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 39,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1555,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 40,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1563,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 41,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1568,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 42,
-  "kind": "bitwise",
-  "label": "$.motor_limit_nm",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1576,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 43,
-  "kind": "bitwise",
-  "label": "$.motor_limited_request_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1580,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.motor_request_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1588,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.motor_setpoint_nm",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1596,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 46,
-  "kind": "bitwise",
-  "label": "$.motor_shaft_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1600,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.motor_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1608,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.omits_suspension_coupling",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1616,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.required_cadence_rpm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1621,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
   "kind": "bitwise",
   "label": "$.rider_mode",
   "nbytes": 10,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1629,
+  "offset": 1530,
   "rtol": null,
   "shape": [
    10
@@ -660,12 +608,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.safety_limited",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1639,
+  "offset": 1540,
   "rtol": null,
   "shape": [
    5
@@ -674,12 +622,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.shift_active",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1644,
+  "offset": 1545,
   "rtol": null,
   "shape": [
    5
@@ -688,12 +636,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1649,
+  "offset": 1550,
   "rtol": null,
   "shape": [
    1
@@ -702,12 +650,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.shift_direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1650,
+  "offset": 1551,
   "rtol": null,
   "shape": [
    6
@@ -716,12 +664,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.shift_from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1656,
+  "offset": 1557,
   "rtol": null,
   "shape": [
    2
@@ -730,12 +678,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 56,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1658,
+  "offset": 1559,
   "rtol": null,
   "shape": [
    4
@@ -744,24 +692,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 57,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.shift_torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1662,
+  "offset": 1563,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 58,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.transmission_model",
   "nbytes": 15,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1670,
+  "offset": 1571,
   "rtol": null,
   "shape": [
    15
@@ -770,12 +718,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 55,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 19,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1685,
+  "offset": 1586,
   "rtol": null,
   "shape": [
    19
@@ -784,24 +732,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.chain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1704,
+  "offset": 1605,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 61,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.freehub",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_force_staging[coast-elastic_chain]",
-  "offset": 1712,
+  "offset": 1613,
   "rtol": null,
   "shape": []
  }

@@ -838,7 +838,7 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         snap.time_s = time;
         snap.backend = "distributed_2d_reference";
         snap.geometric_contact = count > 0;
-        snap.wheel_axis_m = center;
+        snap.reference_position_world_m = center;
         snap.interval_id = interval_clock::interval_id(time, dt);
         // WheelContactSnapshot.__post_init__ (contact_state.py:90-113).
         if (!std::isfinite(time) || time < 0.0)

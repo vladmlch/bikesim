@@ -62,7 +62,7 @@ void test_atomic_state_inputs_and_probes() {
     bt::require(bike::io::canonical_json(field(state(*owner), "policies")) == bike::io::canonical_json(field(before, "policies")),
         "probe preserves every live policy");
     const auto saved = state(*owner); restore(*owner, saved); state(golden, *owner);
-    auto broken = saved; put(member(broken, "policies"), "battery", "energy_j", Value{bike::io::Number{"nan"}});
+    auto broken = saved; put(member(broken, "policies"), "assist", "torque", Value{bike::io::Number{"nan"}});
     bt::invalid([&] { restore(*owner, broken); }); state(golden, *owner);
     const std::vector<double> control(owner->ctrl().begin(), owner->ctrl().end());
     bt::invalid([&] { owner->set_inputs(std::vector<double>(control.size(), 1.),
@@ -149,21 +149,16 @@ void test_shifting_prepared_state_and_clock() {
             error<std::invalid_argument>([&] { (void)components(*owner, .15, 2.); }, "once per timestamp");
             clear_pending(*owner); owner->data()->time += .15; reset_engine_state(*owner);
         }
-        const auto old = state(*owner); owner->drive().restart_clock(); state(golden, *owner);
-        tree(golden, field(field(state(*owner), "policies"), "battery"));
-        bt::require(bike::io::canonical_json(field(field(state(*owner), "policies"), "battery")) ==
-            bike::io::canonical_json(field(field(old, "policies"), "battery")), "clock restart preserves battery inventory");
+        owner->drive().restart_clock(); state(golden, *owner);
         owner->drive().reset(); state(golden, *owner); golden.done();
     }
 }
-// Source: test_energy_ceiling_and_actual_force, actual actuator effort is halved.
-void test_energy_ceiling_and_actual_force() {
-    struct Case { std::string_view id; bool enabled; double energy; };
-    constexpr std::array cases{Case{.id="empty", .enabled=true, .energy=0.}, Case{.id="tiny", .enabled=true, .energy=.00001}, Case{.id="limited", .enabled=true, .energy=1.}, Case{.id="disabled", .enabled=false, .energy=0.}};
-    for (const auto& item : cases) for (auto const kind : kinds) {
-        auto golden = node("test_energy_ceiling_and_actual_force", std::string(item.id) + "-" + std::string(kind));
-        auto input = source(kind); input.battery.enabled = item.enabled; input.battery.energy_j = item.energy;
-        auto owner = pair(input); const drivetrain::RideControl control{.motor_torque_nm=40., .motor_limit_nm=8., .human_torque_nm=50.};
+// Source: test_motor_limit_and_actual_force; the 40 N*m motor command exceeds
+// the 8 N*m safety limit and the actual actuator effort is halved.
+void test_motor_limit_and_actual_force() {
+    for (auto const kind : kinds) {
+        auto golden = node("test_motor_limit_and_actual_force", kind);
+        auto owner = pair(kind); const drivetrain::RideControl control{.motor_torque_nm=40., .motor_limit_nm=8., .human_torque_nm=50.};
         const auto motor = static_cast<std::size_t>(bike::model::required_id(*owner->model(), mjOBJ_ACTUATOR, "mid_drive"));
         for (int i = 0; i < 10; ++i) {
             const auto forces = components(*owner, .0002, 2., control);
@@ -246,7 +241,7 @@ void test_invalid_restoration_is_atomic() {
         {.id="coefficient-width", .section="ideal_hub", .key="coefficients", .value=Value{Value::Array{real(0.)}}},
         {.id="count-overflow", .section="shifting", .key="shift_count", .value=integer(static_cast<std::int64_t>(std::uint64_t{1} << 40U))},
         {.id="coasting-integer", .section="pedaling", .key="coasting", .value=integer(1)}, {.id="direction", .section="shifting", .key="direction", .value=text("bad")},
-        {.id="battery-negative", .section="battery", .key="energy_j", .value=real(-1.)}, {.id="assist-nan", .section="assist", .key="torque", .value=Value{bike::io::Number{"nan"}}}};
+        {.id="assist-nan", .section="assist", .key="torque", .value=Value{bike::io::Number{"nan"}}}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_restoration_is_atomic", item.id); auto owner = pair("geometric_ideal_mid_drive");
         const auto before = state(*owner); auto candidate = before;
@@ -285,7 +280,6 @@ void test_injected_valid_state_and_replay() {
         injected->shifting.cooldown_s = .07; injected->shifting.cut_remaining_s = .03;
         injected->shifting.shift_count = 4; injected->shifting.direction = "up"; injected->shifting.from_teeth = 28;
         injected->assist.torque = 2.; injected->assist.last_gain = .4;
-        injected->battery.energy_j = 17.; injected->battery.drawn_energy_j = 3.;
         injected->shift_time_s = -1.; injected->last_time_s = -.5;
         bt::require(injected->angles.has_value(), "injected source has angle state");
         for (auto& angle : std::span(injected->angles->values).first(injected->angles->count)) angle += 2. * std::numbers::pi; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
@@ -301,8 +295,10 @@ void test_injected_valid_state_and_replay() {
             }
         }
         owner->drive().restore(*injected); state(golden, *owner);
-        injected->battery.energy_j = 999.;
-        bt::require(owner->drive().battery_energy_j() == 17., "restore owns the caller's battery state");
+        injected->assist.torque = 999.;
+        // A by-value snapshot read inside the lambda frame (-Wframe-larger-than).
+        const auto assist_torque = [&] { return owner->drive().state().assist.torque; };
+        bt::require(assist_torque() == 2., "restore owns the caller's policy state");
         for (int i = 0; i < 8; ++i) {
             const auto forces = components(*owner, .0002, 2.); components(golden, forces); state(golden, *owner);
             step(*owner, forces); array(golden, owner->drive().settle()); state(golden, *owner);
@@ -322,11 +318,8 @@ void test_pending_and_duplicate_settlement_guards() {
         // set_state resets ctrl; the source next supplies the oracle's saved
         // actuator inputs from that first components call.
         owner->set_inputs(controls, std::vector<double>(owner->qvel().size())); owner->step();
-        array(golden, owner->drive().settle()); const auto first = state(*owner);
+        array(golden, owner->drive().settle());
         array(golden, owner->drive().settle()); state(golden, *owner);
-        tree(golden, field(field(state(*owner), "policies"), "battery"));
-        bt::require(bike::io::canonical_json(field(field(state(*owner), "policies"), "battery")) ==
-            bike::io::canonical_json(field(field(first, "policies"), "battery")), "duplicate settle cannot debit battery twice");
         golden.done();
     }
 }
@@ -516,7 +509,7 @@ int main() {
         test_chain_core(); test_force_staging(); test_solved_intervals();
         test_atomic_state_inputs_and_probes(); test_projection(); test_no_drive();
         test_transmission_core(); test_random_multiturn_staging(); test_shifting_prepared_state_and_clock();
-        test_energy_ceiling_and_actual_force(); test_probe_does_not_touch_ratchets_or_live_state();
+        test_motor_limit_and_actual_force(); test_probe_does_not_touch_ratchets_or_live_state();
         test_invalid_config(); test_invalid_calls_are_atomic(); test_invalid_restoration_is_atomic();
         test_set_inputs_cross_aliases_and_ownership(); test_injected_valid_state_and_replay();
         test_pending_and_duplicate_settlement_guards(); test_passive_topology_without_actuators();

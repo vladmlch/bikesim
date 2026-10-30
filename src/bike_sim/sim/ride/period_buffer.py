@@ -259,7 +259,6 @@ def publish_close(rt, raws):
         rt.closure_absolute_j+=work.closure_absolute_j
         rt.active_work_j+=work.muscle_signed_j+work.motor_signed_j
         rt.external_work_j+=sum(float(components[n]@v)*dt for n in _EXTERNAL_FORCE_NAMES if n in components)
-        rt.electrical_work_j+=raw.metadata['electrical_power_w']*dt
         source_positive = rt.muscle_positive_j+rt.motor_positive_j
         work_ok = constraint_work_ok(rt.constraint_absolute_j, source_positive)
         # This is an integral criterion, published at the closing physical
@@ -290,9 +289,6 @@ def publish_close(rt, raws):
                                      if source_positive > 0. else None),
             'constraint_work_ok':work_ok,
             'residual_j':total-rt.initial_energy_j-rt.active_work_j-rt.external_work_j+rt.loss_j,
-            'electrical_work_j':rt.electrical_work_j,
-            'electrical_residual_j':(rt.initial_battery_j-raw.metadata['battery_energy_j']-rt.electrical_work_j
-                                    if rt.cfg.drive.battery.enabled else 0.),
             'measured':measured,
             'source_interval_id':raw.interval_id if measured else (None if source is None else source[0]),
             'source_time_s':raw.end_time_s if measured else (None if source is None else source[1])}

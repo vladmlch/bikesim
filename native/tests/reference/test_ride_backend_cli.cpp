@@ -132,7 +132,7 @@ struct CliResult {
     options.timeout_s = 120.;
     const bike::platform::ProcessResult result =
         bike::platform::run(argv, repo_root(), options);
-    return {.code = result.exit_code, .out = result.out, .err = result.err};
+    return {.code = result.exit_code, .out = result.stdout_text, .err = result.stderr_text};
 }
 
 [[nodiscard]] bool contains(std::string_view haystack, std::string_view needle) {

@@ -11,7 +11,7 @@ import pytest
 
 from _bits import assert_bitwise_equal
 from bike_sim.physics.chain import chain_geometry, chain_center_gradient
-from bike_sim.physics.physical_config import PhysicalDriveConfig, PedalingConfig, ShiftingConfig, BatteryConfig
+from bike_sim.physics.physical_config import PhysicalDriveConfig, PedalingConfig, ShiftingConfig
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.drivetrain_forces import DrivetrainForceApplier
 from bike_sim.sim.ride.ideal_freehub import IdealFreehubConstraint
@@ -133,7 +133,7 @@ def test_atomic_state_inputs_and_probes(tmp_path):
     assert_tree(n.drive_diagnostics(probe=True),p.probe_last)
     assert_tree(n.drive_state()['policies'],before['policies'])
     state = n.drive_state(); n.set_drive_state(copy.deepcopy(state)); assert_tree(n.drive_state(),state)
-    broken = copy.deepcopy(state); broken['policies']['battery']['energy_j'] = float('nan')
+    broken = copy.deepcopy(state); broken['policies']['assist']['torque'] = float('nan')
     with pytest.raises(ValueError): n.set_drive_state(broken)
     assert_tree(n.drive_state(),state)
     ctrl = n.ctrl.copy()
@@ -166,7 +166,7 @@ def python_state(p, model):
         policies[name] = None if obj is None else {k:vars(obj)[k] for k in keys}
     out = {k:getattr(p,k,None) for k in ('shift_time_s','last_time_s','reference','psi','angles','last','probe_last')}
     pending = p.pending_actuation
-    out['pending_actuation'] = None if pending is None else dict(zip(('requested','omega','dt','enabled'),pending))
+    out['pending_actuation'] = None if pending is None else dict(zip(('requested','omega','enabled'),pending))
     out['policies'] = policies
     for name in ('ideal_hub','clutch','freewheel'):
         t = getattr(p,name)
@@ -258,16 +258,15 @@ def test_shifting_prepared_state_and_clock(tmp_path,kind,contact,slip):
         # Clear only pending to advance the force oracle without an invented solve.
         p.pending_actuation=None;s=n.drive_state();s['pending_actuation']=None;n.set_drive_state(s)
         d.time += .15;n.set_state(d.qpos,d.qvel,d.act,d.qacc_warmstart,d.time);n.forward()
-    old=n.drive_state();p.restart_clock();n.drive_restart_clock()
-    assert_tree(n.drive_state(),python_state(p,m));assert_tree(n.drive_state()['policies']['battery'],old['policies']['battery'])
+    p.restart_clock();n.drive_restart_clock()
+    assert_tree(n.drive_state(),python_state(p,m))
     p.reset(m,d);n.drive_reset();assert_tree(n.drive_state(),python_state(p,m))
 
 
 @pytest.mark.parametrize('kind',['elastic_chain','ideal_mid_drive','geometric_ideal_mid_drive'])
-@pytest.mark.parametrize('enabled,energy',[(True,0.),(True,.00001),(True,1.),(False,0.)], ids=['empty','tiny','limited','disabled'])
-def test_energy_ceiling_and_actual_force(tmp_path,kind,enabled,energy):
-    b=BatteryConfig(enabled=enabled,energy_j=energy)
-    m,d,p,n=pair(tmp_path,kind,battery=b)
+def test_motor_limit_and_actual_force(tmp_path,kind):
+    # The 40 N*m motor command exceeds the 8 N*m safety limit.
+    m,d,p,n=pair(tmp_path,kind)
     control=RideControl(human_torque_nm=50.,motor_torque_nm=40.,motor_limit_nm=8.)
     for i in range(10):
         actual=n.drive_components(asdict_control(control),.0002,2.)
@@ -324,7 +323,7 @@ def test_invalid_calls_are_atomic(tmp_path,field,value):
     ('root','angles',[0.,1.]),('root','reference',float('nan')),('root','last_time_s',float('inf')),
     ('ideal_hub','ratio',0.),('ideal_hub','shift_pending',1),('ideal_hub','coefficients',[0.]),
     ('shifting','shift_count',2**40),('pedaling','coasting',1),('shifting','direction','bad'),
-    ('battery','energy_j',-1.),('assist','torque',float('nan'))], ids=['angles-width','reference-nan','time-infinite','ratio-zero','pending-integer','coefficient-width','count-overflow','coasting-integer','direction','battery-negative','assist-nan'])
+    ('assist','torque',float('nan'))], ids=['angles-width','reference-nan','time-infinite','ratio-zero','pending-integer','coefficient-width','count-overflow','coasting-integer','direction','assist-nan'])
 def test_invalid_restoration_is_atomic(tmp_path,section,key,value):
     _,_,_,n=pair(tmp_path,'geometric_ideal_mid_drive')
     before=n.drive_state();bad=copy.deepcopy(before)
@@ -356,7 +355,7 @@ def test_injected_valid_state_and_replay(tmp_path,kind):
     m,d,p,n=pair(tmp_path,kind)
     p.pedaling._effort=13.;p.pedaling._cadence_ema=-3.
     p.shifting.cooldown_s=.07;p.shifting.cut_remaining_s=.03;p.shifting.shift_count=4;p.shifting.direction='up';p.shifting.from_teeth=28
-    p.assist.torque=2.;p.assist.last_gain=.4;p.battery.energy_j=17.;p.battery.drawn_energy_j=3.
+    p.assist.torque=2.;p.assist.last_gain=.4
     p.shift_time_s=-1.;p.last_time_s=-.5;p.angles=tuple(x+2*np.pi for x in p.angles)
     if p.hub:
         p.hub.boundary=-.03;p.hub.energy_j=.04;p.hub.torque_nm=2.
@@ -370,8 +369,8 @@ def test_injected_valid_state_and_replay(tmp_path,kind):
     n.set_drive_state(injected)
     assert_tree(n.drive_state(),injected)
     # Owning input and output snapshots remain detached after modification.
-    injected['policies']['battery']['energy_j']=999.
-    assert n.drive_state()['policies']['battery']['energy_j']==17.
+    injected['policies']['assist']['torque']=999.
+    assert n.drive_state()['policies']['assist']['torque']==2.
     for _ in range(8):
         a=n.drive_components({},.0002,2.);e=p.compute_components(m,d,.0002,speed_mps=2.)
         assert_tree(a,e);assert_tree(n.drive_state(),python_state(p,m))
@@ -390,9 +389,9 @@ def test_pending_and_duplicate_settlement_guards(tmp_path,kind):
     with pytest.raises(RuntimeError,match='not settled'):n.drive_components({},.0002,2.)
     assert_tree(n.drive_state(),python_state(p,m))
     n.set_inputs(d.ctrl,np.zeros(m.nv));mujoco.mj_step(m,d);n.step()
-    assert_bitwise_equal(n.drive_settle_actuation(),p.settle_actuation(m,d));first=n.drive_state()
     assert_bitwise_equal(n.drive_settle_actuation(),p.settle_actuation(m,d))
-    assert_tree(n.drive_state(),python_state(p,m));assert_tree(n.drive_state()['policies']['battery'],first['policies']['battery'])
+    assert_bitwise_equal(n.drive_settle_actuation(),p.settle_actuation(m,d))
+    assert_tree(n.drive_state(),python_state(p,m))
 
 
 @pytest.mark.parametrize('mode',['coast','ideal_speed_control'])

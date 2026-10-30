@@ -92,7 +92,7 @@ void test_invalid_target_and_command_rejected() {
 }
 NATIVE_DIAG_POP
 
-// The advancement guard excludes concurrent advance/reset/snapshot/
+// The runtime-operation guard excludes concurrent advance/reset/snapshot/
 // probe/close — a second entry fails fast while one is in flight, and a
 // rejected close must not latch.
 NATIVE_DIAG_PUSH
@@ -108,7 +108,7 @@ void test_concurrent_advance_and_reset_rejected() {
         started.store(true);
         try {
             // Long target + a 5 s wall budget — the worker holds the
-            // advancement guard for the whole window.
+            // operation guard for the whole window.
             static_cast<void>(
                 native->advance(1000000000, command, 0., 0., 5.));
         } catch (...) {
@@ -118,7 +118,7 @@ void test_concurrent_advance_and_reset_rejected() {
         }
         worker_done.store(true);
     });
-    // The worker holds the advancement guard once its advance begins —
+    // The worker holds the operation guard once its advance begins —
     // give it a head start the same way the source's Event+sleep does.
     const auto started_deadline =
         std::chrono::steady_clock::now() + std::chrono::seconds(5);

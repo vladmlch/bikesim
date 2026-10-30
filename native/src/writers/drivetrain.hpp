@@ -40,7 +40,7 @@ namespace drivetrain {
     };
 
     struct PendingActuation {
-        double requested{}, omega{}, dt{};
+        double requested{}, omega{};
         bool enabled{};
     };
 
@@ -56,11 +56,10 @@ namespace drivetrain {
         PedalingSnapshot pedaling;
         ShiftingSnapshot shifting;
         AssistSnapshot assist;
-        BatterySnapshot battery;
         std::optional<FreehubSnapshot> hub;
         std::optional<double> shift_time_s, last_time_s, reference, psi;
         std::optional<DriveAngles> angles;
-        // Typed telemetry lanes (R1) — the closed 67-field schema replaces
+        // Typed telemetry lanes (R1) — the closed 63-field schema replaces
         // the per-tick map; lane presence keeps the wire's absent/explicit-
         // None distinction and for_each()/to_map() emit the map's sorted
         // order at the serialization boundary.
@@ -148,7 +147,6 @@ namespace drivetrain {
             PedalingSnapshot pedaling;
             ShiftingSnapshot shifting;
             AssistSnapshot assist;
-            BatterySnapshot battery;
             std::optional<FreehubSnapshot> hub;
             // Candidate force rows — construction-sized nv vectors indexed
             // by ForceComponent; the emitted span carries component_count
@@ -197,10 +195,6 @@ namespace drivetrain {
             // transmission exists).
             std::optional<SolvedTransmission> ideal_solve, clutch_solve,
                     freewheel_solve;
-            // Candidate store after the pending debit — identical
-            // arithmetic to Battery::draw, staged detached so a failed
-            // publish never drains.
-            std::optional<BatterySnapshot> battery;
             std::optional<AssistSnapshot> assist;
             // Pending actuation is consumed only when the settlement
             // commits.
@@ -262,12 +256,12 @@ namespace drivetrain {
 
     // A fully evaluated, still-unpublished settlement — a non-owning view
     // over one of the writer's two settlement banks plus the solved force
-    // span. stage_settle() performs every throwing step — candidate battery
-    // debit, pending validation, force solution (which drives the
-    // transmissions' own solve telemetry) and the telemetry write plan —
-    // so commit() is a memory-only, non-throwing publication of the whole
-    // result: force, battery candidate, telemetry and pending removal land
-    // together or not at all.
+    // span. stage_settle() performs every throwing step — pending
+    // validation, force solution (which drives the transmissions' own solve
+    // telemetry) and the telemetry write plan — so commit() is a
+    // memory-only, non-throwing publication of the whole result: force,
+    // assist torque, telemetry and pending removal land together or not at
+    // all.
     class PreparedSettlement {
     public:
         // Solved force — a view over the writer's persistent transmission_
@@ -341,12 +335,12 @@ namespace drivetrain {
         void commit(const PreparedTick &tick);
 
         // Settlement follows the same transaction shape: staging runs the
-        // transmission solve, the battery debit on a detached snapshot and
-        // the telemetry write plan, so a throw anywhere publishes nothing.
+        // transmission solve and the telemetry write plan, so a throw
+        // anywhere publishes nothing.
         // commit() only lands already-computed values.
         [[nodiscard]] PreparedSettlement stage_settle();
 
-        // Memory-only and noexcept: the pending actuation, battery store
+        // Memory-only and noexcept: the pending actuation, assist torque
         // and telemetry all publish together. Precondition: the handle came
         // from this writer's latest stage_settle — a stale or foreign handle
         // is a contract violation (checked; terminates under noexcept).
@@ -375,9 +369,13 @@ namespace drivetrain {
         [[nodiscard]] std::optional<int>
         body_id(std::string_view name) const noexcept;
 
-        // self.simplified — stored_terms()'s empty-map branch and the
-        // runtime's crank-target gating both read it.
-        [[nodiscard]] bool simplified() const noexcept { return simplified_; }
+        // The ideal-transmission predicate (self.simplified upstream):
+        // stored_terms()'s empty-map branch and the runtime's crank-target
+        // gating both read it. True for the ideal/geometric mid-drive
+        // families, false for elastic_chain — see the initializer.
+        [[nodiscard]] bool uses_ideal_transmission() const noexcept {
+            return uses_ideal_transmission_;
+        }
 
         // self.cfg — the runtime's static-brake owner reads
         // brake_ceiling_nm and the pedaling gates off the same config the
@@ -386,12 +384,6 @@ namespace drivetrain {
             return config_;
         }
 
-        // self.battery.energy_j — the committed battery store level the
-        // step's metadata reads after settle (drive.last alone is a tick
-        // snapshot; the battery object carries the running level).
-        [[nodiscard]] double battery_energy_j() const noexcept {
-            return battery_.state().energy_j;
-        }
         [[nodiscard]] bool assist_pedaling() const noexcept {
             return assist_.state().pedaling;
         }
@@ -414,7 +406,7 @@ namespace drivetrain {
         // geometric_hub_ selects the telemetry-merge settle path (the
         // geometric transmission publishes its solve diagnostics — a map
         // carrying a string status — which cannot be written in place).
-        bool simplified_ = false, effort_ = false, geometric_hub_ = false;
+        bool uses_ideal_transmission_ = false, effort_ = false, geometric_hub_ = false;
         GeometryWorkspace geometry_;
         // frame_/crank_/rear_ resolve unconditionally in the ctor; cassette_
         // resolves only for the elastic-chain model, so it needs a named
@@ -445,7 +437,6 @@ namespace drivetrain {
         PedalingPolicy pedaling_;
         CadenceShifter shifting_;
         AssistController assist_;
-        Battery battery_;
         std::optional<Freehub> hub_;
         std::unique_ptr<Transmission> ideal_hub_, clutch_, freewheel_;
         DriveSnapshot live_;
@@ -472,7 +463,6 @@ namespace drivetrain {
         PedalingPolicy pedaling_scratch_;
         CadenceShifter shifting_scratch_;
         AssistController assist_scratch_;
-        Battery battery_scratch_;
         std::optional<Freehub> hub_scratch_;
 
         // cassette_ resolves only under the elastic-chain topology; the
@@ -518,7 +508,7 @@ namespace drivetrain {
                     torque = 0., deflection = 0., relative_rate = 0.,
                     cadence = 0., omega_crank = 0., omega = 0., human = 0.,
                     sensor = 0., assist_sensor = 0., request = 0.,
-                    safety = 0., delivered = 0., electrical = 0.;
+                    safety = 0., delivered = 0.;
             bool enabled = false;
             PedalingState ps;
             DriveAngles angles;
@@ -526,7 +516,7 @@ namespace drivetrain {
         };
 
         // The solve half of stage_components: pedaling advance, chain/freehub
-        // and bearing force evaluation and the motor/battery solve land the
+        // and bearing force evaluation and the motor solve land the
         // component forces on the candidate bank and return the scalar
         // metrics the telemetry build publishes.
         [[nodiscard]] TickMetrics

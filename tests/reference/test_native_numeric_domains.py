@@ -117,7 +117,7 @@ def test_activated_zero_hbo_denominator_rejected(resolved, legacy):
     ('pedaling', 'effort_slew_nm_s', -1.), ('shifting', 'shift_cooldown_s', -1.),
     ('shifting', 'torque_factor', 1.1), ('shifting', 'cadence_smoothing_tau_s', -1.),
     ('assist', 'tau', 0.), ('assist', 'slew', 0.), ('assist', 'gain', -1.),
-    ('assist', 'taper_width_mps', 0.), ('battery', 'energy_j', -1.),
+    ('assist', 'taper_width_mps', 0.),
 ])
 def test_mutated_policy_configs_are_rejected(section, key, value):
     from test_native_drive_policies import applier
@@ -126,11 +126,7 @@ def test_mutated_policy_configs_are_rejected(section, key, value):
     config = project_drive_policies(drive)
     config[section][key] = value
     target = getattr(drive, section)
-    if section == 'battery':
-        object.__setattr__(drive.config.battery, key, value)
-        from bike_sim.physics.physical_config import BatteryConfig
-        oracle = lambda: BatteryConfig(**config['battery'])
-    elif section == 'assist':
+    if section == 'assist':
         setattr(target, {'taper_width_mps':'width'}.get(key, key), value)
         # ceiling() no longer revalidates; probe the controller's own
         # validation entry (the same checks its constructor runs).
@@ -146,8 +142,6 @@ def test_mutated_policy_configs_are_rejected(section, key, value):
 
 @pytest.mark.parametrize('method,args', [
     ('assist_step', (1e308, 80., 0., False, .001)),
-    ('battery_draw', (1e308, 10.)),
-    ('electrical_power', (1e308, 1., True)),
     ('freehub_torque', (1e308, 0., 0., 0.)),
 ])
 def test_policy_derived_overflow_is_shared(method, args):
@@ -157,13 +151,6 @@ def test_policy_derived_overflow_is_shared(method, args):
     native = load_native().DrivePolicies(project_drive_policies(drive))
     if method == 'assist_step':
         oracle = lambda: drive.assist.step(*args)
-    elif method == 'battery_draw':
-        oracle = lambda: drive.battery.draw(*args)
-    elif method == 'electrical_power':
-        from bike_sim.physics.battery import motor_electrical_power
-        cfg = drive.config.battery
-        oracle = lambda: motor_electrical_power(args[0], args[1], cfg.copper_w_per_nm2,
-            cfg.speed_w_per_rad_s2, cfg.idle_w, args[2])
     else:
         drive.hub.boundary = 0.
         state = native.state()

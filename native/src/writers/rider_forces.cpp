@@ -84,7 +84,7 @@ void RiderForcesWriter::compute_into(const mjData *d,
     if (out.size() != static_cast<std::size_t>(nv_) ||
         (out.data() == nullptr && !out.empty()))
         throw std::invalid_argument("rider output width");
-    accumulate_validated(d, out);
+    compute_validated_into(d, out);
 }
 
 // The warm-core twin of compute_into: the same precondition gates report
@@ -99,7 +99,7 @@ CoreStatus RiderForcesWriter::try_compute_into(const mjData *d,
         (out.data() == nullptr && !out.empty()))
         return CoreStatus::invalid_input;
     try {
-        accumulate_validated(d, out);
+        compute_validated_into(d, out);
     } catch (const std::bad_alloc &) {
         return CoreStatus::engine_failure;
     } catch (const engine::EngineFailure &) {
@@ -122,10 +122,9 @@ std::vector<double> RiderForcesWriter::qfrc(const mjData *d) const {
 // Extracted unchanged from the original qfrc() body — including the
 // model-table require_id guards and the derived() overflow gates, whose
 // exception types are part of the observable contract.
-void RiderForcesWriter::accumulate_validated(const mjData *d,
-                                             std::span<double> out) const {
-    // rider_forces.py:151-154 — apply(): reads qpos/qvel only; assign, not
-    // accumulate.
+void RiderForcesWriter::compute_validated_into(const mjData *d,
+                                               std::span<double> out) const {
+    // rider_forces.py:151-154 — apply(): reads qpos/qvel only.
     const std::span<const mjtNum> qpos =
             model_access::readonly_buffer(d->qpos, nq_);
     const std::span<const mjtNum> qvel =

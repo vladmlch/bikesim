@@ -208,7 +208,7 @@ void write(const std::filesystem::path &path, std::span<const std::byte> bytes) 
     platform::write_exclusive(path, bytes);
 }
 std::string read_text(const std::filesystem::path &path) {
-    const auto bytes = io::read_numpy_bytes(path);
+    const auto bytes = io::read_bounded_file_bytes(path);
     std::string result;
     result.reserve(bytes.size());
     for (const auto byte : bytes) result.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
@@ -372,11 +372,11 @@ void save(const EpisodeArtifact &episode, const std::filesystem::path &out_dir, 
 }
 
 EpisodeArtifact load_episode(const std::filesystem::path &directory) {
-    const auto archive = io::parse_npz(io::read_numpy_bytes(directory / "episode.npz"));
+    const auto archive = io::parse_npz(io::read_bounded_file_bytes(directory / "episode.npz"));
     EpisodeArtifact out;
     out.manifest = read_manifest(directory / "manifest.json");
     (void)io::as_object(out.manifest, "manifest");
-    out.model_image = io::read_numpy_bytes(directory / "model.mjb");
+    out.model_image = io::read_bounded_file_bytes(directory / "model.mjb");
     if (out.model_image.empty()) bad("model image is empty");
     out.channel_names = string_vector(required(archive, "channel_names"), "channel_names");
     unique(out.channel_names, "channel_names");

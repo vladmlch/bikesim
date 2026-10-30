@@ -203,7 +203,7 @@ namespace {
     }
 
     nb::dict policy_dict(const DriveSnapshot &s) {
-        nb::dict d, p, sh, a, b, h;
+        nb::dict d, p, sh, a, h;
         const auto &ps = s.pedaling;
         const auto &ss = s.shifting;
         p["coasting"] = ps.coasting;
@@ -223,13 +223,9 @@ namespace {
         a["torque"] = s.assist.torque;
         a["pedaling"] = s.assist.pedaling;
         a["last_gain"] = s.assist.last_gain;
-        b["initial_energy_j"] = s.battery.initial_energy_j;
-        b["energy_j"] = s.battery.energy_j;
-        b["drawn_energy_j"] = s.battery.drawn_energy_j;
         d["pedaling"] = p;
         d["shifting"] = sh;
         d["assist"] = a;
-        d["battery"] = b;
         if (s.hub) {
             h["boundary"] = nb::cast(s.hub->boundary);
             h["energy_j"] = s.hub->energy_j;
@@ -241,13 +237,12 @@ namespace {
     }
 
     void parse_policies(const wire::Dict &d, DriveSnapshot &out) {
-        wire::exact(d, wire::keys("pedaling", "shifting", "assist", "battery", "hub"));
+        wire::exact(d, wire::keys("pedaling", "shifting", "assist", "hub"));
         const auto p = section(d, "pedaling"), s = section(d, "shifting"),
-                a = section(d, "assist"), b = section(d, "battery");
+                a = section(d, "assist");
         wire::exact(p, wire::keys("coasting", "target_phase_rad", "target_rate_rad_s", "deceleration_rad_s2", "_effort", "_cadence_ema"));
         wire::exact(s, wire::keys("rear_teeth", "from_teeth", "cooldown_s", "cut_remaining_s", "shift_count", "direction", "cadence_ema", "required_ema"));
         wire::exact(a, wire::keys("torque", "pedaling", "last_gain"));
-        wire::exact(b, wire::keys("initial_energy_j", "energy_j", "drawn_energy_j"));
         out.pedaling = {
             .coasting = boolean(p, "coasting"), .target_phase_rad = optional_num(p, "target_phase_rad"),
             .target_rate_rad_s = num(p, "target_rate_rad_s"), .deceleration_rad_s2 = num(p, "deceleration_rad_s2"),
@@ -260,10 +255,6 @@ namespace {
             .cadence_ema = optional_num(s, "cadence_ema"), .required_ema = optional_num(s, "required_ema")
         };
         out.assist = {.torque = num(a, "torque"), .last_gain = num(a, "last_gain"), .pedaling = boolean(a, "pedaling")};
-        out.battery = {
-            .initial_energy_j = num(b, "initial_energy_j"), .energy_j = num(b, "energy_j"),
-            .drawn_energy_j = num(b, "drawn_energy_j")
-        };
         if (!field(d, "hub").is_none()) {
             const auto h = section(d, "hub");
             wire::exact(h, wire::keys("boundary", "energy_j", "torque_nm"));
@@ -359,7 +350,6 @@ namespace {
             nb::dict p;
             p["requested"] = s.pending_actuation->requested;
             p["omega"] = s.pending_actuation->omega;
-            p["dt"] = s.pending_actuation->dt;
             p["enabled"] = s.pending_actuation->enabled;
             d["pending_actuation"] = p;
         } else
@@ -391,13 +381,11 @@ namespace {
             s.probe_last = parse_telemetry(section(d, "probe_last"));
         if (!field(d, "pending_actuation").is_none()) {
             const auto p = section(d, "pending_actuation");
-            wire::exact(p, wire::keys("requested", "omega", "dt", "enabled"));
+            wire::exact(p, wire::keys("requested", "omega", "enabled"));
             s.pending_actuation = PendingActuation{
                 .requested = num(p, "requested"), .omega = num(p, "omega"),
-                .dt = num(p, "dt"), .enabled = boolean(p, "enabled")
+                .enabled = boolean(p, "enabled")
             };
-            if (s.pending_actuation->dt <= 0.)
-                wire::invalid(p.child("dt"), "dt must be positive");
         }
         s.ideal_hub = parse_transmission(field(d, "ideal_hub"), d.child("ideal_hub"));
         s.clutch = parse_transmission(field(d, "clutch"), d.child("clutch"));
@@ -536,7 +524,7 @@ void bind_drivetrain(nb::module_ &module, nb::class_<Stepper> &cls) {
                      // The staged settlement owns everything commit()
                      // publishes; boxing the force array first means an
                      // ndarray allocation failure cannot leave the
-                     // drivetrain half settled (battery debited, pending
+                     // drivetrain half settled (pending
                      // consumed, telemetry written).
                      return s.mutate([&] {
                          auto settlement = s.drive().stage_settle();

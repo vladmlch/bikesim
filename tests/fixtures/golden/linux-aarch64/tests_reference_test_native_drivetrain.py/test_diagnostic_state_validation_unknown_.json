@@ -255,12 +255,12 @@
   "index": 19,
   "kind": "bitwise",
   "label": "$.last#keys",
-  "nbytes": 1066,
+  "nbytes": 993,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
   "offset": 401,
   "rtol": null,
   "shape": [
-   1066
+   993
   ]
  },
  {
@@ -271,7 +271,7 @@
   "label": "$.last.assist_demand_gated",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1467,
+  "offset": 1394,
   "rtol": null,
   "shape": [
    4
@@ -285,7 +285,7 @@
   "label": "$.last.assist_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1471,
+  "offset": 1398,
   "rtol": null,
   "shape": []
  },
@@ -297,7 +297,7 @@
   "label": "$.last.assist_mode",
   "nbytes": 7,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1479,
+  "offset": 1406,
   "rtol": null,
   "shape": [
    7
@@ -311,30 +311,152 @@
   "label": "$.last.assist_sensor_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1486,
+  "offset": 1413,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 24,
   "kind": "bitwise",
-  "label": "$.last.battery_empty",
-  "nbytes": 5,
+  "label": "$.last.cadence_rpm",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1494,
+  "offset": 1421,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.last.battery_energy_j",
+  "label": "$.last.chain_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1429,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.last.chain_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1437,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_m",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1445,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_rate_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1453,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.last.chain_tension_n",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1461,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.last.coasting_reason",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1469,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.last.crank_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1471,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.last.crank_target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1479,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.last.crank_target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1483,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.last.drive_shaft_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1491,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.last.freehub_deflection_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
   "offset": 1499,
@@ -344,9 +466,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 26,
+  "index": 36,
   "kind": "bitwise",
-  "label": "$.last.cadence_rpm",
+  "label": "$.last.freehub_dissipation_power_w",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
   "offset": 1507,
@@ -356,9 +478,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 27,
+  "index": 37,
   "kind": "bitwise",
-  "label": "$.last.chain_dissipation_power_w",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
   "offset": 1515,
@@ -367,137 +489,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1523,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.last.chain_extension_m",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1531,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.last.chain_extension_rate_mps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1539,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 31,
-  "kind": "bitwise",
-  "label": "$.last.chain_tension_n",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1547,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.last.coasting_reason",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1555,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "$.last.crank_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1557,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.last.crank_target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1565,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.last.crank_target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1569,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.last.drive_shaft_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1577,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1585,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "$.last.energy_limited",
+  "label": "$.last.freehub_engaged",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1593,
+  "offset": 1523,
   "rtol": null,
   "shape": [
    5
@@ -508,34 +506,36 @@
   "dtype": "<f8",
   "index": 39,
   "kind": "bitwise",
-  "label": "$.last.freehub_deflection_rad",
+  "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1598,
+  "offset": 1528,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 40,
   "kind": "bitwise",
-  "label": "$.last.freehub_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.last.gear_front_teeth",
+  "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1606,
+  "offset": 1536,
   "rtol": null,
-  "shape": []
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 41,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
+  "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1614,
+  "offset": 1538,
   "rtol": null,
   "shape": []
  },
@@ -544,13 +544,13 @@
   "dtype": "|u1",
   "index": 42,
   "kind": "bitwise",
-  "label": "$.last.freehub_engaged",
-  "nbytes": 5,
+  "label": "$.last.gear_rear_teeth",
+  "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1622,
+  "offset": 1546,
   "rtol": null,
   "shape": [
-   5
+   2
   ]
  },
  {
@@ -558,86 +558,34 @@
   "dtype": "<f8",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.last.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1627,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.last.gear_front_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1635,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.last.gear_ratio",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1637,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.last.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1645,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 47,
-  "kind": "bitwise",
   "label": "$.last.human_command_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1647,
+  "offset": 1548,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 48,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.last.human_sensor_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1655,
+  "offset": 1556,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.last.human_setpoint_nm",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1663,
+  "offset": 1564,
   "rtol": null,
   "shape": [
    4
@@ -646,24 +594,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 50,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.last.human_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1667,
+  "offset": 1568,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.last.motor_control_source",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1675,
+  "offset": 1576,
   "rtol": null,
   "shape": [
    8
@@ -672,15 +620,67 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.last.motor_enabled",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1683,
+  "offset": 1584,
   "rtol": null,
   "shape": [
    5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1589,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1597,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1602,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.last.motor_limit_nm",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1610,
+  "rtol": null,
+  "shape": [
+   4
   ]
  },
  {
@@ -688,124 +688,72 @@
   "dtype": "<f8",
   "index": 53,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "label": "$.last.motor_limited_request_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1688,
+  "offset": 1614,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.last.motor_request_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1622,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 55,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
+  "label": "$.last.motor_setpoint_nm",
+  "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1696,
+  "offset": 1630,
   "rtol": null,
   "shape": [
-   5
+   4
   ]
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 55,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1701,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 56,
   "kind": "bitwise",
-  "label": "$.last.motor_limit_nm",
-  "nbytes": 4,
+  "label": "$.last.motor_shaft_power_w",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1709,
+  "offset": 1634,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 57,
   "kind": "bitwise",
-  "label": "$.last.motor_limited_request_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1713,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 58,
-  "kind": "bitwise",
-  "label": "$.last.motor_request_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1721,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 59,
-  "kind": "bitwise",
-  "label": "$.last.motor_setpoint_nm",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1729,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 60,
-  "kind": "bitwise",
-  "label": "$.last.motor_shaft_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1733,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 61,
-  "kind": "bitwise",
   "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1741,
+  "offset": 1642,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 62,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.last.omits_suspension_coupling",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1749,
+  "offset": 1650,
   "rtol": null,
   "shape": [
    4
@@ -814,24 +762,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 63,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.last.required_cadence_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1753,
+  "offset": 1654,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 64,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.last.rider_mode",
   "nbytes": 10,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1761,
+  "offset": 1662,
   "rtol": null,
   "shape": [
    10
@@ -840,12 +788,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 61,
   "kind": "bitwise",
   "label": "$.last.safety_limited",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1771,
+  "offset": 1672,
   "rtol": null,
   "shape": [
    5
@@ -854,12 +802,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 62,
   "kind": "bitwise",
   "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1776,
+  "offset": 1677,
   "rtol": null,
   "shape": [
    5
@@ -868,12 +816,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1781,
+  "offset": 1682,
   "rtol": null,
   "shape": [
    1
@@ -882,12 +830,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 68,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1782,
+  "offset": 1683,
   "rtol": null,
   "shape": [
    6
@@ -896,12 +844,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 69,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1788,
+  "offset": 1689,
   "rtol": null,
   "shape": [
    2
@@ -910,12 +858,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 70,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1790,
+  "offset": 1691,
   "rtol": null,
   "shape": [
    4
@@ -924,24 +872,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 71,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1794,
+  "offset": 1695,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 72,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.last.transmission_model",
   "nbytes": 17,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1802,
+  "offset": 1703,
   "rtol": null,
   "shape": [
    17
@@ -950,12 +898,64 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 73,
+  "index": 69,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1819,
+  "offset": 1720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "$.pending_actuation#keys",
+  "nbytes": 31,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1728,
+  "rtol": null,
+  "shape": [
+   31
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "$.pending_actuation.enabled",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1759,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "$.pending_actuation.omega",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1764,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "$.pending_actuation.requested",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 1772,
   "rtol": null,
   "shape": []
  },
@@ -964,88 +964,24 @@
   "dtype": "|u1",
   "index": 74,
   "kind": "bitwise",
-  "label": "$.pending_actuation#keys",
-  "nbytes": 36,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1827,
-  "rtol": null,
-  "shape": [
-   36
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 75,
-  "kind": "bitwise",
-  "label": "$.pending_actuation.dt",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1863,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 76,
-  "kind": "bitwise",
-  "label": "$.pending_actuation.enabled",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1871,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 77,
-  "kind": "bitwise",
-  "label": "$.pending_actuation.omega",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1876,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 78,
-  "kind": "bitwise",
-  "label": "$.pending_actuation.requested",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1884,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 79,
-  "kind": "bitwise",
   "label": "$.policies#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1892,
+  "offset": 1780,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 75,
   "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1940,
+  "offset": 1818,
   "rtol": null,
   "shape": [
    33
@@ -1054,24 +990,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 81,
+  "index": 76,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1973,
+  "offset": 1851,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 82,
+  "index": 77,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1981,
+  "offset": 1859,
   "rtol": null,
   "shape": [
    5
@@ -1080,74 +1016,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 83,
+  "index": 78,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1986,
+  "offset": 1864,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 84,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 1994,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 85,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2042,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 86,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2050,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 87,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2058,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 88,
+  "index": 79,
   "kind": "bitwise",
   "label": "$.policies.hub",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2066,
+  "offset": 1872,
   "rtol": null,
   "shape": [
    4
@@ -1156,12 +1042,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 89,
+  "index": 80,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2070,
+  "offset": 1876,
   "rtol": null,
   "shape": [
    98
@@ -1170,36 +1056,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 90,
+  "index": 81,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2168,
+  "offset": 1974,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 91,
+  "index": 82,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2176,
+  "offset": 1982,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 92,
+  "index": 83,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2184,
+  "offset": 1990,
   "rtol": null,
   "shape": [
    5
@@ -1208,24 +1094,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 93,
+  "index": 84,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2189,
+  "offset": 1995,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 94,
+  "index": 85,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2197,
+  "offset": 2003,
   "rtol": null,
   "shape": [
    4
@@ -1234,24 +1120,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 95,
+  "index": 86,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2201,
+  "offset": 2007,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 96,
+  "index": 87,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2209,
+  "offset": 2015,
   "rtol": null,
   "shape": [
    113
@@ -1260,12 +1146,134 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 97,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2322,
+  "offset": 2128,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2132,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2140,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2148,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2154,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2156,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2158,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2162,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "$.probe_last",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2163,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "$.psi",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
+  "offset": 2167,
   "rtol": null,
   "shape": [
    4
@@ -1276,144 +1284,22 @@
   "dtype": "<f8",
   "index": 98,
   "kind": "bitwise",
-  "label": "$.policies.shifting.cooldown_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2326,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 99,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.cut_remaining_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2334,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 100,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.direction",
-  "nbytes": 6,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2342,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 101,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.from_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2348,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 102,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2350,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 103,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.required_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2352,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 104,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.shift_count",
-  "nbytes": 1,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2356,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 105,
-  "kind": "bitwise",
-  "label": "$.probe_last",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2357,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 106,
-  "kind": "bitwise",
-  "label": "$.psi",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2361,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 107,
-  "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2365,
+  "offset": 2171,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 108,
+  "index": 99,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_diagnostic_state_validation[unknown]",
-  "offset": 2373,
+  "offset": 2179,
   "rtol": null,
   "shape": [
    4

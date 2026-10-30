@@ -140,7 +140,7 @@ std::vector<std::byte> encode_npy(const NpyArray& array){
     std::vector<std::byte> out{std::byte{0x93},std::byte{'N'},std::byte{'U'},std::byte{'M'},std::byte{'P'},std::byte{'Y'},std::byte{1},std::byte{0}};
     append_bits(out,header.size(),2);for(char c:header)out.push_back(static_cast<std::byte>(static_cast<unsigned char>(c)));out.insert(out.end(),array.bytes.begin(),array.bytes.end());return out;
 }
-std::vector<std::byte> read_numpy_bytes(const std::filesystem::path& file){
+std::vector<std::byte> read_bounded_file_bytes(const std::filesystem::path& file){
     const auto handle=platform::open_regular(file);struct stat info{};if(::fstat(handle.get(),&info)!=0)throw std::system_error(errno,std::generic_category(),"state fstat");
     if(info.st_size<0||std::cmp_greater(info.st_size,kMaxNumpyBytes))bad("file exceeds read bound");
     std::vector<std::byte> bytes(static_cast<std::size_t>(info.st_size));std::size_t at=0;

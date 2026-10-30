@@ -10,14 +10,20 @@
 #include <array>
 #include <cmath>
 #include <sstream>
+#include <type_traits>
 
 namespace {
 namespace m = runtime::measurement;
 namespace io = bike::io;
 using namespace runtime::setupvalue;
 
+// Compile contract for the N2 rename: the bounded raw reader is a plain
+// filesystem byte reader, not a NumPy decoder.
+using FileReader = std::vector<std::byte> (*)(const std::filesystem::path&);
+static_assert(std::is_same_v<decltype(&io::read_bounded_file_bytes), FileReader>);
+
 io::Value read_json(const std::filesystem::path& path) {
-    const auto bytes = io::read_numpy_bytes(path);
+    const auto bytes = io::read_bounded_file_bytes(path);
     std::string text; text.reserve(bytes.size());
     for (std::byte const byte : bytes) text.push_back(static_cast<char>(byte));
     return io::parse_json(text);
@@ -71,7 +77,7 @@ void test_nonempty_output_is_rejected_before_setup() {
     bt::require(m::measure_realtime_command(args, message, error) == 2, "nonempty output exits 2");
     bt::require(error.str().find("new or empty") != std::string::npos, "output check precedes setup");
     bt::require(!std::filesystem::exists(directory.path() / "report.json"), "rejected output has no report");
-    bt::require(io::read_numpy_bytes(directory.path() / "existing.txt").size() == marker.size(), "existing file preserved");
+    bt::require(io::read_bounded_file_bytes(directory.path() / "existing.txt").size() == marker.size(), "existing file preserved");
 }
 void test_invalid_runs_and_python_backend_exit_two() {
     bt::TemporaryDirectory const directory("measure-invalid");

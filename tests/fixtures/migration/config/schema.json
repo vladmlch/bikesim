@@ -785,44 +785,6 @@
         },
         {
           "default": null,
-          "default_factory": "BatteryConfig",
-          "fields": [
-            {
-              "default": true,
-              "default_factory": null,
-              "name": "enabled",
-              "type": "<class 'bool'>"
-            },
-            {
-              "default": 1800000.0,
-              "default_factory": null,
-              "name": "energy_j",
-              "type": "<class 'float'>"
-            },
-            {
-              "default": 0.02,
-              "default_factory": null,
-              "name": "copper_w_per_nm2",
-              "type": "<class 'float'>"
-            },
-            {
-              "default": 0.0,
-              "default_factory": null,
-              "name": "speed_w_per_rad_s2",
-              "type": "<class 'float'>"
-            },
-            {
-              "default": 5.0,
-              "default_factory": null,
-              "name": "idle_w",
-              "type": "<class 'float'>"
-            }
-          ],
-          "name": "battery",
-          "type": "<class 'bike_sim.physics.physical_config.BatteryConfig'>"
-        },
-        {
-          "default": null,
           "default_factory": "PedalingConfig",
           "fields": [
             {

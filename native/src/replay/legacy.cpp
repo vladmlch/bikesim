@@ -143,7 +143,7 @@ ReplayInput load_legacy_input(const std::filesystem::path& path, std::optional<s
     exact_keys(field(out.manifest, "file_sha256"), required, "replay fixed file set");
     for (const auto& name : required) {
         const auto& hash = field(field(out.manifest, "file_sha256"), name); digest(hash, name);
-        auto bytes = io::read_numpy_bytes(path / name); // no-follow, regular opened file, bounded
+        auto bytes = io::read_bounded_file_bytes(path / name); // no-follow, regular opened file, bounded
         if (io::sha256(bytes) != string(hash)) throw recording::RecordingError("recording checksum mismatch: " + name);
         out.assets.emplace(name, std::move(bytes));
     }

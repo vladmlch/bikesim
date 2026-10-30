@@ -16,9 +16,14 @@
 
 #include "model_access.hpp"
 #include "runtime/setup_values.hpp"
+#include "writers/brake.hpp"
 #include "writers/resistance.hpp"
 
+#include <algorithm>
+#include <bit>
+#include <cstdint>
 #include <limits>
+#include <ranges>
 
 namespace {
 
@@ -88,7 +93,17 @@ struct Side {
     const auto bundle =
             platform_fixture("episode", "pinned_savage_40_f2");
     const auto ep = load_episode_bundle(bundle);
-    Stepper st((bundle / "model.mjb").string(), load_config(bundle));
+    const auto config = load_config(bundle);
+    Stepper st((bundle / "model.mjb").string(), config);
+    bt::require(config.brake.has_value(),
+                "episode bundle projects a brake section");
+    // The overwrite gate runs the same kernel the Stepper's own brake
+    // writer holds — a second writer over the same live mjModel.
+    const BrakeWriter overwrite_writer(st.model(), *config.brake);
+    const auto bitwise_eq = [](double a, double b) {
+        return std::bit_cast<std::uint64_t>(a) ==
+               std::bit_cast<std::uint64_t>(b);
+    };
     const int front_adr = mj_name2id(st.model(), mjOBJ_ACTUATOR,
                                      "front_brake");
     const int rear_adr =
@@ -116,8 +131,32 @@ struct Side {
                 const auto [nf, nr] = st.brake_torques(kDemands[fi],
                                                        kDemands[ri]);
                 const std::array pair{nf, nr};
-                golden.f64(pair, std::array<std::size_t, 1>{2},
-                           "brake_torques" + tag);
+                if (fi == 2 && ri == 3) {
+                    // Overwrite check: two identical compute_into calls
+                    // into differently dirtied caller buffers must bitwise
+                    // reproduce the recorded (front, rear) pair — the
+                    // caller's prior contents never leak into the two
+                    // assigns.
+                    std::array<double, BrakeWriter::kTorqueCount>
+                            first{-77.5, 313.25},
+                            second{-19.125, 904.75};
+                    overwrite_writer.compute_into(st.data(), kDemands[fi],
+                                                  kDemands[ri], first);
+                    overwrite_writer.compute_into(st.data(), kDemands[fi],
+                                                  kDemands[ri], second);
+                    bt::require(std::ranges::equal(first, second,
+                                                   bitwise_eq) &&
+                                    std::ranges::equal(first, pair,
+                                                       bitwise_eq),
+                                "compute_into overwrites caller storage "
+                                "at brake_torques" +
+                                        tag);
+                    golden.f64(first, std::array<std::size_t, 1>{2},
+                               "brake_torques" + tag);
+                } else {
+                    golden.f64(pair, std::array<std::size_t, 1>{2},
+                               "brake_torques" + tag);
+                }
                 st.apply_brake(kDemands[fi], kDemands[ri]);
                 golden.f64(st.ctrl(), std::array<std::size_t, 1>{nu},
                            "apply_brake" + tag);

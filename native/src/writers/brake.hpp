@@ -68,8 +68,8 @@ private:
     // torques()' body verbatim on caller-owned storage: front wheel first,
     // like the Python source. Kept throwing so both boundaries share one
     // kernel and the original rejection types reach the caller.
-    void accumulate_validated(const mjData *d, double front_demand,
-                              double rear_demand, std::span<double> out) const;
+    void compute_validated_into(const mjData *d, double front_demand,
+                                double rear_demand, std::span<double> out) const;
 
     nativecfg::BrakeConfig cfg_;
     mjtSize nv_ = 0, nu_ = 0;

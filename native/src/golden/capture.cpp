@@ -193,7 +193,7 @@ public:
         // directly; it does not submit delayed research control windows.
         // Validate all inputs before that reset changes any runtime state.
         runtime.reset();
-        const Guard physical_guard(runtime.advancing_);
+        const Guard physical_guard(runtime.busy_);
         if (initial) restore_initial(runtime, *initial);
         auto result = std::make_unique<EpisodeArtifact>();
         capture_initial(*result, model, *stepper.data());

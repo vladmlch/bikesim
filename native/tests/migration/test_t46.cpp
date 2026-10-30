@@ -25,27 +25,31 @@ void analyst_process(const std::filesystem::path& executable, const std::string&
         args.insert(args.begin(),executable.string());return bike::platform::run(args,cwd);
     };
     const auto help=process({"--help"});
-    bt::require(help.exit_code==0&&help.out.find("usage: bike-recording")!=std::string::npos&&help.err.empty(),"standalone analyst help runs without a simulator or display request");
+    bt::require(help.exit_code==0&&help.stdout_text.find("usage: bike-recording")!=std::string::npos&&help.stderr_text.empty(),"standalone analyst help runs without a simulator or display request");
     const auto overview=process({"overview",path,"--json"});
-    bt::require(overview.exit_code==0&&overview.err.empty()&&equal(bike::io::parse_recording_json(overview.out),bike::io::parse_recording_json(expected_json)),
+    bt::require(overview.exit_code==0&&overview.stderr_text.empty()&&equal(bike::io::parse_recording_json(overview.stdout_text),bike::io::parse_recording_json(expected_json)),
         "native executable and direct analyst API return the same sealed evidence");
     const auto invalid=process({"sql",path,"--query","DELETE FROM physics"});
-    bt::require(invalid.exit_code==1&&invalid.out.empty()&&invalid.err.find("RECORDING ERROR")!=std::string::npos,"standalone SQL rejection keeps stdout and stderr separate");
+    bt::require(invalid.exit_code==1&&invalid.stdout_text.empty()&&invalid.stderr_text.starts_with("RECORDING ERROR: "),"standalone SQL rejection is a status 1 stderr diagnostic with empty stdout");
     const auto process_export=cwd/"process-metrics.csv";
     const auto exported_process=process({"export",path,"--episode","0","--table","metrics","--format","csv","--output",process_export.string()});
-    bt::require(exported_process.exit_code==0&&bt::text(process_export).find("9007199254740993")!=std::string::npos,"standalone export writes actual exact-integer CSV output");
+    bt::require(exported_process.exit_code==0&&exported_process.stderr_text.empty()&&bt::text(process_export).find("9007199254740993")!=std::string::npos,"standalone export writes actual exact-integer CSV output");
 }
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void analyst(const std::filesystem::path& executable) {
     recording_reader_test::Directory const tmp;
     bt::require(command({"--help"}).code==0,"analyst help does not open a recording");
-    bt::require(command({}).code==2&&command({"missing-command"}).code==2,"required command/parser failures return status 2");
+    const auto no_command=command({}),unknown=command({"missing-command"});
+    bt::require(no_command.code==2&&unknown.code==2&&no_command.out.empty()&&unknown.out.empty()&&
+        no_command.error.find("bike-recording: error:")!=std::string::npos&&
+        unknown.error.find("bike-recording: error:")!=std::string::npos,
+        "required command/parser failures return status 2 on stderr with empty stdout");
     bt::require(command({"window","missing","--episode","0","--start","0","--end","1"}).code==2,"window requires explicit fields before recording access");
     bt::require(command({"overview","missing","--limit","bad"}).code==2,"bad integer is rejected before opening missing input");
     bt::require(command({"export","missing","--episode","0","--format","parquet","--output","wrong"}).code==2,"format choices reject unsupported convenience export");
     const auto missing=command({"overview",(tmp.path/"missing").string()});
-    bt::require(missing.code==1&&missing.out.empty()&&missing.error.find("RECORDING ERROR")!=std::string::npos,"missing/unsealed recording is a status 1 diagnostic on stderr");
+    bt::require(missing.code==1&&missing.out.empty()&&missing.error.starts_with("RECORDING ERROR: "),"missing/unsealed recording is a status 1 diagnostic on stderr");
     const auto published=recording_fixture::publish(tmp.path/"runs",3); const auto path=published.directory.string();
     const auto plain=command({"overview",path}),json=command({"overview",path,"--json"});
     bt::require(plain.code==0&&json.code==0&&plain.error.empty()&&json.error.empty()&&

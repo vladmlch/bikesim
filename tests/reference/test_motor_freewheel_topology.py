@@ -92,7 +92,7 @@ def _config(tmp_path, drive_lines):
     text = text.replace('gain = 4.0', 'profile = "bosch_cx_gen4"').replace('max_torque = 85.0', 'max_torque = 1.0')
     # Task 8 removes explicit profile-owned limits from the default TOML. Keep
     # this intentionally conflicting raw limit in the probe regardless.
-    assist = text[text.index('[drive.assist]'):text.index('[drive.battery]')]
+    assist = text[text.index('[drive.assist]'):text.index('[drive.gearing]')]
     if '\nmax_torque = ' not in assist:
         text = text.replace('[drive.assist]\n', '[drive.assist]\nmax_torque = 1.0\n')
     start = text.index('[drive]\n')

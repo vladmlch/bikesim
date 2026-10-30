@@ -62,8 +62,8 @@ PlainResult run_plain(const std::vector<std::string> &argv,
         out.exit_code = result.exit_code > 128
                             ? static_cast<std::int64_t>(128 - result.exit_code)
                             : static_cast<std::int64_t>(result.exit_code);
-        out.out = utf8_replace(result.out);
-        out.err = utf8_replace(result.err);
+        out.out = utf8_replace(result.stdout_text);
+        out.err = utf8_replace(result.stderr_text);
         return out;
     } catch (const std::exception &error) {
         throw ContractError(std::string("cannot run native contract "

@@ -248,8 +248,8 @@ if(NOT IS_DIRECTORY "${_native_rapidjson_include}")
   message(FATAL_ERROR
     "pinned RapidJSON include tree is missing: ${_native_rapidjson_include} — acquire the locked .deps before configure")
 endif()
-add_library(bike_io STATIC src/io/json.cpp src/io/hash.cpp
-  src/io/value.hpp src/io/json.hpp src/io/hash.hpp)
+add_library(bike_io STATIC src/io/json.cpp src/io/hash.cpp src/io/diagnostics.cpp
+  src/io/value.hpp src/io/json.hpp src/io/hash.hpp src/io/diagnostics.hpp)
 bike_apply_native_graph_policy(bike_io)
 target_include_directories(bike_io SYSTEM PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src" "${_native_rapidjson_include}")

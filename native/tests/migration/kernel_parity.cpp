@@ -5,7 +5,6 @@
 #include "support/migration_test.hpp"
 #include "drivetrain/chain.hpp"
 #include "drivetrain/freehub.hpp"
-#include "drivetrain/motor.hpp"
 #include "drivetrain/state_codec.hpp"
 #include "io/json.hpp"
 
@@ -30,19 +29,6 @@ void exact_controls() {
     exact(hub.update(.25, 0., 0., 0.), 16., "freehub engagement torque");
     exact(hub.state().energy_j, 2., "freehub engagement energy");
     exact(hub.update(-.5, 0., 0., 0.), 0., "overrun moves the one-way boundary");
-
-    drivetrain::Battery battery(16.);
-    const auto debit = battery.debit(12., .25);
-    exact(battery.state().energy_j, 16., "debit stages battery energy");
-    exact(debit.second.energy_j, 13., "debit candidate energy");
-    exact(debit.second.drawn_energy_j, 3., "debit accounts delivered energy");
-    battery.publish(debit.second);
-    battery.reset();
-    exact(battery.state().energy_j, 16., "reset restores battery capacity");
-    exact(drivetrain::motor_electrical_power(4., 2., .5, .25, 1., true),
-          18., "shaft, copper, speed and idle power remain separate terms");
-    exact(drivetrain::motor_electrical_power(4., 2., .5, .25, 1., false),
-          0., "disabled motor consumes no synthetic idle power");
 
     const auto source = bt::text(bt::fixture("state/drive.json"));
     const auto decoded = drivetrain::decode_drive_snapshot(bike::io::parse_json(source));

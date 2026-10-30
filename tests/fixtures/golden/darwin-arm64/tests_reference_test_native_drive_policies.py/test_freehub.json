@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 94,
+  "nbytes": 84,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
   "offset": 0,
   "rtol": null,
   "shape": [
-   94
+   84
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "$.assist#keys",
   "nbytes": 151,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 94,
+  "offset": 84,
   "rtol": null,
   "shape": [
    151
@@ -35,7 +35,7 @@
   "label": "$.assist.cutoff_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 245,
+  "offset": 235,
   "rtol": null,
   "shape": []
  },
@@ -47,7 +47,7 @@
   "label": "$.assist.engage_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 253,
+  "offset": 243,
   "rtol": null,
   "shape": []
  },
@@ -59,7 +59,7 @@
   "label": "$.assist.gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 261,
+  "offset": 251,
   "rtol": null,
   "shape": []
  },
@@ -71,7 +71,7 @@
   "label": "$.assist.gate_min_crank_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 269,
+  "offset": 259,
   "rtol": null,
   "shape": []
  },
@@ -83,7 +83,7 @@
   "label": "$.assist.max_power",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 277,
+  "offset": 267,
   "rtol": null,
   "shape": []
  },
@@ -95,7 +95,7 @@
   "label": "$.assist.max_torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 285,
+  "offset": 275,
   "rtol": null,
   "shape": []
  },
@@ -107,7 +107,7 @@
   "label": "$.assist.mode",
   "nbytes": 7,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 293,
+  "offset": 283,
   "rtol": null,
   "shape": [
    7
@@ -121,7 +121,7 @@
   "label": "$.assist.profile",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 300,
+  "offset": 290,
   "rtol": null,
   "shape": [
    4
@@ -135,7 +135,7 @@
   "label": "$.assist.slew",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 304,
+  "offset": 294,
   "rtol": null,
   "shape": []
  },
@@ -147,7 +147,7 @@
   "label": "$.assist.taper_width_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 312,
+  "offset": 302,
   "rtol": null,
   "shape": []
  },
@@ -159,7 +159,7 @@
   "label": "$.assist.tau",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 320,
+  "offset": 310,
   "rtol": null,
   "shape": []
  },
@@ -171,7 +171,7 @@
   "label": "$.assist.torque_curve",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 328,
+  "offset": 318,
   "rtol": null,
   "shape": [
    4
@@ -182,86 +182,10 @@
   "dtype": "|u1",
   "index": 14,
   "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 71,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 332,
-  "rtol": null,
-  "shape": [
-   71
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 15,
-  "kind": "bitwise",
-  "label": "$.battery.copper_w_per_nm2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 403,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 16,
-  "kind": "bitwise",
-  "label": "$.battery.enabled",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 411,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 17,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 415,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 18,
-  "kind": "bitwise",
-  "label": "$.battery.idle_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 423,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.battery.speed_w_per_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 431,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 20,
-  "kind": "bitwise",
   "label": "$.gearing#keys",
   "nbytes": 44,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 439,
+  "offset": 322,
   "rtol": null,
   "shape": [
    44
@@ -270,24 +194,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 21,
+  "index": 15,
   "kind": "bitwise",
   "label": "$.gearing.chain_pitch_m",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 483,
+  "offset": 366,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 22,
+  "index": 16,
   "kind": "bitwise",
   "label": "$.gearing.front_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 491,
+  "offset": 374,
   "rtol": null,
   "shape": [
    2
@@ -296,12 +220,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 23,
+  "index": 17,
   "kind": "bitwise",
   "label": "$.gearing.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 493,
+  "offset": 376,
   "rtol": null,
   "shape": [
    2
@@ -310,36 +234,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 24,
+  "index": 18,
   "kind": "bitwise",
   "label": "$.hub_damping_nm_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 495,
+  "offset": 378,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 25,
+  "index": 19,
   "kind": "bitwise",
   "label": "$.hub_stiffness_nm_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 503,
+  "offset": 386,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 26,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 219,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 511,
+  "offset": 394,
   "rtol": null,
   "shape": [
    219
@@ -348,48 +272,48 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 27,
+  "index": 21,
   "kind": "bitwise",
   "label": "$.pedaling.coast_above_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 730,
+  "offset": 613,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 28,
+  "index": 22,
   "kind": "bitwise",
   "label": "$.pedaling.coast_cadence_tau_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 738,
+  "offset": 621,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 29,
+  "index": 23,
   "kind": "bitwise",
   "label": "$.pedaling.effort_slew_nm_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 746,
+  "offset": 629,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 30,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.pedaling.enabled",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 754,
+  "offset": 637,
   "rtol": null,
   "shape": [
    4
@@ -398,12 +322,86 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 31,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.pedaling.mash_cadence_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 758,
+  "offset": 641,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.pedaling.mash_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 649,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.pedaling.resume_below_rpm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 657,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_brake",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 665,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_demand",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 669,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_engage_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 677,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_release_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 685,
   "rtol": null,
   "shape": []
  },
@@ -412,96 +410,22 @@
   "dtype": "<f8",
   "index": 32,
   "kind": "bitwise",
-  "label": "$.pedaling.mash_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 766,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "$.pedaling.resume_below_rpm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 774,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.pedaling.rollback_brake",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 782,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.pedaling.rollback_demand",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 786,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.pedaling.rollback_engage_mps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 794,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.pedaling.rollback_release_mps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 802,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 38,
-  "kind": "bitwise",
   "label": "$.pedaling.stop_time_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 810,
+  "offset": 693,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 39,
+  "index": 33,
   "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 201,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 818,
+  "offset": 701,
   "rtol": null,
   "shape": [
    201
@@ -510,24 +434,108 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 40,
+  "index": 34,
   "kind": "bitwise",
   "label": "$.shifting.cadence_smoothing_tau_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1019,
+  "offset": 902,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 41,
+  "index": 35,
   "kind": "bitwise",
   "label": "$.shifting.cassette#length",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1027,
+  "offset": 910,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[0]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 912,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[1]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 914,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[2]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 916,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[3]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 918,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[4]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 920,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[5]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 922,
   "rtol": null,
   "shape": [
    2
@@ -538,10 +546,10 @@
   "dtype": "|u1",
   "index": 42,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[0]",
+  "label": "$.shifting.cassette[6]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1029,
+  "offset": 924,
   "rtol": null,
   "shape": [
    2
@@ -552,10 +560,10 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[1]",
+  "label": "$.shifting.cassette[7]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1031,
+  "offset": 926,
   "rtol": null,
   "shape": [
    2
@@ -566,10 +574,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[2]",
+  "label": "$.shifting.cassette[8]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1033,
+  "offset": 928,
   "rtol": null,
   "shape": [
    2
@@ -580,10 +588,10 @@
   "dtype": "|u1",
   "index": 45,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[3]",
+  "label": "$.shifting.cassette[9]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1035,
+  "offset": 930,
   "rtol": null,
   "shape": [
    2
@@ -594,10 +602,10 @@
   "dtype": "|u1",
   "index": 46,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[4]",
+  "label": "$.shifting.cassette[10]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1037,
+  "offset": 932,
   "rtol": null,
   "shape": [
    2
@@ -608,10 +616,10 @@
   "dtype": "|u1",
   "index": 47,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[5]",
+  "label": "$.shifting.cassette[11]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1039,
+  "offset": 934,
   "rtol": null,
   "shape": [
    2
@@ -622,94 +630,10 @@
   "dtype": "|u1",
   "index": 48,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[6]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1041,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[7]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1043,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[8]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1045,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[9]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1047,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[10]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1049,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[11]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1051,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 54,
-  "kind": "bitwise",
   "label": "$.shifting.enabled",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1053,
+  "offset": 936,
   "rtol": null,
   "shape": [
    4
@@ -718,84 +642,84 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 55,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.shifting.shift_cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1057,
+  "offset": 940,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.shifting.shift_cut_duration_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1065,
+  "offset": 948,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 57,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.shifting.target_cadence_max_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1073,
+  "offset": 956,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 58,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.shifting.target_cadence_min_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1081,
+  "offset": 964,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 59,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.shifting.torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1089,
+  "offset": 972,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.shifting.upshift_slip_limit_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1097,
+  "offset": 980,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.shifting.upshift_slip_mode",
   "nbytes": 15,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1105,
+  "offset": 988,
   "rtol": null,
   "shape": [
    15
@@ -804,38 +728,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 62,
+  "index": 56,
   "kind": "bitwise",
   "label": "",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1120,
+  "offset": 1003,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 63,
+  "index": 57,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1128,
+  "offset": 1011,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 64,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1176,
+  "offset": 1049,
   "rtol": null,
   "shape": [
    33
@@ -844,12 +768,88 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 65,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1209,
+  "offset": 1082,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1090,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1095,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1103,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1138,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1146,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1154,
   "rtol": null,
   "shape": []
  },
@@ -858,136 +858,10 @@
   "dtype": "|u1",
   "index": 66,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1217,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 67,
-  "kind": "bitwise",
-  "label": "$.assist.torque",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1222,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 68,
-  "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1230,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 69,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1278,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 70,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1286,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 71,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1294,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 72,
-  "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1302,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 73,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1337,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 74,
-  "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1345,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 75,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1353,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 76,
-  "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1361,
+  "offset": 1162,
   "rtol": null,
   "shape": [
    98
@@ -996,12 +870,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 77,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1459,
+  "offset": 1260,
   "rtol": null,
   "shape": [
    4
@@ -1010,24 +884,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 78,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1463,
+  "offset": 1264,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 79,
+  "index": 69,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1471,
+  "offset": 1272,
   "rtol": null,
   "shape": [
    5
@@ -1036,24 +910,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 80,
+  "index": 70,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1476,
+  "offset": 1277,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 81,
+  "index": 71,
   "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1484,
+  "offset": 1285,
   "rtol": null,
   "shape": [
    4
@@ -1062,12 +936,146 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 82,
+  "index": 72,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1488,
+  "offset": 1289,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1297,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1410,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1414,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1422,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1430,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1436,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1438,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1440,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1444,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1445,
   "rtol": null,
   "shape": []
  },
@@ -1076,13 +1084,13 @@
   "dtype": "|u1",
   "index": 83,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
+  "label": "$#keys",
+  "nbytes": 38,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1496,
+  "offset": 1453,
   "rtol": null,
   "shape": [
-   113
+   38
   ]
  },
  {
@@ -1090,144 +1098,10 @@
   "dtype": "|u1",
   "index": 84,
   "kind": "bitwise",
-  "label": "$.shifting.cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1609,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 85,
-  "kind": "bitwise",
-  "label": "$.shifting.cooldown_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1613,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 86,
-  "kind": "bitwise",
-  "label": "$.shifting.cut_remaining_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1621,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 87,
-  "kind": "bitwise",
-  "label": "$.shifting.direction",
-  "nbytes": 6,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1629,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 88,
-  "kind": "bitwise",
-  "label": "$.shifting.from_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1635,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 89,
-  "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1637,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 90,
-  "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1639,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 91,
-  "kind": "bitwise",
-  "label": "$.shifting.shift_count",
-  "nbytes": 1,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1643,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 92,
-  "kind": "bitwise",
-  "label": "",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1644,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 93,
-  "kind": "bitwise",
-  "label": "$#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1652,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 94,
-  "kind": "bitwise",
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1700,
+  "offset": 1491,
   "rtol": null,
   "shape": [
    33
@@ -1236,24 +1110,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 95,
+  "index": 85,
   "kind": "bitwise",
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1733,
+  "offset": 1524,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 96,
+  "index": 86,
   "kind": "bitwise",
   "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1741,
+  "offset": 1532,
   "rtol": null,
   "shape": [
    5
@@ -1262,74 +1136,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 97,
+  "index": 87,
   "kind": "bitwise",
   "label": "$.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1746,
+  "offset": 1537,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 98,
-  "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1754,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 99,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1802,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 100,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1810,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 101,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1818,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 102,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1826,
+  "offset": 1545,
   "rtol": null,
   "shape": [
    35
@@ -1338,48 +1162,48 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 103,
+  "index": 89,
   "kind": "bitwise",
   "label": "$.hub.boundary",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1861,
+  "offset": 1580,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 104,
+  "index": 90,
   "kind": "bitwise",
   "label": "$.hub.energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1869,
+  "offset": 1588,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 105,
+  "index": 91,
   "kind": "bitwise",
   "label": "$.hub.torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1877,
+  "offset": 1596,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 106,
+  "index": 92,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1885,
+  "offset": 1604,
   "rtol": null,
   "shape": [
    98
@@ -1388,12 +1212,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 107,
+  "index": 93,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1983,
+  "offset": 1702,
   "rtol": null,
   "shape": [
    4
@@ -1402,12 +1226,198 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 108,
+  "index": 94,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1987,
+  "offset": 1706,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1714,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1719,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1727,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1731,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1739,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1852,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1856,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1864,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1872,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1878,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1880,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1882,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1886,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1887,
   "rtol": null,
   "shape": []
  },
@@ -1416,10 +1426,50 @@
   "dtype": "|u1",
   "index": 109,
   "kind": "bitwise",
-  "label": "$.pedaling.coasting",
+  "label": "$#keys",
+  "nbytes": 38,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1895,
+  "rtol": null,
+  "shape": [
+   38
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1933,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 1966,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 1995,
+  "offset": 1974,
   "rtol": null,
   "shape": [
    5
@@ -1428,67 +1478,27 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 110,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2000,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 111,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2008,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 112,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2012,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 113,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
+  "label": "$.assist.torque",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2020,
+  "offset": 1979,
   "rtol": null,
-  "shape": [
-   113
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 114,
   "kind": "bitwise",
-  "label": "$.shifting.cadence_ema",
-  "nbytes": 4,
+  "label": "$.hub#keys",
+  "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2133,
+  "offset": 1987,
   "rtol": null,
   "shape": [
-   4
+   35
   ]
  },
  {
@@ -1496,10 +1506,10 @@
   "dtype": "<f8",
   "index": 115,
   "kind": "bitwise",
-  "label": "$.shifting.cooldown_s",
+  "label": "$.hub.boundary",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2137,
+  "offset": 2022,
   "rtol": null,
   "shape": []
  },
@@ -1508,39 +1518,37 @@
   "dtype": "<f8",
   "index": 116,
   "kind": "bitwise",
-  "label": "$.shifting.cut_remaining_s",
+  "label": "$.hub.energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2145,
+  "offset": 2030,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2038,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 117,
-  "kind": "bitwise",
-  "label": "$.shifting.direction",
-  "nbytes": 6,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2153,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 118,
   "kind": "bitwise",
-  "label": "$.shifting.from_teeth",
-  "nbytes": 2,
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2159,
+  "offset": 2046,
   "rtol": null,
   "shape": [
-   2
+   98
   ]
  },
  {
@@ -1548,24 +1556,10 @@
   "dtype": "|u1",
   "index": 119,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2161,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 120,
-  "kind": "bitwise",
-  "label": "$.shifting.required_ema",
+  "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2163,
+  "offset": 2144,
   "rtol": null,
   "shape": [
    4
@@ -1573,16 +1567,28 @@
  },
  {
   "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
   "dtype": "|u1",
   "index": 121,
   "kind": "bitwise",
-  "label": "$.shifting.shift_count",
-  "nbytes": 1,
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2167,
+  "offset": 2156,
   "rtol": null,
   "shape": [
-   1
+   5
   ]
  },
  {
@@ -1590,10 +1596,10 @@
   "dtype": "<f8",
   "index": 122,
   "kind": "bitwise",
-  "label": "",
+  "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2168,
+  "offset": 2161,
   "rtol": null,
   "shape": []
  },
@@ -1602,242 +1608,10 @@
   "dtype": "|u1",
   "index": 123,
   "kind": "bitwise",
-  "label": "$#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2176,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 124,
-  "kind": "bitwise",
-  "label": "$.assist#keys",
-  "nbytes": 33,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2224,
-  "rtol": null,
-  "shape": [
-   33
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 125,
-  "kind": "bitwise",
-  "label": "$.assist.last_gain",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2257,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 126,
-  "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2265,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 127,
-  "kind": "bitwise",
-  "label": "$.assist.torque",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2270,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 128,
-  "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2278,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 129,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2326,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 130,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2334,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 131,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2342,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 132,
-  "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2350,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 133,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2385,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 134,
-  "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2393,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 135,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2401,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 136,
-  "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2409,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 137,
-  "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2507,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 138,
-  "kind": "bitwise",
-  "label": "$.pedaling._effort",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2511,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 139,
-  "kind": "bitwise",
-  "label": "$.pedaling.coasting",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2519,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 140,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2524,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 141,
-  "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2532,
+  "offset": 2169,
   "rtol": null,
   "shape": [
    4
@@ -1846,24 +1620,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 142,
+  "index": 124,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2536,
+  "offset": 2173,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 143,
+  "index": 125,
   "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2544,
+  "offset": 2181,
   "rtol": null,
   "shape": [
    113
@@ -1872,12 +1646,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 144,
+  "index": 126,
   "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2657,
+  "offset": 2294,
   "rtol": null,
   "shape": [
    4
@@ -1886,36 +1660,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 145,
+  "index": 127,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2661,
+  "offset": 2298,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 146,
+  "index": 128,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2669,
+  "offset": 2306,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 147,
+  "index": 129,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2677,
+  "offset": 2314,
   "rtol": null,
   "shape": [
    6
@@ -1924,12 +1698,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 148,
+  "index": 130,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2683,
+  "offset": 2320,
   "rtol": null,
   "shape": [
    2
@@ -1938,12 +1712,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 149,
+  "index": 131,
   "kind": "bitwise",
   "label": "$.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2685,
+  "offset": 2322,
   "rtol": null,
   "shape": [
    2
@@ -1952,12 +1726,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 150,
+  "index": 132,
   "kind": "bitwise",
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2687,
+  "offset": 2324,
   "rtol": null,
   "shape": [
    4
@@ -1966,12 +1740,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 151,
+  "index": 133,
   "kind": "bitwise",
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2691,
+  "offset": 2328,
   "rtol": null,
   "shape": [
    1
@@ -1980,38 +1754,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 152,
+  "index": 134,
   "kind": "bitwise",
   "label": "",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2692,
+  "offset": 2329,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 153,
+  "index": 135,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2700,
+  "offset": 2337,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 154,
+  "index": 136,
   "kind": "bitwise",
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2748,
+  "offset": 2375,
   "rtol": null,
   "shape": [
    33
@@ -2020,24 +1794,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 155,
+  "index": 137,
   "kind": "bitwise",
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2781,
+  "offset": 2408,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 156,
+  "index": 138,
   "kind": "bitwise",
   "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2789,
+  "offset": 2416,
   "rtol": null,
   "shape": [
    5
@@ -2046,74 +1820,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 157,
+  "index": 139,
   "kind": "bitwise",
   "label": "$.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2794,
+  "offset": 2421,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 158,
-  "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2802,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 159,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2850,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 160,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2858,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 161,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2866,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 162,
+  "index": 140,
   "kind": "bitwise",
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2874,
+  "offset": 2429,
   "rtol": null,
   "shape": [
    35
@@ -2122,48 +1846,48 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 163,
+  "index": 141,
   "kind": "bitwise",
   "label": "$.hub.boundary",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2909,
+  "offset": 2464,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 164,
+  "index": 142,
   "kind": "bitwise",
   "label": "$.hub.energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2917,
+  "offset": 2472,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 165,
+  "index": 143,
   "kind": "bitwise",
   "label": "$.hub.torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2925,
+  "offset": 2480,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 166,
+  "index": 144,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 2933,
+  "offset": 2488,
   "rtol": null,
   "shape": [
    98
@@ -2172,12 +1896,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 167,
+  "index": 145,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3031,
+  "offset": 2586,
   "rtol": null,
   "shape": [
    4
@@ -2186,24 +1910,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 168,
+  "index": 146,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3035,
+  "offset": 2590,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 169,
+  "index": 147,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3043,
+  "offset": 2598,
   "rtol": null,
   "shape": [
    5
@@ -2212,24 +1936,314 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 170,
+  "index": 148,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3048,
+  "offset": 2603,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 171,
+  "index": 149,
   "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3056,
+  "offset": 2611,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2615,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2623,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2736,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2740,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2748,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2756,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2762,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2764,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2766,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2770,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2771,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 38,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2779,
+  "rtol": null,
+  "shape": [
+   38
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2817,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2850,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2858,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2863,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2871,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2906,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2914,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2922,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 2930,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3028,
   "rtol": null,
   "shape": [
    4
@@ -2240,10 +2254,10 @@
   "dtype": "<f8",
   "index": 172,
   "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
+  "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3060,
+  "offset": 3032,
   "rtol": null,
   "shape": []
  },
@@ -2252,184 +2266,10 @@
   "dtype": "|u1",
   "index": 173,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3068,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 174,
-  "kind": "bitwise",
-  "label": "$.shifting.cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3181,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 175,
-  "kind": "bitwise",
-  "label": "$.shifting.cooldown_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3185,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 176,
-  "kind": "bitwise",
-  "label": "$.shifting.cut_remaining_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3193,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 177,
-  "kind": "bitwise",
-  "label": "$.shifting.direction",
-  "nbytes": 6,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3201,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 178,
-  "kind": "bitwise",
-  "label": "$.shifting.from_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3207,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 179,
-  "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3209,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 180,
-  "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3211,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 181,
-  "kind": "bitwise",
-  "label": "$.shifting.shift_count",
-  "nbytes": 1,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3215,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 182,
-  "kind": "bitwise",
-  "label": "",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3216,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 183,
-  "kind": "bitwise",
-  "label": "$#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3224,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 184,
-  "kind": "bitwise",
-  "label": "$.assist#keys",
-  "nbytes": 33,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3272,
-  "rtol": null,
-  "shape": [
-   33
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 185,
-  "kind": "bitwise",
-  "label": "$.assist.last_gain",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3305,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 186,
-  "kind": "bitwise",
-  "label": "$.assist.pedaling",
+  "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3313,
+  "offset": 3040,
   "rtol": null,
   "shape": [
    5
@@ -2438,27 +2278,201 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 187,
+  "index": 174,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3318,
+  "offset": 3045,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 188,
+  "index": 175,
   "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3326,
+  "offset": 3053,
   "rtol": null,
   "shape": [
-   48
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3057,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3065,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3178,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3182,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3190,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3198,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3204,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3206,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3208,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3212,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3213,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 38,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3221,
+  "rtol": null,
+  "shape": [
+   38
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
+  "offset": 3259,
+  "rtol": null,
+  "shape": [
+   33
   ]
  },
  {
@@ -2466,34 +2480,36 @@
   "dtype": "<f8",
   "index": 189,
   "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3374,
+  "offset": 3292,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 190,
   "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3382,
+  "offset": 3300,
   "rtol": null,
-  "shape": []
+  "shape": [
+   5
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 191,
   "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3390,
+  "offset": 3305,
   "rtol": null,
   "shape": []
  },
@@ -2505,7 +2521,7 @@
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3398,
+  "offset": 3313,
   "rtol": null,
   "shape": [
    35
@@ -2519,7 +2535,7 @@
   "label": "$.hub.boundary",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3433,
+  "offset": 3348,
   "rtol": null,
   "shape": []
  },
@@ -2531,7 +2547,7 @@
   "label": "$.hub.energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3441,
+  "offset": 3356,
   "rtol": null,
   "shape": []
  },
@@ -2543,7 +2559,7 @@
   "label": "$.hub.torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3449,
+  "offset": 3364,
   "rtol": null,
   "shape": []
  },
@@ -2555,7 +2571,7 @@
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3457,
+  "offset": 3372,
   "rtol": null,
   "shape": [
    98
@@ -2569,7 +2585,7 @@
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3555,
+  "offset": 3470,
   "rtol": null,
   "shape": [
    4
@@ -2583,7 +2599,7 @@
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3559,
+  "offset": 3474,
   "rtol": null,
   "shape": []
  },
@@ -2595,7 +2611,7 @@
   "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3567,
+  "offset": 3482,
   "rtol": null,
   "shape": [
    5
@@ -2609,7 +2625,7 @@
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3572,
+  "offset": 3487,
   "rtol": null,
   "shape": []
  },
@@ -2621,7 +2637,7 @@
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3580,
+  "offset": 3495,
   "rtol": null,
   "shape": [
    4
@@ -2635,7 +2651,7 @@
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3584,
+  "offset": 3499,
   "rtol": null,
   "shape": []
  },
@@ -2647,7 +2663,7 @@
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3592,
+  "offset": 3507,
   "rtol": null,
   "shape": [
    113
@@ -2661,7 +2677,7 @@
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3705,
+  "offset": 3620,
   "rtol": null,
   "shape": [
    4
@@ -2675,7 +2691,7 @@
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3709,
+  "offset": 3624,
   "rtol": null,
   "shape": []
  },
@@ -2687,7 +2703,7 @@
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3717,
+  "offset": 3632,
   "rtol": null,
   "shape": []
  },
@@ -2699,7 +2715,7 @@
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3725,
+  "offset": 3640,
   "rtol": null,
   "shape": [
    6
@@ -2713,7 +2729,7 @@
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3731,
+  "offset": 3646,
   "rtol": null,
   "shape": [
    2
@@ -2727,7 +2743,7 @@
   "label": "$.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3733,
+  "offset": 3648,
   "rtol": null,
   "shape": [
    2
@@ -2741,7 +2757,7 @@
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3735,
+  "offset": 3650,
   "rtol": null,
   "shape": [
    4
@@ -2755,399 +2771,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3739,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 212,
-  "kind": "bitwise",
-  "label": "",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3740,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 213,
-  "kind": "bitwise",
-  "label": "$#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3748,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 214,
-  "kind": "bitwise",
-  "label": "$.assist#keys",
-  "nbytes": 33,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3796,
-  "rtol": null,
-  "shape": [
-   33
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 215,
-  "kind": "bitwise",
-  "label": "$.assist.last_gain",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3829,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 216,
-  "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3837,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 217,
-  "kind": "bitwise",
-  "label": "$.assist.torque",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3842,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 218,
-  "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3850,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 219,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3898,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 220,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3906,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 221,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3914,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 222,
-  "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3922,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 223,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3957,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 224,
-  "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3965,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 225,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3973,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 226,
-  "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 3981,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 227,
-  "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4079,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 228,
-  "kind": "bitwise",
-  "label": "$.pedaling._effort",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4083,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 229,
-  "kind": "bitwise",
-  "label": "$.pedaling.coasting",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4091,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 230,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4096,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 231,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4104,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 232,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4108,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 233,
-  "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4116,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 234,
-  "kind": "bitwise",
-  "label": "$.shifting.cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4229,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 235,
-  "kind": "bitwise",
-  "label": "$.shifting.cooldown_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4233,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 236,
-  "kind": "bitwise",
-  "label": "$.shifting.cut_remaining_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4241,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 237,
-  "kind": "bitwise",
-  "label": "$.shifting.direction",
-  "nbytes": 6,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4249,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 238,
-  "kind": "bitwise",
-  "label": "$.shifting.from_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4255,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 239,
-  "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4257,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 240,
-  "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4259,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 241,
-  "kind": "bitwise",
-  "label": "$.shifting.shift_count",
-  "nbytes": 1,
-  "node": "tests/reference/test_native_drive_policies.py::test_freehub",
-  "offset": 4263,
+  "offset": 3654,
   "rtol": null,
   "shape": [
    1

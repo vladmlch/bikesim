@@ -80,7 +80,6 @@ io::Value physical_summary(runtime::NativeRideRuntime const& environment,const i
         {"balance_lost_at_m",frame.presentation.balance_lost_at_m?real(*frame.presentation.balance_lost_at_m):Value{}}}});
     set(result,"energy",field(accounting,"energy"));
     set(result,"model_status",research::wire_value(runtime::Wire{frame.state.model_status}));
-    set(result,"battery_energy_j",real(frame.presentation.battery_energy_j));
     set(result,"component_work_j",field(history,"work_j"));
     set(result,"airtime_threshold_s",field(history,"airtime_s"));set(result,"duration_s",field(history,"duration_s"));
     set(result,"input_identity_at_finalization",recording::input_identity_at_finalization(metadata));
@@ -108,11 +107,39 @@ std::vector<recording::Asset> physical_assets(const initialization::SetupRequest
                               std::pair{"joint_strength","rider_joint_strength.json"}}) {
         const auto& path=field(articulated,std::string(key)+"_path");
         if(io::is_null(path))continue;
-        auto profile=recording::asset(name,"application/json",io::read_numpy_bytes(io::as_string(path,key)));
+        auto profile=recording::asset(name,"application/json",io::read_bounded_file_bytes(io::as_string(path,key)));
         if(profile.sha256!=io::as_string(field(resolved,std::string(key)+"_sha256"),key))
             throw std::invalid_argument(std::string(key)+" changed before recording setup could snapshot it");
         assets.push_back(std::move(profile));
     }
     return assets;
+}
+research::FailureReport finalize_physical_run(
+    const PhysicalFinalizationActions& actions,
+    std::exception_ptr primary) {
+    research::FailureReport report;
+    report.primary = std::move(primary);
+    const auto run = [&report](std::string_view operation,
+                               const std::function<void()>& action) {
+        if (!action) return;
+        try { action(); }
+        catch (...) { report.add(operation, std::current_exception()); }
+    };
+    // A strict trailing flush can report an already committed rejection once:
+    // the seal over that prefix retries exactly once; no physics advance is
+    // ever retried.
+    if (actions.seal) {
+        try { actions.seal(); }
+        catch (...) {
+            report.add("seal", std::current_exception());
+            try { actions.seal(); }
+            catch (...) { report.add("seal", std::current_exception()); }
+        }
+    }
+    run("preview_close", actions.preview_close);
+    run("recording_publish", actions.recording_publish);
+    run("plot_publish", actions.plot_publish);
+    run("runtime_close", actions.runtime_close);
+    return report;
 }
 } // namespace bike::cli

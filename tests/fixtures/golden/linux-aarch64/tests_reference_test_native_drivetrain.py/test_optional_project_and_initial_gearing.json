@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 419,
+  "nbytes": 409,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
   "offset": 0,
   "rtol": null,
   "shape": [
-   419
+   409
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "$.assist#keys",
   "nbytes": 151,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 419,
+  "offset": 409,
   "rtol": null,
   "shape": [
    151
@@ -35,7 +35,7 @@
   "label": "$.assist.cutoff_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 570,
+  "offset": 560,
   "rtol": null,
   "shape": []
  },
@@ -47,7 +47,7 @@
   "label": "$.assist.engage_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 578,
+  "offset": 568,
   "rtol": null,
   "shape": []
  },
@@ -59,7 +59,7 @@
   "label": "$.assist.gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 586,
+  "offset": 576,
   "rtol": null,
   "shape": []
  },
@@ -71,7 +71,7 @@
   "label": "$.assist.gate_min_crank_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 594,
+  "offset": 584,
   "rtol": null,
   "shape": []
  },
@@ -83,7 +83,7 @@
   "label": "$.assist.max_power",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 602,
+  "offset": 592,
   "rtol": null,
   "shape": []
  },
@@ -95,7 +95,7 @@
   "label": "$.assist.max_torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 610,
+  "offset": 600,
   "rtol": null,
   "shape": []
  },
@@ -107,7 +107,7 @@
   "label": "$.assist.mode",
   "nbytes": 7,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 618,
+  "offset": 608,
   "rtol": null,
   "shape": [
    7
@@ -121,7 +121,7 @@
   "label": "$.assist.profile",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 625,
+  "offset": 615,
   "rtol": null,
   "shape": [
    4
@@ -135,7 +135,7 @@
   "label": "$.assist.slew",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 629,
+  "offset": 619,
   "rtol": null,
   "shape": []
  },
@@ -147,7 +147,7 @@
   "label": "$.assist.taper_width_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 637,
+  "offset": 627,
   "rtol": null,
   "shape": []
  },
@@ -159,7 +159,7 @@
   "label": "$.assist.tau",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 645,
+  "offset": 635,
   "rtol": null,
   "shape": []
  },
@@ -171,7 +171,7 @@
   "label": "$.assist.torque_curve",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 653,
+  "offset": 643,
   "rtol": null,
   "shape": [
    4
@@ -179,53 +179,49 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 14,
   "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 71,
+  "label": "$.bearing_c_nms_rad",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 657,
+  "offset": 647,
   "rtol": null,
-  "shape": [
-   71
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 15,
   "kind": "bitwise",
-  "label": "$.battery.copper_w_per_nm2",
+  "label": "$.brake_ceiling_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 728,
+  "offset": 655,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 16,
   "kind": "bitwise",
-  "label": "$.battery.enabled",
-  "nbytes": 4,
+  "label": "$.brake_hold_damping_nms_rad",
+  "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 736,
+  "offset": 663,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.battery.energy_j",
+  "label": "$.brake_hold_engage_radps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 740,
+  "offset": 671,
   "rtol": null,
   "shape": []
  },
@@ -234,10 +230,10 @@
   "dtype": "<f8",
   "index": 18,
   "kind": "bitwise",
-  "label": "$.battery.idle_w",
+  "label": "$.brake_hold_release_radps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 748,
+  "offset": 679,
   "rtol": null,
   "shape": []
  },
@@ -246,10 +242,10 @@
   "dtype": "<f8",
   "index": 19,
   "kind": "bitwise",
-  "label": "$.battery.speed_w_per_rad_s2",
+  "label": "$.brake_hold_stiffness_nm_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 756,
+  "offset": 687,
   "rtol": null,
   "shape": []
  },
@@ -258,10 +254,10 @@
   "dtype": "<f8",
   "index": 20,
   "kind": "bitwise",
-  "label": "$.bearing_c_nms_rad",
+  "label": "$.brake_hold_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 764,
+  "offset": 695,
   "rtol": null,
   "shape": []
  },
@@ -270,10 +266,10 @@
   "dtype": "<f8",
   "index": 21,
   "kind": "bitwise",
-  "label": "$.brake_ceiling_nm",
+  "label": "$.chain_c_ns_m",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 772,
+  "offset": 703,
   "rtol": null,
   "shape": []
  },
@@ -282,10 +278,10 @@
   "dtype": "<f8",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.brake_hold_damping_nms_rad",
+  "label": "$.chain_k_n_m",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 780,
+  "offset": 711,
   "rtol": null,
   "shape": []
  },
@@ -294,94 +290,22 @@
   "dtype": "<f8",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.brake_hold_engage_radps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 788,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 24,
-  "kind": "bitwise",
-  "label": "$.brake_hold_release_radps",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 796,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 25,
-  "kind": "bitwise",
-  "label": "$.brake_hold_stiffness_nm_rad",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 804,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 26,
-  "kind": "bitwise",
-  "label": "$.brake_hold_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 812,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 27,
-  "kind": "bitwise",
-  "label": "$.chain_c_ns_m",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 820,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.chain_k_n_m",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 828,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
   "label": "$.crank_phase_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 836,
+  "offset": 719,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 30,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.drive_mode",
   "nbytes": 14,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 844,
+  "offset": 727,
   "rtol": null,
   "shape": [
    14
@@ -390,12 +314,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 31,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.gearing#keys",
   "nbytes": 44,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 858,
+  "offset": 741,
   "rtol": null,
   "shape": [
    44
@@ -404,24 +328,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 32,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.gearing.chain_pitch_m",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 902,
+  "offset": 785,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 33,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.gearing.front_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 910,
+  "offset": 793,
   "rtol": null,
   "shape": [
    2
@@ -430,12 +354,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 34,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.gearing.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 912,
+  "offset": 795,
   "rtol": null,
   "shape": [
    2
@@ -444,48 +368,48 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 35,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.hub_damping_nm_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 914,
+  "offset": 797,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 36,
+  "index": 30,
   "kind": "bitwise",
   "label": "$.hub_stiffness_nm_rad",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 922,
+  "offset": 805,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 37,
+  "index": 31,
   "kind": "bitwise",
   "label": "$.human_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 930,
+  "offset": 813,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 38,
+  "index": 32,
   "kind": "bitwise",
   "label": "$.motor_clutch",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 938,
+  "offset": 821,
   "rtol": null,
   "shape": [
    5
@@ -494,12 +418,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 39,
+  "index": 33,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 219,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 943,
+  "offset": 826,
   "rtol": null,
   "shape": [
    219
@@ -508,48 +432,48 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 40,
+  "index": 34,
   "kind": "bitwise",
   "label": "$.pedaling.coast_above_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1162,
+  "offset": 1045,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 35,
   "kind": "bitwise",
   "label": "$.pedaling.coast_cadence_tau_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1170,
+  "offset": 1053,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 42,
+  "index": 36,
   "kind": "bitwise",
   "label": "$.pedaling.effort_slew_nm_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1178,
+  "offset": 1061,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 43,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.pedaling.enabled",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1186,
+  "offset": 1069,
   "rtol": null,
   "shape": [
    5
@@ -558,48 +482,48 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 44,
+  "index": 38,
   "kind": "bitwise",
   "label": "$.pedaling.mash_cadence_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1191,
+  "offset": 1074,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 45,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.pedaling.mash_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1199,
+  "offset": 1082,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 46,
+  "index": 40,
   "kind": "bitwise",
   "label": "$.pedaling.resume_below_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1207,
+  "offset": 1090,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.pedaling.rollback_brake",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1215,
+  "offset": 1098,
   "rtol": null,
   "shape": [
    4
@@ -608,72 +532,72 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 48,
+  "index": 42,
   "kind": "bitwise",
   "label": "$.pedaling.rollback_demand",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1219,
+  "offset": 1102,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 49,
+  "index": 43,
   "kind": "bitwise",
   "label": "$.pedaling.rollback_engage_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1227,
+  "offset": 1110,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 50,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.pedaling.rollback_release_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1235,
+  "offset": 1118,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 51,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.pedaling.stop_time_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1243,
+  "offset": 1126,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 52,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.rotor_inertia_kgm2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1251,
+  "offset": 1134,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 201,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1259,
+  "offset": 1142,
   "rtol": null,
   "shape": [
    201
@@ -682,24 +606,108 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 54,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.shifting.cadence_smoothing_tau_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1460,
+  "offset": 1343,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.shifting.cassette#length",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1468,
+  "offset": 1351,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[0]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
+  "offset": 1353,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[1]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
+  "offset": 1355,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[2]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
+  "offset": 1357,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[3]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
+  "offset": 1359,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[4]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
+  "offset": 1361,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[5]",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
+  "offset": 1363,
   "rtol": null,
   "shape": [
    2
@@ -710,10 +718,10 @@
   "dtype": "|u1",
   "index": 56,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[0]",
+  "label": "$.shifting.cassette[6]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1470,
+  "offset": 1365,
   "rtol": null,
   "shape": [
    2
@@ -724,10 +732,10 @@
   "dtype": "|u1",
   "index": 57,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[1]",
+  "label": "$.shifting.cassette[7]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1472,
+  "offset": 1367,
   "rtol": null,
   "shape": [
    2
@@ -738,10 +746,10 @@
   "dtype": "|u1",
   "index": 58,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[2]",
+  "label": "$.shifting.cassette[8]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1474,
+  "offset": 1369,
   "rtol": null,
   "shape": [
    2
@@ -752,10 +760,10 @@
   "dtype": "|u1",
   "index": 59,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[3]",
+  "label": "$.shifting.cassette[9]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1476,
+  "offset": 1371,
   "rtol": null,
   "shape": [
    2
@@ -766,10 +774,10 @@
   "dtype": "|u1",
   "index": 60,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[4]",
+  "label": "$.shifting.cassette[10]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1478,
+  "offset": 1373,
   "rtol": null,
   "shape": [
    2
@@ -780,10 +788,10 @@
   "dtype": "|u1",
   "index": 61,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[5]",
+  "label": "$.shifting.cassette[11]",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1480,
+  "offset": 1375,
   "rtol": null,
   "shape": [
    2
@@ -794,94 +802,10 @@
   "dtype": "|u1",
   "index": 62,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[6]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1482,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 63,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[7]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1484,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 64,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[8]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1486,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 65,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[9]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1488,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 66,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[10]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1490,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 67,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[11]",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1492,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 68,
-  "kind": "bitwise",
   "label": "$.shifting.enabled",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1494,
+  "offset": 1377,
   "rtol": null,
   "shape": [
    5
@@ -890,84 +814,84 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 69,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.shifting.shift_cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1499,
+  "offset": 1382,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 70,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.shifting.shift_cut_duration_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1507,
+  "offset": 1390,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 71,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.shifting.target_cadence_max_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1515,
+  "offset": 1398,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 72,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.shifting.target_cadence_min_rpm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1523,
+  "offset": 1406,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 73,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.shifting.torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1531,
+  "offset": 1414,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 74,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.shifting.upshift_slip_limit_mps",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1539,
+  "offset": 1422,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 75,
+  "index": 69,
   "kind": "bitwise",
   "label": "$.shifting.upshift_slip_mode",
   "nbytes": 15,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1547,
+  "offset": 1430,
   "rtol": null,
   "shape": [
    15
@@ -976,24 +900,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 76,
+  "index": 70,
   "kind": "bitwise",
   "label": "$.torque_ripple",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1562,
+  "offset": 1445,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 77,
+  "index": 71,
   "kind": "bitwise",
   "label": "$.transmission_model",
   "nbytes": 17,
   "node": "tests/reference/test_native_drivetrain.py::test_optional_project_and_initial_gearing",
-  "offset": 1570,
+  "offset": 1453,
   "rtol": null,
   "shape": [
    17

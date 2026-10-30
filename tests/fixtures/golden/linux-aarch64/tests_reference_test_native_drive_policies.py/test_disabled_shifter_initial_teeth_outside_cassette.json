@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
   "offset": 0,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 48,
+  "offset": 38,
   "rtol": null,
   "shape": [
    33
@@ -35,7 +35,7 @@
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 81,
+  "offset": 71,
   "rtol": null,
   "shape": []
  },
@@ -47,7 +47,7 @@
   "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 89,
+  "offset": 79,
   "rtol": null,
   "shape": [
    5
@@ -61,7 +61,7 @@
   "label": "$.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 94,
+  "offset": 84,
   "rtol": null,
   "shape": []
  },
@@ -70,60 +70,10 @@
   "dtype": "|u1",
   "index": 5,
   "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 102,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 6,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 150,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 7,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 158,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 8,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 166,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 9,
-  "kind": "bitwise",
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 174,
+  "offset": 92,
   "rtol": null,
   "shape": [
    35
@@ -132,12 +82,64 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 10,
+  "index": 6,
   "kind": "bitwise",
   "label": "$.hub.boundary",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 209,
+  "offset": 127,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 131,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 139,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 147,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 245,
   "rtol": null,
   "shape": [
    4
@@ -148,48 +150,48 @@
   "dtype": "<f8",
   "index": 11,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 213,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 12,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 221,
+  "offset": 249,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 13,
+  "index": 12,
   "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 229,
+  "offset": 257,
   "rtol": null,
   "shape": [
-   98
+   5
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 262,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 14,
   "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
+  "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 327,
+  "offset": 270,
   "rtol": null,
   "shape": [
    4
@@ -200,10 +202,10 @@
   "dtype": "<f8",
   "index": 15,
   "kind": "bitwise",
-  "label": "$.pedaling._effort",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 331,
+  "offset": 274,
   "rtol": null,
   "shape": []
  },
@@ -212,62 +214,10 @@
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "$.pedaling.coasting",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 339,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 17,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 344,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 18,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 352,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 356,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 20,
-  "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 364,
+  "offset": 282,
   "rtol": null,
   "shape": [
    113
@@ -276,12 +226,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 21,
+  "index": 17,
   "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 477,
+  "offset": 395,
   "rtol": null,
   "shape": [
    4
@@ -290,36 +240,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 22,
+  "index": 18,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 481,
+  "offset": 399,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 23,
+  "index": 19,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 489,
+  "offset": 407,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 24,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 497,
+  "offset": 415,
   "rtol": null,
   "shape": [
    6
@@ -328,12 +278,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 25,
+  "index": 21,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 503,
+  "offset": 421,
   "rtol": null,
   "shape": [
    2
@@ -342,12 +292,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 26,
+  "index": 22,
   "kind": "bitwise",
   "label": "$.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 505,
+  "offset": 423,
   "rtol": null,
   "shape": [
    2
@@ -356,12 +306,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 27,
+  "index": 23,
   "kind": "bitwise",
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 507,
+  "offset": 425,
   "rtol": null,
   "shape": [
    4
@@ -370,12 +320,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 511,
+  "offset": 429,
   "rtol": null,
   "shape": [
    1

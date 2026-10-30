@@ -215,7 +215,7 @@ void test_load_old_artifact_without_exit_total(std::string_view version) {
     episode.force_names = {"old"}; episode.forces = io::double_array(std::vector<double>(2 * nv, 1.), {2, 1, nv});
     const auto path = temporary.path() / "golden";
     golden::save(episode, path, model.model.get());
-    auto archive = io::parse_npz(io::read_numpy_bytes(path / "episode.npz"));
+    auto archive = io::parse_npz(io::read_bounded_file_bytes(path / "episode.npz"));
     std::erase_if(archive, [&](const auto &member) {
         const auto &key = member.first;
         return key == "qfrc_applied" || (version == "v1" &&

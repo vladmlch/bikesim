@@ -350,14 +350,13 @@ NONNEGATIVE_FIELDS = [
     *(('drive', 'pedaling', key) for key in ('resume_below_rpm', 'coast_cadence_tau_s', 'mash_cadence_rpm', 'mash_torque_nm', 'effort_slew_nm_s')),
     *(('drive', 'shifting', key) for key in ('shift_cooldown_s', 'shift_cut_duration_s', 'torque_factor', 'cadence_smoothing_tau_s', 'upshift_slip_limit_mps')),
     *(('drive', 'assist', key) for key in ('gain', 'max_torque', 'max_power', 'engage_torque_nm', 'gate_min_crank_rad_s', 'cutoff_mps')),
-    *(('drive', 'battery', key) for key in ('energy_j', 'copper_w_per_nm2', 'speed_w_per_rad_s2', 'idle_w')),
 ]
 
 
 def python_wire_config(env, wire):
     from bike_sim.physics.chain import DrivetrainSpecs
     from bike_sim.physics.motor import AssistController
-    from bike_sim.physics.physical_config import (PedalingConfig, ShiftingConfig, BatteryConfig,
+    from bike_sim.physics.physical_config import (PedalingConfig, ShiftingConfig,
         TireParameters, TireBackendConfig, ResistanceConfig, PhysicalDriveConfig)
     from bike_sim.physics.tire import TireSpec
     from bike_sim.terrain.surface import SurfaceSpec
@@ -376,10 +375,9 @@ def python_wire_config(env, wire):
     DrivetrainSpecs(**drive['gearing'])
     PedalingConfig(**drive['pedaling'])
     ShiftingConfig(**drive['shifting'])
-    BatteryConfig(**drive['battery'])
     AssistController(**drive['assist'])
     PhysicalDriveConfig(**{k:v for k,v in drive.items() if k in PhysicalDriveConfig.__dataclass_fields__ and
-        k not in ('gearing', 'pedaling', 'shifting', 'assist', 'battery')},
+        k not in ('gearing', 'pedaling', 'shifting', 'assist')},
         freehub_k_nm_rad=drive['hub_stiffness_nm_rad'], freehub_c_nms_rad=drive['hub_damping_nm_s'])
 
 
@@ -543,9 +541,7 @@ def test_bearing_force_overflow_before_return_and_telemetry(tmp_path):
 
 def test_chain_dissipation_overflow_before_telemetry(tmp_path):
     from test_native_drivetrain import pair
-    from bike_sim.physics.physical_config import BatteryConfig
-    model, data, python, native = pair(tmp_path, 'elastic_chain', chain_k_n_m=1e308, chain_c_ns_m=1e108,
-                                      battery=BatteryConfig(enabled=False))
+    model, data, python, native = pair(tmp_path, 'elastic_chain', chain_k_n_m=1e308, chain_c_ns_m=1e108)
     data.qpos[model.joint('crank_spin').qposadr[0]] += 1.
     data.qvel[model.joint('crank_spin').dofadr[0]] = -1e200
     mujoco.mj_forward(model, data)
@@ -677,19 +673,6 @@ def test_air_calibration_and_curve_valid_controls():
     curve = spring.compute_force_curve(n_points=11)
     assert np.isfinite(curve['energy_j']).all()
     assert curve['max_energy_j'] == curve['energy_j'][-1]
-
-
-@pytest.mark.parametrize('implementation', ['python', 'native'])
-def test_battery_cap_numerator_overflow_before_saturation(implementation):
-    from bike_sim.physics.battery import limit_torque_by_energy
-    from test_native_drive_policies import applier, oracle_config
-    wire = oracle_config(applier())
-    wire['battery'].update(copper_w_per_nm2=1e-306, speed_w_per_rad_s2=0., idle_w=0.)
-    native = load_native().DrivePolicies(wire)
-    calculate = (lambda: limit_torque_by_energy(1e308, 0., 1e-306, 0., 0., 1e308)) if implementation == 'python' else (
-        lambda: native.energy_limit(1e308, 0., 1e308))
-    with pytest.raises(OverflowError):
-        calculate()
 
 
 @pytest.mark.parametrize('implementation', ['python', 'native'])
@@ -937,12 +920,11 @@ def test_generic_one_way_scalar_preload_is_axis_agnostic(kind, axis):
 
 
 def test_zero_disable_policy_fields_remain_bitwise_valid(tmp_path):
-    from bike_sim.physics.physical_config import PedalingConfig, ShiftingConfig, BatteryConfig, AssistConfig
+    from bike_sim.physics.physical_config import PedalingConfig, ShiftingConfig, AssistConfig
     from test_native_drivetrain import pair
     from test_native_drive_policies import assert_tree
     config = dict(pedaling=PedalingConfig(coast_cadence_tau_s=0., effort_slew_nm_s=0., mash_torque_nm=0., mash_cadence_rpm=0.),
         shifting=ShiftingConfig(shift_cooldown_s=0., shift_cut_duration_s=0., cadence_smoothing_tau_s=0., upshift_slip_limit_mps=0.),
-        battery=BatteryConfig(energy_j=0., copper_w_per_nm2=0., speed_w_per_rad_s2=0., idle_w=0.),
         assist=AssistConfig(gain=0., max_torque=0., max_power=0., engage_torque_nm=0., gate_min_crank_rad_s=0.),
         bearing_c_nms_rad=0., freehub_c_nms_rad=0., chain_c_ns_m=0.)
     model, data, python, native = pair(tmp_path, **config)
@@ -975,10 +957,8 @@ int main() {
   invalid(drivetrain::GearingConfig{}); invalid(drivetrain::PedalingConfig{});
   invalid(drivetrain::ShiftingConfig{}); invalid(drivetrain::MotorProfile{});
   invalid(drivetrain::AssistConfig{}); invalid(drivetrain::DrivePolicyConfig{}); invalid(drivetrain::DriveConfig{});
-  invalid(drivetrain::BatteryConfig{.energy_j=-1.});
   nativecfg::validate(nativecfg::EndStopConfig{});
   nativecfg::validate(nativecfg::BrakeConfig{.torque_ceiling_nm=0., .taper_radps=1.});
-  drivetrain::validate(drivetrain::BatteryConfig{});
   return 0;
 }
 ''')

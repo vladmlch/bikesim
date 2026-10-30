@@ -69,3 +69,33 @@ For each task, report what changed, why, the evidence, and remaining scope limit
 its completion gate. Record a suppression with checker, origin, reason, reproducer, and removal condition. Complete a
 handoff when every task requirement is implemented, verified, or explicitly deferred with a reason and dependency; never
 label a deferred requirement complete.
+
+## Naming and diagnostic consistency
+
+One concept has one name; one name has one meaning. A name states the operation's real semantics, not its surface
+shape: `find_*` may report absence, `require_*` throws on absence, `read_*` produces bytes, `parse_*` decodes syntax,
+`compute_*` produces a fresh value, `set_*` assigns, `update_*` re-derives from new inputs, `apply_*` performs an
+effect. Renaming a member is a different change from renaming a serialized key; both need evidence, only the first is
+internal. Predicates use `is_*`/`has_*`/`can_*`; configuration flags keep `use_*`/`*_enabled`; prefer positive
+polarity. Collections take plural names, lookup fields name their key (`*_by_id`), and identity is explicit:
+`*_id` identity, `*_index` position, `*_name` display text, `*_key` lookup/serialized key, `*_path` filesystem path.
+Units live in names at API and diagnostic boundaries (`*_s`, `*_ms`, `*_ns`, `*_m`, `*_rad`, `*_nm`, `*_bytes`,
+`*_count`); simulation time, monotonic elapsed duration and absolute timestamps are different concepts and are not
+unified. Vendor spellings (`qpos`, `mjData`), STL/ABI pairs (`create`/`destroy`, `erase`/`remove`) and numerics
+locals (`i`, `j`, `x`) are contract exemptions, not debt.
+
+External spellings are contracts, not rename candidates: wire and JSON keys, TOML/schema identifiers, the policy C
+ABI, exported binding names, CLI flags and golden fixture values keep their spelling even when the internal concept
+is renamed. An internal rename must state which ambiguity it resolves and which external spelling it deliberately
+preserves.
+
+Diagnostics have three disjoint channels. Product output on stdout is the CLI contract. Operational diagnostics go
+to stderr with one semantic owner per event and the form `LEVEL <component>.<operation>.<outcome>: message
+key=value` — message a fixed phrase, values typed fields, never user input or exception text embedded in the event
+name. Recorded evidence keeps its product schema and timestamps; it is not routed through operational diagnostics.
+Realtime paths keep flag/code/deferred-message transport: no formatting, allocation, locking or stream I/O there. A
+throwing layer adds context; the handling layer writes exactly one terminal event. A cleanup failure is a separate
+event that never replaces the primary cause and never prints a false completion. Expected invalid input may end in
+`ERROR` without a stack trace. Human diagnostics never embed raw argv, environment, credentials, plugin payloads or
+whole documents: use an allowlist of typed fields and escape dynamic text as data. Disabled levels build no message
+or fields.

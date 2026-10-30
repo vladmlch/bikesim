@@ -445,7 +445,7 @@ def test_record_decimation_forwards_period_closing_energy(tmp_path):
     accumulators = ('active_work_j', 'external_work_j', 'loss_j', 'loss_step_j',
         'muscle_signed_j', 'muscle_positive_j', 'motor_signed_j', 'motor_positive_j',
         'constraint_absolute_j', 'constraint_signed_j', 'solver_constraint_work_j',
-        'electrical_work_j', 'source_positive_work_j')
+        'source_positive_work_j')
     def closing(interval_id):
         """The interval whose measurement an unmeasured raw's energy reports."""
         start = interval_id-interval_id % period

@@ -2,11 +2,13 @@
 #include "../batch/plan.hpp"
 #include "../batch/log.hpp"
 #include "../configuration/load.hpp"
+#include "../io/diagnostics.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
 #include "../platform/files.hpp"
 #include "../platform/signals.hpp"
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -20,9 +22,9 @@ int batch_command(const Arguments& args) {
     // An explicit --serial/--jobs never performs CPU discovery and is
     // validated before the spec is opened or any output exists.
     const auto count=args.flag("serial")?1
-        :args.has("jobs")?args.integer("jobs"):args.integer("jobs",batch::performance_cores());
+        :args.has("jobs")?args.integer("jobs"):args.integer("jobs",batch::default_worker_count());
     if(count<1||std::cmp_greater(count,std::numeric_limits<unsigned>::max()))throw ArgumentError("--jobs must be positive");
-    const auto bytes=io::read_numpy_bytes(args.text("spec"));
+    const auto bytes=io::read_bounded_file_bytes(args.text("spec"));
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) byte-to-char aliasing is the designed idiom for raw file bytes
     const std::string source(reinterpret_cast<const char*>(bytes.data()),bytes.size());
     auto jobs=batch::expand_spec(batch::parse_spec_toml(source,args.text("spec")));
@@ -58,13 +60,22 @@ for(const auto& arg:job.argv)views.push_back(arg);
     batch::ExecuteOptions options;
     options.cancelled=[&]{return interrupt.deferred()!=0;};
     options.completed=[&](std::size_t index,const batch::Result& result) {
+        // A summary candidate that failed to parse is one warning event; raw
+        // stdout stays in the per-job artifacts instead of being repeated here.
+        if(result.summary_status==batch::SummaryStatus::malformed) {
+            const std::array fields{
+                io::DiagnosticField{.key=io::DiagnosticKey::job_id,.value=std::string_view(result.id)},
+                io::DiagnosticField{.key=io::DiagnosticKey::job_index,.value=static_cast<std::int64_t>(index)}};
+            (void)io::write_diagnostic(std::cerr,io::Severity::warning,
+                "batch.summary.malformed","terminal summary rejected",fields);
+        }
         const auto record=batch::result_record(jobs[index],result);
         batch::append_log(results_file,io::recording_json(record)+"\n");
         // Raw worker streams are kept for diagnostics without changing cwd.
-        for(const auto& [name,text]:{std::pair{"stdout.log",&result.out},std::pair{"stderr.log",&result.err}}) {
+        for(const auto& [name,text]:{std::pair{"stdout.log",&result.stdout_text},std::pair{"stderr.log",&result.stderr_text}}) {
             batch::write_log(jobs[index].output/name,*text,args.flag("overwrite"));
         }
-        std::cout<<'['<<++done<<'/'<<jobs.size()<<"] "<<result.id<<" exit="<<result.exit_code<<" wall="<<result.wall_s<<"s\n";
+        std::cout<<'['<<++done<<'/'<<jobs.size()<<"] "<<result.id<<" exit="<<result.exit_code<<" wall="<<result.wall_duration_s<<"s\n";
     };
     // The oracle banner: "in-process" iff --serial or an explicit --jobs 1;
     // every pooled run (including a discovered worker count) is "spawn".

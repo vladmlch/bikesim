@@ -49,7 +49,7 @@ const io::NpyArray& state_array(const StateFile& state,std::string_view name){
 }
 StateFile read_state_file(const std::filesystem::path& file){
     try{
-        const auto bytes=io::read_numpy_bytes(file);
+        const auto bytes=io::read_bounded_file_bytes(file);
         if(bytes.size()>=4&&bytes[0]==std::byte{'P'}&&bytes[1]==std::byte{'K'})return StateFile{.schema_version=0,.metadata=io::Value{},.arrays=io::parse_npz(bytes)};
         std::string text;text.reserve(bytes.size());for(auto const byte:bytes)text.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));
         return decode(io::parse_recording_json(text));

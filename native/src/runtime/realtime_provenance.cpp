@@ -16,7 +16,7 @@ namespace {
 using namespace setupvalue;
 namespace io = bike::io;
 std::string read(const std::filesystem::path& path) {
-    const auto bytes = io::read_numpy_bytes(path);
+    const auto bytes = io::read_bounded_file_bytes(path);
     std::string out; out.reserve(bytes.size());
     for (std::byte const value : bytes) out.push_back(static_cast<char>(value));
     return out;
@@ -79,7 +79,7 @@ bike::io::Value native_provenance() {
         const auto sha = bike::platform::run({"git", "rev-parse", "HEAD"}, source_root, process);
         const auto dirty = bike::platform::run({"git", "status", "--porcelain", "--", "native", "CMakeLists.txt", "CMakePresets.json"}, source_root, process);
         if (sha.exit_code != 0 || dirty.exit_code != 0) throw std::runtime_error("git cannot identify the native source checkout");
-        set(out, "git_sha", text(trim_line(sha.out))); set(out, "working_tree_dirty", Value{!dirty.out.empty()});
+        set(out, "git_sha", text(trim_line(sha.stdout_text))); set(out, "working_tree_dirty", Value{!dirty.stdout_text.empty()});
     } catch (const std::exception& error) { set(out, "git_unavailable_reason", text(error.what())); }
     utsname machine{};
     if (::uname(&machine) == 0) set(out, "machine", text(std::string(static_cast<const char *>(machine.sysname)) + "-" + static_cast<const char *>(machine.release) + "-" + static_cast<const char *>(machine.machine)));

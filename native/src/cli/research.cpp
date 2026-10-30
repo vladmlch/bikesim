@@ -1,6 +1,7 @@
 #include "application.hpp"
 #include "physical_capture.hpp"
 #include "viewer_options.hpp"
+#include "../io/diagnostics.hpp"
 #include "../io/json.hpp"
 #include "../platform/provenance.hpp"
 #include "../platform/signals.hpp"
@@ -69,10 +70,16 @@ std::string error_text(const std::exception_ptr& failure) {
         research::PolicySession* session, research::ResearchRun& launch, const Arguments& args,
         platform::InterruptShield& interrupt, bool interactive, bool& interrupted) {
     const auto warn = [&] {
-        if (const auto warning = environment.take_pending_warning()) std::cerr << "WARNING: " << *warning << '\n';
+        // The warning source emits one event per take; drain until empty so
+        // every pending reference warning reaches the human stream exactly
+        // once — independent of the viewer HUD.
+        while (const auto warning = environment.take_pending_warning())
+            (void)io::write_diagnostic(std::cerr, io::Severity::warning,
+                "research.reference.warning", *warning);
     };
     const auto stop = [&] {
         if (session) research::drain_active(*session); else research::drain_active(environment);
+        warn();
     };
     if (interactive) {
         const auto options = ride_viewer_options(args, environment.configuration().timestep_s, viewer::Mode::research);
@@ -146,6 +153,7 @@ int run_research(std::unique_ptr<research::ResearchRequest> request, const Argum
     runtime::NativeResearchRuntime* environment = nullptr;
     std::optional<std::filesystem::path> output;
     std::exception_ptr failure;
+    std::optional<std::string> policy_name;
     bool interrupted = false;
     int result = 2;
     try {
@@ -162,7 +170,7 @@ int run_research(std::unique_ptr<research::ResearchRequest> request, const Argum
             std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap)));
         environment = owned_environment.get();
         launch = std::make_unique<research::ResearchRun>(*environment, publication);
-        auto policy_name = args.optional_text("policy");
+        policy_name = args.optional_text("policy");
         if (!policy_name && args.command == "bike-ride")
             policy_name = "bike_sim.sim.research.policies:passthrough_factory";
         if (policy_name) {
@@ -188,23 +196,52 @@ int run_research(std::unique_ptr<research::ResearchRequest> request, const Argum
             // NOLINTNEXTLINE(bugprone-empty-catch) deliberate: the result is advisory and the failure path is handled separately
             catch (...) { /* The launch retains primary and secondary diagnostics. */ }
         }
-        std::cerr << "ERROR: " << error_text(failure) << '\n';
-        if (launch) for (const auto& note : launch->failures().secondary) std::cerr << "  " << note << '\n';
+        emit_failure_diagnostic(std::cerr, "research.run.failed", failure,
+            policy_name ? std::optional<std::string_view>{*policy_name}
+                        : std::nullopt);
+        if (launch) {
+            for (const auto& note : launch->failures().secondary)
+                (void)io::write_diagnostic(std::cerr, io::Severity::error,
+                    "research.run.secondary", note);
+        }
         result = interrupted || interrupt.deferred() ? 130 : environment ? 3 : 2;
     }
     research::FailureReport cleanup;
     cleanup.primary = failure;
+    // Warnings pending at stop/finalization drain before the runtime closes —
+    // the same owner on every exit path. A drain failure must not skip close.
+    if (environment) {
+        try {
+            while (const auto warning = environment->take_pending_warning())
+                (void)io::write_diagnostic(std::cerr, io::Severity::warning,
+                    "research.reference.warning", *warning);
+        } catch (...) {
+            cleanup.add("warning drain", std::current_exception());
+        }
+    }
     if (session) research::close_environment(*session, cleanup);
     else if (environment) {
         try { environment->close(); } catch (...) { cleanup.add("research close failed", std::current_exception()); }
     }
-    for (const auto& note : cleanup.secondary) std::cerr << "  " << note << '\n';
-    if (!failure && cleanup.primary) { std::cerr << "ERROR: " << error_text(cleanup.primary) << '\n'; result = 3; }
+    for (const auto& note : cleanup.secondary)
+        (void)io::write_diagnostic(std::cerr, io::Severity::error,
+            "research.cleanup.secondary", note);
+    if (!failure && cleanup.primary) {
+        emit_failure_diagnostic(std::cerr, "research.cleanup.failed",
+            cleanup.primary,
+            policy_name ? std::optional<std::string_view>{*policy_name}
+                        : std::nullopt);
+        result = 3;
+    }
     return interrupt.deferred() ? 130 : result;
 }
 
 int research_command(const Arguments& args) {
     try { return run_research(resolve_research(args), args, false); }
-    catch (const std::exception& error) { std::cerr << "ERROR: " << error.what() << '\n'; return 2; }
+    catch (const std::exception& error) {
+        (void)io::write_diagnostic(std::cerr, io::Severity::error,
+            "research.command.failed", error.what());
+        return 2;
+    }
 }
 } // namespace bike::cli

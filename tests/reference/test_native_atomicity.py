@@ -367,13 +367,12 @@ def _solved_fixture(native, model, data):
     ``drive_components`` reserves the delivered torque in the pending row;
     a restored pending row plus a matching ctrl row reproduces that arming
     deterministically — the ceiling check admits the solve and the settle
-    debits a real energy amount.
+    commits a real, positive motor torque.
     """
     native.drive_components({}, .002, 2., sensed_human_torque_nm=20.)
     armed = native.drive_state()
     assert armed['pending_actuation'] is not None
-    armed['pending_actuation'] = {'requested': 1., 'omega': 4., 'dt': .002,
-                                  'enabled': True}
+    armed['pending_actuation'] = {'requested': 1., 'omega': 4., 'enabled': True}
     native.set_drive_state(armed)
     data.ctrl[model.actuator('mid_drive').id] = 1.
     native.set_inputs(data.ctrl, data.qfrc_applied)
@@ -388,14 +387,14 @@ def _solved_fixture(native, model, data):
 def test_rejected_settle_keeps_everything(tmp_path, kind):
     """A settle rejection publishes nothing — not even transmission solve
     telemetry: pending validation runs ahead of every solve, so a refused
-    settle leaves battery, pending, diagnostics and hub state frozen."""
+    settle leaves assist, pending, diagnostics and hub state frozen."""
     model, data, _, native = drive_pair(tmp_path, kind=kind)
     armed = _solved_fixture(native, model, data)
     # A pending reservation below the solved effort violates the reserved
     # ceiling — the rejection must land before any publication.
     corrupted = copy.deepcopy(armed)
     corrupted['pending_actuation'] = {'requested': .001, 'omega': 4.,
-                                    'dt': .002, 'enabled': True}
+                                    'enabled': True}
     native.set_drive_state(corrupted)
     before = _frozen(native)
     for _ in range(2):
@@ -418,36 +417,15 @@ def test_rejected_settle_keeps_everything(tmp_path, kind):
     assert freeze(native.drive_state()) == freeze(fresh.drive_state())
 
 
-def test_battery_budget_rejection_is_atomic(tmp_path):
-    """The store check rejects before any publication too — and the retry
-    with an honest reservation debits exactly once."""
-    model, data, _, native = drive_pair(tmp_path)
-    armed = _solved_fixture(native, model, data)
-    corrupted = copy.deepcopy(armed)
-    corrupted['pending_actuation'] = {'requested': 1000., 'omega': 4.,
-                                    'dt': .002, 'enabled': True}
-    corrupted['policies']['battery']['energy_j'] = .001
-    native.set_drive_state(corrupted)
-    before = _frozen(native)
-    with pytest.raises(ArithmeticError, match='battery storage'):
-        native.drive_settle_actuation()
-    assert _frozen(native) == before
-    native.set_drive_state(armed)
-    native.drive_settle_actuation()
-    settled = native.drive_state()
-    debit = (settled['policies']['battery']['drawn_energy_j'] -
-             armed['policies']['battery']['drawn_energy_j'])
-    assert debit > 0. and settled['pending_actuation'] is None
-
-
 @pytest.mark.parametrize('kind,topology', [('elastic_chain', 'plain')] + [
     (kind, topology)
     for kind in ('ideal_mid_drive', GEOMETRIC)
     for topology in ('plain', 'clutch', 'rotor')])
-def test_sparse_last_settle_debits_once(tmp_path, kind, topology):
+def test_sparse_last_settle_commits_once(tmp_path, kind, topology):
     """The A12 shape at the FFI: a restored sparse ``last={}`` cannot change
     exactly-once settlement — the detached map republishes the telemetry,
-    the battery moves exactly once, and a second settle debits nothing."""
+    the solved torque lands in assist exactly once, and a second settle
+    moves no policy state."""
     model, data, _, native = drive_pair(tmp_path, kind=kind, topology=topology)
     armed = _solved_fixture(native, model, data)
     sparse = copy.deepcopy(armed)
@@ -456,13 +434,12 @@ def test_sparse_last_settle_debits_once(tmp_path, kind, topology):
     assert native.drive_state()['last'] == {}
     native.drive_settle_actuation()
     settled = native.drive_state()
-    debit = (settled['policies']['battery']['drawn_energy_j'] -
-             armed['policies']['battery']['drawn_energy_j'])
-    assert debit > 0.
+    torque = settled['policies']['assist']['torque']
+    assert torque > 0. and torque == settled['last']['motor_torque_nm']
     assert settled['pending_actuation'] is None
     assert settled['last']  # telemetry republished through the detached map
     # Control: the same armed snapshot with full diagnostics settles into
-    # the same battery/pending/hub outcome; it steps from the same pre-step
+    # the same assist/pending/hub outcome; it steps from the same pre-step
     # engine state so the recorded constraint forces match.
     control_dir = tmp_path / 'control'
     control_dir.mkdir()
@@ -475,11 +452,10 @@ def test_sparse_last_settle_debits_once(tmp_path, kind, topology):
     assert freeze(settled['policies']) == freeze(control_state['policies'])
     for name in ('ideal_hub', 'clutch', 'freewheel'):
         assert freeze(settled[name]) == freeze(control_state[name])
-    # Exactly once: settling again moves the battery by nothing at all.
+    # Exactly once: settling again moves no policy state at all.
     native.drive_settle_actuation()
     again = native.drive_state()
-    assert freeze(again['policies']['battery']) == \
-        freeze(settled['policies']['battery'])
+    assert freeze(again['policies']) == freeze(settled['policies'])
     assert again['pending_actuation'] is None
 
 
@@ -493,7 +469,7 @@ def test_python_rejected_settle_keeps_everything(tmp_path, kind):
     drive.compute_components(model, data, .002, speed_mps=2.,
                              sensed_human_nm=20.)
     assert drive.pending_actuation is not None
-    drive.pending_actuation = (1., 4., .002, True)
+    drive.pending_actuation = (1., 4., True)
     # Solved effort far beyond the reserved ceiling: the settle must reject
     # before the transmission publishes anything of its own.
     data.ctrl[drive.actuators['mid_drive']] = 1000.
@@ -504,30 +480,31 @@ def test_python_rejected_settle_keeps_everything(tmp_path, kind):
         with pytest.raises(ArithmeticError, match='reserved effort ceiling'):
             drive.settle_actuation(model, data)
         assert _python_frozen(drive, model) == before
-    # An honest solve at the reserved torque settles and debits exactly once.
+    # An honest solve at the reserved torque settles exactly once.
     data.ctrl[drive.actuators['mid_drive']] = 1.
     mujoco.mj_forward(model, data)
     drive.settle_actuation(model, data)
-    drawn = drive.battery.drawn_energy_j
-    assert drawn > 0. and drive.pending_actuation is None
+    settled = drive.assist.torque
+    assert settled > 0. and drive.pending_actuation is None
     drive.settle_actuation(model, data)
-    assert drive.battery.drawn_energy_j == drawn
+    assert drive.assist.torque == settled and drive.pending_actuation is None
 
 
-def test_python_settle_debits_once_after_sparse_diagnostics(tmp_path):
+def test_python_settle_commits_once_after_sparse_diagnostics(tmp_path):
     """The sparse-``last`` shape on the Python mirror: settlement rebuilds
-    the telemetry but debits the battery exactly once."""
+    the telemetry but commits the solved torque exactly once."""
     model, data, drive, _ = drive_pair(tmp_path)
     drive.compute_components(model, data, .002, speed_mps=2.,
                              sensed_human_nm=20.)
     assert drive.pending_actuation is not None
-    drive.pending_actuation = (1., 4., .002, True)
+    drive.pending_actuation = (1., 4., True)
     data.ctrl[drive.actuators['mid_drive']] = 1.
     data.qfrc_applied[:] = 0.
     mujoco.mj_forward(model, data)
     drive.last = {}
     drive.settle_actuation(model, data)
-    drawn = drive.battery.drawn_energy_j
-    assert drawn > 0. and drive.pending_actuation is None and drive.last
+    settled = drive.assist.torque
+    assert settled > 0. and drive.pending_actuation is None and drive.last
+    assert drive.last['motor_torque_nm'] == settled
     drive.settle_actuation(model, data)
-    assert drive.battery.drawn_energy_j == drawn
+    assert drive.assist.torque == settled and drive.pending_actuation is None

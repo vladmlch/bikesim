@@ -83,10 +83,10 @@ public:
 
 private:
     // qfrc()'s body verbatim on caller-owned storage: zero-fill, then the
-    // per-path spring-damper dofadr writes (assign, not accumulate) and
-    // the live last_ telemetry updates. Kept throwing so both boundaries
-    // share one kernel and the original rejection types reach the caller.
-    void accumulate_validated(const mjData *d, std::span<double> out) const;
+    // per-path spring-damper dofadr writes and the live last_ telemetry
+    // updates. Kept throwing so both boundaries share one kernel and the
+    // original rejection types reach the caller.
+    void compute_validated_into(const mjData *d, std::span<double> out) const;
 
     std::vector<Path> paths_;
     mjtSize nq_ = 0, nv_ = 0;

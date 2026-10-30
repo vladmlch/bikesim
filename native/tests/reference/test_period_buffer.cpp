@@ -795,11 +795,11 @@ void test_record_decimation_forwards_period_closing_energy() {
         bt::require(last.has_value(), "a closing measurement exists");
         return *last;
     };
-    const std::array<std::string_view, 13> accumulators{
+    const std::array<std::string_view, 12> accumulators{
         "active_work_j", "external_work_j", "loss_j", "loss_step_j",
         "muscle_signed_j", "muscle_positive_j", "motor_signed_j",
         "motor_positive_j", "constraint_absolute_j", "constraint_signed_j",
-        "solver_constraint_work_j", "electrical_work_j", "source_positive_work_j"};
+        "solver_constraint_work_j", "source_positive_work_j"};
     const auto elastic_equal = [&](const runtime::WireObject &energy, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                                    const runtime::WireObject &expected,
                                    std::int64_t i) {

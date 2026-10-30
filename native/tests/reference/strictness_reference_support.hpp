@@ -54,12 +54,10 @@ constexpr double kDt = .0005;
     raw.components = std::move(components);
     raw.qfrc_passive = {0.};
     raw.loss_step_j = 0.;
-    raw.electrical_power_w = runtime::Wire(0.);
     // Python neutral_raw always measured (mechanical 0., elastic {});
     // the unmeasured legs clear the optionals below.
     raw.mechanical_energy_j = 0.;
     raw.elastic_energy_j = runtime::WireObject{};
-    raw.battery_energy_j = 0.;
     raw.attachment_errors = std::move(violations);
     raw.full = false;
     raw.constraint_snapshot.interval_start_s = raw.time_s;
@@ -83,7 +81,7 @@ constexpr double kDt = .0005;
 }
 
 // runtime_for_raws(): a detached PeriodAccounting — no controller, no
-// contact writer, legacy retention, battery disengaged, generation 1.
+// contact writer, legacy retention, generation 1.
 // strict=True/decimation=1 are the oracle defaults.
 [[nodiscard]] inline std::unique_ptr<runtime::PeriodAccounting>
 runtime_for_raws(bool strict = true, int decimation = 1) {
@@ -92,10 +90,8 @@ runtime_for_raws(bool strict = true, int decimation = 1) {
     config.period_steps = 10;
     config.measurement_decimation = decimation;
     config.retention = runtime::RetentionMode::legacy;
-    config.battery_enabled = false;
     runtime::AccountingState initial;
     initial.energy.initial_energy_j = 0.;
-    initial.energy.initial_battery_j = 0.;
     initial.energy.energy_scale_j = 1.;
     initial.monitor.strict = strict;
     return std::make_unique<runtime::PeriodAccounting>(

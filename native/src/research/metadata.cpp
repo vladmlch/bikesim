@@ -266,7 +266,7 @@ runtime::ResearchAssets snapshot_research_assets(const ResearchRequest& request,
                                   std::pair{"joint_strength", "rider_joint_strength.json"}}) {
         const auto* path = find(articulated, std::string(key) + "_path");
         if (!path || io::is_null(*path)) continue;
-        auto profile = asset(name, "application/json", io::read_numpy_bytes(io::as_string(*path, key)));
+        auto profile = asset(name, "application/json", io::read_bounded_file_bytes(io::as_string(*path, key)));
         if (profile.sha256 != io::as_string(field(resolved, std::string(key) + "_sha256"), key))
             throw std::invalid_argument(std::string(key) + " changed before recording setup could snapshot it");
         result.push_back(std::move(profile));

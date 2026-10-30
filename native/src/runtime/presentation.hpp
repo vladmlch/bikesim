@@ -22,7 +22,6 @@ struct PresentationState {
     double fork_travel_mm = 0., fork_velocity_mps = 0., fork_force_n = 0.;
     double shock_stroke_mm = 0., shock_velocity_mps = 0., shock_force_n = 0.;
     double crank_phase_rad = 0., front_load_n = 0., rear_load_n = 0.;
-    double battery_energy_j = 0.;
     std::optional<double> balance_lost_at_m;
     drivetrain::DriveTelemetry drive;
     bool assist_pedaling = false, rider_present = false, tire_present = false;

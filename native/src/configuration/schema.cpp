@@ -597,7 +597,7 @@ bool schema_entry(std::string_view name, std::string_view &required,
           "offset_m unilateral",
           .optional = ""}},
         {.name = "drive", .entry =
-         {.required = "gearing pedaling shifting assist battery hub_stiffness_nm_rad "
+         {.required = "gearing pedaling shifting assist hub_stiffness_nm_rad "
           "hub_damping_nm_s drive_mode transmission_model human_torque_nm "
           "torque_ripple crank_phase_rad chain_k_n_m chain_c_ns_m "
           "bearing_c_nms_rad rotor_inertia_kgm2 motor_clutch "
@@ -606,7 +606,7 @@ bool schema_entry(std::string_view name, std::string_view &required,
           "brake_hold_damping_nms_rad brake_hold_engage_radps "
           "brake_hold_release_radps"}},
         {.name = "policies", .entry =
-         {.required = "gearing pedaling shifting assist battery "
+         {.required = "gearing pedaling shifting assist "
           "hub_stiffness_nm_rad hub_damping_nm_s",
           .optional = ""}},
         {.name = "drive.gearing", .entry = {.required = "front_teeth rear_teeth chain_pitch_m",
@@ -630,9 +630,6 @@ bool schema_entry(std::string_view name, std::string_view &required,
          {.required = "mode_gains emtb_full_gain_at_nm",
           .optional = ""}},
         {.name = "drive.assist.profile.mode_gains", .entry = {.required = "eco tour emtb turbo",
-          .optional = ""}},
-        {.name = "drive.battery", .entry =
-         {.required = "enabled energy_j copper_w_per_nm2 speed_w_per_rad_s2 idle_w",
           .optional = ""}},
         {.name = "rider_contacts", .entry =
          {.required = "arm_reach_m saddle_patch_half_length_m pedal_patch_half_length_m "
@@ -936,7 +933,7 @@ void validate_mapping(const Value &value, const std::string &name,
         }
         if (name == "policies" &&
             (key == "gearing" || key == "pedaling" || key == "shifting" ||
-             key == "assist" || key == "battery"))
+             key == "assist"))
             nested = "drive." + key;
         if (key == "sections" || key == "paths") {
             std::size_t index = 0;

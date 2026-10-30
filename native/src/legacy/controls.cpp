@@ -246,7 +246,7 @@ namespace {
 TireSnapshot legacy_tyre_snapshot(const mjModel& m,const mjData& d,int geom,const biketyre::WheelOutputs& outputs,std::int64_t interval){
     TireSnapshot out;out.time_s=d.time;out.interval_id=interval;out.backend="legacy_pneumatic";out.geometric_contact=!outputs.airborne;
     const auto id=static_cast<std::size_t>(geom);const int body=std::views::counted(m.geom_bodyid,m.ngeom)[id];
-    std::ranges::copy(std::views::counted(d.geom_xpos,3*m.ngeom).subspan(3*id,3),out.wheel_axis_m.begin());
+    std::ranges::copy(std::views::counted(d.geom_xpos,3*m.ngeom).subspan(3*id,3),out.reference_position_world_m.begin());
     // contact_state.py's effective_radius sums: float items only (patch
     // fields and float products) — the compensated float branch is exact.
     numeric::PythonSum weighted_drop,weights;
@@ -256,7 +256,7 @@ TireSnapshot legacy_tyre_snapshot(const mjModel& m,const mjData& d,int geom,cons
         for(std::size_t j=0;j<3;++j)patch.normal[j]=p.normal_force_world_n[j]/p.normal_load_n;
         const std::array tangent{patch.normal[2],0.,-patch.normal[0]};const auto velocity=model::point_velocity(m,d,body,patch.point_m);
         patch.slip_mps=geometry::detail::np_dot3(velocity,tangent);
-        const std::array delta{patch.point_m[0]-out.wheel_axis_m[0],patch.point_m[1]-out.wheel_axis_m[1],patch.point_m[2]-out.wheel_axis_m[2]};
+        const std::array delta{patch.point_m[0]-out.reference_position_world_m[0],patch.point_m[1]-out.reference_position_world_m[1],patch.point_m[2]-out.reference_position_world_m[2]};
         weighted_drop.add(p.normal_load_n * -geometry::detail::np_dot3(delta,patch.normal));weights.add(p.normal_load_n);out.patches.push_back(patch);
     }
     out.effective_radius_m=out.patches.empty()?0.:std::max(0.,weighted_drop.total()/weights.total());return out;

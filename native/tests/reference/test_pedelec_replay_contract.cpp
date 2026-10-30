@@ -56,7 +56,7 @@ void cli_exit() {
         "--output", (tmp.path / "failure.json").string(),
         "--root", rr::repo_root().string()}, tmp.path, options);
     bt::require(result.exit_code == 1, "a failed case reports exit 1");
-    bt::require(result.out.find("motor-only open-loop") != std::string::npos,
+    bt::require(result.stdout_text.find("motor-only open-loop") != std::string::npos,
         "the printed report retains the motor-only diagnosis");
 }
 

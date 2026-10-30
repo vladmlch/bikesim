@@ -11,7 +11,7 @@ class EnergyLedger:
 
     Active and signed external work increase stored energy; positive loss reduces it.
     Callers must supply elastic potential and all work/loss channels before interpreting a
-    residual as a closed balance. Battery storage belongs to an electrical ledger.
+    residual as a closed balance.
     """
 
     def __init__(self, initial_energy_j: float) -> None:

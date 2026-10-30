@@ -25,15 +25,15 @@ namespace drivetrain {
 
     void validate(const DriveSnapshot &s, const DriveConfig &config,
                   const mjModel &model) {
-        const bool simplified = config.transmission_model != "elastic_chain",
+        const bool ideal = config.transmission_model != "elastic_chain",
                 effort = config.drive_mode == "crank_effort" ||
                          config.drive_mode == "articulated_effort";
         // Topology is selected by the config, not discovered from the snapshot.
-        if (s.hub.has_value() == simplified)
+        if (s.hub.has_value() == ideal)
             throw std::invalid_argument("hub topology");
-        if (s.ideal_hub.has_value() != (simplified && effort) ||
-            s.clutch.has_value() != (simplified && effort && config.motor_clutch) ||
-            s.freewheel.has_value() != (simplified && effort && config.rotor_inertia_kgm2 > 0.))
+        if (s.ideal_hub.has_value() != (ideal && effort) ||
+            s.clutch.has_value() != (ideal && effort && config.motor_clutch) ||
+            s.freewheel.has_value() != (ideal && effort && config.rotor_inertia_kgm2 > 0.))
             throw std::invalid_argument("transmission topology");
         // A pending actuation exists only after a compute that also set the clock.
         if (s.pending_actuation && !s.last_time_s)
@@ -50,11 +50,6 @@ namespace drivetrain {
             (!std::ranges::contains(cassette, s.shifting.rear_teeth) ||
              !std::ranges::contains(cassette, s.shifting.from_teeth)))
             throw std::invalid_argument("shifter teeth outside the cassette");
-        // The store is sized by the config and only ever drains.
-        if (s.battery.initial_energy_j != config.policies.battery.energy_j ||
-            s.battery.energy_j > s.battery.initial_energy_j ||
-            s.battery.drawn_energy_j > s.battery.initial_energy_j)
-            throw std::invalid_argument("battery energy outside the configured store");
         // Auxiliary transmissions are fixed 1:1 one-way clutches.
         for (const auto *aux: {s.clutch ? &*s.clutch : nullptr,
                                s.freewheel ? &*s.freewheel : nullptr})
@@ -84,7 +79,7 @@ namespace drivetrain {
 
     DrivetrainWriter::DrivetrainWriter(mjModel *m, mjData *d, DriveConfig c)
         : model_(m), data_(d), config_(checked_config(std::move(c))),
-          simplified_(config_.transmission_model != "elastic_chain"),
+          uses_ideal_transmission_(config_.transmission_model != "elastic_chain"),
           effort_(config_.drive_mode == "crank_effort" ||
                   config_.drive_mode == "articulated_effort"),
           geometric_hub_(config_.transmission_model == "geometric_ideal_mid_drive"),
@@ -95,12 +90,11 @@ namespace drivetrain {
           motor_actuator_(mj_name2id(m, mjOBJ_ACTUATOR, "mid_drive")),
           pedaling_(config_.policies.pedaling),
           shifting_(config_.policies.gearing, config_.policies.shifting),
-          assist_(config_.policies.assist), battery_(config_.policies.battery.energy_j),
+          assist_(config_.policies.assist),
           transmission_(static_cast<std::size_t>(m->nv)),
           pedaling_scratch_(config_.policies.pedaling),
           shifting_scratch_(config_.policies.gearing, config_.policies.shifting),
-          assist_scratch_(config_.policies.assist),
-          battery_scratch_(config_.policies.battery.energy_j) {
+          assist_scratch_(config_.policies.assist) {
         if (m->nq != m->nv)
             throw std::invalid_argument(
                 "physical chain supports scalar planar coordinates only (nq == nv)");
@@ -119,7 +113,7 @@ namespace drivetrain {
         }
         for (const char *name: {"cassette_spin", "drive_shaft_spin", "rotor_spin"}) {
             const std::string key(name);
-            if ((key == "cassette_spin" && !simplified_) ||
+            if ((key == "cassette_spin" && !uses_ideal_transmission_) ||
                 (key == "drive_shaft_spin" && config_.motor_clutch) ||
                 (key == "rotor_spin" && config_.rotor_inertia_kgm2 > 0.)) {
                 const int id = resolve(m, mjOBJ_JOINT, name);
@@ -138,7 +132,7 @@ namespace drivetrain {
         // libstdc++).
         crank_joint_ = joints_.at("crank_spin");
         wheel_joint_ = joints_.at("rear_wheel_spin");
-        if (!simplified_)
+        if (!uses_ideal_transmission_)
             cassette_joint_ = joints_.at("cassette_spin");
         shaft_joint_ =
                 joints_.contains("drive_shaft_spin")
@@ -156,7 +150,7 @@ namespace drivetrain {
         if (motor_actuator_ >= 0)
             topology::actuator(m, motor_actuator_, "mid_drive",
                                resolve(m, mjOBJ_JOINT, motor.actuator_joint));
-        if (!simplified_) {
+        if (!uses_ideal_transmission_) {
             cassette_ = resolve(m, mjOBJ_BODY, "cassette");
             const auto parents = buffer(m->body_parentid, m->nbody);
             if (parents[static_cast<std::size_t>(cassette_)] !=
@@ -166,7 +160,7 @@ namespace drivetrain {
             hub_.emplace(config_.policies.hub_stiffness_nm_rad,
                          config_.policies.hub_damping_nm_s);
         }
-        if (simplified_ && effort_) {
+        if (uses_ideal_transmission_ && effort_) {
             const bool geometric =
                     config_.transmission_model == "geometric_ideal_mid_drive";
             ideal_hub_ = std::make_unique<Transmission>(
@@ -188,7 +182,7 @@ namespace drivetrain {
         // table position IS the serialized slot (pinned by the
         // force_component_table_ordered static_assert in the header).
         for (const ForceComponentSpec &spec: force_component_specs)
-            if (spec.slot != ForceComponent::ideal_transmission || simplified_)
+            if (spec.slot != ForceComponent::ideal_transmission || uses_ideal_transmission_)
                 components_.emplace_back(std::string(spec.name),
                                          std::vector<double>(transmission_.size()));
         // TickBank::components are construction-sized by contract (see the
@@ -290,10 +284,6 @@ namespace drivetrain {
         next.last_time_s.reset();
         next.pedaling = PedalingSnapshot{};
         next.assist = AssistSnapshot{};
-        next.battery = BatterySnapshot{
-            .initial_energy_j = battery_.state().initial_energy_j,
-            .energy_j = battery_.state().initial_energy_j,
-            .drawn_energy_j = 0.};
         next.shifting = {};
         next.shifting.rear_teeth = next.shifting.from_teeth =
                 config_.policies.gearing.rear_teeth;
@@ -302,7 +292,7 @@ namespace drivetrain {
         detail::TickBank &staging = banks_.at(0);
         staging.ideal_hub_staged = staging.clutch_staged =
                 staging.freewheel_staged = false;
-        if (simplified_) {
+        if (uses_ideal_transmission_) {
             next.angles = DriveAngles{.values = {angle(crank_), 0.},
                                       .count = 1};
             next.reference = 0.;
@@ -379,7 +369,6 @@ namespace drivetrain {
         last.set(TelemetryField::freehub_energy_j, 0.);
         last.set(TelemetryField::motor_torque_nm, 0.);
         last.set(TelemetryField::human_torque_nm, 0.);
-        last.set(TelemetryField::electrical_power_w, 0.);
         last.set(TelemetryField::freehub_torque_nm, 0.);
         last.set(TelemetryField::motor_freewheel_engaged, false);
         last.set(TelemetryField::motor_freewheel_torque_nm, 0.);
@@ -424,7 +413,6 @@ namespace drivetrain {
             bank.pedaling = next.pedaling;
             bank.shifting = next.shifting;
             bank.assist = next.assist;
-            bank.battery = next.battery;
             bank.hub = next.hub;
             bank.ctrl_count = 0;
             bank.ideal_hub_staged = bank.clutch_staged =
@@ -463,7 +451,6 @@ namespace drivetrain {
         }
         for (auto &bank: settlement_banks_) {
             bank.write_count = 0;
-            bank.battery.reset();
             bank.assist.reset();
             bank.clear_pending = false;
             const auto seed_solve =
@@ -511,7 +498,6 @@ namespace drivetrain {
             live_model_dirty_ |= freewheel_->commit(*staging.freewheel);
         shifting_.reset();
         assist_.reset();
-        battery_.reset();
         pedaling_.reset();
         if (hub_)
             engaged(hub_).reset();
@@ -526,7 +512,6 @@ namespace drivetrain {
         pedaling_scratch_ = pedaling_;
         shifting_scratch_ = shifting_;
         assist_scratch_ = assist_;
-        battery_scratch_ = battery_;
         hub_scratch_ = hub_;
     }
 
@@ -671,7 +656,6 @@ namespace drivetrain {
                 bank.freewheel_staged = false;
         bank.shifting = shifting_.state();
         bank.assist = assist_.state();
-        bank.battery = battery_.state();
         bank.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
         // The pedaling policy always advances on a detached candidate; only a
         // committed tick publishes it back.
@@ -692,7 +676,6 @@ namespace drivetrain {
         bank.snapshot.pedaling = bank.pedaling;
         bank.snapshot.shifting = bank.shifting;
         bank.snapshot.assist = bank.assist;
-        bank.snapshot.battery = bank.battery;
         bank.snapshot.hub = bank.hub;
         const auto mirror = [](Transmission *transmission,
                                const std::optional<TransmissionUpdate> &update,
@@ -724,8 +707,6 @@ namespace drivetrain {
         shifting_scratch_.set_state(bank.shifting);
         assist_scratch_ = assist_;
         assist_scratch_.set_state(bank.assist);
-        battery_scratch_ = battery_;
-        battery_scratch_.set_state(bank.battery);
         if (hub_) {
             hub_scratch_ = hub_;
             engaged(hub_scratch_).set_state(engaged(bank.hub));
@@ -795,6 +776,14 @@ namespace drivetrain {
         positive(in.dt, "drivetrain interval");
         finite(in.speed, "bike speed");
         finite(in.sensed, "measured pedal torque");
+        // RideControl.__post_init__ (control.py) admits only finite
+        // nonnegative torque commands; the POD cannot, so the writer
+        // boundary rejects them before any staging.
+        for (const auto &[value, name]: {
+                 std::pair{in.control.motor_torque_nm, "motor torque command"},
+                 std::pair{in.control.motor_limit_nm, "motor torque limit"},
+                 std::pair{in.control.human_torque_nm, "rider torque command"}})
+            if (value) nonnegative(*value, name);
         if (!live_.reference)
             throw std::runtime_error("initialize the drivetrain before applying forces");
         if (in.advance && live_.last_time_s && data_->time <= *live_.last_time_s)
@@ -810,7 +799,6 @@ namespace drivetrain {
         bank.pedaling = pedaling_.state();
         bank.shifting = shifting_.state();
         bank.assist = assist_.state();
-        bank.battery = battery_.state();
         bank.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
         if (!in.advance) {
             // Probe evaluation runs on the detached candidate: pending
@@ -871,7 +859,7 @@ namespace drivetrain {
             std::ranges::fill(component, 0.);
         const auto crank = crank_joint_, wheel = wheel_joint_;
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
-        if (!simplified_) {
+        if (!uses_ideal_transmission_) {
             m.angles.count = 2;
             m.angles.values = {
                 angle(crank_, engaged(bank.snapshot.angles).values[0]),
@@ -934,24 +922,13 @@ namespace drivetrain {
                                     in.dt, in.control.motor_torque_nm, rpm);
             bank.assist = assist_scratch_.state();
         }
-        const auto &b = config_.policies.battery;
-        const double budget = bank.battery.energy_j / in.dt;
         m.safety = in.control.motor_limit_nm
                        ? std::min(m.request, *in.control.motor_limit_nm)
                        : m.request;
-        m.delivered =
-                b.enabled
-                    ? limit_torque_by_energy(m.safety, m.omega, b.copper_w_per_nm2,
-                                             b.speed_w_per_rad_s2, b.idle_w, budget)
-                    : m.safety;
+        m.delivered = m.safety;
         m.enabled = in.active && m.delivered > 0. && !in.braking;
         if (!m.enabled)
             m.delivered = 0.;
-        m.electrical = motor_electrical_power(
-            m.delivered, m.omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2,
-            b.idle_w, m.enabled);
-        if (b.enabled && m.electrical > budget + std::max(1e-10, std::abs(budget) * 1e-12))
-            throw ArithmeticError("delivered motor torque exceeds the battery budget");
         return m;
     }
 
@@ -962,12 +939,12 @@ namespace drivetrain {
                                       "DrivetrainWriter.force");
         const double chain_loss = std::max(0., validation::derived(
             (m.tension - config_.chain_k_n_m * std::max(m.extension, 0.)) * m.rate, "DrivetrainWriter.chain_dissipation"));
-        const double hub_loss = simplified_ ? 0. : std::max(0., validation::derived(
+        const double hub_loss = uses_ideal_transmission_ ? 0. : std::max(0., validation::derived(
             (m.torque - config_.policies.hub_stiffness_nm_rad * m.deflection) * m.relative_rate, "DrivetrainWriter.freehub_dissipation"));
         bank.snapshot.pending_actuation =
                 in.active
                     ? std::optional<PendingActuation>{
-                        {.requested = m.delivered, .omega = m.omega, .dt = in.dt,
+                        {.requested = m.delivered, .omega = m.omega,
                          .enabled = m.enabled}
                     }
                     : std::nullopt;
@@ -997,11 +974,11 @@ namespace drivetrain {
         last.set(TelemetryField::chain_energy_j, m.energy);
         last.set(TelemetryField::chain_dissipation_power_w, chain_loss);
         last.set(TelemetryField::freehub_torque_nm,
-                 simplified_ ? 0. : m.torque);
+                 uses_ideal_transmission_ ? 0. : m.torque);
         last.set(TelemetryField::freehub_energy_j,
-                 simplified_ ? 0. : engaged(bank.hub).energy_j);
+                 uses_ideal_transmission_ ? 0. : engaged(bank.hub).energy_j);
         last.set(TelemetryField::freehub_engaged,
-                 simplified_ ? false : m.torque > 0.);
+                 uses_ideal_transmission_ ? false : m.torque > 0.);
         last.set(TelemetryField::freehub_deflection_rad, m.deflection);
         last.set(TelemetryField::freehub_dissipation_power_w, hub_loss);
         last.set(TelemetryField::cadence_rpm, m.cadence);
@@ -1047,16 +1024,12 @@ namespace drivetrain {
                                                       : "assist")));
         last.set(TelemetryField::safety_limited, m.safety < m.request);
         last.set(TelemetryField::motor_shaft_power_w, m.delivered * m.omega);
-        last.set(TelemetryField::electrical_power_w, 0.);
-        last.set(TelemetryField::battery_energy_j, bank.battery.energy_j);
         last.set(TelemetryField::motor_enabled, m.enabled);
-        last.set(TelemetryField::energy_limited, m.delivered < m.safety);
-        last.set(TelemetryField::battery_empty, bank.battery.energy_j == 0.);
         last.set_open(TelemetryField::assist_mode,
                       config_.policies.assist.mode);
         last.set(TelemetryField::assist_gain, bank.assist.last_gain);
         shifts(last, bank.shifting, bank.snapshot.shift_time_s);
-        if (simplified_)
+        if (uses_ideal_transmission_)
             bank.snapshot.angles = DriveAngles{
                 .values = {angle(crank_,
                                  engaged(bank.snapshot.angles).values[0]),
@@ -1124,7 +1097,6 @@ namespace drivetrain {
         pedaling_.set_state(bank.pedaling);
         shifting_.set_state(bank.shifting);
         assist_.set_state(bank.assist);
-        battery_.set_state(bank.battery);
         if (hub_)
             engaged(hub_).set_state(engaged(bank.hub));
         // The snapshot's embedded policy/transmission mirrors were staged
@@ -1137,10 +1109,6 @@ namespace drivetrain {
 
     void DrivetrainWriter::validate_settlement(
         const detail::SettlementBank &bank) {
-        if (bank.battery) {
-            battery_scratch_ = battery_;
-            battery_scratch_.set_state(*bank.battery);
-        }
         if (bank.assist) {
             assist_scratch_ = assist_;
             assist_scratch_.set_state(*bank.assist);
@@ -1150,7 +1118,6 @@ namespace drivetrain {
     PreparedSettlement DrivetrainWriter::stage_settle() {
         detail::SettlementBank &bank = next_settlement_bank();
         bank.write_count = 0;
-        bank.battery.reset();
         bank.assist.reset();
         bank.clear_pending = false;
         PreparedSettlement settlement;
@@ -1168,7 +1135,7 @@ namespace drivetrain {
         const PendingActuation *pending = live_.pending_actuation
                                               ? &*live_.pending_actuation
                                               : nullptr;
-        double pending_torque = 0., pending_delivered = 0.;
+        double pending_torque = 0.;
         if (pending) {
             pending_torque =
                     motor_actuator_ >= 0
@@ -1180,23 +1147,6 @@ namespace drivetrain {
                 throw ArithmeticError(
                     "solved motor effort violates the reserved effort ceiling");
             pending_torque = std::max(pending_torque, 0.);
-            const auto &b = config_.policies.battery;
-            const double power = motor_electrical_power(
-                pending_torque, pending->omega, b.copper_w_per_nm2,
-                b.speed_w_per_rad_s2, b.idle_w,
-                pending->enabled && pending_torque > 0.);
-            pending_delivered = power;
-            if (b.enabled) {
-                const double store = battery_.state().energy_j;
-                if (power * pending->dt >
-                    store + std::max(1e-10, store * 1e-12))
-                    throw ArithmeticError(
-                        "solved motor energy exceeds available battery storage");
-                const auto [delivered, candidate] =
-                        battery_.debit(power, pending->dt);
-                pending_delivered = delivered;
-                bank.battery = candidate;
-            }
             AssistSnapshot assist = assist_.state();
             assist.torque = pending_torque;
             bank.assist = assist;
@@ -1291,17 +1241,11 @@ namespace drivetrain {
                 });
         }
         if (pending) {
-            const double energy = bank.battery
-                                      ? bank.battery->energy_j
-                                      : battery_.state().energy_j;
             record(TelemetryField::motor_torque_nm, pending_torque);
             record(TelemetryField::motor_shaft_power_w,
                    pending_torque * pending->omega);
-            record(TelemetryField::electrical_power_w, pending_delivered);
-            record(TelemetryField::battery_energy_j, energy);
             record(TelemetryField::motor_enabled,
                    pending->enabled && pending_torque > 0.);
-            record(TelemetryField::battery_empty, energy == 0.);
         }
         return settlement;
     }
@@ -1328,8 +1272,6 @@ namespace drivetrain {
             freewheel_->commit(*bank.freewheel_solve);
         for (std::size_t i = 0; i < bank.write_count; ++i)
             live_.last.apply(bank.writes[i].field, bank.writes[i].value);
-        if (bank.battery)
-            battery_.publish(*bank.battery);
         if (bank.assist)
             assist_.publish(*bank.assist);
         if (bank.clear_pending)
@@ -1361,7 +1303,7 @@ namespace drivetrain {
     }
 
     Diagnostics DrivetrainWriter::stored_energy() {
-        if (simplified_)
+        if (uses_ideal_transmission_)
             return {};
         if (!live_.reference || !live_.angles)
             throw std::runtime_error("initialize the drivetrain before reading energy");
@@ -1391,7 +1333,6 @@ namespace drivetrain {
         s.pedaling = pedaling_.state();
         s.shifting = shifting_.state();
         s.assist = assist_.state();
-        s.battery = battery_.state();
         s.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
         s.ideal_hub = ideal_hub_ ? std::optional(ideal_hub_->state()) : std::nullopt;
         s.clutch = clutch_ ? std::optional(clutch_->state()) : std::nullopt;
@@ -1404,12 +1345,10 @@ namespace drivetrain {
         auto p = pedaling_;
         auto sh = shifting_;
         auto a = assist_;
-        auto b = battery_;
         auto h = hub_;
         p.set_state(s.pedaling);
         sh.set_state(s.shifting);
         a.set_state(s.assist);
-        b.set_state(s.battery);
         if (s.hub.has_value() != h.has_value())
             throw std::invalid_argument("hub topology");
         if (h)
@@ -1419,18 +1358,17 @@ namespace drivetrain {
         finite_optional(s.last_time_s, "last time");
         finite_optional(s.shift_time_s, "shift time");
         if (s.angles) {
-            if (s.angles->count != (simplified_ ? 1U : 2U))
+            if (s.angles->count != (uses_ideal_transmission_ ? 1U : 2U))
                 throw std::invalid_argument("drive angle width");
             for (std::size_t i = 0; i < s.angles->count; ++i)
                 finite(s.angles->values[i], "drive angle");
         }
         if (s.reference.has_value() != s.angles.has_value() ||
-            (!simplified_ && s.reference.has_value() != s.psi.has_value()))
+            (!uses_ideal_transmission_ && s.reference.has_value() != s.psi.has_value()))
             throw std::invalid_argument("drive initialization state");
         if (s.pending_actuation) {
             nonnegative(s.pending_actuation->requested, "pending request");
             finite(s.pending_actuation->omega, "pending omega");
-            positive(s.pending_actuation->dt, "pending dt");
         }
         for (const auto &pair: {
                  std::pair{ideal_hub_.get(), &s.ideal_hub},
@@ -1456,7 +1394,6 @@ namespace drivetrain {
         pedaling_ = p;
         shifting_ = std::move(sh);
         assist_ = std::move(a);
-        battery_ = b;
         hub_ = h;
         live_ = std::move(snapshot_scratch_);
         // A publication: retire every outstanding staged handle. The banks

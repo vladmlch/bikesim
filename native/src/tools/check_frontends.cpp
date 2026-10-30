@@ -324,16 +324,14 @@ int run_sweep(const std::string &kind, const fs::path &build) {
     set_member(summary, "tool_version", vstr(tool_version));
     Array records;
     if (!record_health_ok(version)) {
-        // Python appends to summary["records"] here and later assigns
-        // summary["records"] = records — the version record is therefore
-        // dropped from the written summary. The append is reproduced against
-        // the member so the same drop occurs.
+        // An unhealthy tool probe is a first-class failure cause: keep its
+        // record in the local list so the written summary carries it (the
+        // historical in-place summary append was overwritten later).
         Value version_copy = version;
         Object version_record_members = std::get<Object>(version_copy.data);
         version_record_members.insert(version_record_members.begin(),
                                       {"pass", vstr("version")});
-        std::get<Array>(member_mut(summary, "records")->data)
-            .push_back(vobj(std::move(version_record_members)));
+        records.push_back(vobj(std::move(version_record_members)));
     }
     bool blocking_findings = false;
     bool report_only_findings = false;
@@ -414,7 +412,6 @@ int run_sweep(const std::string &kind, const fs::path &build) {
                 if (kind == "analyzer" && pass_name == "alpha") {
                     if (warning) {
                         report_only_findings = true;
-                        report_alpha_findings(record, entry.source);
                     }
                     if (error)
                         // An alpha finding may be noisy, but an error
@@ -489,8 +486,32 @@ int run_sweep(const std::string &kind, const fs::path &build) {
               << (build_dir / "native_check_summaries" / (kind + ".json"))
                      .string()
               << "\n";
+    // Console reporting happens exactly once, after every record is formed:
+    // healthy alpha-pass findings are report-only and printed here; an alpha
+    // record whose health failed is failure evidence owned by the listing
+    // below, so it is skipped on this pass.
+    for (const Value &record: std::get<Array>(member(summary, "records")->data)) {
+        const Value *alpha_pass = member(record, "pass");
+        const bool alpha = alpha_pass != nullptr &&
+            std::holds_alternative<std::string>(alpha_pass->data) &&
+            std::get<std::string>(alpha_pass->data) == "alpha";
+        if (alpha && record_health_ok(record)) {
+            const Value *alpha_source = member(record, "source");
+            report_alpha_findings(record,
+                alpha_source != nullptr &&
+                        std::holds_alternative<std::string>(alpha_source->data)
+                    ? fs::path(std::get<std::string>(alpha_source->data))
+                    : fs::path{});
+        }
+    }
     if (std::get<std::string>(member(summary, "status")->data) != "passed") {
         for (const Value &record: std::get<Array>(member(summary, "records")->data)) {
+            const Value *pass_name = member(record, "pass");
+            if (pass_name != nullptr &&
+                std::holds_alternative<std::string>(pass_name->data) &&
+                std::get<std::string>(pass_name->data) == "alpha" &&
+                record_health_ok(record))
+                continue; // Already reported by the alpha pass above.
             if (!record_health_ok(record) ||
                 !record_diagnostics(record).empty()) {
                 for (const auto &line: record_diagnostics(record))

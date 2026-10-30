@@ -283,7 +283,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
                     state_file.filename();
                 std::filesystem::is_regular_file(keyed, keyed_error))
                 state_file = keyed;
-            const auto bytes = io::read_numpy_bytes(state_file);
+            const auto bytes = io::read_bounded_file_bytes(state_file);
             std::string source;
             source.reserve(bytes.size());
             for (auto const byte : bytes) source.push_back(static_cast<char>(std::to_integer<unsigned char>(byte)));

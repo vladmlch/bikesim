@@ -307,12 +307,12 @@
   "index": 23,
   "kind": "bitwise",
   "label": "$.last#keys",
-  "nbytes": 359,
+  "nbytes": 338,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
   "offset": 629,
   "rtol": null,
   "shape": [
-   359
+   338
   ]
  },
  {
@@ -323,7 +323,7 @@
   "label": "$.last.chain_energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 988,
+  "offset": 967,
   "rtol": null,
   "shape": []
  },
@@ -332,10 +332,10 @@
   "dtype": "<f8",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 996,
+  "offset": 975,
   "rtol": null,
   "shape": []
  },
@@ -344,34 +344,22 @@
   "dtype": "<f8",
   "index": 26,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1004,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 27,
-  "kind": "bitwise",
   "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1012,
+  "offset": 983,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.last.gear_front_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1020,
+  "offset": 991,
   "rtol": null,
   "shape": [
    2
@@ -380,35 +368,85 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 29,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1022,
+  "offset": 993,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 30,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.last.gear_rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1030,
+  "offset": 1001,
   "rtol": null,
   "shape": [
    2
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.last.human_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 1003,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 31,
   "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 1011,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 1019,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 1024,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
   "offset": 1032,
@@ -417,77 +455,27 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1040,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 33,
+  "index": 35,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
+  "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1048,
+  "offset": 1040,
   "rtol": null,
   "shape": [
    5
   ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1053,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.last.motor_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1061,
-  "rtol": null,
-  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 36,
   "kind": "bitwise",
-  "label": "$.last.shift_active",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1069,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1074,
+  "offset": 1045,
   "rtol": null,
   "shape": [
    1
@@ -496,12 +484,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 38,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1075,
+  "offset": 1046,
   "rtol": null,
   "shape": [
    6
@@ -510,12 +498,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 39,
+  "index": 38,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1081,
+  "offset": 1052,
   "rtol": null,
   "shape": [
    2
@@ -524,12 +512,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 40,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1083,
+  "offset": 1054,
   "rtol": null,
   "shape": [
    4
@@ -538,24 +526,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 40,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1087,
+  "offset": 1058,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1095,
+  "offset": 1066,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.pending_actuation",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 1070,
   "rtol": null,
   "shape": [
    4
@@ -566,13 +568,13 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.pending_actuation",
-  "nbytes": 4,
+  "label": "$.policies#keys",
+  "nbytes": 38,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1099,
+  "offset": 1074,
   "rtol": null,
   "shape": [
-   4
+   38
   ]
  },
  {
@@ -580,24 +582,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "$.policies#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1103,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1151,
+  "offset": 1112,
   "rtol": null,
   "shape": [
    33
@@ -606,24 +594,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 46,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1184,
+  "offset": 1145,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1192,
+  "offset": 1153,
   "rtol": null,
   "shape": [
    5
@@ -632,74 +620,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 48,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1197,
+  "offset": 1158,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1205,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1253,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1261,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1269,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.policies.hub",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1277,
+  "offset": 1166,
   "rtol": null,
   "shape": [
    4
@@ -708,12 +646,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1281,
+  "offset": 1170,
   "rtol": null,
   "shape": [
    98
@@ -722,12 +660,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1379,
+  "offset": 1268,
   "rtol": null,
   "shape": [
    4
@@ -736,24 +674,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1383,
+  "offset": 1272,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1391,
+  "offset": 1280,
   "rtol": null,
   "shape": [
    5
@@ -762,24 +700,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 58,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1396,
+  "offset": 1285,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1404,
+  "offset": 1293,
   "rtol": null,
   "shape": [
    4
@@ -788,24 +726,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1408,
+  "offset": 1297,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1416,
+  "offset": 1305,
   "rtol": null,
   "shape": [
    113
@@ -814,12 +752,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 62,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1529,
+  "offset": 1418,
   "rtol": null,
   "shape": [
    4
@@ -828,36 +766,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 63,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1533,
+  "offset": 1422,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 64,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1541,
+  "offset": 1430,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1549,
+  "offset": 1438,
   "rtol": null,
   "shape": [
    6
@@ -866,12 +804,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 61,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1555,
+  "offset": 1444,
   "rtol": null,
   "shape": [
    2
@@ -880,12 +818,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 62,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1557,
+  "offset": 1446,
   "rtol": null,
   "shape": [
    2
@@ -894,12 +832,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 68,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1559,
+  "offset": 1448,
   "rtol": null,
   "shape": [
    4
@@ -908,12 +846,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 69,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1563,
+  "offset": 1452,
   "rtol": null,
   "shape": [
    1
@@ -922,12 +860,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 70,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1564,
+  "offset": 1453,
   "rtol": null,
   "shape": [
    4
@@ -936,12 +874,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 71,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1568,
+  "offset": 1457,
   "rtol": null,
   "shape": [
    4
@@ -950,24 +888,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 72,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1572,
+  "offset": 1461,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 73,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1580,
+  "offset": 1469,
   "rtol": null,
   "shape": [
    4
@@ -976,12 +914,12 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 74,
+  "index": 69,
   "kind": "bitwise",
   "label": "",
   "nbytes": 64,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1584,
+  "offset": 1473,
   "rtol": null,
   "shape": [
    8
@@ -990,12 +928,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 75,
+  "index": 70,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 141,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1648,
+  "offset": 1537,
   "rtol": null,
   "shape": [
    141
@@ -1004,12 +942,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 76,
+  "index": 71,
   "kind": "bitwise",
   "label": "$.angles#length",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1789,
+  "offset": 1678,
   "rtol": null,
   "shape": [
    1
@@ -1018,24 +956,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 77,
+  "index": 72,
   "kind": "bitwise",
   "label": "$.angles[0]",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1790,
+  "offset": 1679,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 78,
+  "index": 73,
   "kind": "bitwise",
   "label": "$.clutch",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1798,
+  "offset": 1687,
   "rtol": null,
   "shape": [
    4
@@ -1044,12 +982,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 79,
+  "index": 74,
   "kind": "bitwise",
   "label": "$.freewheel",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1802,
+  "offset": 1691,
   "rtol": null,
   "shape": [
    4
@@ -1058,12 +996,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 75,
   "kind": "bitwise",
   "label": "$.ideal_hub#keys",
   "nbytes": 165,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1806,
+  "offset": 1695,
   "rtol": null,
   "shape": [
    165
@@ -1072,24 +1010,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 81,
+  "index": 76,
   "kind": "bitwise",
   "label": "$.ideal_hub.boundary",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1971,
+  "offset": 1860,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 82,
+  "index": 77,
   "kind": "bitwise",
   "label": "$.ideal_hub.coefficients",
   "nbytes": 64,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 1979,
+  "offset": 1868,
   "rtol": null,
   "shape": [
    8
@@ -1098,12 +1036,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 83,
+  "index": 78,
   "kind": "bitwise",
   "label": "$.ideal_hub.diagnostics#keys",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2043,
+  "offset": 1932,
   "rtol": null,
   "shape": [
    2
@@ -1112,24 +1050,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 84,
+  "index": 79,
   "kind": "bitwise",
   "label": "$.ideal_hub.last_tension_n",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2045,
+  "offset": 1934,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 85,
+  "index": 80,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared#keys",
   "nbytes": 32,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2053,
+  "offset": 1942,
   "rtol": null,
   "shape": [
    32
@@ -1138,12 +1076,12 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 86,
+  "index": 81,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared.jacobian",
   "nbytes": 64,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2085,
+  "offset": 1974,
   "rtol": null,
   "shape": [
    8
@@ -1152,24 +1090,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 87,
+  "index": 82,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared.phi",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2149,
+  "offset": 2038,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 88,
+  "index": 83,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared.qpos",
   "nbytes": 64,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2157,
+  "offset": 2046,
   "rtol": null,
   "shape": [
    8
@@ -1178,24 +1116,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 89,
+  "index": 84,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared.time",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2221,
+  "offset": 2110,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 90,
+  "index": 85,
   "kind": "bitwise",
   "label": "$.ideal_hub.range",
   "nbytes": 16,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2229,
+  "offset": 2118,
   "rtol": null,
   "shape": [
    2
@@ -1204,24 +1142,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 91,
+  "index": 86,
   "kind": "bitwise",
   "label": "$.ideal_hub.ratio",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2245,
+  "offset": 2134,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 92,
+  "index": 87,
   "kind": "bitwise",
   "label": "$.ideal_hub.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2253,
+  "offset": 2142,
   "rtol": null,
   "shape": [
    2
@@ -1230,12 +1168,76 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 93,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.ideal_hub.shift_constraint_work_j",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2255,
+  "offset": 2144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_parameter_work_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2152,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_pending",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2160,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "$.last#keys",
+  "nbytes": 338,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2165,
+  "rtol": null,
+  "shape": [
+   338
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "$.last.chain_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2503,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "$.last.freehub_energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2511,
   "rtol": null,
   "shape": []
  },
@@ -1244,10 +1246,10 @@
   "dtype": "<f8",
   "index": 94,
   "kind": "bitwise",
-  "label": "$.ideal_hub.shift_parameter_work_j",
+  "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2263,
+  "offset": 2519,
   "rtol": null,
   "shape": []
  },
@@ -1256,50 +1258,50 @@
   "dtype": "|u1",
   "index": 95,
   "kind": "bitwise",
-  "label": "$.ideal_hub.shift_pending",
-  "nbytes": 5,
+  "label": "$.last.gear_front_teeth",
+  "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2271,
+  "offset": 2527,
   "rtol": null,
   "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 96,
-  "kind": "bitwise",
-  "label": "$.last#keys",
-  "nbytes": 359,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2276,
-  "rtol": null,
-  "shape": [
-   359
+   2
   ]
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 97,
+  "index": 96,
   "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
+  "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2635,
+  "offset": 2529,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "$.last.gear_rear_teeth",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2537,
+  "rtol": null,
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 98,
   "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
+  "label": "$.last.human_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2643,
+  "offset": 2539,
   "rtol": null,
   "shape": []
  },
@@ -1308,48 +1310,48 @@
   "dtype": "<f8",
   "index": 99,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2651,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 100,
-  "kind": "bitwise",
-  "label": "$.last.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2659,
+  "offset": 2547,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 101,
+  "index": 100,
   "kind": "bitwise",
-  "label": "$.last.gear_front_teeth",
-  "nbytes": 2,
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2667,
+  "offset": 2555,
   "rtol": null,
   "shape": [
-   2
+   5
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2560,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 102,
   "kind": "bitwise",
-  "label": "$.last.gear_ratio",
+  "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2669,
+  "offset": 2568,
   "rtol": null,
   "shape": []
  },
@@ -1358,86 +1360,10 @@
   "dtype": "|u1",
   "index": 103,
   "kind": "bitwise",
-  "label": "$.last.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2677,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 104,
-  "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2679,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 105,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2687,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 106,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2695,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 107,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2700,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 108,
-  "kind": "bitwise",
-  "label": "$.last.motor_torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2708,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 109,
-  "kind": "bitwise",
   "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2716,
+  "offset": 2576,
   "rtol": null,
   "shape": [
    5
@@ -1446,12 +1372,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 110,
+  "index": 104,
   "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2721,
+  "offset": 2581,
   "rtol": null,
   "shape": [
    1
@@ -1460,12 +1386,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 111,
+  "index": 105,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2722,
+  "offset": 2582,
   "rtol": null,
   "shape": [
    6
@@ -1474,12 +1400,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 112,
+  "index": 106,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2728,
+  "offset": 2588,
   "rtol": null,
   "shape": [
    2
@@ -1488,12 +1414,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 113,
+  "index": 107,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2730,
+  "offset": 2590,
   "rtol": null,
   "shape": [
    4
@@ -1502,24 +1428,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 114,
+  "index": 108,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2734,
+  "offset": 2594,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 115,
+  "index": 109,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2742,
+  "offset": 2602,
   "rtol": null,
   "shape": [
    4
@@ -1528,12 +1454,92 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 116,
+  "index": 110,
   "kind": "bitwise",
   "label": "$.pending_actuation",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2746,
+  "offset": 2606,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "$.policies#keys",
+  "nbytes": 38,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2610,
+  "rtol": null,
+  "shape": [
+   38
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "$.policies.assist#keys",
+  "nbytes": 33,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2648,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "$.policies.assist.last_gain",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2681,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "$.policies.assist.pedaling",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2689,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "$.policies.assist.torque",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2694,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "$.policies.hub",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
+  "offset": 2702,
   "rtol": null,
   "shape": [
    4
@@ -1544,13 +1550,13 @@
   "dtype": "|u1",
   "index": 117,
   "kind": "bitwise",
-  "label": "$.policies#keys",
-  "nbytes": 48,
+  "label": "$.policies.pedaling#keys",
+  "nbytes": 98,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2750,
+  "offset": 2706,
   "rtol": null,
   "shape": [
-   48
+   98
   ]
  },
  {
@@ -1558,13 +1564,13 @@
   "dtype": "|u1",
   "index": 118,
   "kind": "bitwise",
-  "label": "$.policies.assist#keys",
-  "nbytes": 33,
+  "label": "$.policies.pedaling._cadence_ema",
+  "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2798,
+  "offset": 2804,
   "rtol": null,
   "shape": [
-   33
+   4
   ]
  },
  {
@@ -1572,10 +1578,10 @@
   "dtype": "<f8",
   "index": 119,
   "kind": "bitwise",
-  "label": "$.policies.assist.last_gain",
+  "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2831,
+  "offset": 2808,
   "rtol": null,
   "shape": []
  },
@@ -1584,10 +1590,10 @@
   "dtype": "|u1",
   "index": 120,
   "kind": "bitwise",
-  "label": "$.policies.assist.pedaling",
+  "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2839,
+  "offset": 2816,
   "rtol": null,
   "shape": [
    5
@@ -1598,10 +1604,10 @@
   "dtype": "<f8",
   "index": 121,
   "kind": "bitwise",
-  "label": "$.policies.assist.torque",
+  "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2844,
+  "offset": 2821,
   "rtol": null,
   "shape": []
  },
@@ -1610,13 +1616,13 @@
   "dtype": "|u1",
   "index": 122,
   "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
+  "label": "$.policies.pedaling.target_phase_rad",
+  "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2852,
+  "offset": 2829,
   "rtol": null,
   "shape": [
-   48
+   4
   ]
  },
  {
@@ -1624,152 +1630,22 @@
   "dtype": "<f8",
   "index": 123,
   "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2900,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 124,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2908,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 125,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2916,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 126,
-  "kind": "bitwise",
-  "label": "$.policies.hub",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2924,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 127,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling#keys",
-  "nbytes": 98,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 2928,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 128,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling._cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3026,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 129,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling._effort",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3030,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 130,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.coasting",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3038,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 131,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3043,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 132,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3051,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 133,
-  "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3055,
+  "offset": 2833,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 134,
+  "index": 124,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3063,
+  "offset": 2841,
   "rtol": null,
   "shape": [
    113
@@ -1778,12 +1654,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 135,
+  "index": 125,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3176,
+  "offset": 2954,
   "rtol": null,
   "shape": [
    4
@@ -1792,36 +1668,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 136,
+  "index": 126,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3180,
+  "offset": 2958,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 137,
+  "index": 127,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3188,
+  "offset": 2966,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 138,
+  "index": 128,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3196,
+  "offset": 2974,
   "rtol": null,
   "shape": [
    6
@@ -1830,12 +1706,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 139,
+  "index": 129,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3202,
+  "offset": 2980,
   "rtol": null,
   "shape": [
    2
@@ -1844,12 +1720,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 140,
+  "index": 130,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3204,
+  "offset": 2982,
   "rtol": null,
   "shape": [
    2
@@ -1858,12 +1734,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 141,
+  "index": 131,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3206,
+  "offset": 2984,
   "rtol": null,
   "shape": [
    4
@@ -1872,12 +1748,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 142,
+  "index": 132,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3210,
+  "offset": 2988,
   "rtol": null,
   "shape": [
    1
@@ -1886,12 +1762,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 143,
+  "index": 133,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3211,
+  "offset": 2989,
   "rtol": null,
   "shape": [
    4
@@ -1900,12 +1776,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 144,
+  "index": 134,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3215,
+  "offset": 2993,
   "rtol": null,
   "shape": [
    4
@@ -1914,24 +1790,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 145,
+  "index": 135,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3219,
+  "offset": 2997,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 146,
+  "index": 136,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "tests/reference/test_native_drivetrain.py::test_geometric_prepared_sentinel_owns_reused_storage",
-  "offset": 3227,
+  "offset": 3005,
   "rtol": null,
   "shape": [
    4

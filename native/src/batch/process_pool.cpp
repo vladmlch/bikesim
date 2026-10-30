@@ -15,7 +15,7 @@
 #endif
 
 namespace bike::batch {
-unsigned performance_cores() {
+unsigned default_worker_count() {
 #if defined(__APPLE__)
     int count=0;std::size_t size=sizeof(count);
     if(::sysctlbyname("hw.perflevel0.physicalcpu",&count,&size,nullptr,0)==0&&count>0)return static_cast<unsigned>(count);
@@ -53,17 +53,18 @@ std::vector<Result> execute(std::span<const Job> jobs,unsigned workers,const Exe
             const auto started=Clock::now();
             try {
                 if(stop.stop_requested()) {
-                    result.exit_code=130;result.err="cancelled before worker launch";
+                    result.exit_code=130;result.stderr_text="cancelled before worker launch";
                 } else {
                     platform::ProcessOptions child_options;child_options.cancellation=stop.get_token();
                     auto child=platform::run(job.argv,options.cwd,child_options);
-                    result.exit_code=child.exit_code;result.out=std::move(child.out);result.err=std::move(child.err);
-                    result.summary=tail_json(result.out);
+                    result.exit_code=child.exit_code;result.stdout_text=std::move(child.stdout_text);result.stderr_text=std::move(child.stderr_text);
+                    auto parsed=parse_stdout_summary(result.stdout_text);
+                    result.summary_status=parsed.status;result.summary=std::move(parsed.value);
                 }
             } catch(const std::exception& error) {
-                result.exit_code=-1;result.err=error.what();
-            } catch(...) { result.exit_code=-1;result.err="non-standard worker failure"; }
-            result.wall_s=std::chrono::duration<double>(Clock::now()-started).count();
+                result.exit_code=-1;result.stderr_text=error.what();
+            } catch(...) { result.exit_code=-1;result.stderr_text="non-standard worker failure"; }
+            result.wall_duration_s=std::chrono::duration<double>(Clock::now()-started).count();
             // No reader observes the result before the queue's release/acquire.
             {std::scoped_lock<std::mutex> const lock(mutex);completed[published++]=index;}
             wake.notify_one();

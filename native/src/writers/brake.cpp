@@ -148,7 +148,7 @@ void BrakeWriter::compute_into(const mjData *d, double front_demand,
     if (out.size() != kTorqueCount ||
         (out.data() == nullptr && !out.empty()))
         throw std::invalid_argument("brake output width");
-    accumulate_validated(d, front_demand, rear_demand, out);
+    compute_validated_into(d, front_demand, rear_demand, out);
 }
 
 // The warm-core twin of compute_into: the same precondition gates report
@@ -167,7 +167,7 @@ CoreStatus BrakeWriter::try_compute_into(const mjData *d,
         (out.data() == nullptr && !out.empty()))
         return CoreStatus::invalid_input;
     try {
-        accumulate_validated(d, front_demand, rear_demand, out);
+        compute_validated_into(d, front_demand, rear_demand, out);
     } catch (const std::bad_alloc &) {
         return CoreStatus::engine_failure;
     } catch (const engine::EngineFailure &) {
@@ -195,10 +195,10 @@ std::pair<double, double> BrakeWriter::torques(const mjData *d,
 // Extracted unchanged from the original torques() body — front wheel
 // first — including wheel_torque's finite() and dof guards, whose
 // exception types are part of the observable contract.
-void BrakeWriter::accumulate_validated(const mjData *d,
-                                       double front_demand,
-                                       double rear_demand,
-                                       std::span<double> out) const {
+void BrakeWriter::compute_validated_into(const mjData *d,
+                                         double front_demand,
+                                         double rear_demand,
+                                         std::span<double> out) const {
     out[0] = wheel_torque(d, front_, front_demand);
     out[1] = wheel_torque(d, rear_, rear_demand);
 }

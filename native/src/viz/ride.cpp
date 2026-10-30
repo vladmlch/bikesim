@@ -136,7 +136,7 @@ Report track_profile(const terrain::TrackSpec& track,double resolution) {
 std::vector<Report> physical_ride_plots(const Channels& channels) {
     const auto time=detail::required(channels,"time_s");
     const std::array<std::string_view,4> titles{"speed","normal_load","power","energy_residual"},labels{"Speed (m/s)","Normal force (N)","Power (W)","Mechanical residual (J)"};
-    const std::array<std::vector<std::string_view>,4> keys{{{"speed_mps"},{"tires.front.normal_load_n","tires.rear.normal_load_n"},{"drive.motor_shaft_power_w","drive.electrical_power_w"},{"energy.residual_j"}}};
+    const std::array<std::vector<std::string_view>,4> keys{{{"speed_mps"},{"tires.front.normal_load_n","tires.rear.normal_load_n"},{"drive.motor_shaft_power_w"},{"energy.residual_j"}}};
     std::vector<Report> out;
     for(std::size_t i=0;i<titles.size();++i){Plot plot{.title=std::string(titles[i]),.x_label="Force interval start (s)",.y_label=std::string(labels[i]),.series={}};
         for(const auto key:keys[i])add(plot,channels,time,key);

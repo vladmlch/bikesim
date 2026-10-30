@@ -11,7 +11,6 @@ import mujoco
 import numpy as np
 import pytest
 
-from bike_sim.physics.battery import Battery, motor_electrical_power, limit_torque_by_energy
 from bike_sim.physics.freehub import Freehub
 from bike_sim.physics.motor import AssistController
 from bike_sim.physics.pedaling import PedalingPolicy, human_crank_torque
@@ -28,7 +27,6 @@ KEYS = {
     'pedaling': {'coasting', 'target_phase_rad', 'target_rate_rad_s', 'deceleration_rad_s2', '_effort', '_cadence_ema'},
     'shifting': {'rear_teeth', 'cooldown_s', 'cut_remaining_s', 'shift_count', 'direction', 'from_teeth', 'cadence_ema', 'required_ema'},
     'assist': {'torque', 'pedaling', 'last_gain'},
-    'battery': {'initial_energy_j', 'energy_j', 'drawn_energy_j'},
     'hub': {'boundary', 'energy_j', 'torque_nm'},
 }
 
@@ -82,7 +80,6 @@ def oracle_config(drive):
             'assist': {**{k:getattr(a,k) for k in ('gain','max_torque','max_power','tau','slew','engage_torque_nm','gate_min_crank_rad_s','mode')},
                        'cutoff_mps':a.cutoff,'taper_width_mps':a.width,'profile':profile,
                        'torque_curve': None if a.torque_curve is None else a.torque_curve.tolist()},
-            'battery':asdict(drive.config.battery),
             'hub_stiffness_nm_rad':drive.config.freehub_k_nm_rad,'hub_damping_nm_s':drive.config.freehub_c_nms_rad}
 
 
@@ -119,14 +116,6 @@ def test_crank_torque():
         for phase in (-23., -np.pi, -0., 0., .71, np.pi/2, 15.):
             for ripple in (0., .35, .999):
                 assert_bitwise_equal(bike_native.human_crank_torque(mean, phase, ripple), human_crank_torque(mean, phase, ripple))
-
-
-def test_battery_draw_matches_python(config, drive):
-    native = bike_native.DrivePolicies(config)
-    drive.battery = Battery(config['battery']['energy_j'])
-    for power, dt in [(5., .002), (1000., .01), (1e9, .1), (0., .01)]:
-        assert_bitwise_equal(native.battery_draw(power, dt), drive.battery.draw(power, dt))
-        check(native, drive)
 
 
 def test_pedaling_sequences(config, drive):
@@ -183,18 +172,6 @@ def test_assist(profile, mode):
         check(native, drive)
 
 
-@pytest.mark.parametrize('a', [0., .02], ids=['lossless', 'copper'])
-@pytest.mark.parametrize('enabled', [False, True], ids=['disabled', 'enabled'])
-def test_energy_helpers(config, a, enabled):
-    config['battery'].update(copper_w_per_nm2=a, speed_w_per_rad_s2=.03, idle_w=5., enabled=enabled)
-    native = bike_native.DrivePolicies(config)
-    for torque in (-0., 0., 5., 37.13, 80.):
-        for omega in (-7.3, -0., 0., 5.2):
-            assert_bitwise_equal(native.electrical_power(torque,omega,enabled), motor_electrical_power(torque,omega,a,.03,5.,enabled))
-            for budget in (0., 4.99, 5., 6., 72., 500.):
-                assert_bitwise_equal(native.energy_limit(torque,omega,budget), limit_torque_by_energy(torque,omega,a,.03,5.,budget))
-
-
 def test_freehub(config, drive):
     native = bike_native.DrivePolicies(config)
     for values in [(0.,0.,0.,0.), (.1,0.,2.,0.), (.3,.5,0.,3.), (.4,.5,4.,0.), (8.,3.,2.,3.), (8.,10.,2.,3.)]:
@@ -216,8 +193,8 @@ def test_replay_reset_and_ownership(config, drive):
     native.reset()
     drive.assist.reset()
     check(native, drive)
-    old['battery']['energy_j'] = 1.
-    assert native.state()['battery']['energy_j'] != 1.
+    old['hub']['energy_j'] = 1.
+    assert native.state()['hub']['energy_j'] != 1.
 
 
 @pytest.mark.parametrize('section', KEYS)
@@ -240,7 +217,7 @@ def test_invalid_restore_is_atomic(config, section):
         assert_tree(native.state(), old)
 
 
-@pytest.mark.parametrize('section,key,value', [('battery','energy_j',-1.), ('hub','energy_j',-1.), ('shifting','cooldown_s',-1.), ('shifting','rear_teeth',2), ('shifting','shift_count',-1), ('shifting','rear_teeth',3.5), ('pedaling','coasting',1), ('shifting','cadence_ema',10.)], ids=['battery-negative', 'hub-negative', 'cooldown-negative', 'teeth-small', 'count-negative', 'teeth-fractional', 'coasting-integer', 'ema-unpaired'])
+@pytest.mark.parametrize('section,key,value', [('hub','energy_j',-1.), ('shifting','cooldown_s',-1.), ('shifting','rear_teeth',2), ('shifting','shift_count',-1), ('shifting','rear_teeth',3.5), ('pedaling','coasting',1), ('shifting','cadence_ema',10.)], ids=['hub-negative', 'cooldown-negative', 'teeth-small', 'count-negative', 'teeth-fractional', 'coasting-integer', 'ema-unpaired'])
 def test_invalid_restore_values(config, section, key, value):
     native = bike_native.DrivePolicies(config)
     old = native.state()
@@ -252,7 +229,7 @@ def test_invalid_restore_values(config, section, key, value):
 
 
 def test_config_validation(config):
-    for section in ('gearing', 'pedaling', 'shifting', 'assist', 'battery'):
+    for section in ('gearing', 'pedaling', 'shifting', 'assist'):
         for key, value in config[section].items():
             bad = copy.deepcopy(config)
             del bad[section][key]
@@ -285,9 +262,8 @@ def test_projection_resolves_runtime(drive):
 
 
 def test_projection_normalizes_numeric_leaves():
-    from bike_sim.physics.physical_config import BatteryConfig
     from tools.native_config import project_drive_policies
-    drive = applier(battery=BatteryConfig(energy_j=np.float64(123.), copper_w_per_nm2=np.float64(.02)),
+    drive = applier(assist=AssistConfig(gain=np.float64(1.5), max_torque=np.float64(70.)),
                     shifting=ShiftingConfig(shift_cooldown_s=np.float64(.4)))
     config = project_drive_policies(drive)
     def plain(value):
@@ -308,14 +284,12 @@ def test_complete_reset_and_atomic_multi_policy_restore(config, drive):
     native.pedaling_update(1., 13., 120., 30., .04)
     native.shifting_update(100.,100.,.01)
     native.assist_step(30.,80.,0.,False,.01)
-    native.battery_draw(80.,.01)
     native.freehub_torque(0.,0.,2.,0.)
     native.freehub_torque(.1,0.,2.,0.)
     old = native.state()
     bad = copy.deepcopy(old)
     bad['pedaling']['_effort'] = 17.
     bad['shifting']['rear_teeth'] = 33
-    bad['battery']['energy_j'] = 8.
     bad['hub']['torque_nm'] = np.inf
     with pytest.raises(ValueError):
         native.set_state(bad)
@@ -332,9 +306,6 @@ def test_restored_finite_snapshots_preserve_bits(config):
     # still exercise bit-preserving restores of arbitrary state.
     state['shifting'].update(rear_teeth=51, from_teeth=45, cadence_ema=-3., required_ema=-5.)
     state['assist'].update(torque=1e8, last_gain=1e9)
-    # initial_energy_j is fixed by the config; energy/drawn stay within it.
-    initial = state['battery']['initial_energy_j']
-    state['battery'].update(energy_j=initial * .5, drawn_energy_j=initial * .75)
     state['hub'].update(boundary=-1e9, torque_nm=1e9)
     native.set_state(state)
     assert_tree(native.state(), state)
@@ -359,11 +330,11 @@ def test_disabled_shifter_initial_teeth_outside_cassette():
     ('shifting','upshift_slip_mode','other'), ('assist','tau',0.), ('assist','slew',0.),
     ('assist','gain',-1.), ('assist','mode',1), ('assist','torque_curve',[[0.,1.]]),
     ('assist','torque_curve',[[0.,1.],[0.,2.]]), ('assist','torque_curve',[[0.,1.],[2.,-1.]]),
-    ('assist','profile',{'mode_gains':{}}), ('battery','enabled',1), ('battery','energy_j',-1.),
+    ('assist','profile',{'mode_gains':{}}),
 ], ids=['front-bool', 'rear-fractional', 'pitch-zero', 'pedaling-bool', 'stop-zero', 'resume-band',
         'shifting-bool', 'cassette-duplicate', 'cassette-bool', 'cassette-empty', 'torque-factor',
         'shift-cut', 'slip-mode', 'tau-zero', 'slew-zero', 'gain-negative', 'mode-integer',
-        'curve-short', 'curve-duplicate', 'curve-negative', 'profile-incomplete', 'battery-bool', 'energy-negative'])
+        'curve-short', 'curve-duplicate', 'curve-negative', 'profile-incomplete'])
 def test_invalid_config_values(config, section, key, value):
     bad = copy.deepcopy(config)
     bad[section][key] = value
@@ -371,7 +342,7 @@ def test_invalid_config_values(config, section, key, value):
         bike_native.DrivePolicies(bad)
 
 
-@pytest.mark.parametrize('key', ['gearing', 'pedaling', 'shifting', 'assist', 'battery',
+@pytest.mark.parametrize('key', ['gearing', 'pedaling', 'shifting', 'assist',
                                 'hub_stiffness_nm_rad', 'hub_damping_nm_s'])
 def test_missing_config_sections(config, key):
     del config[key]
@@ -390,15 +361,6 @@ def test_random_curve_interpolation(config):
     rpms += list(rng.uniform(-10.,170.,1000))
     for rpm in rpms:
         assert_bitwise_equal(native.assist_ceiling(float(rpm),0.), python.ceiling(float(rpm),0.))
-
-
-def test_battery_nonzero_idle_remainder(config):
-    native = bike_native.DrivePolicies(config)
-    state = native.state()
-    state['battery']['energy_j'] = .001
-    native.set_state(state)
-    assert native.energy_limit(80., 0., .001/.01) == 0.
-    assert native.state()['battery']['energy_j'] == .001
 
 
 def test_config_and_python_object_deletion():
@@ -450,10 +412,9 @@ def test_extra_and_missing_state_sections(config):
     ('pedaling_update',(np.nan,0.,0.,30.,.01)), ('pedaling_update',(0.,0.,0.,30.,0.)),
     ('shifting_update',(80.,80.,0.)), ('shifting_update',(80.,np.inf,.01)),
     ('assist_step',(30.,80.,0.,False,0.)), ('assist_step',(np.inf,80.,0.,False,.01)),
-    ('battery_draw',(np.inf,.01)), ('battery_draw',(1.,0.)), ('freehub_torque',(0.,np.inf,0.,0.)),
-    ('electrical_power',(np.inf,0.,True)), ('energy_limit',(-1.,0.,100.)),
+    ('freehub_torque',(0.,np.inf,0.,0.)),
 ], ids=['pedal-nan', 'pedal-zero-dt', 'shift-zero-dt', 'shift-infinite', 'assist-zero-dt',
-        'assist-infinite', 'battery-infinite', 'battery-zero-dt', 'hub-infinite', 'power-infinite', 'limit-negative'])
+        'assist-infinite', 'hub-infinite'])
 def test_invalid_calls_preserve_state(config, method, args):
     native = bike_native.DrivePolicies(config)
     old = native.state()

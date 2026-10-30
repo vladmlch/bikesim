@@ -47,9 +47,9 @@
       },
       "files": [
         {
-          "bytes": 8386,
+          "bytes": 8227,
           "path": "config/viewer_physics_welded.toml",
-          "sha256": "b2123f32f737d5d034de69316b17159b089e9f6acabb04d4945d841cdd298dcf"
+          "sha256": "9b93a151ed3069102138c9c678fb2a0ee7b1e3cdbad92c1c46506ee8fe92918d"
         }
       ],
       "group": "config",
@@ -71,9 +71,9 @@
       },
       "files": [
         {
-          "bytes": 6181,
+          "bytes": 6022,
           "path": "config/viewer_physics_distributed.toml",
-          "sha256": "56c0e3024d1acc38e24acffff7ab78404b19c8a8cb1c855c6fcec60c1f25f329"
+          "sha256": "6f0c7b9aa0cf15a67051c4866cce9816086379fe2487ebabd240201de9dc57db"
         }
       ],
       "group": "config",
@@ -95,9 +95,9 @@
       },
       "files": [
         {
-          "bytes": 6605,
+          "bytes": 6446,
           "path": "config/viewer_physics_pneumatic.toml",
-          "sha256": "82c8bdf91ffb52a0fea92f5f177ec5e2f6df52108e053c04b15663d33003d15b"
+          "sha256": "7e6d842e0fda8c5bf7245175315d220c756a201012d08086268959c9a4810e85"
         }
       ],
       "group": "config",
@@ -191,9 +191,9 @@
       },
       "files": [
         {
-          "bytes": 10007,
+          "bytes": 9845,
           "path": "config/resolved/welded.json",
-          "sha256": "60a05cf5ae630ca2592139d666d73d34c7e8bd1d347ae5f45fa5a7aeee30512f"
+          "sha256": "0f8ed74fe8c3b117ed38617b920e360387b3e6d7a31d69c8e6e538fd0307d73d"
         }
       ],
       "group": "config",
@@ -215,9 +215,9 @@
       },
       "files": [
         {
-          "bytes": 9999,
+          "bytes": 9837,
           "path": "config/resolved/distributed.json",
-          "sha256": "b77e569d956261783fbde6c0d0096a9b45695f58262bed19e341e6384a6f6a30"
+          "sha256": "3e86db9e4e8ed30ee977f0cdb74d31c08bcf214de723434218b60c18a39e97fd"
         }
       ],
       "group": "config",
@@ -239,9 +239,9 @@
       },
       "files": [
         {
-          "bytes": 10119,
+          "bytes": 9957,
           "path": "config/resolved/pneumatic.json",
-          "sha256": "6e235d3a70670296dce42d30a9966b933aee0773a9ba85ecdbcd83ddfd10cd46"
+          "sha256": "e8d5618957ae628737b39f16611c88d28724857c271fc0e827e0fd5e0941811b"
         }
       ],
       "group": "config",
@@ -263,14 +263,14 @@
       },
       "files": [
         {
-          "bytes": 8385,
+          "bytes": 8226,
           "path": "config/variant_elastic_chain.toml",
-          "sha256": "c2a2aa08fb5e0e860c60d7d13ea0b38e2d846e8ba722877f53d4cb41195cb5fa"
+          "sha256": "0cd987e8e8f73aa0ee98b916a45da854b742bc56f7cd9dd0ac7d1b1683ba3793"
         },
         {
-          "bytes": 10006,
+          "bytes": 9844,
           "path": "config/variant_elastic_chain.resolved.json",
-          "sha256": "5aebee645eb69759c9130924ff0293faf26cf381a3ca3f1a6f29bd9f56e8ba2c"
+          "sha256": "23239ef869242b537d22f3a2b24f0ee0614a71aa3fd532d1395659a4a61874ab"
         }
       ],
       "group": "config",
@@ -294,9 +294,9 @@
       },
       "files": [
         {
-          "bytes": 8384,
+          "bytes": 8225,
           "path": "config/variant_elastic_chain_shifting_rejected.toml",
-          "sha256": "b316bc82227d65040c49d2aeb7890ca1d55aa2fbafc97b78a752853f6305035e"
+          "sha256": "e7a85132c3331c954a82b1fadf474f43afc4bc77ce4816df4335496426eaf6be"
         }
       ],
       "group": "config",
@@ -318,14 +318,14 @@
       },
       "files": [
         {
-          "bytes": 8383,
+          "bytes": 8224,
           "path": "config/variant_alt_support.toml",
-          "sha256": "a0926976fd61248b1c44dfcb14e8ff4ad02046265b52d37b751af24896e34e30"
+          "sha256": "b8088473e11105b346756cf7ffd92d96769a53f620507233eabbf1dd7908f612"
         },
         {
-          "bytes": 10004,
+          "bytes": 9842,
           "path": "config/variant_alt_support.resolved.json",
-          "sha256": "d1d669e5faf6bfdd1ba4b4dc527679b1975e8c4c1ec17bae29187e3e6383ae64"
+          "sha256": "28e919c3c66ad2c64ad6e4e5f97406a1b6a21d33d244ff1c182f9ca4f6535c73"
         }
       ],
       "group": "config",
@@ -348,14 +348,14 @@
       },
       "files": [
         {
-          "bytes": 8383,
+          "bytes": 8224,
           "path": "config/variant_grip_weld_coercion.toml",
-          "sha256": "533d6102eabd9afd41f7fbcb17a987a3610d231d5da19506171128e8a257af97"
+          "sha256": "65b286d209d0a6fa811955689ec5ebb2415a63a52065767d31c1989e8900e568"
         },
         {
-          "bytes": 10007,
+          "bytes": 9845,
           "path": "config/variant_grip_weld_coercion.resolved.json",
-          "sha256": "60a05cf5ae630ca2592139d666d73d34c7e8bd1d347ae5f45fa5a7aeee30512f"
+          "sha256": "0f8ed74fe8c3b117ed38617b920e360387b3e6d7a31d69c8e6e538fd0307d73d"
         }
       ],
       "group": "config",
@@ -377,9 +377,9 @@
       },
       "files": [
         {
-          "bytes": 47392,
+          "bytes": 46276,
           "path": "config/schema.json",
-          "sha256": "b0ea9d62fd2b8cbeb9e78c1342281b841acfac4236409c451c6c531f3f9ac438"
+          "sha256": "7df5e63bcd2fc1b8983c420aa465527f319ae8381da02897cfe6a806013467b5"
         }
       ],
       "group": "config",
@@ -13418,14 +13418,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/welded/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
-          "bytes": 32472,
+          "bytes": 32110,
           "path": "bootstrap/welded/state.json",
-          "sha256": "6e00fb7d062827842031f9d5fe919f941b4593dab8d009af8a6b579ac56922dc"
+          "sha256": "c65da2b2c384d82e5d3f0c0f3491fd36890365064de247662f61f91bb9bf6324"
         },
         {
           "bytes": 2336,
@@ -13974,9 +13974,9 @@
       },
       "files": [
         {
-          "bytes": 130026,
+          "bytes": 129182,
           "path": "bootstrap/welded/steps_control.json",
-          "sha256": "d04c8eb97b5a6409d075968d6446b0ea9b41cb54b7d2cff87b4b7c6844b99ec7"
+          "sha256": "3ccd40e77f884fa58225ba5612d73ee643a1893f9111d3f3057c806fc009a569"
         },
         {
           "bytes": 2336,
@@ -14009,14 +14009,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/welded/reset/1/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
-          "bytes": 32608,
+          "bytes": 32246,
           "path": "bootstrap/welded/reset/1/state.json",
-          "sha256": "dcc37a6b4e8e18b22b8a01d0857b82b60857acf4598f76deb0979d250e545126"
+          "sha256": "7137bada1d0e12b3f809f93b3c0ef19f3cf46f3d5bd71c00e12fac7bcf1044ab"
         },
         {
           "bytes": 2336,
@@ -14209,14 +14209,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/welded/reset/2/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
-          "bytes": 32608,
+          "bytes": 32246,
           "path": "bootstrap/welded/reset/2/state.json",
-          "sha256": "3f8d384ca51c2e189a0d186a21d59240090cfb6f9ceff5d81c1f41f4c1abd6b4"
+          "sha256": "08ba220b2b9cdd21dde1bcf742f5e378d63c77a65fef34f732451ccfe0ebc5f2"
         },
         {
           "bytes": 2336,
@@ -14423,14 +14423,14 @@
           "sha256": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/welded_pinned/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
-          "bytes": 32592,
+          "bytes": 32230,
           "path": "bootstrap/welded_pinned/state.json",
-          "sha256": "2903568a54db308e23e886791477f355b4d3c6b1b636ffad705ab1b2303b003f"
+          "sha256": "cf23b8512b0808e48ee4ce9924d25da3e49246dcb4d0f93c60bfaf1ab458dcb0"
         },
         {
           "bytes": 2336,
@@ -14637,14 +14637,14 @@
           "sha256": "a1cdaccd1080d22eb3cb4ab0ca9ab27490cfbdd8e983223d95e0b97fa5252d29"
         },
         {
-          "bytes": 26453,
+          "bytes": 26277,
           "path": "bootstrap/native_start_welded/config.json",
-          "sha256": "c874462543c3bf6a6b5da576fafc3e74fd64a5c44f807e7db9aaa7ce766e7dc7"
+          "sha256": "9f2acf65a272493b1aec4747926fec62a9472c4486b4ceaccc424b3e6ba4e0e2"
         },
         {
-          "bytes": 33298,
+          "bytes": 32936,
           "path": "bootstrap/native_start_welded/state.json",
-          "sha256": "9863faa06d9669d0dac04ae92f5a6f7e933fddac8a727bf9b41addb7aa720b05"
+          "sha256": "687090f8cb2992c989b5f5dd48dd459f818392677d8967b953ef15168f6f9cc8"
         },
         {
           "bytes": 2336,
@@ -14873,7 +14873,7 @@
         {
           "bytes": 23573,
           "path": "initial_state/darwin-arm64/welded_flat.json",
-          "sha256": "c3033e3813305e9f863e8ae58b7c35a11b9ece0a3c3fb470c1a78748ecca9aed"
+          "sha256": "ea927ddd3b70d0e891f6462d690d822e7a09978192a4aca2e6fc3e5f889478ea"
         }
       ],
       "group": "bootstrap",
@@ -14897,7 +14897,7 @@
         {
           "bytes": 23570,
           "path": "initial_state/linux-aarch64/welded_flat.json",
-          "sha256": "a028952fe820d042546612ed2bf94ab9ea70cea4aae9fbc8fc2aa9c51af08d3a"
+          "sha256": "50cb4e9b30a5fe1b3cfadd49c7f07c1a0515e4dbfccd14f3735645bce63f13f7"
         }
       ],
       "group": "bootstrap",
@@ -14921,7 +14921,7 @@
         {
           "bytes": 23574,
           "path": "initial_state/darwin-arm64/probe_welded_0005.json",
-          "sha256": "9343dc905df6146d309575ad6c62a1545b43fab5cb76c814cf2abd6933d7e133"
+          "sha256": "a2e6f2d9330d449b17bc12d7d7823a17f2fffba786f0320bff3000b7816a9cf3"
         }
       ],
       "group": "research",
@@ -14945,7 +14945,7 @@
         {
           "bytes": 23578,
           "path": "initial_state/linux-aarch64/probe_welded_0005.json",
-          "sha256": "2f08b30bb78e962a3689f76fa7e12f5e7400548bfa493d8db2129b1b4b7bd323"
+          "sha256": "6288cb26cb2ab2704350073c37819935c3b21496d0cde6440bc9e57c7b146c79"
         }
       ],
       "group": "research",
@@ -15013,14 +15013,14 @@
       },
       "files": [
         {
-          "bytes": 32382,
+          "bytes": 32020,
           "path": "bootstrap/faults/schema/state.json",
-          "sha256": "6406276d64191bd35683f432668cd70e50049d1565e8a00f4b8118a3bc2ba0ca"
+          "sha256": "bf2baadbf3123872429d1ea6b8de4c9913f36357432441946c80d50b2fc4ffa3"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/schema/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 167,
@@ -15044,14 +15044,14 @@
       },
       "files": [
         {
-          "bytes": 32381,
+          "bytes": 32019,
           "path": "bootstrap/faults/digest/state.json",
-          "sha256": "b1ec66c91c9910c3dc701d9e6120a907cf6da7dd850541935601d2e1aaadfb63"
+          "sha256": "9ee70ab95ae5b798109f500334b527cfd98e2d3c0fe9ef53ec43f520a38a54fe"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/digest/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 188,
@@ -15075,14 +15075,14 @@
       },
       "files": [
         {
-          "bytes": 32381,
+          "bytes": 32019,
           "path": "bootstrap/faults/dims/state.json",
-          "sha256": "48a3197e1c481bf1f9805324f199691e58a56b47a38f56c0a72ec4895fa4bea7"
+          "sha256": "c336bece1b672dc8701580194c57dd43f96438038e903f5cc0afd4fda70d8197"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/dims/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 177,
@@ -15106,14 +15106,14 @@
       },
       "files": [
         {
-          "bytes": 32372,
+          "bytes": 32010,
           "path": "bootstrap/faults/width/state.json",
-          "sha256": "09ef22444a1bb78eed31622bf0f56ec9c6ac9127eaf8862a462300eeb7f54413"
+          "sha256": "9b76dfc8ee06412b53f9288d936bf55a76371a46a7e838038a10d30bd341991b"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/width/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 193,
@@ -15137,14 +15137,14 @@
       },
       "files": [
         {
-          "bytes": 32411,
+          "bytes": 32049,
           "path": "bootstrap/faults/nonfinite/state.json",
-          "sha256": "c1d92d940dd8e143259d15eb6146df94dd243b601f12aceeeb959789b10f0c6c"
+          "sha256": "f1bdb4b203b1447fb9d5f4f2271fbf60c7085af6b44da0db27f4d04e2429a410"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/nonfinite/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 192,
@@ -15168,14 +15168,14 @@
       },
       "files": [
         {
-          "bytes": 32366,
+          "bytes": 32004,
           "path": "bootstrap/faults/missing_key/state.json",
-          "sha256": "efb25c6f3359179f7af0cd3019ae2f60aa0d2d19580d8876281b93dd82bac7c4"
+          "sha256": "4839c4130d33c5a9d8bca7cd2d0da800f84f614e5c7b654e07d5f51a11065ebb"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/missing_key/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 176,
@@ -15199,14 +15199,14 @@
       },
       "files": [
         {
-          "bytes": 32413,
+          "bytes": 32051,
           "path": "bootstrap/faults/unknown_key/state.json",
-          "sha256": "898bc428581a890b4e1d9e725d52b6167f8a78def9c7bdc907d9c9f450b11162"
+          "sha256": "0139ccbce3a995b80ec7f2b64b71afb64ee2607ae827d5d436e4e349a7e0c148"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/unknown_key/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 182,
@@ -15228,14 +15228,14 @@
       },
       "files": [
         {
-          "bytes": 32381,
+          "bytes": 32019,
           "path": "bootstrap/faults/malformed_drive/state.json",
-          "sha256": "406531aafc7a2e486347c0274a343b32089c9c1a4c16608a7a4f6119a812cb04"
+          "sha256": "50a664104425568448cf9852934eee582f7b05dd07a86b339f42559ea50f2b39"
         },
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/malformed_drive/config.json",
-          "sha256": "1ab04a0a2f2ccee854e8e5a99011d502267bf5c84de6e06a28de0e094d9c276e"
+          "sha256": "8d0f6f49a96ad4e276f0ae2d47f8aa3b6eb3e8e32d83eeacaf3278f176d68f37"
         },
         {
           "bytes": 109,
@@ -15259,9 +15259,9 @@
       },
       "files": [
         {
-          "bytes": 26206,
+          "bytes": 26030,
           "path": "bootstrap/faults/control_period/config.json",
-          "sha256": "8fdfcf6432844ca0a0ab8d4fb624e798ee114da08a2f868e883be417e65a32bf"
+          "sha256": "326d70ddd63e5f75fa30fe40015f67e8cb2f0cca5e2d18297cd7c90bb8a06455"
         },
         {
           "bytes": 193,
@@ -15485,9 +15485,9 @@
       },
       "files": [
         {
-          "bytes": 26216,
+          "bytes": 26040,
           "path": "research/delayed_bootstrap/config.json",
-          "sha256": "f5056952574fd29656d92ca1b54479c211ebcfd1d5ec4f9a6781888685ee78ed"
+          "sha256": "d3979b7065c12076d76d3c023f07c8fa6953fa9f03b74cc616b11af3a3f7ffd1"
         },
         {
           "bytes": 790,
@@ -15605,9 +15605,9 @@
           "sha256": "c8dea082c4c95bbcf87232b3d5553013ad7f7ef23e22b17058f8a7bf53c36c78"
         },
         {
-          "bytes": 35685,
+          "bytes": 35225,
           "path": "research/delayed_bootstrap/state.json",
-          "sha256": "d25574ff65a38ebcbfd05550cded135fcd44414200e1bf01d59de637a998259d"
+          "sha256": "61330cfb67007fa9de5891a623229921f2baa803b18da9f5b20b2cbfd2205d97"
         },
         {
           "bytes": 6613,
@@ -17220,14 +17220,14 @@
       },
       "files": [
         {
-          "bytes": 2704,
+          "bytes": 2497,
           "path": "state/drive.json",
-          "sha256": "27eade2cab3f95e0c42ac6e85e6d56d389c672070d19bf1b6f16bb34f97f6d73"
+          "sha256": "1e71e32eadb76eb9696caeb569017c23303fc41376264d7a5d52c47127524ead"
         },
         {
-          "bytes": 2693,
+          "bytes": 2486,
           "path": "state/drive.canonical.json",
-          "sha256": "d7577aab73a53ad5cf0e1f450bcef147dce544a659ad6af2722e339f6b74e002"
+          "sha256": "bc005efeb5ab4b925a0b3ebd6c468c084ab6932e46a2eaafb6272acb791ce9f2"
         }
       ],
       "group": "state",
@@ -17249,14 +17249,14 @@
       },
       "files": [
         {
-          "bytes": 645,
+          "bytes": 562,
           "path": "state/drive_minimal.json",
-          "sha256": "80aff7cce7b6ed60145c07243ec5ab12bda40db135e3c28e7ea679ff3ea60899"
+          "sha256": "1fce08aa71a19e81b39e79157de85a8038b538fb05c4daeb61cdca68da297671"
         },
         {
-          "bytes": 644,
+          "bytes": 561,
           "path": "state/drive_minimal.canonical.json",
-          "sha256": "de2bb2b4aab5f3c102d960fb45a7d91d490966fead7c587b7c46ec30470f0a2f"
+          "sha256": "73d3cda0b3a2cc52ec66a9d782be65fed4921300bad4a66e04f1fc2e89acca3e"
         }
       ],
       "group": "state",
@@ -17536,9 +17536,9 @@
       },
       "files": [
         {
-          "bytes": 654,
+          "bytes": 571,
           "path": "state/invalid/drive_angle_width.json",
-          "sha256": "ffa20ccb7f3fb8b61bd75dc3b7a4aa82c51f61df265a04b2cb522c72dd7f1dc7"
+          "sha256": "98cce45bc7f0dcab6842d7ba8e0c66f0a5b912babecfbc9d13923736084bebf6"
         }
       ],
       "group": "state",
@@ -17557,9 +17557,9 @@
       },
       "files": [
         {
-          "bytes": 673,
+          "bytes": 590,
           "path": "state/invalid/drive_label.json",
-          "sha256": "99b9b00a93dcb54df025db39ee33912a0f9dbb8b9fe90c6bc59a371972d0abe7"
+          "sha256": "380bedc4c5761117551fc4df262c06a89d12b1e052b9b8e709f421d2aac81e39"
         }
       ],
       "group": "state",
@@ -17578,9 +17578,9 @@
       },
       "files": [
         {
-          "bytes": 634,
+          "bytes": 551,
           "path": "state/invalid/drive_schema.json",
-          "sha256": "d70260525265358f4e6a97df49d9c020413a52c37b5caa4011a41cb8aa514f38"
+          "sha256": "8452544c4b7c6f90ac25d4e713ab0418e5929a7c647768e1184f5cd020fe1684"
         }
       ],
       "group": "state",
@@ -17599,9 +17599,9 @@
       },
       "files": [
         {
-          "bytes": 658,
+          "bytes": 575,
           "path": "state/invalid/drive_unknown_key.json",
-          "sha256": "20b6d2f7e378dd0fd2a363a2bb670754a01086aad6276233e4a0071d5c9747b4"
+          "sha256": "08be8f39e3af42dec9558c9fdc0930e91f645fcae40f36b826cc959b159e6a1a"
         }
       ],
       "group": "state",
@@ -17620,9 +17620,9 @@
       },
       "files": [
         {
-          "bytes": 646,
+          "bytes": 563,
           "path": "state/invalid/drive_nonfinite.json",
-          "sha256": "4d86e1449a4eca897c87397fd1257ed6c03e4680baaf2d28bf1689e5492f08d6"
+          "sha256": "8a3dd9cc93b3881bb5fd84e6ddb7d709adba7d891ba0ce63e2e694ba7b5bd0ec"
         }
       ],
       "group": "state",
@@ -17641,36 +17641,15 @@
       },
       "files": [
         {
-          "bytes": 665,
+          "bytes": 582,
           "path": "state/invalid/drive_telemetry_range.json",
-          "sha256": "efe37b23d2035e37e78dd2620b691e513373ac4edc3d756ec2eb0beb57e0c000"
+          "sha256": "0cdfaacb71f848ac5fb3d64665a73b035e4e5e99f2d3b31830b55550c5cf2228"
         }
       ],
       "group": "state",
       "inputs": [],
       "name": "state/invalid/drive_telemetry_range.json",
       "notes": "integer telemetry lane below its schema floor",
-      "produced_by": "authored single-defect variant of the accepted state capture",
-      "recipe": "RCP-04"
-    },
-    {
-      "comparison": "S",
-      "expected": {
-        "error": "ValueError",
-        "kind": "invalid",
-        "message": "pending_actuation dt is not positive"
-      },
-      "files": [
-        {
-          "bytes": 694,
-          "path": "state/invalid/drive_pending_dt.json",
-          "sha256": "7b2e13b2de1c20f3b919b3dd38b0566226ab9c48f6103be216ff49cde7f24aa9"
-        }
-      ],
-      "group": "state",
-      "inputs": [],
-      "name": "state/invalid/drive_pending_dt.json",
-      "notes": "pending_actuation dt is not positive",
       "produced_by": "authored single-defect variant of the accepted state capture",
       "recipe": "RCP-04"
     },

@@ -748,6 +748,15 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T30_native_contacts>")
 endif()
 
+# Bounded human-diagnostic formatter contract (L1): cold-path renderer checks
+# — no MuJoCo/runtime edge, just the harness and the owned bike::io boundary.
+add_executable(native_diagnostics_tests ../test_diagnostics.cpp)
+bike_startup_target_policy(native_diagnostics_tests "${_migration_repo_root}/native")
+target_link_libraries(native_diagnostics_tests PRIVATE bike_migration_test bike_io)
+if(BUILD_TESTING)
+  add_test(NAME native_diagnostics_tests COMMAND native_diagnostics_tests)
+endif()
+
 # Recording/application regression sources. These declarations do not run
 # a test, simulate a ride or generate a recording during configuration.
 # The supplied snapshot is implementation evidence; execution is pending.
@@ -768,8 +777,17 @@ foreach(_recording_task RANGE 38 51)
     endif()
   elseif(_recording_task EQUAL 47)
     target_link_libraries(${_recording_test} PRIVATE bike_cli)
+    # The spawned command binaries back the stderr-diagnostic and
+    # cancellation-status checks. bike-validate exists only in the root
+    # graph, so its machine-readable envelope check is compiled (and the
+    # executable built) only when the target exists.
     add_dependencies(${_recording_test} bike-sim bike-playground bike-export
-      bike-ride bike-settle bike-research bike-recording bike-replay bike-batch)
+      bike-ride bike-settle bike-research bike-recording bike-replay bike-batch
+      bike-test-child)
+    if(TARGET bike-validate)
+      add_dependencies(${_recording_test} bike-validate)
+      target_compile_definitions(${_recording_test} PRIVATE BIKE_HAVE_VALIDATE=1)
+    endif()
   elseif(_recording_task EQUAL 48 OR _recording_task EQUAL 49)
     target_link_libraries(${_recording_test} PRIVATE bike_viewer)
   elseif(_recording_task LESS 51)

@@ -578,11 +578,24 @@ std::vector<std::string> split_lines(const std::string &text) {
     return lines;
 }
 
+namespace {
+
+// Severity lives on the diagnostic head line (file:line:col: severity:); the
+// "   NN |" source lines clang echoes as snippet context are evidence, not
+// diagnostics — an "error:" inside echoed source is not an error finding.
+bool is_snippet_context_line(const std::string &line) {
+    static const std::regex pattern("^\\s*[0-9]*\\s*\\|");
+    return std::regex_search(line.begin(), line.end(), pattern);
+}
+
+} // namespace
+
 bool has_warning(const std::vector<std::string> &diagnostics) {
     static const std::regex pattern("\\bwarning:",
                                     std::regex_constants::icase);
     return std::ranges::any_of(diagnostics, [](const auto &line) {
-        return std::regex_search(line.begin(), line.end(), pattern);
+        return !is_snippet_context_line(line) &&
+               std::regex_search(line.begin(), line.end(), pattern);
     });
 }
 
@@ -590,7 +603,8 @@ bool has_error(const std::vector<std::string> &diagnostics) {
     static const std::regex pattern("\\b(?:error|fatal error):",
                                     std::regex_constants::icase);
     return std::ranges::any_of(diagnostics, [](const auto &line) {
-        return std::regex_search(line.begin(), line.end(), pattern);
+        return !is_snippet_context_line(line) &&
+               std::regex_search(line.begin(), line.end(), pattern);
     });
 }
 
@@ -823,8 +837,8 @@ Value run_process(const std::vector<std::string> &argv, const fs::path &cwd,
     try {
         const platform::ProcessResult result =
             platform::run(effective, cwd, options);
-        out = utf8_replace(result.out);
-        err = utf8_replace(result.err);
+        out = utf8_replace(result.stdout_text);
+        err = utf8_replace(result.stderr_text);
         returncode = python_returncode(result.exit_code);
         const double elapsed =
             std::chrono::duration<double>(std::chrono::steady_clock::now() - before)

@@ -477,7 +477,7 @@ int audit_package(const fs::path &root, const Value &policy) {
                      mach_o ? "-L" : "-d", file.string()},
                     root);
             if (result.exit_code != 0) continue; // not a loadable image
-            std::istringstream lines(result.out + "\n" + result.err);
+            std::istringstream lines(result.stdout_text + "\n" + result.stderr_text);
             std::string line;
             while (std::getline(lines, line)) {
                 for (const auto &load: forbidden_loads) {

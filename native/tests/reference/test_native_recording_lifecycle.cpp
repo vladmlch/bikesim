@@ -166,20 +166,16 @@ void test_derived_transitions_cover_shift_coast_and_limiter_gates() {
     const auto episode = make_episode({
         drive_row(0, WireObject{{"shift_active", Wire{false}}, {"shift_direction", Wire{std::string("none")}},
                                 {"freehub_engaged", Wire{true}}, {"coasting_reason", Wire{}},
-                                {"safety_limited", Wire{false}}, {"energy_limited", Wire{false}},
-                                {"motor_enabled", Wire{true}}, {"battery_empty", Wire{false}}}),
+                                {"safety_limited", Wire{false}}, {"motor_enabled", Wire{true}}}),
         drive_row(1, WireObject{{"shift_active", Wire{true}}, {"shift_direction", Wire{std::string("down")}},
                                 {"freehub_engaged", Wire{false}}, {"coasting_reason", Wire{std::string("shift")}},
-                                {"safety_limited", Wire{false}}, {"energy_limited", Wire{false}},
-                                {"motor_enabled", Wire{true}}, {"battery_empty", Wire{false}}}),
+                                {"safety_limited", Wire{false}}, {"motor_enabled", Wire{true}}}),
         drive_row(2, WireObject{{"shift_active", Wire{false}}, {"shift_direction", Wire{std::string("none")}},
                                 {"freehub_engaged", Wire{false}}, {"coasting_reason", Wire{std::string("coast")}},
-                                {"safety_limited", Wire{true}}, {"energy_limited", Wire{false}},
-                                {"motor_enabled", Wire{false}}, {"battery_empty", Wire{false}}}),
+                                {"safety_limited", Wire{true}}, {"motor_enabled", Wire{false}}}),
         drive_row(3, WireObject{{"shift_active", Wire{false}}, {"shift_direction", Wire{std::string("none")}},
                                 {"freehub_engaged", Wire{true}}, {"coasting_reason", Wire{}},
-                                {"safety_limited", Wire{false}}, {"energy_limited", Wire{true}},
-                                {"motor_enabled", Wire{false}}, {"battery_empty", Wire{true}}})});
+                                {"safety_limited", Wire{false}}, {"motor_enabled", Wire{false}}})});
     const auto events = rec::derived_events(episode, 0, 0, 0.);
     std::map<std::string, std::vector<const rec::InputEvent *>> by_kind;
     for (const auto &event : events)
@@ -226,10 +222,8 @@ void test_derived_transitions_cover_shift_coast_and_limiter_gates() {
     bt::require(limits0.size() == 2 &&
                 as_bool(required_member(limits0, "safety_limited")) &&
                 !as_bool(required_member(limits0, "motor_enabled")) &&
-                limits1.size() == 3 &&
-                !as_bool(required_member(limits1, "safety_limited")) &&
-                as_bool(required_member(limits1, "energy_limited")) &&
-                as_bool(required_member(limits1, "battery_empty")),
+                limits1.size() == 1 &&
+                !as_bool(required_member(limits1, "safety_limited")),
                 "limiter changes carry only the changed fields");
     for (const auto &event : events)
         bt::require(as_text(member_ref(event.values, "classification")) == "derived_transition" &&

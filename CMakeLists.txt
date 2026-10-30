@@ -294,9 +294,11 @@ target_include_directories(bike_core PRIVATE
 add_library(bike_io STATIC
   "${_bike_native_dir}/src/io/json.cpp"
   "${_bike_native_dir}/src/io/hash.cpp"
+  "${_bike_native_dir}/src/io/diagnostics.cpp"
   "${_bike_native_dir}/src/io/value.hpp"
   "${_bike_native_dir}/src/io/json.hpp"
-  "${_bike_native_dir}/src/io/hash.hpp")
+  "${_bike_native_dir}/src/io/hash.hpp"
+  "${_bike_native_dir}/src/io/diagnostics.hpp")
 set_target_properties(bike_io PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_apply_native_policy(bike_io)
 target_include_directories(bike_io SYSTEM PRIVATE

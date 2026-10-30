@@ -6,7 +6,7 @@
 // the adapter must prove a *fatal* engine path is isolated from the
 // interpreter. The native production boundary is already in-process safe —
 // test_fail_at_step runs the same solver-99 forward() probe under an
-// AdvancementGuard, and T10/T36 exercise it in-process. Every assertion in
+// RuntimeOperationGuard, and T10/T36 exercise it in-process. Every assertion in
 // the child's JSON report is pinned here against the same runtime object.
 #include "research_reference_support.hpp"
 

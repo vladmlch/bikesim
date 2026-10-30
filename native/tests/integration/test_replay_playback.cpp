@@ -105,12 +105,12 @@ void view_dry_run() {
     options.timeout_s = 300.;
     const auto ok = bike::platform::run({binary.string(), publication.directory.string(),
         "--view", "--dry-run"}, tmp.path, options);
-    bt::require(ok.exit_code == 0 && ok.out.find("frames=") != std::string::npos,
+    bt::require(ok.exit_code == 0 && ok.stdout_text.find("frames=") != std::string::npos,
         "dry-run inspection walks the stored trajectory and reports 0");
     options.timeout_s = 60.;
     const auto missing = bike::platform::run({binary.string(),
         (tmp.path / "nonexistent").string(), "--view", "--dry-run"}, tmp.path, options);
-    bt::require(missing.exit_code == 1 && missing.err.find("REPLAY ERROR") != std::string::npos,
+    bt::require(missing.exit_code == 1 && missing.stderr_text.find("REPLAY ERROR") != std::string::npos,
         "a missing recording reports 1 on the dry-run path");
 }
 

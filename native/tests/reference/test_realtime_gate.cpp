@@ -67,8 +67,8 @@ void test_realtime_factor_for_full_twenty_seconds(const std::filesystem::path& a
         scratch.path(), process);
     // The artifact's own per-run lines are the gate's measured values — keep
     // them in the CTest log on either outcome.
-    std::cout << result.out;
-    if (!result.err.empty()) std::cerr << result.err;
+    std::cout << result.stdout_text;
+    if (!result.stderr_text.empty()) std::cerr << result.stderr_text;
     bt::require(result.exit_code == 0,
         "bike-measure-realtime reports every measured run measured_ok (exit " +
         std::to_string(result.exit_code) + ")");

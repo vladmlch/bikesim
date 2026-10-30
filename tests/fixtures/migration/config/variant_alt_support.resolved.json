@@ -115,13 +115,6 @@
         ]
       }
     },
-    "battery": {
-      "copper_w_per_nm2": 0.02,
-      "enabled": false,
-      "energy_j": 1800000.0,
-      "idle_w": 5.0,
-      "speed_w_per_rad_s2": 0.0
-    },
     "bearing_c_nms_rad": 0.03,
     "brake_ceiling_nm": 200.0,
     "brake_hold_damping_nms_rad": 10.0,

@@ -228,9 +228,6 @@ ResearchQuality research_quality(const WireObject &energy, double maximum_ratio)
     scale += std::abs(source);
     if (scale == 0.) throw std::runtime_error("energy quality has a zero energy scale");
     const double ratio = std::abs(optional_number(energy, "residual_j", 0.)) / scale;
-    const double electrical = optional_number(energy, "electrical_residual_j", 0.);
-    const double budget = std::max(1., std::abs(optional_number(energy, "electrical_work_j", 0.)));
-    return {.residual_ratio = ratio,
-        .acceptable = ratio <= maximum_ratio && std::abs(electrical) <= 1e-7 * budget};
+    return {.residual_ratio = ratio, .acceptable = ratio <= maximum_ratio};
 }
 } // namespace runtime

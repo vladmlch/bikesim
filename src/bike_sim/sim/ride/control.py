@@ -10,9 +10,9 @@ class RideControl:
 
     None motor_torque_nm selects the configured pedelec assistance. A numeric
     value is an external ceiling on that assistance; rider torque and forward
-    crank motion still gate it. Motor lag, slew, torque/power/speed and battery
-    limits remain active. motor_limit_nm is an immediate safety ceiling after the lag
-    and before energy limiting. Its removal restarts the normal bounded ramp.
+    crank motion still gate it. Motor lag, slew and torque/power/speed limits
+    remain active. motor_limit_nm is an immediate safety ceiling after the lag.
+    Its removal restarts the normal bounded ramp.
     Commands are not latched by RideSimulation.step; wrappers may hold them.
     """
     motor_torque_nm: float | None = None

@@ -50,8 +50,8 @@ constexpr std::int64_t kMaxExactStep = static_cast<std::int64_t>(std::uint64_t{1
 WireObject ResearchCommand::as_wire(bool requested) const {
     WireObject result{{"time_s", time_s}, {"step", step}, {"control", research_control_wire(control)}};
     if (requested) {
-        result.emplace_back("front_brake_demand", front);
-        result.emplace_back("rear_brake_demand", rear);
+        result.emplace_back("front_brake_demand", front_brake_demand);
+        result.emplace_back("rear_brake_demand", rear_brake_demand);
     }
     return result;
 }
@@ -75,7 +75,7 @@ ResearchEpisode::ResearchEpisode(const ResearchConfig &c, NoiseTape tape, Sensor
     if (keeps_history(c.capture_mode)) observations.push_back(observation);
     if (c.capture_mode != ResearchCaptureMode::off)
         applied_records.push_back(ResearchCommand{.time_s = 0., .step = 0, .control = applied,
-            .front = 0., .rear = 0.});
+            .front_brake_demand = 0., .rear_brake_demand = 0.});
     demand_nm = c.programs.demand_at(0.);
     if (demand_nm) demand_integral_nms = 0.;
 }
@@ -147,27 +147,29 @@ void NativeResearchRuntime::require_open() const {
 bool NativeResearchRuntime::model_valid() const {
     return boolean(required(runtime_->accounting_->state().model_status.as_wire(), "model_valid"));
 }
-void NativeResearchRuntime::begin_control(const RideControl &control, double front, double rear) {
+void NativeResearchRuntime::begin_control(const RideControl &control, double front_brake_demand, double rear_brake_demand) {
     const ResearchGuard guard(busy_);
     require_open();
     auto &e = *episode_;
     if (e.window || e.delivery_pending) throw std::runtime_error("an external research window is already active");
     if (e.done()) throw std::runtime_error("episode has ended; reset before stepping again");
-    validate_brake(front);
-    validate_brake(rear);
+    validate_brake(front_brake_demand);
+    validate_brake(rear_brake_demand);
     config_.programs.validate_control(control);
     control_validate_for(control, runtime_->physical_->rider_present(), runtime_->physical_->drive_mode());
     const auto start = runtime_->committed_step_;
     if (start >= config_.max_steps) throw std::runtime_error("research duration already reached");
     const auto count = std::min(config_.control_steps, config_.max_steps - start);
-    const ResearchWindow window{.control = control, .front = front, .rear = rear,
-        .start_step = start, .target_step = start + count, .seen_demand = e.demand_nm};
+    const ResearchWindow window{.control = control, .front_brake_demand = front_brake_demand,
+        .rear_brake_demand = rear_brake_demand,
+        .start_step = start, .target_step = start + count, .observed_demand_nm = e.demand_nm};
     const ResearchCommand request{.time_s = runtime_->committed_time_s_, .step = start,
-        .control = control, .front = front, .rear = rear};
+        .control = control, .front_brake_demand = front_brake_demand,
+        .rear_brake_demand = rear_brake_demand};
     if (keeps_history(config_.capture_mode)) reserve_next(e.requested);
     // RideControl contains value-only fields. Queue allocation precedes the
     // publication of the accepted request and the active window.
-    e.commands.emplace_back(start + config_.delay_steps, control);
+    e.pending_delayed_controls.emplace_back(start + config_.delay_steps, control);
     if (keeps_history(config_.capture_mode)) e.requested.push_back(request);
     e.last_requested = request;
     ++e.requested_count;
@@ -263,7 +265,7 @@ void NativeResearchRuntime::finish_window() {
         .contact_state = e.tracker.state(), .terminated = e.terminated, .truncated = e.truncated,
         .numerically_valid = e.numerically_valid, .model_valid = model_valid(), .reason = e.reason,
         .physics_steps = runtime_->committed_step_ - e.window->start_step,
-        .demand_nm = e.window->seen_demand};
+        .demand_nm = e.window->observed_demand_nm};
     // Stage the deliverable before publishing the completed control prefix.
     // Python boxing may fail and retry without advancing any of the clocks.
     auto pending = result;
@@ -313,9 +315,10 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
                 return std::nullopt; // Pacing yield; the external command stays latched.
             if (budget && std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count() >= *budget)
                 return std::nullopt; // No flush, delivery, request or transition on a yield.
-            while (!e.commands.empty() && e.commands.front().first <= runtime_->committed_step_) {
-                e.motor_applied = e.commands.front().second;
-                e.commands.pop_front();
+            while (!e.pending_delayed_controls.empty() &&
+                   e.pending_delayed_controls.front().first <= runtime_->committed_step_) {
+                e.motor_applied = e.pending_delayed_controls.front().second;
+                e.pending_delayed_controls.pop_front();
             }
             const auto rider = config_.programs.apply(e.window->control, runtime_->committed_time_s_);
             RideControl effective = e.motor_applied;
@@ -326,10 +329,11 @@ std::optional<ResearchTransition> NativeResearchRuntime::advance_control(
             if (!controls_equal(effective, e.applied)) {
                 if (config_.capture_mode != ResearchCaptureMode::off)
                     e.applied_records.push_back(ResearchCommand{.time_s = runtime_->committed_time_s_,
-                        .step = runtime_->committed_step_, .control = effective, .front = 0., .rear = 0.});
+                        .step = runtime_->committed_step_, .control = effective,
+                        .front_brake_demand = 0., .rear_brake_demand = 0.});
                 e.applied = effective;
             }
-            runtime_->advance_interval(e.applied, e.window->front, e.window->rear);
+            runtime_->advance_interval(e.applied, e.window->front_brake_demand, e.window->rear_brake_demand);
             consume_samples();
         }
         if (runtime_->accounting_->has_raws()) {
@@ -387,7 +391,7 @@ WireObject NativeResearchRuntime::status_unlocked() const {
     const auto &balance = runtime_->committed_balance_;
     const auto &crash = runtime_->committed_crash_;
     WireObject result{{"step", runtime_->committed_step_}, {"time_s", runtime_->committed_time_s_},
-        {"position_m", runtime_->committed_position_m_}, {"battery_energy_j", runtime_->committed_battery_energy_j_},
+        {"position_m", runtime_->committed_position_m_},
         {"observation", e.observation.as_wire()}, {"demand_nm", opt(e.demand_nm)},
         {"truth", e.truth ? Wire(e.truth->as_wire()) : Wire(nullptr)}, {"contact_state", e.tracker.state()},
         {"terminated", e.terminated}, {"truncated", e.truncated}, {"reason", opt(e.reason)}, {"error", opt(e.error)},

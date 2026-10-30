@@ -29,12 +29,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
   "offset": 16,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
@@ -45,7 +45,7 @@
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 64,
+  "offset": 54,
   "rtol": null,
   "shape": [
    33
@@ -59,7 +59,7 @@
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 97,
+  "offset": 87,
   "rtol": null,
   "shape": []
  },
@@ -71,7 +71,7 @@
   "label": "$.assist.pedaling",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 105,
+  "offset": 95,
   "rtol": null,
   "shape": [
    4
@@ -85,7 +85,7 @@
   "label": "$.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 109,
+  "offset": 99,
   "rtol": null,
   "shape": []
  },
@@ -94,60 +94,10 @@
   "dtype": "|u1",
   "index": 7,
   "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 117,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 8,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 165,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 9,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 173,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 10,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 181,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 11,
-  "kind": "bitwise",
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 189,
+  "offset": 107,
   "rtol": null,
   "shape": [
    35
@@ -156,12 +106,64 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 12,
+  "index": 8,
   "kind": "bitwise",
   "label": "$.hub.boundary",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 224,
+  "offset": 142,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 146,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 154,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 162,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 260,
   "rtol": null,
   "shape": [
    4
@@ -172,48 +174,48 @@
   "dtype": "<f8",
   "index": 13,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 228,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 14,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 236,
+  "offset": 264,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 15,
+  "index": 14,
   "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 244,
+  "offset": 272,
   "rtol": null,
   "shape": [
-   98
+   5
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 277,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
+  "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 342,
+  "offset": 285,
   "rtol": null,
   "shape": [
    4
@@ -224,10 +226,10 @@
   "dtype": "<f8",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.pedaling._effort",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 346,
+  "offset": 289,
   "rtol": null,
   "shape": []
  },
@@ -236,62 +238,10 @@
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "$.pedaling.coasting",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 354,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 359,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 20,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 367,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 21,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 371,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 22,
-  "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 379,
+  "offset": 297,
   "rtol": null,
   "shape": [
    113
@@ -300,12 +250,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 23,
+  "index": 19,
   "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 492,
+  "offset": 410,
   "rtol": null,
   "shape": [
    4
@@ -314,36 +264,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 24,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 496,
+  "offset": 414,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 25,
+  "index": 21,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 504,
+  "offset": 422,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 26,
+  "index": 22,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 512,
+  "offset": 430,
   "rtol": null,
   "shape": [
    6
@@ -352,12 +302,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 27,
+  "index": 23,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 518,
+  "offset": 436,
   "rtol": null,
   "shape": [
    2
@@ -366,12 +316,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 520,
+  "offset": 438,
   "rtol": null,
   "shape": [
    2
@@ -380,12 +330,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 29,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 522,
+  "offset": 440,
   "rtol": null,
   "shape": [
    4
@@ -394,12 +344,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 30,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 526,
+  "offset": 444,
   "rtol": null,
   "shape": [
    1
@@ -408,38 +358,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 31,
+  "index": 27,
   "kind": "bitwise",
   "label": "",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 527,
+  "offset": 445,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 32,
+  "index": 28,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 535,
+  "offset": 453,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 33,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 583,
+  "offset": 491,
   "rtol": null,
   "shape": [
    33
@@ -448,24 +398,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 34,
+  "index": 30,
   "kind": "bitwise",
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 616,
+  "offset": 524,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 35,
+  "index": 31,
   "kind": "bitwise",
   "label": "$.assist.pedaling",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 624,
+  "offset": 532,
   "rtol": null,
   "shape": [
    4
@@ -474,74 +424,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 36,
+  "index": 32,
   "kind": "bitwise",
   "label": "$.assist.torque",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 628,
+  "offset": 536,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 636,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 38,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 684,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 39,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 692,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 40,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 700,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 41,
+  "index": 33,
   "kind": "bitwise",
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 708,
+  "offset": 544,
   "rtol": null,
   "shape": [
    35
@@ -550,12 +450,116 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 34,
   "kind": "bitwise",
   "label": "$.hub.boundary",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 743,
+  "offset": 579,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 583,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 591,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 599,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 697,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 701,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 709,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 714,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
+  "offset": 722,
   "rtol": null,
   "shape": [
    4
@@ -566,126 +570,22 @@
   "dtype": "<f8",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 747,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 755,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 763,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 861,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.pedaling._effort",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 865,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.pedaling.coasting",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 873,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 878,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 886,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 51,
-  "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 890,
+  "offset": 726,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 898,
+  "offset": 734,
   "rtol": null,
   "shape": [
    113
@@ -694,12 +594,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1011,
+  "offset": 847,
   "rtol": null,
   "shape": [
    4
@@ -708,36 +608,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 54,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1015,
+  "offset": 851,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 55,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1023,
+  "offset": 859,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 56,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1031,
+  "offset": 867,
   "rtol": null,
   "shape": [
    6
@@ -746,12 +646,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1037,
+  "offset": 873,
   "rtol": null,
   "shape": [
    2
@@ -760,12 +660,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 58,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.shifting.rear_teeth",
   "nbytes": 2,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1039,
+  "offset": 875,
   "rtol": null,
   "shape": [
    2
@@ -774,12 +674,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1041,
+  "offset": 877,
   "rtol": null,
   "shape": [
    4
@@ -788,12 +688,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 60,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-positive-plain]",
-  "offset": 1045,
+  "offset": 881,
   "rtol": null,
   "shape": [
    1

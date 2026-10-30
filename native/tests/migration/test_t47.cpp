@@ -3,16 +3,23 @@
 #include "cli/physical_capture.hpp"
 #include "cli/viewer_options.hpp"
 #include "io/hash.hpp"
+#include "io/json.hpp"
 #include "io/npy.hpp"
 #include "platform/argv.hpp"
 #include "platform/process.hpp"
+#include "research/lifecycle.hpp"
+#include "research/policy.hpp"
 #include "runtime/setup_values.hpp"
 #include "terrain/profile.hpp"
 #include <algorithm>
 #include <array>
+#include <exception>
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <sstream>
+#include <stdexcept>
+#include <stop_token>
 #include <string>
 #include <vector>
 
@@ -86,8 +93,113 @@ void compiled_capture() {
     auto wrong=metadata;set(wrong,"terrain_sha256",text(std::string(64,'f')));
     bt::invalid([&]{(void)bike::cli::physical_assets(request,*prepared,wrong);});
 }
+[[gnu::noinline]] void failure_preservation_contract() {
+    // The emit seam keeps untrusted plugin payloads out of the human
+    // stream: a synthetic PolicyFailure carries a fixed description, a
+    // stable error code and the rejected policy identifier — never the
+    // plugin-provided text. The exception itself is not rewritten.
+    {
+        std::ostringstream human;
+        bike::cli::emit_failure_diagnostic(human, "research.run.failed",
+            std::make_exception_ptr(bike::research::PolicyFailure(
+                "policy act threw: token=secret-sentinel")),
+            std::string_view("plugin:/tmp/fake.so"));
+        const std::string line = human.str();
+        bt::require(line.find("secret-sentinel") == std::string::npos,
+            "plugin-provided payloads never reach the human stream");
+        bt::require(line.starts_with("ERROR research.policy.rejected: native policy rejected") &&
+            line.find("error_code=\"policy_failure\"") != std::string::npos &&
+            line.find("field_path=\"plugin:/tmp/fake.so\"") != std::string::npos,
+            "the bounded policy diagnostic carries a stable code and safe identifier");
+        std::ostringstream column;
+        bike::cli::emit_failure_diagnostic(column, "research.run.failed",
+            std::make_exception_ptr(std::invalid_argument(
+                "recording requires column 'demand_nm'")));
+        bt::require(column.str() ==
+            "ERROR research.run.failed: recording requires column 'demand_nm'\n",
+            "first-party messages are preserved and identify the bad column");
+    }
+    // The finalization seam keeps the first exception as primary and
+    // records every later failure as a distinguishable secondary
+    // "operation: cause" — close always runs, seal retries at most once.
+    {
+        bike::research::FailureReport failures;
+        const auto primary = std::make_exception_ptr(
+            std::invalid_argument("primary field"));
+        failures.add("simulation", primary);
+        failures.add("preview_close",
+            std::make_exception_ptr(std::runtime_error("disk full")));
+        bt::require(failures.primary == primary,
+            "primary identity is preserved");
+        bt::require(failures.secondary == std::vector<std::string>{
+            "preview_close: disk full"},
+            "secondary keeps operation and cause");
+        bt::invalid([&] { failures.rethrow_if_failed(); });
+    }
+    {
+        int seals = 0;
+        bool closed = false;
+        bike::cli::PhysicalFinalizationActions actions;
+        actions.seal = [&] {
+            if (++seals == 1) throw std::runtime_error("seal first");
+        };
+        actions.preview_close = [] [[noreturn]] () {
+            throw std::runtime_error("preview full");
+        };
+        actions.runtime_close = [&] { closed = true; };
+        const auto primary = std::make_exception_ptr(
+            std::invalid_argument("simulation"));
+        const auto report = bike::cli::finalize_physical_run(actions,
+            primary);
+        bt::require(report.primary == primary && seals == 2 && closed,
+            "retry only seal and always close without replacing primary");
+        bt::require(report.secondary == std::vector<std::string>{
+            "seal: seal first", "preview_close: preview full"},
+            "successful seal retry does not discard the first failed attempt");
+    }
+    {
+        bool closed = false;
+        bike::cli::PhysicalFinalizationActions actions;
+        actions.seal = [] {};
+        actions.recording_publish = [] [[noreturn]] () {
+            throw std::runtime_error("publish denied");
+        };
+        actions.runtime_close = [&] { closed = true; };
+        const auto primary = std::make_exception_ptr(
+            std::runtime_error("simulation ended"));
+        const auto report = bike::cli::finalize_physical_run(actions,
+            primary);
+        bt::require(report.primary == primary && closed &&
+            report.secondary == std::vector<std::string>{
+                "recording_publish: publish denied"},
+            "a publication failure is a distinguishable secondary");
+    }
+    {
+        bike::cli::PhysicalFinalizationActions actions;
+        actions.seal = [] {};
+        actions.runtime_close = [] [[noreturn]] () {
+            throw std::invalid_argument("close broke");
+        };
+        const auto report = bike::cli::finalize_physical_run(actions);
+        bt::require(report.primary && report.secondary.empty(),
+            "a lone cleanup failure becomes the primary");
+        bt::invalid([&] { report.rethrow_if_failed(); });
+    }
+    {
+        bool sealed = false, closed = false;
+        bike::cli::PhysicalFinalizationActions actions;
+        actions.seal = [&] { sealed = true; };
+        actions.runtime_close = [&] { closed = true; };
+        const auto report = bike::cli::finalize_physical_run(actions);
+        bt::require(!report.primary && report.secondary.empty() &&
+            sealed && closed,
+            "a clean finalization produces no diagnostic events");
+    }
+}
 }
 int main(int argc, char** argv) {
+    // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+    // cppcheck-suppress throwInEntryPoint
     return bt::run([&] {
         using namespace bike::cli;
         const auto off = parse("bike-ride", {"--physics", "physical", "--headless", "--duration", ".02", "--out", "résultats/путь с пробелами"});
@@ -126,10 +238,46 @@ int main(int argc, char** argv) {
         const auto bin = std::filesystem::path(raw[1]);
         for (const auto& name : command_names()) {
             const auto help = bike::platform::run({(bin / name).string(), "--help"}, bin);
-            bt::require(help.exit_code == 0 && help.out.find("usage:") != std::string::npos, name + " help dispatch");
+            bt::require(help.exit_code == 0 && help.stdout_text.find("usage:") != std::string::npos && help.stderr_text.empty(),
+                name + " help dispatch writes product text only to stdout");
         }
         const auto rejected = bike::platform::run({(bin / "bike-research").string(), "--duration", "not-a-number"}, bin);
-        bt::require(rejected.exit_code == 2 && !rejected.err.empty(), "configuration errors keep CLI exit 2");
+        bt::require(rejected.exit_code == 2 && rejected.stdout_text.empty() &&
+            rejected.stderr_text.starts_with("ERROR cli.argument_error: ") &&
+            rejected.stderr_text.find("--duration") != std::string::npos &&
+            rejected.stderr_text.find("command=\"bike-research\"") != std::string::npos,
+            "invalid input is a status 2 'LEVEL event: message key=value' stderr diagnostic with empty stdout");
+        const auto runtime_failure = bike::platform::run({(bin / "bike-ride").string(), "--physics", "physical",
+            "--headless", "--duration", ".001", "--track", "definitely-missing-track-file.toml"}, bin);
+        bt::require(runtime_failure.exit_code == 1 && runtime_failure.stdout_text.empty() &&
+            runtime_failure.stderr_text.starts_with("ERROR cli.command_failed: ") &&
+            runtime_failure.stderr_text.find("platform::open_regular") != std::string::npos &&
+            runtime_failure.stderr_text.find("command=\"bike-ride\"") != std::string::npos,
+            "a runtime failure is a distinct status 1 'LEVEL event: message key=value' diagnostic, not a parse error");
+        failure_preservation_contract();
+#ifdef BIKE_HAVE_VALIDATE
+        // bike-validate answers invalid input with a machine-readable JSON
+        // error envelope on stderr — a product contract that is never routed
+        // through human diagnostic prose. The executable is registered only
+        // in the root graph, where CMake defines BIKE_HAVE_VALIDATE.
+        const auto validated = bike::platform::run({(bin / "bike-validate").string(), "definitely-missing-module"}, bin);
+        bt::require(validated.exit_code == 2 && validated.stdout_text.empty(),
+            "validator input failure keeps status 2 and clean stdout");
+        const auto envelope = bike::io::parse_json(validated.stderr_text);
+        bt::require(!bike::io::as_bool(runtime::setupvalue::field(envelope, "accepted"), "accepted") &&
+            bike::io::as_string(runtime::setupvalue::field(envelope, "error"), "error")
+                .find("unknown validation case") != std::string::npos,
+            "machine-readable stderr is a parseable error envelope");
+#endif
+        // Cancellation is signal-encoded (128 + SIGINT), distinct from parse
+        // (2) and runtime (1) statuses.
+        std::stop_source stop;
+        stop.request_stop();
+        const auto cancelled = bike::platform::run({(bin / "bike-test-child").string(), "sleep", "5000"}, bin,
+            bike::platform::ProcessOptions{.cancellation = stop.get_token(),
+                                           .timeout_s = std::nullopt});
+        bt::require(cancelled.exit_code == 130 && cancelled.stdout_text.empty() && cancelled.stderr_text.empty(),
+            "a pre-cancelled subprocess reports the cancellation status without stream bytes");
         bike::BikeConfig first, second;
         first.damper_clicks.fork_hsc = 0;
         bt::require(second.damper_clicks.fork_hsc == 2, "BikeConfig owns independent nested defaults");

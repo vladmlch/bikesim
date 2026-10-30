@@ -28,8 +28,8 @@ namespace bike::platform {
 
 struct ProcessResult {
     int exit_code = 0;
-    std::string out;
-    std::string err;
+    std::string stdout_text;
+    std::string stderr_text;
 };
 
 struct ProcessOptions {

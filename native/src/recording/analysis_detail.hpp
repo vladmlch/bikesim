@@ -80,7 +80,7 @@ inline Value bounded(std::vector<Object> rows, std::uint64_t maximum, std::optio
     return Value{std::move(out)};
 }
 inline std::string read_text(const std::filesystem::path& path) {
-    auto bytes = io::read_numpy_bytes(path);
+    auto bytes = io::read_bounded_file_bytes(path);
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast) byte-to-char aliasing is the designed idiom for raw file bytes
     return {reinterpret_cast<const char*>(bytes.data()), bytes.size()};
 }

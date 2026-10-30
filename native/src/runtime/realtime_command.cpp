@@ -16,7 +16,7 @@ void write(const std::filesystem::path& path, const Value& value) {
     bike::platform::write_exclusive(path, std::as_bytes(std::span(data)));
 }
 Value read(const std::filesystem::path& path) {
-    const auto bytes = io::read_numpy_bytes(path); std::string text; text.reserve(bytes.size());
+    const auto bytes = io::read_bounded_file_bytes(path); std::string text; text.reserve(bytes.size());
     for (std::byte const byte : bytes) text.push_back(static_cast<char>(byte));
     return io::parse_json(text);
 }

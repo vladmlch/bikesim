@@ -433,8 +433,6 @@ WireObject energy_channels() {
             {"constraint_work_ratio", Wire{0.0}},
             {"constraint_work_ok", Wire{true}},
             {"residual_j", Wire{-0.001}},
-            {"electrical_work_j", Wire{0.5}},
-            {"electrical_residual_j", Wire{0.0}},
             {"measured", Wire{true}},
             {"source_interval_id", Wire{std::int64_t{0}}},
             {"source_time_s", Wire{0.001}},

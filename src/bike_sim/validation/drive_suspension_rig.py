@@ -3,7 +3,7 @@
 The fork and closed Horst linkage are free after initialization. Identical
 constant vertical frame load, compliant roller supports and delivered mechanical
 crank torque are used for all reductions. This is not a riding controller and
-not a substitute for the motor/battery actuator contract test.
+not a substitute for the motor actuator contract test.
 """
 from dataclasses import asdict
 from itertools import product

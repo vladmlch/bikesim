@@ -982,7 +982,7 @@ void PneumaticTireWriter::evaluate_wheels(
         snap.geometric_contact = !outputs.airborne;
         snap.interval_id = interval_clock::interval_id(time, dt);
         snap.backend = "pneumatic";
-        snap.wheel_axis_m = hub;
+        snap.reference_position_world_m = hub;
         if (!std::isfinite(time) || time < 0.0)
             throw std::invalid_argument(
                     "contact snapshot needs finite nonnegative time");

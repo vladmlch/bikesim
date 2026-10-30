@@ -223,8 +223,8 @@ double snapshot_axis_moment(const TireSnapshot &s) {
     NeumaierSum acc;
     for (const auto &p: s.patches) {
         const auto f = patch_world_force(p);
-        const double rx = p.point_m[0] - s.wheel_axis_m[0];
-        const double rz = p.point_m[2] - s.wheel_axis_m[2];
+        const double rx = p.point_m[0] - s.reference_position_world_m[0];
+        const double rz = p.point_m[2] - s.reference_position_world_m[2];
         // Applied tire writers retain the original arithmetic. Engine
         // contacts additionally carry their solved torsional couple.
         const double moment = rz * f[0] - rx * f[2];
@@ -684,14 +684,6 @@ Wire diag_wire(const drivetrain::DiagnosticValue &v) {
     if (const auto *x = std::get_if<std::string>(&v))
         return Wire{*x};
     return Wire{nullptr};
-}
-
-// drive.last.get(key, 0.) — absent yields the float default; a present
-// None stays None (the wire dict's own rule).
-Wire diag_wire_default_zero(const drivetrain::Diagnostics &m,
-                            const std::string &key) {
-    const auto it = m.find(key);
-    return it == m.end() ? Wire(0.) : diag_wire(it->second);
 }
 
 // drive.last.get(key, 0.) under float() — the sensor-channel readers and
@@ -1797,8 +1789,6 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             require_component(last_constraint_snapshot_.components,
                               "shock_solver_limit"),
             v);
-        in.electrical_power_w =
-            diag_wire_default_zero(drive_last, "electrical_power_w");
         in.solved_actuator = buffer_copy(d->actuator_force, m->nu);
         in.solved_passive = buffer_copy(d->qfrc_passive, m->nv);
         // Deliberately a FULL forward: this refreshes the pos/vel caches
@@ -2035,8 +2025,6 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.loss_step_j = loss_step;
         raw.mechanical_energy_j = total;
         raw.elastic_energy_j = std::move(elastic);
-        raw.battery_energy_j = stepper_->drive().battery_energy_j();
-        raw.electrical_power_w = in.electrical_power_w;
         raw.invalid_controller =
             rider_state.has_value() &&
             rider_state->allocation_diagnostics.invalid_controller;
@@ -2251,7 +2239,7 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
                 i == 0 ? contact_query_.front_id
                        : contact_query_.rear_id)]);
         const auto jac =
-            point_jacobian(m, d, body, s.wheel_axis_m);
+            point_jacobian(m, d, body, s.reference_position_world_m);
         const double omega =
             dot(std::span<const double>(jac.jr).subspan(nv, nv), qvel);
         const std::array<double, 3> velocity = {
@@ -2331,7 +2319,7 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         wire_set(side, "tangent_force_n",
                  Wire(snapshot_tangent_force(s)));
         wire_set(side, "effective_radius_m", Wire(s.effective_radius_m));
-        wire_set(side, "wheel_axis_m", wire_vec3(s.wheel_axis_m));
+        wire_set(side, "wheel_axis_m", wire_vec3(s.reference_position_world_m));
         wire_set(side, "wheel_axis_moment_nm",
                  Wire(snapshot_axis_moment(s)));
         wire_set(side, "omega_abs_rad_s", Wire(omega));

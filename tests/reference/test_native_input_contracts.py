@@ -269,7 +269,6 @@ def test_dynamic_result_keys_are_strings(tmp_path):
 @pytest.mark.parametrize('name,args', [
     ('pedaling_update', (0., 1., 80., 10., True)),
     ('assist_ceiling', (True, 0.)),
-    ('battery_draw', (True, .001)),
     ('freehub_torque', (True, 0., 0., 0.)),
 ])
 def test_policy_call_numeric_bools_are_rejected(name, args):

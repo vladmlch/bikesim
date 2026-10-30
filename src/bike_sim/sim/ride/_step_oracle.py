@@ -148,7 +148,6 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
     self.closure_absolute_j+=work.closure_absolute_j
     self.active_work_j+=work.muscle_signed_j+work.motor_signed_j
     self.external_work_j+=sum(float(components[n]@v)*dt for n in external_names if n in components)
-    self.electrical_work_j+=self.drive.last.get('electrical_power_w',0.)*dt
     rider={} if self.rider_contacts is None else copy.deepcopy(self.rider_contacts.diagnostics)
     drive=dict(self.drive.last,crank_phase_rad=float(q[self.address('crank_spin')[0]]),
                front_brake_demand=front,rear_brake_demand=rear,rollback_brake_demand=hold)
@@ -170,10 +169,7 @@ def step_reference(self, front=0., rear=0., external=None, *, control=None):
         'source_positive_work_j':self.muscle_positive_j+self.motor_positive_j,
         'constraint_signed_j':self.solver_work_j,'constraint_absolute_j':self.constraint_absolute_j,
         'closure_signed_j':self.closure_signed_j,'closure_absolute_j':self.closure_absolute_j,
-        'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j,
-        'electrical_work_j':self.electrical_work_j,
-        'electrical_residual_j':(self.initial_battery_j-self.drive.battery.energy_j-self.electrical_work_j
-                                if self.cfg.drive.battery.enabled else 0.)}
+        'residual_j':total-self.initial_energy_j-self.active_work_j-self.external_work_j+self.loss_j}
     drive.update(chain_power_w=float(components['chain']@v),
         freehub_power_w=float((components['freehub']+components.get('ideal_transmission',np.zeros(m.nv)))@v),
         front_brake_power_w=float(components['front_static_brake']@v),rear_brake_power_w=float(components['rear_static_brake']@v),

@@ -34,7 +34,7 @@ double effective_radius(const TireSnapshot &snapshot) {
         const double weight = loaded ? patch.normal_load_n : 1.;
         Vec3 delta{};
         for (std::size_t j = 0; j < delta.size(); ++j)
-            delta[j] = patch.point_m[j] - snapshot.wheel_axis_m[j];
+            delta[j] = patch.point_m[j] - snapshot.reference_position_world_m[j];
         terms.add(weight * -dot(delta, patch.normal));
         weights.add(weight);
     }
@@ -114,7 +114,7 @@ NativeContactResult RuntimeContactQuery::query(
         snapshot.interval_id = static_cast<std::int64_t>(interval);
         snapshot.backend = "native_reference";
         const auto offset = static_cast<std::size_t>(tracked_ids[side]) * 3;
-        std::ranges::copy(geom_positions.subspan(offset, 3), snapshot.wheel_axis_m.begin());
+        std::ranges::copy(geom_positions.subspan(offset, 3), snapshot.reference_position_world_m.begin());
     }
     std::array<double, 3> magnitudes{}, verticals{};
     std::vector<double> jacobian(nv * 3, 0.);

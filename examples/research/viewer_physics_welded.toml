@@ -49,8 +49,11 @@ stop_time_s = 0.35
 mash_cadence_rpm = 45.0
 mash_torque_nm = 60.0
 effort_slew_nm_s = 300.0
-# Rider's hand on the brake during rollback (until hill-hold D4 replaces it).
-# RU: при откате быстрее 0.25 м/с райдер зажимает тормоза до остановки отката.
+# Hill-hold reflex during rollback (until hill-hold D4 replaces it): a physical
+# restraint, not a rider brake input — pedaling and assist keep working while it
+# holds (physical_runtime.py _rollback_brake_demand).
+# RU: при откате быстрее 0.25 м/с тормоза зажимаются автоматически до остановки
+# отката; это не торможение райдером — педалирование и мотор продолжают работать.
 rollback_brake = true
 rollback_engage_mps = 0.25
 rollback_release_mps = 0.0
@@ -72,11 +75,6 @@ mode = "turbo"
 torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
 # Sensor noise floor: measured pedal torque below this is "not pedalling".
 engage_torque_nm = 4.0
-
-[drive.battery]
-# No energy store: electrical power is still metered, but torque is never
-# energy-limited and the reserve is never depleted.
-enabled = false
 
 [drive.gearing]
 front_teeth = 22

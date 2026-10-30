@@ -368,13 +368,13 @@
   "dtype": "|u1",
   "index": 26,
   "kind": "bitwise",
-  "label": "channel_energy/bits/electrical_work_j",
-  "nbytes": 40,
+  "label": "channel_energy/bits/measured",
+  "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
   "offset": 969,
   "rtol": null,
   "shape": [
-   40
+   5
   ]
  },
  {
@@ -382,10 +382,10 @@
   "dtype": "|u1",
   "index": 27,
   "kind": "bitwise",
-  "label": "channel_energy/bits/electrical_residual_j",
+  "label": "channel_energy/bits/source_interval_id",
   "nbytes": 40,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1009,
+  "offset": 974,
   "rtol": null,
   "shape": [
    40
@@ -396,10 +396,10 @@
   "dtype": "|u1",
   "index": 28,
   "kind": "bitwise",
-  "label": "channel_energy/bits/measured",
+  "label": "channel_energy/bits/source_interval_id_present",
   "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1049,
+  "offset": 1014,
   "rtol": null,
   "shape": [
    5
@@ -410,10 +410,10 @@
   "dtype": "|u1",
   "index": 29,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_interval_id",
+  "label": "channel_energy/bits/source_time_s",
   "nbytes": 40,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1054,
+  "offset": 1019,
   "rtol": null,
   "shape": [
    40
@@ -424,10 +424,10 @@
   "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_interval_id_present",
+  "label": "channel_energy/bits/source_time_s_present",
   "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1094,
+  "offset": 1059,
   "rtol": null,
   "shape": [
    5
@@ -438,13 +438,13 @@
   "dtype": "|u1",
   "index": 31,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_time_s",
-  "nbytes": 40,
+  "label": "channel_energy/bits/component_work_j",
+  "nbytes": 67,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1099,
+  "offset": 1064,
   "rtol": null,
   "shape": [
-   40
+   67
   ]
  },
  {
@@ -452,10 +452,10 @@
   "dtype": "|u1",
   "index": 32,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_time_s_present",
+  "label": "channel_energy/bits/component_work_j_present",
   "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1139,
+  "offset": 1131,
   "rtol": null,
   "shape": [
    5
@@ -466,13 +466,13 @@
   "dtype": "|u1",
   "index": 33,
   "kind": "bitwise",
-  "label": "channel_energy/bits/component_work_j",
-  "nbytes": 67,
+  "label": "channel_energy/bits/__component_work_j_present",
+  "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1144,
+  "offset": 1136,
   "rtol": null,
   "shape": [
-   67
+   5
   ]
  },
  {
@@ -480,10 +480,10 @@
   "dtype": "|u1",
   "index": 34,
   "kind": "bitwise",
-  "label": "channel_energy/bits/component_work_j_present",
+  "label": "channel_energy/bits/__component_work_j_valid",
   "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1211,
+  "offset": 1141,
   "rtol": null,
   "shape": [
    5
@@ -494,10 +494,10 @@
   "dtype": "|u1",
   "index": 35,
   "kind": "bitwise",
-  "label": "channel_energy/bits/__component_work_j_present",
+  "label": "channel_energy/bits/__energy_present",
   "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1216,
+  "offset": 1146,
   "rtol": null,
   "shape": [
    5
@@ -508,38 +508,10 @@
   "dtype": "|u1",
   "index": 36,
   "kind": "bitwise",
-  "label": "channel_energy/bits/__component_work_j_valid",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1221,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "channel_energy/bits/__energy_present",
-  "nbytes": 5,
-  "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1226,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 38,
-  "kind": "bitwise",
   "label": "channel_energy/bits/__energy_valid",
   "nbytes": 5,
   "node": "tests/reference/test_native_encode_columns.py::test_map_fragments_respect_batch_rows_bound",
-  "offset": 1231,
+  "offset": 1151,
   "rtol": null,
   "shape": [
    5

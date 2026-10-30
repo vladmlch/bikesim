@@ -66,22 +66,21 @@ crash_outcome(const std::optional<runtime::CrashEvent> &event) {
     return "crash:" + event->cause;
 }
 
-// Reentrancy guard — advance() and reset() are the two entries that can
-// run without caller serialization; a nested or concurrent call fails fast
-// instead of observing a half-advanced runtime.
-class AdvancementGuard {
+// A nested or concurrent runtime operation is refused before it can
+// observe a partially changed runtime.
+class RuntimeOperationGuard {
 public:
-    explicit AdvancementGuard(std::atomic<bool> &flag) : flag_(flag) {
+    explicit RuntimeOperationGuard(std::atomic<bool> &flag) : flag_(flag) {
         bool expected = false;
         if (!flag_.compare_exchange_strong(expected, true))
             throw std::runtime_error(
                 "advance already in progress on this runtime");
     }
-    ~AdvancementGuard() { flag_.store(false); }
-    AdvancementGuard(const AdvancementGuard &) = delete;
-    AdvancementGuard &operator=(const AdvancementGuard &) = delete;
-    AdvancementGuard(AdvancementGuard &&) = delete;
-    AdvancementGuard &operator=(AdvancementGuard &&) = delete;
+    ~RuntimeOperationGuard() { flag_.store(false); }
+    RuntimeOperationGuard(const RuntimeOperationGuard &) = delete;
+    RuntimeOperationGuard &operator=(const RuntimeOperationGuard &) = delete;
+    RuntimeOperationGuard(RuntimeOperationGuard &&) = delete;
+    RuntimeOperationGuard &operator=(RuntimeOperationGuard &&) = delete;
 
 private:
     std::atomic<bool> &flag_;
@@ -213,8 +212,7 @@ parse_energy(const vread::Dict &d) {
                         "muscle_signed_j", "muscle_positive_j",
                         "motor_signed_j", "motor_positive_j",
                         "constraint_absolute_j", "closure_signed_j",
-                        "closure_absolute_j", "initial_battery_j",
-                        "electrical_work_j", "mechanical_energy_j",
+                        "closure_absolute_j", "mechanical_energy_j",
                         "elastic_energy_j", "residual_j"));
     runtime::EnergyState out;
     out.initial_energy_j = optional_field(d, "initial_energy_j");
@@ -230,8 +228,6 @@ parse_energy(const vread::Dict &d) {
     out.constraint_absolute_j = real_field(d, "constraint_absolute_j");
     out.closure_signed_j = real_field(d, "closure_signed_j");
     out.closure_absolute_j = real_field(d, "closure_absolute_j");
-    out.initial_battery_j = optional_field(d, "initial_battery_j");
-    out.electrical_work_j = real_field(d, "electrical_work_j");
     out.mechanical_energy_j = real_field(d, "mechanical_energy_j");
     const runtime::Wire elastic =
         vread::wire_from_value(*vread::field(d, "elastic_energy_j").value,
@@ -616,7 +612,6 @@ void NativeRideRuntime::initialize_accounting() {
     accounting_config_.measurement_decimation = config_.measurement_decimation;
     accounting_config_.retention = config_.record_retention;
     accounting_config_.async_telemetry = config_.async_telemetry;
-    accounting_config_.battery_enabled = stepper_->drive().config().policies.battery.enabled;
     const mjModel *const model = stepper_->model();
     accounting_config_.max_dofs = static_cast<std::size_t>(model->nv);
     accounting_config_.max_qpos = static_cast<std::size_t>(model->nq);
@@ -646,7 +641,7 @@ void NativeRideRuntime::initialize_accounting() {
 NATIVE_DIAG_POP
 
 void NativeRideRuntime::test_fail_at_step(std::int64_t step) {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     if (step < committed_step_)
         throw std::invalid_argument("test failure step is behind the committed boundary");
@@ -675,7 +670,6 @@ std::optional<std::string> NativeRideRuntime::outcome_reason() const {
 void NativeRideRuntime::cache_research_boundary() {
     const auto qpos = stepper_->qpos();
     committed_position_m_ = qpos[accounting_config_.columns.root_x_qpos];
-    committed_battery_energy_j_ = stepper_->drive().battery_energy_j();
     committed_crash_ = physical_->crash();
     committed_balance_ = physical_->balance_event();
 }
@@ -727,7 +721,7 @@ void NativeRideRuntime::flush_accounting() {
 }
 
 void NativeRideRuntime::set_finish_position(double position_m) {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     if (!std::isfinite(position_m) || position_m <= committed_position_m_)
         throw std::invalid_argument("finish position must be finite and ahead of the start");
@@ -758,7 +752,7 @@ NativeRideRuntime::advance(std::int64_t target_step, const RideControl &command,
     // Reentrancy precedes every state-dependent check: while a concurrent
     // advance is in flight the committed step is a moving target, so
     // reading it (or advancing) must fail as reentrancy first.
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     if (target_step < committed_step_)
         throw std::invalid_argument(
@@ -803,14 +797,14 @@ NativeRideRuntime::probe_step_inputs(const RideControl &command,
         throw std::invalid_argument("front_brake_demand must be finite");
     if (!std::isfinite(rear_brake_demand))
         throw std::invalid_argument("rear_brake_demand must be finite");
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     return physical_->probe_step_inputs(command, front_brake_demand,
                                         rear_brake_demand);
 }
 
 RuntimeSnapshot NativeRideRuntime::snapshot() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     const auto &latest = accounting_->latest_sample();
     return {.generation = physical_->generation(), .step = committed_step_,
@@ -822,7 +816,7 @@ RuntimeSnapshot NativeRideRuntime::snapshot() const {
 }
 
 RenderFrame NativeRideRuntime::render_frame() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     // Copy the committed cache under ONE guard: a reset cannot split the
     // integration vector, presentation and generation across two calls.
@@ -836,63 +830,63 @@ RenderFrame NativeRideRuntime::render_frame() const {
 }
 
 ModelImage NativeRideRuntime::model_image() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     return model_image_;
 }
 
 void NativeRideRuntime::flush() {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     flush_accounting();
 }
 
 RuntimeSampleBatch NativeRideRuntime::prepare_samples() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     return accounting_->prepare_samples();
 }
 
 void NativeRideRuntime::acknowledge_samples(const RuntimeSampleBatch &batch) {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     accounting_->acknowledge_samples(batch);
 }
 
 WireObject NativeRideRuntime::accounting_state() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     return accounting_->state_wire();
 }
 
 SampleColumns NativeRideRuntime::recorded_columns() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     return accounting_->recorded_columns();
 }
 
 std::span<const SamplePtr> NativeRideRuntime::recorded_intervals() const {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     return accounting_->recorded_samples();
 }
 
 OwnedNativeEpisode NativeRideRuntime::seal_episode() {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     flush_accounting();
     return accounting_->seal_episode();
 }
 
 void NativeRideRuntime::release_samples() {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     if (const auto &latest = accounting_->latest_sample(); latest != nullptr)
         accounting_->acknowledge_through(latest->interval_id);
 }
 
 std::optional<std::string> NativeRideRuntime::take_pending_warning() {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     // An earlier pending warning (e.g. the reset-time flush's) drains
     // first — the adapter emits at most one per call, exactly like the
@@ -906,7 +900,7 @@ std::optional<std::string> NativeRideRuntime::take_pending_warning() {
 }
 
 void NativeRideRuntime::reset() {
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     require_open();
     if (physical_->generation() == std::numeric_limits<int>::max())
         throw std::overflow_error("native runtime generation overflow");
@@ -944,7 +938,7 @@ void NativeRideRuntime::reset() {
 void NativeRideRuntime::close() {
     // Freeing under an in-flight advance is a UAF — take the guard first.
     // Idempotent (a second close re-acquires and no-ops), like before.
-    const AdvancementGuard guard(advancing_);
+    const RuntimeOperationGuard guard(busy_);
     closed_.store(true);
     accounting_.reset();
     physical_.reset();

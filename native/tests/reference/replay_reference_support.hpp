@@ -344,7 +344,7 @@ inline void patch_legacy_execution(const std::filesystem::path& path, Mutate&& m
 inline void tamper_npz_state(const std::filesystem::path& path, std::string_view member,
     std::size_t lane, double delta) {
     const auto full = path / "states.npz";
-    const auto bytes = io::read_numpy_bytes(full);
+    const auto bytes = io::read_bounded_file_bytes(full);
     auto archive = io::parse_npz(std::span<const std::byte>(bytes.data(), bytes.size()));
     for (auto& [name, array] : archive) {
         if (name != member) continue;

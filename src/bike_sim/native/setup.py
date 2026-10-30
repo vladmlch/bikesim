@@ -36,7 +36,7 @@ def validate_supported(cfg: SimulationPhysicsConfig,
     """Require the design section-1 capability set on resolved fields.
 
     Every rejection names the full configuration field path. Supported
-    values include seated-climb on/off, assist/battery/shifting settings,
+    values include seated-climb on/off, assist/shifting settings,
     numerical tuning and valid rider geometry.
     """
     if not isinstance(cfg, SimulationPhysicsConfig):
@@ -198,8 +198,6 @@ def _runtime_state(sim, physical) -> dict:
             'constraint_absolute_j': physical.constraint_absolute_j,
             'closure_signed_j': physical.closure_signed_j,
             'closure_absolute_j': physical.closure_absolute_j,
-            'initial_battery_j': physical.initial_battery_j,
-            'electrical_work_j': physical.electrical_work_j,
             'mechanical_energy_j': energy['mechanical_energy_j'],
             'elastic_energy_j': dict(energy['elastic_energy_j']),
             'residual_j': energy['residual_j'],

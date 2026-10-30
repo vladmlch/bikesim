@@ -194,7 +194,6 @@ def test_native_capability_accepts_disabled_features():
     cfg, rider = _supported()
     drive = replace(cfg.drive,
                     assist=replace(cfg.drive.assist, gain=0.0),
-                    battery=replace(cfg.drive.battery, enabled=False),
                     shifting=replace(cfg.drive.shifting, enabled=False))
     validate_supported(
         replace(cfg, drive=drive,

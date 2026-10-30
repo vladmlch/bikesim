@@ -78,11 +78,6 @@ torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
 # Sensor noise floor: measured pedal torque below this is "not pedalling".
 engage_torque_nm = 4.0
 
-[drive.battery]
-# No energy store: electrical power is still metered, but torque is never
-# energy-limited and the reserve is never depleted.
-enabled = false
-
 [drive.gearing]
 front_teeth = 22
 rear_teeth = 51

@@ -44,7 +44,7 @@ struct ResearchCommand {
     double time_s = 0.;
     std::int64_t step = 0;
     RideControl control;
-    double front = 0., rear = 0.;
+    double front_brake_demand = 0., rear_brake_demand = 0.;
     [[nodiscard]] WireObject as_wire(bool requested) const;
 };
 struct ResearchTransition {
@@ -62,9 +62,9 @@ struct ResearchTransition {
 };
 struct ResearchWindow {
     RideControl control;
-    double front = 0., rear = 0.;
+    double front_brake_demand = 0., rear_brake_demand = 0.;
     std::int64_t start_step = 0, target_step = 0;
-    std::optional<double> seen_demand;
+    std::optional<double> observed_demand_nm;
 };
 struct ResearchEpisode {
     ResearchEpisode(const ResearchConfig &config, NoiseTape tape, SensorState startup);
@@ -72,7 +72,7 @@ struct ResearchEpisode {
     WheelieTracker tracker;
     ResearchRecorder recorder;
     std::int64_t next_sensor_step = 0, sample_cursor = -1;
-    std::deque<std::pair<std::int64_t, RideControl>> commands;
+    std::deque<std::pair<std::int64_t, RideControl>> pending_delayed_controls;
     RideControl applied, motor_applied;
     std::optional<ResearchWindow> window;
     bool delivery_pending = false, stop_requested = false;
@@ -117,7 +117,7 @@ public:
     NativeResearchRuntime &operator=(const NativeResearchRuntime &) = delete;
     NativeResearchRuntime(NativeResearchRuntime &&) = delete;
     NativeResearchRuntime &operator=(NativeResearchRuntime &&) = delete;
-    void begin_control(const RideControl &control, double front, double rear);
+    void begin_control(const RideControl &control, double front_brake_demand, double rear_brake_demand);
     // A completed result stays available until ack_control after Python boxing.
     [[nodiscard]] std::optional<ResearchTransition> advance_control(
         std::optional<double> wall_budget_s, std::optional<std::int64_t> target_step = std::nullopt);

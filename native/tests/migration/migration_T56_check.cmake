@@ -2655,6 +2655,125 @@ else()
   endif()
 endif()
 
+# ---------------------------------------------------------------------------
+# Sweep fixtures (L5): a reduced two-TU selection that reuses the real
+# context, manifest rows and compilation-database entries, so every case
+# invokes a fake tool once per TU without real analysis. The real context
+# validates because every recorded path is genuine.
+set(_sweep_fixture "${SCRATCH_DIR}/sweep-fixture")
+file(MAKE_DIRECTORY "${_sweep_fixture}")
+file(WRITE "${_sweep_fixture}/native_check_context.json" "${_context_json}")
+
+file(READ "${_ccdb}" _ccdb_json)
+file(READ "${_sources}" _manifest_json)
+string(JSON _roots GET "${_manifest_json}" first_party_roots)
+string(JSON _manifest_count LENGTH "${_manifest_json}" sources)
+math(EXPR _manifest_last "${_manifest_count} - 1")
+
+# Take the first two database entries (distinct first-party sources) and the
+# manifest rows carrying their exact paths.
+set(_fixture_entries "")
+set(_fixture_sources "")
+foreach(_index 0 1)
+  string(JSON _entry GET "${_ccdb_json}" ${_index})
+  string(JSON _file GET "${_entry}" file)
+  list(APPEND _fixture_entries "${_entry}")
+  foreach(_s RANGE 0 ${_manifest_last})
+    string(JSON _row GET "${_manifest_json}" sources ${_s})
+    string(JSON _row_path GET "${_row}" path)
+    if(_row_path STREQUAL "${_file}")
+      list(APPEND _fixture_sources "${_row}")
+    endif()
+  endforeach()
+endforeach()
+list(LENGTH _fixture_sources _picked)
+if(NOT _picked EQUAL 2 OR NOT _fixture_entries MATCHES "^[^;]+;[^;]+$")
+  set(_failures "${_failures}\n  t56_sweep_fixture: cannot reduce manifest/CCDB to two TUs")
+endif()
+list(GET _fixture_sources 0 _src_row0)
+list(GET _fixture_sources 1 _src_row1)
+list(GET _fixture_entries 0 _ccdb_row0)
+list(GET _fixture_entries 1 _ccdb_row1)
+file(WRITE "${_sweep_fixture}/native_sources.json"
+  "{\"schema_version\":1,\"first_party_roots\":${_roots},\"sources\":[${_src_row0},${_src_row1}]}")
+file(WRITE "${_sweep_fixture}/compile_commands.json" "[${_ccdb_row0},${_ccdb_row1}]")
+
+# t56_sweep_version_probe: a tool whose --version probe fails while the
+# analysis itself stays clean. The summary must keep the version record.
+set(_tool "${_sweep_fixture}/tool-version-fail.sh")
+file(WRITE "${_tool}" "#!/bin/sh\nif [ \"\${1:-}\" = \"--version\" ]; then printf '%s\\n' 'l5-version-probe-broken' >&2; exit 42; fi\nexit 0\n")
+file(CHMOD "${_tool}" FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+run_case(t56_sweep_version_probe EXPECT_EXIT FAIL
+  EXPECT_STDERR "native tidy tool health: failed"
+  COMMAND "${CMAKE_COMMAND}" -E env "CLANG_TIDY=${_tool}"
+    "${CHECKS_BINARY}" --kind tidy --build "${_sweep_fixture}")
+set(_summary "${_sweep_fixture}/native_check_summaries/tidy.json")
+expect_json(t56_version_health "${_summary}" "failed" tool_health)
+expect_json(t56_version_findings "${_summary}" "none" finding_status)
+expect_json_member_set(t56_version_passes "${_summary}"
+  MEMBER pass PATH records EXPECT stable stable version)
+expect_json(t56_version_first "${_summary}" "version" records 0 pass)
+file(READ "${_summary}" _version_doc)
+foreach(_member stdout_log stderr_log)
+  string(JSON _log GET "${_version_doc}" records 0 ${_member})
+  string(FIND "${_log}" ".log" _log_pos)
+  if(_log_pos EQUAL -1)
+    set(_failures
+      "${_failures}\n  t56_version_probe: version record ${_member} is not a log path: ${_log}")
+  endif()
+endforeach()
+
+# t56_sweep_alpha_only: warnings on the alpha pass are report-only — the run
+# still passes and the findings print exactly once per TU.
+set(_tool "${_sweep_fixture}/tool-alpha-only.sh")
+file(WRITE "${_tool}" "#!/bin/sh\nif [ \"\${1:-}\" = \"--version\" ]; then echo 'mock analysis tool 1'; exit 0; fi\ncase \"\$*\" in\n  *-analyzer-checker=alpha*) printf '%s\\n' 'warning: L5-ALPHA-REPORT-ONLY' >&2; exit 0 ;;\n  *) exit 0 ;;\nesac\n")
+file(CHMOD "${_tool}" FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_tool}"
+    "${CHECKS_BINARY}" --kind analyzer --build "${_sweep_fixture}"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+if(NOT _rc EQUAL 0)
+  set(_failures "${_failures}\n  t56_sweep_alpha_only: expected pass, exit ${_rc}: ${_err}")
+endif()
+expect_json(t56_alpha_health "${_sweep_fixture}/native_check_summaries/analyzer.json" "ok" tool_health)
+expect_json(t56_alpha_findings "${_sweep_fixture}/native_check_summaries/analyzer.json" "report-only" finding_status)
+string(REGEX MATCHALL "L5-ALPHA-REPORT-ONLY" _hits "${_err}")
+list(LENGTH _hits _hit_count)
+if(NOT _hit_count EQUAL 2)
+  set(_failures
+    "${_failures}\n  t56_sweep_alpha_only: alpha marker printed ${_hit_count}x, expected one per TU: ${_err}")
+endif()
+
+# t56_sweep_alpha_stable_fail: one TU fails the stable pass (its alpha pass
+# is skipped), the other's alpha warning must print exactly once even though
+# the run fails — the failure listing must not reprint it.
+string(JSON _fail_file GET "${_ccdb_row0}" file)
+get_filename_component(_fail_stem "${_fail_file}" NAME)
+set(_tool "${_sweep_fixture}/tool-alpha-stable.sh")
+file(WRITE "${_tool}" "#!/bin/sh\nif [ \"\${1:-}\" = \"--version\" ]; then echo 'mock analysis tool 1'; exit 0; fi\ncase \"\$*\" in\n  *${_fail_stem}*) printf '%s\\n' 'error: L5-STABLE-FAILURE' >&2; exit 2 ;;\n  *-analyzer-checker=alpha*) printf '%s\\n' 'warning: L5-UNIQUE-ALPHA' >&2; exit 0 ;;\n  *) exit 0 ;;\nesac\n")
+file(CHMOD "${_tool}" FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_tool}"
+    "${CHECKS_BINARY}" --kind analyzer --build "${_sweep_fixture}"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+if(_rc EQUAL 0)
+  set(_failures "${_failures}\n  t56_sweep_alpha_stable: expected failure, exited 0")
+endif()
+expect_json(t56_stable_health "${_sweep_fixture}/native_check_summaries/analyzer.json" "failed" tool_health)
+expect_json(t56_stable_findings "${_sweep_fixture}/native_check_summaries/analyzer.json" "blocking" finding_status)
+string(REGEX MATCHALL "L5-UNIQUE-ALPHA" _hits "${_err}")
+list(LENGTH _hits _hit_count)
+if(NOT _hit_count EQUAL 1)
+  set(_failures
+    "${_failures}\n  t56_sweep_alpha_stable: alpha marker printed ${_hit_count}x, expected exactly once: ${_err}")
+endif()
+string(REGEX MATCHALL "L5-STABLE-FAILURE" _hits "${_err}")
+list(LENGTH _hits _hit_count)
+if(NOT _hit_count EQUAL 1)
+  set(_failures
+    "${_failures}\n  t56_sweep_alpha_stable: stable error printed ${_hit_count}x, expected once: ${_err}")
+endif()
+
 if(NOT _failures STREQUAL "")
   message(FATAL_ERROR "migration_T56 fixture contract failed:${_failures}")
 endif()

@@ -335,7 +335,6 @@ void test_native_capability_accepts_scalar_tuning() {
 void test_native_capability_accepts_disabled_features() {
     cfg::SimulationPhysicsConfig config = welded();
     config.drive.assist.gain = 0.;
-    config.drive.battery.enabled = false;
     config.drive.shifting.enabled = false;
     config.seated_climb.enabled = false;
     require_supported(config, articulated_rider(),

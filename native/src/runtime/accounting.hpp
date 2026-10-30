@@ -38,7 +38,6 @@ struct AccountingConfig {
     // `record_decimation` scheduled before the measurement/retention split.
     int measurement_decimation = 1;
     RetentionMode retention = RetentionMode::legacy;
-    bool battery_enabled = false;
     bool async_telemetry = false;
     std::size_t max_qpos = 0;
     std::size_t max_dofs = 0;

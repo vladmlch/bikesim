@@ -340,14 +340,14 @@ __all__ = [
 
 
 def plot_physical_ride(channels, output_dir):
-    """Plot recorded schema-2 observations; no reconstructed wheel/battery power."""
+    """Plot recorded schema-2 observations; no reconstructed wheel power."""
     from pathlib import Path
     import matplotlib.pyplot as plt
     out=Path(output_dir);out.mkdir(parents=True,exist_ok=True)
     time=channels['time_s']
     groups=(('speed',('speed_mps',),'Speed (m/s)'),
             ('normal_load',('tires.front.normal_load_n','tires.rear.normal_load_n'),'Normal force (N)'),
-            ('power',('drive.motor_shaft_power_w','drive.electrical_power_w'),'Power (W)'),
+            ('power',('drive.motor_shaft_power_w',),'Power (W)'),
             ('energy_residual',('energy.residual_j',),'Mechanical residual (J)'))
     paths=[]
     for name,keys,label in groups:

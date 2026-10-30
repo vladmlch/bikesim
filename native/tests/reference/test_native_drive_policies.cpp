@@ -9,8 +9,8 @@ using namespace policy_reference;
 // tests/reference/test_native_drive_policies.py::test_native_policy_api_exists
 [[gnu::noinline]] void test_native_policy_api_exists(const Value& baseline) {
     auto policy = policies(baseline);
-    bt::require(sorted_keys(state(policy)) == std::vector<std::string>{"assist", "battery", "hub", "pedaling", "shifting"},
-                "native policy owner exposes all five complete snapshots");
+    bt::require(sorted_keys(state(policy)) == std::vector<std::string>{"assist", "hub", "pedaling", "shifting"},
+                "native policy owner exposes all four complete snapshots");
 }
 
 // tests/reference/test_native_drive_policies.py::test_crank_torque
@@ -20,16 +20,6 @@ using namespace policy_reference;
         for (double const phase : {-23., -std::numbers::pi, -0., 0., .71, std::numbers::pi / 2., 15.})
             for (double const ripple : {0., .35, .999})
                 scalar(golden, drivetrain::human_crank_torque(mean, phase, ripple));
-    golden.done();
-}
-
-// tests/reference/test_native_drive_policies.py::test_battery_draw_matches_python
-[[gnu::noinline]] void test_battery_draw_matches_python(const Value& baseline) {
-    auto golden = node("test_battery_draw_matches_python"); tree(golden, baseline);
-    auto policy = policies(baseline);
-    for (const auto& [power, dt] : std::array<std::array<double, 2>, 4>{{{5., .002}, {1000., .01}, {1e9, .1}, {0., .01}}}) {
-        scalar(golden, policy.battery.draw(power, dt)); tree(golden, state(policy));
-    }
     golden.done();
 }
 
@@ -131,23 +121,6 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_energy_helpers[disabled/enabled-lossless/copper]
-[[gnu::noinline]] void test_energy_helpers(const Value& baseline) {
-    for (bool enabled : {false, true}) for (double const copper : {0., .02}) {
-        const auto id = std::string(enabled ? "enabled-" : "disabled-") + (copper == 0. ? "lossless" : "copper");
-        auto golden = node("test_energy_helpers", id); tree(golden, baseline);
-        auto input = baseline;
-        put(input, "battery", "enabled", Value{enabled}); put(input, "battery", "copper_w_per_nm2", real(copper));
-        put(input, "battery", "speed_w_per_rad_s2", real(.03)); put(input, "battery", "idle_w", real(5.));
-        auto policy = policies(input);
-        for (double const torque : {-0., 0., 5., 37.13, 80.}) for (double const omega : {-7.3, -0., 0., 5.2}) {
-            scalar(golden, electrical(policy, torque, omega, enabled));
-            for (double const budget : {0., 4.99, 5., 6., 72., 500.}) scalar(golden, energy_limit(policy, torque, omega, budget));
-        }
-        golden.done();
-    }
-}
-
 // tests/reference/test_native_drive_policies.py::test_freehub
 [[gnu::noinline]] void test_freehub(const Value& baseline) {
     auto golden = node("test_freehub"); tree(golden, baseline);
@@ -169,14 +142,14 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     put(input, "assist", "gain", real(999.)); put(input, "shifting", "cassette", Value{Value::Array{}}); input = Value{};
     scalar(golden, policy.assist.step(30., 80., 0., false, .01));
     policy.reset(); tree(golden, state(policy));
-    put(old, "battery", "energy_j", real(1.));
-    bt::require(policy.battery.state().energy_j != 1., "restored source snapshot does not alias live state");
+    put(old, "hub", "energy_j", real(1.));
+    bt::require(policy.hub.state().energy_j != 1., "restored source snapshot does not alias live state");
     golden.done();
 }
 
 // tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[section]
 [[gnu::noinline]] void test_invalid_restore_is_atomic(const Value& baseline) {
-    for (auto section : {"pedaling", "shifting", "assist", "battery", "hub"}) {
+    for (auto section : {"pedaling", "shifting", "assist", "hub"}) {
         auto golden = node("test_invalid_restore_is_atomic", section); tree(golden, baseline);
         auto policy = policies(baseline); const auto old = state(policy); const auto before = state_text(policy);
         for (const auto& key : sorted_keys(field(old, section))) {
@@ -202,7 +175,7 @@ struct Mutation { std::string_view id, section, key, json; };
 // tests/reference/test_native_drive_policies.py::test_invalid_restore_values[case]
 [[gnu::noinline]] void test_invalid_restore_values(const Value& baseline) {
     constexpr std::array cases{
-        Mutation{.id="battery-negative", .section="battery", .key="energy_j", .json="-1.0"}, Mutation{.id="hub-negative", .section="hub", .key="energy_j", .json="-1.0"},
+        Mutation{.id="hub-negative", .section="hub", .key="energy_j", .json="-1.0"},
         Mutation{.id="cooldown-negative", .section="shifting", .key="cooldown_s", .json="-1.0"}, Mutation{.id="teeth-small", .section="shifting", .key="rear_teeth", .json="2"},
         Mutation{.id="count-negative", .section="shifting", .key="shift_count", .json="-1"}, Mutation{.id="teeth-fractional", .section="shifting", .key="rear_teeth", .json="3.5"},
         Mutation{.id="coasting-integer", .section="pedaling", .key="coasting", .json="1"}, Mutation{.id="ema-unpaired", .section="shifting", .key="cadence_ema", .json="10.0"}};
@@ -219,7 +192,7 @@ struct Mutation { std::string_view id, section, key, json; };
 // tests/reference/test_native_drive_policies.py::test_config_validation
 [[gnu::noinline]] void test_config_validation(const Value& baseline) {
     auto golden = node("test_config_validation"); tree(golden, baseline);
-    for (auto section : {"gearing", "pedaling", "shifting", "assist", "battery"})
+    for (auto section : {"gearing", "pedaling", "shifting", "assist"})
         for (const auto& [key, value] : bike::io::as_object(field(baseline, section), section)) {
             if (key == "profile" || key == "torque_curve" || key.starts_with("rollback_")) continue;
             auto bad = baseline; erase(member(bad, section), key);
@@ -253,7 +226,7 @@ struct Mutation { std::string_view id, section, key, json; };
 
 // tests/reference/test_native_drive_policies.py::test_projection_normalizes_numeric_leaves
 [[gnu::noinline]] void test_projection_normalizes_numeric_leaves() {
-    auto input = source(false); input.battery.energy_j = 123.; input.battery.copper_w_per_nm2 = .02;
+    auto input = source(false); input.assist.gain = 1.5; input.assist.max_torque = 70.;
     input.shifting.shift_cooldown_s = .4;
     const auto document = config(input);
     std::function<void(const Value&)> plain = [&](const Value& value) {
@@ -266,7 +239,8 @@ struct Mutation { std::string_view id, section, key, json; };
     };
     plain(document);
     const auto policy = policies(document);
-    bt::require(policy.battery.state().energy_j == 123., "plain projected numeric value is preserved");
+    bt::require(policy.config.assist.gain == 1.5 && policy.config.assist.max_torque == 70.,
+                "plain projected numeric values are preserved");
 }
 
 // tests/reference/test_native_drive_policies.py::test_complete_reset_and_atomic_multi_policy_restore
@@ -276,11 +250,10 @@ struct Mutation { std::string_view id, section, key, json; };
     (void)policy.pedaling.update(1., 13., 120., 30., .04);
     (void)policy.shifting.update(100., 100., .01);
     (void)policy.assist.step(30., 80., 0., false, .01);
-    (void)policy.battery.draw(80., .01);
     (void)policy.hub.update(0., 0., 2., 0.); (void)policy.hub.update(.1, 0., 2., 0.);
     auto bad = state(policy); const auto before = state_text(policy);
     put(bad, "pedaling", "_effort", real(17.)); put(bad, "shifting", "rear_teeth", integer(33));
-    put(bad, "battery", "energy_j", real(8.)); put(bad, "hub", "torque_nm", Value{bike::io::Number{"inf"}});
+    put(bad, "hub", "torque_nm", Value{bike::io::Number{"inf"}});
     bt::invalid([&] { restore(policy, bad); });
     bt::require(state_text(policy) == before, "late invalid hub value cannot commit earlier policy fields");
     tree(golden, state(policy)); policy.reset(); tree(golden, state(policy)); golden.done();
@@ -295,8 +268,6 @@ struct Mutation { std::string_view id, section, key, json; };
     put(document, "shifting", "rear_teeth", integer(51)); put(document, "shifting", "from_teeth", integer(45));
     put(document, "shifting", "cadence_ema", real(-3.)); put(document, "shifting", "required_ema", real(-5.));
     put(document, "assist", "torque", real(1e8)); put(document, "assist", "last_gain", real(1e9));
-    const double initial = policy.battery.state().initial_energy_j;
-    put(document, "battery", "energy_j", real(initial * .5)); put(document, "battery", "drawn_energy_j", real(initial * .75));
     put(document, "hub", "boundary", real(-1e9)); put(document, "hub", "torque_nm", real(1e9));
     restore(policy, document); tree(golden, state(policy));
     bt::require(std::bit_cast<std::uint64_t>(policy.pedaling.state().target_rate_rad_s) == UINT64_C(0x8000000000000000),
@@ -328,8 +299,7 @@ struct Mutation { std::string_view id, section, key, json; };
         Mutation{.id="mode-integer", .section="assist", .key="mode", .json="1"}, Mutation{.id="curve-short", .section="assist", .key="torque_curve", .json="[[0.0,1.0]]"},
         Mutation{.id="curve-duplicate", .section="assist", .key="torque_curve", .json="[[0.0,1.0],[0.0,2.0]]"},
         Mutation{.id="curve-negative", .section="assist", .key="torque_curve", .json="[[0.0,1.0],[2.0,-1.0]]"},
-        Mutation{.id="profile-incomplete", .section="assist", .key="profile", .json="{\"mode_gains\":{}}"},
-        Mutation{.id="battery-bool", .section="battery", .key="enabled", .json="1"}, Mutation{.id="energy-negative", .section="battery", .key="energy_j", .json="-1.0"}};
+        Mutation{.id="profile-incomplete", .section="assist", .key="profile", .json="{\"mode_gains\":{}}"}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_config_values", item.id); tree(golden, baseline);
         auto bad = baseline; put(bad, item.section, item.key, bike::io::parse_json(item.json));
@@ -339,7 +309,7 @@ struct Mutation { std::string_view id, section, key, json; };
 
 // tests/reference/test_native_drive_policies.py::test_missing_config_sections[key]
 [[gnu::noinline]] void test_missing_config_sections(const Value& baseline) {
-    for (auto key : {"gearing", "pedaling", "shifting", "assist", "battery", "hub_stiffness_nm_rad", "hub_damping_nm_s"}) {
+    for (auto key : {"gearing", "pedaling", "shifting", "assist", "hub_stiffness_nm_rad", "hub_damping_nm_s"}) {
         auto golden = node("test_missing_config_sections", key); tree(golden, baseline);
         auto bad = baseline; erase(bad, key); bt::invalid([&] { (void)policies(bad); }); golden.done();
     }
@@ -355,14 +325,6 @@ struct Mutation { std::string_view id, section, key, json; };
     bike::random::NumpyRng random(541);
     for (int i = 0; i < 1000; ++i) pair(golden, policy.assist.ceiling(random.uniform(-10., 170.), 0.));
     golden.done();
-}
-
-// tests/reference/test_native_drive_policies.py::test_battery_nonzero_idle_remainder
-[[gnu::noinline]] void test_battery_nonzero_idle_remainder(const Value& baseline) {
-    auto golden = node("test_battery_nonzero_idle_remainder"); tree(golden, baseline);
-    auto policy = policies(baseline); auto restored = policy.snapshot(); restored.battery.energy_j = .001; policy.restore(restored);
-    bt::require(energy_limit(policy, 80., 0., .001 / .01) == 0., "idle loss can consume the available power budget");
-    bt::require(policy.battery.state().energy_j == .001, "energy-limit query does not debit battery"); golden.done();
 }
 
 // tests/reference/test_native_drive_policies.py::test_config_and_python_object_deletion
@@ -426,11 +388,7 @@ struct Mutation { std::string_view id, section, key, json; };
         Case{.id="shift-infinite", .invoke=[inf](auto& p) { (void)p.shifting.update(80., inf, .01); }},
         Case{.id="assist-zero-dt", .invoke=[](auto& p) { (void)p.assist.step(30., 80., 0., false, 0.); }},
         Case{.id="assist-infinite", .invoke=[inf](auto& p) { (void)p.assist.step(inf, 80., 0., false, .01); }},
-        Case{.id="battery-infinite", .invoke=[inf](auto& p) { (void)p.battery.draw(inf, .01); }},
-        Case{.id="battery-zero-dt", .invoke=[](auto& p) { (void)p.battery.draw(1., 0.); }},
-        Case{.id="hub-infinite", .invoke=[inf](auto& p) { (void)p.hub.update(0., inf, 0., 0.); }},
-        Case{.id="power-infinite", .invoke=[inf](auto& p) { (void)electrical(p, inf, 0., true); }},
-        Case{.id="limit-negative", .invoke=[](auto& p) { (void)energy_limit(p, -1., 0., 100.); }}};
+        Case{.id="hub-infinite", .invoke=[inf](auto& p) { (void)p.hub.update(0., inf, 0., 0.); }}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_calls_preserve_state", item.id); tree(golden, baseline);
         auto policy = policies(baseline); const auto before = state_text(policy);
@@ -506,11 +464,9 @@ int main() { return bt::run([] {
     const auto baseline = policy_reference::config(policy_reference::source());
     test_native_policy_api_exists(baseline);
     test_crank_torque();
-    test_battery_draw_matches_python(baseline);
     test_pedaling_sequences(baseline);
     test_shifting();
     test_assist();
-    test_energy_helpers(baseline);
     test_freehub(baseline);
     test_replay_reset_and_ownership(baseline);
     test_invalid_restore_is_atomic(baseline);
@@ -524,7 +480,6 @@ int main() { return bt::run([] {
     test_invalid_config_values(baseline);
     test_missing_config_sections(baseline);
     test_random_curve_interpolation(baseline);
-    test_battery_nonzero_idle_remainder(baseline);
     test_config_and_python_object_deletion();
     test_pedaling_parameter_branches();
     test_optional_config_sections(baseline);

@@ -6,7 +6,6 @@ from bike_sim.physics.checks import scalar
 @dataclass(frozen=True)
 class EnergyQuality:
     residual_ratio: float
-    electrical_residual_j: float
     acceptable: bool
 
 
@@ -29,6 +28,4 @@ def energy_quality(energy, *, maximum_ratio=.05):
     source = energy.get('source_positive_work_j', energy.get('active_work_j', 0.))
     scale += abs(scalar(source, 'source_positive_work_j'))
     ratio = abs(scalar(energy.get('residual_j', 0.), 'mechanical residual'))/scale
-    electrical = scalar(energy.get('electrical_residual_j', 0.), 'electrical residual')
-    electrical_budget = max(1., abs(scalar(energy.get('electrical_work_j', 0.), 'electrical work')))
-    return EnergyQuality(ratio, electrical, ratio <= limit and abs(electrical) <= 1e-7*electrical_budget)
+    return EnergyQuality(ratio, ratio <= limit)

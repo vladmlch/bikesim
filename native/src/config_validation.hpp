@@ -169,14 +169,8 @@ namespace drivetrain {
             }
         }
     }
-    inline void validate(const BatteryConfig &s) {
-        validation::nonnegative(s.energy_j, "config.drive.battery.energy_j");
-        validation::nonnegative(s.copper_w_per_nm2, "config.drive.battery.copper_w_per_nm2");
-        validation::nonnegative(s.speed_w_per_rad_s2, "config.drive.battery.speed_w_per_rad_s2");
-        validation::nonnegative(s.idle_w, "config.drive.battery.idle_w");
-    }
     inline void validate(const DrivePolicyConfig &s) {
-        validate(s.gearing); validate(s.pedaling); validate(s.shifting); validate(s.assist); validate(s.battery);
+        validate(s.gearing); validate(s.pedaling); validate(s.shifting); validate(s.assist);
         validation::positive(s.hub_stiffness_nm_rad, "config.drive.hub_stiffness_nm_rad");
         validation::nonnegative(s.hub_damping_nm_s, "config.drive.hub_damping_nm_s");
         if (s.shifting.enabled && std::ranges::find(s.shifting.cassette, s.gearing.rear_teeth) == s.shifting.cassette.end())

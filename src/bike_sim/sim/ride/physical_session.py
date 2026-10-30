@@ -187,7 +187,7 @@ def physical_summary(sim,metadata,reason):
                                        'steps':sim.steps,'crashed':sim.crash is not None,
                                        'balance_lost':event is not None,
                                        'balance_lost_at_m':None if event is None else event.position_m},
-        equilibrium=sim.equilibrium,energy=r.energy,model_status=r.model_status.as_dict(),battery_energy_j=r.drive.battery.energy_j,
+        equilibrium=sim.equilibrium,energy=r.energy,model_status=r.model_status.as_dict(),
         component_work_j=r.history.work_j,airtime_threshold_s=r.history.airtime_s,
         duration_s=r.history.duration_s))
 

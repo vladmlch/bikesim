@@ -67,7 +67,7 @@ inline void text(bt::oracle::Node &golden, std::string_view actual,
 
 [[nodiscard]] std::vector<std::byte>
 fixture_bytes(std::string_view name, std::string_view file) {
-    auto bytes = io::read_numpy_bytes(
+    auto bytes = io::read_bounded_file_bytes(
             bt::oracle::root() / "pneumatic_wire" / std::string(name) /
                     std::string(file));
     bt::require(!bytes.empty(), "fixture artifact missing");
@@ -76,7 +76,7 @@ fixture_bytes(std::string_view name, std::string_view file) {
 
 [[nodiscard]] std::string
 fixture_text(const std::filesystem::path &path) {
-    const auto bytes = io::read_numpy_bytes(path);
+    const auto bytes = io::read_bounded_file_bytes(path);
     bt::require(!bytes.empty(),
                 "fixture artifact missing or empty: " + path.string());
     return {reinterpret_cast<const char *>(bytes.data()), bytes.size()};

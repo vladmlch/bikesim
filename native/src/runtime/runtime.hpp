@@ -180,7 +180,6 @@ private:
     void cache_research_boundary();
     void flush_accounting();
     double committed_position_m_ = 0.;
-    double committed_battery_energy_j_ = 0.;
     std::optional<CrashEvent> committed_crash_;
     std::optional<BalanceLostEvent> committed_balance_;
     void require_open() const;
@@ -225,12 +224,11 @@ private:
     // surfaces it to the adapter (the old emit happened between the flush
     // and the owner swap).
     std::optional<std::string> pending_warning_;
-    // Single-advancement reentrancy guard: advance(), probe_step_inputs(),
-    // reset(), snapshot() and close() exclude each other — a second entry
-    // fails fast instead of observing or freeing a half-advanced runtime.
+    // Runtime-operation reentrancy flag: a nested or concurrent entry is
+    // refused before it can observe a partially changed runtime.
     // `mutable` lets the const snapshot() take it; `closed_` is atomic so
     // the unguarded closed() property reads a defined value.
-    mutable std::atomic<bool> advancing_{false};
+    mutable std::atomic<bool> busy_{false};
     std::atomic<bool> closed_{false};
 };
 

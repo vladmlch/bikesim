@@ -69,32 +69,27 @@ namespace {
             : PolicySet(parse_drive_policy_config(wire::mapping(input, "config"))) {}
 
         nb::dict state() const {
-            nb::dict d, a, b, h;
+            nb::dict d, a, h;
             const auto &as = assist.state();
-            const auto &bs = battery.state();
             const auto &hs = hub.state();
             a["torque"] = as.torque;
             a["pedaling"] = as.pedaling;
             a["last_gain"] = as.last_gain;
-            b["initial_energy_j"] = bs.initial_energy_j;
-            b["energy_j"] = bs.energy_j;
-            b["drawn_energy_j"] = bs.drawn_energy_j;
             h["boundary"] = nb::cast(hs.boundary);
             h["energy_j"] = hs.energy_j;
             h["torque_nm"] = hs.torque_nm;
             d["pedaling"] = pedaling_dict(pedaling.state());
             d["shifting"] = shifting_dict(shifting.state());
             d["assist"] = a;
-            d["battery"] = b;
             d["hub"] = h;
             return d;
         }
 
         void set_state(nb::handle raw) {
             const wire::Dict input{.value = wire::mapping(raw, "state"), .path = "state"};
-            wire::exact(input, wire::keys("pedaling", "shifting", "assist", "battery", "hub"));
+            wire::exact(input, wire::keys("pedaling", "shifting", "assist", "hub"));
             const auto p = section(input, "pedaling"), s = section(input, "shifting"), a = section(input, "assist"),
-                    b = section(input, "battery"), h = section(input, "hub");
+                    h = section(input, "hub");
             // Restore into typed copies: every field is parsed/validated before commit.
             auto next = *this;
             next.pedaling.set_state({
@@ -113,10 +108,6 @@ namespace {
             next.assist.set_state({
                 .torque = num(a, "torque"), .last_gain = num(a, "last_gain"), .pedaling = boolean(a, "pedaling")
             });
-            next.battery.set_state({
-                .initial_energy_j = num(b, "initial_energy_j"), .energy_j = num(b, "energy_j"),
-                .drawn_energy_j = num(b, "drawn_energy_j")
-            });
             next.hub.set_state({
                 .boundary = optional_num(h, "boundary"), .energy_j = num(h, "energy_j"),
                 .torque_nm = num(h, "torque_nm")
@@ -124,7 +115,6 @@ namespace {
             wire::exact(p, wire::keys("coasting", "target_phase_rad", "target_rate_rad_s", "deceleration_rad_s2", "_effort", "_cadence_ema"));
             wire::exact(s, wire::keys("rear_teeth", "from_teeth", "cooldown_s", "cut_remaining_s", "shift_count", "direction", "cadence_ema", "required_ema"));
             wire::exact(a, wire::keys("torque", "pedaling", "last_gain"));
-            wire::exact(b, wire::keys("initial_energy_j", "energy_j", "drawn_energy_j"));
             wire::exact(h, wire::keys("boundary", "energy_j", "torque_nm"));
             next.validate_state();
             *this = std::move(next);
@@ -208,27 +198,6 @@ void bind_drive_policies(nb::module_ &module) {
                  }, nb::arg("human_nm").none(), nb::arg("cadence_rpm").none(), nb::arg("speed_mps").none(), nb::arg("braking").none(),
                  nb::arg("dt").none(),
                  nb::arg("torque_request_nm").none() = nb::none(), nb::arg("shaft_rpm").none() = nb::none())
-            .def("battery_draw",
-                 [](DrivePolicies &self, nb::handle power, nb::handle dt) {
-                     const auto checked_power = wire::finite_real(power, "battery_draw.requested_power_w");
-                     const auto checked_dt = wire::finite_real(dt, "battery_draw.dt"); return self.battery.draw(checked_power, checked_dt); },
-                 nb::arg("requested_power_w").none(), nb::arg("dt").none())
-            .def("electrical_power", [](const DrivePolicies &self, nb::handle torque, nb::handle omega, nb::handle enabled) {
-                     const auto checked_torque = wire::finite_real(torque, "electrical_power.torque");
-                     const auto checked_omega = wire::finite_real(omega, "electrical_power.omega");
-                     const auto checked_enabled = wire::boolean(enabled, "electrical_power.enabled");
-                const auto &b = self.config.battery;
-                return motor_electrical_power(checked_torque, checked_omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2, b.idle_w,
-                                              checked_enabled);
-            }, nb::arg("torque").none(), nb::arg("omega").none(), nb::arg("enabled").none())
-            .def("energy_limit", [](const DrivePolicies &self, nb::handle request, nb::handle omega, nb::handle budget) {
-                     const auto checked_request = wire::finite_real(request, "energy_limit.request");
-                     const auto checked_omega = wire::finite_real(omega, "energy_limit.omega");
-                     const auto checked_budget = wire::finite_real(budget, "energy_limit.budget_w");
-                const auto &b = self.config.battery;
-                return limit_torque_by_energy(checked_request, checked_omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2, b.idle_w,
-                                              checked_budget);
-            }, nb::arg("request").none(), nb::arg("omega").none(), nb::arg("budget_w").none())
             .def("freehub_torque",
                  [](DrivePolicies &self, nb::handle pc, nb::handle pw, nb::handle wc, nb::handle ww) {
                      const auto checked_pc = wire::finite_real(pc, "freehub_torque.phi_c");

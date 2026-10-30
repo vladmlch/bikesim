@@ -242,7 +242,7 @@ platform_fixture(std::string_view bundle, std::string_view name) {
 
 [[nodiscard]] inline std::vector<std::byte>
 fixture_bytes(const std::filesystem::path &path) {
-    auto bytes = io::read_numpy_bytes(path);
+    auto bytes = io::read_bounded_file_bytes(path);
     bt::require(!bytes.empty(),
                 "fixture artifact missing or empty: " + path.string());
     return bytes;

@@ -98,7 +98,6 @@ class _SimulationView:
         accounting = state['accounting']
         return _Record(dict(energy=accounting['energy'], history=accounting['history'],
             model_status=accounting['model_status'], reference_monitor=accounting['monitor'],
-            drive=dict(battery=dict(energy_j=state['battery_energy_j'])),
             balance_monitor=dict(event=state['balance_event']), vertices=self._vertices))
 
     def snapshot(self):

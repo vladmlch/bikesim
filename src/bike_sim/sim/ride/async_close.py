@@ -38,7 +38,7 @@ _RESULT_FIELDS = ('period_violations', 'energy',
                   'muscle_signed_j', 'muscle_positive_j', 'motor_signed_j',
                   'motor_positive_j', 'constraint_absolute_j',
                   'closure_signed_j', 'closure_absolute_j',
-                  'electrical_work_j', 'history', 'model_status')
+                  'history', 'model_status')
 
 
 def _sample_transport(sample):
@@ -87,8 +87,6 @@ def _build_rt(ctx):
         attachment_errors=(), step_violations=(),
         initial_energy_j=ctx['initial_energy_j'],
         energy_scale_j=ctx['energy_scale_j'],
-        initial_battery_j=ctx['initial_battery_j'],
-        electrical_work_j=ctx['electrical_work_j'],
         loss_j=ctx['loss_j'], active_work_j=ctx['active_work_j'],
         external_work_j=ctx['external_work_j'], solver_work_j=ctx['solver_work_j'],
         muscle_signed_j=ctx['muscle_signed_j'],

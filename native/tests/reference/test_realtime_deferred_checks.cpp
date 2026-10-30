@@ -107,7 +107,6 @@ void test_bulk_road_queries_match_two_hundred_scalar_windows() {
     raw.qpos.assign(static_cast<std::size_t>(m->nq), 0.);
     raw.qvel.assign(static_cast<std::size_t>(m->nv), 0.);
     raw.attachment_raw = {{"foot_front", std::move(captured)}};
-    raw.electrical_power_w = runtime::Wire(0.);
     raw.mechanical_energy_j = 1.;
     raw.elastic_energy_j = runtime::WireObject{};
     raw.constraint_snapshot = {.interval_start_s = 0.,
@@ -185,7 +184,6 @@ void test_deferred_unexplained_wrench_is_rejected_at_its_original_interval() {
         .period_steps = 1,
         .measurement_decimation = 1,
         .retention = runtime::RetentionMode::legacy,
-        .battery_enabled = false,
         .async_telemetry = false,
         .max_qpos = static_cast<std::size_t>(m->nq),
         .max_dofs = static_cast<std::size_t>(m->nv),
@@ -194,7 +192,6 @@ void test_deferred_unexplained_wrench_is_rejected_at_its_original_interval() {
     };
     runtime::AccountingState state;
     state.energy.initial_energy_j = 1.;
-    state.energy.initial_battery_j = 0.;
     state.energy.energy_scale_j = 1.;
     runtime::PeriodAccounting accounting(config, std::move(state), 1,
                                          nullptr, nullptr);

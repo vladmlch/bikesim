@@ -1,7 +1,6 @@
 #include "motor.hpp"
 
 #include "../numeric_numpy.hpp"
-#include "../writers/pyfloat.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -82,63 +81,5 @@ namespace drivetrain {
         state_.torque = torque;
         state_.pedaling = torque > 0.;
         return torque;
-    }
-
-    void Battery::set_state(BatterySnapshot s) {
-        nonnegative(s.initial_energy_j, "initial_energy_j");
-        nonnegative(s.energy_j, "energy_j");
-        nonnegative(s.drawn_energy_j, "drawn_energy_j");
-        state_ = s;
-    }
-
-    std::pair<double, BatterySnapshot> Battery::debit(double power, double dt) const {
-        nonnegative(power, "battery power");
-        positive(dt, "battery timestep");
-        const double requested = validation::derived(power * dt, "Battery.requested_energy");
-        const double delivered = std::min(state_.energy_j, requested);
-        BatterySnapshot candidate = state_;
-        candidate.energy_j = std::max(0., state_.energy_j - delivered);
-        candidate.drawn_energy_j = state_.drawn_energy_j + delivered;
-        return {delivered / dt, candidate};
-    }
-
-    double Battery::draw(double power, double dt) {
-        auto [delivered, candidate] = debit(power, dt);
-        state_ = candidate;
-        return delivered;
-    }
-
-    double motor_electrical_power(double torque, double omega, double a, double b, double idle, bool enabled) {
-        finite(torque, "shaft torque");
-        finite(omega, "shaft speed");
-        nonnegative(a, "copper coefficient");
-        nonnegative(b, "speed loss coefficient");
-        nonnegative(idle, "idle loss");
-        if (!enabled) return 0.;
-        return validation::derived(std::max(validation::derived(torque * omega, "motor_electrical_power.mechanical_power"), 0.) + a * pyfloat::pow(torque, 2.) + b * pyfloat::pow(omega, 2.) + idle,
-                      "electrical power");
-    }
-
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror motor.py
-    double limit_torque_by_energy(double request, double omega, double a, double b, double idle, double budget) {
-        nonnegative(request, "requested motor torque");
-        finite(omega, "shaft speed");
-        nonnegative(a, "copper coefficient");
-        nonnegative(b, "speed loss coefficient");
-        nonnegative(idle, "idle loss");
-        nonnegative(budget, "power budget");
-        const double overhead = validation::derived(b * pyfloat::pow(omega, 2.) + idle, "motor overhead");
-        const double available = budget - overhead;
-        if (available <= 0.) return 0.;
-        const double w = std::max(omega, 0.);
-        double cap = std::numeric_limits<double>::quiet_NaN();
-        if (a > 0.) {
-            const double discriminant = validation::derived(w * w + 4. * a * available, "torque budget discriminant");
-            const double numerator = validation::derived(2. * available, "limit_torque_by_energy.numerator");
-            const double denominator = validation::derived(w + std::sqrt(discriminant), "limit_torque_by_energy.denominator");
-            cap = validation::derived(numerator / denominator, "limit_torque_by_energy.cap");
-        } else if (w > 0.) cap = validation::derived(available / w, "limit_torque_by_energy.cap");
-        else cap = request;
-        return std::min(request, cap);
     }
 }

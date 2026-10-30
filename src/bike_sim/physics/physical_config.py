@@ -135,24 +135,6 @@ class AssistConfig:
 
 
 @dataclass(frozen=True)
-class BatteryConfig:
-    # enabled=false removes the energy store: metering still runs but torque is
-    # never energy-limited and the reserve never depletes.
-    enabled: bool = True
-    energy_j: float = 1800000.
-    copper_w_per_nm2: float = .02
-    speed_w_per_rad_s2: float = 0.
-    idle_w: float = 5.
-
-    def __post_init__(self):
-        if not isinstance(self.enabled, bool):
-            raise ValueError('battery enable must be a bool')
-        for key in self.__dataclass_fields__:
-            if key != 'enabled':
-                scalar(getattr(self,key),key,minimum=0)
-
-
-@dataclass(frozen=True)
 class PedalingConfig:
     enabled: bool = False
     coast_above_rpm: float = 110.
@@ -275,16 +257,14 @@ class PhysicalDriveConfig:
     # freewheel. 0.1–0.3 is an unverified recalled order of magnitude.
     rotor_inertia_kgm2: float = 0.
     assist: AssistConfig = field(default_factory=AssistConfig)
-    battery: BatteryConfig = field(default_factory=BatteryConfig)
     pedaling: PedalingConfig = field(default_factory=PedalingConfig)
     shifting: ShiftingConfig = field(default_factory=ShiftingConfig)
 
     def __post_init__(self):
-        if not isinstance(self.gearing,DrivetrainSpecs) or not isinstance(self.assist,AssistConfig) or not isinstance(self.battery,BatteryConfig):
+        if not isinstance(self.gearing,DrivetrainSpecs) or not isinstance(self.assist,AssistConfig):
             raise ValueError('invalid drivetrain configuration object')
         self.gearing.__post_init__()
         self.assist.__post_init__()
-        self.battery.__post_init__()
         if not isinstance(self.pedaling, PedalingConfig):
             raise ValueError('pedaling needs an immutable PedalingConfig')
         self.pedaling.__post_init__()

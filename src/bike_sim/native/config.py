@@ -273,9 +273,6 @@ def _project_drive_policies(drive) -> dict:
                    'cutoff_mps': a.cutoff, 'taper_width_mps': a.width,
                    'mode': a.mode, 'profile': profile,
                    'torque_curve': a.torque_curve},
-        'battery': {'enabled': drive.config.battery.enabled,
-                    **{key: getattr(drive.config.battery, key) for key in
-                       ('energy_j', 'copper_w_per_nm2', 'speed_w_per_rad_s2', 'idle_w')}},
         'hub_stiffness_nm_rad': drive.config.freehub_k_nm_rad,
         'hub_damping_nm_s': drive.config.freehub_c_nms_rad,
     }

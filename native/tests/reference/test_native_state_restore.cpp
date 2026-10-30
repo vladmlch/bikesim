@@ -580,8 +580,7 @@ void reject_drive_state(const Stepper &owner, const std::function<void(Value &)>
 }
 
 // The source's mutate spec language, applied to the leaf value.
-void apply_spec(Value &leaf, std::string_view spec,
-                const Value &whole_for_over) {
+void apply_spec(Value &leaf, std::string_view spec) {
     if (spec == "x1.5") {
         leaf = real(bike::io::as_double(leaf, "leaf") * 1.5);
     } else if (spec == "short") {
@@ -600,11 +599,6 @@ void apply_spec(Value &leaf, std::string_view spec,
         leaf = text("up");
     } else if (spec == "half") {
         leaf = real(.5);
-    } else if (spec == "over") {
-        const double initial = bike::io::as_double(
-            at(whole_for_over, "policies.battery.initial_energy_j"),
-            "battery.initial_energy_j");
-        leaf = real(initial + 1.);
     } else {
         bt::require(false, "unknown mutation spec");
     }
@@ -635,10 +629,6 @@ void test_drive_restore_relational_rejection_is_atomic() {
         Case{"policies.shifting.cut_remaining_s", "half",
              "shift clock/count"},
         Case{"shift_time_s", "half", "shift clock/count"},
-        // The store is sized by the config and only ever drains.
-        Case{"policies.battery.energy_j", "over", "battery energy"},
-        Case{"policies.battery.drawn_energy_j", "over", "battery energy"},
-        Case{"policies.battery.initial_energy_j", "over", "battery energy"},
     };
     for (const std::string_view kind :
          {"ideal_mid_drive", "geometric_ideal_mid_drive"})
@@ -647,7 +637,7 @@ void test_drive_restore_relational_rejection_is_atomic() {
             reject_drive_state(
                 *owner,
                 [&](Value &bad) {
-                    apply_spec(at(bad, path), spec, bad);
+                    apply_spec(at(bad, path), spec);
                 },
                 match);
         }
@@ -714,7 +704,6 @@ void test_drive_restore_rejects_pending_actuation_without_interval() {
             Value::Object pending;
             pending.emplace_back("requested", real(1.));
             pending.emplace_back("omega", real(2.));
-            pending.emplace_back("dt", real(.002));
             pending.emplace_back("enabled", Value{true});
             set(bad, "pending_actuation", Value{std::move(pending)});
         },
@@ -728,25 +717,6 @@ void test_drive_restore_rejects_pending_actuation_without_interval() {
     reject_drive_state(
         *owner, [](Value &bad) { set(bad, "last_time_s", Value{}); },
         "live interval");
-}
-
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_nonpositive_pending_dt[dt]
-void test_drive_restore_rejects_nonpositive_pending_dt() {
-    for (const double dt : {0., -.002}) {
-        const auto owner = drivetrain_reference::pair();
-        (void)drivetrain_reference::components(*owner, .002, 2.);
-        bt::require(!bike::io::is_null(
-                        field(drivetrain_reference::state(*owner),
-                              "pending_actuation")),
-                    "pending actuation recorded before mutation");
-        reject_drive_state(
-            *owner,
-            [dt](Value &bad) {
-                set(policy_reference::member(bad, "pending_actuation"),
-                    "dt", real(dt));
-            },
-            "pending");
-    }
 }
 
 // tests/reference/test_native_state_restore.py::test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub
@@ -838,7 +808,7 @@ void test_drive_restore_rejects_auxiliary_transmission_drift() {
 // tests/reference/test_native_state_restore.py::test_drive_policies_set_state_relational_rejections
 void test_drive_policies_set_state_relational_rejections() {
     // The standalone policy binding repeats the same relational guards:
-    // shift clock/count, cassette membership, battery bounds.
+    // shift clock/count and cassette membership.
     auto policy = policy_reference::policies(
         policy_reference::config(policy_reference::source(true)));
     const Value before = policy_reference::state(policy);
@@ -849,12 +819,7 @@ void test_drive_policies_set_state_relational_rejections() {
     constexpr std::array cases{
         Case{"shifting", "direction"},   Case{"shifting", "cooldown_s"},
         Case{"shifting", "cut_remaining_s"}, Case{"shifting", "rear_teeth"},
-        Case{"battery", "energy_j"},     Case{"battery", "drawn_energy_j"},
-        Case{"battery", "initial_energy_j"},
     };
-    const double over = bike::io::as_double(
-        field(field(before, "battery"), "initial_energy_j"),
-        "battery.initial_energy_j") + 1.;
     for (const auto &[section, key] : cases) {
         Value bad = before;
         Value replacement;
@@ -867,10 +832,8 @@ void test_drive_policies_set_state_relational_rejections() {
         else if (section == std::string_view("shifting") &&
                  key == std::string_view("cut_remaining_s"))
             replacement = real(.1);
-        else if (section == std::string_view("shifting"))
-            replacement = integer(25);
         else
-            replacement = real(over);
+            replacement = integer(25);
         set(policy_reference::member(bad, section), key,
             std::move(replacement));
         drivetrain_reference::error<std::invalid_argument>(
@@ -897,7 +860,6 @@ void check() {
     test_drive_restore_rejects_coefficient_drift();
     test_drive_restore_rejects_geometric_prepared_jacobian_drift();
     test_drive_restore_rejects_pending_actuation_without_interval();
-    test_drive_restore_rejects_nonpositive_pending_dt();
     test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub();
     test_drive_restore_geometric_shift_pending_accepted();
     test_drive_restore_cassette_membership_when_shifter_enabled();

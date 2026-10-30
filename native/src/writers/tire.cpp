@@ -782,7 +782,7 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         snap.time_s = time;
         snap.backend = "compliant_2d";
         snap.geometric_contact = contact.delta > 0.0;
-        snap.wheel_axis_m = center;
+        snap.reference_position_world_m = center;
         if (contact.delta > 0.0) {
             if (snap.patches.size() >= kMaxSnapshotPatches)
                 throw std::invalid_argument(

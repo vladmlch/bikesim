@@ -129,7 +129,9 @@ void native_topologies() {
             for (double const value : component.values) bt::require(std::isfinite(value), "finite staged force");
         }
         auto malformed = std::make_unique<drivetrain::DriveSnapshot>(*initial);
-        malformed->battery.energy_j = -1.;
+        // A non-finite chain reference is rejected only after the policy
+        // states have been staged, so the probe covers a late restore failure.
+        malformed->reference = std::numeric_limits<double>::quiet_NaN();
         bt::invalid([&] { writer->restore(*malformed); });
         bt::require(before == bike::io::canonical_json(drivetrain::encode_drive_snapshot(writer->state())),
             "failed state restore leaves the writer unchanged");

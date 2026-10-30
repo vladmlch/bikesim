@@ -228,14 +228,6 @@ struct AssistConfig {
     [[nodiscard]] double effective_max_torque() const;
 };
 
-struct BatteryConfig {
-    bool enabled = true;
-    double energy_j = 1800000.;
-    double copper_w_per_nm2 = .02;
-    double speed_w_per_rad_s2 = 0.;
-    double idle_w = 5.;
-};
-
 struct PedalingConfig {
     bool enabled = false;
     double coast_above_rpm = 110.;
@@ -296,7 +288,6 @@ struct PhysicalDriveConfig {
     // Motor inertia reflected to the crank coordinate, kg.m^2.
     double rotor_inertia_kgm2 = 0.;
     AssistConfig assist;
-    BatteryConfig battery;
     PedalingConfig pedaling;
     ShiftingConfig shifting;
 };
@@ -326,7 +317,6 @@ void post_init(TireBackendConfig&);
 void post_init(const DrivetrainSpecs&);
 void post_init(const MotorProfile&);
 void post_init(AssistConfig&);
-void post_init(const BatteryConfig&);
 void post_init(const PedalingConfig&);
 void post_init(ShiftingConfig&);
 void post_init(PhysicalDriveConfig&);
@@ -415,10 +405,10 @@ struct ArticulatedConfig {
     // Residual recovery-leg load on the rising flat pedal; zero disables it.
     double return_foot_preload_n = 0.;
     // Weld-press servo gain/hold limit and weld-imposed leg-velocity follow
-    // damping — physical_config.py's same-named block. Declared and validated
-    // here so the mirror stays complete (schema()/to_value()/contract), but
-    // the native rider controller has not ported those knobs: the closed
-    // config.rider_controller wire drops them in project_rider_controller.
+    // damping — physical_config.py's same-named block. project_rider_controller
+    // forwards them on the config.rider_controller wire; SpindleController::
+    // compute consumes them for the weld-press servo and the leg-velocity
+    // follow term.
     double weld_servo_gain = .05;
     double weld_servo_limit_nm = 25.;
     double leg_track_damping_nms_rad = 0.;
@@ -731,19 +721,6 @@ inline const RecordSchema kAssistConfigSchema{
     .path="bike_sim.physics.physical_config.AssistConfig", .fields=kAssistConfigFields,
     .declared_default=&kDeclaredAssistConfig};
 
-inline const BatteryConfig kDeclaredBatteryConfig{};
-inline constexpr auto kBatteryConfigFields = std::to_array<FieldDecl>({
-    BOOL(BatteryConfig, enabled),
-    REAL(BatteryConfig, energy_j),
-    REAL(BatteryConfig, copper_w_per_nm2),
-    REAL(BatteryConfig, speed_w_per_rad_s2),
-    REAL(BatteryConfig, idle_w),
-});
-// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
-inline const RecordSchema kBatteryConfigSchema{
-    .path="bike_sim.physics.physical_config.BatteryConfig", .fields=kBatteryConfigFields,
-    .declared_default=&kDeclaredBatteryConfig};
-
 inline const PedalingConfig kDeclaredPedalingConfig{};
 inline constexpr auto kPedalingConfigFields = std::to_array<FieldDecl>({
     BOOL(PedalingConfig, enabled),
@@ -810,9 +787,6 @@ inline constexpr auto kPhysicalDriveConfigFields = std::to_array<FieldDecl>({
     {.name="assist", .type="<class 'bike_sim.physics.physical_config.AssistConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, assist), .required=false,
      .factory="AssistConfig", .nested=&kAssistConfigSchema, .nested2=nullptr},
-    {.name="battery", .type="<class 'bike_sim.physics.physical_config.BatteryConfig'>",
-     .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, battery), .required=false,
-     .factory="BatteryConfig", .nested=&kBatteryConfigSchema, .nested2=nullptr},
     {.name="pedaling",
      .type="<class 'bike_sim.physics.physical_config.PedalingConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, pedaling), .required=false,

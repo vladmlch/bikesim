@@ -584,6 +584,31 @@ void test_diagnostic_warns_once_and_keeps_failure_after_more_periods() {
 }
 NATIVE_DIAG_POP
 
+// ---------------------------------------------------------------------------
+// test_reset_lifts_pending_warning_for_outgoing_generation — the reset-time
+// lift keeps the outgoing generation's pending warning available for the
+// caller's pre-episode-switch drain: it is never silently dropped and never
+// re-attributed to the incoming generation.
+// ---------------------------------------------------------------------------
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_reset_lifts_pending_warning_for_outgoing_generation() {
+    const auto docs = welded_floor_docs(/*strict=*/false, /*decimation=*/1);
+    const auto runtime = compose_runtime(docs);
+    const runtime::RideControl command;
+    static_cast<void>(runtime->advance(41, command, 0., 0., std::nullopt));
+    runtime->flush();
+    runtime->reset();
+    const std::optional<std::string> lifted = runtime->take_pending_warning();
+    bt::require(lifted.has_value() &&
+                    lifted->find("invalid reference step") != std::string::npos,
+                "the outgoing generation's warning survives reset");
+    bt::require(!runtime->take_pending_warning().has_value(),
+                "the lifted warning drains exactly once");
+    runtime->close();
+}
+NATIVE_DIAG_POP
+
 } // namespace
 
 int main() {
@@ -603,6 +628,8 @@ int main() {
             test_strict_rejection_publishes_the_whole_period_before_raising);
         failures += bt::run(
             test_diagnostic_warns_once_and_keeps_failure_after_more_periods);
+        failures += bt::run(
+            test_reset_lifts_pending_warning_for_outgoing_generation);
         return failures == 0 ? 0 : 1;
     } catch (...) {
         return 1;

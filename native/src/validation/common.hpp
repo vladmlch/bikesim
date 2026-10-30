@@ -111,7 +111,7 @@ inline std::vector<std::string> strings(const Value& item, std::string_view name
 inline std::string read_text(const std::filesystem::path& file) {
     // Reuse the opened-object/no-follow and bounded-read contract. The byte
     // reader is format-neutral; JSON/TOML validation belongs to the caller.
-    const auto bytes = io::read_numpy_bytes(file);
+    const auto bytes = io::read_bounded_file_bytes(file);
     if (bytes.empty()) return {};
     return {reinterpret_cast<const char*>(bytes.data()), bytes.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte storage is reinterpreted as char for the string contract
 }

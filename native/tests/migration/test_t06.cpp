@@ -105,7 +105,7 @@ bool hex64(std::string_view value) {
 // ---- produced contract (step 2 of the work package) -------------------------
 void checks_produced() {
     const auto p = pf::run({"/usr/bin/printf", "%s", "a b;not-a-command"}, "/");
-    bt::require(p.exit_code == 0 && p.out == "a b;not-a-command",
+    bt::require(p.exit_code == 0 && p.stdout_text == "a b;not-a-command",
                 "argv is not a shell");
 }
 
@@ -116,7 +116,8 @@ void checks_process() {
     {
         const auto p = pf::run({self.string(), std::string(kModeExit), "7"}, "/");
         bt::require(p.exit_code == 7, "child exit status preserved");
-        bt::require(p.out == "child-out\n" && p.err == "child-err\n",
+        bt::require(p.stdout_text == "child-out\n" &&
+                        p.stderr_text == "child-err\n",
                     "child streams captured verbatim");
     }
     // cwd is an argv-level working directory, never an implicit mutation of
@@ -126,7 +127,7 @@ void checks_process() {
         const auto spaced = temp.path / "cwd with space";
         std::filesystem::create_directories(spaced);
         const auto p = pf::run({"/bin/pwd"}, spaced);
-        std::string out = p.out;
+        std::string out = p.stdout_text;
         if (!out.empty() && out.back() == '\n') out.pop_back();
         bt::require(p.exit_code == 0 &&
                         std::filesystem::weakly_canonical(out) ==
@@ -150,6 +151,31 @@ void checks_process() {
                     "timeout kills the child group (signal status)");
         bt::require(elapsed < 10.0, "kill/reap bounded the wait");
     }
+    // Cooperative cancellation signals the child's own process group, then
+    // kills and reaps after the grace period — the run returns with the
+    // signal-encoded status instead of waiting out the sleep.
+    {
+        std::stop_source cancellation;
+        const pf::ProcessOptions options{
+            .cancellation = cancellation.get_token(),
+            .timeout_s = std::nullopt,
+            .max_output_bytes = std::size_t{4U} * 1024U * 1024U};
+        const auto started = std::chrono::steady_clock::now();
+        std::jthread const canceller([&] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            cancellation.request_stop();
+        });
+        const auto p =
+            pf::run({self.string(), std::string(kModeSleep), "30"}, "/",
+                    options);
+        const double elapsed =
+            std::chrono::duration<double>(
+                std::chrono::steady_clock::now() - started)
+                .count();
+        bt::require(p.exit_code == 130,
+                    "cancellation reports the signalled status");
+        bt::require(elapsed < 15.0, "kill/reap bounded the wait");
+    }
     // stderr flood cannot deadlock stdout collection: the child writes
     // ~2 MiB to stderr (macOS pipes hold far less) and only then writes the
     // stdout marker — a serial drain would wedge the child on a full pipe.
@@ -157,8 +183,9 @@ void checks_process() {
         const auto p = pf::run(
             {self.string(), std::string(kModeFlood), "2097152", "stdout-ok"}, "/");
         bt::require(p.exit_code == 0, "flooded child completed");
-        bt::require(p.out == "stdout-ok", "stdout drained past the flood");
-        bt::require(p.err.size() == 2097152U,
+        bt::require(p.stdout_text == "stdout-ok",
+                    "stdout drained past the flood");
+        bt::require(p.stderr_text.size() == 2097152U,
                     "stderr fully drained concurrently");
     }
     // Explicit output bounds: a flood past max_output_bytes fails loudly and
@@ -451,7 +478,7 @@ void checks_provenance() {
                                 "t06-resource-payload\n"})));
         const auto p = pf::run({moved_exe.string(), std::string(kModeResource)},
                                moved);
-        bt::require(p.exit_code == 0 && p.out == "resource-ok\n",
+        bt::require(p.exit_code == 0 && p.stdout_text == "resource-ok\n",
                     "moved install tree resolves resources by image path");
     }
 

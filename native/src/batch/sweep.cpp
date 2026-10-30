@@ -1,10 +1,12 @@
 #include "plan.hpp"
 #include "log.hpp"
 #include "../cli/arguments.hpp"
+#include "../io/diagnostics.hpp"
 #include "../io/json.hpp"
 #include "../platform/signals.hpp"
 #include "../runtime/setup_values.hpp"
 #include <algorithm>
+#include <array>
 #include <iostream>
 #include <limits>
 #include <thread>
@@ -58,14 +60,24 @@ for (const auto& arg : job.argv) views.push_back(arg);
     ExecuteOptions options;
     options.cancelled = [&] { return interrupt.deferred() != 0; };
     options.completed = [&](std::size_t index, const Result& result) {
-        write_log(root / (jobs[index].id + ".log"), result.out + result.err, false);
-        std::cout << "seed " << seeds[index] << ": rc=" << result.exit_code << " wall=" << result.wall_s << "s\n" << std::flush;
+        // Stream-owned artifacts: stdout and stderr never interleave into one
+        // file, so neither is mistaken for the other's content on review.
+        write_log(root / (jobs[index].id + ".stdout.log"), result.stdout_text, false);
+        write_log(root / (jobs[index].id + ".stderr.log"), result.stderr_text, false);
+        if (result.summary_status == SummaryStatus::malformed) {
+            const std::array fields{
+                io::DiagnosticField{.key = io::DiagnosticKey::job_id, .value = std::string_view(result.id)},
+                io::DiagnosticField{.key = io::DiagnosticKey::job_index, .value = static_cast<std::int64_t>(index)}};
+            (void)io::write_diagnostic(std::cerr, io::Severity::warning,
+                "batch.summary.malformed", "terminal summary rejected", fields);
+        }
+        std::cout << "seed " << seeds[index] << ": rc=" << result.exit_code << " wall=" << result.wall_duration_s << "s\n" << std::flush;
     };
     const auto results = execute(jobs, static_cast<unsigned>(count), options);
     Array runs, passed;
     for (const auto& token : passthrough) passed.push_back(text(token));
     for (std::size_t i = 0; i < results.size(); ++i)
-        runs.push_back(Value{Object{{"seed", Value{io::Number{seeds[i]}}}, {"returncode", integer(results[i].exit_code)}, {"wall_s", real(results[i].wall_s)}}});
+        runs.push_back(Value{Object{{"seed", Value{io::Number{seeds[i]}}}, {"returncode", integer(results[i].exit_code)}, {"wall_s", real(results[i].wall_duration_s)}}});
     write_log(root / "sweep.json", io::recording_json(Value{Object{{"jobs", integer(args.integer("jobs"))},
         {"passthrough", Value{std::move(passed)}}, {"runs", Value{std::move(runs)}}}}) + "\n", false);
     return interrupt.deferred() ? 130 : std::ranges::all_of(results, [](const auto& r) { return r.exit_code == 0; }) ? 0 : 1;

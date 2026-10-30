@@ -101,7 +101,6 @@ def test_summary_and_research_metrics_keep_latched_event_position():
     runtime = SimpleNamespace(balance_monitor=monitor,
         reference_monitor=SimpleNamespace(first_failure=None),energy={},
         model_status=SimpleNamespace(as_dict=lambda:{}),
-        drive=SimpleNamespace(battery=SimpleNamespace(energy_j=0.)),
         history=SimpleNamespace(work_j={},airtime_s={},duration_s=1.))
     sim = SimpleNamespace(physical=runtime,time_s=1.,position_m=15.,steps=800,
         crash=None,equilibrium={})

@@ -14,15 +14,15 @@ ADR-0003.
 | Python source | Native replacement | Records (port/golden/drop) |
 |---|---|---|
 | tests/test_execution_identity.py | `reference.execution_identity` | 26 / 0 / 0 |
-| tests/reference/test_native_numeric_portability.py | `reference.native_numeric_portability` | 2 / 21 / 1 |
-| tests/reference/test_native_platform_blas.py | `reference.native_platform_blas` | 1 / 11 / 0 |
-| tests/reference/test_native_platform_linkage.py | `reference.native_platform_linkage` | 4 / 0 / 0(3) |
-| tests/reference/test_native_linux_headless.py | `reference.native_linux_headless` | 4 / 0 / 0 |
+| tests/reference/test_native_numeric_portability.py | `reference.native_numeric_portability` | 0 / 23 / 0 |
+| tests/reference/test_native_platform_blas.py | `reference.native_platform_blas` | 0 / 11 / 1 |
+| tests/reference/test_native_platform_linkage.py | `reference.native_platform_linkage` | 2 / 0 / 1 |
+| tests/reference/test_native_linux_headless.py | `reference.native_linux_headless` | 2 / 0 / 2 |
 | tests/reference/test_native_platform_recording.py | `reference.native_platform_recording` | 9 / 0 / 9 |
 | tests/reference/test_native_platform_replay.py | `reference.native_platform_replay` | 6 / 0 / 0 |
 | tests/test_recording_platform_compatibility.py | `reference.recording_platform_compat` | 17 / 0 / 0 |
 | tests/test_async_recovery.py | `reference.async_recovery` (+`reference.async_close`) | 8 / 0 / 3 |
-| tests/reference/test_golden_hook.py | — (delete_with_python) | 0 / 0 / 5 |
+| tests/reference/test_golden_hook.py | — (delete_with_python) | 0 / 0 / 12 |
 
 (Counts per `migration/test-port-map.json`; the linkage/headless table
 rows above reflect the per-record dispositions recorded there.)
@@ -39,12 +39,14 @@ rows above reflect the per-record dispositions recorded there.)
   layout views), min/max (incl. signed zero + NaN class fixtures),
   multiply broadcast, python_hypot, sum, sin/cos edge+nonfinite
   fixtures, interp incl. reject paths via production `np_interp`,
-  rider linalg 2-D/3-D/norm + reject paths. One drop: a Python
-  import-ordering mechanic. 34 records carry `golden` disposition with
+  rider linalg 2-D/3-D/norm + reject paths. 23 records carry `golden`
+  disposition with
   `golden_platforms: [darwin-arm64, linux-aarch64]` after this task.
 - **platform_blas** — golden-replayed dot/matvec/matmul over C and F
   layouts, zero-size shapes, transposed views, rectangular selections,
-  and all provider reject paths (`_debug_platform_blas`).
+  and all provider reject paths (`_debug_platform_blas`). One drop: a
+  Python import-ordering mechanic. 11 records carry `golden`
+  disposition on both platforms (34 golden across the two files).
 - **platform_linkage** — subprocess link-table inspection instead of
   Python ctypes probes: `otool -L` on Darwin; `readelf -d` + `ldd` on
   Linux. Runs the real published binaries under a scrubbed
@@ -119,12 +121,19 @@ rows above reflect the per-record dispositions recorded there.)
 
 ## Commits (this task)
 
-- `b63435b2` platform_replay port (prior)
-- `b129f9fb` async_recovery + recording_platform_compat
+- `0f586027` execution_identity port
+- `b63435b2` platform_replay port
+- `9cfaa2b8` recording_platform_compat port
+- `b129f9fb` async_recovery + recording_platform_compat rename
 - `9b1f9070` native_platform_recording
 - `4f922ff0` linux_headless + platform_linkage
 - `24efb1c8` numeric_portability + platform_blas (darwin goldens)
 - `43f8c4b1` linux portability fixes + linux-aarch64 goldens
+- `9cc1cb43` two-platform ledger evidence + this report
+- `49494d2c` python-removal entries → replacement_landed
+- `d462a8b2` 3.34 NOLINT concurrency-mt-unsafe on getenv
+- (follow-up) canonical ledger reserialization, measured
+  `collected_node_ids` / `comparison_class`, report counters
 
 ## Remaining gates
 

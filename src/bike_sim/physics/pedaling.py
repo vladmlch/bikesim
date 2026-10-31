@@ -54,8 +54,6 @@ class PedalingPolicy:
         phase_rad = scalar(phase_rad, 'crank phase')
         rate_rad_s = scalar(rate_rad_s, 'crank rate')
         required_cadence_rpm = scalar(required_cadence_rpm, 'required cadence')
-        # Keep the signed wheel rate for forward cadence intent.
-        wheel_rad_s = derived(required_cadence_rpm * 2. * pi / 60., "PedalingPolicy.wheel_rate")
         required_cadence_rpm = max(required_cadence_rpm, 0.)
         effort_nm = scalar(effort_nm, 'rider effort', minimum=0.)
         dt = scalar(dt, 'pedaling interval', positive=True)
@@ -107,8 +105,20 @@ class PedalingPolicy:
                 derived(upper, 'PedalingPolicy.slew_upper')
                 effort = max(lower, min(upper, target))
             self._effort = effort
+            # The limb-velocity wish is the lesser of the wheel-implied
+            # cadence and the rider's own perceived cadence. A wheel-slip
+            # burst inflates the freehub boundary for tens of milliseconds;
+            # the legs are dragged by the crank through the welds, they are
+            # never willed past the rider's cadence sense, so the wish does
+            # not chase wheelspin. When the wheel-implied rate falls (the
+            # engaged sweep decelerates the crank) the wish tracks it
+            # instantly, since the drivetrain decelerates the legs whether
+            # they intend it or not and matching intent avoids fighting it.
+            wish_rad_s = derived(
+                max(min(required_cadence_rpm, self._cadence_ema)*2.*pi/60., 0.),
+                'PedalingPolicy.target_rate')
             return PedalingState('pedaling', '', effort, required_cadence_rpm,
-                                 None, max(wheel_rad_s, 0.))
+                                 None, wish_rad_s)
         if not self.coasting:
             deceleration = abs(rate_rad_s) / self.config.stop_time_s
             derived(deceleration, 'PedalingPolicy.deceleration')

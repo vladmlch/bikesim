@@ -188,7 +188,25 @@ class DrivetrainForceApplier:
             raise ValueError('drivetrain state can advance only once per timestamp')
         crank_qpos, crank_dof = self.joints['crank_spin']
         _, wheel_dof = self.joints['rear_wheel_spin']
-        required = float(data.qvel[wheel_dof]) / self.shifting.gear_ratio * 60. / (2. * pi)
+        # The physically applied ratio is the freehub's own, not the
+        # shifter's committed decision: spec S6's shift transaction
+        # ``request -> unload -> verify -> change -> recover`` spends the
+        # declared shift time moving the chain between cogs, so the
+        # effective ratio sweeps through the unload window instead of
+        # flipping in one step. An instantaneous flip makes the crank
+        # violate the new boundary by the whole gear step, and the solved
+        # catch reads at the weld as a ~50-100 N.m inertial spike followed
+        # by a freewheel collapse -- neither happens while the transmission
+        # can still carry torque. A linear sweep keeps the chain engaged:
+        # on an upshift the hub decelerates the crank at the sweep rate
+        # (the weld reads the bounded inertial share), on a downshift the
+        # rising required stays inside the legs' acceleration authority.
+        # The pending state derives entirely from committed state -- applied
+        # ratio vs ``shifting.gear_ratio`` and ``cut_remaining_s`` -- so a
+        # snapshot restored mid-window resumes the sweep with no extra field.
+        applied_ratio = (self.ideal_hub.ratio if self.ideal_hub is not None
+                         else self.shifting.gear_ratio)
+        required = float(data.qvel[wheel_dof]) / applied_ratio * 60. / (2. * pi)
         effort = self.config.human_torque_nm if control.human_torque_nm is None else control.human_torque_nm
         enabled = active and control.rider_enabled and self.drive_mode in ('crank_effort', 'articulated_effort')
         if (advance and active and self.config.shifting.enabled
@@ -203,12 +221,21 @@ class DrivetrainForceApplier:
             shifted = shifter.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
                 required, dt, pedaling=enabled and effort > 0., braking=braking,
                 rear_in_contact=rear_in_contact, rear_slip_mps=rear_slip_mps)
-            if shifted:
-                self.ideal_hub.set_ratio(model, data, shifter.gear_ratio)
             self.shifting = shifter
             if shifted:
                 self.shift_time_s = float(data.time)
-            required = float(data.qvel[wheel_dof]) / self.shifting.gear_ratio * 60. / (2. * pi)
+            if self.shifting.cut_remaining_s > 0.:
+                remaining = self.shifting.cut_remaining_s + dt
+                # Each step retires the fraction dt/remaining of the ratio
+                # gap, so the applied ratio reaches the decision exactly when
+                # the cut does -- a linear sweep, and set_ratio's own early
+                # return makes a zero gap free.
+                self.ideal_hub.set_ratio(model, data, self.ideal_hub.ratio
+                    + (self.shifting.gear_ratio - self.ideal_hub.ratio) * dt / remaining)
+            elif self.ideal_hub.ratio != self.shifting.gear_ratio:
+                # A restored or otherwise stranded pending gap still lands.
+                self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
+            required = float(data.qvel[wheel_dof]) / self.ideal_hub.ratio * 60. / (2. * pi)
         # The pedaling policy advances on a detached candidate; a rejected
         # ceiling (or a mid-update failure) leaves the live policy untouched
         # and cannot accumulate effort across retries.

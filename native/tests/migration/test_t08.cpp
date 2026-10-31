@@ -53,7 +53,12 @@ bio::Value parse_fixture(std::string_view relative) {
 
 [[nodiscard]] const bio::Value::Object &object_of(const bio::Value &v) {
     const auto *const out = std::get_if<bio::Value::Object>(&v.data);
-    bt::require(out != nullptr, "encoded value must be an object");
+    // The guard must be visible in this translation unit: bt::require's
+    // throw lives in the harness TU, so the analyzer cannot prove the
+    // dereference below is unreachable on the null path. The failure mode
+    // is identical — std::runtime_error with the same message.
+    if (out == nullptr)
+        throw std::runtime_error("encoded value must be an object");
     return *out;
 }
 

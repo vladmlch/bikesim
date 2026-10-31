@@ -10417,3 +10417,177 @@ on all 104 landed rows, wrong report counters and a missing
 linux-aarch64. No `run_tests.sh` — bounded merge-back scope per
 protocol; the integration-level `full` gate remains the scheduled
 accumulation checkpoint.
+
+## 2026-10-31 — lane/a tranche-A portability merge-back (merge `d8663f3a`)
+
+Lane/a tip `c7fdb53e` (base `d20ea74c`, six commits: `fe5f65ac` recovered
+"stale check_* crumbs" provenance — launcher-preserving `tool_argv` +
+`gcc_context_args` offset fix + real `inspect_tool`/`--inspect-tool`
+surface + frontend warning-flag probing; `44af459e` the
+`migration_T336_portability` contract script + Checks.cmake registration;
+`175d4ff8` ledgers; `a24d26f6` documented `concurrency-mt-unsafe`
+suppression; `73116522`/`c7fdb53e` the task report). Batch scope:
+`tests/portability/{test_qualification_report,test_native_toolchain,
+test_native_runtime,test_offline_bundle,test_offline_install,
+test_offline_tools}.py` — 188 records → 22 port / 166 drop / 0 golden.
+Merged `--no-ff` into integration at tip `dacccbca`; auto-merged, zero
+conflict hunks.
+
+Review found **no defects requiring fix commits** — the lane is the
+first reviewed batch in recent merges needing no `fix(3.36t2a)` commit:
+
+- **Ledger hygiene (audit §3.3 classes 1/3/4):** both JSONs already
+  canonical `json.dumps(indent=2, ensure_ascii=True)` + trailing LF;
+  headers 2394/2378/16 equal actual row counts; the diff vs base touches
+  exactly the 188 batch rows (`planned → port` ×22, `planned → drop`
+  ×166) and 6 `python-removal.json` rows — no serializer churn. All 188
+  rows carry real `collected_node_ids` — spot-verified against live
+  `pytest --collect-only` on every file (17/29/39/102/28/43 nodes,
+  258 total, exact match incl. parametrized expansions);
+  `assertions_capture` is the measured "pytest collected N node(s)"
+  phrasing; `comparison_class` `contract` ×22 / `python-only` ×166;
+  `native_test_id` = `migration_T336_portability::<case>` for the 16
+  script-mapped rows or the bare pre-existing CTest name
+  (`sanitizer_clean_control` ×3, `rtsan_clean_control` ×2,
+  `sanitizer_negative_control` ×1) — all verified real (script's 12
+  named cases enumerated; the three controls registered by
+  `native/cmake/Sanitizers.cmake`, included from root `CMakeLists.txt:719`).
+- **Drop-evidence verdict (main risk, 166 drops): PASS.** Six evidence
+  groups, each a one-sentence justification naming a real native
+  successor, spot-checked ~30 rows plus every cited artifact:
+  `tools/ci_presets.sh`, `.github/workflows/portability.yml`,
+  `docs/releases/python-free-qualification.md` (43 rows);
+  `packaging/CMakeLists.txt` + `package_smoke` CTest
+  (`native/tests/package/package_smoke.cmake`, registered
+  packaging/CMakeLists.txt:80) + `install_smoke`
+  (`native/tests/install/install_smoke.cmake`, root CMakeLists.txt:700)
+  (77 rows); `BikeCompilerPolicy.cmake` `capabilities.{asan,rtsan}` in
+  `native_check_context.json` + the four Sanitizers.cmake control CTests
+  (26 rows); `bike-native-checks` internals
+  `check_{context,frontends,reports}.cpp` + the produced
+  check_frontends/odr/analyzer/diagnostic-controls sweeps +
+  `migration_T56` (20 rows). No stale/fake replacement found — all
+  paths exist in tree. The dropped tests import only removed Python
+  tools (`tools.{portability_qualification,native_checks,native_toolchain,
+  native_runtime,offline_bundle,offline_manifest,install_offline,
+  offline_install_probe,prepare_offline_tools}`), consistent with the
+  10-31 tooling-replacement-map dispositions.
+- **`python-removal.json` flips:** all six batch rows →
+  `replacement_landed` with real `replacement_paths` (each path verified
+  in tree) and real `verification_ids`, replacing the inventory's
+  never-created `native/tests/reference/test_*.cpp` placeholders.
+  **Pre-existing convention caveat:** the all-drop
+  `test_qualification_report.py` row carries
+  `source_assertion_map`/`release_capability_matrix` — stale plan-08
+  artifact names existing only inside this ledger, but used by 18 other
+  landed rows per the established all-drop convention and already listed
+  as tooling-map defect #5 (fix-later, not this merge's scope).
+- **`check_*` code diffs (`fe5f65ac`) reviewed as real changes:** faithful
+  ports of `tools/native_checks.py` oracle semantics — `compiler_launcher()`
+  null→absent vs the entry validator's fail-closed present-null rule
+  (matches `_compiler_launcher`/`validate_compilation_context` exactly);
+  analyzer argv replaces `arguments[len(launcher)]` and drops `-o`/
+  `-c`/dep flags identically; frontends/odr argv prepend the launcher;
+  `gcc_context_args` offset `1 + len(launcher)`; `_probe_frontend_warning_flags`
+  required/batch-then-per-flag probing with the same flag tables
+  (2 required + 51 optional) and repr-style diagnostics;
+  `inspect_tool` implements the real version/target/resource-dir probes
+  + family classification (clang-tidy before clang, `(GCC)`/FSF for gcc)
+  with the oracle's rejection wording; `--inspect-tool PATH` CLI emits
+  the schema-1 record. These are oracle-divergence **bug fixes**
+  (launcher was dropped before), not cosmetic churn.
+- **`a24d26f6` suppression:** minimal-scope — checker+origin+message+
+  tool_version=23.1.2 pinned to `summary.cpp` getenv (origin `29509355`,
+  in the lane base; baseline-red claim plausible since `d20ea74c` lacks
+  the later NOLINT). Post-merge it is **dormant**: integration's
+  `d462a8b2` NOLINTNEXTLINE suppresses the diagnostic at source, so the
+  manifest entry matches nothing; `apply_suppressions` has no
+  unused-entry gate, so no conflict — kept for lane provenance.
+- **Report counters reconcile:** per-file table (29/39/35/28/14/43 →
+  9/20, 13/26, 0/35, 0/28, 0/14, 0/43 port/drop) matches the ledger
+  exactly; case map matches `native_test_id`s; gate-exit-8 narrative
+  (T09/T10 baseline-verbatim ctest reds + 41 live-parity pytest reds,
+  A/B-verified against `pfc-gate` at `d20ea74c`) is the documented
+  baseline family, not batch-attributable.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records**, headers **2394/2378/16**
+  unchanged and equal to actual counts, canonical bytes. Row-level union
+  vs merge-base recomputed: lane-changed **188**, integration-changed
+  **120**, **0 contested / 0 missing / 0 wrong**.
+- `migration/python-removal.json` — auto-merged; verified: **535**
+  `path`-keyed rows; lane-changed **6**, integration-changed **9**,
+  **0 contested / 0 missing / 0 wrong**.
+- `native/cmake/Checks.cmake` — integration untouched since base;
+  lane's version is the union (one new `migration_T336_portability`
+  `add_test` + convenience target, root graph only).
+- `native/src/tools/check_{context,frontends,reports}.cpp`,
+  `checks_internal.hpp`, `checks_main.cpp`,
+  `native/tests/migration/migration_T336_portability.cmake`,
+  `native/analysis_suppressions.json`,
+  `task-C336t2a-report.md` — untouched by integration since base;
+  byte-identical to the lane parent (sha256-verified ×9).
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch it;
+  integration's version retained (this section is the merge-back append).
+- Stash note: `stash@{0}` "stale check_* crumbs" remains on the repo —
+  its content landed as `fe5f65ac`; dropping it is a maintainer action.
+
+### Ledger deltas (pre-merge `dacccbca` → merge `d8663f3a`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  qualification); headers **2394/2378** unchanged. Dispositions:
+  `port` 1342 → **1364** (+22), `golden` 390 → **390** (0),
+  `drop` 189 → **355** (+166), `planned` 473 → **285** (−188). Empty
+  `collected_node_ids` 925 → **737** (−188); total collected nodes
+  2767 → **3025** (+258); `T01 records source assertions` placeholders
+  **423 → 423** unchanged.
+- `python-removal.json`: `replacement_landed` 142 → **148** (+6),
+  `planned` 393 → **387** (−6); exactly the 6 batch rows changed.
+
+### Merge-back verification
+
+New/changed registrations (Checks.cmake/Phase3Ports.cmake diff vs
+merge-base): **`migration_T336_portability`** — the only registration
+this merge adds (the nine `reference.*` Phase3Ports entries visible in
+the same diff range are the prior 3.35 merge's, already verified
+9/9 then). The batch's port rows additionally cite the pre-existing
+`sanitizer_clean_control`/`rtsan_clean_control`/
+`sanitizer_negative_control` controls; ran the two registered in the
+default configure alongside the new test.
+
+- **darwin-arm64** (`build/native-release`, AppleClang): reconfigure +
+  build clean (bike-native-checks relinked with the check_* changes);
+  `ctest -R '^(migration_T336_portability|sanitizer_clean_control|
+  rtsan_clean_control)$'` → **3/3 Passed, exit 0** (T336 5.11 s,
+  `passed (12 cases)`, 0 skips; controls 0.12 s). 
+  `sanitizer_negative_control` registers only under `NATIVE_SANITIZE=ON`
+  — no asan tree on this worktree; lane-verified green in its own asan
+  preset (0.25 s, task report).
+- **linux-aarch64** (container `bike-dev-python-free-cpp`; `/src` tar
+  snapshot synced — `test-port-map.json` sha256 `482935c8…` identical
+  host/container): `/build/root-clang` reconfigured (clang++-18,
+  pre-existing tree), `bike-native-checks` + both control binaries
+  rebuilt clean; `ctest -R` same selection → **3/3 Passed, exit 0**
+  (T336 0.51 s, `passed (12 cases)`, 1 by-design skip:
+  `libcpp_extensive_assertion_traps_out_of_bounds` is the Darwin libc++
+  contract; controls 0.00 s).
+
+### Assessment
+
+Clean merge: zero conflict hunks; both JSON ledgers verified
+key-exact-union against merge-base + both parents with canonical bytes;
+non-ledger files byte-identical to the lane (owning) parent;
+Checks.cmake union trivially satisfied. Review spot-checked ~30 drop
+rows plus all six evidence groups: every drop cites a real, existing
+native replacement or a precise Python-internals-only justification —
+the recurring stale-path/fake-replacement defect class was absent. The
+`check_*` recovered-stash code is a faithful oracle port fixing real
+divergences (launcher preservation, offset accounting, inspect_tool
+stub). No `run_tests.sh` — bounded merge-back scope per protocol; the
+integration-level `full` gate remains the scheduled accumulation
+checkpoint (audit debt §2.5.1). Watch item for later merges: the
+`a24d26f6` suppression is dormant under integration's NOLINT — remove
+when tidy stops matching it, per its `remove_when`.

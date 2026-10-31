@@ -32820,13 +32820,17 @@
       "line": 123,
       "end_line": 132,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_bootstrap_is_explicit_locked_sync",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_bootstrap_is_explicit_locked_sync"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the 'uv sync --locked' argv is the Python venv provisioner, removed with the dev driver; no interpreter environment remains to sync."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32834,13 +32838,17 @@
       "line": 113,
       "end_line": 120,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_bootstrap_missing_lock_fails_before_any_sync",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_bootstrap_missing_lock_fails_before_any_sync"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 'bootstrap' provisions the Python dev venv from uv.lock; there is no Python environment to provision. Dependency acquisition is the explicit sha256-locked step of docs/installation.md (tools/linux/extract_deps.sh against native/dependencies.lock.json)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32848,13 +32856,17 @@
       "line": 187,
       "end_line": 192,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_bootstrap_offline_requires_wheelhouse",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_bootstrap_offline_requires_wheelhouse"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 same dev.py bootstrap machinery: the offline requirement is met by the CPack source package's pinned .deps archives, not a Python wheelhouse (packaging/CMakeLists.txt, docs/installation.md)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32862,13 +32874,17 @@
       "line": 135,
       "end_line": 184,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_bootstrap_python_and_offline_wheelhouse",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_bootstrap_python_and_offline_wheelhouse"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the offline wheelhouse bootstrap exists for a Python-wheel install. The Python-free offline path is the CPack source TGZ plus locked .deps archives (packaging/CMakeLists.txt; package_smoke re-verifies archive digests after extraction), then 'bash tools/linux/extract_deps.sh' + 'cmake --workflow --preset release' per docs/installation.md; the offline rehearsal lane is tools/ci_presets.sh <preset> offline."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32876,13 +32892,17 @@
       "line": 57,
       "end_line": 72,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_build_commands_returns_configure_then_compile",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_build_commands_returns_configure_then_compile"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the two-command uv-wrapped configure-then-compile sequence is dev.py plumbing; the native flow is the preset pair 'cmake --preset <name>' then 'cmake --build --preset <name>' (configurePresets+buildPresets in CMakePresets.json; 'cmake --workflow --preset release' per docs/installation.md)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32890,13 +32910,17 @@
       "line": 92,
       "end_line": 99,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_cli_resolves_relative_build_against_checkout",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_cli_resolves_relative_build_against_checkout"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev.resolve_build_path is a dev.py-internal helper for its --build selector; build trees are selected by preset name (binaryDir is ${sourceDir}-anchored), so no checkout-relative selector resolution remains."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32904,13 +32928,17 @@
       "line": 46,
       "end_line": 54,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_configure_uses_one_interpreter_and_preserves_path_tokens",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_configure_uses_one_interpreter_and_preserves_path_tokens"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev.build_commands wraps configure in a 'uv run' interpreter and assembles the compiler token list; both are dev.py internals (replace_with_cmake_ctest_cpack). Configure is now 'cmake --preset <name>' against CMakePresets.json, whose cacheVariables carry CMAKE_CXX_COMPILER as one JSON value \u2014 no argv builder or interpreter selection remains."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32918,13 +32946,17 @@
       "line": 291,
       "end_line": 299,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_doctor_cli_writes_json_stdout_and_status",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_doctor_cli_writes_json_stdout_and_status"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the doctor CLI's JSON-stdout surface is dev.py; the produced diagnostics are 'bike-native-checks --kind context|contracts' structured check output plus the context JSON itself."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32932,13 +32964,17 @@
       "line": 257,
       "end_line": 268,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_doctor_missing_artifact_is_not_failed_unless_requested",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_doctor_missing_artifact_is_not_failed_unless_requested"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the bike_native extension artifact no longer exists: the Python-free root build produces none by design, and check_contracts reports loader_provenance not-applicable (check_contracts.cpp). A doctor 'artifact present?' probe has no object."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32946,13 +32982,17 @@
       "line": 239,
       "end_line": 254,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_doctor_schema_and_base_checks",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_doctor_schema_and_base_checks"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev.doctor_report's schema-1 document and its named checks (interpreter/lock/packages/compilers) are dev.py internals; the diagnostic successor is the emitted native_check_context.json (schema 2, BikeCheckContext.cmake) validated by 'bike-native-checks --kind context' (native/src/tools/check_context.cpp), whose rejection battery runs as migration_T56."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32960,13 +33000,17 @@
       "line": 302,
       "end_line": 314,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_doctor_selected_artifact_passes_with_one_extension",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_doctor_selected_artifact_passes_with_one_extension"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 a 'exactly one bike_native*.so' probe is meaningless in a build that produces none; check_contracts keeps the oracle's fail-closed extension-count rule only on the bindings graph and reports not-applicable on the Python-free root by design (check_contracts.cpp)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32974,13 +33018,17 @@
       "line": 271,
       "end_line": 288,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_doctor_unavailable_probes_fail_when_requested",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_doctor_unavailable_probes_fail_when_requested"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 request-gated dependency/numerics probes are dev.py machinery; the capabilities are probed at configure and recorded unconditionally in native_check_context.json capabilities.{requested,supported,enabled} with evidence \u2014 never a silent pass (validated by check_context.cpp's capabilities record and asserted in migration_T336_portability)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -32988,13 +33036,17 @@
       "line": 317,
       "end_line": 323,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_main_help_lists_every_command",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_main_help_lists_every_command"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev.py's --help listing is removed with the driver; every produced binary's --help is exercised in a clean environment by the package_smoke CTest (native/tests/package/package_smoke.cmake)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -33002,13 +33054,17 @@
       "line": 221,
       "end_line": 232,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_no_command_uses_shell_true",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_no_command_uses_shell_true"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 an AST scan of tools/dev.py for shell=True; the guarded file is removed. The produced check orchestrator execs argv directly (bike-native-checks --check-child wraps a literal argv; exercised by migration_T56)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -33016,13 +33072,17 @@
       "line": 83,
       "end_line": 89,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_relative_paths_are_rejected_by_command_builder",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_relative_paths_are_rejected_by_command_builder"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the absolute-path precondition lives inside dev.py's command builder; no command builder remains. Presets resolve binaryDir under the checkout (${sourceDir}-anchored in CMakePresets.json)."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -33030,13 +33090,17 @@
       "line": 102,
       "end_line": 110,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_subprocess_failure_exit_code_propagates",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_subprocess_failure_exit_code_propagates"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev._run/dev.main return-code plumbing; the produced binaries exit directly with no Python wrapper to propagate through."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -33044,13 +33108,17 @@
       "line": 195,
       "end_line": 218,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_test_profile_sets_absolute_selectors",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_test_profile_sets_absolute_selectors"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 BIKE_NATIVE_BUILD_PATH/NATIVE_TEST_BUILD_PATH env selectors into tools/run_tests.sh are dev.py composition; the test selection layer is ctest --test-dir and the testPresets entries in CMakePresets.json. run_tests.sh itself retires with the Python gate."
+      ]
     },
     {
       "source_path": "tests/portability/test_dev_commands.py",
@@ -33058,13 +33126,17 @@
       "line": 75,
       "end_line": 80,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_dev_commands::test_unsupported_config_is_rejected",
-      "native_source": "native/tests/reference/test_dev_commands.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T336r_portability::unsupported_preset_is_rejected",
+      "native_source": "native/tests/migration/migration_T336r_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_dev_commands.py::test_unsupported_config_is_rejected"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 the supported-configuration gate is the declared CMakePresets.json configurePresets list; the case drives cmake --preset on a real build-type spelling (RelWithDebInfo), an all-caps spelling (DEBUG) and an absent name, each rejected by name with the supported set listed before any configure work; CTest migration_T336r_portability green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/portability/test_development_docs.py",
@@ -33299,13 +33371,18 @@
       "line": 463,
       "end_line": 488,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_all_wrappers_preserve_one_absolute_uv_environment",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_all_wrappers_preserve_one_absolute_uv_environment[False]",
+        "tests/portability/test_install_modes.py::test_all_wrappers_preserve_one_absolute_uv_environment[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 UV_PROJECT_ENVIRONMENT/UV_OFFLINE passthrough into child environments is dev.py internals; no uv environment is provisioned by the native workflow."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33313,13 +33390,17 @@
       "line": 123,
       "end_line": 125,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_cached_correct_source_artifact_is_a_valid_control",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_cached_correct_source_artifact_is_a_valid_control"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 sys.modules caching of a valid extension is artifact.py internals; no module cache exists without the Python loader."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33327,13 +33408,17 @@
       "line": 416,
       "end_line": 428,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_copied_build_cache_is_rejected_before_build_process",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T336r_portability::copied_build_cache_rejected_at_configure",
+      "native_source": "native/tests/migration/migration_T336r_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_copied_build_cache_is_rejected_before_build_process"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 a copied build tree is rejected at configure time: CMake's own cache-directory guard ('is different than the directory ... where CMakeCache.txt was created', measured exit 1) replaces dev.py's _check_build_cache with the identical rejected-before-any-build ordering; the case stages a real seed configure then a copied tree. CTest green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33341,13 +33426,17 @@
       "line": 128,
       "end_line": 134,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_default_source_selection_ignores_working_directory",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_default_source_selection_ignores_working_directory"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 artifact.selected_build_dir()'s cwd-independence is loader internals; build trees are preset-named with ${sourceDir}-anchored binaryDir in CMakePresets.json \u2014 no cwd-dependent selection remains."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33355,13 +33444,17 @@
       "line": 571,
       "end_line": 581,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_doctor_capture_preserves_installer_environment",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_doctor_capture_preserves_installer_environment"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev._capture's environment passthrough is dev.py internals; no installer environment exists."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33369,13 +33462,18 @@
       "line": 501,
       "end_line": 568,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_doctor_probe_does_not_invoke_configure_time_abi_compiler",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_doctor_probe_does_not_invoke_configure_time_abi_compiler[False]",
+        "tests/portability/test_install_modes.py::test_doctor_probe_does_not_invoke_configure_time_abi_compiler[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the doctor dependency probe's read-only child composition is dev.py machinery; dependency/numerics probing moved to configure time (BikeCompilerPolicy.cmake compile/link probes, provider resolution) and is recorded with evidence text in native_check_context.json \u2014 'bike-native-checks --kind context' is a pure validator that launches no compiler."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33383,13 +33481,18 @@
       "line": 585,
       "end_line": 598,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_doctor_reinjects_selected_sanitizer_for_fresh_python",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_doctor_reinjects_selected_sanitizer_for_fresh_python[darwin-DYLD_INSERT_LIBRARIES]",
+        "tests/portability/test_install_modes.py::test_doctor_reinjects_selected_sanitizer_for_fresh_python[linux-LD_PRELOAD]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the DYLD_INSERT_LIBRARIES/LD_PRELOAD reinjection composer is dev.py preload machinery; Sanitizers.cmake links the resolved runtime directly into instrumented binaries so no environment composition remains \u2014 the instrumented controls run clean without env setup (sanitizer_clean_control/rtsan_clean_control under the sanitizer presets)."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33397,13 +33500,17 @@
       "line": 601,
       "end_line": 605,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_doctor_rejects_missing_selected_sanitizer_before_probe",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T336r_portability::sanitizer_enabled_without_runtime_is_rejected",
+      "native_source": "native/tests/migration/migration_T336r_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_doctor_rejects_missing_selected_sanitizer_before_probe"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 a sanitizer lane without its resolved runtime is never enabled: 'bike-native-checks --kind context --validate-only' fails on the mutated real context with 'enabled without a recorded sanitizer runtime' \u2014 the same fail-closed rule the removed preload resolver enforced, moved to configure+validation time. CTest green darwin-arm64 + linux-aarch64"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33411,13 +33518,21 @@
       "line": 394,
       "end_line": 405,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_doctor_rejects_stale_install_context",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_doctor_rejects_stale_install_context[source_directory]",
+        "tests/portability/test_install_modes.py::test_doctor_rejects_stale_install_context[build_directory]",
+        "tests/portability/test_install_modes.py::test_doctor_rejects_stale_install_context[soabi]",
+        "tests/portability/test_install_modes.py::test_doctor_rejects_stale_install_context[python]",
+        "tests/portability/test_install_modes.py::test_doctor_rejects_stale_install_context[provider]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 every stale-context field is rejected by the produced context validator; the migration_T56 mutation battery covers the field family: stale root metadata (t56_ctx_root_null_/missing_{dependency_root,dependency_lock,configure_source_dir,cmake}), platform/host mismatch (t56_ctx_schema2_{host_mismatch,machine,pointer_width,foreign_system}), a removed provider file (t56_ctx_missing_required) and interpreter record rules (t56_ctx_binding_*). migration_T56 fixture contract passed darwin-arm64 on the direct cmake -P run 2026-10-31 (the fixture exceeds ctest\u2019s 1500 s default timeout on this host \u2014 ~43 min wall; linux-aarch64 cited t56_ctx_* cases green, unrelated b29/contracts arms fail on container-only gaps: no bike-contract-tests binary in the scoped build, image Python 3.12 < required 3.13)"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33425,13 +33540,18 @@
       "line": 213,
       "end_line": 225,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_dynamic_loader_diagnostic_keeps_original_cause",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_dynamic_loader_diagnostic_keeps_original_cause[ImportError]",
+        "tests/portability/test_install_modes.py::test_dynamic_loader_diagnostic_keeps_original_cause[OSError]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 ImportError/OSError cause-chaining through the extension loader is artifact.py internals; there is no Python dynamic loader to diagnose."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33439,13 +33559,17 @@
       "line": 388,
       "end_line": 390,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_install_context_matches_source_build_interpreter_and_dependencies",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_host",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_install_context_matches_source_build_interpreter_and_dependencies"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 the schema-2 install context coherence contract (truthful source/build/platform/dependency record validates) is re-asserted by 'bike-native-checks --kind context --validate-only' on a truthful copy of the real emitted context (migration_T56::t56_ctx_schema2_host); the interpreter record is null-by-design on the Python-free root context (t56_ctx_root_missing_python* family). migration_T56 fixture contract passed darwin-arm64 on the direct cmake -P run 2026-10-31 (the fixture exceeds ctest\u2019s 1500 s default timeout on this host \u2014 ~43 min wall; linux-aarch64 cited t56_ctx_* cases green, unrelated b29/contracts arms fail on container-only gaps: no bike-contract-tests binary in the scoped build, image Python 3.12 < required 3.13)"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33453,13 +33577,17 @@
       "line": 137,
       "end_line": 142,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_missing_artifact_never_launches_a_build",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_missing_artifact_never_launches_a_build"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the loader's no-lazy-build refusal and its tools/dev.py diagnostic die with artifact.py and the dev driver; nothing lazily builds at runtime in the native distribution \u2014 a missing packaged entry point is fatal in package_smoke ('Package omits installed entry point')."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33467,13 +33595,17 @@
       "line": 408,
       "end_line": 413,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_old_context_requests_reconfigure_without_changing_its_schema",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_root_missing_python",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_old_context_requests_reconfigure_without_changing_its_schema"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 an install context missing the additive python record is rejected outright ('Python-free root context must record python: null', migration_T56::t56_ctx_root_missing_python) \u2014 the native reconfigure request; the unknown-schema arm is t56_ctx_schema3 ('native check context has an unsupported schema'). migration_T56 fixture contract passed darwin-arm64 on the direct cmake -P run 2026-10-31 (the fixture exceeds ctest\u2019s 1500 s default timeout on this host \u2014 ~43 min wall; linux-aarch64 cited t56_ctx_* cases green, unrelated b29/contracts arms fail on container-only gaps: no bike-contract-tests binary in the scoped build, image Python 3.12 < required 3.13)"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33481,13 +33613,18 @@
       "line": 445,
       "end_line": 459,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_project_interpreter_must_belong_to_selected_venv",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_project_interpreter_must_belong_to_selected_venv[False]",
+        "tests/portability/test_install_modes.py::test_project_interpreter_must_belong_to_selected_venv[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 _require_project_interpreter's venv binding (sys.prefix/sys.executable identity) is dev.py internals; there is no project interpreter."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33495,13 +33632,18 @@
       "line": 241,
       "end_line": 262,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_python_only_wheel_layout_never_guesses_a_checkout",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_python_only_wheel_layout_never_guesses_a_checkout[False]",
+        "tests/portability/test_install_modes.py::test_python_only_wheel_layout_never_guesses_a_checkout[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 a Python-only wheel borrowing a checkout's native build is a wheel-loader refusal with no analog: no wheel and no loader remain. The packaged artifact is verified self-contained: package_smoke runs every binary from the package prefix in a scrubbed environment and bike-python-audit --mode package applies migration/no-python-policy.json."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33509,13 +33651,17 @@
       "line": 338,
       "end_line": 363,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_reference_loader_adds_context_without_replacing_import_error",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_reference_loader_adds_context_without_replacing_import_error"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 tests/reference/native_loader.py is pytest plumbing removed with the oracle suite; its fail-context behavior has no C++ analog because the extension it loads no longer exists."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33523,13 +33669,17 @@
       "line": 491,
       "end_line": 497,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_relative_custom_environment_fails_before_any_command",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_relative_custom_environment_fails_before_any_command"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the UV_PROJECT_ENVIRONMENT absolute-path gate is dev.py internals; no custom uv environment exists."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33537,13 +33687,18 @@
       "line": 154,
       "end_line": 168,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_relative_native_selector_is_rejected_in_fresh_process",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_relative_native_selector_is_rejected_in_fresh_process[argument]",
+        "tests/portability/test_install_modes.py::test_relative_native_selector_is_rejected_in_fresh_process[environment]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the absolute-path gate on the BIKE_NATIVE_BUILD_PATH/argument selector is artifact.py internals; no selector variable or loader remains."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33551,13 +33706,17 @@
       "line": 228,
       "end_line": 237,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_removed_compiled_provider_keeps_identity_failure_context",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_removed_compiled_provider_keeps_identity_failure_context"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the provider-identity failure context is artifact.py internals; provider identity is bound at configure by native/cmake/BikeProviderIdentity.cmake + dependencies.lock.json and validated by check_contracts' provider_binding_boundary."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33565,13 +33724,18 @@
       "line": 308,
       "end_line": 335,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_removed_mapped_numerical_provider_is_not_reused",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_missing_required",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_removed_mapped_numerical_provider_is_not_reused[False]",
+        "tests/portability/test_install_modes.py::test_removed_mapped_numerical_provider_is_not_reused[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 a recorded provider image that no longer exists is rejected by the produced context validator's required_files/library_paths existence rule ('missing context required_files entry'), exercised by migration_T56::t56_ctx_missing_required on a mutated copy of the real emitted context; the present-provider arm is t56_ctx_schema2_host (clean validate). migration_T56 fixture contract passed darwin-arm64 on the direct cmake -P run 2026-10-31 (the fixture exceeds ctest\u2019s 1500 s default timeout on this host \u2014 ~43 min wall; linux-aarch64 cited t56_ctx_* cases green, unrelated b29/contracts arms fail on container-only gaps: no bike-contract-tests binary in the scoped build, image Python 3.12 < required 3.13)"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33579,13 +33743,17 @@
       "line": 117,
       "end_line": 120,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_source_editable_layout_uses_only_selected_artifact",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_source_editable_layout_uses_only_selected_artifact"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 load_native_extension's editable-layout artifact selection is src/bike_sim/native/artifact.py internals; no bike_native extension exists in the Python-free build, so there is nothing to select \u2014 the produced binaries are the artifacts."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33593,13 +33761,18 @@
       "line": 188,
       "end_line": 194,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_stale_compiled_source_stamp_is_rejected",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_stale_compiled_source_stamp_is_rejected[False]",
+        "tests/portability/test_install_modes.py::test_stale_compiled_source_stamp_is_rejected[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the runtime_identity source-sha gate is artifact.py internals; native build provenance is recorded in dependency_provenance.json (native/cmake/Provenance.cmake, installed to share/bike_sim) and the loader_provenance contract keeps its fail-closed shape only on the bindings graph (check_contracts.cpp)."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33607,13 +33780,17 @@
       "line": 145,
       "end_line": 150,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_two_importable_suffixes_fail_before_import",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_two_importable_suffixes_fail_before_import"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 extension-suffix disambiguation (importlib.machinery.EXTENSION_SUFFIXES) is artifact.py internals; there is no extension to disambiguate."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33621,13 +33798,17 @@
       "line": 431,
       "end_line": 441,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_two_venvs_sharing_base_python_are_distinct",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_two_venvs_sharing_base_python_are_distinct"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 dev._same_interpreter's venv-identity logic (symlink-resolved interpreter identity) is dev.py internals; no interpreter selection remains."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33635,13 +33816,18 @@
       "line": 293,
       "end_line": 304,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_wheel_help_needs_no_native_binary",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "package_smoke",
+      "native_source": "native/tests/package/package_smoke.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_wheel_help_needs_no_native_binary[ride]",
+        "tests/portability/test_install_modes.py::test_wheel_help_needs_no_native_binary[research]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 entry-point --help standalone is re-asserted verbatim: package_smoke runs every packaged bike-* binary's --help (bike-ride and bike-research included) in a scrubbed environment with loader/preload variables unset and cwd inside the package prefix \u2014 no Python extension exists anywhere. CTest green darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33649,13 +33835,17 @@
       "line": 274,
       "end_line": 289,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_wheel_python_reference_backend_does_not_request_native",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_wheel_python_reference_backend_does_not_request_native"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the 'python' backend route is bike_sim.sim.backend internals; the Python-free distribution ships native binaries only (package_smoke's headless ride runs --backend native; the pure_core_python_free contract check bars Python from the core)."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33663,13 +33853,17 @@
       "line": 171,
       "end_line": 184,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_wrong_cached_module_is_not_unloaded_or_replaced",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": null,
+      "native_source": null,
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_wrong_cached_module_is_not_unloaded_or_replaced"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
+      "disposition": "drop",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: drop \u2014 the pre-imported-module guard (sys.modules forensics, 'fresh Python process' remediation) is artifact.py internals; there is no module cache."
+      ]
     },
     {
       "source_path": "tests/portability/test_install_modes.py",
@@ -33677,13 +33871,17 @@
       "line": 197,
       "end_line": 209,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::portability::test_install_modes::test_wrong_mujoco_fails_before_import",
-      "native_source": "native/tests/reference/test_install_modes.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T53_portability::dependency_lock_pins_the_engine_exactly",
+      "native_source": "native/tests/migration/migration_T53_portability.cmake",
+      "collected_node_ids": [
+        "tests/portability/test_install_modes.py::test_wrong_mujoco_fails_before_import"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.36r lane/a2: ported \u2014 the engine-version gate moved from import time to dependency selection: native/dependencies.lock.json pins mujoco to exactly 3.12.0 and BikeDependencyLock.cmake fails configure on archive/member sha256 mismatch ('FATAL before a single first-party object can build'); migration_T53_portability::dependency_lock_pins_the_engine_exactly asserts the pin. CTest green darwin-arm64"
+      ]
     },
     {
       "source_path": "tests/portability/test_native_coverage_tools.py",

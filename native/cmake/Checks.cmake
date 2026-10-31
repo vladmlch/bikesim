@@ -149,6 +149,31 @@ if(BUILD_TESTING)
   endif()
 endif()
 
+# --- migration_T336r_portability: install/dev tooling contracts (3.36r) ---
+# cmake -P script cases: cmake --preset supported-set rejection, the
+# relocated-build-cache configure guard and the produced context
+# validator's fail-closed sanitizer-runtime rule — the surviving native
+# contracts of tests/portability/{test_install_modes,test_dev_commands}.py
+# (3.36 remainder tranche).
+if(BUILD_TESTING)
+  add_test(NAME migration_T336r_portability
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T336r_portability"
+      -D "CHECKS_BINARY=$<TARGET_FILE:bike-native-checks>"
+      -D "BUILD_DIR=${CMAKE_BINARY_DIR}"
+      -P "${_checks_native_dir}/tests/migration/migration_T336r_portability.cmake")
+  set_tests_properties(migration_T336r_portability PROPERTIES
+    LABELS "migration;t336r;portability" TIMEOUT 600)
+  if(NOT TARGET migration_T336r_portability)
+    add_custom_target(migration_T336r_portability
+      COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
+              -R "^migration_T336r_portability$" --no-tests=error --output-on-failure
+      DEPENDS bike-native-checks
+      USES_TERMINAL)
+  endif()
+endif()
+
 # --- migration_T56: fixture contract for the produced orchestrator --------
 if(BUILD_TESTING)
   add_test(NAME migration_T56

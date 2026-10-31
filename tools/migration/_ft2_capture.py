@@ -139,6 +139,7 @@ def _write_research(out: FixtureWriter, env, stem: str, work: Path,
     provenance = {
         "seed_decimal": str(env.seed),
         "raw_initial": dataclasses.asdict(raw_observation(env.sim)),
+        "equilibrium": env.sim.equilibrium,
         "noise_std": [env.sensor_config.acceleration_std_mps2,
                       env.sensor_config.gyro_std_rad_s,
                       env.sensor_config.encoder_std_rad_s,

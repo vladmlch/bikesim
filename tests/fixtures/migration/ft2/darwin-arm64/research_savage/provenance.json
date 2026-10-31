@@ -1,4 +1,19 @@
 {
+  "equilibrium": {
+    "cache_hit": true,
+    "fork_travel_mm": 60.62022679883576,
+    "initial_crank_phase_rad": 0.0,
+    "pitch_rad": 0.005669348853502329,
+    "rear_travel_mm": 45.86356417535847,
+    "residual_qacc": 0.009775739934597733,
+    "root_z_m": -0.05322793535521624,
+    "settled_crank_phase_rad": -0.04024832148525415,
+    "shock_stroke_mm": 14.46646655506489,
+    "static_front_load_n": 431.1141480291414,
+    "static_rear_load_n": 593.1500459580951,
+    "steps": 3200,
+    "total_vertical_force_n": 1024.2641939872365
+  },
   "execution": {
     "backend": "python",
     "build_context": {
@@ -179,7 +194,7 @@
       "single equivalent tire support; multi-support peaks not calibrated",
       "native contact work is a solver diagnostic, not material tire hysteresis"
     ],
-    "model_commit": "9b4c3ee17c6d2924e2a2b89f466d2fb9bed4c01e",
+    "model_commit": "3707f4ad6f34347538eec09e0762a1fade436252",
     "model_source_dirty": false,
     "model_source_sha256": "a7ddce8ab9fea2c409a5bca0fde200bbbb073e3bd40425eaff8e320935598c52",
     "physics_revision": "physical-2026-09-29",

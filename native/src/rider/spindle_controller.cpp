@@ -1436,7 +1436,7 @@ void SpindleController::write(
         const double torque =
             validation::finite(named_at(torques, joint.name),
                                "rider torque");
-        // rider_control.py:1375-1382 — the held plan is applied verbatim
+        // rider_control.py:1403-1419 — the held plan is applied verbatim
         // between ticks, but the bound side still re-derives every step:
         // directional Hill capacity is a function of the incoming joint
         // velocity, so a held command may not exceed the muscle's

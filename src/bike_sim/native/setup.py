@@ -330,6 +330,23 @@ def _geometry(sim, physical, model) -> dict:
     return out
 
 
+def _rider_controller_state(control) -> dict:
+    """``state.rider_controller`` — the controller's canonical ``state_dict``
+    plus the spindle weld-press servo hold.
+
+    ``ArticulatedRiderController.state_dict()`` stays 18-key on purpose:
+    ``_coast_hold_nm`` reaches saved equilibria through the material's flat
+    ``state_control_coast_hold_nm`` channel. A live bootstrap has no
+    material section, so the hold crosses inside this document as the
+    optional 19th key ``decode_spindle_state`` already accepts — the same
+    layout native-authored bootstrap captures emit.
+    """
+    state = control.state_dict()
+    if getattr(control, 'spindle', False):
+        state['coast_hold_nm'] = float(control._coast_hold_nm)
+    return state
+
+
 @dataclass(frozen=True)
 class RuntimeBootstrap:
     """An owning, reusable t=0 capture for the native runtime.
@@ -417,7 +434,8 @@ def capture_bootstrap(sim, directory: Path) -> RuntimeBootstrap:
         'rider_contacts': (None if physical.rider_contacts is None
                            else physical.rider_contacts.state_dict()),
         'rider_controller': (None if physical.rider_control is None
-                             else physical.rider_control.state_dict()),
+                             else _rider_controller_state(
+                                 physical.rider_control)),
         'rider_intent': physical.rider_intent.state_dict(),
         'signals': _signals_dict(physical.rider_intent_signals),
         'runtime': _runtime_state(sim, physical),

@@ -1,0 +1,858 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "step.0.front.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "step.0.front.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 512,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "step.0.front.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1024,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "step.0.front.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "step.0.front.patch_keys",
+  "nbytes": 16,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1544,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "step.0.front.patch.28.36.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1560,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "step.0.front.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1568,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "step.0.front.output.0.force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1576,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "step.0.front.output.0.slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1600,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "step.0.rear.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 1608,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "step.0.rear.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 2120,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "step.0.rear.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 2632,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "step.0.rear.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 3144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "step.0.rear.patch_keys",
+  "nbytes": 0,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 3152,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "step.0.rear.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 3152,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "step.0.qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 3160,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "step.1.front.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 3192,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "step.1.front.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 3704,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "step.1.front.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4216,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "step.1.front.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4728,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "step.1.front.patch_keys",
+  "nbytes": 16,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4736,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "step.1.front.patch.28.36.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4752,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "step.1.front.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4760,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "step.1.front.output.0.force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4768,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "step.1.front.output.0.slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4792,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "step.1.rear.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 4800,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "step.1.rear.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 5312,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "step.1.rear.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 5824,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "step.1.rear.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 6336,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "step.1.rear.patch_keys",
+  "nbytes": 0,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 6344,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "step.1.rear.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 6344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "step.1.qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 6352,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "step.2.front.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 6384,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "step.2.front.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 6896,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "step.2.front.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7408,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "step.2.front.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7920,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "step.2.front.patch_keys",
+  "nbytes": 16,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7928,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "step.2.front.patch.28.36.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7944,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "step.2.front.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7952,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "step.2.front.output.0.force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7960,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "step.2.front.output.0.slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7984,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "step.2.rear.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 7992,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "step.2.rear.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 8504,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "step.2.rear.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 9016,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "step.2.rear.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 9528,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "step.2.rear.patch_keys",
+  "nbytes": 0,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 9536,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "step.2.rear.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 9536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "step.2.qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 9544,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "step.3.front.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 9576,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "step.3.front.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 10088,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "step.3.front.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 10600,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "step.3.front.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11112,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "step.3.front.patch_keys",
+  "nbytes": 16,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11120,
+  "rtol": null,
+  "shape": [
+   1,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "step.3.front.patch.28.36.kappa_prime",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11136,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "step.3.front.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "step.3.front.output.0.force_world_n",
+  "nbytes": 24,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11152,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "step.3.front.output.0.slip_speed_mps",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11176,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "step.3.rear.delta_prev_m",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11184,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "step.3.rear.elastic_prev_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 11696,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "step.3.rear.maxwell_force_n",
+  "nbytes": 512,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 12208,
+  "rtol": null,
+  "shape": [
+   64
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "step.3.rear.initialized",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 12720,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "step.3.rear.patch_keys",
+  "nbytes": 0,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 12728,
+  "rtol": null,
+  "shape": [
+   0,
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "step.3.rear.output_patch_count",
+  "nbytes": 8,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 12728,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "step.3.qfrc",
+  "nbytes": 32,
+  "node": "tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[fast]",
+  "offset": 12736,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

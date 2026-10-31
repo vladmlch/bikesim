@@ -1167,7 +1167,18 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             // reading is one tick stale and the bound is wide enough to
             // cover the deficit without touching the clamp in normal
             // pedaling.
-            if (weld_crank_torque_nm.has_value() && advance) {
+            // rider_control.py:873-893 — the residual is a delivery
+            // measurement only while the drivetrain can accept torque and
+            // the reading stays inside the servo's own authority. Below the
+            // wheel-implied required crank rate the freehub freewheels (the
+            // weld press is unforced), and a reading above
+            // task+weld_servo_limit_nm is a transient, not over-delivery.
+            // Integrating either residual is classic windup, so while the
+            // reading carries no tracking information the offset is held.
+            if (weld_crank_torque_nm.has_value() && advance
+                && rate >= command.crank_target_rate_rad_s
+                && *weld_crank_torque_nm <=
+                       task + config_.weld_servo_limit_nm) {
                 const double held =
                     coast_hold_nm_ + config_.weld_servo_gain *
                                          (task - *weld_crank_torque_nm);
@@ -1177,7 +1188,16 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                      ? -config_.weld_servo_limit_nm
                                      : held;
             }
-            total = task + coast_hold_nm_;
+            // rider_control.py:898-908 — the hold is a learned delivery
+            // correction, so its applied magnitude can never exceed the
+            // demand it tracks: during a commanded unload the task
+            // collapses while a settled hold would still request the old
+            // press. Only the applied value is clipped; the hold state
+            // keeps integrating and is re-applied when the demand returns.
+            const double applied_hold = coast_hold_nm_ > task ? task
+                : coast_hold_nm_ < -task                    ? -task
+                                                            : coast_hold_nm_;
+            total = task + applied_hold;
         } else {
             // rider_control.py:892-899 — freewheeling: damp toward the
             // coasting crank rate and servo the weld-measured pedal press
@@ -1188,7 +1208,15 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             // pedal-press sensor. The per-tick secant step converges
             // because a requested crank torque maps nearly 1:1 into the
             // measured weld moment.
-            if (weld_crank_torque_nm.has_value() && advance) {
+            // rider_control.py:909-918 — the secant step is valid only when
+            // the reading is a press the servo can own: a resting foot
+            // carries a few N.m at most, so a reading outside the
+            // weld-servo authority is leg inertia dragged through a
+            // drivetrain transient, not a press to cancel. While the
+            // reading carries no press information the offset is held.
+            if (weld_crank_torque_nm.has_value() && advance
+                && std::abs(*weld_crank_torque_nm) <=
+                       config_.weld_servo_limit_nm) {
                 const double held = coast_hold_nm_ - *weld_crank_torque_nm;
                 coast_hold_nm_ = held > config_.coasting_brake_limit_nm
                                      ? config_.coasting_brake_limit_nm

@@ -185,6 +185,11 @@ namespace drivetrain {
         bool restore(TransmissionSnapshot state);
 
         const DriveTelemetry &diagnostics() const { return state_.diagnostics; }
+        // The committed applied ratio — a scalar read where state() would
+        // copy coefficients, range mirrors and telemetry lanes (the warm
+        // pedal-advance tick reads it every step; mirrors the oracle's
+        // `constraint.ratio` attribute).
+        [[nodiscard]] double ratio() const noexcept { return state_.ratio; }
         int driven_dof() const { return driven_dof_; }
         // Private FFI regression diagnostics read storage identity, not
         // snapshots: each generation counter bumps when its buffer's

@@ -31,7 +31,6 @@ namespace drivetrain {
         finite(required, "required cadence");
         nonnegative(effort, "rider effort");
         positive(dt, "pedaling interval");
-        const double wheel = validation::derived(required * 2. * std::numbers::pi / 60., "PedalingPolicy.wheel_rate");
         required = std::max(required, 0.);
         if (!enabled) {
             reset();
@@ -68,9 +67,21 @@ namespace drivetrain {
                 effort = std::max(validation::derived(previous - delta, "PedalingPolicy.slew_lower"), std::min(validation::derived(previous + delta, "PedalingPolicy.slew_upper"), target));
             }
             state_.effort = effort;
+            // pedaling.py:110-120 — the limb-velocity wish is the lesser of
+            // the wheel-implied cadence and the rider's own perceived
+            // cadence: a wheel-slip burst inflates the freehub boundary for
+            // tens of milliseconds and the legs are dragged by the crank
+            // through the welds, never willed past the rider's cadence
+            // sense, so the wish does not chase wheelspin. When the
+            // wheel-implied rate falls (the engaged sweep decelerates the
+            // crank) the wish tracks instantly, since the drivetrain
+            // decelerates the legs whether they intend it or not.
+            const double wish = validation::derived(
+                std::max(std::min(required, engaged(state_.cadence_ema)) * 2. * std::numbers::pi / 60., 0.),
+                "PedalingPolicy.target_rate");
             return {
                 .mode = PedalMode::pedaling, .reason = CoastReason::none, .effort_nm = effort, .required_cadence_rpm = required,
-                .target_phase_rad = std::nullopt, .target_rate_rad_s = std::max(wheel, 0.)
+                .target_phase_rad = std::nullopt, .target_rate_rad_s = wish
             };
         }
         if (!state_.coasting) {

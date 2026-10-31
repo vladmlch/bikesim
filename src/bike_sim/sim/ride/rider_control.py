@@ -870,12 +870,41 @@ class ArticulatedRiderController:
                 # The weld reading is one tick stale and the bound is wide
                 # enough to cover the deficit without touching the clamp in
                 # normal pedaling.
-                if weld_crank_torque_nm is not None and advance:
+                # The residual is a delivery measurement only while the
+                # drivetrain can accept torque and the reading stays inside
+                # the servo's own authority. Below the wheel-implied
+                # required crank rate the freehub freewheels: the weld press
+                # is unforced (~bearing drag), so task-weld is a missing
+                # load rather than a tracking deficit. And a weld reading
+                # above task+weld_servo_limit_nm cannot be a sustained press
+                # -- the largest press the request could explain is
+                # task+hold -- so a bigger reading is a transient (the hub
+                # catching an over-revved crank, leg inertia ringing through
+                # the weld), not over-delivery to unwind. Integrating either
+                # residual is classic windup: the wound-up hold overdrives
+                # the crank into over-rev, then unwinds hard through the
+                # catch transient and brakes the crank below the required
+                # rate, prolonging every unload collapse. While the reading
+                # carries no tracking information the offset is simply held:
+                # the rider's settled press habit persists until a valid
+                # measurement returns.
+                if (weld_crank_torque_nm is not None and advance
+                        and rate >= command.crank_target_rate_rad_s
+                        and weld_crank_torque_nm <= task+cfg.weld_servo_limit_nm):
                     self._coast_hold_nm = float(np.clip(
                         self._coast_hold_nm+cfg.weld_servo_gain*(
                             task-weld_crank_torque_nm),
                         -cfg.weld_servo_limit_nm,cfg.weld_servo_limit_nm))
-                total = task+self._coast_hold_nm
+                # The hold is a learned delivery correction, so its applied
+                # magnitude can never exceed the demand it tracks: during a
+                # commanded unload (the shift torque cut, an effort dip) the
+                # task collapses while a settled hold would still request the
+                # old press -- the weld then reads several times the intended
+                # torque and the assist follows it. A correction larger than
+                # the tracked demand is not a tracking term. Only the applied
+                # value is clipped; the hold state keeps integrating and is
+                # re-applied in full when the demand returns.
+                total = task+float(np.clip(self._coast_hold_nm,-task,task))
             else:
                 # Freewheeling: damp toward the coasting crank rate, and servo
                 # the weld-measured pedal press to zero. A coasting rider rests
@@ -889,7 +918,16 @@ class ArticulatedRiderController:
                 # the update is a per-tick secant step on the residual, which
                 # converges because a requested crank torque maps nearly 1:1
                 # into the measured weld moment.
-                if weld_crank_torque_nm is not None and advance:
+                # The secant step is valid only when the reading is a press the
+                # servo can own: a resting foot carries a few N.m at most, so a
+                # reading outside the weld-servo authority is leg inertia being
+                # dragged through a drivetrain transient (a freehub catch, a
+                # wheel-slip yank), not a press to cancel. Subtracting it
+                # slams the hold to the brake limit and the rider then brakes
+                # the crank through zero into reversal. While the reading
+                # carries no press information the offset is simply held.
+                if (weld_crank_torque_nm is not None and advance
+                        and abs(weld_crank_torque_nm) <= cfg.weld_servo_limit_nm):
                     self._coast_hold_nm = float(np.clip(
                         self._coast_hold_nm-weld_crank_torque_nm,
                         -cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm))

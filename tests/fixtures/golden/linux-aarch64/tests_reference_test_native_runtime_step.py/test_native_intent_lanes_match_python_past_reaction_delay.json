@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "step 160 integration state",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_python_past_reaction_delay",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "intent_signals.values",
+  "nbytes": 56,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_python_past_reaction_delay",
+  "offset": 2336,
+  "rtol": 1e-09,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "intent_signals.other",
+  "nbytes": 2,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_python_past_reaction_delay",
+  "offset": 2392,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "intent_inclination_rad",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_python_past_reaction_delay",
+  "offset": 2394,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 24,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_intent_lanes_match_python_past_reaction_delay",
+  "offset": 2402,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

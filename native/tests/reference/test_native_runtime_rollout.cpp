@@ -14,20 +14,20 @@
 // -0.05449393733358502 native vs -0.054495487350229764 oracle, and the
 // rider_strength.rider_torso_hinge strict trigger at t=0.37875) — the same
 // pre-existing ADR-0003 red family the 3.25 step/commands ports recorded.
-// Porting them past green would falsify the gate; they stay `planned`.
-//
-// Ported below: the two native-vs-native records — partial-period budget/
-// snapshot/drain behavior (schedule-independence of the published prefix,
-// bitwise integration vector between runtimes) and record-decimation
-// independence of the accounting ledger — plus the forwarded closing
-// measurement contract.
+// FT-2 (lane/f2): all six records are now ported. The four oracle-parity
+// records replay the committed welded capture under
+// tests/fixtures/migration/ft2/<platform>/ride and compare rows, columns
+// and the integration vector against the frozen goldens.
+#include "ft2_reference_support.hpp"
 #include "runtime_reference_support.hpp"
 
 #include "diag.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <memory>
 #include <optional>
 #include <set>
@@ -243,6 +243,151 @@ void test_accounting_all_intervals_is_independent_of_record_decimation() {
 }
 NATIVE_DIAG_POP
 
+// ---- FT-2 oracle-parity ports ----------------------------------------------
+// The frozen oracle rows/columns replay against the ft2 ride capture.
+
+constexpr std::string_view kNode =
+    "tests/reference/test_native_runtime_rollout.py::";
+
+void consume_rows(bt::oracle::Node &node,
+                  const std::vector<runtime::SamplePtr> &samples,
+                  std::int64_t first = 0) {
+    char label[32];
+    for (std::size_t index = 0; index < samples.size(); ++index) {
+        const auto &sample = samples[index];
+        bt::require(sample->interval_id == first +
+                            static_cast<std::int64_t>(index),
+                    "rows publish contiguous interval ids");
+        std::snprintf(label, sizeof(label), "row.%08zu", index);
+        ft2_reference::consume_tree(node, sample->as_wire(), label);
+    }
+}
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_full_rows_match_python_for_non_aligned_tail() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_native_full_rows_match_python_for_non_aligned_tail");
+    const auto native = ft2_reference::ride();
+    const runtime::RideControl command;
+    static_cast<void>(native->advance(41, command, 0., 0., std::nullopt));
+    native->flush();
+    const runtime::RuntimeSampleBatch batch = drain(*native);
+    consume_rows(node, batch.samples);
+    bt::require(batch.samples.size() == 41,
+                "41 full rows publish for the non-aligned tail");
+    bt::require(drain(*native).samples.empty(),
+                "the second drain is empty");
+    const auto snap =
+        std::make_unique<const runtime::RuntimeSnapshot>(native->snapshot());
+    ft2_reference::consume_tree(node, snap->latest_sample->as_wire(),
+                                "latest_sample");
+    // snap.view.channels == snap.latest_sample.channels on the oracle;
+    // the C++ snapshot surfaces the same channel tree on the sample.
+    ft2_reference::consume_tree(
+        node, snap->latest_sample->channels, "view.channels");
+    native->close();
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_identical_non_aligned_explicit_flush_schedule_matches_python() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_identical_non_aligned_explicit_flush_schedule_matches_python");
+    const auto native = ft2_reference::ride_decimated(7);
+    // (target, held human torque): nullopt = the automatic lane.
+    const std::array<std::pair<std::int64_t, std::optional<double>>, 4>
+        schedule{{{3, 0.}, {14, std::nullopt}, {19, 0.}, {41, std::nullopt}}};
+    std::vector<runtime::SamplePtr> actual;
+    for (const auto &[target, torque] : schedule) {
+        runtime::RideControl command;
+        command.human_torque_nm = torque;
+        static_cast<void>(native->advance(target, command, 0., 0.,
+                                        std::nullopt));
+        native->flush();
+        const runtime::RuntimeSampleBatch batch = drain(*native);
+        bt::require(!batch.samples.empty(), "each leg publishes rows");
+        const runtime::WireObject last = batch.samples.back()->as_wire();
+        static_cast<void>(sw::required(last, "attachment_samples"));
+        static_cast<void>(sw::required(last, "component_work_j"));
+        for (const auto &sample : batch.samples) actual.push_back(sample);
+    }
+    consume_rows(node, actual);
+    native->close();
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip");
+    const auto native = ft2_reference::ride_decimated(7);
+    const runtime::RideControl command;
+    static_cast<void>(native->advance(41, command, 0., 0., std::nullopt));
+    native->flush();
+    const runtime::SampleColumns actual = native->recorded_columns();
+    // Consume in the oracle's recorded order — dict insertion order is not
+    // the std::map sort order.
+    while (node.has_next()) {
+        const std::string label(node.peek_label());
+        if (!label.starts_with("columns.")) break;
+        const std::string name = label.substr(std::string("columns.").size());
+        node.f64_close(actual.at(name), label);
+    }
+    native->close();
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_one_second_800_interval_golden_episode_all_channels() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_one_second_800_interval_golden_episode_all_channels");
+    const auto native = ft2_reference::ride();
+    const runtime::RideControl command;
+    const runtime::AdvanceResult done =
+        native->advance(800, command, 0., 0., std::nullopt);
+    bt::require(done.step == 800, "the full second commits");
+    native->flush();
+    const runtime::RuntimeSampleBatch batch = drain(*native);
+    bt::require(batch.samples.size() == 800,
+                "all 800 intervals publish");
+    consume_rows(node, batch.samples);
+    const auto snap =
+        std::make_unique<const runtime::RuntimeSnapshot>(native->snapshot());
+    bt::require(std::abs(snap->time_s - 1.) <= 1e-12,
+                "the episode spans exactly one second");
+    node.f64(snap->integration_state,
+             "golden episode integration state");
+    if (snap->first_failure)
+        ft2_reference::consume_tree(node, snap->first_failure->as_wire(),
+                                    "first_failure");
+    else
+        ft2_reference::consume_tree(node, runtime::Wire{nullptr},
+                                    "first_failure");
+    ft2_reference::consume_tree(node, snap->model_status, "model_status");
+    const runtime::WireObject accounting = native->accounting_state();
+    const auto &history = sw::object(wire_member(accounting, "history"));
+    ft2_reference::consume_tree(
+        node, sw::required(history, "work_j"), "history.work_j");
+    ft2_reference::consume_tree(
+        node, sw::required(history, "airtime_s"), "history.airtime_s");
+    const double duration[1] = {sw::number(sw::required(history, "duration_s"))};
+    node.f64_close(duration, "history.duration_s");
+    native->close();
+    node.done();
+}
+NATIVE_DIAG_POP
+
 } // namespace
 
 int main() {
@@ -252,6 +397,14 @@ int main() {
             test_target_snapshot_drain_and_budget_do_not_close_a_partial_period);
         failures += bt::run(
             test_accounting_all_intervals_is_independent_of_record_decimation);
+        failures += bt::run(
+            test_native_full_rows_match_python_for_non_aligned_tail);
+        failures += bt::run(
+            test_identical_non_aligned_explicit_flush_schedule_matches_python);
+        failures += bt::run(
+            test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip);
+        failures += bt::run(
+            test_one_second_800_interval_golden_episode_all_channels);
         return failures == 0 ? 0 : 1;
     } catch (...) {
         return 1;

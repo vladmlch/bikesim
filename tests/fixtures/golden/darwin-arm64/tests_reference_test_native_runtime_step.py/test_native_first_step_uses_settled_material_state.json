@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "settled first step",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_first_step_uses_settled_material_state",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ }
+]

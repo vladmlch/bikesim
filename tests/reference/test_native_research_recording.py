@@ -2,6 +2,7 @@ import json
 import numpy as np
 import pytest
 from native_loader import load_native
+import _golden
 from _bits import assert_bitwise_equal
 from bike_sim.native.artifact import EXECUTION_FIELDS
 from bike_sim.sim.ride.control import RideControl
@@ -18,8 +19,10 @@ bike_native = load_native()
 
 def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp_path, assert_tree):
     reference, native = environment_pair(decimation=3)
-    for _ in range(2):
-        assert_tree(native.step(RideControl(0.)), reference.step(RideControl(0.)))
+    for index in range(2):
+        expected_step = reference.step(RideControl(0.))
+        _golden.record_tree(expected_step, f'step.{index}.transition')
+        assert_tree(native.step(RideControl(0.)), expected_step)
     reference.stop()
     native.stop()
     python_path, native_path = tmp_path/'python', tmp_path/'native'
@@ -52,12 +55,16 @@ def test_shared_export_native_rows_and_complete_provenance(environment_pair, tmp
     actual_summary, expected_summary = deepcopy(summary), deepcopy(python_summary)
     del actual_summary['research']['execution']
     del expected_summary['research']['execution']
+    _golden.record_tree(expected_summary, 'export.summary')
     assert_tree(actual_summary, expected_summary)
     for name in ('observations.jsonl', 'transitions.jsonl', 'commands_requested.jsonl', 'commands_applied.jsonl',
                  'intervals.jsonl'):
         actual = [json.loads(line) for line in (native_path/name).read_text().splitlines()]
         expected = [json.loads(line) for line in (python_path/name).read_text().splitlines()]
+        _golden.record_tree(expected, f'export.{name}')
         assert_tree(actual, expected)
+    _golden.record_tree(json.loads((python_path/'episode_metrics.json').read_text()),
+                        'export.episode_metrics')
     assert_tree(json.loads((native_path/'episode_metrics.json').read_text()),
                 json.loads((python_path/'episode_metrics.json').read_text()))
     with np.load(native_path/'states.npz', allow_pickle=False) as actual:

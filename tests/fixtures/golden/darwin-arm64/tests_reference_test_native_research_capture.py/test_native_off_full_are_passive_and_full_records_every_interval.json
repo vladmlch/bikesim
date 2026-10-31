@@ -1,0 +1,142 @@
+[
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "step.0.transition.values",
+  "nbytes": 224,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 0,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "step.0.transition.other",
+  "nbytes": 175,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 224,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "step.0.integration_state",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 399,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "close",
+  "label": "step.1.transition.values",
+  "nbytes": 224,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 2735,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "step.1.transition.other",
+  "nbytes": 175,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 2959,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "step.1.integration_state",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 3134,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "close",
+  "label": "step.2.transition.values",
+  "nbytes": 224,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 5470,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "step.2.transition.other",
+  "nbytes": 175,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 5694,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "step.2.integration_state",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 5869,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "episode.qpos_row1",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_research_capture.py::test_native_off_full_are_passive_and_full_records_every_interval",
+  "offset": 8205,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

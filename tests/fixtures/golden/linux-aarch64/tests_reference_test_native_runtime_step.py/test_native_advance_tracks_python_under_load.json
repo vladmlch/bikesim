@@ -1,0 +1,422 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "interval 1",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "interval 2",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 2336,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "interval 3",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 4672,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "interval 4",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 7008,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "interval 5",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 9344,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "interval 6",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 11680,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "interval 7",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 14016,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "interval 8",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 16352,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "interval 9",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 18688,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "interval 10",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 21024,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "interval 11",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 23360,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "interval 12",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 25696,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "interval 13",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 28032,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "interval 14",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 30368,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "interval 15",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 32704,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "interval 16",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 35040,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "interval 17",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 37376,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "interval 18",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 39712,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "interval 19",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 42048,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "interval 20",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 44384,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "interval 21",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 46720,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "interval 22",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 49056,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "interval 23",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 51392,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "interval 24",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 53728,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "interval 25",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 56064,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "interval 26",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 58400,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "interval 27",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 60736,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "interval 28",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 63072,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "interval 29",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 65408,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "interval 30",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_runtime_step.py::test_native_advance_tracks_python_under_load",
+  "offset": 67744,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ }
+]

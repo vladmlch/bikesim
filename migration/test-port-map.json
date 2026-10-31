@@ -17666,10 +17666,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: assert_tree step transitions and bitwise integration_state equality between the welded reference and both capture modes \u2014 blocked on the documented welded baseline drift; the verify-cursor sibling was ported.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_capture.cpp (test_native_off_full_are_passive_and_full_records_every_interval); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_capture green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_capture::test_native_off_full_are_passive_and_full_records_every_interval",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17702,10 +17708,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: step-for-step transition equality with the Python oracle on the rough-track assist fixture \u2014 blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_native_research_matches_every_external_transition); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_native_research_matches_every_external_transition",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17720,10 +17732,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: per-step bitwise integration_state and identical outcome classification across one simulated second \u2014 blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_one_second_pair_with_one_e_minus_nine_gate); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_one_second_pair_with_one_e_minus_nine_gate",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17738,10 +17756,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: the complete 800-step episode must match bitwise under the raised energy gate \u2014 blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_one_second_pair_complete_episode_gate); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_one_second_pair_complete_episode_gate",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17759,10 +17783,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: per-command transition equality plus recorder.columns and episode_metrics bitwise comparison at four decimations \u2014 the physics-dependent legs are blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_delay_full_commands_immediate_brakes_and_recording); 4 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_delay_full_commands_immediate_brakes_and_recording",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17777,10 +17807,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: scripted rider/demand transitions compared to the oracle step-for-step \u2014 blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_scripted_rider_and_demand_are_sampled_at_physics_rate); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_scripted_rider_and_demand_are_sampled_at_physics_rate",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17807,7 +17843,6 @@
       "line": 167,
       "end_line": 182,
       "owner_task": "T53",
-      "native_test_id": null,
       "native_source": null,
       "collected_node_ids": [
         "tests/reference/test_native_research_environment.py::test_publication_failure_retry_does_not_advance_twice"
@@ -17818,8 +17853,9 @@
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 the probe injects a failure into the Python adapter _transition publication hook (monkeypatch on bike_sim.native.research._transition); no such hook exists in NativeResearchRuntime \u2014 the retained committed-step contract is covered by the ported zero-budget and invalid-boundary twins.",
         "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
-        "2026-10-31 FT-2 lane/d2 @ 3901bdb4: dropped \u2014 the committed-step contract the test protects is covered by the ported twins reference.native_research_environment::test_zero_budget_retains_single_window_and_no_tail_flush (a pending window holds its staged command across zero-budget polls and commits exactly once, publishing one transition) and test_invalid_boundary_calls_do_not_change_state (rejected boundary calls keep pending and leave integration state untouched). The injected adapter._transition failure is a Python-adapter-only seam deleted with the adapter at T63 \u2014 NativeResearchRuntime has no publication hook to monkeypatch; the native staged-completion design (PolicySession::advance_pending retains s.completed; begin_advance's staged command is never re-derived on retry, policy_session.cpp:190-243) mirrors the invariant. Python node itself green on darwin-arm64 (21.7 s pair) \u2014 it continues to guard the adapter until removal."
-      ]
+        "2026-10-31 FT-2 lane/d2 @ 3901bdb4 (replicated on lane/f2): dropped \u2014 the committed-step contract the test protects is covered by the ported twins reference.native_research_environment::test_zero_budget_retains_single_window_and_no_tail_flush (a pending window holds its staged command across zero-budget polls and commits exactly once, publishing one transition) and test_invalid_boundary_calls_do_not_change_state (rejected boundary calls keep pending and leave integration state untouched). The injected adapter._transition failure is a Python-adapter-only seam deleted with the adapter at T63 \u2014 NativeResearchRuntime has no publication hook to monkeypatch; the native staged-completion design (PolicySession::advance_pending retains s.completed; begin_advance's staged command is never re-derived on retry, policy_session.cpp:190-243) mirrors the invariant. Python node itself green on darwin-arm64 (21.7 s pair) \u2014 it continues to guard the adapter until removal."
+      ],
+      "native_test_id": null
     },
     {
       "source_path": "tests/reference/test_native_research_environment.py",
@@ -17851,10 +17887,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity legs: assert_tree reset(seed=73) transition equality plus episode_metrics/metadata bitwise comparison \u2014 blocked on the documented welded baseline drift; the facade-ownership legs (snapshot write guards, AttributeError on sim attributes) are nanobind-only.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_reset_seed_generation_snapshot_and_facade_ownership); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_reset_seed_generation_snapshot_and_facade_ownership",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17891,7 +17933,7 @@
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 rider_behavior is a Python adapter object (bike_sim.native.research); NativeResearchRuntime has no behavior-callback hook \u2014 the port waits on a native equivalent.",
         "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
-        "2026-10-31 FT-2 lane/d2 @ 3901bdb4: stays planned \u2014 the committed-step half (polls never re-commit a held window) is covered by the ported zero-budget twin, but the once-per-external-boundary callback contract has no native test leg: research::PolicySession calls rider_behavior->act(observation.time_s, ...) once per begin_advance inside the staged-command block (policy_session.cpp:202, retry never re-calls act per the staged design), yet no native test registers a RiderBehavior. The Python adapter's deepcopy-ownership/reseed legs are adapter semantics deleted at T63; a port needs a counting-RiderBehavior leg through begin_advance + zero-budget polls + reset before this record can drop with coverage."
+        "2026-10-31 FT-2 lane/d2 @ 3901bdb4 (replicated on lane/f2): stays planned \u2014 the committed-step half (polls never re-commit a held window) is covered by the ported zero-budget twin, but the once-per-external-boundary callback contract has no native test leg: research::PolicySession calls rider_behavior->act(observation.time_s, ...) once per begin_advance inside the staged-command block (policy_session.cpp:202, retry never re-calls act per the staged design), yet no native test registers a RiderBehavior. The Python adapter's deepcopy-ownership/reseed legs are adapter semantics deleted at T63; a port needs a counting-RiderBehavior leg through begin_advance + zero-budget polls + reset before this record can drop with coverage."
       ]
     },
     {
@@ -17907,10 +17949,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: InvalidReferenceRun failure equality plus reference_monitor.first_failure bitwise comparison \u2014 blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_strict_and_diagnostic_outcomes_remain_visible); 2 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_strict_and_diagnostic_outcomes_remain_visible",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -17928,10 +17976,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: per-step bitwise integration_state equality across four control/sensor period combinations \u2014 blocked on the documented welded baseline drift.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_environment.cpp (test_differing_control_and_sensor_periods_match_python); 4 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_environment green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_environment::test_differing_control_and_sensor_periods_match_python",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -18196,10 +18250,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 live-oracle parity: native.save vs Python save shared-export row equality and complete provenance \u2014 blocked on the documented welded baseline drift; the six contract legs (empty/no-overwrite, staging seal, manifest seal, opaque policy, pending window, changed identity) were ported.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_research_recording.cpp (test_shared_export_native_rows_and_complete_provenance); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_research_recording green on both platforms"
+      ],
+      "native_test_id": "reference.native_research_recording::test_shared_export_native_rows_and_complete_provenance",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -20870,10 +20930,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_commands.cpp (test_explicit_zero_effort_differs_from_automatic); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_commands green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_commands::test_explicit_zero_effort_differs_from_automatic",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -20888,10 +20954,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_commands.cpp (test_motor_ceiling_change_matches_python); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_commands green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_commands::test_motor_ceiling_change_matches_python",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -20906,10 +20978,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_commands.cpp (test_brake_apply_release_matches_python); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_commands green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_commands::test_brake_apply_release_matches_python",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -20924,10 +21002,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_commands.cpp (test_gear_shift_and_coast_resume_match_python); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_commands green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_commands::test_gear_shift_and_coast_resume_match_python",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21731,10 +21815,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.26 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (root.sensors.frame_specific_force_body_mps2[0] weld-family divergence; the 800-interval episode additionally trips rider_strength.rider_torso_hinge at t=0.37875) \u2014 the same native-vs-oracle signature family the 3.25 step/commands ports recorded; the source node remains a live oracle gate until the parity task lands.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_rollout.cpp (test_native_full_rows_match_python_for_non_aligned_tail); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_rollout green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_rollout::test_native_full_rows_match_python_for_non_aligned_tail",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21749,10 +21839,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.26 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (root.sensors.frame_specific_force_body_mps2[0] weld-family divergence; the 800-interval episode additionally trips rider_strength.rider_torso_hinge at t=0.37875) \u2014 the same native-vs-oracle signature family the 3.25 step/commands ports recorded; the source node remains a live oracle gate until the parity task lands.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_rollout.cpp (test_identical_non_aligned_explicit_flush_schedule_matches_python); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_rollout green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_rollout::test_identical_non_aligned_explicit_flush_schedule_matches_python",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21768,9 +21864,14 @@
       ],
       "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
       "comparison_class": "invariant",
-      "disposition": "port",
+      "disposition": "golden",
       "evidence": [
-        "2026-10-27 3.26 lane/d: ported to native/tests/reference/test_native_runtime_rollout.cpp; CTest reference.native_runtime_rollout green on darwin-arm64 (build/native-release, 0.36s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.46s)"
+        "2026-10-27 3.26 lane/d: ported to native/tests/reference/test_native_runtime_rollout.cpp; CTest reference.native_runtime_rollout green on darwin-arm64 (build/native-release, 0.36s) and linux-aarch64 (container bike-dev-pfc-lane-d /build/root-clang, 0.46s)",
+        "2026-10-31 FT-2 lane/f2: gained golden coverage \u2014 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_rollout green on both platforms (the contract port already covered the record)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21803,10 +21904,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.26 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (root.sensors.frame_specific_force_body_mps2[0] weld-family divergence; the 800-interval episode additionally trips rider_strength.rider_torso_hinge at t=0.37875) \u2014 the same native-vs-oracle signature family the 3.25 step/commands ports recorded; the source node remains a live oracle gate until the parity task lands.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_rollout.cpp (test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_rollout green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_rollout::test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21821,10 +21928,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.26 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (root.sensors.frame_specific_force_body_mps2[0] weld-family divergence; the 800-interval episode additionally trips rider_strength.rider_torso_hinge at t=0.37875) \u2014 the same native-vs-oracle signature family the 3.25 step/commands ports recorded; the source node remains a live oracle gate until the parity task lands.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_rollout.cpp (test_one_second_800_interval_golden_episode_all_channels); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_rollout green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_rollout::test_one_second_800_interval_golden_episode_all_channels",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21840,9 +21953,14 @@
       ],
       "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); source green on darwin-arm64 + linux-aarch64",
       "comparison_class": "contract",
-      "disposition": "port",
+      "disposition": "golden",
       "evidence": [
-        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_step.cpp; CTest reference.native_runtime_step green on darwin-arm64 (build/native-release, 0.45s) and linux-aarch64 (container /build/root-clang, 0.51s)"
+        "2026-10-27 3.25 lane/d: ported to native/tests/reference/test_native_runtime_step.cpp; CTest reference.native_runtime_step green on darwin-arm64 (build/native-release, 0.45s) and linux-aarch64 (container /build/root-clang, 0.51s)",
+        "2026-10-31 FT-2 lane/f2: gained golden coverage \u2014 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms (the contract port already covered the record)"
+      ],
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21857,10 +21975,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_step.cpp (test_native_first_step_uses_settled_material_state); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_step::test_native_first_step_uses_settled_material_state",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21875,10 +21999,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_step.cpp (test_native_step_sequence_matches_python_state); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_step::test_native_step_sequence_matches_python_state",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21893,10 +22023,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_step.cpp (test_native_force_fold_matches_python_recorded_inputs); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_step::test_native_force_fold_matches_python_recorded_inputs",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21911,10 +22047,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_step.cpp (test_native_advance_tracks_python_under_load); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_step::test_native_advance_tracks_python_under_load",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -21983,10 +22125,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_step.cpp (test_sensor_channels_read_sensordata_rows); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_step::test_sensor_channels_read_sensordata_rows",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -22001,10 +22149,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-27 3.25 lane/d: NOT PORTED (disposition kept planned) \u2014 pre-existing live-oracle parity red on both platforms (first-difference lane of the 5.66934495e-03/5.66934496e-03 1-ulp family on darwin-arm64; same signature and set on linux-aarch64). A/B-verified identical before and after the F4 merge-back \u2014 a native-vs-oracle runtime divergence to fix in its own task; the source node remains a live oracle gate in the Python suite.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_runtime_step.cpp (test_native_intent_lanes_match_python_past_reaction_delay); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_runtime_step green on both platforms"
+      ],
+      "native_test_id": "reference.native_runtime_step::test_native_intent_lanes_match_python_past_reaction_delay",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -24158,10 +24312,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.32 lane/d: native-side ownership/pacing halves landed in native/tests/reference/test_native_viewer_snapshot.cpp (reference.native_viewer_snapshot PASS 12 checks on darwin-arm64); the Python-vs-native preview/endpoint/integration-state parity assertions remain planned red pending two-platform goldens",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_viewer_snapshot.cpp (preview_owned); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_viewer_snapshot green on both platforms"
+      ],
+      "native_test_id": "reference.native_viewer_snapshot::preview_owned",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {
@@ -24176,10 +24336,16 @@
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
       "comparison_class": "bitwise-oracle",
-      "disposition": "planned",
+      "disposition": "golden",
       "evidence": [
         "2026-10-28 3.32 lane/d: native-side ownership/pacing halves landed in native/tests/reference/test_native_viewer_snapshot.cpp (reference.native_viewer_snapshot PASS 12 checks on darwin-arm64); the Python-vs-native preview/endpoint/integration-state parity assertions remain planned red pending two-platform goldens",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/f2: ported to native/tests/reference/test_native_viewer_snapshot.cpp (target_slice); 1 golden node(s) captured on darwin-arm64 + linux-aarch64; CTest reference.native_viewer_snapshot green on both platforms"
+      ],
+      "native_test_id": "reference.native_viewer_snapshot::target_slice",
+      "golden_platforms": [
+        "darwin-arm64",
+        "linux-aarch64"
       ]
     },
     {

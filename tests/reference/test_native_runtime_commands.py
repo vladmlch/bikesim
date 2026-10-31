@@ -64,7 +64,8 @@ def test_explicit_zero_effort_differs_from_automatic(sim):
         automatic.advance(target, RideControl())
     expected = _integration_state(sim)
     assert_bitwise_equal(
-        native.snapshot().integration_state, expected)
+        native.snapshot().integration_state, expected,
+        'explicit zero effort step 140')
     assert not np.array_equal(
         native.snapshot().integration_state,
         automatic.snapshot().integration_state)

@@ -2,6 +2,7 @@ from dataclasses import asdict
 import numpy as np
 import pytest
 from native_loader import load_native
+import _golden
 from _bits import assert_bitwise_equal
 from bike_sim.physics.rider_posture import RiderPosture
 from bike_sim.sim.ride.control import RideControl
@@ -22,10 +23,14 @@ def test_native_research_matches_every_external_transition(assert_tree):
     from bike_sim.native.research import create_native_research
     reference = make_python_research()
     native = create_native_research(reference)
+    _golden.record_tree(asdict(reference.observation), 'startup.observation')
     assert_tree(asdict(native.observation), asdict(reference.observation))
+    boundary = 0
     while not reference.done and not native.done:
         wanted = reference.step(RideControl())
         got = native.step(RideControl())
+        _golden.record_tree(asdict(wanted), f'transition.{boundary:08d}')
+        boundary += 1
         assert_tree(asdict(got), asdict(wanted))
         assert native.sim.steps == reference.sim.steps
         assert native.sim.time_s == reference.sim.time_s
@@ -34,7 +39,11 @@ def test_native_research_matches_every_external_transition(assert_tree):
     assert native.done and reference.done
     assert native.sim.steps == reference.sim.steps == reference.max_steps
     assert native.reason == reference.reason == 'duration'
+    _golden.record_tree(reference.commands_applied, 'commands_applied',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
+    _golden.record_tree(reference.commands_requested, 'commands_requested',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
 
 
@@ -42,9 +51,14 @@ def test_one_second_pair_with_one_e_minus_nine_gate(environment_pair, assert_tre
     """Release gate, not a pre-existing result: do not shorten on early failure."""
     reference, native = environment_pair(duration=1., decimation=20)
     command = RideControl(motor_torque_nm=0.)
+    _golden.record_tree(asdict(reference.observation), 'startup.observation',
+                        rtol=0., atol=0.)
     assert_tree(native.observation, reference.observation, atol=0., rtol=0.)
+    boundary = 0
     while not reference.done and not native.done:
         expected, actual = reference.step(command), native.step(command)
+        _golden.record_tree(asdict(expected), f'transition.{boundary:08d}')
+        boundary += 1
         assert_tree(actual, expected)
         assert native.sim.steps == reference.sim.steps
         assert native.sim.time_s == reference.sim.time_s
@@ -57,9 +71,15 @@ def test_one_second_pair_with_one_e_minus_nine_gate(environment_pair, assert_tre
     assert reference.done and native.done
     assert native.sim.steps == reference.sim.steps
     assert native.reason == reference.reason
+    _golden.record_tree(reference.commands_requested, 'commands_requested',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
+    _golden.record_tree(reference.commands_applied, 'commands_applied',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
+    _golden.record_tree(episode_metrics(reference), 'episode_metrics')
     assert_tree(episode_metrics(native), episode_metrics(reference))
+    _golden.record_tree(reference.recorder.columns(), 'recorder.columns')
     assert_tree(native.recorder.columns(), reference.recorder.columns())
 
 
@@ -80,9 +100,14 @@ def test_one_second_pair_complete_episode_gate(environment_pair, assert_tree):
     reference, native = environment_pair(duration=1., decimation=20,
                                          energy_tolerance=1e9)
     command = RideControl(motor_torque_nm=0.)
+    _golden.record_tree(asdict(reference.observation), 'startup.observation',
+                        rtol=0., atol=0.)
     assert_tree(native.observation, reference.observation, atol=0., rtol=0.)
+    boundary = 0
     while not reference.done and not native.done:
         expected, actual = reference.step(command), native.step(command)
+        _golden.record_tree(asdict(expected), f'transition.{boundary:08d}')
+        boundary += 1
         assert_tree(actual, expected)
         assert native.sim.steps == reference.sim.steps
         assert native.sim.time_s == reference.sim.time_s
@@ -95,10 +120,19 @@ def test_one_second_pair_complete_episode_gate(environment_pair, assert_tree):
     # The identical residual shows the raised gate did not alter physics: the
     # measured 0.021247508925841027 stays under the default .05 limit, so the
     # default gate would have made the same decision at every sensor step.
+    _golden.record(np.asarray([reference.max_energy_residual_ratio],
+                              dtype='<f8'), 'max_energy_residual_ratio',
+                   kind='close', rtol=0., atol=0.)
     assert native.max_energy_residual_ratio == reference.max_energy_residual_ratio <= .05
+    _golden.record_tree(reference.commands_requested, 'commands_requested',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
+    _golden.record_tree(reference.commands_applied, 'commands_applied',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
+    _golden.record_tree(episode_metrics(reference), 'episode_metrics')
     assert_tree(episode_metrics(native), episode_metrics(reference))
+    _golden.record_tree(reference.recorder.columns(), 'recorder.columns')
     assert_tree(native.recorder.columns(), reference.recorder.columns())
 
 
@@ -111,18 +145,29 @@ def test_delay_full_commands_immediate_brakes_and_recording(environment_pair, as
                 RideControl(2., .5, 0., 0., None, False), RideControl()]
     for index, command in enumerate(commands):
         brakes = dict(front_brake_demand=.2 if index == 1 else 0., rear_brake_demand=.1 if index == 2 else 0.)
-        assert_tree(native.step(command, **brakes), reference.step(command, **brakes))
+        expected = reference.step(command, **brakes)
+        _golden.record_tree(asdict(expected), f'transition.{index:08d}')
+        assert_tree(native.step(command, **brakes), expected)
+        _golden.record_tree(reference.commands_applied,
+                            f'commands_applied.{index}', rtol=0., atol=0.)
         assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
+        _golden.record_tree(reference.commands_requested,
+                            f'commands_requested.{index}', rtol=0., atol=0.)
         assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
         if reference.done or native.done:
             assert reference.done and native.done
             break
+    _golden.record_tree(reference.recorder.columns(), 'recorder.columns')
     assert_tree(native.recorder.columns(), reference.recorder.columns())
+    _golden.record_tree(episode_metrics(reference), 'episode_metrics')
     assert_tree(episode_metrics(native), episode_metrics(reference))
     assert native.commands_requested[0]['control']['motor_torque_nm'] is None
     # Rider fields are immediate, while the motor transport starts with the
     # safe bootstrap command. Check the actual recorded interval commands.
     first = native.recorder.samples[0]['control']
+    _golden.record(np.asarray([reference.recorder.samples[0]['control']['motor_torque_nm'],
+                               reference.recorder.samples[0]['control']['human_torque_nm']],
+                              dtype='<f8'), 'first_sample.control')
     assert first['motor_torque_nm'] == 0.
     assert first['human_torque_nm'] == 0.
 
@@ -133,13 +178,18 @@ def test_scripted_rider_and_demand_are_sampled_at_physics_rate(environment_pair,
         RiderKeyframe(.04, RiderPosture(), 0.)), reaction_delay_s=.0025)
     demand = DemandProgram(((0., 0.), (.013, 5.), (.04, 1.)))
     reference, native = environment_pair(program=program, demand=demand, decimation=3)
-    for _ in range(4):
+    for index in range(4):
         command = RideControl(motor_torque_nm=native.demand_nm)
-        assert_tree(native.step(command), reference.step(command))
+        expected = reference.step(command)
+        _golden.record_tree(asdict(expected), f'transition.{index:08d}')
+        assert_tree(native.step(command), expected)
         if native.done or reference.done:
             break
+    _golden.record_tree(reference.commands_applied, 'commands_applied',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
     assert len(native.commands_applied) > len(native.commands_requested)
+    _golden.record_tree(episode_metrics(reference), 'episode_metrics')
     assert_tree(episode_metrics(native), episode_metrics(reference))
 
 
@@ -207,6 +257,8 @@ def test_reset_seed_generation_snapshot_and_facade_ownership(environment_pair, a
     with pytest.raises(AttributeError):
         native.terminated = True
     native.step(RideControl(0.))
+    _golden.record_tree(asdict(reference.reset(seed=73)), 'reset.observation',
+                        rtol=0., atol=0.)
     assert_tree(native.reset(seed=73), reference.reset(seed=73), atol=0., rtol=0.)
     assert native.snapshot().generation > snapshot.generation
     assert native.sim.steps == 0
@@ -220,8 +272,11 @@ def test_reset_seed_generation_snapshot_and_facade_ownership(environment_pair, a
     assert len(native.commands_applied) == len(reference.commands_applied) == 1
     assert_tree(episode_metrics(native), episode_metrics(reference))
     np.testing.assert_array_equal(snapshot.integration_state, original)
+    _golden.record_tree(reference.metadata, 'metadata', rtol=0., atol=0.)
     assert_tree(native.metadata, reference.metadata, atol=0., rtol=0.)
-    assert_tree(native.step(RideControl(0.)), reference.step(RideControl(0.)))
+    expected_step = reference.step(RideControl(0.))
+    _golden.record_tree(asdict(expected_step), 'post_reset.transition')
+    assert_tree(native.step(RideControl(0.)), expected_step)
 
 
 def test_invalid_boundary_calls_do_not_change_state(environment_pair, assert_tree):
@@ -287,7 +342,7 @@ def test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_
     # four steps and the assert_tree leg hits the documented backend drift.
     physics = violating_physics(tmp_path/'physics.toml') if strict else None
     reference, native = environment_pair(strict=strict, physics_config=physics)
-    for _ in range(4):
+    for window in range(4):
         results, errors = [], []
         for env in (reference, native):
             try:
@@ -303,8 +358,11 @@ def test_strict_and_diagnostic_outcomes_remain_visible(environment_pair, assert_
         if errors[0] is not None:
             assert strict and native.reason == 'invalid_controller'
             assert native.reference_monitor.first_failure is not None
+            _golden.record_tree(reference.reference_monitor.first_failure,
+                                'first_failure')
             assert_tree(native.reference_monitor.first_failure, reference.reference_monitor.first_failure)
             break
+        _golden.record_tree(asdict(results[0]), f'transition.{window:08d}')
         assert_tree(results[1], results[0])
         if reference.done or native.done:
             assert native.done and reference.done
@@ -328,8 +386,12 @@ def test_differing_control_and_sensor_periods_match_python(
         control_period=control_period, sensor_period=sensor_period)
     assert native.control_steps == reference.control_steps == control_steps
     assert native.sensor_steps == reference.sensor_steps == sensor_steps
+    boundary = 0
     while not reference.done and not native.done:
-        assert_tree(asdict(native.step(RideControl(0.))), asdict(reference.step(RideControl(0.))))
+        expected = reference.step(RideControl(0.))
+        _golden.record_tree(asdict(expected), f'transition.{boundary:08d}')
+        boundary += 1
+        assert_tree(asdict(native.step(RideControl(0.))), asdict(expected))
         assert native.sim.steps == reference.sim.steps
         assert_bitwise_equal(integration_state(native.sim), integration_state(reference.sim),
                              msg=f'integration state at step {reference.sim.steps}')
@@ -342,7 +404,14 @@ def test_differing_control_and_sensor_periods_match_python(
     assert reference.pipeline.samples_attempted == expected_attempted
     assert native.pipeline.samples_attempted == expected_attempted
     assert native.pipeline.samples_dropped == reference.pipeline.samples_dropped
+    _golden.record(np.asarray([reference.pipeline.samples_attempted,
+                               reference.pipeline.samples_dropped],
+                              dtype='<f8'), 'pipeline.counters')
+    _golden.record_tree(reference.commands_requested, 'commands_requested',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_requested, reference.commands_requested, atol=0., rtol=0.)
+    _golden.record_tree(reference.commands_applied, 'commands_applied',
+                        rtol=0., atol=0.)
     assert_tree(native.commands_applied, reference.commands_applied, atol=0., rtol=0.)
 
 

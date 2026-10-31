@@ -1,0 +1,37 @@
+{
+  "deflection_m": [
+    0.0,
+    0.01,
+    0.02,
+    0.04
+  ],
+  "force_n": [
+    0.0,
+    1000.0,
+    2500.0,
+    4300.0
+  ],
+  "radial_c_ns_m": 100.0,
+  "samples": [
+    {
+      "penetration_m": 0.005,
+      "rate_mps": 0.0
+    },
+    {
+      "penetration_m": 0.005,
+      "rate_mps": -10.0
+    },
+    {
+      "penetration_m": 0.015,
+      "rate_mps": -1.5
+    },
+    {
+      "penetration_m": 0.03,
+      "rate_mps": -2.0
+    },
+    {
+      "penetration_m": 0.04,
+      "rate_mps": 0.5
+    }
+  ]
+}

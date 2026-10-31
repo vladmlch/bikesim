@@ -74,7 +74,7 @@ Value incline_rig(double dt,double duration,double degrees){ // NOLINT(bugprone-
 Value brake_rig(double dt,double duration){
     const auto count=steps(duration,dt);Stand const s("<mujoco>"+option(dt)+R"(<worldbody><body><joint type="hinge" axis="0 1 0" frictionloss="20" solreffriction=".005 1" solimpfriction=".9999 .9999 .001 .5 2"/><inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body></worldbody></mujoco>)");
     auto const* m=s.model.get();auto* d=s.data.get();const std::span<mjtNum> qfrc_applied=model_access::mutable_buffer(d->qfrc_applied,m->nv,"qfrc_applied");
-    const std::span<const mjtNum> qpos=model_access::readonly_buffer(d->qpos,m->nq,"qpos"),qvel=model_access::readonly_buffer(d->qvel,m->nv,"qvel"),qfrc_constraint=model_access::readonly_buffer(d->qfrc_constraint,d->nefc,"qfrc_constraint");
+    const std::span<const mjtNum> qpos=model_access::readonly_buffer(d->qpos,m->nq,"qpos"),qvel=model_access::readonly_buffer(d->qvel,m->nv,"qvel"),qfrc_constraint=model_access::readonly_buffer(d->qfrc_constraint,m->nv,"qfrc_constraint");
     qfrc_applied[0]=10.;for(std::size_t i=0;i<count;++i)engine::step(m,d);const double held=qpos[0];double work=0.;qfrc_applied[0]=30.;
     for(std::size_t i=0,n=steps(.1,dt);i<n;++i){const double speed=qvel[0];engine::step(m,d);work+=qfrc_constraint[0]*speed*dt;}
     return metrics({{"held_angle_rad",held},{"overload_speed_rad_s",qvel[0]},{"brake_work_j",work}});

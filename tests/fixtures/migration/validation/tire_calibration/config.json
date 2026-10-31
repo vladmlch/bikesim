@@ -1,0 +1,29 @@
+{
+  "record": {
+    "dataset_id": "oracle-radial-01",
+    "deflection_m": [
+      0.0,
+      0.01,
+      0.02,
+      0.04
+    ],
+    "force_n": [
+      0.0,
+      1000.0,
+      2500.0,
+      4300.0
+    ],
+    "inflated_width_m": 0.06,
+    "pressure_pa_gauge": 150000.0,
+    "provenance": "capture record for the 3.37 oracle freeze",
+    "radial_c_ns_m": 100.0,
+    "radius_m": 0.37,
+    "rim_internal_width_m": 0.03,
+    "source_kind": "synthetic",
+    "tyre_label": "oracle bench tyre",
+    "valid_load_range_n": [
+      0.0,
+      4300.0
+    ]
+  }
+}

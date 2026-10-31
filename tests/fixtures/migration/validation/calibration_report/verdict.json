@@ -1,0 +1,54 @@
+{
+  "bounds": {
+    "stiffness": [
+      1000.0,
+      200000.0
+    ]
+  },
+  "calibration_status": "parameterized_unvalidated",
+  "conditions": {
+    "pressure_pa_gauge": 150000.0
+  },
+  "dataset_hash": "86e2c2129808d86e30b2df19c370db7b9d9f3ffdcaac8a8c9bb978b4693ebd33",
+  "dataset_id": "oracle-rig-1",
+  "error_budget": {
+    "bias_abs": 10.0,
+    "budget_id": "oracle-registered-budget",
+    "max_abs": 10.0,
+    "rmse": 10.0
+  },
+  "error_budget_hash": "6b8460748b03955038345dc1a665620905dafced969975c886173f6def3c5e9a",
+  "experiments": {
+    "fit-a": {
+      "metrics": {
+        "bias": 3.5,
+        "max_abs": 5.0,
+        "rmse": 3.8078865529319543
+      },
+      "passed": true,
+      "sample_count": 2,
+      "split": "fit"
+    },
+    "hold-b": {
+      "metrics": {
+        "bias": 1.5,
+        "max_abs": 5.0,
+        "rmse": 3.8078865529319543
+      },
+      "passed": true,
+      "sample_count": 2,
+      "split": "holdout"
+    }
+  },
+  "holdout_passed": true,
+  "output": "force",
+  "parameters": {
+    "stiffness": 100000.0
+  },
+  "sensor_uncertainty": {
+    "deflection": 0.0001,
+    "force": 1.0
+  },
+  "source": "synthetic:fixture",
+  "unit": "N"
+}

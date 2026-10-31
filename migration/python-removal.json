@@ -3863,7 +3863,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ea9300580e2b69483192c2ac815cf0e4906958e67f32731576dffa50032de594",
     "snapshot_line_count": 84,
     "tracked": true,
@@ -3873,9 +3873,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "`TireCalibration`, record/file loading, geometry/provenance, explicit curve and inclusive load range. No implicit pressure scaling.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C337338-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31: migration_T54 green on darwin-arm64 and linux-aarch64 (`ctest -R '^migration_T54$'`), including the bitwise `tire_calibration` oracle verdict and the direct material-curve contract; `load_calibration` remains a thin read_json+calibration_from_record twin with no in-repo caller"
     }
   },
   {
@@ -3893,10 +3894,14 @@
     "verification_ids": [
       "migration_T54",
       "source_assertion_map",
-      "release_capability_matrix"
+      "release_capability_matrix",
+      "reference.native_tire",
+      "reference.distributed_tire_reference",
+      "reference.native_distributed_tire",
+      "reference.native_distributed_stands"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "dcc5d80a5a2bcad58f050ae07b82be756d76874c5267f11cf151aa9392e108b0",
     "snapshot_line_count": 92,
     "tracked": true,
@@ -3906,9 +3911,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Monotone table, interval force integral, unilateral damping, no extrapolation and range errors. CLI `tire_curve` retains energy in joules.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C337338-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31: migration_T54 green on darwin-arm64 and linux-aarch64, including the bitwise `tire_curve` oracle verdict and direct MaterialRangeError/load-range/unilateral-damping contract checks; the TabulatedRadial runtime law is additionally green under reference.native_tire/distributed_tire_reference/native_distributed_tire/native_distributed_stands"
     }
   },
   {
@@ -12759,7 +12765,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "25574b654eaf847ba162788b068b3cd6d223f7aa22b4995c319020dd64f4cae0",
     "snapshot_line_count": 20,
     "tracked": true,
@@ -12769,9 +12775,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Explicit scalar domains and `mu * rear_fraction - grade`; result is labelled necessary and never sufficient for a completed climb.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C337338-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31: migration_T54 green on darwin-arm64 and linux-aarch64, including the bitwise `grade_feasibility` oracle verdict (margin, necessary_condition_met and the constant-false sufficient_for_completion label)"
     }
   },
   {
@@ -13156,7 +13163,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "bc37cdd7b506cb69e0f0ac1911c5fde7ce690c56e78eceb84412f1a33449a849",
     "snapshot_line_count": 42,
     "tracked": true,
@@ -13166,9 +13173,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Pure brush-step loop, exact slip convention, Stribeck cap, loss/storage/stiffness metadata and integer horizon. Default-material provenance is explicit through a supplied tire record or physics profile.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C337338-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31: migration_T54 green on darwin-arm64 and linux-aarch64, including the bitwise `tire-characterization` oracle verdict captured from steady_brush_force (RCP-07) and the invalid-input rejection contract"
     }
   },
   {

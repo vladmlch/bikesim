@@ -2673,6 +2673,251 @@ def _rcp07_validation(ctx: Context):
                     f"{type(exc).__name__}: {exc}")
 
 
+# RCP-16 validation rigs (tasks 3.37/3.38): pure-arithmetic public outputs
+# ---------------------------------------------------------------------------
+#
+# Each entry freezes one authored ``config.json`` (or ``config.toml``) plus the
+# oracle's verdict for the same inputs the native ``run_case`` dispatch
+# consumes (native/src/validation/registry.cpp). Only IEEE-754-deterministic
+# outputs are captured here — multiplies/divides/sqrt over binary64 — so the
+# committed JSON is identical on both qualified platforms. Transcendental or
+# engine-integrated surfaces (libm sin/cos/exp, MuJoCo trajectories) stay on
+# their declared rig bounds instead of a frozen verdict.
+#
+# verdict shapes mirror the native evidence exactly; where the native wrapper
+# augments the module's return (e.g. constant calibration_status or the
+# grade-feasibility verdict object) ``produced_by`` records that mapping.
+
+def _rcp16_validation_rigs(ctx: Context):
+    out, rec = ctx.out, ctx.rec
+
+    def add_verdict(name, config_name, config_text, verdict, produced_by,
+                    notes, comparison="B"):
+        files = [out.text(f"{name}/{config_name}", config_text)]
+        files += write_canonical(out, f"{name}/verdict.json", verdict)
+        rec.add(name, recipe="RCP-16", group="validation", comparison=comparison,
+                expected={"kind": "accepted"}, produced_by=produced_by,
+                files=files, notes=notes)
+
+    # -- physics/tire_curve.py: TabulatedTireSpec elastic/damped responses ----
+    try:
+        from bike_sim.physics.tire_curve import TabulatedTireSpec
+        curve = TabulatedTireSpec(
+            deflection_m=(0., .01, .02, .04), force_n=(0., 1000., 2500., 4300.),
+            radial_c_ns_m=100., pressure_pa_gauge=150000.,
+            provenance="capture grid for the 3.37 oracle freeze",
+            valid_load_range_n=(0., 4300.))
+        samples = [(.005, 0.), (.005, -10.), (.015, -1.5), (.03, -2.), (.04, .5)]
+        config = {"deflection_m": [0., .01, .02, .04],
+                  "force_n": [0., 1000., 2500., 4300.],
+                  "radial_c_ns_m": 100.,
+                  "samples": [{"penetration_m": p, "rate_mps": r}
+                              for p, r in samples]}
+        rows = []
+        for pen, rate in samples:
+            force, energy = curve.elastic_response(pen)
+            normal, stored = curve.normal_contact(pen, rate)
+            rows.append({"elastic_force_n": force, "stored_energy_j": energy,
+                         "normal_force_n": normal,
+                         "contact_stored_energy_j": stored})
+        add_verdict("validation/tire_curve", "config.json",
+                    json.dumps(config, indent=2, sort_keys=True) + "\n",
+                    rows,
+                    "TabulatedTireSpec.elastic_response/normal_contact per sample",
+                    "monotone table, interval integral, unilateral damping")
+    except Exception as exc:
+        rec.blocker("validation/tire_curve", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- physics/tire_calibration.py: record -> calibration evidence ---------
+    try:
+        from bike_sim.physics.tire_calibration import calibration_from_record
+        record = {"dataset_id": "oracle-radial-01", "source_kind": "synthetic",
+                  "tyre_label": "oracle bench tyre",
+                  "radius_m": .37, "inflated_width_m": .06,
+                  "rim_internal_width_m": .03, "pressure_pa_gauge": 150000.,
+                  "radial_c_ns_m": 100.,
+                  "deflection_m": [0., .01, .02, .04],
+                  "force_n": [0., 1000., 2500., 4300.],
+                  "valid_load_range_n": [0., 4300.],
+                  "provenance": "capture record for the 3.37 oracle freeze"}
+        cal = calibration_from_record(record)
+        add_verdict("validation/tire_calibration", "config.json",
+                    json.dumps({"record": record}, indent=2,
+                               sort_keys=True) + "\n",
+                    {"record": record, "source_kind": cal.source_kind,
+                     "calibration_status": "parameterized_unvalidated"},
+                    "calibration_from_record; the native wrapper adds the "
+                    "constant parameterized_unvalidated status",
+                    "explicit curve, geometry and provenance schema")
+    except Exception as exc:
+        rec.blocker("validation/tire_calibration", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/datasets.py: validate_dataset/dataset_hash/holdout -------
+    dataset = {
+        "dataset_id": "oracle-rig-1", "source": "synthetic:fixture",
+        "synthetic": True, "measured_at": "2026-09-30",
+        "units": {"force": "N", "deflection": "m"},
+        "bike_config_hash": "configuration-a",
+        "sensor_uncertainty": {"force": 1.0, "deflection": .0001},
+        "conditions": {"pressure_pa_gauge": 150000.},
+        "samples": [
+            {"experiment_id": "fit-a", "force": 100., "deflection": .001},
+            {"experiment_id": "fit-a", "force": 110., "deflection": .0011},
+            {"experiment_id": "hold-b", "force": 200., "deflection": .002},
+            {"experiment_id": "hold-b", "force": 220., "deflection": .0022}],
+        "split": {"fit": ["fit-a"], "holdout": ["hold-b"]}}
+    try:
+        from bike_sim.validation.datasets import (
+            calibration_report, dataset_hash, holdout_metrics, validate_dataset)
+        validated = validate_dataset(dict(dataset), allow_synthetic=True)
+        add_verdict("validation/datasets", "config.json",
+                    json.dumps({"dataset": dataset, "allow_synthetic": True},
+                               indent=2, sort_keys=True) + "\n",
+                    validated, "validate_dataset(payload, allow_synthetic=True)",
+                    "seven unit schemas and whole-experiment split gates")
+        add_verdict("validation/dataset_hash", "config.json",
+                    json.dumps({"dataset": dataset}, indent=2,
+                               sort_keys=True) + "\n",
+                    dataset_hash(validated), "dataset_hash(validate_dataset())",
+                    "canonical ASCII finite-JSON SHA-256")
+        add_verdict("validation/holdout_metrics", "config.json",
+                    json.dumps({"measured": [1., 2., 3., 4., 5.],
+                                "predicted": [1.5, 1.75, 3., 4.25, 6.]},
+                               indent=2, sort_keys=True) + "\n",
+                    holdout_metrics([1., 2., 3., 4., 5.],
+                                    [1.5, 1.75, 3., 4.25, 6.]),
+                    "holdout_metrics(measured, predicted)",
+                    "bias, maximum absolute error and RMSE reductions")
+        report = calibration_report(
+            dict(dataset),
+            {"fit-a": [105., 112.], "hold-b": [198., 225.]},
+            output="force", parameters={"stiffness": 100000.},
+            bounds={"stiffness": [1000., 200000.]},
+            error_budget={"budget_id": "oracle-registered-budget",
+                          "rmse": 10., "max_abs": 10., "bias_abs": 10.},
+            allow_synthetic=True)
+        add_verdict("validation/calibration_report", "config.json",
+                    json.dumps({"dataset": dataset,
+                                "predictions": {"fit-a": [105., 112.],
+                                                "hold-b": [198., 225.]},
+                                "quantity": "force",
+                                "parameters": {"stiffness": 100000.},
+                                "bounds": {"stiffness": [1000., 200000.]},
+                                "error_budget": {
+                                    "budget_id": "oracle-registered-budget",
+                                    "rmse": 10., "max_abs": 10.,
+                                    "bias_abs": 10.},
+                                "allow_synthetic": True},
+                               indent=2, sort_keys=True) + "\n",
+                    report,
+                    "calibration_report(dataset, predictions, output, "
+                    "parameters, bounds, error_budget)",
+                    "per-experiment errors, dataset/budget hashes and the "
+                    "no-promotion status")
+    except Exception as exc:
+        for name in ("validation/datasets", "validation/dataset_hash",
+                     "validation/holdout_metrics", "validation/calibration_report"):
+            rec.blocker(name, "RCP-16",
+                        "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/load_transfer.py: quasistatic_front_load (slope = 0) -----
+    try:
+        from bike_sim.validation.load_transfer import quasistatic_front_load
+        add_verdict("validation/quasistatic_front_load", "config.toml",
+                    "mass_kg = 100.0\nwheelbase_m = 1.2\ncom_x_m = 0.55\n"
+                    "com_h_m = 0.9\nslope_rad = 0.0\nacceleration_mps2 = 1.5\n"
+                    "gravity_mps2 = 9.81\n",
+                    quasistatic_front_load(100., 1.2, .55, .9, 0.,
+                                           tangent_accel_mps2=1.5),
+                    "quasistatic_front_load(100, 1.2, .55, .9, 0, 1.5)",
+                    "explicit gravity and acceleration load transfer")
+    except Exception as exc:
+        rec.blocker("validation/quasistatic_front_load", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/grade_feasibility.py: necessary margin verdict -----------
+    try:
+        from bike_sim.validation.grade_feasibility import (
+            necessary_traction_margin)
+        margin = necessary_traction_margin(.8, .55, .31)
+        add_verdict("validation/grade_feasibility", "config.toml",
+                    "mu = 0.8\nrear_fraction = 0.55\ngrade = 0.31\n",
+                    {"necessary_traction_margin": margin,
+                     "necessary_condition_met": margin >= 0.,
+                     "sufficient_for_completion": False},
+                    "necessary_traction_margin(.8, .55, .31); the native "
+                    "wrapper adds the two explicit no-promotion flags",
+                    "necessary margin only; never climb sufficiency")
+    except Exception as exc:
+        rec.blocker("validation/grade_feasibility", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/contact_resolution.py: _events + contact_comparison -----
+    try:
+        from bike_sim.validation.contact_resolution import (
+            _events, contact_comparison)
+        rows = [
+            {"time_s": 0., "end_time_s": .001, "normal_load_n": 0.},
+            {"time_s": .001, "end_time_s": .003, "normal_load_n": 50.},
+            {"time_s": .003, "end_time_s": .008, "normal_load_n": 50.},
+            {"time_s": .008, "end_time_s": .0085, "normal_load_n": 0.},
+            {"time_s": .0085, "end_time_s": .015, "normal_load_n": 0.}]
+        add_verdict("validation/persistent_events", "config.json",
+                    json.dumps({"rows": rows, "persistence_s": .005,
+                                "normal_load_only": True},
+                               indent=2, sort_keys=True) + "\n",
+                    _events(rows, .005),
+                    "_events(rows, persistence_s=.005)",
+                    "state transitions confirm only after the dwell persists")
+        coarse = {"normal_impulse_ns": 102., "vertical_impulse_ns": 101.,
+                  "contact_events": [{"state": "loaded", "time_s": .01}],
+                  "energy_residual_ratio": .01,
+                  "native_wheel_contact_count": 0.}
+        reference = {"normal_impulse_ns": 100., "vertical_impulse_ns": 100.,
+                     "contact_events": [{"state": "loaded", "time_s": .012}],
+                     "energy_residual_ratio": .02,
+                     "native_wheel_contact_count": 0.}
+        add_verdict("validation/contact_comparison", "config.json",
+                    json.dumps({"coarse": coarse, "reference": reference},
+                               indent=2, sort_keys=True) + "\n",
+                    contact_comparison(coarse, reference),
+                    "contact_comparison(coarse, reference)",
+                    "impulse/event/energy and no-native-contact criteria")
+        unmatched = dict(coarse, contact_events=[
+            {"state": "loaded", "time_s": .01},
+            {"state": "unloaded", "time_s": .02}])
+        add_verdict("validation/contact_comparison_unmatched", "config.json",
+                    json.dumps({"coarse": unmatched, "reference": reference},
+                               indent=2, sort_keys=True) + "\n",
+                    contact_comparison(unmatched, reference),
+                    "contact_comparison with mismatched event lists",
+                    "event mismatch yields a null event_error_s")
+    except Exception as exc:
+        for name in ("validation/persistent_events",
+                     "validation/contact_comparison",
+                     "validation/contact_comparison_unmatched"):
+            rec.blocker(name, "RCP-16",
+                        "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/contact_manifold_rigs.py: arithmetic road cases ----------
+    try:
+        from bike_sim.validation.contact_manifold_rigs import (
+            contact_case_vertices)
+        for case in ("step", "edge_unload", "recontact", "incline"):
+            vertices = contact_case_vertices(case, .01)
+            add_verdict(f"validation/contact_case_{case}", "config.toml",
+                        f'case = "{case}"\ndx_m = 0.01\n',
+                        vertices.tolist(),
+                        f"contact_case_vertices({case!r}, .01)",
+                        "declared analytic rasterization, arithmetic-only case")
+    except Exception as exc:
+        for case in ("step", "edge_unload", "recontact", "incline"):
+            rec.blocker(f"validation/contact_case_{case}", "RCP-16",
+                        "".join(traceback.format_exception(exc))[-1200:])
+
+
 # ---------------------------------------------------------------------------
 # Mandatory negative controls
 # ---------------------------------------------------------------------------
@@ -3812,6 +4057,7 @@ GROUPS = {
     "recording": _rcp05_recording,
     "replay": _rcp06_replay,
     "validation": _rcp07_validation,
+    "validation_t54": _rcp16_validation_rigs,
 }
 
 

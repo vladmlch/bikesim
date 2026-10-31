@@ -1,0 +1,31 @@
+{
+  "normal_load_only": true,
+  "persistence_s": 0.005,
+  "rows": [
+    {
+      "end_time_s": 0.001,
+      "normal_load_n": 0.0,
+      "time_s": 0.0
+    },
+    {
+      "end_time_s": 0.003,
+      "normal_load_n": 50.0,
+      "time_s": 0.001
+    },
+    {
+      "end_time_s": 0.008,
+      "normal_load_n": 50.0,
+      "time_s": 0.003
+    },
+    {
+      "end_time_s": 0.0085,
+      "normal_load_n": 0.0,
+      "time_s": 0.008
+    },
+    {
+      "end_time_s": 0.015,
+      "normal_load_n": 0.0,
+      "time_s": 0.0085
+    }
+  ]
+}

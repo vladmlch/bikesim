@@ -4,6 +4,7 @@
 #include "validation/acceptance.hpp"
 #include "validation/cli_options.hpp"
 #include "validation/evidence.hpp"
+#include "validation/rigs.hpp"
 #include "validation/scenarios.hpp"
 #include "validation/tire.hpp"
 #include "configuration/load.hpp"
@@ -48,6 +49,35 @@ void captured_tire_characterization(){
     exact_value(result.evidence,io::parse_json(bt::text(bt::fixture("validation/tire/verdict.json"))),"tire-characterization");
     auto bad=config;set(bad,"duration_s",value::real(.5001));bt::invalid([&]{(void)run_case("tire-characterization",bad);});
     bad=std::move(config);set(bad,"loads_n",Value{Array{}});bt::invalid([&]{(void)run_case("tire-characterization",bad);});
+}
+void verdict_fixture(std::string_view name,std::string_view case_id){
+    // RCP-16 freeze (tools/migration/capture_reference.py): one authored
+    // config plus the oracle's verdict for the same pure-arithmetic inputs
+    // the native run_case dispatch consumes — binary64-exact evidence, so a
+    // single committed verdict serves both qualified platforms.
+    bt::manifest_verify_files(bt::manifest_entry(name));
+    const auto dir=bt::fixture(name);
+    auto config=dir/"config.toml";
+    if(!std::filesystem::is_regular_file(config))config=dir/"config.json";
+    const auto result=run_case(case_id,config);
+    exact_value(result.evidence,io::parse_json(bt::text(dir/"verdict.json")),std::string(name));
+}
+void migration_fixture_verdicts(){
+    verdict_fixture("validation/tire_curve","tire_curve");
+    verdict_fixture("validation/tire_calibration","tire_calibration");
+    verdict_fixture("validation/datasets","datasets");
+    verdict_fixture("validation/dataset_hash","dataset_hash");
+    verdict_fixture("validation/holdout_metrics","holdout_metrics");
+    verdict_fixture("validation/calibration_report","calibration_report");
+    verdict_fixture("validation/quasistatic_front_load","quasistatic_front_load");
+    verdict_fixture("validation/grade_feasibility","grade_feasibility");
+    verdict_fixture("validation/persistent_events","persistent_events");
+    verdict_fixture("validation/contact_comparison","contact_comparison");
+    verdict_fixture("validation/contact_comparison_unmatched","contact_comparison");
+    verdict_fixture("validation/contact_case_step","contact_case_vertices");
+    verdict_fixture("validation/contact_case_edge_unload","contact_case_vertices");
+    verdict_fixture("validation/contact_case_recontact","contact_case_vertices");
+    verdict_fixture("validation/contact_case_incline","contact_case_vertices");
 }
 void material_curve_contract(){
     auto record=json(R"({"dataset_id":"synthetic-radial","source_kind":"synthetic","tyre_label":"bench",
@@ -208,13 +238,98 @@ void cli_option_contract(){
 void actual_stand_checks(){
     // Preserve the source horizons, loads and thresholds. There is no short
     // substitute trajectory and no golden update mode in this regression.
-    for(const char* name:{"wheel_inertia","chain_suspension_motion","actual_shaft_ratio","actual_freehub_overrun"}){
+    for(const char* name:{"wheel_inertia","chain_suspension_motion","actual_shaft_ratio","actual_freehub_overrun",
+            // rigs.py stands (task 3.38): radial spring/damper loads, first
+            // contact timing, incline gravity decomposition, and the locked
+            // three-shaft chain geometry/power.
+            "radial_100","radial_300","radial_600","radial_1000","contact_event",
+            "incline_30_deg","chain_locked_geometry",
+            // contact_manifold_rigs.py + load_transfer.py stands: distributed
+            // flat/step/incline cells and the free-pitch rigid-equivalent stand.
+            "distributed_flat_600","distributed_step","distributed_incline","rigid_load_transfer"}){
         const auto result=benchmark_case(name,.0005);const auto checks=check_bounds(result.metrics,result.bounds);
         bt::require(!io::as_object(checks,"checks").empty()&&checks_passed(checks),std::string("source stand conservation/geometry bounds: ")+name);
     }
+    // drive_suspension_rig.py: all three transmissions under the full
+    // 0/20/40 Nm delivered-torque sweep on the actual compiled fixture.
+    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive","elastic_chain"})
+        for(int const torque:{0,20,40}){
+            const std::string name=std::string("drive_suspension_")+mode+"_"+std::to_string(torque);
+            const auto result=benchmark_case(name,.0005);const auto checks=check_bounds(result.metrics,result.bounds);
+            bt::require(!io::as_object(checks,"checks").empty()&&checks_passed(checks),"drive-suspension fixture bounds: "+name);
+        }
+    // rigs.py::native_radial_rig is the declared diagnostic stand: it carries
+    // no acceptance bounds, so the contract is the produced metric fields.
+    const auto reference=benchmark_case("radial_native_reference",.0005);
+    for(const char* key:{"deflection_at_100n_m","deflection_at_300n_m","deflection_at_600n_m","deflection_at_1000n_m"})
+        bt::require(std::isfinite(real(reference.metrics,key)),std::string("native radial reference produced ")+key);
+    // rigs.py brake stand: a sub-threshold applied torque is held by joint
+    // friction (the wheel stays at rest), then an overload torque spins it
+    // while the constraint does signed work.
+    const auto brake=brake_rig(.0005,.1);
+    bt::require(std::abs(real(brake,"held_angle_rad"))<1e-6,"sub-threshold brake torque keeps the wheel at rest");
+    bt::require(real(brake,"overload_speed_rad_s")>0.&&std::isfinite(real(brake,"brake_work_j")),
+        "overload torque spins the wheel against the dissipated brake work");
+}
+void contact_and_environment_checks(){
+    // contact_acceptance.py::contact_matrix — one declared (dt, stations)
+    // cell still evaluates the flat/step/incline rig pipeline and its own
+    // per-case bounds; the full sweep is the same code with more axis levels.
+    const auto matrix=contact_matrix(json(R"({"dts":[0.000625],"station_counts":[128],
+        "flat_loads":[600.0],"step_dxs":[0.005],"incline_angle_deg":15.0})"));
+    const auto& cells=io::as_array(matrix,"matrix");
+    bt::require(cells.size()==3,"minimal matrix evaluates the flat, step and incline stands");
+    for(const auto& cell:cells)
+        bt::require(flag(cell,"accepted")&&checks_passed(get(cell,"checks")),"declared stand bounds accept the minimal matrix cell");
+    // contact_manifold_rigs.py::contact_case_vertices — the analytic road
+    // rasterization retains uniform spacing, extent and case shapes.
+    for(const char* name:{"step","two_support","edge_unload","recontact","bump","incline"}){
+        const auto vertices=contact_case_vertices(name,.01);
+        bt::require(vertices.size()==401&&vertices.front()[0]==-2.&&vertices.back()[0]==2.,"contact case retains the declared 4 m raster extent");
+        const double dx=vertices[1][0]-vertices[0][0];
+        for(std::size_t i=2;i<vertices.size();++i)
+            bt::require(std::abs((vertices[i][0]-vertices[i-1][0])-dx)<1e-12+1e-9*std::abs(dx),"contact road is uniformly rasterized");
+    }
+    bt::invalid([&]{(void)contact_case_vertices("missing",.01);});
+    // contact_resolution.py::_events — a state must dwell for the declared
+    // persistence before it is accepted as an event; bounces never confirm.
+    const auto events=persistent_events(json(R"([
+        {"time_s":0.0,"end_time_s":0.001,"normal_load_n":0.0},
+        {"time_s":0.001,"end_time_s":0.003,"normal_load_n":50.0},
+        {"time_s":0.003,"end_time_s":0.008,"normal_load_n":50.0},
+        {"time_s":0.008,"end_time_s":0.0085,"normal_load_n":0.0},
+        {"time_s":0.0085,"end_time_s":0.015,"normal_load_n":0.0}])"),.005,true);
+    const auto& list=io::as_array(events,"events");
+    bt::require(list.size()==2&&text(list[0],"state")=="loaded"&&real(list[0],"time_s")==.001&&
+        text(list[1],"state")=="unloaded"&&real(list[1],"time_s")==.008,
+        "load/unload events confirm only after the dwell persists");
+    // contact_resolution.py::contact_comparison — impulse/event/energy and
+    // native-contact criteria gate pairwise convergence independently.
+    auto coarse=json(R"({"normal_impulse_ns":102.0,"vertical_impulse_ns":101.0,
+        "contact_events":[{"state":"loaded","time_s":0.01}],"energy_residual_ratio":0.01,"native_wheel_contact_count":0.0})");
+    const auto reference=json(R"({"normal_impulse_ns":100.0,"vertical_impulse_ns":100.0,
+        "contact_events":[{"state":"loaded","time_s":0.012}],"energy_residual_ratio":0.02,"native_wheel_contact_count":0.0})");
+    auto comparison=contact_comparison(coarse,reference);
+    bt::require(flag(comparison,"passed")&&real(comparison,"event_error_s")==.002,"matching impulse/event/energy criteria accept the pair");
+    set(coarse,"native_wheel_contact_count",value::real(1.));
+    comparison=contact_comparison(coarse,reference);
+    bt::require(!flag(comparison,"passed")&&!flag(get(comparison,"criteria"),"no_native_contact"),
+        "a native engine contact fails the independent no-contact criterion");
+    // environment.py — the native identity contract reports the build lock,
+    // engine and numeric provider, and the source fingerprint is stable and
+    // directory-content sensitive. Both stay evidence, never a promotion.
+    const auto repo=bt::fixture("validation/tire").parent_path().parent_path().parent_path().parent_path().parent_path();
+    const auto environment=environment_contract(repo);
+    for(const char* key:{"platform","compiler","mujoco_version","mujoco_sha256","numeric_provider","executable_sha256"})
+        bt::require(!text(environment,key).empty(),std::string("environment contract identifies ")+key);
+    for(const char* key:{"declared_requirements_satisfied","locked_versions_match","locked_environment_verified"})
+        bt::require(std::holds_alternative<bool>(get(environment,key).data),std::string("environment verdict is boolean: ")+key);
+    const auto first=source_fingerprint(repo/"native/src"),second=source_fingerprint(repo/"native/src");
+    bt::require(first.size()==64&&first==second,"source fingerprint is a stable length-delimited digest");
+    bt::invalid([&]{(void)source_fingerprint(repo/"native/does-not-exist");});
 }
 } // namespace
 int main(){return bt::run([]{
-    captured_tire_characterization();material_curve_contract();calibration_evidence_contract();invalid_prefix_and_axes();publication_coverage_contract();
-    release_and_bound_rejections();intervals_and_dimensions();resolution_and_pair_inventory();cli_option_contract();actual_stand_checks();
+    captured_tire_characterization();material_curve_contract();calibration_evidence_contract();invalid_prefix_and_axes();publication_coverage_contract();migration_fixture_verdicts();
+    release_and_bound_rejections();intervals_and_dimensions();resolution_and_pair_inventory();cli_option_contract();actual_stand_checks();contact_and_environment_checks();
 });}

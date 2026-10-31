@@ -1,7 +1,7 @@
 #pragma once
+#include "../io/float_format.hpp"
 #include "../io/json.hpp"
 #include <array>
-#include <charconv>
 #include <cmath>
 #include <limits>
 #include <memory>
@@ -13,13 +13,11 @@ inline Value integer(std::int64_t n) { return Value{io::Number{std::to_string(n)
 inline Value text(std::string_view s) { return Value{std::string(s)}; }
 inline Value real(double x) {
     if (!std::isfinite(x)) return Value{io::Tagged{.kind="float64", .fields={{"value", std::isnan(x) ? "nan" : x < 0. ? "-inf" : "+inf"}}}};
-    std::array<char,64> bytes{};
-    const auto out = std::to_chars(bytes.data(), std::to_address(bytes.end()), x);
-    if (out.ec != std::errc{}) throw std::runtime_error("recording: could not format double");
-    const auto size = static_cast<std::size_t>(out.ptr - bytes.data());
-    std::string lexeme(bytes.data(), size);
-    if (lexeme.find_first_of(".eE") == std::string::npos) lexeme += ".0";
-    return Value{io::Number{std::move(lexeme)}};
+    // Python repr()/json.dumps spelling: shortest round-trip digits stay
+    // fixed for -4 <= e < 16 and integral values retain ".0". A raw
+    // to_chars general pass instead shortens e.g. 0.0001 to "1e-04" and
+    // 1e15 to "1e+15", diverging from the oracle's canonical JSON hash.
+    return Value{io::Number{io::repr_binary64(x)}};
 }
 inline Value strings(std::span<const std::string> input) {
     Value::Array out; out.reserve(input.size());

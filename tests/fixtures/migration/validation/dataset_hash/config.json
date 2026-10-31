@@ -1,0 +1,50 @@
+{
+  "dataset": {
+    "bike_config_hash": "configuration-a",
+    "conditions": {
+      "pressure_pa_gauge": 150000.0
+    },
+    "dataset_id": "oracle-rig-1",
+    "measured_at": "2026-09-30",
+    "samples": [
+      {
+        "deflection": 0.001,
+        "experiment_id": "fit-a",
+        "force": 100.0
+      },
+      {
+        "deflection": 0.0011,
+        "experiment_id": "fit-a",
+        "force": 110.0
+      },
+      {
+        "deflection": 0.002,
+        "experiment_id": "hold-b",
+        "force": 200.0
+      },
+      {
+        "deflection": 0.0022,
+        "experiment_id": "hold-b",
+        "force": 220.0
+      }
+    ],
+    "sensor_uncertainty": {
+      "deflection": 0.0001,
+      "force": 1.0
+    },
+    "source": "synthetic:fixture",
+    "split": {
+      "fit": [
+        "fit-a"
+      ],
+      "holdout": [
+        "hold-b"
+      ]
+    },
+    "synthetic": true,
+    "units": {
+      "deflection": "m",
+      "force": "N"
+    }
+  }
+}

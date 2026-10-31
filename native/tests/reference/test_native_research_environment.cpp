@@ -630,6 +630,7 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
         // null model_commit/model_source_dirty. The recorded Value is
         // re-seated verbatim so the port stays capture-environment-agnostic.
         bike::io::Value oracle_commit, oracle_source_sha;
+        bike::io::Value oracle_envelope_path, oracle_strength_path;
         bool provenance_found = false;
         for (const auto &entry : std::get<bike::io::Value::Array>(index.data))
             if (rd::string(rd::field(entry, "label")) ==
@@ -647,6 +648,14 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
                 oracle_commit = rd::field(recorded, ".model_commit");
                 oracle_source_sha =
                     rd::field(recorded, ".model_source_sha256");
+                oracle_envelope_path =
+                    rd::field(recorded,
+                              ".resolved_config.physics.articulated."
+                              "joint_envelope_path");
+                oracle_strength_path =
+                    rd::field(recorded,
+                              ".resolved_config.physics.articulated."
+                              "joint_strength_path");
                 provenance_found = true;
             }
         bt::require(provenance_found,
@@ -656,8 +665,33 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
                    std::holds_alternative<std::string>(value.data);
         };
         bt::require(
-            string_or_null(oracle_commit) && string_or_null(oracle_source_sha),
+            string_or_null(oracle_commit) && string_or_null(oracle_source_sha) &&
+                string_or_null(oracle_envelope_path) &&
+                string_or_null(oracle_strength_path),
             "oracle provenance is string-or-null");
+        // resolved_config.physics.articulated carries absolute joint-asset
+        // path spellings — the same capture-environment provenance class
+        // as the commit stamps (asset identity is asserted bitwise by the
+        // joint_*_sha256 leaves), so the spellings are re-seated verbatim
+        // to keep the golden worktree-agnostic.
+        const auto member_of = [](bike::io::Value &owner,
+                                  std::string_view key) -> bike::io::Value * {
+            for (auto &[name, member] :
+                 std::get<bike::io::Value::Object>(owner.data))
+                if (name == key)
+                    return &member;
+            return nullptr;
+        };
+        if (auto *resolved = member_of(metadata, "resolved_config"))
+            if (auto *physics = member_of(*resolved, "physics"))
+                if (auto *articulated = member_of(*physics, "articulated")) {
+                    if (auto *path =
+                            member_of(*articulated, "joint_envelope_path"))
+                        *path = oracle_envelope_path;
+                    if (auto *path =
+                            member_of(*articulated, "joint_strength_path"))
+                        *path = oracle_strength_path;
+                }
         auto &object = std::get<bike::io::Value::Object>(metadata.data);
         for (auto &[name, member] : object) {
             if (name == "model_commit")

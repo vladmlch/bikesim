@@ -16343,12 +16343,12 @@
   "index": 1167,
   "kind": "bitwise",
   "label": "row.00000583.other",
-  "nbytes": 4575,
+  "nbytes": 4576,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
   "offset": 5645627,
   "rtol": null,
   "shape": [
-   4575
+   4576
   ]
  },
  {
@@ -16359,7 +16359,7 @@
   "label": "row.00000584.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5650202,
+  "offset": 5650203,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16371,12 +16371,12 @@
   "index": 1169,
   "kind": "bitwise",
   "label": "row.00000584.other",
-  "nbytes": 4577,
+  "nbytes": 4578,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5655250,
+  "offset": 5655251,
   "rtol": null,
   "shape": [
-   4577
+   4578
   ]
  },
  {
@@ -16387,7 +16387,7 @@
   "label": "row.00000585.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5659827,
+  "offset": 5659829,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16401,7 +16401,7 @@
   "label": "row.00000585.other",
   "nbytes": 4580,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5664875,
+  "offset": 5664877,
   "rtol": null,
   "shape": [
    4580
@@ -16415,7 +16415,7 @@
   "label": "row.00000586.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5669455,
+  "offset": 5669457,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16429,7 +16429,7 @@
   "label": "row.00000586.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5674503,
+  "offset": 5674505,
   "rtol": null,
   "shape": [
    4581
@@ -16443,7 +16443,7 @@
   "label": "row.00000587.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5679084,
+  "offset": 5679086,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16457,7 +16457,7 @@
   "label": "row.00000587.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5684132,
+  "offset": 5684134,
   "rtol": null,
   "shape": [
    4581
@@ -16471,7 +16471,7 @@
   "label": "row.00000588.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5688713,
+  "offset": 5688715,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16485,7 +16485,7 @@
   "label": "row.00000588.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5693761,
+  "offset": 5693763,
   "rtol": null,
   "shape": [
    4573
@@ -16499,7 +16499,7 @@
   "label": "row.00000589.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5698334,
+  "offset": 5698336,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16513,7 +16513,7 @@
   "label": "row.00000589.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5703382,
+  "offset": 5703384,
   "rtol": null,
   "shape": [
    4573
@@ -16527,7 +16527,7 @@
   "label": "row.00000590.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5707955,
+  "offset": 5707957,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16541,7 +16541,7 @@
   "label": "row.00000590.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5713003,
+  "offset": 5713005,
   "rtol": null,
   "shape": [
    4573
@@ -16555,7 +16555,7 @@
   "label": "row.00000591.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5717576,
+  "offset": 5717578,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16567,12 +16567,12 @@
   "index": 1183,
   "kind": "bitwise",
   "label": "row.00000591.other",
-  "nbytes": 4571,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5722624,
+  "offset": 5722626,
   "rtol": null,
   "shape": [
-   4571
+   4573
   ]
  },
  {
@@ -16583,7 +16583,7 @@
   "label": "row.00000592.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5727195,
+  "offset": 5727199,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16597,7 +16597,7 @@
   "label": "row.00000592.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5732243,
+  "offset": 5732247,
   "rtol": null,
   "shape": [
    4571
@@ -16611,7 +16611,7 @@
   "label": "row.00000593.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5736814,
+  "offset": 5736818,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16623,12 +16623,12 @@
   "index": 1187,
   "kind": "bitwise",
   "label": "row.00000593.other",
-  "nbytes": 4571,
+  "nbytes": 4572,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5741862,
+  "offset": 5741866,
   "rtol": null,
   "shape": [
-   4571
+   4572
   ]
  },
  {
@@ -16639,7 +16639,7 @@
   "label": "row.00000594.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5746433,
+  "offset": 5746438,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16651,12 +16651,12 @@
   "index": 1189,
   "kind": "bitwise",
   "label": "row.00000594.other",
-  "nbytes": 4571,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5751481,
+  "offset": 5751486,
   "rtol": null,
   "shape": [
-   4571
+   4573
   ]
  },
  {
@@ -16667,7 +16667,7 @@
   "label": "row.00000595.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5756052,
+  "offset": 5756059,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16679,12 +16679,12 @@
   "index": 1191,
   "kind": "bitwise",
   "label": "row.00000595.other",
-  "nbytes": 4571,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5761100,
+  "offset": 5761107,
   "rtol": null,
   "shape": [
-   4571
+   4573
   ]
  },
  {
@@ -16695,7 +16695,7 @@
   "label": "row.00000596.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5765671,
+  "offset": 5765680,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16707,12 +16707,12 @@
   "index": 1193,
   "kind": "bitwise",
   "label": "row.00000596.other",
-  "nbytes": 4573,
+  "nbytes": 4574,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5770719,
+  "offset": 5770728,
   "rtol": null,
   "shape": [
-   4573
+   4574
   ]
  },
  {
@@ -16723,7 +16723,7 @@
   "label": "row.00000597.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5775292,
+  "offset": 5775302,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16737,7 +16737,7 @@
   "label": "row.00000597.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5780340,
+  "offset": 5780350,
   "rtol": null,
   "shape": [
    4575
@@ -16751,7 +16751,7 @@
   "label": "row.00000598.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5784915,
+  "offset": 5784925,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16765,7 +16765,7 @@
   "label": "row.00000598.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5789963,
+  "offset": 5789973,
   "rtol": null,
   "shape": [
    4575
@@ -16779,7 +16779,7 @@
   "label": "row.00000599.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5794538,
+  "offset": 5794548,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16793,7 +16793,7 @@
   "label": "row.00000599.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5799586,
+  "offset": 5799596,
   "rtol": null,
   "shape": [
    4575
@@ -16807,7 +16807,7 @@
   "label": "row.00000600.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5804161,
+  "offset": 5804171,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16819,12 +16819,12 @@
   "index": 1201,
   "kind": "bitwise",
   "label": "row.00000600.other",
-  "nbytes": 4576,
+  "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5809209,
+  "offset": 5809219,
   "rtol": null,
   "shape": [
-   4576
+   4575
   ]
  },
  {
@@ -16835,7 +16835,7 @@
   "label": "row.00000601.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5813785,
+  "offset": 5813794,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16849,7 +16849,7 @@
   "label": "row.00000601.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5818833,
+  "offset": 5818842,
   "rtol": null,
   "shape": [
    4575
@@ -16863,7 +16863,7 @@
   "label": "row.00000602.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5823408,
+  "offset": 5823417,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16875,12 +16875,12 @@
   "index": 1205,
   "kind": "bitwise",
   "label": "row.00000602.other",
-  "nbytes": 4575,
+  "nbytes": 4576,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5828456,
+  "offset": 5828465,
   "rtol": null,
   "shape": [
-   4575
+   4576
   ]
  },
  {
@@ -16891,7 +16891,7 @@
   "label": "row.00000603.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5833031,
+  "offset": 5833041,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16905,7 +16905,7 @@
   "label": "row.00000603.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5838079,
+  "offset": 5838089,
   "rtol": null,
   "shape": [
    4575
@@ -16919,7 +16919,7 @@
   "label": "row.00000604.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5842654,
+  "offset": 5842664,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16933,7 +16933,7 @@
   "label": "row.00000604.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5847702,
+  "offset": 5847712,
   "rtol": null,
   "shape": [
    4575
@@ -16947,7 +16947,7 @@
   "label": "row.00000605.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5852277,
+  "offset": 5852287,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16959,12 +16959,12 @@
   "index": 1211,
   "kind": "bitwise",
   "label": "row.00000605.other",
-  "nbytes": 4576,
+  "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5857325,
+  "offset": 5857335,
   "rtol": null,
   "shape": [
-   4576
+   4575
   ]
  },
  {
@@ -16975,7 +16975,7 @@
   "label": "row.00000606.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5861901,
+  "offset": 5861910,
   "rtol": 1e-09,
   "shape": [
    631
@@ -16989,7 +16989,7 @@
   "label": "row.00000606.other",
   "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5866949,
+  "offset": 5866958,
   "rtol": null,
   "shape": [
    4575
@@ -17003,7 +17003,7 @@
   "label": "row.00000607.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5871524,
+  "offset": 5871533,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17015,12 +17015,12 @@
   "index": 1215,
   "kind": "bitwise",
   "label": "row.00000607.other",
-  "nbytes": 4577,
+  "nbytes": 4575,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5876572,
+  "offset": 5876581,
   "rtol": null,
   "shape": [
-   4577
+   4575
   ]
  },
  {
@@ -17031,7 +17031,7 @@
   "label": "row.00000608.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5881149,
+  "offset": 5881156,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17043,12 +17043,12 @@
   "index": 1217,
   "kind": "bitwise",
   "label": "row.00000608.other",
-  "nbytes": 4643,
+  "nbytes": 4642,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5886197,
+  "offset": 5886204,
   "rtol": null,
   "shape": [
-   4643
+   4642
   ]
  },
  {
@@ -17059,7 +17059,7 @@
   "label": "row.00000609.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5890840,
+  "offset": 5890846,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17071,12 +17071,12 @@
   "index": 1219,
   "kind": "bitwise",
   "label": "row.00000609.other",
-  "nbytes": 4643,
+  "nbytes": 4641,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5895888,
+  "offset": 5895894,
   "rtol": null,
   "shape": [
-   4643
+   4641
   ]
  },
  {
@@ -17087,7 +17087,7 @@
   "label": "row.00000610.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5900531,
+  "offset": 5900535,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17099,12 +17099,12 @@
   "index": 1221,
   "kind": "bitwise",
   "label": "row.00000610.other",
-  "nbytes": 4643,
+  "nbytes": 4641,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5905579,
+  "offset": 5905583,
   "rtol": null,
   "shape": [
-   4643
+   4641
   ]
  },
  {
@@ -17115,7 +17115,7 @@
   "label": "row.00000611.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5910222,
+  "offset": 5910224,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17127,12 +17127,12 @@
   "index": 1223,
   "kind": "bitwise",
   "label": "row.00000611.other",
-  "nbytes": 4643,
+  "nbytes": 4642,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5915270,
+  "offset": 5915272,
   "rtol": null,
   "shape": [
-   4643
+   4642
   ]
  },
  {
@@ -17143,7 +17143,7 @@
   "label": "row.00000612.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5919913,
+  "offset": 5919914,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17155,12 +17155,12 @@
   "index": 1225,
   "kind": "bitwise",
   "label": "row.00000612.other",
-  "nbytes": 4577,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5924961,
+  "offset": 5924962,
   "rtol": null,
   "shape": [
-   4577
+   4585
   ]
  },
  {
@@ -17171,7 +17171,7 @@
   "label": "row.00000613.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5929538,
+  "offset": 5929547,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17183,12 +17183,12 @@
   "index": 1227,
   "kind": "bitwise",
   "label": "row.00000613.other",
-  "nbytes": 4577,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5934586,
+  "offset": 5934595,
   "rtol": null,
   "shape": [
-   4577
+   4586
   ]
  },
  {
@@ -17199,7 +17199,7 @@
   "label": "row.00000614.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5939163,
+  "offset": 5939181,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17211,12 +17211,12 @@
   "index": 1229,
   "kind": "bitwise",
   "label": "row.00000614.other",
-  "nbytes": 4577,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5944211,
+  "offset": 5944229,
   "rtol": null,
   "shape": [
-   4577
+   4586
   ]
  },
  {
@@ -17227,7 +17227,7 @@
   "label": "row.00000615.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5948788,
+  "offset": 5948815,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17239,12 +17239,12 @@
   "index": 1231,
   "kind": "bitwise",
   "label": "row.00000615.other",
-  "nbytes": 4576,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5953836,
+  "offset": 5953863,
   "rtol": null,
   "shape": [
-   4576
+   4585
   ]
  },
  {
@@ -17255,7 +17255,7 @@
   "label": "row.00000616.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5958412,
+  "offset": 5958448,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17267,12 +17267,12 @@
   "index": 1233,
   "kind": "bitwise",
   "label": "row.00000616.other",
-  "nbytes": 4585,
+  "nbytes": 4640,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5963460,
+  "offset": 5963496,
   "rtol": null,
   "shape": [
-   4585
+   4640
   ]
  },
  {
@@ -17283,7 +17283,7 @@
   "label": "row.00000617.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5968045,
+  "offset": 5968136,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17295,12 +17295,12 @@
   "index": 1235,
   "kind": "bitwise",
   "label": "row.00000617.other",
-  "nbytes": 4585,
+  "nbytes": 4640,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5973093,
+  "offset": 5973184,
   "rtol": null,
   "shape": [
-   4585
+   4640
   ]
  },
  {
@@ -17311,7 +17311,7 @@
   "label": "row.00000618.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5977678,
+  "offset": 5977824,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17323,12 +17323,12 @@
   "index": 1237,
   "kind": "bitwise",
   "label": "row.00000618.other",
-  "nbytes": 4585,
+  "nbytes": 4640,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5982726,
+  "offset": 5982872,
   "rtol": null,
   "shape": [
-   4585
+   4640
   ]
  },
  {
@@ -17339,7 +17339,7 @@
   "label": "row.00000619.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5987311,
+  "offset": 5987512,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17351,12 +17351,12 @@
   "index": 1239,
   "kind": "bitwise",
   "label": "row.00000619.other",
-  "nbytes": 4585,
+  "nbytes": 4640,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5992359,
+  "offset": 5992560,
   "rtol": null,
   "shape": [
-   4585
+   4640
   ]
  },
  {
@@ -17367,7 +17367,7 @@
   "label": "row.00000620.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 5996944,
+  "offset": 5997200,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17379,12 +17379,12 @@
   "index": 1241,
   "kind": "bitwise",
   "label": "row.00000620.other",
-  "nbytes": 4641,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6001992,
+  "offset": 6002248,
   "rtol": null,
   "shape": [
-   4641
+   4585
   ]
  },
  {
@@ -17395,7 +17395,7 @@
   "label": "row.00000621.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6006633,
+  "offset": 6006833,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17407,12 +17407,12 @@
   "index": 1243,
   "kind": "bitwise",
   "label": "row.00000621.other",
-  "nbytes": 4641,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6011681,
+  "offset": 6011881,
   "rtol": null,
   "shape": [
-   4641
+   4585
   ]
  },
  {
@@ -17423,7 +17423,7 @@
   "label": "row.00000622.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6016322,
+  "offset": 6016466,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17435,12 +17435,12 @@
   "index": 1245,
   "kind": "bitwise",
   "label": "row.00000622.other",
-  "nbytes": 4641,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6021370,
+  "offset": 6021514,
   "rtol": null,
   "shape": [
-   4641
+   4585
   ]
  },
  {
@@ -17451,7 +17451,7 @@
   "label": "row.00000623.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6026011,
+  "offset": 6026099,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17463,12 +17463,12 @@
   "index": 1247,
   "kind": "bitwise",
   "label": "row.00000623.other",
-  "nbytes": 4641,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6031059,
+  "offset": 6031147,
   "rtol": null,
   "shape": [
-   4641
+   4585
   ]
  },
  {
@@ -17479,7 +17479,7 @@
   "label": "row.00000624.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6035700,
+  "offset": 6035732,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17491,12 +17491,12 @@
   "index": 1249,
   "kind": "bitwise",
   "label": "row.00000624.other",
-  "nbytes": 4641,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6040748,
+  "offset": 6040780,
   "rtol": null,
   "shape": [
-   4641
+   4585
   ]
  },
  {
@@ -17507,7 +17507,7 @@
   "label": "row.00000625.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6045389,
+  "offset": 6045365,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17519,12 +17519,12 @@
   "index": 1251,
   "kind": "bitwise",
   "label": "row.00000625.other",
-  "nbytes": 4641,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6050437,
+  "offset": 6050413,
   "rtol": null,
   "shape": [
-   4641
+   4585
   ]
  },
  {
@@ -17535,7 +17535,7 @@
   "label": "row.00000626.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6055078,
+  "offset": 6054998,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17547,12 +17547,12 @@
   "index": 1253,
   "kind": "bitwise",
   "label": "row.00000626.other",
-  "nbytes": 4640,
+  "nbytes": 4584,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6060126,
+  "offset": 6060046,
   "rtol": null,
   "shape": [
-   4640
+   4584
   ]
  },
  {
@@ -17563,7 +17563,7 @@
   "label": "row.00000627.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6064766,
+  "offset": 6064630,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17575,12 +17575,12 @@
   "index": 1255,
   "kind": "bitwise",
   "label": "row.00000627.other",
-  "nbytes": 4639,
+  "nbytes": 4584,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6069814,
+  "offset": 6069678,
   "rtol": null,
   "shape": [
-   4639
+   4584
   ]
  },
  {
@@ -17591,7 +17591,7 @@
   "label": "row.00000628.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6074453,
+  "offset": 6074262,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17605,7 +17605,7 @@
   "label": "row.00000628.other",
   "nbytes": 4572,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6079501,
+  "offset": 6079310,
   "rtol": null,
   "shape": [
    4572
@@ -17619,7 +17619,7 @@
   "label": "row.00000629.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6084073,
+  "offset": 6083882,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17633,7 +17633,7 @@
   "label": "row.00000629.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6089121,
+  "offset": 6088930,
   "rtol": null,
   "shape": [
    4571
@@ -17647,7 +17647,7 @@
   "label": "row.00000630.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6093692,
+  "offset": 6093501,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17661,7 +17661,7 @@
   "label": "row.00000630.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6098740,
+  "offset": 6098549,
   "rtol": null,
   "shape": [
    4571
@@ -17675,7 +17675,7 @@
   "label": "row.00000631.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6103311,
+  "offset": 6103120,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17689,7 +17689,7 @@
   "label": "row.00000631.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6108359,
+  "offset": 6108168,
   "rtol": null,
   "shape": [
    4571
@@ -17703,7 +17703,7 @@
   "label": "row.00000632.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6112930,
+  "offset": 6112739,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17717,7 +17717,7 @@
   "label": "row.00000632.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6117978,
+  "offset": 6117787,
   "rtol": null,
   "shape": [
    4571
@@ -17731,7 +17731,7 @@
   "label": "row.00000633.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6122549,
+  "offset": 6122358,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17745,7 +17745,7 @@
   "label": "row.00000633.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6127597,
+  "offset": 6127406,
   "rtol": null,
   "shape": [
    4571
@@ -17759,7 +17759,7 @@
   "label": "row.00000634.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6132168,
+  "offset": 6131977,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17773,7 +17773,7 @@
   "label": "row.00000634.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6137216,
+  "offset": 6137025,
   "rtol": null,
   "shape": [
    4571
@@ -17787,7 +17787,7 @@
   "label": "row.00000635.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6141787,
+  "offset": 6141596,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17801,7 +17801,7 @@
   "label": "row.00000635.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6146835,
+  "offset": 6146644,
   "rtol": null,
   "shape": [
    4571
@@ -17815,7 +17815,7 @@
   "label": "row.00000636.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6151406,
+  "offset": 6151215,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17829,7 +17829,7 @@
   "label": "row.00000636.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6156454,
+  "offset": 6156263,
   "rtol": null,
   "shape": [
    4571
@@ -17843,7 +17843,7 @@
   "label": "row.00000637.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6161025,
+  "offset": 6160834,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17857,7 +17857,7 @@
   "label": "row.00000637.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6166073,
+  "offset": 6165882,
   "rtol": null,
   "shape": [
    4571
@@ -17871,7 +17871,7 @@
   "label": "row.00000638.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6170644,
+  "offset": 6170453,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17885,7 +17885,7 @@
   "label": "row.00000638.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6175692,
+  "offset": 6175501,
   "rtol": null,
   "shape": [
    4571
@@ -17899,7 +17899,7 @@
   "label": "row.00000639.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6180263,
+  "offset": 6180072,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17913,7 +17913,7 @@
   "label": "row.00000639.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6185311,
+  "offset": 6185120,
   "rtol": null,
   "shape": [
    4571
@@ -17927,7 +17927,7 @@
   "label": "row.00000640.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6189882,
+  "offset": 6189691,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17941,7 +17941,7 @@
   "label": "row.00000640.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6194930,
+  "offset": 6194739,
   "rtol": null,
   "shape": [
    4571
@@ -17955,7 +17955,7 @@
   "label": "row.00000641.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6199501,
+  "offset": 6199310,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17969,7 +17969,7 @@
   "label": "row.00000641.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6204549,
+  "offset": 6204358,
   "rtol": null,
   "shape": [
    4571
@@ -17983,7 +17983,7 @@
   "label": "row.00000642.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6209120,
+  "offset": 6208929,
   "rtol": 1e-09,
   "shape": [
    631
@@ -17997,7 +17997,7 @@
   "label": "row.00000642.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6214168,
+  "offset": 6213977,
   "rtol": null,
   "shape": [
    4571
@@ -18011,7 +18011,7 @@
   "label": "row.00000643.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6218739,
+  "offset": 6218548,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18025,7 +18025,7 @@
   "label": "row.00000643.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6223787,
+  "offset": 6223596,
   "rtol": null,
   "shape": [
    4571
@@ -18039,7 +18039,7 @@
   "label": "row.00000644.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6228358,
+  "offset": 6228167,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18053,7 +18053,7 @@
   "label": "row.00000644.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6233406,
+  "offset": 6233215,
   "rtol": null,
   "shape": [
    4571
@@ -18067,7 +18067,7 @@
   "label": "row.00000645.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6237977,
+  "offset": 6237786,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18081,7 +18081,7 @@
   "label": "row.00000645.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6243025,
+  "offset": 6242834,
   "rtol": null,
   "shape": [
    4571
@@ -18095,7 +18095,7 @@
   "label": "row.00000646.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6247596,
+  "offset": 6247405,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18109,7 +18109,7 @@
   "label": "row.00000646.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6252644,
+  "offset": 6252453,
   "rtol": null,
   "shape": [
    4571
@@ -18123,7 +18123,7 @@
   "label": "row.00000647.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6257215,
+  "offset": 6257024,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18137,7 +18137,7 @@
   "label": "row.00000647.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6262263,
+  "offset": 6262072,
   "rtol": null,
   "shape": [
    4571
@@ -18151,7 +18151,7 @@
   "label": "row.00000648.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6266834,
+  "offset": 6266643,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18165,7 +18165,7 @@
   "label": "row.00000648.other",
   "nbytes": 4572,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6271882,
+  "offset": 6271691,
   "rtol": null,
   "shape": [
    4572
@@ -18179,7 +18179,7 @@
   "label": "row.00000649.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6276454,
+  "offset": 6276263,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18193,7 +18193,7 @@
   "label": "row.00000649.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6281502,
+  "offset": 6281311,
   "rtol": null,
   "shape": [
    4573
@@ -18207,7 +18207,7 @@
   "label": "row.00000650.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6286075,
+  "offset": 6285884,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18221,7 +18221,7 @@
   "label": "row.00000650.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6291123,
+  "offset": 6290932,
   "rtol": null,
   "shape": [
    4573
@@ -18235,7 +18235,7 @@
   "label": "row.00000651.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6295696,
+  "offset": 6295505,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18249,7 +18249,7 @@
   "label": "row.00000651.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6300744,
+  "offset": 6300553,
   "rtol": null,
   "shape": [
    4573
@@ -18263,7 +18263,7 @@
   "label": "row.00000652.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6305317,
+  "offset": 6305126,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18277,7 +18277,7 @@
   "label": "row.00000652.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6310365,
+  "offset": 6310174,
   "rtol": null,
   "shape": [
    4573
@@ -18291,7 +18291,7 @@
   "label": "row.00000653.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6314938,
+  "offset": 6314747,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18305,7 +18305,7 @@
   "label": "row.00000653.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6319986,
+  "offset": 6319795,
   "rtol": null,
   "shape": [
    4573
@@ -18319,7 +18319,7 @@
   "label": "row.00000654.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6324559,
+  "offset": 6324368,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18333,7 +18333,7 @@
   "label": "row.00000654.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6329607,
+  "offset": 6329416,
   "rtol": null,
   "shape": [
    4573
@@ -18347,7 +18347,7 @@
   "label": "row.00000655.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6334180,
+  "offset": 6333989,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18361,7 +18361,7 @@
   "label": "row.00000655.other",
   "nbytes": 4572,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6339228,
+  "offset": 6339037,
   "rtol": null,
   "shape": [
    4572
@@ -18375,7 +18375,7 @@
   "label": "row.00000656.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6343800,
+  "offset": 6343609,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18389,7 +18389,7 @@
   "label": "row.00000656.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6348848,
+  "offset": 6348657,
   "rtol": null,
   "shape": [
    4571
@@ -18403,7 +18403,7 @@
   "label": "row.00000657.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6353419,
+  "offset": 6353228,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18417,7 +18417,7 @@
   "label": "row.00000657.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6358467,
+  "offset": 6358276,
   "rtol": null,
   "shape": [
    4571
@@ -18431,7 +18431,7 @@
   "label": "row.00000658.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6363038,
+  "offset": 6362847,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18445,7 +18445,7 @@
   "label": "row.00000658.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6368086,
+  "offset": 6367895,
   "rtol": null,
   "shape": [
    4571
@@ -18459,7 +18459,7 @@
   "label": "row.00000659.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6372657,
+  "offset": 6372466,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18473,7 +18473,7 @@
   "label": "row.00000659.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6377705,
+  "offset": 6377514,
   "rtol": null,
   "shape": [
    4571
@@ -18487,7 +18487,7 @@
   "label": "row.00000660.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6382276,
+  "offset": 6382085,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18501,7 +18501,7 @@
   "label": "row.00000660.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6387324,
+  "offset": 6387133,
   "rtol": null,
   "shape": [
    4571
@@ -18515,7 +18515,7 @@
   "label": "row.00000661.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6391895,
+  "offset": 6391704,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18529,7 +18529,7 @@
   "label": "row.00000661.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6396943,
+  "offset": 6396752,
   "rtol": null,
   "shape": [
    4571
@@ -18543,7 +18543,7 @@
   "label": "row.00000662.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6401514,
+  "offset": 6401323,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18557,7 +18557,7 @@
   "label": "row.00000662.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6406562,
+  "offset": 6406371,
   "rtol": null,
   "shape": [
    4571
@@ -18571,7 +18571,7 @@
   "label": "row.00000663.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6411133,
+  "offset": 6410942,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18585,7 +18585,7 @@
   "label": "row.00000663.other",
   "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6416181,
+  "offset": 6415990,
   "rtol": null,
   "shape": [
    4571
@@ -18599,7 +18599,7 @@
   "label": "row.00000664.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6420752,
+  "offset": 6420561,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18611,12 +18611,12 @@
   "index": 1329,
   "kind": "bitwise",
   "label": "row.00000664.other",
-  "nbytes": 4571,
+  "nbytes": 4572,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6425800,
+  "offset": 6425609,
   "rtol": null,
   "shape": [
-   4571
+   4572
   ]
  },
  {
@@ -18627,7 +18627,7 @@
   "label": "row.00000665.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6430371,
+  "offset": 6430181,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18639,12 +18639,12 @@
   "index": 1331,
   "kind": "bitwise",
   "label": "row.00000665.other",
-  "nbytes": 4571,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6435419,
+  "offset": 6435229,
   "rtol": null,
   "shape": [
-   4571
+   4573
   ]
  },
  {
@@ -18655,7 +18655,7 @@
   "label": "row.00000666.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6439990,
+  "offset": 6439802,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18667,12 +18667,12 @@
   "index": 1333,
   "kind": "bitwise",
   "label": "row.00000666.other",
-  "nbytes": 4571,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6445038,
+  "offset": 6444850,
   "rtol": null,
   "shape": [
-   4571
+   4573
   ]
  },
  {
@@ -18683,7 +18683,7 @@
   "label": "row.00000667.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6449609,
+  "offset": 6449423,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18695,12 +18695,12 @@
   "index": 1335,
   "kind": "bitwise",
   "label": "row.00000667.other",
-  "nbytes": 4571,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6454657,
+  "offset": 6454471,
   "rtol": null,
   "shape": [
-   4571
+   4573
   ]
  },
  {
@@ -18711,7 +18711,7 @@
   "label": "row.00000668.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6459228,
+  "offset": 6459044,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18723,12 +18723,12 @@
   "index": 1337,
   "kind": "bitwise",
   "label": "row.00000668.other",
-  "nbytes": 4572,
+  "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6464276,
+  "offset": 6464092,
   "rtol": null,
   "shape": [
-   4572
+   4573
   ]
  },
  {
@@ -18739,7 +18739,7 @@
   "label": "row.00000669.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6468848,
+  "offset": 6468665,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18753,7 +18753,7 @@
   "label": "row.00000669.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6473896,
+  "offset": 6473713,
   "rtol": null,
   "shape": [
    4573
@@ -18767,7 +18767,7 @@
   "label": "row.00000670.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6478469,
+  "offset": 6478286,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18781,7 +18781,7 @@
   "label": "row.00000670.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6483517,
+  "offset": 6483334,
   "rtol": null,
   "shape": [
    4573
@@ -18795,7 +18795,7 @@
   "label": "row.00000671.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6488090,
+  "offset": 6487907,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18809,7 +18809,7 @@
   "label": "row.00000671.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6493138,
+  "offset": 6492955,
   "rtol": null,
   "shape": [
    4573
@@ -18823,7 +18823,7 @@
   "label": "row.00000672.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6497711,
+  "offset": 6497528,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18837,7 +18837,7 @@
   "label": "row.00000672.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6502759,
+  "offset": 6502576,
   "rtol": null,
   "shape": [
    4573
@@ -18851,7 +18851,7 @@
   "label": "row.00000673.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6507332,
+  "offset": 6507149,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18865,7 +18865,7 @@
   "label": "row.00000673.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6512380,
+  "offset": 6512197,
   "rtol": null,
   "shape": [
    4573
@@ -18879,7 +18879,7 @@
   "label": "row.00000674.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6516953,
+  "offset": 6516770,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18893,7 +18893,7 @@
   "label": "row.00000674.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6522001,
+  "offset": 6521818,
   "rtol": null,
   "shape": [
    4573
@@ -18907,7 +18907,7 @@
   "label": "row.00000675.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6526574,
+  "offset": 6526391,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18921,7 +18921,7 @@
   "label": "row.00000675.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6531622,
+  "offset": 6531439,
   "rtol": null,
   "shape": [
    4573
@@ -18935,7 +18935,7 @@
   "label": "row.00000676.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6536195,
+  "offset": 6536012,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18949,7 +18949,7 @@
   "label": "row.00000676.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6541243,
+  "offset": 6541060,
   "rtol": null,
   "shape": [
    4573
@@ -18963,7 +18963,7 @@
   "label": "row.00000677.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6545816,
+  "offset": 6545633,
   "rtol": 1e-09,
   "shape": [
    631
@@ -18977,7 +18977,7 @@
   "label": "row.00000677.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6550864,
+  "offset": 6550681,
   "rtol": null,
   "shape": [
    4573
@@ -18991,7 +18991,7 @@
   "label": "row.00000678.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6555437,
+  "offset": 6555254,
   "rtol": 1e-09,
   "shape": [
    631
@@ -19005,7 +19005,7 @@
   "label": "row.00000678.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6560485,
+  "offset": 6560302,
   "rtol": null,
   "shape": [
    4573
@@ -19019,7 +19019,7 @@
   "label": "row.00000679.values",
   "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6565058,
+  "offset": 6564875,
   "rtol": 1e-09,
   "shape": [
    631
@@ -19033,7 +19033,7 @@
   "label": "row.00000679.other",
   "nbytes": 4573,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6570106,
+  "offset": 6569923,
   "rtol": null,
   "shape": [
    4573
@@ -19045,12 +19045,12 @@
   "index": 1360,
   "kind": "close",
   "label": "row.00000680.values",
-  "nbytes": 5168,
+  "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6574679,
+  "offset": 6574496,
   "rtol": 1e-09,
   "shape": [
-   646
+   631
   ]
  },
  {
@@ -19059,12 +19059,12 @@
   "index": 1361,
   "kind": "bitwise",
   "label": "row.00000680.other",
-  "nbytes": 4582,
+  "nbytes": 4572,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6579847,
+  "offset": 6579544,
   "rtol": null,
   "shape": [
-   4582
+   4572
   ]
  },
  {
@@ -19073,12 +19073,12 @@
   "index": 1362,
   "kind": "close",
   "label": "row.00000681.values",
-  "nbytes": 5168,
+  "nbytes": 5048,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6584429,
+  "offset": 6584116,
   "rtol": 1e-09,
   "shape": [
-   646
+   631
   ]
  },
  {
@@ -19087,12 +19087,12 @@
   "index": 1363,
   "kind": "bitwise",
   "label": "row.00000681.other",
-  "nbytes": 4581,
+  "nbytes": 4571,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6589597,
+  "offset": 6589164,
   "rtol": null,
   "shape": [
-   4581
+   4571
   ]
  },
  {
@@ -19103,7 +19103,7 @@
   "label": "row.00000682.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6594178,
+  "offset": 6593735,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19117,7 +19117,7 @@
   "label": "row.00000682.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6599346,
+  "offset": 6598903,
   "rtol": null,
   "shape": [
    4581
@@ -19131,7 +19131,7 @@
   "label": "row.00000683.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6603927,
+  "offset": 6603484,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19145,7 +19145,7 @@
   "label": "row.00000683.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6609095,
+  "offset": 6608652,
   "rtol": null,
   "shape": [
    4581
@@ -19159,7 +19159,7 @@
   "label": "row.00000684.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6613676,
+  "offset": 6613233,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19173,7 +19173,7 @@
   "label": "row.00000684.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6618844,
+  "offset": 6618401,
   "rtol": null,
   "shape": [
    4581
@@ -19187,7 +19187,7 @@
   "label": "row.00000685.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6623425,
+  "offset": 6622982,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19199,12 +19199,12 @@
   "index": 1371,
   "kind": "bitwise",
   "label": "row.00000685.other",
-  "nbytes": 4582,
+  "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6628593,
+  "offset": 6628150,
   "rtol": null,
   "shape": [
-   4582
+   4581
   ]
  },
  {
@@ -19215,7 +19215,7 @@
   "label": "row.00000686.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6633175,
+  "offset": 6632731,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19227,12 +19227,12 @@
   "index": 1373,
   "kind": "bitwise",
   "label": "row.00000686.other",
-  "nbytes": 4583,
+  "nbytes": 4582,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6638343,
+  "offset": 6637899,
   "rtol": null,
   "shape": [
-   4583
+   4582
   ]
  },
  {
@@ -19243,7 +19243,7 @@
   "label": "row.00000687.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6642926,
+  "offset": 6642481,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19257,7 +19257,7 @@
   "label": "row.00000687.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6648094,
+  "offset": 6647649,
   "rtol": null,
   "shape": [
    4583
@@ -19271,7 +19271,7 @@
   "label": "row.00000688.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6652677,
+  "offset": 6652232,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19285,7 +19285,7 @@
   "label": "row.00000688.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6657845,
+  "offset": 6657400,
   "rtol": null,
   "shape": [
    4583
@@ -19299,7 +19299,7 @@
   "label": "row.00000689.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6662428,
+  "offset": 6661983,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19313,7 +19313,7 @@
   "label": "row.00000689.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6667596,
+  "offset": 6667151,
   "rtol": null,
   "shape": [
    4583
@@ -19327,7 +19327,7 @@
   "label": "row.00000690.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6672179,
+  "offset": 6671734,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19341,7 +19341,7 @@
   "label": "row.00000690.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6677347,
+  "offset": 6676902,
   "rtol": null,
   "shape": [
    4583
@@ -19355,7 +19355,7 @@
   "label": "row.00000691.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6681930,
+  "offset": 6681485,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19367,12 +19367,12 @@
   "index": 1383,
   "kind": "bitwise",
   "label": "row.00000691.other",
-  "nbytes": 4584,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6687098,
+  "offset": 6686653,
   "rtol": null,
   "shape": [
-   4584
+   4583
   ]
  },
  {
@@ -19383,7 +19383,7 @@
   "label": "row.00000692.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6691682,
+  "offset": 6691236,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19395,12 +19395,12 @@
   "index": 1385,
   "kind": "bitwise",
   "label": "row.00000692.other",
-  "nbytes": 4584,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6696850,
+  "offset": 6696404,
   "rtol": null,
   "shape": [
-   4584
+   4583
   ]
  },
  {
@@ -19411,7 +19411,7 @@
   "label": "row.00000693.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6701434,
+  "offset": 6700987,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19425,7 +19425,7 @@
   "label": "row.00000693.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6706602,
+  "offset": 6706155,
   "rtol": null,
   "shape": [
    4583
@@ -19439,7 +19439,7 @@
   "label": "row.00000694.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6711185,
+  "offset": 6710738,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19451,12 +19451,12 @@
   "index": 1389,
   "kind": "bitwise",
   "label": "row.00000694.other",
-  "nbytes": 4584,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6716353,
+  "offset": 6715906,
   "rtol": null,
   "shape": [
-   4584
+   4583
   ]
  },
  {
@@ -19467,7 +19467,7 @@
   "label": "row.00000695.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6720937,
+  "offset": 6720489,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19479,12 +19479,12 @@
   "index": 1391,
   "kind": "bitwise",
   "label": "row.00000695.other",
-  "nbytes": 4585,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6726105,
+  "offset": 6725657,
   "rtol": null,
   "shape": [
-   4585
+   4583
   ]
  },
  {
@@ -19495,7 +19495,7 @@
   "label": "row.00000696.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6730690,
+  "offset": 6730240,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19507,12 +19507,12 @@
   "index": 1393,
   "kind": "bitwise",
   "label": "row.00000696.other",
-  "nbytes": 4584,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6735858,
+  "offset": 6735408,
   "rtol": null,
   "shape": [
-   4584
+   4583
   ]
  },
  {
@@ -19523,7 +19523,7 @@
   "label": "row.00000697.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6740442,
+  "offset": 6739991,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19537,7 +19537,7 @@
   "label": "row.00000697.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6745610,
+  "offset": 6745159,
   "rtol": null,
   "shape": [
    4583
@@ -19551,7 +19551,7 @@
   "label": "row.00000698.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6750193,
+  "offset": 6749742,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19565,7 +19565,7 @@
   "label": "row.00000698.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6755361,
+  "offset": 6754910,
   "rtol": null,
   "shape": [
    4583
@@ -19579,7 +19579,7 @@
   "label": "row.00000699.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6759944,
+  "offset": 6759493,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19593,7 +19593,7 @@
   "label": "row.00000699.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6765112,
+  "offset": 6764661,
   "rtol": null,
   "shape": [
    4583
@@ -19607,7 +19607,7 @@
   "label": "row.00000700.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6769695,
+  "offset": 6769244,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19621,7 +19621,7 @@
   "label": "row.00000700.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6774863,
+  "offset": 6774412,
   "rtol": null,
   "shape": [
    4583
@@ -19635,7 +19635,7 @@
   "label": "row.00000701.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6779446,
+  "offset": 6778995,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19649,7 +19649,7 @@
   "label": "row.00000701.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6784614,
+  "offset": 6784163,
   "rtol": null,
   "shape": [
    4583
@@ -19663,7 +19663,7 @@
   "label": "row.00000702.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6789197,
+  "offset": 6788746,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19677,7 +19677,7 @@
   "label": "row.00000702.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6794365,
+  "offset": 6793914,
   "rtol": null,
   "shape": [
    4583
@@ -19691,7 +19691,7 @@
   "label": "row.00000703.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6798948,
+  "offset": 6798497,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19705,7 +19705,7 @@
   "label": "row.00000703.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6804116,
+  "offset": 6803665,
   "rtol": null,
   "shape": [
    4583
@@ -19719,7 +19719,7 @@
   "label": "row.00000704.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6808699,
+  "offset": 6808248,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19733,7 +19733,7 @@
   "label": "row.00000704.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6813867,
+  "offset": 6813416,
   "rtol": null,
   "shape": [
    4583
@@ -19747,7 +19747,7 @@
   "label": "row.00000705.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6818450,
+  "offset": 6817999,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19761,7 +19761,7 @@
   "label": "row.00000705.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6823618,
+  "offset": 6823167,
   "rtol": null,
   "shape": [
    4583
@@ -19775,7 +19775,7 @@
   "label": "row.00000706.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6828201,
+  "offset": 6827750,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19789,7 +19789,7 @@
   "label": "row.00000706.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6833369,
+  "offset": 6832918,
   "rtol": null,
   "shape": [
    4583
@@ -19803,7 +19803,7 @@
   "label": "row.00000707.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6837952,
+  "offset": 6837501,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19817,7 +19817,7 @@
   "label": "row.00000707.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6843120,
+  "offset": 6842669,
   "rtol": null,
   "shape": [
    4583
@@ -19831,7 +19831,7 @@
   "label": "row.00000708.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6847703,
+  "offset": 6847252,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19843,12 +19843,12 @@
   "index": 1417,
   "kind": "bitwise",
   "label": "row.00000708.other",
-  "nbytes": 4581,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6852871,
+  "offset": 6852420,
   "rtol": null,
   "shape": [
-   4581
+   4583
   ]
  },
  {
@@ -19859,7 +19859,7 @@
   "label": "row.00000709.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6857452,
+  "offset": 6857003,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19871,12 +19871,12 @@
   "index": 1419,
   "kind": "bitwise",
   "label": "row.00000709.other",
-  "nbytes": 4581,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6862620,
+  "offset": 6862171,
   "rtol": null,
   "shape": [
-   4581
+   4583
   ]
  },
  {
@@ -19887,7 +19887,7 @@
   "label": "row.00000710.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6867201,
+  "offset": 6866754,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19901,7 +19901,7 @@
   "label": "row.00000710.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6872369,
+  "offset": 6871922,
   "rtol": null,
   "shape": [
    4581
@@ -19915,7 +19915,7 @@
   "label": "row.00000711.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6876950,
+  "offset": 6876503,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19927,12 +19927,12 @@
   "index": 1423,
   "kind": "bitwise",
   "label": "row.00000711.other",
-  "nbytes": 4582,
+  "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6882118,
+  "offset": 6881671,
   "rtol": null,
   "shape": [
-   4582
+   4581
   ]
  },
  {
@@ -19943,7 +19943,7 @@
   "label": "row.00000712.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6886700,
+  "offset": 6886252,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19955,12 +19955,12 @@
   "index": 1425,
   "kind": "bitwise",
   "label": "row.00000712.other",
-  "nbytes": 4583,
+  "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6891868,
+  "offset": 6891420,
   "rtol": null,
   "shape": [
-   4583
+   4581
   ]
  },
  {
@@ -19971,7 +19971,7 @@
   "label": "row.00000713.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6896451,
+  "offset": 6896001,
   "rtol": 1e-09,
   "shape": [
    646
@@ -19983,12 +19983,12 @@
   "index": 1427,
   "kind": "bitwise",
   "label": "row.00000713.other",
-  "nbytes": 4583,
+  "nbytes": 4582,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6901619,
+  "offset": 6901169,
   "rtol": null,
   "shape": [
-   4583
+   4582
   ]
  },
  {
@@ -19999,7 +19999,7 @@
   "label": "row.00000714.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6906202,
+  "offset": 6905751,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20013,7 +20013,7 @@
   "label": "row.00000714.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6911370,
+  "offset": 6910919,
   "rtol": null,
   "shape": [
    4583
@@ -20027,7 +20027,7 @@
   "label": "row.00000715.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6915953,
+  "offset": 6915502,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20041,7 +20041,7 @@
   "label": "row.00000715.other",
   "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6921121,
+  "offset": 6920670,
   "rtol": null,
   "shape": [
    4583
@@ -20055,7 +20055,7 @@
   "label": "row.00000716.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6925704,
+  "offset": 6925253,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20067,12 +20067,12 @@
   "index": 1433,
   "kind": "bitwise",
   "label": "row.00000716.other",
-  "nbytes": 4583,
+  "nbytes": 4584,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6930872,
+  "offset": 6930421,
   "rtol": null,
   "shape": [
-   4583
+   4584
   ]
  },
  {
@@ -20083,7 +20083,7 @@
   "label": "row.00000717.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6935455,
+  "offset": 6935005,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20095,12 +20095,12 @@
   "index": 1435,
   "kind": "bitwise",
   "label": "row.00000717.other",
-  "nbytes": 4583,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6940623,
+  "offset": 6940173,
   "rtol": null,
   "shape": [
-   4583
+   4585
   ]
  },
  {
@@ -20111,7 +20111,7 @@
   "label": "row.00000718.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6945206,
+  "offset": 6944758,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20123,12 +20123,12 @@
   "index": 1437,
   "kind": "bitwise",
   "label": "row.00000718.other",
-  "nbytes": 4583,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6950374,
+  "offset": 6949926,
   "rtol": null,
   "shape": [
-   4583
+   4585
   ]
  },
  {
@@ -20139,7 +20139,7 @@
   "label": "row.00000719.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6954957,
+  "offset": 6954511,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20151,12 +20151,12 @@
   "index": 1439,
   "kind": "bitwise",
   "label": "row.00000719.other",
-  "nbytes": 4584,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6960125,
+  "offset": 6959679,
   "rtol": null,
   "shape": [
-   4584
+   4585
   ]
  },
  {
@@ -20167,7 +20167,7 @@
   "label": "row.00000720.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6964709,
+  "offset": 6964264,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20181,7 +20181,7 @@
   "label": "row.00000720.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6969877,
+  "offset": 6969432,
   "rtol": null,
   "shape": [
    4585
@@ -20195,7 +20195,7 @@
   "label": "row.00000721.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6974462,
+  "offset": 6974017,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20209,7 +20209,7 @@
   "label": "row.00000721.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6979630,
+  "offset": 6979185,
   "rtol": null,
   "shape": [
    4585
@@ -20223,7 +20223,7 @@
   "label": "row.00000722.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6984215,
+  "offset": 6983770,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20237,7 +20237,7 @@
   "label": "row.00000722.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6989383,
+  "offset": 6988938,
   "rtol": null,
   "shape": [
    4585
@@ -20251,7 +20251,7 @@
   "label": "row.00000723.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6993968,
+  "offset": 6993523,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20263,12 +20263,12 @@
   "index": 1447,
   "kind": "bitwise",
   "label": "row.00000723.other",
-  "nbytes": 4586,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 6999136,
+  "offset": 6998691,
   "rtol": null,
   "shape": [
-   4586
+   4585
   ]
  },
  {
@@ -20279,7 +20279,7 @@
   "label": "row.00000724.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7003722,
+  "offset": 7003276,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20293,7 +20293,7 @@
   "label": "row.00000724.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7008890,
+  "offset": 7008444,
   "rtol": null,
   "shape": [
    4585
@@ -20307,7 +20307,7 @@
   "label": "row.00000725.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7013475,
+  "offset": 7013029,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20319,12 +20319,12 @@
   "index": 1451,
   "kind": "bitwise",
   "label": "row.00000725.other",
-  "nbytes": 4585,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7018643,
+  "offset": 7018197,
   "rtol": null,
   "shape": [
-   4585
+   4586
   ]
  },
  {
@@ -20335,7 +20335,7 @@
   "label": "row.00000726.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7023228,
+  "offset": 7022783,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20349,7 +20349,7 @@
   "label": "row.00000726.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7028396,
+  "offset": 7027951,
   "rtol": null,
   "shape": [
    4585
@@ -20363,7 +20363,7 @@
   "label": "row.00000727.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7032981,
+  "offset": 7032536,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20377,7 +20377,7 @@
   "label": "row.00000727.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7038149,
+  "offset": 7037704,
   "rtol": null,
   "shape": [
    4585
@@ -20391,7 +20391,7 @@
   "label": "row.00000728.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7042734,
+  "offset": 7042289,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20405,7 +20405,7 @@
   "label": "row.00000728.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7047902,
+  "offset": 7047457,
   "rtol": null,
   "shape": [
    4585
@@ -20419,7 +20419,7 @@
   "label": "row.00000729.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7052487,
+  "offset": 7052042,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20433,7 +20433,7 @@
   "label": "row.00000729.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7057655,
+  "offset": 7057210,
   "rtol": null,
   "shape": [
    4585
@@ -20447,7 +20447,7 @@
   "label": "row.00000730.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7062240,
+  "offset": 7061795,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20459,12 +20459,12 @@
   "index": 1461,
   "kind": "bitwise",
   "label": "row.00000730.other",
-  "nbytes": 4586,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7067408,
+  "offset": 7066963,
   "rtol": null,
   "shape": [
-   4586
+   4585
   ]
  },
  {
@@ -20475,7 +20475,7 @@
   "label": "row.00000731.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7071994,
+  "offset": 7071548,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20487,12 +20487,12 @@
   "index": 1463,
   "kind": "bitwise",
   "label": "row.00000731.other",
-  "nbytes": 4585,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7077162,
+  "offset": 7076716,
   "rtol": null,
   "shape": [
-   4585
+   4586
   ]
  },
  {
@@ -20503,7 +20503,7 @@
   "label": "row.00000732.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7081747,
+  "offset": 7081302,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20517,7 +20517,7 @@
   "label": "row.00000732.other",
   "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7086915,
+  "offset": 7086470,
   "rtol": null,
   "shape": [
    4585
@@ -20531,7 +20531,7 @@
   "label": "row.00000733.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7091500,
+  "offset": 7091055,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20543,12 +20543,12 @@
   "index": 1467,
   "kind": "bitwise",
   "label": "row.00000733.other",
-  "nbytes": 4586,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7096668,
+  "offset": 7096223,
   "rtol": null,
   "shape": [
-   4586
+   4585
   ]
  },
  {
@@ -20559,7 +20559,7 @@
   "label": "row.00000734.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7101254,
+  "offset": 7100808,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20571,12 +20571,12 @@
   "index": 1469,
   "kind": "bitwise",
   "label": "row.00000734.other",
-  "nbytes": 4587,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7106422,
+  "offset": 7105976,
   "rtol": null,
   "shape": [
-   4587
+   4586
   ]
  },
  {
@@ -20587,7 +20587,7 @@
   "label": "row.00000735.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7111009,
+  "offset": 7110562,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20599,12 +20599,12 @@
   "index": 1471,
   "kind": "bitwise",
   "label": "row.00000735.other",
-  "nbytes": 4587,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7116177,
+  "offset": 7115730,
   "rtol": null,
   "shape": [
-   4587
+   4586
   ]
  },
  {
@@ -20615,7 +20615,7 @@
   "label": "row.00000736.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7120764,
+  "offset": 7120316,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20629,7 +20629,7 @@
   "label": "row.00000736.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7125932,
+  "offset": 7125484,
   "rtol": null,
   "shape": [
    4587
@@ -20643,7 +20643,7 @@
   "label": "row.00000737.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7130519,
+  "offset": 7130071,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20657,7 +20657,7 @@
   "label": "row.00000737.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7135687,
+  "offset": 7135239,
   "rtol": null,
   "shape": [
    4587
@@ -20671,7 +20671,7 @@
   "label": "row.00000738.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7140274,
+  "offset": 7139826,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20685,7 +20685,7 @@
   "label": "row.00000738.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7145442,
+  "offset": 7144994,
   "rtol": null,
   "shape": [
    4587
@@ -20699,7 +20699,7 @@
   "label": "row.00000739.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7150029,
+  "offset": 7149581,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20713,7 +20713,7 @@
   "label": "row.00000739.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7155197,
+  "offset": 7154749,
   "rtol": null,
   "shape": [
    4587
@@ -20727,7 +20727,7 @@
   "label": "row.00000740.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7159784,
+  "offset": 7159336,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20741,7 +20741,7 @@
   "label": "row.00000740.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7164952,
+  "offset": 7164504,
   "rtol": null,
   "shape": [
    4587
@@ -20755,7 +20755,7 @@
   "label": "row.00000741.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7169539,
+  "offset": 7169091,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20769,7 +20769,7 @@
   "label": "row.00000741.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7174707,
+  "offset": 7174259,
   "rtol": null,
   "shape": [
    4587
@@ -20783,7 +20783,7 @@
   "label": "row.00000742.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7179294,
+  "offset": 7178846,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20797,7 +20797,7 @@
   "label": "row.00000742.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7184462,
+  "offset": 7184014,
   "rtol": null,
   "shape": [
    4587
@@ -20811,7 +20811,7 @@
   "label": "row.00000743.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7189049,
+  "offset": 7188601,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20825,7 +20825,7 @@
   "label": "row.00000743.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7194217,
+  "offset": 7193769,
   "rtol": null,
   "shape": [
    4587
@@ -20839,7 +20839,7 @@
   "label": "row.00000744.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7198804,
+  "offset": 7198356,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20853,7 +20853,7 @@
   "label": "row.00000744.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7203972,
+  "offset": 7203524,
   "rtol": null,
   "shape": [
    4587
@@ -20867,7 +20867,7 @@
   "label": "row.00000745.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7208559,
+  "offset": 7208111,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20881,7 +20881,7 @@
   "label": "row.00000745.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7213727,
+  "offset": 7213279,
   "rtol": null,
   "shape": [
    4587
@@ -20895,7 +20895,7 @@
   "label": "row.00000746.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7218314,
+  "offset": 7217866,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20909,7 +20909,7 @@
   "label": "row.00000746.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7223482,
+  "offset": 7223034,
   "rtol": null,
   "shape": [
    4587
@@ -20923,7 +20923,7 @@
   "label": "row.00000747.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7228069,
+  "offset": 7227621,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20937,7 +20937,7 @@
   "label": "row.00000747.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7233237,
+  "offset": 7232789,
   "rtol": null,
   "shape": [
    4587
@@ -20951,7 +20951,7 @@
   "label": "row.00000748.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7237824,
+  "offset": 7237376,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20965,7 +20965,7 @@
   "label": "row.00000748.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7242992,
+  "offset": 7242544,
   "rtol": null,
   "shape": [
    4587
@@ -20979,7 +20979,7 @@
   "label": "row.00000749.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7247579,
+  "offset": 7247131,
   "rtol": 1e-09,
   "shape": [
    646
@@ -20993,7 +20993,7 @@
   "label": "row.00000749.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7252747,
+  "offset": 7252299,
   "rtol": null,
   "shape": [
    4587
@@ -21007,7 +21007,7 @@
   "label": "row.00000750.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7257334,
+  "offset": 7256886,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21021,7 +21021,7 @@
   "label": "row.00000750.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7262502,
+  "offset": 7262054,
   "rtol": null,
   "shape": [
    4587
@@ -21035,7 +21035,7 @@
   "label": "row.00000751.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7267089,
+  "offset": 7266641,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21049,7 +21049,7 @@
   "label": "row.00000751.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7272257,
+  "offset": 7271809,
   "rtol": null,
   "shape": [
    4587
@@ -21063,7 +21063,7 @@
   "label": "row.00000752.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7276844,
+  "offset": 7276396,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21077,7 +21077,7 @@
   "label": "row.00000752.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7282012,
+  "offset": 7281564,
   "rtol": null,
   "shape": [
    4587
@@ -21091,7 +21091,7 @@
   "label": "row.00000753.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7286599,
+  "offset": 7286151,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21105,7 +21105,7 @@
   "label": "row.00000753.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7291767,
+  "offset": 7291319,
   "rtol": null,
   "shape": [
    4587
@@ -21119,7 +21119,7 @@
   "label": "row.00000754.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7296354,
+  "offset": 7295906,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21133,7 +21133,7 @@
   "label": "row.00000754.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7301522,
+  "offset": 7301074,
   "rtol": null,
   "shape": [
    4587
@@ -21147,7 +21147,7 @@
   "label": "row.00000755.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7306109,
+  "offset": 7305661,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21161,7 +21161,7 @@
   "label": "row.00000755.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7311277,
+  "offset": 7310829,
   "rtol": null,
   "shape": [
    4587
@@ -21175,7 +21175,7 @@
   "label": "row.00000756.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7315864,
+  "offset": 7315416,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21189,7 +21189,7 @@
   "label": "row.00000756.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7321032,
+  "offset": 7320584,
   "rtol": null,
   "shape": [
    4587
@@ -21203,7 +21203,7 @@
   "label": "row.00000757.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7325619,
+  "offset": 7325171,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21217,7 +21217,7 @@
   "label": "row.00000757.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7330787,
+  "offset": 7330339,
   "rtol": null,
   "shape": [
    4587
@@ -21231,7 +21231,7 @@
   "label": "row.00000758.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7335374,
+  "offset": 7334926,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21245,7 +21245,7 @@
   "label": "row.00000758.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7340542,
+  "offset": 7340094,
   "rtol": null,
   "shape": [
    4587
@@ -21259,7 +21259,7 @@
   "label": "row.00000759.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7345129,
+  "offset": 7344681,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21273,7 +21273,7 @@
   "label": "row.00000759.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7350297,
+  "offset": 7349849,
   "rtol": null,
   "shape": [
    4587
@@ -21287,7 +21287,7 @@
   "label": "row.00000760.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7354884,
+  "offset": 7354436,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21301,7 +21301,7 @@
   "label": "row.00000760.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7360052,
+  "offset": 7359604,
   "rtol": null,
   "shape": [
    4587
@@ -21315,7 +21315,7 @@
   "label": "row.00000761.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7364639,
+  "offset": 7364191,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21329,7 +21329,7 @@
   "label": "row.00000761.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7369807,
+  "offset": 7369359,
   "rtol": null,
   "shape": [
    4587
@@ -21343,7 +21343,7 @@
   "label": "row.00000762.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7374394,
+  "offset": 7373946,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21357,7 +21357,7 @@
   "label": "row.00000762.other",
   "nbytes": 4587,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7379562,
+  "offset": 7379114,
   "rtol": null,
   "shape": [
    4587
@@ -21371,7 +21371,7 @@
   "label": "row.00000763.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7384149,
+  "offset": 7383701,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21383,12 +21383,12 @@
   "index": 1527,
   "kind": "bitwise",
   "label": "row.00000763.other",
-  "nbytes": 4587,
+  "nbytes": 4586,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7389317,
+  "offset": 7388869,
   "rtol": null,
   "shape": [
-   4587
+   4586
   ]
  },
  {
@@ -21399,7 +21399,7 @@
   "label": "row.00000764.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7393904,
+  "offset": 7393455,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21411,12 +21411,12 @@
   "index": 1529,
   "kind": "bitwise",
   "label": "row.00000764.other",
-  "nbytes": 4587,
+  "nbytes": 4585,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7399072,
+  "offset": 7398623,
   "rtol": null,
   "shape": [
-   4587
+   4585
   ]
  },
  {
@@ -21427,7 +21427,7 @@
   "label": "row.00000765.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7403659,
+  "offset": 7403208,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21439,12 +21439,12 @@
   "index": 1531,
   "kind": "bitwise",
   "label": "row.00000765.other",
-  "nbytes": 4586,
+  "nbytes": 4584,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7408827,
+  "offset": 7408376,
   "rtol": null,
   "shape": [
-   4586
+   4584
   ]
  },
  {
@@ -21455,7 +21455,7 @@
   "label": "row.00000766.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7413413,
+  "offset": 7412960,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21467,12 +21467,12 @@
   "index": 1533,
   "kind": "bitwise",
   "label": "row.00000766.other",
-  "nbytes": 4585,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7418581,
+  "offset": 7418128,
   "rtol": null,
   "shape": [
-   4585
+   4583
   ]
  },
  {
@@ -21483,7 +21483,7 @@
   "label": "row.00000767.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7423166,
+  "offset": 7422711,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21495,12 +21495,12 @@
   "index": 1535,
   "kind": "bitwise",
   "label": "row.00000767.other",
-  "nbytes": 4585,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7428334,
+  "offset": 7427879,
   "rtol": null,
   "shape": [
-   4585
+   4583
   ]
  },
  {
@@ -21511,7 +21511,7 @@
   "label": "row.00000768.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7432919,
+  "offset": 7432462,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21523,12 +21523,12 @@
   "index": 1537,
   "kind": "bitwise",
   "label": "row.00000768.other",
-  "nbytes": 4584,
+  "nbytes": 4583,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7438087,
+  "offset": 7437630,
   "rtol": null,
   "shape": [
-   4584
+   4583
   ]
  },
  {
@@ -21539,7 +21539,7 @@
   "label": "row.00000769.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7442671,
+  "offset": 7442213,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21553,7 +21553,7 @@
   "label": "row.00000769.other",
   "nbytes": 4582,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7447839,
+  "offset": 7447381,
   "rtol": null,
   "shape": [
    4582
@@ -21567,7 +21567,7 @@
   "label": "row.00000770.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7452421,
+  "offset": 7451963,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21581,7 +21581,7 @@
   "label": "row.00000770.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7457589,
+  "offset": 7457131,
   "rtol": null,
   "shape": [
    4581
@@ -21595,7 +21595,7 @@
   "label": "row.00000771.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7462170,
+  "offset": 7461712,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21609,7 +21609,7 @@
   "label": "row.00000771.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7467338,
+  "offset": 7466880,
   "rtol": null,
   "shape": [
    4581
@@ -21623,7 +21623,7 @@
   "label": "row.00000772.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7471919,
+  "offset": 7471461,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21637,7 +21637,7 @@
   "label": "row.00000772.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7477087,
+  "offset": 7476629,
   "rtol": null,
   "shape": [
    4581
@@ -21651,7 +21651,7 @@
   "label": "row.00000773.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7481668,
+  "offset": 7481210,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21665,7 +21665,7 @@
   "label": "row.00000773.other",
   "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7486836,
+  "offset": 7486378,
   "rtol": null,
   "shape": [
    4581
@@ -21679,7 +21679,7 @@
   "label": "row.00000774.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7491417,
+  "offset": 7490959,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21691,12 +21691,12 @@
   "index": 1549,
   "kind": "bitwise",
   "label": "row.00000774.other",
-  "nbytes": 4581,
+  "nbytes": 4580,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7496585,
+  "offset": 7496127,
   "rtol": null,
   "shape": [
-   4581
+   4580
   ]
  },
  {
@@ -21707,7 +21707,7 @@
   "label": "row.00000775.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7501166,
+  "offset": 7500707,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21719,12 +21719,12 @@
   "index": 1551,
   "kind": "bitwise",
   "label": "row.00000775.other",
-  "nbytes": 4580,
+  "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7506334,
+  "offset": 7505875,
   "rtol": null,
   "shape": [
-   4580
+   4579
   ]
  },
  {
@@ -21735,7 +21735,7 @@
   "label": "row.00000776.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7510914,
+  "offset": 7510454,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21747,12 +21747,12 @@
   "index": 1553,
   "kind": "bitwise",
   "label": "row.00000776.other",
-  "nbytes": 4579,
+  "nbytes": 4578,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7516082,
+  "offset": 7515622,
   "rtol": null,
   "shape": [
-   4579
+   4578
   ]
  },
  {
@@ -21763,7 +21763,7 @@
   "label": "row.00000777.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7520661,
+  "offset": 7520200,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21775,12 +21775,12 @@
   "index": 1555,
   "kind": "bitwise",
   "label": "row.00000777.other",
-  "nbytes": 4579,
+  "nbytes": 4577,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7525829,
+  "offset": 7525368,
   "rtol": null,
   "shape": [
-   4579
+   4577
   ]
  },
  {
@@ -21791,7 +21791,7 @@
   "label": "row.00000778.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7530408,
+  "offset": 7529945,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21803,12 +21803,12 @@
   "index": 1557,
   "kind": "bitwise",
   "label": "row.00000778.other",
-  "nbytes": 4578,
+  "nbytes": 4577,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7535576,
+  "offset": 7535113,
   "rtol": null,
   "shape": [
-   4578
+   4577
   ]
  },
  {
@@ -21819,7 +21819,7 @@
   "label": "row.00000779.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7540154,
+  "offset": 7539690,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21833,7 +21833,7 @@
   "label": "row.00000779.other",
   "nbytes": 4577,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7545322,
+  "offset": 7544858,
   "rtol": null,
   "shape": [
    4577
@@ -21847,7 +21847,7 @@
   "label": "row.00000780.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7549899,
+  "offset": 7549435,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21859,12 +21859,12 @@
   "index": 1561,
   "kind": "bitwise",
   "label": "row.00000780.other",
-  "nbytes": 4577,
+  "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7555067,
+  "offset": 7554603,
   "rtol": null,
   "shape": [
-   4577
+   4579
   ]
  },
  {
@@ -21875,7 +21875,7 @@
   "label": "row.00000781.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7559644,
+  "offset": 7559182,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21889,7 +21889,7 @@
   "label": "row.00000781.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7564812,
+  "offset": 7564350,
   "rtol": null,
   "shape": [
    4579
@@ -21903,7 +21903,7 @@
   "label": "row.00000782.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7569391,
+  "offset": 7568929,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21917,7 +21917,7 @@
   "label": "row.00000782.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7574559,
+  "offset": 7574097,
   "rtol": null,
   "shape": [
    4579
@@ -21931,7 +21931,7 @@
   "label": "row.00000783.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7579138,
+  "offset": 7578676,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21945,7 +21945,7 @@
   "label": "row.00000783.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7584306,
+  "offset": 7583844,
   "rtol": null,
   "shape": [
    4579
@@ -21959,7 +21959,7 @@
   "label": "row.00000784.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7588885,
+  "offset": 7588423,
   "rtol": 1e-09,
   "shape": [
    646
@@ -21973,7 +21973,7 @@
   "label": "row.00000784.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7594053,
+  "offset": 7593591,
   "rtol": null,
   "shape": [
    4579
@@ -21987,7 +21987,7 @@
   "label": "row.00000785.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7598632,
+  "offset": 7598170,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22001,7 +22001,7 @@
   "label": "row.00000785.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7603800,
+  "offset": 7603338,
   "rtol": null,
   "shape": [
    4579
@@ -22015,7 +22015,7 @@
   "label": "row.00000786.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7608379,
+  "offset": 7607917,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22029,7 +22029,7 @@
   "label": "row.00000786.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7613547,
+  "offset": 7613085,
   "rtol": null,
   "shape": [
    4579
@@ -22043,7 +22043,7 @@
   "label": "row.00000787.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7618126,
+  "offset": 7617664,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22057,7 +22057,7 @@
   "label": "row.00000787.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7623294,
+  "offset": 7622832,
   "rtol": null,
   "shape": [
    4579
@@ -22071,7 +22071,7 @@
   "label": "row.00000788.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7627873,
+  "offset": 7627411,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22085,7 +22085,7 @@
   "label": "row.00000788.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7633041,
+  "offset": 7632579,
   "rtol": null,
   "shape": [
    4579
@@ -22099,7 +22099,7 @@
   "label": "row.00000789.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7637620,
+  "offset": 7637158,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22113,7 +22113,7 @@
   "label": "row.00000789.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7642788,
+  "offset": 7642326,
   "rtol": null,
   "shape": [
    4579
@@ -22127,7 +22127,7 @@
   "label": "row.00000790.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7647367,
+  "offset": 7646905,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22141,7 +22141,7 @@
   "label": "row.00000790.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7652535,
+  "offset": 7652073,
   "rtol": null,
   "shape": [
    4579
@@ -22155,7 +22155,7 @@
   "label": "row.00000791.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7657114,
+  "offset": 7656652,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22169,7 +22169,7 @@
   "label": "row.00000791.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7662282,
+  "offset": 7661820,
   "rtol": null,
   "shape": [
    4579
@@ -22183,7 +22183,7 @@
   "label": "row.00000792.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7666861,
+  "offset": 7666399,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22197,7 +22197,7 @@
   "label": "row.00000792.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7672029,
+  "offset": 7671567,
   "rtol": null,
   "shape": [
    4579
@@ -22211,7 +22211,7 @@
   "label": "row.00000793.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7676608,
+  "offset": 7676146,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22223,12 +22223,12 @@
   "index": 1587,
   "kind": "bitwise",
   "label": "row.00000793.other",
-  "nbytes": 4579,
+  "nbytes": 4580,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7681776,
+  "offset": 7681314,
   "rtol": null,
   "shape": [
-   4579
+   4580
   ]
  },
  {
@@ -22239,7 +22239,7 @@
   "label": "row.00000794.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7686355,
+  "offset": 7685894,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22251,12 +22251,12 @@
   "index": 1589,
   "kind": "bitwise",
   "label": "row.00000794.other",
-  "nbytes": 4579,
+  "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7691523,
+  "offset": 7691062,
   "rtol": null,
   "shape": [
-   4579
+   4581
   ]
  },
  {
@@ -22267,7 +22267,7 @@
   "label": "row.00000795.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7696102,
+  "offset": 7695643,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22279,12 +22279,12 @@
   "index": 1591,
   "kind": "bitwise",
   "label": "row.00000795.other",
-  "nbytes": 4579,
+  "nbytes": 4581,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7701270,
+  "offset": 7700811,
   "rtol": null,
   "shape": [
-   4579
+   4581
   ]
  },
  {
@@ -22295,7 +22295,7 @@
   "label": "row.00000796.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7705849,
+  "offset": 7705392,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22307,12 +22307,12 @@
   "index": 1593,
   "kind": "bitwise",
   "label": "row.00000796.other",
-  "nbytes": 4580,
+  "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7711017,
+  "offset": 7710560,
   "rtol": null,
   "shape": [
-   4580
+   4579
   ]
  },
  {
@@ -22323,7 +22323,7 @@
   "label": "row.00000797.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7715597,
+  "offset": 7715139,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22335,12 +22335,12 @@
   "index": 1595,
   "kind": "bitwise",
   "label": "row.00000797.other",
-  "nbytes": 4581,
+  "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7720765,
+  "offset": 7720307,
   "rtol": null,
   "shape": [
-   4581
+   4579
   ]
  },
  {
@@ -22351,7 +22351,7 @@
   "label": "row.00000798.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7725346,
+  "offset": 7724886,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22365,7 +22365,7 @@
   "label": "row.00000798.other",
   "nbytes": 4579,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7730514,
+  "offset": 7730054,
   "rtol": null,
   "shape": [
    4579
@@ -22379,7 +22379,7 @@
   "label": "row.00000799.values",
   "nbytes": 5168,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7735093,
+  "offset": 7734633,
   "rtol": 1e-09,
   "shape": [
    646
@@ -22391,12 +22391,12 @@
   "index": 1599,
   "kind": "bitwise",
   "label": "row.00000799.other",
-  "nbytes": 4579,
+  "nbytes": 4580,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7740261,
+  "offset": 7739801,
   "rtol": null,
   "shape": [
-   4579
+   4580
   ]
  },
  {
@@ -22407,7 +22407,7 @@
   "label": "golden episode integration state",
   "nbytes": 2336,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7744840,
+  "offset": 7744381,
   "rtol": null,
   "shape": [
    292
@@ -22421,7 +22421,7 @@
   "label": "first_failure.values",
   "nbytes": 0,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747176,
+  "offset": 7746717,
   "rtol": 1e-09,
   "shape": [
    0
@@ -22435,7 +22435,7 @@
   "label": "first_failure.other",
   "nbytes": 9,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747176,
+  "offset": 7746717,
   "rtol": null,
   "shape": [
    9
@@ -22449,7 +22449,7 @@
   "label": "model_status.values",
   "nbytes": 0,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747185,
+  "offset": 7746726,
   "rtol": 1e-09,
   "shape": [
    0
@@ -22463,7 +22463,7 @@
   "label": "model_status.other",
   "nbytes": 173,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747185,
+  "offset": 7746726,
   "rtol": null,
   "shape": [
    173
@@ -22477,7 +22477,7 @@
   "label": "history.work_j.values",
   "nbytes": 296,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747358,
+  "offset": 7746899,
   "rtol": 1e-09,
   "shape": [
    37
@@ -22491,7 +22491,7 @@
   "label": "history.work_j.other",
   "nbytes": 2,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747654,
+  "offset": 7747195,
   "rtol": null,
   "shape": [
    2
@@ -22505,7 +22505,7 @@
   "label": "history.airtime_s.values",
   "nbytes": 48,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747656,
+  "offset": 7747197,
   "rtol": 1e-09,
   "shape": [
    6
@@ -22519,7 +22519,7 @@
   "label": "history.airtime_s.other",
   "nbytes": 2,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747704,
+  "offset": 7747245,
   "rtol": null,
   "shape": [
    2
@@ -22533,7 +22533,7 @@
   "label": "history.duration_s",
   "nbytes": 8,
   "node": "tests/reference/test_native_runtime_rollout.py::test_one_second_800_interval_golden_episode_all_channels",
-  "offset": 7747706,
+  "offset": 7747247,
   "rtol": 0.0,
   "shape": [
    1

@@ -216,6 +216,15 @@
       "reason": "clang-tidy 18 misc-const-correctness misses that `lwork` escapes by address into the Fortran-style numeric_backend::dgelsd out-parameter at test_platform_lapack.cpp:66, :97, and :241; declaring it const would not compile. The pinned LLVM 23 baseline does not emit this diagnostic.",
       "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-const-correctness at native/tests/test_platform_lapack.cpp:66, :97, and :241 for the dgelsd lwork out-parameter",
       "remove_when": "Remove when the Linux clang-tidy toolchain recognizes the address-taken out-parameter escape at these sites."
+    },
+    {
+      "checker": "concurrency-mt-unsafe",
+      "origin": "(?:^|/)native/src/batch/summary\\.cpp$",
+      "message": "function is not thread safe",
+      "tool_version": "23.1.2",
+      "reason": "clang-tidy 23.1.2 flags the read-only `std::getenv(\"OPENBLAS_NUM_THREADS\")` telemetry probe at summary.cpp:51 in the single-threaded batch-summary builder. getenv is MT-unsafe only against concurrent environment mutation, and no setenv/putenv exists anywhere in native/src — the variable is read once for the worker thread-policy record and never written back. Introduced at 29509355 (3.34 lane/d) after the last green baseline gate; verified baseline-red on an independent checkout at d20ea74c with none of the 3.36t2a changes.",
+      "reproducer": "cmake --build native/build --target check_tidy; concurrency-mt-unsafe at native/src/batch/summary.cpp:51:28 on the OPENBLAS_NUM_THREADS getenv call",
+      "remove_when": "Remove when the summary builder reads the variable through a thread-safe snapshot (or the call moves behind NOLINT with justification), or when clang-tidy stops emitting this exact diagnostic at summary.cpp:51."
     }
   ]
 }

@@ -18118,11 +18118,21 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_dev_commands.cpp"
+      "CMakePresets.json",
+      "native/cmake/BikeCheckContext.cmake",
+      "native/src/tools/check_context.cpp",
+      "native/tests/migration/migration_T336r_portability.cmake",
+      "native/tests/migration/migration_T56_check.cmake",
+      "native/tests/package/package_smoke.cmake",
+      "docs/installation.md"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T336r_portability",
+      "migration_T56",
+      "package_smoke"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "fa6f8fad32316352d476002f2c5d2eb4839f054215664dc931206539c92411b1",
     "snapshot_line_count": 323,
     "tracked": true,
@@ -18179,11 +18189,26 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_install_modes.cpp"
+      "packaging/CMakeLists.txt",
+      "native/dependencies.lock.json",
+      "native/cmake/BikeDependencyLock.cmake",
+      "native/cmake/Provenance.cmake",
+      "native/cmake/Sanitizers.cmake",
+      "native/src/tools/check_context.cpp",
+      "native/tests/migration/migration_T53_portability.cmake",
+      "native/tests/migration/migration_T56_check.cmake",
+      "native/tests/migration/migration_T336r_portability.cmake",
+      "native/tests/package/package_smoke.cmake",
+      "docs/installation.md"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T336r_portability",
+      "migration_T53_portability",
+      "migration_T56",
+      "package_smoke"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "df403d4028a20551954cb13127cf53ecc9adadb6cf6a0657f881fcbcf3969d3c",
     "snapshot_line_count": 605,
     "tracked": true,

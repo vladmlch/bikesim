@@ -1402,15 +1402,31 @@ void SpindleController::write(
         throw std::invalid_argument("incomplete rider actuator command");
     const auto ctrl = model_access::mutable_buffer(
         data->ctrl, model_->nu, "ctrl");
+    const auto qvel = model_access::readonly_buffer(
+        data->qvel, model_->nv, "qvel");
     for (const auto &joint : joints_) {
         const double torque =
             validation::finite(named_at(torques, joint.name),
                                "rider torque");
+        // rider_control.py:1375-1382 — the held plan is applied verbatim
+        // between ticks, but the bound side still re-derives every step:
+        // directional Hill capacity is a function of the incoming joint
+        // velocity, so a held command may not exceed the muscle's
+        // instantaneous concentric/eccentric capacity, and the
+        // accelerating-speed gate follows the same per-step rule.
+        const double cap =
+            directional_limit(joint.name, data, torque >= 0. ? 1. : -1.);
+        double clipped = std::min(std::max(torque, -cap), cap);
+        const double speed =
+            qvel[static_cast<std::size_t>(joint.dof_adr)];
+        if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
+            clipped * speed > 0.)
+            clipped = 0.;
         // The actuator is a pure motor: ctrl is the muscle torque itself.
         // Passive damping lives on the DOF, so a disabled command removes
         // only active force; tissue damping still acts physically.
         ctrl[static_cast<std::size_t>(joint.actuator_id)] =
-            command_enabled_ ? torque : 0.;
+            command_enabled_ ? clipped : 0.;
     }
 }
 

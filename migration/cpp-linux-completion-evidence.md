@@ -10758,3 +10758,129 @@ Watch items: the 4-argument `g++`-alias skip and the missing
 rejection/probe arms have no live exercise in the qualified lanes;
 the `/tmp`-style direct script invocation requires SCRATCH_DIR's parent
 to be a real build dir (registered/CTest invocation is unaffected).
+
+## 2026-10-31 — lane/f FT-1 welded-parity fix merge-back (merge `5d709b4b`)
+
+Lane/f tip `fc09fca4` — 6 commits over base `d20ea74c`: `4b99733b` the
+spindle `write()` per-step bound fix, `466b4996` the bootstrap
+`coast_hold_nm` serialization, `3457ca98` the research-environment
+premise re-anchor, `77d14455` a `summary.cpp` NOLINT, `23016d93` the
+task-FT1 report, `fc09fca4` the review-corrected ledger reverting 28
+premature `port` flips to `planned`. Physics/realtime-path change —
+the first FT-family fix that alters integration-vector results on the
+weld plant: `native/src/rider/spindle_controller.cpp::write` now
+re-derives the `directional_limit` clip + accelerating-speed gate on
+the current `qvel` every physics step (mirror of
+`rider_control.py:1375-1388`; it previously wrote held torques
+verbatim — bisected first divergence `ctrl[3]` `act_rider_torso_hinge`
+82.5181136176496 vs oracle 72.8826668383254 at step 114), and
+oracle-side `src/bike_sim/native/setup.py::_rider_controller_state`
+emits the optional 19th `coast_hold_nm` key that
+`decode_spindle_state` already accepts via `optional_real`. Review
+approved the code and corrected the ledger on the lane before merge.
+Merged `--no-ff` into integration at tip `a8296085`.
+
+### Conflicts / resolutions
+
+One conflict:
+
+- `native/src/batch/summary.cpp` — both sides suppressed the same
+  pre-existing `std::getenv` `concurrency-mt-unsafe` finding on the
+  `OPENBLAS_NUM_THREADS` line: integration with
+  `// NOLINTNEXTLINE(concurrency-mt-unsafe)` plus the workers-joined
+  justification on the preceding line, lane/f with a trailing
+  `// NOLINT(concurrency-mt-unsafe)` plus its own comment. Kept
+  integration's NOLINTNEXTLINE form per the established precedent;
+  resolved file is byte-identical to pre-merge HEAD (the lane's
+  NOLINT is fully redundant against it).
+
+Auto-merged clean: `migration/test-port-map.json` (key-exact union
+verified programmatically on the committed merge — 0 missing /
+0 extra / 0 wrong / 0 contested non-owned rows; all 36 lane-changed
+records resolved to lane values; canonical
+`json.dumps(indent=2, ensure_ascii=True)` + trailing LF; headers
+2394/2378/16 unchanged), `native/src/rider/spindle_controller.cpp`,
+`src/bike_sim/native/setup.py`,
+`tests/reference/test_native_research_environment.py` (all identical
+to lane/f — integration never touched them since base), and the
+task-FT1 report. `python-removal.json`, `Phase3Ports.cmake`,
+`Checks.cmake` untouched by the lane. No conflict markers remain.
+
+### Ledger deltas (pre-merge `a8296085` → merge `5d709b4b`)
+
+- `test-port-map.json`: 2,394 → **2,394** records; headers unchanged.
+  Aggregate dispositions unchanged (`port` 1468, `golden` 390,
+  `drop` 398, `planned` 138) — per the review-corrected lane ledger
+  this is a documentation merge, not a disposition merge. 36 records
+  touched across the FT-1 honest-red families:
+  - 28 records (R1/R2/R3/R8: runtime_step 6, runtime_commands 4,
+    runtime_rollout 4, research_environment 10, research_capture 1,
+    research_recording 1, viewer_snapshot 2): `evidence` appended
+    with the measured two-platform green-parity note, T01-placeholder
+    `assertions_capture` replaced by measured collection, speculative
+    `native_test_id` anchors removed; all stay `planned` — unblocked
+    but still owed real ports.
+  - 4 records (R6 `test_realistic_pedelec_acceptance.py`):
+    evidence-only append noting the held-command fix removed the
+    recorded native-side `rider_strength.*` late-violation signature;
+    stay `planned` on the Task-3.09 oracle-baseline ruling.
+  - 4 records (already-`port` research_environment rows): pure
+    `line`/`end_line` re-anchors (+2 from the premise edit).
+- `python-removal.json`: untouched by the merge.
+
+### Merge-back verification
+
+Physics-path change — scoped verification on the unblocked R1/R2/R3
+families plus the covering registration; no `run_tests.sh` gate
+re-run (the lane ran `full` once: exit 8, baseline-verbatim
+`migration_T09`/`T10` ctest reds, contracts 12/12 standalone, pytest
+5151 passed / 31 documented-baseline failures; recorded in
+`task-FT1-report.md`).
+
+- **darwin-arm64** (`native/build` + `build/native-release`,
+  AppleClang): `cmake --build native/build -j6` → exit 0;
+  `cmake --build build/native-release -j6` → exit 0.
+  `uv run --frozen pytest tests/reference/test_native_runtime_step.py
+  test_native_runtime_commands.py test_native_runtime_rollout.py
+  test_native_research_environment.py`
+  (`NATIVE_TEST_BUILD_PATH`=`BIKE_NATIVE_BUILD_PATH`=`$PWD/native/build`)
+  → **47 passed, 0 failed** in 157.13 s — the previously-blocked
+  parity nodes (`test_native_first_step_uses_settled_material_state`,
+  `test_gear_shift_and_coast_resume_match_python`, both
+  `test_one_second_pair_*_gate`,
+  `test_one_second_800_interval_golden_episode_all_channels`) green;
+  warnings are the symmetric `energy.constraint_work`
+  reference-monitor notices both backends emit. Registrations
+  unchanged by this merge; `ctest -R 'spindle'` → **1/1 PASS**
+  (`reference.native_spindle_controller`, 0.42 s) as changed-TU
+  insurance.
+- **linux-aarch64** (container `bike-dev-python-free-cpp`; `/src`
+  synced, fix present at `spindle_controller.cpp:1418`): venv
+  provisioned; `configure native-clang native` (clang++-18, Release,
+  numerics record `linux-aarch64` matches the live measurement) +
+  `build native-clang bike_native` → exit 0
+  (`bike_native.cpython-313-aarch64-linux-gnu.so`). Same pytest
+  subset (`NATIVE_TEST_BUILD_PATH`=/build/native-clang) → **47
+  passed, 0 failed** in 102.39 s. `build root-clang
+  reference.native_spindle_controller` + `ctest -R 'spindle'` →
+  **1/1 PASS** (0.37 s).
+
+### Assessment
+
+Merge `5d709b4b` is clean: one deliberate conflict resolved to the
+established suppression form, the ledger union verified row-exact,
+and the previously-blocked FT-1 parity families now pass 47/47 on
+both platforms — the weld-plant integration vector is bitwise-equal
+to the live oracle where it diverged at step 114 before the fix.
+Physics-path significance: held rider torques are now
+capacity-clipped every step on the weld plant, so any consumer
+snapshotting pre-merge native trajectories on welded scenarios is
+expected to differ — that is the fix working, not fixture drift
+(committed goldens replay captured oracle values and are
+unaffected; `reference.native_spindle_controller` green both
+platforms corroborates). The 32 honest-red records remain `planned`
+by review correction — parity evidence is recorded, real port tasks
+still owe the ports. Residual scope: the 4 pedelec acceptance nodes
+stay oracle-baseline-red (Task 3.09); the `full` gate on integration
+remains the scheduled accumulation checkpoint (audit §2.5.1) — this
+merge did not re-run it.

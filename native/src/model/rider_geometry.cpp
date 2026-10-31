@@ -1143,7 +1143,7 @@ SegmentMasses segment_masses(double total_kg, double helmet_kg) {
     return result;
 }
 
-SegmentMasses split_paired_arm_masses(SegmentMasses masses) {
+SegmentMasses split_paired_arm_masses(const SegmentMasses& masses) {
     // dict(masses) then pop each *_pair and append its halves at tail.
     SegmentMasses result;
     result.reserve(masses.size() + 2);

@@ -194,7 +194,7 @@ std::vector<ConstraintMode> ConstraintDynamics::neighboring_modes(const Constrai
     for(std::size_t i=0;i<lower.size();++i) {
         const auto previous=std::ranges::find_if(mode,[&](const auto& entry){return entry.first==i;});
         if(previous!=mode.end()) {auto next=mode;std::erase_if(next,[&](const auto& item){return item.first==i;});out.push_back(std::move(next));}
-        for(double value:{lower[i],upper[i]}) if(std::isfinite(value) && (previous==mode.end() || previous->second!=value)) {
+        for(const double value:{lower[i],upper[i]}) if(std::isfinite(value) && (previous==mode.end() || previous->second!=value)) {
             auto next=mode;std::erase_if(next,[&](const auto& item){return item.first==i;});next.emplace_back(i,value);std::ranges::sort(next);
             if(std::ranges::find(out,next)==out.end())out.push_back(std::move(next));
         }

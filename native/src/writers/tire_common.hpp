@@ -29,12 +29,16 @@
 // planar force reconstruction; native_reference retains the complete
 // engine wrench, including its contact couple and out-of-plane force.
 struct TirePatch {
-    std::array<double, 3> point_m;
-    std::array<double, 3> normal;
-    double normal_load_n;
-    double tangent_force_n;
-    double slip_mps;
-    bool working_surface;
+    // Required fields mirroring contact_state.py's patch record — every
+    // make_patch call designates all of them. The in-class initializers only
+    // remove the indeterminate-value path (pro-type-member-init); the values
+    // are placeholders, not semantic defaults.
+    std::array<double, 3> point_m{};
+    std::array<double, 3> normal{};
+    double normal_load_n = 0.;
+    double tangent_force_n = 0.;
+    double slip_mps = 0.;
+    bool working_surface = false;
     std::optional<std::array<double, 3>> native_world_force_n;
     std::array<double, 3> couple_world_nm{};
 };

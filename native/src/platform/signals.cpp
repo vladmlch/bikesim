@@ -52,7 +52,9 @@ bool on_main_thread() {
 #if defined(__APPLE__)
     return ::pthread_main_np() != 0;
 #elif defined(__linux__)
-    return ::getpid() == static_cast<pid_t>(::syscall(SYS_gettid));
+    // gettid(2) — the glibc ≥2.30 wrapper for the syscall, avoiding a
+    // c-style vararg call (pro-type-vararg).
+    return ::getpid() == ::gettid();
 #else
     return false; // conservative: only the owning thread may swap handlers
 #endif

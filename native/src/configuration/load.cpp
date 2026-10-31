@@ -581,8 +581,12 @@ void construct_typed(const RecordSchema& schema, const Value::Object& obj,
 [[gnu::noinline]] void
 construct_record(const RecordSchema& schema, const Value::Object& obj,
                  void* out, const std::string& path) {
+// NOLINTNEXTLINE's bugprone-macro-parentheses exemption: Type expands inside
+// a static_cast type-id — a precedence hazard cannot exist there, and the
+// checker's suggested (Type) does not parse as a type-id.
 #define BIKE_T13_RECORD(Type, Schema)                                         \
     if (&schema == &detail::Schema) {                                         \
+        /* NOLINTNEXTLINE(bugprone-macro-parentheses) type-id position */     \
         construct_typed<Type>(schema, obj, *static_cast<Type*>(out), path);   \
         return;                                                               \
     }

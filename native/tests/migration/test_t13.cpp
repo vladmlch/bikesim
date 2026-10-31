@@ -103,6 +103,7 @@ Value make_object(std::initializer_list<Value::Object::value_type> members) {
 std::string canonical(const Value& value) { return io::canonical_json(value); }
 
 // Drops a [[nodiscard]] result inside rejection probes.
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward) universal sink — it accepts and ignores by design, so nothing is forwarded
 template <typename T> void discard(T&&) {}
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage

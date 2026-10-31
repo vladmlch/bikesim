@@ -420,7 +420,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void checks_channels() {
     // EncodePlan moves by steal: path-trie edge views into leaf column
     // path strings stay valid — encode through the moved plan to prove it.
-    EncodePlan moved = encode_plan(kChannelsPlan);
+    const EncodePlan moved = encode_plan(kChannelsPlan);
     const EncodePlan &live = moved;
 
     // Row 0: every leaf authored; row 1: watts absent, by_part empty map,
@@ -540,7 +540,7 @@ void checks_channels() {
     // member_slots point into the children map's nodes — moving the
     // whole table must keep them dereferenceable and pointing at the
     // same (now moved) member pieces, not stale source slots.
-    EncodedTable moved_table = std::move(table);
+    const EncodedTable moved_table = std::move(table);
     const Piece &moved_meta = column(moved_table, "meta");
     bt::require(moved_meta.member_slots.size() == 2,
                 "member_slots lost slots across the move");

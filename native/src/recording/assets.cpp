@@ -28,7 +28,7 @@ io::Value input_identity_at_finalization(const io::Value& metadata) {
     const auto* articulated = io::find_member(io::as_object(*physics, "resolved_config.physics"), "articulated");
     if (!articulated) return io::Value{std::move(result)};
     const auto& profiles = io::as_object(*articulated, "resolved_config.physics.articulated");
-    for (std::string_view key : {"joint_envelope", "joint_strength"}) {
+    for (const std::string_view key : {"joint_envelope", "joint_strength"}) {
         const auto* path = io::find_member(profiles, std::string(key) + "_path");
         if (!path || io::is_null(*path)) continue;
         const auto* expected = io::find_member(config, std::string(key) + "_sha256");

@@ -658,7 +658,7 @@ namespace nativecfg {
             // the per-backend presence rule.
             if (d.contains("material")) {
                 const Dict<N> m = req_dict(d, "material");
-                p.material = TireMaterial{
+                TireMaterial material{
                     .radial_k_n_m = m.contains("deflection_m") ? 0. : req_f64(m, "radial_k_n_m"),
                     .radial_c_ns_m = req_f64(m, "radial_c_ns_m"),
                     .pressure_pa_gauge = req_f64(m, "pressure_pa_gauge"),
@@ -666,9 +666,10 @@ namespace nativecfg {
                     .valid_load_range_n = req_vec2(m, "valid_load_range_n"),
                     .table = std::nullopt,
                 };
-                if (m.contains("deflection_m")) p.material->table = TireTable{
+                if (m.contains("deflection_m")) material.table = TireTable{
                     .deflection_m = vector(req(m, "deflection_m"), m.child("deflection_m")),
                     .force_n = vector(req(m, "force_n"), m.child("force_n"))};
+                p.material = std::move(material);
             }
             p.tangent_k_n_m = req_f64(d, "tangent_k_n_m");
             p.mu = req_f64(d, "mu");

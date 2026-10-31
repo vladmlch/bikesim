@@ -336,11 +336,15 @@ void post_init(ArticulatedConfig&);
 
 // ---- attachment_budget.py AttachmentBudget ------------------------------------
 struct AttachmentBudget {
-    double foot_min_normal_n;
-    double foot_mu;
-    double saddle_mu;
-    double grip_pull_n;
-    double max_gap_m;
+    // The five limits below are required dataclass fields in Python — every
+    // construction site (attachment_budget()) designates all of them. The
+    // in-class zero-initializers only remove the indeterminate-value path
+    // (pro-type-member-init); 0 is a placeholder, not a semantic default.
+    double foot_min_normal_n = 0.;
+    double foot_mu = 0.;
+    double saddle_mu = 0.;
+    double grip_pull_n = 0.;
+    double max_gap_m = 0.;
     // F1 weld load envelope (attachment_budget.py): connect-equality welds
     // carry tension and shear a friction cone cannot express. nullopt/0
     // disables each bound and keeps the unilateral checks bitwise-identical.

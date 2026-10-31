@@ -423,7 +423,7 @@ void checks_recording() {
         bt::require(recording_json(decoded) ==
                         R"({"$bike_recording":"bytes","value":"TWFu"})",
                     "bytes re-encode is canonical base64");
-        Value binary{Bytes{{std::byte{0xff}, std::byte{0x00}}}};
+        const Value binary{Bytes{{std::byte{0xff}, std::byte{0x00}}}};
         bt::require(recording_json(binary) ==
                         R"({"$bike_recording":"bytes","value":"/wA="})",
                     "binary payload encodes");

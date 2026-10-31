@@ -308,7 +308,7 @@ using SegmentMasses = std::vector<std::pair<std::string, double>>;
 
 // split_paired_arm_masses(masses) — pops the two *_pair keys and appends
 // halved {part}_{left,right} entries at the tail (dict order preserved).
-[[nodiscard]] SegmentMasses split_paired_arm_masses(SegmentMasses masses);
+[[nodiscard]] SegmentMasses split_paired_arm_masses(const SegmentMasses& masses);
 
 // segment_inertia(mass_kg, axis_vector_m, radius_m) -> (3, 3) ndarray.
 [[nodiscard]] Mat3 segment_inertia(double mass_kg, const Vec3 &axis_vector_m,

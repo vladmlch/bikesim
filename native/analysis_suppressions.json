@@ -141,9 +141,9 @@
       "origin": "(?:^|/)src/drivetrain/transmission\\.cpp$",
       "message": "unchecked access to optional value",
       "tool_version": "18.1.3",
-      "reason": "clang-tidy 18 does not model the ternary-guarded optional at transmission.cpp:319: `update.state.boundary` is assigned an engaged value by the preceding conditional expression before `update.range[1] = *update.state.boundary` dereferences it. The pinned LLVM 23 baseline does not emit this diagnostic.",
-      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/drivetrain/transmission.cpp:319",
-      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes the assignment-guarded optional access at this site."
+      "reason": "clang-tidy 18 does not model the guarded optional accesses in the transmission stepper: at :319 `update.state.boundary` is engaged by the preceding conditional expression before `update.range[1] = *update.state.boundary` dereferences it, and at :345-346 the same member is unconditionally assigned `std::min(*update.state.boundary, phi) : phi` before the :346 dereference — assignment- and ternary-guarded engagement is not tracked through member-of-member optional paths. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/drivetrain/transmission.cpp:319 and :346",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes the assignment-guarded optional access at these sites."
     },
     {
       "checker": "bugprone-unchecked-optional-access",
@@ -174,12 +174,21 @@
     },
     {
       "checker": "misc-no-recursion",
-      "origin": "(?:^|/)src/runtime/control\\.hpp$",
+      "origin": "(?:^|/)runtime/control\\.hpp$",
       "message": "is within a recursive call chain",
       "tool_version": "18.1.3",
-      "reason": "clang-tidy 18 misc-no-recursion reports runtime::Wire and its operator= at control.hpp:41 as recursive because the Wire variant legitimately nests std::vector<Wire> reached through std::visit; the recursion is data-bounded and terminates. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reason": "clang-tidy 18 misc-no-recursion reports runtime::Wire and its operator= at control.hpp:41 as recursive because the Wire variant legitimately nests std::vector<Wire> reached through std::visit; the recursion is data-bounded and terminates. The origin is anchored on the filename tail because TUs reach the header through both canonical and ../-spelled include paths. The pinned LLVM 23 baseline does not emit this diagnostic.",
       "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/runtime/control.hpp:41 across Wire-visiting translation units",
       "remove_when": "Remove when the Linux clang-tidy toolchain handles the data-bounded Wire variant recursion without this diagnostic."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)io/value\\.hpp$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion reports io::Value, io::ObjectList and the implicit copy assignment operator at value.hpp:82 and :100 as recursive: Value is a recursive JSON/tree variant (arrays and objects of Value) whose special members recurse through std::vector/std::variant machinery — the recursion is data-bounded and terminates. The origin is anchored on the filename tail because TUs reach the header through both canonical and ../-spelled include paths. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/io/value.hpp:82 and :100 across Value-visiting translation units",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the data-bounded Value variant recursion without this diagnostic."
     },
     {
       "checker": "misc-no-recursion",
@@ -218,13 +227,184 @@
       "remove_when": "Remove when the Linux clang-tidy toolchain recognizes the address-taken out-parameter escape at these sites."
     },
     {
-      "checker": "concurrency-mt-unsafe",
-      "origin": "(?:^|/)native/src/batch/summary\\.cpp$",
-      "message": "function is not thread safe",
-      "tool_version": "23.1.2",
-      "reason": "clang-tidy 23.1.2 flags the read-only `std::getenv(\"OPENBLAS_NUM_THREADS\")` telemetry probe at summary.cpp:51 in the single-threaded batch-summary builder. getenv is MT-unsafe only against concurrent environment mutation, and no setenv/putenv exists anywhere in native/src — the variable is read once for the worker thread-policy record and never written back. Introduced at 29509355 (3.34 lane/d) after the last green baseline gate; verified baseline-red on an independent checkout at d20ea74c with none of the 3.36t2a changes.",
-      "reproducer": "cmake --build native/build --target check_tidy; concurrency-mt-unsafe at native/src/batch/summary.cpp:51:28 on the OPENBLAS_NUM_THREADS getenv call",
-      "remove_when": "Remove when the summary builder reads the variable through a thread-safe snapshot (or the call moves behind NOLINT with justification), or when clang-tidy stops emitting this exact diagnostic at summary.cpp:51."
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/configuration/validate\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the conditional-assignment engagement on a member optional: `config.drive_mode`/`config.pitch_assist` are unconditionally engaged by the `if (!config.drive_mode) config.drive_mode = ...` guards at validate.cpp:1063-1065 before every `*config.drive_mode` access at :1066, :1072-1073, :1103, :1106-1107, :1110-1111 and the `*config.pitch_assist` access at :1075. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/configuration/validate.cpp:1066-1111 in post_init",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes assignment-guarded member-optional engagement at these sites."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/initialization/setup_owner\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model guarded optional access on member-of-member paths: the `*impl->request.*` dereferences at setup_owner.cpp:178, :188, :201, :210 are protected by schema-required presence and ternary/if guards (`model.solver ?`, `if (legacy_source_root)`, `initial_state ?`), `*state.result` at :233 follows the unconditional :232 assignment, `impl_->result->*` at :245 and `*impl_->result` at :274 sit behind `!impl_->result -> throw` and `impl_->result ?` guards, `rider->variant` at :278 behind `rider &&`, and `*impl_->research_startup` at :290 behind the :288 throw guard. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/initialization/setup_owner.cpp:178-290",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks guarded optional access on member-of-member paths at these sites."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/initialization/initial_state\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model guarded optional access on member-of-member paths in the initial-state codecs: `drive->angles.value()`/`drive->angles.value().values` at :104 follow the same-branch `drive->angles = DriveAngles{}` assignment, `drive->hub->*` at :106 sits behind `if (drive->hub)`, `context.equilibrium->*` at :131 and `*context.equilibrium` at :136 behind the `if (!context.equilibrium) throw` at :127, `drive.angles->*` at :132 and `drive.hub.value()` at :133 behind `if (drive.angles)`/`if (drive.hub)`, `*anchor` at :134 behind `anchor ?`, and `ideal_hub->boundary`/`clutch->boundary` at :138 behind ternary presence tests. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/initialization/initial_state.cpp:104-138",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks guarded optional access on member-of-member paths at these sites."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/legacy/ride\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the explicit throw guard on the member-of-member optional at legacy/ride.cpp:133: `projection->physics->tires.backend` dereferences `projection->physics` after `if (!projection->physics) throw std::invalid_argument(...)` at :132. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/legacy/ride.cpp:133 in make_legacy_stepper",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through a throw guard on a member-of-member optional path."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/model/builder\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the if-init guard on the member-of-member optional at model/builder.cpp:74: `*context.physics->articulated.joint_envelope_path` is dereferenced only when the enclosing `if (context.physics->articulated.joint_envelope_path)` condition holds. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/model/builder.cpp:74 in finish_physical_topology",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks if-init guards on member-of-member optional paths."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/drivetrain/state_codec\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the explicit throw guard on the member-of-member optional at state_codec.cpp:497: `*decoded->hub` is dereferenced only after `if (!decoded->hub) throw std::invalid_argument(...)` at :496. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/drivetrain/state_codec.cpp:497 in decode_policy_snapshot",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through a throw guard on a member-of-member optional path."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/initialization/legacy_equilibrium\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the unconditional assignment engagement on the member optional at legacy_equilibrium.cpp:89: `*result.rider_loads_n` is dereferenced immediately after `result.rider_loads_n = context.rider_loads_n()` at :88 engages it. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/initialization/legacy_equilibrium.cpp:89",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes assignment-guarded member-optional engagement at this site."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/app/native_ride_main\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the explicit throw guard on the member-of-member optional path: `result->model.physics` is proven engaged by `if (!result->model.physics) throw std::invalid_argument(...)` at native_ride_main.cpp:126, yet the member dereferences at :127, :129-130 and the `*result->model.physics` call argument at :133 are still flagged. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/app/native_ride_main.cpp:127-133 in request_ptr",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through a throw guard on a member-of-member optional path."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)src/golden/capture\\.cpp$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion flags value_from_wire at golden/capture.cpp:36 and its std::visit lambdas at :37 for the data-bounded recursion over the recursive Wire variant; every recursion level consumes a smaller Wire subtree. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/golden/capture.cpp:36 and :37",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the Wire writer recursion without this diagnostic."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)src/initialization/capture\\.cpp$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion flags wire_value at initialization/capture.cpp:25 and its std::visit lambdas at :26 for the data-bounded recursion over the recursive Wire variant; every recursion level consumes a smaller Wire subtree. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/initialization/capture.cpp:25 and :26",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the Wire writer recursion without this diagnostic."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)src/research/metadata\\.cpp$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion flags wire_value at research/metadata.cpp:89 and its std::visit lambdas at :90 for the data-bounded recursion over the recursive Wire variant; every recursion level consumes a smaller Wire subtree. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at native/src/research/metadata.cpp:89 and :90",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the Wire writer recursion without this diagnostic."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)include/c\\+\\+/[0-9]+/bits/stl_construct\\.h$",
+      "message": "is within a recursive call chain",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 misc-no-recursion anchors the data-bounded recursive-variant call chain on the libstdc++ construct_at frame at bits/stl_construct.h:94 — the same bounded std::variant copy/destroy recursion as the suppressed <variant> frames, surfaced at this header instead when the checker's chain starts inside std::construct_at. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; misc-no-recursion at include/c++/13/bits/stl_construct.h:94 via Value/Wire recursive variants",
+      "remove_when": "Remove when the Linux clang-tidy toolchain handles the recursive-variant library frames without this diagnostic."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/rider/spindle_controller\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the short-circuit && engagement on the member-of-member optional at spindle_controller.cpp:1500-1501: `*config_.delivered_positive_budget_w()` is evaluated only under `config_.delivered_positive_budget_w().has_value() &&` in the same expression. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/rider/spindle_controller.cpp:1501",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through a short-circuit && optional guard."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/runtime/accounting\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model while-condition engagement: `while (const auto result = async_->peek(block))` iterates only while the optional result is engaged, so the `result->` accesses at accounting.cpp:546-548 are guarded. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/runtime/accounting.cpp:546",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through a while-condition optional binding."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)src/viewer/render_owner\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model the early-return guard on the member-of-member optional at render_owner.cpp:172-173: `impl_->frame->state.integration_state` is reached only after `if (!impl_->frame) return {};`. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/src/viewer/render_owner.cpp:173 in integration_state",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through an early-return optional guard."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)tests/migration/test_t08\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model member-of-member optional engagement through test guard shapes: `bt::require(state->angles.has_value() && state->angles->count == 1)` short-circuit derefs at test_t08.cpp:168-219 and the `if (state->probe_last)` guarded `->presence` at :298, plus assignment-engagement `request->rider = RiderSpecs{}` then `request->rider->variant` at :182-183. Every dereference is engagement-guarded in the same expression or statement. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/tests/migration/test_t08.cpp:168-298",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through &&-guards and assignment on member-of-member optionals."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)tests/migration/test_t16\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model assignment engagement on a member optional: `request->physics = load_physics(...)` at test_t16.cpp:27 engages it before `request->physics->drive` at :28. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/tests/migration/test_t16.cpp:28",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes assignment-guarded member-optional engagement at this site."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)tests/migration/test_t17\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model assignment engagement on a member optional: `request.rider = cfg::RiderSpecs{}` engages it before `request.rider->variant` at test_t17.cpp:78. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/tests/migration/test_t17.cpp:78",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes assignment-guarded member-optional engagement at this site."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)tests/migration/test_t18\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model assignment engagement on a member optional: `request->physics = cfg::load_physics(...)` / `request->rider = cfg::RiderSpecs{}` engage before the `->` accesses flagged at test_t18.cpp:43. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/tests/migration/test_t18.cpp:43",
+      "remove_when": "Remove when the Linux clang-tidy toolchain recognizes assignment-guarded member-optional engagement at this site."
+    },
+    {
+      "checker": "bugprone-unchecked-optional-access",
+      "origin": "(?:^|/)tests/migration/test_t27\\.cpp$",
+      "message": "unchecked access to optional value",
+      "tool_version": "18.1.3",
+      "reason": "clang-tidy 18 does not model member-of-member optional engagement through test guard shapes at test_t27.cpp:89-144: `request->rider->`/`request->physics->` after `= T{}` assignment engagement and `*config.drive` derefs gated on the `bt::require(config.drive.has_value())` guard at :99 — the harness require proves engagement but the checker does not model it. The pinned LLVM 23 baseline does not emit this diagnostic.",
+      "reproducer": "cmake --build native/build-linux-clang --target check_tidy; bugprone-unchecked-optional-access at native/tests/migration/test_t27.cpp:89-144",
+      "remove_when": "Remove when the Linux clang-tidy toolchain tracks engagement through require-guards and assignment on member-of-member optionals."
     }
   ]
 }

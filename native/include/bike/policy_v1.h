@@ -19,12 +19,18 @@ extern "C" {
 #define BIKE_CONTROL_POSTURE (1U << 4U)
 #define BIKE_CONTROL_PELVIS_OFFSET (1U << 5U)
 
+/* This header is the C ABI surface: typedef-struct spelling and trivially
+   default-constructed records (no in-class initializers, which C cannot
+   parse and which would make the records non-trivial) are the contract, not
+   modernization or initialization debt. */
+// NOLINTNEXTLINE(modernize-use-using,cppcoreguidelines-pro-type-member-init)
 typedef struct BikeErrorV1 {
     char* data;
     size_t capacity;
     size_t written;
 } BikeErrorV1;
 
+// NOLINTNEXTLINE(modernize-use-using,cppcoreguidelines-pro-type-member-init)
 typedef struct BikeObservationV1 {
     uint32_t struct_size;
     uint8_t valid;
@@ -37,11 +43,13 @@ typedef struct BikeObservationV1 {
     uint32_t valid_mask;
 } BikeObservationV1;
 
+// NOLINTNEXTLINE(modernize-use-using,cppcoreguidelines-pro-type-member-init)
 typedef struct BikeDemandV1 {
     uint8_t present;
     double torque_nm;
 } BikeDemandV1;
 
+// NOLINTNEXTLINE(modernize-use-using,cppcoreguidelines-pro-type-member-init)
 typedef struct BikeControlV1 {
     uint32_t struct_size;
     uint32_t present_mask;
@@ -56,6 +64,7 @@ typedef struct BikeControlV1 {
     uint8_t rider_enabled;
 } BikeControlV1;
 
+// NOLINTNEXTLINE(modernize-use-using,cppcoreguidelines-pro-type-member-init)
 typedef struct BikePolicyV1 {
     uint32_t abi_version;
     uint32_t struct_size;

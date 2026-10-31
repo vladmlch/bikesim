@@ -31628,7 +31628,7 @@
       "source_path": "tests/portability/test_baseline.py",
       "source_symbol": "test_real_checkout_baseline",
       "line": 78,
-      "end_line": 103,
+      "end_line": 105,
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::baseline_context_record_has_required_sections",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",

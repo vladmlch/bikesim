@@ -88,11 +88,13 @@ def test_real_checkout_baseline(tmp_path):
     declared = report["packages"]["declared"]
     assert declared["mujoco"]["version"] == "3.12.0"
     assert declared["numpy"]["version"] == "2.5.2"
-    # Genuinely absent inputs are named, not silently dropped.
-    assert ".python-version" in report["missing_inputs"]
-    # T28 adds .github/workflows/portability.yml, so .github is no longer
-    # an absent input; the remaining entries below are still missing.
+    # Committed inputs stay out of the missing list and keep their presence
+    # record: the CPython 3.13 pin landed with 160ead37/cc5e18c8 and T28
+    # added .github/workflows/portability.yml.
+    assert ".python-version" not in report["missing_inputs"]
+    assert report["inputs"][".python-version"]["present"] is True
     assert ".github" not in report["missing_inputs"]
+    # Genuinely absent inputs are named, not silently dropped.
     assert (
         "docs/superpowers/specs/2026-10-06-native-safety.md"
         in report["missing_inputs"]

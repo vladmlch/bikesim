@@ -98,7 +98,7 @@ if(BUILD_TESTING)
   # The case list includes scratch configures and real compiler builds;
   # give the whole script a generous budget.
   set_tests_properties(migration_T53_portability PROPERTIES
-    LABELS "migration;t53;portability" TIMEOUT 3600)
+    LABELS "migration;t53;portability;slow" TIMEOUT 3600)
   if(NOT TARGET migration_T53_portability)
     add_custom_target(migration_T53_portability
       COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
@@ -117,6 +117,8 @@ if(BUILD_TESTING)
       -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
       -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T53_numerics"
       -P "${_checks_native_dir}/tests/migration/migration_T53_numerics.cmake")
+  set_tests_properties(migration_T53_numerics PROPERTIES
+    LABELS "migration;t53;numerics;slow")
   if(NOT TARGET migration_T53_numerics)
     add_custom_target(migration_T53_numerics
       COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
@@ -189,7 +191,7 @@ if(BUILD_TESTING)
   # control builds; give the whole script the same generous budget the T53
   # portability fixture already declares.
   set_tests_properties(migration_T56 PROPERTIES
-    LABELS "migration;t56" TIMEOUT 3600)
+    LABELS "migration;t56;slow" TIMEOUT 3600)
   if(NOT TARGET migration_T56)
     add_custom_target(migration_T56
       COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"

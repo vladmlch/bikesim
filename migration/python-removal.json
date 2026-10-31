@@ -18839,9 +18839,14 @@
       "native/cmake/Coverage.cmake",
       "packaging/CMakeLists.txt"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T336r_portability",
+      "install_smoke",
+      "package_smoke",
+      "coverage_smoke"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "bd54873b620a90f32c7ad068da5d311a7f6f82cd84bf3e2b5e5f26b812458a04",
     "snapshot_line_count": 898,
     "tracked": true,
@@ -18912,9 +18917,15 @@
       "native/cmake/Coverage.cmake",
       "packaging/CMakeLists.txt"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T336_portability",
+      "sanitizer_clean_control",
+      "sanitizer_negative_control",
+      "rtsan_clean_control",
+      "rtsan_negative_control"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "a35133c585ea56169acb292ed496984db7dcf08b3652d4b18f35bf3df12d44ef",
     "snapshot_line_count": 614,
     "tracked": true,

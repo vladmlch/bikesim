@@ -21,40 +21,49 @@ qualified platform workflows.
 
 ## Verification
 
-`bash tools/run_tests.sh` is the test entry point; pick the profile by what changed:
+`bash tools/run_tests.sh <profile> [preset]` is the test entry point; pick the
+profile by what changed. `preset` names a configure preset from
+`CMakePresets.json` (default `release`, build dir `build/native-release`);
+`native asan` runs the same stages on `build/asan`.
 
-- `quick` — Python-only changes outside the native verification scope.
-- `native` — native code, bindings/config projection/tests, or build/analysis/sanitizer/coverage tooling (including `tools/*.sh`): build, all static-analysis sweeps, native+golden tests. Not done until green.
-- `full` — changes to physics or realtime paths.
+- `quick` — one `cmake --workflow --preset <preset>` run: configure, build and
+  the test step, which excludes the `slow|audit|package` labels.
+- `native` — configure + build, then every produced static-analysis sweep and
+  the structural contracts check via `tools/run_native_checks.sh`, then CTest
+  without `slow|audit|package`. The gate for native code and
+  build/analysis/sanitizer/coverage tooling (including `tools/*.sh`). Not done
+  until green.
+- `full` — the `native` profile plus the explicit `slow`, `audit` and
+  `package` label gates (`--no-tests=error`). For physics or realtime paths.
 
-A failed sweep names its CMake target; rerun it standalone with `cmake --build native/build --target check_<name>`. Alpha analyzer findings print but never block. A missing sweep tool fails the run on purpose — install the tool rather than skipping the target. For sanitizer/RTSan/coverage builds and sweep internals, reach `docs/TESTING.md`.
+A failed sweep names its kind; rerun it standalone with
+`build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`,
+or `cmake --build build/native-release --target check_<name>` where
+`native/cmake/Checks.cmake` defines one. Alpha analyzer findings print but
+never block. A missing sweep tool fails the run on purpose — install the tool
+rather than skipping the target. For sanitizer/RTSan/coverage presets and
+sweep internals, reach `docs/TESTING.md`.
 
 ### Verification speed
 
-The `native` profile costs ~15–30 min (build + 9 static-analysis sweeps + CTest +
-native/golden pytest). It is the outer gate, not the inner loop.
+The `native` profile costs ~15–30 min (build + 9 static-analysis sweeps +
+CTest). It is the outer gate, not the inner loop.
 
-- Iterate **red→green** on the smallest scope: the targeted pytest node for the
-  behavior you changed, plus `cmake --build <selected-build> --target check_<name>`
-  for the one sweep that covers it (a failed sweep names its own target).
-- Run `bash tools/run_tests.sh native` **once**, as the final step before reporting
-  a task done. The completion criterion: that run exits 0.
-- Pick the cheapest covering profile: `quick` for Python-only changes outside the
-  native scope, `native` for native/bindings/verification tooling, `full` only for
-  physics or realtime paths (profiles: docs/TESTING.md).
+- Iterate **red→green** on the smallest scope: the targeted CTest node for the
+  behavior you changed, plus `cmake --build <selected-build> --target
+  check_<name>` for the one sweep that covers it (a failed sweep names its own
+  target).
+- Run `bash tools/run_tests.sh native` **once**, as the final step before
+  reporting a task done. The completion criterion: that run exits 0.
+- Pick the cheapest covering profile: `quick` outside the native scope,
+  `native` for native/build/verification tooling, `full` only for physics or
+  realtime paths (profiles: docs/TESTING.md).
 - Compare a gate's failures against the documented baseline list. Reach for
-  stash+rerun at HEAD only for a failure the baseline does not explain — proving
-  pre-existing red costs a full gate.
+  stash+rerun at HEAD only for a failure the baseline does not explain —
+  proving pre-existing red costs a full gate.
 
-Numba caveats: the ride-loop kernels in `physics/tire.py`,
-`physics/joint_strength.py` and `sim/ride/support_geometry.py` are
-`@numba.njit(cache=True)` — first call per process compiles (seconds)
-when the cache is cold, so a cold `step_profile`/`measure_realtime`
-overstates per-step cost; always run a warmup first. `cache=True`
-falls back to compiling on every process start when the package is
-installed read-only. `tools/research_sweep.py` pays the import+JIT
-startup in every child process; it is amortized inside each episode,
-not shared.
+The numba caveat (cold `@njit(cache=True)` compiles overstating per-step cost)
+was removed with Python, see ADR-0003.
 
 Oracle parity ([ADR-0003](docs/adr/0003-native-authoritative-python-removal.md)):
 a pytest file comparing C++ with the live Python oracle stays a bitwise

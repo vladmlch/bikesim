@@ -6,6 +6,7 @@ from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.ride.hud import RideHUD
 from bike_sim.sim.ride.physical_view import RenderReplica, environment_snapshot, present_view
 from native_loader import load_native
+import _golden
 from _bits import assert_bitwise_equal
 from _physical_hud_oracle import RideHUD as OriginalHUD
 
@@ -17,13 +18,20 @@ bike_native = load_native()
 def test_native_preview_matches_reference_and_is_owned(environment_pair, assert_tree):
     reference, native = environment_pair()
     original = OriginalHUD(reference.sim.model)
-    for _ in range(3):
+    for iteration in range(3):
         frame = native.snapshot()
         view = present_view(frame.view, track=native.sim.track)
-        assert_tree(dict(view.preview_row), dict(original.preview_log_row(reference.sim), requested_scale=1))
+        expected_row = dict(original.preview_log_row(reference.sim),
+                            requested_scale=1)
+        _golden.record_tree(expected_row, f'preview.{iteration}.row')
+        assert_tree(dict(view.preview_row), expected_row)
         assert RideHUD(reference.sim.model)._physical_columns(view) == original._physical_columns(reference.sim)
-        assert_tree(view.endpoint, environment_snapshot(reference).view.endpoint)
-        assert_tree(native.step(RideControl(0.)), reference.step(RideControl(0.)))
+        expected_endpoint = environment_snapshot(reference).view.endpoint
+        _golden.record_tree(expected_endpoint, f'preview.{iteration}.endpoint')
+        assert_tree(view.endpoint, expected_endpoint)
+        expected_step = reference.step(RideControl(0.))
+        _golden.record_tree(expected_step, f'preview.{iteration}.transition')
+        assert_tree(native.step(RideControl(0.)), expected_step)
     frame = native.snapshot()
     expected = frame.integration_state.copy()
     replica = RenderReplica(native.make_render_model())
@@ -53,6 +61,9 @@ def test_native_target_slice_does_not_flush_or_duplicate_request(environment_pai
             env.advance_control(target_step=0)
         assert env.control_pending
     assert_bitwise_equal(native.snapshot().integration_state,
-                         environment_snapshot(reference).integration_state)
-    assert_tree(native.advance_control(), reference.advance_control())
+                         environment_snapshot(reference).integration_state,
+                         'target slice integration state')
+    expected_transition = reference.advance_control()
+    _golden.record_tree(expected_transition, 'advance.transition')
+    assert_tree(native.advance_control(), expected_transition)
     assert len(native.commands_requested) == len(native.trace) == 1

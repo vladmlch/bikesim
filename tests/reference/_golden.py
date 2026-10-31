@@ -53,6 +53,73 @@ def _current_node() -> str:
     return _PHASE.sub("", os.environ.get("PYTEST_CURRENT_TEST", ""))
 
 
+def _tree_leaves(value, path, numeric, other):
+    """Split an assert_tree-shaped value into sorted-path leaf maps.
+
+    numeric[path] -> float is the elementwise (close) surface; other[path] ->
+    JSON-safe leaf is the exact-match surface (None/bool/str/empty containers).
+    Both sides flatten into the same sorted-path space so member and index
+    order never reaches the comparison.
+    """
+    from dataclasses import asdict, is_dataclass
+    from collections.abc import Mapping, Sequence
+    if is_dataclass(value) and not isinstance(value, type):
+        value = asdict(value)
+    if isinstance(value, Mapping):
+        if not value:
+            other[path] = {"$empty": "object"}
+        for key in sorted(value):
+            _tree_leaves(value[key], f"{path}.{key}", numeric, other)
+    elif isinstance(value, np.ndarray):
+        if value.dtype.kind in "biuf":
+            # Recurse elementwise under padded indices, exactly like a
+            # nested list, so the native WireArray walk lands on identical
+            # sorted paths regardless of the leaf's container spelling.
+            for index in np.ndindex(value.shape):
+                leaf = float(value[index])
+                suffix = "".join(f"[{axis:08d}]" for axis in index)
+                numeric[f"{path}{suffix}"] = leaf
+        else:
+            other[path] = value.tolist()
+    elif isinstance(value, np.generic):
+        _tree_leaves(value.item(), path, numeric, other)
+    elif isinstance(value, (list, tuple)) or (
+            isinstance(value, Sequence) and
+            not isinstance(value, (str, bytes, bytearray))):
+        if not value:
+            other[path] = {"$empty": "array"}
+        for index, item in enumerate(value):
+            _tree_leaves(item, f"{path}[{index:08d}]", numeric, other)
+    elif value is None or isinstance(value, (bool, str)):
+        other[path] = value
+    elif isinstance(value, (int, float)):
+        numeric[path] = np.asarray(value, dtype="<f8")
+    else:
+        raise TypeError(f"golden tree leaf of unsupported type {type(value).__name__} at {path!r}")
+
+
+def record_tree(value, label: str, *, rtol=1e-9, atol=1e-9) -> None:
+    """Freeze an assert_tree/assert_tree_close comparison.
+
+    Emits two entries per call, consumed as a pair by the native port:
+    ``<label>.values`` (close little-endian float64 leaves in sorted-path
+    order) and ``<label>.other`` (bitwise canonical-JSON object of the
+    nonnumeric leaves, ``{path: leaf}`` with empty containers marked
+    ``{"$empty": "object"|"array"}``).
+    """
+    if not os.environ.get("BIKE_GOLDEN_CAPTURE"):
+        return
+    numeric, other = {}, {}
+    _tree_leaves(value, "", numeric, other)
+    paths = sorted(numeric)
+    flat = np.concatenate([np.atleast_1d(numeric[path]) for path in paths]) \
+        if paths else np.empty(0, dtype="<f8")
+    record(flat, f"{label}.values", kind="close", rtol=rtol, atol=atol)
+    text = json.dumps(other, sort_keys=True, separators=(",", ":"),
+                      allow_nan=False)
+    record(np.frombuffer(text.encode("utf-8"), dtype="|u1"), f"{label}.other")
+
+
 def record(value, label: str = "", *, kind: str = "bitwise", rtol=None, atol=None) -> None:
     root = os.environ.get("BIKE_GOLDEN_CAPTURE")
     if not root:

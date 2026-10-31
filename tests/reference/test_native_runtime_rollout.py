@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from native_loader import load_native
+import _golden
 from _bits import assert_bitwise_equal
 from _native_runtime_support import make_python_ride, advance_python, assert_tree_close
 from bike_sim.native.runtime import create_native_ride
@@ -29,7 +30,9 @@ def _integration(sim):
 def _assert_rows(actual, expected):
     assert len(actual) == len(expected)
     assert [row['interval_id'] for row in actual] == list(range(len(actual)))
-    for actual_row, expected_row in zip(actual, expected):
+    for index, (actual_row, expected_row) in enumerate(
+            zip(actual, expected)):
+        _golden.record_tree(expected_row, f'row.{index:08d}')
         assert_tree_close(actual_row, expected_row)
 
 
@@ -45,7 +48,9 @@ def test_native_full_rows_match_python_for_non_aligned_tail():
     assert len(batch) == 41
     assert len(native.drain_samples()) == 0
     snap = native.snapshot()
+    _golden.record_tree(expected[-1], 'latest_sample')
     assert_tree_close(snap.latest_sample.as_dict(), expected[-1])
+    _golden.record_tree(snap.view.channels, 'view.channels')
     assert_tree_close(snap.view.channels, snap.latest_sample.channels)
     native.close()
 
@@ -177,6 +182,8 @@ def test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip():
     actual, expected = native.recorded_columns, recorder.columns()
     assert actual.keys() == expected.keys()
     for name, column in expected.items():
+        _golden.record(np.asarray(column, dtype='<f8'), f'columns.{name}',
+                       kind='close', rtol=1e-9, atol=1e-9)
         np.testing.assert_allclose(actual[name], column, atol=1e-9, rtol=1e-9,
                                    equal_nan=True, err_msg=name)
         assert not actual[name].flags.writeable
@@ -200,9 +207,16 @@ def test_one_second_800_interval_golden_episode_all_channels():
     # bar for this comparison kind).
     assert_bitwise_equal(snap.integration_state, _integration(sim),
                          'golden episode integration state')
+    _golden.record_tree(sim.physical.reference_monitor.first_failure,
+                        'first_failure')
     assert_tree_close(snap.first_failure, sim.physical.reference_monitor.first_failure)
+    _golden.record_tree(sim.physical.model_status.as_dict(), 'model_status')
     assert_tree_close(snap.model_status, sim.physical.model_status.as_dict())
+    _golden.record_tree(sim.physical.history.work_j, 'history.work_j')
     assert_tree_close(native.accounting_state['history']['work_j'], sim.physical.history.work_j)
+    _golden.record_tree(sim.physical.history.airtime_s, 'history.airtime_s')
     assert_tree_close(native.accounting_state['history']['airtime_s'], sim.physical.history.airtime_s)
+    _golden.record(np.asarray([sim.physical.history.duration_s], dtype='<f8'),
+                   'history.duration_s', kind='close', rtol=0., atol=1e-12)
     assert native.accounting_state['history']['duration_s'] == pytest.approx(1., abs=1e-12)
     native.close()

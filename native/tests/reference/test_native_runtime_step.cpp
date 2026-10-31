@@ -2,24 +2,20 @@
 // test_native_runtime_step.py — A3 owned physical step and bounded
 // NativeRideRuntime.advance().
 //
-// Ported (4 of 10 records): every assertion below compares native state
-// against native state, so no oracle data enters this file. The remaining
-// six records compare NativeRideRuntime against the *live Python oracle's*
-// integration vector bit-for-bit; they are pre-existing live-oracle reds
-// on both platforms (A/B-verified unchanged across the F4 refresh_forward
-// fix — see task-F4-report.md and task-C325-report.md) and stay `planned`
-// in the port map rather than being ported past as green:
-//   test_native_first_step_uses_settled_material_state
-//   test_native_step_sequence_matches_python_state
-//   test_native_force_fold_matches_python_recorded_inputs
-//   test_native_advance_tracks_python_under_load
-//   test_sensor_channels_read_sensordata_rows
-//   test_native_intent_lanes_match_python_past_reaction_delay
+// Ported (all 10 records): the four native-vs-native contracts plus the
+// six oracle-parity records, now gated on FT-2 goldens replayed through
+// the committed welded bootstrap under
+// tests/fixtures/migration/ft2/<platform>/ride.
+#include "ft2_reference_support.hpp"
 #include "runtime_reference_support.hpp"
 
 #include "diag.hpp"
 
+#include <array>
+#include <cstdio>
 #include <memory>
+#include <utility>
+#include <string>
 #include <vector>
 
 namespace {
@@ -27,9 +23,17 @@ namespace {
 using runtime_reference::bitwise_equal;
 using runtime_reference::expect_error;
 using runtime_reference::require_bitwise;
+using ft2_reference::consume_tree;
 
+constexpr std::string_view kNode =
+    "tests/reference/test_native_runtime_step.py::";
+
+// The FT-2 ride capture: make_python_ride(strict=False, decimation=1)
+// frozen at the oracle boundary — the identical recipe to
+// runtime_reference::ride() but sourced from the platform-qualified
+// capture directory that owns these goldens.
 [[nodiscard]] std::unique_ptr<runtime::NativeRideRuntime> ride() {
-    return runtime_reference::ride();
+    return ft2_reference::ride();
 }
 
 // The call-chunking contract: one bounded advance(40) vs the (1,3,9,17,40)
@@ -133,6 +137,181 @@ void test_probe_step_inputs_returns_staged_diagnostics() {
 }
 NATIVE_DIAG_POP
 
+// ---- FT-2 oracle-parity ports ----------------------------------------------
+// Each test replays the oracle's committed boundary out of the platform
+// golden; entries stream in the Python file's capture order.
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_first_step_uses_settled_material_state() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_native_first_step_uses_settled_material_state");
+    const auto native = ride();
+    const runtime::RideControl command;
+    static_cast<void>(native->advance(1, command, 0., 0., std::nullopt));
+    node.f64(native->snapshot().integration_state, "settled first step");
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_step_sequence_matches_python_state() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_native_step_sequence_matches_python_state");
+    const auto native = ride();
+    const runtime::RideControl command;
+    char label[32];
+    for (std::int64_t target = 1; target <= 30; ++target) {
+        const runtime::AdvanceResult result =
+            native->advance(target, command, 0., 0., std::nullopt);
+        bt::require(result.step == target && result.reason == "target",
+                    "committed interval lands on the requested target");
+        std::snprintf(label, sizeof(label), "step %lld",
+                      static_cast<long long>(target));
+        node.f64(native->snapshot().integration_state, label);
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_force_fold_matches_python_recorded_inputs() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_native_force_fold_matches_python_recorded_inputs");
+    const auto native = ride();
+    const runtime::RideControl command;
+    const std::array<std::pair<double, double>, 3> demands{
+        {{0., 0.}, {.35, .2}, {1., 1.}}};
+    char label[48];
+    int fold = 0;
+    for (const auto [front, rear] : demands) {
+        const runtime::PhysicalStep::ProbeResult probe =
+            native->probe_step_inputs(command, front, rear);
+        // components dict, in the oracle's compute_components order.
+        runtime::WireObject components;
+        for (const auto &[name, force] : probe.components) {
+            runtime::WireArray row;
+            for (const double value : force) row.emplace_back(value);
+            components.emplace_back(name, runtime::Wire{std::move(row)});
+        }
+        std::snprintf(label, sizeof(label), "fold.%d.components", fold);
+        consume_tree(node, components, label);
+        std::snprintf(label, sizeof(label), "fold.%d.ctrl", fold);
+        node.f64_close(probe.ctrl, label);
+        const double bounds[2] = {probe.front_brake_bound_nm,
+                                  probe.rear_brake_bound_nm};
+        std::snprintf(label, sizeof(label), "fold.%d.brake_bounds", fold);
+        node.f64_close(bounds, label);
+        bt::require(native->snapshot().step == 0,
+                    "a probe commits no state");
+        const std::vector<double> before =
+            native->snapshot().integration_state;
+        native->reset();
+        bt::require(bitwise_equal(native->snapshot().integration_state,
+                                  before),
+                    "reset replays the bootstrap bitwise");
+        ++fold;
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_advance_tracks_python_under_load() {
+    bt::oracle::Node node(
+        std::string(kNode) + "test_native_advance_tracks_python_under_load");
+    const auto native = ride();
+    const runtime::RideControl command;
+    char label[32];
+    for (std::int64_t target = 1; target <= 30; ++target) {
+        const double demand = (target >= 11 && target <= 20) ? .6 : 0.;
+        static_cast<void>(native->advance(target, command, demand, demand,
+                                        std::nullopt));
+        std::snprintf(label, sizeof(label), "interval %lld",
+                      static_cast<long long>(target));
+        node.f64(native->snapshot().integration_state, label);
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_sensor_channels_read_sensordata_rows() {
+    bt::oracle::Node node(
+        std::string(kNode) + "test_sensor_channels_read_sensordata_rows");
+    const auto native = ride();
+    const runtime::RideControl command;
+    char label[64];
+    for (std::int64_t target = 1; target <= 5; ++target) {
+        static_cast<void>(
+            native->advance(target, command, 0., 0., std::nullopt));
+        // The oracle staged apply_forces(advance=False) before reading;
+        // the probe stages the same inputs on the native side.
+        const runtime::PhysicalStep::ProbeResult probe =
+            native->probe_step_inputs(command, 0., 0.);
+        const auto gyro = runtime::sample_wire::array(
+            runtime::sample_wire::required(probe.sensors,
+                                           "frame_gyro_body_rad_s"));
+        const auto accel = runtime::sample_wire::array(
+            runtime::sample_wire::required(
+                probe.sensors, "frame_specific_force_body_mps2"));
+        std::vector<double> gyro_values, accel_values;
+        for (const runtime::Wire &lane : gyro)
+            gyro_values.push_back(runtime::sample_wire::number(lane));
+        for (const runtime::Wire &lane : accel)
+            accel_values.push_back(runtime::sample_wire::number(lane));
+        std::snprintf(label, sizeof(label),
+                      "step %lld frame_gyro_body_rad_s",
+                      static_cast<long long>(target));
+        node.f64(gyro_values, label);
+        std::snprintf(label, sizeof(label),
+                      "step %lld frame_specific_force_body_mps2",
+                      static_cast<long long>(target));
+        node.f64(accel_values, label);
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_intent_lanes_match_python_past_reaction_delay() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_native_intent_lanes_match_python_past_reaction_delay");
+    const auto native = ride();
+    const runtime::RideControl command;
+    for (std::int64_t target = 1; target <= 160; ++target)
+        static_cast<void>(
+            native->advance(target, command, 0., 0., std::nullopt));
+    bt::require(native->snapshot().step == 160,
+                "160 intervals committed");
+    node.f64(native->snapshot().integration_state,
+             "step 160 integration state");
+    const runtime::PhysicalStep::ProbeResult probe =
+        native->probe_step_inputs(command, 0., 0.);
+    consume_tree(node, probe.intent_signals, "intent_signals");
+    const double inclination[1] = {probe.intent_inclination_rad};
+    node.f64(inclination, "intent_inclination_rad");
+    // The source file's trailing bitwise leg: the force vector lane.
+    const auto &force = runtime::sample_wire::array(
+        runtime::sample_wire::required(probe.intent_signals,
+                                       "specific_force_body_mps2"));
+    std::vector<double> force_values;
+    for (const runtime::Wire &lane : force)
+        force_values.push_back(runtime::sample_wire::number(lane));
+    node.f64(force_values, "");
+    node.done();
+}
+NATIVE_DIAG_POP
+
 } // namespace
 
 int main() {
@@ -144,6 +323,15 @@ int main() {
         failures += bt::run(test_snapshot_is_an_owned_copy);
         failures += bt::run(
             test_probe_step_inputs_returns_staged_diagnostics);
+        failures += bt::run(
+            test_native_first_step_uses_settled_material_state);
+        failures += bt::run(test_native_step_sequence_matches_python_state);
+        failures += bt::run(
+            test_native_force_fold_matches_python_recorded_inputs);
+        failures += bt::run(test_native_advance_tracks_python_under_load);
+        failures += bt::run(test_sensor_channels_read_sensordata_rows);
+        failures += bt::run(
+            test_native_intent_lanes_match_python_past_reaction_delay);
         return failures == 0 ? 0 : 1;
     } catch (...) {
         return 1;

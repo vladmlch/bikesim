@@ -11,6 +11,7 @@ import pytest
 import mujoco
 
 from native_loader import load_native
+import _golden
 from _bits import assert_bitwise_equal
 from _native_runtime_support import make_python_ride, assert_tree_close
 from bike_sim.native.runtime import create_native_ride
@@ -53,7 +54,8 @@ def test_native_first_step_uses_settled_material_state(sim):
     sim.step(control=command)
     native.advance(1, command)
     expected = _integration_state(sim)
-    assert_bitwise_equal(native.snapshot().integration_state, expected)
+    assert_bitwise_equal(native.snapshot().integration_state, expected,
+                         'settled first step')
 
 
 @pytest.mark.slow
@@ -67,7 +69,8 @@ def test_native_step_sequence_matches_python_state(sim):
         assert result.step == target
         assert result.reason == 'target'
         assert_bitwise_equal(
-            native.snapshot().integration_state, _integration_state(sim))
+            native.snapshot().integration_state, _integration_state(sim),
+            f'step {target}')
 
 
 @pytest.mark.slow
@@ -80,12 +83,21 @@ def test_native_force_fold_matches_python_recorded_inputs(sim):
     """
     native = create_native_ride(sim, strict=False, record_decimation=1)
     command = RideControl()
-    for front, rear in ((0., 0.), (.35, .2), (1., 1.)):
+    for fold, (front, rear) in enumerate(((0., 0.), (.35, .2), (1., 1.))):
         probe = native.probe_step_inputs(
             command, front_brake_demand=front, rear_brake_demand=rear)
         sim.physical.apply_forces(active=True, advance=False, front=front,
                                   rear=rear, control=command)
         expected = sim.force_accumulator.components
+        _golden.record_tree(expected, f'fold.{fold}.components')
+        _golden.record(np.asarray(sim.data.ctrl, dtype='<f8'),
+                       f'fold.{fold}.ctrl', kind='close', rtol=1e-9,
+                       atol=1e-9)
+        _golden.record(np.asarray(
+            [float(sim.model.dof_frictionloss[sim.physical.brake.front]),
+             float(sim.model.dof_frictionloss[sim.physical.brake.rear])],
+            dtype='<f8'), f'fold.{fold}.brake_bounds', kind='close',
+            rtol=0., atol=1e-12)
         assert list(probe['components'].keys()) == list(expected.keys())
         for name, force in expected.items():
             np.testing.assert_allclose(
@@ -189,10 +201,12 @@ def test_sensor_channels_read_sensordata_rows(sim):
         # :182-183); bitwise equal, not just close.
         assert_bitwise_equal(
             np.asarray(probe['sensors']['frame_gyro_body_rad_s']),
-            sim.data.sensor('sensor_frame_gyro').data)
+            sim.data.sensor('sensor_frame_gyro').data,
+            f'step {target} frame_gyro_body_rad_s')
         assert_bitwise_equal(
             np.asarray(probe['sensors']['frame_specific_force_body_mps2']),
-            sim.data.sensor('sensor_frame_accel').data)
+            sim.data.sensor('sensor_frame_accel').data,
+            f'step {target} frame_specific_force_body_mps2')
 
 
 @pytest.mark.slow
@@ -210,9 +224,15 @@ def test_native_intent_lanes_match_python_past_reaction_delay(sim):
     # Snapshot before the probe: apply_forces staging rewrites
     # qacc_warmstart/sensordata lanes the integration vector carries.
     assert_bitwise_equal(
-        native.snapshot().integration_state, _integration_state(sim))
+        native.snapshot().integration_state, _integration_state(sim),
+        'step 160 integration state')
     probe = native.probe_step_inputs(command)
     expected = sim.physical.rider_intent_signals
+    from dataclasses import asdict
+    _golden.record_tree(asdict(expected), 'intent_signals')
+    _golden.record(np.asarray(
+        [sim.physical.rider_intent.policy.inclination_rad], dtype='<f8'),
+        'intent_inclination_rad')
     signals = probe['intent_signals']
     assert signals['pitch_rate_up_rad_s'] == expected.pitch_rate_up_rad_s
     assert_bitwise_equal(

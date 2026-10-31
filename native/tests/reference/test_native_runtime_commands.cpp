@@ -2,23 +2,19 @@
 // test_native_runtime_commands.py — A3 command handling through
 // NativeRideRuntime.advance().
 //
-// Ported (6 of 10 records): the bounded-advance contract, target/command
-// rejection, the reentrancy guard and the fatal-prefix surface — all
-// native-vs-native. The four remaining records replay the live Python
-// oracle's integration vector under scripted command programs; they are
-// pre-existing live-oracle bitwise reds (A/B-verified unchanged across
-// the F4 refresh_forward fix — see task-C325-report.md) and stay
-// `planned` in the port map rather than being ported past as green:
-//   test_explicit_zero_effort_differs_from_automatic
-//   test_motor_ceiling_change_matches_python
-//   test_brake_apply_release_matches_python
-//   test_gear_shift_and_coast_resume_match_python
+// Ported (all 10 records): the six native-vs-native contracts plus the
+// four oracle-parity records, now gated on FT-2 goldens replayed through
+// the committed welded bootstrap under
+// tests/fixtures/migration/ft2/<platform>/ride.
+#include "ft2_reference_support.hpp"
 #include "runtime_reference_support.hpp"
 
 #include "diag.hpp"
 
+#include <array>
 #include <atomic>
 #include <chrono>
+#include <cstdio>
 #include <exception>
 #include <limits>
 #include <memory>
@@ -32,8 +28,11 @@ namespace {
 using runtime_reference::expect_error;
 using runtime_reference::expect_invalid;
 
+constexpr std::string_view kNode =
+    "tests/reference/test_native_runtime_commands.py::";
+
 [[nodiscard]] std::unique_ptr<runtime::NativeRideRuntime> ride() {
-    return runtime_reference::ride();
+    return ft2_reference::ride();
 }
 
 // A zero wall budget yields between steps; a generous budget commits the
@@ -194,6 +193,107 @@ void test_engine_failure_keeps_committed_prefix() {
 }
 NATIVE_DIAG_POP
 
+// ---- FT-2 oracle-parity ports ----------------------------------------------
+// Each replays the source file's scripted command program against the
+// committed integration vector the oracle froze.
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_explicit_zero_effort_differs_from_automatic() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_explicit_zero_effort_differs_from_automatic");
+    const auto native = ride();
+    const auto automatic = ride();
+    runtime::RideControl zero;
+    zero.human_torque_nm = 0.;
+    const runtime::RideControl automatic_command;
+    for (std::int64_t target = 1; target <= 140; ++target) {
+        static_cast<void>(
+            native->advance(target, zero, 0., 0., std::nullopt));
+        static_cast<void>(automatic->advance(target, automatic_command,
+                                             0., 0., std::nullopt));
+    }
+    node.f64(native->snapshot().integration_state,
+             "explicit zero effort step 140");
+    bt::require(!runtime_reference::bitwise_equal(
+                    native->snapshot().integration_state,
+                    automatic->snapshot().integration_state),
+                "explicit zero is not the automatic lane");
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_motor_ceiling_change_matches_python() {
+    bt::oracle::Node node(
+        std::string(kNode) + "test_motor_ceiling_change_matches_python");
+    const auto native = ride();
+    char label[32];
+    for (std::int64_t target = 1; target <= 30; ++target) {
+        runtime::RideControl command;
+        if (target <= 15) command.motor_limit_nm = 40.;
+        command.human_torque_nm = 30.;
+        static_cast<void>(
+            native->advance(target, command, 0., 0., std::nullopt));
+        std::snprintf(label, sizeof(label), "interval %lld",
+                      static_cast<long long>(target));
+        node.f64(native->snapshot().integration_state, label);
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_brake_apply_release_matches_python() {
+    bt::oracle::Node node(
+        std::string(kNode) + "test_brake_apply_release_matches_python");
+    const auto native = ride();
+    runtime::RideControl command;
+    command.human_torque_nm = 25.;
+    char label[32];
+    for (std::int64_t target = 1; target <= 24; ++target) {
+        const bool braking = target >= 9 && target <= 16;
+        static_cast<void>(native->advance(target, command,
+                                        braking ? 1. : 0.,
+                                        braking ? .5 : 0., std::nullopt));
+        std::snprintf(label, sizeof(label), "interval %lld",
+                      static_cast<long long>(target));
+        node.f64(native->snapshot().integration_state, label);
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_gear_shift_and_coast_resume_match_python() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_gear_shift_and_coast_resume_match_python");
+    const auto native = ride();
+    const std::array<std::pair<std::int64_t, double>, 3> segments{
+        {{60, 35.}, {80, 0.}, {120, 35.}}};
+    char label[32];
+    std::int64_t step = 0;
+    for (const auto &[target, torque] : segments) {
+        runtime::RideControl command;
+        command.human_torque_nm = torque;
+        while (step < target) {
+            ++step;
+            static_cast<void>(
+                native->advance(step, command, 0., 0., std::nullopt));
+        }
+        std::snprintf(label, sizeof(label), "interval %lld",
+                      static_cast<long long>(target));
+        node.f64(native->snapshot().integration_state, label);
+    }
+    node.done();
+}
+NATIVE_DIAG_POP
+
 } // namespace
 
 int main() {
@@ -205,6 +305,10 @@ int main() {
         failures += bt::run(test_concurrent_advance_and_reset_rejected);
         failures += bt::run(test_advance_after_close_fails);
         failures += bt::run(test_engine_failure_keeps_committed_prefix);
+        failures += bt::run(test_explicit_zero_effort_differs_from_automatic);
+        failures += bt::run(test_motor_ceiling_change_matches_python);
+        failures += bt::run(test_brake_apply_release_matches_python);
+        failures += bt::run(test_gear_shift_and_coast_resume_match_python);
         return failures == 0 ? 0 : 1;
     } catch (...) {
         return 1;

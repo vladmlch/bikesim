@@ -8,6 +8,8 @@ from bike_sim.recording.json_codec import thaw
 from bike_sim.sim.ride.control import RideControl
 from bike_sim.sim.research.replay import integration_state
 from native_loader import load_native
+import _golden
+from _bits import assert_bitwise_equal
 from test_research_capture import _noise
 
 # The selected-artifact import doubles as the sanitizer-runtime check.
@@ -18,11 +20,14 @@ def test_native_off_full_are_passive_and_full_records_every_interval(environment
     _noise(monkeypatch)
     _, off = environment_pair(capture_mode='off', decimation=3)
     reference, full = environment_pair(capture_mode='full', decimation=3)
-    for torque in (0., 2., 1.):
+    for index, torque in enumerate((0., 2., 1.)):
         expected = reference.step(RideControl(torque))
+        _golden.record_tree(asdict(expected), f'step.{index}.transition')
         assert_tree(off.step(RideControl(torque)), expected)
         assert_tree(full.step(RideControl(torque)), expected)
-        np.testing.assert_array_equal(integration_state(off.sim), integration_state(full.sim))
+        assert_bitwise_equal(integration_state(off.sim),
+                             integration_state(reference.sim),
+                             f'step.{index}.integration_state')
     assert not off.commands_requested and not off.commands_applied and not off.trace
     assert not off.observations and off.recorder.rows == 0
     assert full.recorder.rows == full.sim.steps
@@ -32,6 +37,7 @@ def test_native_off_full_are_passive_and_full_records_every_interval(environment
     owner = evidence.physical.episode
     assert owner.sample_batch(0, 2).columns == {}
     held = owner.sample_batch(0, 1).samples[0].qpos.copy()
+    _golden.record(held, 'episode.qpos_row1')
     full.reset()
     full.close()
     np.testing.assert_array_equal(owner.sample_batch(0, 1).samples[0].qpos, held)

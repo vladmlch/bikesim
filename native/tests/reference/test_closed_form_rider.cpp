@@ -298,25 +298,21 @@ test_disabled_activation_probe_returns_zero_without_advancing_state() {
     bt::require(human_sum / static_cast<double>(late) >= 10.,
                 "the rider sustains >=10 Nm human crank torque");
     // Engagement measurand, always reported (stderr is captured only on
-    // failure under ctest --output-on-failure): the >=80% gate stays
-    // suppressed below while the delivered human_sensor_nm dead-spot
-    // measurand diverges from the oracle — pre-F4 the native assist
-    // engaged 279/401 = 69.6% of late intervals vs the oracle's 351/400 =
-    // 87.8%; post-F4 re-measurement is recorded in task-C315-report.md and
-    // the ledger. F4 closed the weld-allocator stale-efc arena defect;
-    // this gap is a different mechanism — the delivered human-sensor
-    // torque chain (pedal dead-spot depth/duration + shift re-engagement),
-    // plausibly the same enabled-compute torque-map family as the 20
-    // deferred spindle nodes (F5 owns that defect).
+    // failure under ctest --output-on-failure). The >=80% gate was parked
+    // pre-F4 while the delivered human_sensor_nm dead-spot measurand
+    // diverged from the oracle (279/401 = 69.6% vs the oracle's 351/400 =
+    // 87.8%). The F-family fixes that landed since (F4 stale-efc arena,
+    // FT-1 staged coast-hold serialization, the enabled-compute torque-map
+    // work) closed the mechanism: the leg now measures 354/401 = 88.3% on
+    // darwin-arm64 and 326/401 = 81.3% on linux-aarch64, so the source's
+    // contract runs unsuppressed.
     std::fprintf(stderr,
                  "engagement measurand: motor_on %.0f/%zu = %.1f%% of late "
                  "intervals (gate >=80%%)\n",
                  motor_on, late,
                  100. * motor_on / static_cast<double>(late));
-#if 0
     bt::require(motor_on / static_cast<double>(late) >= .8,
                 "the pedelec assist is engaged >=80% of the ride");
-#endif
     bt::require(max_v >= 15. / 3.6,
                 "the launch reaches at least 15 km/h");
 }

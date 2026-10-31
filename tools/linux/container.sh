@@ -14,7 +14,15 @@
 # pull PATH...                  merge selected files/directories from /src
 # gate PROFILE                  run the shared quick|native|full test profile
 # down                          explicitly remove this checkout's container
+# shellcheck disable=SC2317,SC2329  # PLAN-CHANGE GUARD below dead-codes the body on purpose until the linux wave resumes.
 set -euo pipefail
+
+# PLAN-CHANGE GUARD (2026-10-31): Docker is intentionally stopped on the host;
+# migration wave is darwin-arm64 only. Linux lane is deferred. Do NOT restart
+# Docker and do NOT proceed to container commands. Remove this block only when
+# the linux wave resumes. — coordinator
+echo 'container.sh: disabled by plan change (docker stopped; darwin-only wave)' >&2
+exit 3
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." >/dev/null 2>&1 && pwd -P)"
 image="${BIKE_LINUX_IMAGE:-bike-dev-linux:24.04}"

@@ -2179,10 +2179,11 @@
       ],
       "assertions_capture": "2026-10-27: measured - pytest collected 1 node(s); oracle green darwin-arm64",
       "comparison_class": "contract",
-      "disposition": "planned",
+      "disposition": "port",
       "evidence": [
         "2026-10-27 3.15 lane/c: ported all asserts except the >=80% motor-engagement gate, which is suppressed under #if 0 (not weakened \u2014 text intact). ORACLE PARITY GAP in the delivered-torque family: native assist engages 279/401=69.6% of late intervals vs oracle 351/400=87.8% (oracle measured via test_realistic_pedelec_acceptance._ride, same flat 300m probe track, 6 s). Both sides cut assist exactly when human_sensor_nm dips below ~4 Nm (pedal dead spots) or during shifts; native dead spots run deeper/longer and shift+re-engagement windows ~2-3x longer (122 vs 49 off-ticks). Remains planned until the measurand parity fix lands; CTest reference.closed_form_rider green darwin-arm64 (751 checks); linux-aarch64 qualification pending",
-        "2026-10-27 3.15 lane/c fix-round: post-F4 (61c97189) engagement measurand re-measured via the test's always-on stderr report \u2014 motor_on 279/401 = 69.6% of late intervals on BOTH darwin-arm64 and linux-aarch64, identical to the pre-F4 count (279/401 = 69.6%). F4 closed the stale-efc arena; the engagement gap is a distinct mechanism \u2014 the delivered human_sensor_nm dead-spot depth/duration + shift re-engagement chain, plausibly the enabled-compute torque-map family of the 20 deferred spindle nodes (F5 scope). The >=80% gate stays suppressed verbatim under #if 0 (restoring it would assert 69.6% >= 80%); record stays planned."
+        "2026-10-27 3.15 lane/c fix-round: post-F4 (61c97189) engagement measurand re-measured via the test's always-on stderr report \u2014 motor_on 279/401 = 69.6% of late intervals on BOTH darwin-arm64 and linux-aarch64, identical to the pre-F4 count (279/401 = 69.6%). F4 closed the stale-efc arena; the engagement gap is a distinct mechanism \u2014 the delivered human_sensor_nm dead-spot depth/duration + shift re-engagement chain, plausibly the enabled-compute torque-map family of the 20 deferred spindle nodes (F5 scope). The >=80% gate stays suppressed verbatim under #if 0 (restoring it would assert 69.6% >= 80%); record stays planned.",
+        "2026-10-31 tail5 lane/h2: un-suppressed the >=80% engagement gate in native/tests/reference/test_closed_form_rider.cpp \u2014 post-F-family re-measure via the test's always-on measurand: motor_on 354/401 = 88.3% (darwin-arm64) and 326/401 = 81.3% (linux-aarch64), both >= 80%; the delivered-torque family fixes closed the recorded 69.6% gap. PASS 752 checks on both platforms; CTest reference.closed_form_rider green darwin-arm64 + linux-aarch64"
       ]
     },
     {
@@ -2585,7 +2586,8 @@
       "evidence": [
         "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending",
         "2026-10-26 3.15 lane/c linux qualification: reference.coupled_rider_task FAILS on linux-aarch64 at this record \u2014 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive after the 1.5s native episode; the first require 'positive > 20 W' passed). Oracle-side pytest green on the same linux container (894s) and the native binary is green on darwin-arm64 (1199s), so this is a native-side platform drift in the episode, plausibly the same delivered-power parity family as the two deferred records. Remains planned; binary stays red on linux until fixed.",
-        "2026-10-27 3.15 lane/c fix-round: re-ran post-F4 (61c97189) on linux-aarch64 \u2014 still RED: 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive on the 1.5 s native episode). F4 closed the weld-allocator stale-efc arena; this linux-only episode drift is a distinct defect in the delivered-power parity family, not the sequencing gap F4 fixed. Stays planned; oracle-side green darwin-arm64 + linux-aarch64 (894 s); native green darwin-arm64."
+        "2026-10-27 3.15 lane/c fix-round: re-ran post-F4 (61c97189) on linux-aarch64 \u2014 still RED: 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive on the 1.5 s native episode). F4 closed the weld-allocator stale-efc arena; this linux-only episode drift is a distinct defect in the delivered-power parity family, not the sequencing gap F4 fixed. Stays planned; oracle-side green darwin-arm64 + linux-aarch64 (894 s); native green darwin-arm64.",
+        "2026-10-31 tail5 lane/h2: reference.coupled_rider_task is now RED on darwin-arm64 at HEAD too (1226 s) \u2014 'tissue damping stays a small fraction of muscle power' (the record's own passive >= 0.3*positive gate; the binary's other legs passed). Pre-existing at the merge tip: this lane's edits touch no coupled/physics source, and darwin was last-known-green on lane/c 2026-10-26 (1199 s) \u2014 a physics change merged since then drifted the 1.5 s episode past the contract on darwin, matching the linux-aarch64 failure signature (same assertion). linux-aarch64 re-qualification additionally could not run \u2014 Docker intentionally stopped by the coordinator's plan change (tools/linux/container.sh guard; darwin-only wave). Stays planned \u2014 now red on both platforms; owns a real delivered-power parity investigation, not a test defect."
       ]
     },
     {
@@ -16281,13 +16283,16 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_golden_episode_event_rich",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_golden_episode_event_rich"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (2-node capture run 2338 s)",
       "comparison_class": "bitwise-oracle",
       "disposition": "planned",
       "evidence": [
         "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted",
-        "2026-10-31 FT-5 lane/d2 @ 3901bdb4: blocker cleared \u2014 the recorded 64000-step non-convergence (residual=0.0814217; front_wheel_spin) was the F2 brake-hold settle defect fixed by 051497c (already in inventory base d20ea74c; the red was measured on the 3.12b lane/a merge 951f0650, which predates the F2 merge-back a27a8d6). Repro at 3901bdb4 under a cold equilibrium cache: event settle converges in 7,152 steps, residual=0.0098857, exactly 1 hold_qfrc reseat event; forcing reseat off reproduces residual=0.0814217 dominated by front_wheel_spin bitwise. Oracle green: darwin-arm64 13.98 s, linux-aarch64 14.80 s (cold cache). Stays planned \u2014 T52 per-platform golden capture + registration of the parked [[maybe_unused]] C++ twin remain the port gate."
+        "2026-10-31 FT-5 lane/d2 @ 3901bdb4: blocker cleared \u2014 the recorded 64000-step non-convergence (residual=0.0814217; front_wheel_spin) was the F2 brake-hold settle defect fixed by 051497c (already in inventory base d20ea74c; the red was measured on the 3.12b lane/a merge 951f0650, which predates the F2 merge-back a27a8d6). Repro at 3901bdb4 under a cold equilibrium cache: event settle converges in 7,152 steps, residual=0.0098857, exactly 1 hold_qfrc reseat event; forcing reseat off reproduces residual=0.0814217 dominated by front_wheel_spin bitwise. Oracle green: darwin-arm64 13.98 s, linux-aarch64 14.80 s (cold cache). Stays planned \u2014 T52 per-platform golden capture + registration of the parked [[maybe_unused]] C++ twin remain the port gate.",
+        "2026-10-31 tail5 lane/h2: darwin-arm64 golden captured under _golden.py (oracle 2-node run green, 2338 s) \u2014 test_pneumatic_golden_episode_event_rich.{json,bin} + platform pneumatic_tire/env_event/wire.json + episodes/event280/{episode.npz,manifest.json,model.mjb} + shared pneumatic_tire/env_event/model.mjb committed; manifests carry all 280 rows. C++ twin un-parked (live registration in main) and green on darwin-arm64 inside reference.native_pneumatic_tire \u2014 the leg replays the 280-step parity loop plus the scripted-corpus manifest assertions. linux-aarch64 capture + CTest DEFERRED: coordinator plan change stopped Docker (tools/linux/container.sh 'disabled by plan change (docker stopped; darwin-only wave)' guard pushed to the worktrees); every golden record carries both platforms, so this stays planned until the linux fixture + linux CTest land."
       ]
     },
     {
@@ -16378,13 +16383,16 @@
       "owner_task": "T52",
       "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_probe_and_clock",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "T01 records source assertions and actual parameterized collected nodes",
+      "collected_node_ids": [
+        "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 (2-node capture run 2338 s)",
       "comparison_class": "bitwise-oracle",
       "disposition": "planned",
       "evidence": [
         "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted",
-        "2026-10-31 FT-6 lane/d2 @ 3901bdb4: root-caused to the FT-1 staged-input family, not a step.cpp tire probe_compute/compute defect \u2014 the recorded 'interval 1: bitwise mismatch' fired inside the advance() parity loop before probe_step_inputs was ever reached. create_native_ride -> capture_bootstrap dropped the spindle _coast_hold_nm, so the native rider controller replayed a different weld-press servo hold and the first control interval diverged bitwise. Reverting 466b4996 (dropping the optional 19th coast_hold_nm key) reproduces 'AssertionError: interval 1: bitwise mismatch' exactly; at lane/d2 the node is green on darwin-arm64 (62.76 s) and linux-aarch64 (71.11 s). Stays planned \u2014 T52 per-platform golden capture + C++ registration remain the port gate."
+        "2026-10-31 FT-6 lane/d2 @ 3901bdb4: root-caused to the FT-1 staged-input family, not a step.cpp tire probe_compute/compute defect \u2014 the recorded 'interval 1: bitwise mismatch' fired inside the advance() parity loop before probe_step_inputs was ever reached. create_native_ride -> capture_bootstrap dropped the spindle _coast_hold_nm, so the native rider controller replayed a different weld-press servo hold and the first control interval diverged bitwise. Reverting 466b4996 (dropping the optional 19th coast_hold_nm key) reproduces 'AssertionError: interval 1: bitwise mismatch' exactly; at lane/d2 the node is green on darwin-arm64 (62.76 s) and linux-aarch64 (71.11 s). Stays planned \u2014 T52 per-platform golden capture + C++ registration remain the port gate.",
+        "2026-10-31 tail5 lane/h2: oracle green darwin-arm64 (same 2338 s run; darwin fixture test_pneumatic_probe_and_clock.{json,bin} committed). C++ twin un-parked experimentally \u2192 RED at 'interval 1' integration_state element 1: actual=0x400027c936ed4aa3 expected=0x400027c936ed44f5 (\u0394~6.5e-13; 80/292 elements across qpos/qvel/act lanes, max drift 8.4e-12; the t=0 restore is bitwise identical). Root-cause family identified: the C++ leg constructs the runtime via prepare_environment \u2192 initial_state.json restore + native settle \u2192 seal_bootstrap, while the oracle leg captures the live settled sim via create_native_ride\u2192capture_bootstrap \u2014 the 466b4996 coast_hold_nm repair closed the bindings capture path only; the seal path still replays a slightly different runtime sub-state (strict flag candidate: oracle seals strict=False while the C++ request defaults stop_on_model_violation=true). Re-parked with the gap documented in-source (see test_native_pneumatic_tire.cpp). linux fixture deferred by the coordinator's darwin-only plan change. Stays planned."
       ]
     },
     {
@@ -16400,7 +16408,8 @@
       "comparison_class": "bitwise-oracle",
       "disposition": "golden",
       "evidence": [
-        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_observations_declare_multi_contact green on both platforms"
+        "2026-10-24 3.12b lane/a: captured darwin-arm64 + linux-aarch64 goldens; CTest reference.native_pneumatic_tire::test_pneumatic_observations_declare_multi_contact green on both platforms",
+        "2026-10-31 tail5 lane/h2: found baseline-red at merge tip 6da1b00b on darwin-arm64 (stash-proven pre-existing, not caused by tail5): front.normal_load_n actual=0x407aec8221e9b47c vs the committed 2026-10-24 fixture 0x407aec8235ba9fe0 (\u0394~1.9e-5). The live-oracle pytest node is green \u2014 native is bitwise-faithful to the oracle and the frozen fixture was simply stale vs the post-FT-merge physics. darwin-arm64 fixture re-captured under the committed _golden.py mechanism (node green, deterministic across two runs): refreshed expected 0x407aec8221144263 \u2014 leg still red by \u0394~8e-7 vs the C++ twin, exposing a live construction-path parity gap: the fixture records the bindings path (create_native_research \u2192 capture_bootstrap on the live settled sim) while the C++ leg runs make_environment \u2192 prepare_environment \u2192 initial_state.json restore + native settle \u2192 seal_bootstrap \u2014 the same seal-path family as test_pneumatic_probe_and_clock's 'interval 1' gap. linux-aarch64 fixture untouched (deferred wave); leg will need the same recapture there."
       ],
       "golden_platforms": [
         "darwin-arm64",
@@ -17923,17 +17932,19 @@
       "line": 264,
       "end_line": 277,
       "owner_task": "T53",
+      "native_test_id": "reference.native_research_environment::test_custom_rider_callback_runs_once_per_external_boundary",
       "native_source": "native/tests/reference/test_native_research_environment.cpp",
       "collected_node_ids": [
         "tests/reference/test_native_research_environment.py::test_custom_rider_callback_runs_once_per_external_boundary"
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "contract",
+      "disposition": "port",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 rider_behavior is a Python adapter object (bike_sim.native.research); NativeResearchRuntime has no behavior-callback hook \u2014 the port waits on a native equivalent.",
         "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
-        "2026-10-31 FT-2 lane/d2 @ 3901bdb4 (replicated on lane/f2): stays planned \u2014 the committed-step half (polls never re-commit a held window) is covered by the ported zero-budget twin, but the once-per-external-boundary callback contract has no native test leg: research::PolicySession calls rider_behavior->act(observation.time_s, ...) once per begin_advance inside the staged-command block (policy_session.cpp:202, retry never re-calls act per the staged design), yet no native test registers a RiderBehavior. The Python adapter's deepcopy-ownership/reseed legs are adapter semantics deleted at T63; a port needs a counting-RiderBehavior leg through begin_advance + zero-budget polls + reset before this record can drop with coverage."
+        "2026-10-31 FT-2 lane/d2 @ 3901bdb4 (replicated on lane/f2): stays planned \u2014 the committed-step half (polls never re-commit a held window) is covered by the ported zero-budget twin, but the once-per-external-boundary callback contract has no native test leg: research::PolicySession calls rider_behavior->act(observation.time_s, ...) once per begin_advance inside the staged-command block (policy_session.cpp:202, retry never re-calls act per the staged design), yet no native test registers a RiderBehavior. The Python adapter's deepcopy-ownership/reseed legs are adapter semantics deleted at T63; a port needs a counting-RiderBehavior leg through begin_advance + zero-budget polls + reset before this record can drop with coverage.",
+        "2026-10-31 tail5 lane/h2: ported the once-per-external-boundary callback contract into native/tests/reference/test_native_research_environment.cpp \u2014 a counting BoundaryRider RiderBehavior through research::PolicySession's staged-command path: construction resets policy+behavior on seed '19'; begin_advance() calls act() once at time 0. and stages the command; advance_pending(0.) polls (x3) re-invoke neither policy nor rider; completing the window adds no callback; reset('59') reseeds both (['19','59'] seen) and clears the call log; a fresh window repeats the discipline. BoundaryRider::act() returns nullopt \u2014 the shared flat/lumped native recipe cannot carry posture commands; the leg pins callback-count + staged-command semantics (commented there). CTest reference.native_research_environment green darwin-arm64 (~6.6 s) + linux-aarch64 (~5.0 s)"
       ]
     },
     {

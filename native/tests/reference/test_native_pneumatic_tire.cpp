@@ -572,9 +572,10 @@ struct Seen {
     std::vector<std::string> surfaces;
 };
 
-// test_pneumatic_golden_episode_event_rich[slow] — STOPPED (see
-// main): parked until the oracle produces two-platform goldens.
-[[maybe_unused]] void test_pneumatic_golden_episode_event_rich() {
+// test_pneumatic_golden_episode_event_rich[slow] — the 280-step
+// event-rich episode's full parity plus the scripted-corpus patch
+// assertions the oracle reads off the saved manifest.
+void test_pneumatic_golden_episode_event_rich() {
     auto golden =
             node(kFile, "test_pneumatic_golden_episode_event_rich");
     golden_parity(golden, "event280", "env_event");
@@ -945,7 +946,15 @@ void test_pneumatic_rig_event_sweep_detailed_tier() {
 
 // test_pneumatic_probe_and_clock — the Stepper clock half replays row 2
 // of the five-step episode; the runtime half drives a NativeRideRuntime
-// on the prepared env_fast bootstrap.
+// on the prepared env_fast bootstrap. PARKED (see main): the runtime half
+// is red against the frozen golden — 'interval 1' integration_state
+// diverges 80/292 elements at ~1e-12 (max 8.4e-12, qpos+qvel+act+late
+// lanes) from the oracle-captured values on darwin-arm64, while the t=0
+// state restored from env_fast/initial_state.json is bitwise identical.
+// The gap lives in the prepare_environment -> seal_bootstrap ->
+// NativeRideRuntime sub-state path (rider-controller/spindle family) or
+// the standalone advance fold — the nanobind path matched the oracle
+// bitwise on the same scenario.
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[maybe_unused]] void test_pneumatic_probe_and_clock() {
@@ -1120,20 +1129,16 @@ int main() {
         test_pneumatic_state_wire_schema_and_round_trip();
         test_pneumatic_state_rejections_are_atomic();
         test_pneumatic_qfrc_bitwise();
-        // STOPPED (D16): test_pneumatic_golden_episode_event_rich and
-        // test_pneumatic_probe_and_clock are baseline-red in the Python
-        // oracle on this lane — the event env's physical equilibrium does
-        // not converge (64000-step budget, front_wheel_spin residual
-        // ~0.081 — the documented savage-plant defect family) and the
-        // probe interval diverges bitwise from the live sim at step 1.
-        // Both verified identical without the capture edits. Their C++
-        // ports are authored below and wired in once the oracle is green
-        // and both platforms' goldens exist.
-        // test_pneumatic_golden_episode_event_rich();
+        test_pneumatic_golden_episode_event_rich();
         test_pneumatic_golden_reset_restore_mid_run();
         test_pneumatic_golden_failure_atomicity();
         test_pneumatic_qfrc_bitwise_detailed_tier();
         test_pneumatic_rig_event_sweep_detailed_tier();
+        // test_pneumatic_probe_and_clock — parked: 'interval 1'
+        // integration_state diverges ~1e-12 from the frozen golden on
+        // darwin-arm64 (80/292 elements; t=0 bitwise — a runtime sub-state
+        // or advance-fold gap in the seal_bootstrap chain, not the
+        // fixture). Re-register once the divergence is root-caused.
         // test_pneumatic_probe_and_clock();
         test_pneumatic_observations_declare_multi_contact();
         test_pneumatic_stored_energy_and_counters();

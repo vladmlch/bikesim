@@ -145,11 +145,16 @@ void test_valid_shift_commits_atomically() {
         const auto result = owner->drive().prepare({}, .1, false, true, true, true, {}, {});
         const auto after = state(*owner);
         // Cadence ~38 rpm is below the 100 rpm floor: downshift 24 -> 28.
-        bt::require(bike::io::as_double(field(field(after, "ideal_hub"), "ratio"), "ratio") == 34. / 28.,
-                    "committed shift lands the 34/28 ratio atomically");
-        // Geometric hubs re-derive their sprocket; ideal hubs keep the
-        // configured rear_teeth — only the wrap coefficient carries it.
+        // FT-3: the ideal hub publishes the physically *applied* ratio,
+        // which sweeps from the old gear toward the committed one while
+        // cut_remaining_s decays — this first .1 s step retires
+        // dt/(cut_remaining + dt) of the gap. The geometric freehub still
+        // lands the integer sprocket ratio atomically.
         const bool geometric = kind == kGeometric;
+        bt::require(bike::io::as_double(field(field(after, "ideal_hub"), "ratio"), "ratio") ==
+                        (geometric ? 34. / 28.
+                                   : 34. / 24. + (34. / 28. - 34. / 24.) * .1 / (.2 + .1)),
+                    "committed shift lands the topology's post-commit ratio");
         bt::require(bike::io::as_int64(field(field(after, "ideal_hub"), "rear_teeth"), "rear_teeth") ==
                         (geometric ? 28 : 24),
                     "committed shift carries the topology's rear_teeth mirror");

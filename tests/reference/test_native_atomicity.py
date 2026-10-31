@@ -86,7 +86,14 @@ def test_valid_shift_commits_atomically(tmp_path, kind):
     result = native.drive_prepare_pedaling({}, .1)
     state = native.drive_state()
     # Cadence ~38 rpm is below the 100 rpm floor: downshift 24 -> 28 teeth.
-    assert state['ideal_hub']['ratio'] == 34. / 28.
+    # FT-3: the ideal hub publishes the physically *applied* ratio, which
+    # sweeps from the old gear toward the committed one while
+    # cut_remaining_s decays — this first .1 s step retires
+    # dt/(cut_remaining + dt) of the gap. The geometric freehub still lands
+    # the integer sprocket ratio atomically.
+    assert state['ideal_hub']['ratio'] == (
+        34. / 24. + (34. / 28. - 34. / 24.) * .1 / (.2 + .1)
+        if kind != GEOMETRIC else 34. / 28.)
     # Geometric hubs re-derive their sprocket; ideal hubs keep the configured
     # rear_teeth — only the wrap coefficient carries the shifted ratio.
     assert state['ideal_hub']['rear_teeth'] == (28 if kind == GEOMETRIC else 24)

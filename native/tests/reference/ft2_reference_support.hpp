@@ -33,6 +33,7 @@
 
 #include "io/json.hpp"
 #include "io/value.hpp"
+#include "research/environment.hpp"
 #include "runtime/bootstrap.hpp"
 #include "runtime/bootstrap_io.hpp"
 #include "runtime/control.hpp"
@@ -117,6 +118,85 @@ research_bootstrap(std::string_view name) {
 research(std::string_view name) {
     return runtime::make_research(research_bootstrap(name));
 }
+
+// A research capture with test-variant patches applied — the same legs
+// environment_factory's CLI overrides run before capture_bootstrap():
+// record_decimation forwards to both the research stream decimation and
+// the ride's measurement cadence.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+[[nodiscard]] inline std::unique_ptr<runtime::NativeResearchRuntime>
+research_variant(std::string_view name,
+                 std::optional<runtime::ResearchCaptureMode> capture =
+                     std::nullopt,
+                 std::optional<int> decimation = std::nullopt,
+                 std::optional<std::int64_t> max_steps = std::nullopt,
+                 std::optional<std::int64_t> control_steps = std::nullopt,
+                 std::optional<std::int64_t> sensor_steps = std::nullopt,
+                 std::optional<std::int64_t> delay_steps = std::nullopt,
+                 std::optional<bool> stop_on_model_violation = std::nullopt,
+                 std::optional<double> energy_residual = std::nullopt,
+                 std::optional<std::string> seed = std::nullopt,
+                 std::optional<std::array<double, 3>> accel_bias =
+                     std::nullopt,
+                 std::optional<double> gyro_bias = std::nullopt,
+                 std::optional<double> dropout = std::nullopt) {
+    auto bootstrap = research_bootstrap(name);
+    if (capture) bootstrap.config.capture_mode = *capture;
+    if (accel_bias) bootstrap.config.sensors.acceleration_bias = *accel_bias;
+    if (gyro_bias) bootstrap.config.sensors.gyro_bias = *gyro_bias;
+    if (dropout) bootstrap.config.sensors.dropout_probability = *dropout;
+    if (decimation) {
+        bootstrap.config.record_decimation = *decimation;
+        bootstrap.ride.config.measurement_decimation = *decimation;
+        // The runtime ctor re-verifies the decoded config against the
+        // staged state.runtime document — patch both, like ride_decimated
+        // does on the unresolved docs.
+        runtime_reference::set_member(
+            bootstrap.ride.state.runtime, "measurement_decimation",
+            runtime_reference::num(*decimation));
+    }
+    if (max_steps) bootstrap.config.max_steps = *max_steps;
+    if (control_steps) bootstrap.config.control_steps = *control_steps;
+    if (sensor_steps) bootstrap.config.sensor_steps = *sensor_steps;
+    if (delay_steps) bootstrap.config.delay_steps = *delay_steps;
+    if (stop_on_model_violation)
+        bootstrap.config.stop_on_model_violation = *stop_on_model_violation;
+    if (energy_residual)
+        bootstrap.config.maximum_energy_residual_ratio = *energy_residual;
+    if (seed) bootstrap.config.seed_decimal = *seed;
+    // A longer episode, a different sensor cadence or a different seed
+    // needs a regenerated tape; a different delivery config (the Python
+    // _noise seam's bias/dropout injection) only re-runs the pipeline's
+    // delivered startup state — the same legs environment.cpp runs at
+    // composition time. The raw startup observation is restored from the
+    // provenance the capture froze into config.raw_initial.
+    const bool retape = seed || sensor_steps || max_steps;
+    if (retape || accel_bias || gyro_bias || dropout) {
+        bike::research::SensorConfig sensors;
+        sensors.delivery = bootstrap.config.sensors;
+        sensors.sample_period_s =
+            static_cast<double>(bootstrap.config.sensor_steps) *
+            bootstrap.config.timestep_s;
+        sensors.noise = bike::random::SensorNoiseConfig{
+            .acceleration_std_mps2 = bootstrap.config.noise_std[0],
+            .gyro_std_rad_s = bootstrap.config.noise_std[1],
+            .encoder_std_rad_s = bootstrap.config.noise_std[2],
+            .torque_std_nm = bootstrap.config.noise_std[3]};
+        bt::require(bootstrap.config.raw_initial.has_value(),
+                    "the ft2 bootstrap carries the raw startup observation");
+        if (retape) {
+            const std::int64_t count =
+                1 + bootstrap.config.max_steps / bootstrap.config.sensor_steps;
+            bootstrap.tape = bike::research::make_sensor_tape(
+                sensors, bootstrap.config.seed_decimal, count);
+        }
+        bootstrap.startup = bike::research::startup_sensor_state(
+            sensors, bootstrap.tape, *bootstrap.config.raw_initial);
+    }
+    return runtime::make_research(std::move(bootstrap));
+}
+NATIVE_DIAG_POP
 
 // The ft2 ride capture with a patched measurement decimation — the same
 // set_measurement_decimation() leg create_native_ride(record_decimation=N)

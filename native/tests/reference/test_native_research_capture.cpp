@@ -8,6 +8,7 @@
 // failure" cannot lose the un-acked rows by construction. The port pins
 // exactly that contract: repeated prepares re-deliver the same suffix until
 // acknowledge_applied commits the cursor.
+#include "ft2_reference_support.hpp"
 #include "research_reference_support.hpp"
 
 namespace {
@@ -57,10 +58,93 @@ void test_native_verify_boxing_failure_does_not_acknowledge_suffix() {
                 "the last requested command carries the submitted motor torque");
 }
 
+// tests/reference/test_native_research_capture.py::
+//   test_native_off_full_are_passive_and_full_records_every_interval
+// The oracle's 'off' env is capture-passive while 'full' keeps every
+// interval; both replay the same research_flat commands and their
+// transitions/state consume the frozen rows. Two Node cursors over one
+// golden node keep per-env consumption honest.
+constexpr std::string_view kNode =
+    "tests/reference/test_native_research_capture.py::";
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_native_off_full_are_passive_and_full_records_every_interval() {
+    bt::oracle::Node node_off(
+        std::string(kNode) +
+        "test_native_off_full_are_passive_and_full_records_every_interval");
+    bt::oracle::Node node_full(
+        std::string(kNode) +
+        "test_native_off_full_are_passive_and_full_records_every_interval");
+    // The Python _noise seam injects a non-default delivery config —
+    // accel bias (.1,-.2,.3), gyro bias .01, dropout .25 — before both
+    // envs compose; research_variant re-runs the delivered startup state
+    // under the same delivery document.
+    const std::array<double, 3> accel_bias{.1, -.2, .3};
+    const auto off = ft2_reference::research_variant(
+        "research_flat", runtime::ResearchCaptureMode::off, 3, std::nullopt,
+        std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+        std::nullopt, accel_bias, .01, .25);
+    const auto full = ft2_reference::research_variant(
+        "research_flat", runtime::ResearchCaptureMode::full, 3, std::nullopt,
+        std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt,
+        std::nullopt, accel_bias, .01, .25);
+    const std::array<double, 3> torques{0., 2., 1.};
+    char label[40];
+    for (std::size_t index = 0; index < torques.size(); ++index) {
+        const auto control = motor_control(torques[index]);
+        std::snprintf(label, sizeof(label), "step.%zu.transition", index);
+        ft2_reference::consume_tree(node_off, step(*off, control).as_wire(),
+                                    label);
+        ft2_reference::consume_tree(node_full, step(*full, control).as_wire(),
+                                    label);
+        std::snprintf(label, sizeof(label), "step.%zu.integration_state",
+                      index);
+        const std::vector<double> off_state = off->snapshot().integration_state;
+        node_off.f64(off_state, label);
+        const std::vector<double> full_state =
+            full->snapshot().integration_state;
+        node_full.f64(full_state, label);
+    }
+    bt::require(off->commands_requested().empty() &&
+                    off->commands_applied().empty() &&
+                    off->transitions().empty() && off->observations().empty(),
+                "off capture keeps no stream history");
+    const auto committed = full->snapshot().step;
+    const auto episode = full->seal_episode();
+    bt::require(episode.transitions.size() == 3,
+                "the full episode completes three control intervals");
+    // recorder.rows == sim.steps on the oracle: the committed extent is
+    // what 'full' seals; the retained row cadence is the decimation.
+    bt::require(committed % 3 == 0 &&
+                    episode.physical.samples.size() ==
+                        static_cast<std::size_t>(committed / 3) &&
+                    episode.physical.samples.back()->interval_id ==
+                        committed - 3,
+                "full records every committed interval on the decimated "
+                "cadence");
+    bt::require(episode.physical.sample_batch(0, 2).columns.empty(),
+                "sample_batch publishes no explicit flat-column view");
+    const auto held =
+        episode.physical.sample_batch(0, 1).samples[0]->qpos;
+    node_off.f64(held, "episode.qpos_row1");
+    node_full.f64(held, "episode.qpos_row1");
+    full->reset();
+    full->close();
+    bt::require(episode.physical.sample_batch(0, 1).samples[0]->qpos == held,
+                "sealed episode rows outlive reset+close of the runtime");
+    bt::require(episode.row_count("observations") == 4,
+                "the startup plus three step observations seal into history");
+    node_off.done();
+    node_full.done();
+}
+NATIVE_DIAG_POP
+
 } // namespace
 
 int main() {
     return bt::run([] {
         test_native_verify_boxing_failure_does_not_acknowledge_suffix();
+        test_native_off_full_are_passive_and_full_records_every_interval();
     });
 }

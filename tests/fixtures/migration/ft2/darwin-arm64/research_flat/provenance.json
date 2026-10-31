@@ -179,7 +179,7 @@
       "single equivalent tire support; multi-support peaks not calibrated",
       "native contact work is a solver diagnostic, not material tire hysteresis"
     ],
-    "model_commit": "3901bdb4f33bb79a2d37ca54db083da5a5374d2a",
+    "model_commit": "9b4c3ee17c6d2924e2a2b89f466d2fb9bed4c01e",
     "model_source_dirty": false,
     "model_source_sha256": "a7ddce8ab9fea2c409a5bca0fde200bbbb073e3bd40425eaff8e320935598c52",
     "physics_revision": "physical-2026-09-29",
@@ -820,6 +820,24 @@
     0.01,
     0.05
   ],
+  "raw_initial": {
+    "crank_rad_s": 0.0,
+    "front_wheel_rad_s": 0.0,
+    "human_torque_nm": 2.8335761479397926e-06,
+    "motor_torque_nm": 0.0,
+    "pitch_rate_up_rad_s": -0.0,
+    "rear_wheel_rad_s": 0.0,
+    "source_time_s": 0.0,
+    "specific_force_body_mps2": {
+      "$tuple": [
+        -0.05448354439502412,
+        0.0,
+        9.811190115518222
+      ]
+    },
+    "time_s": 0.0,
+    "valid": true
+  },
   "seed_decimal": "19",
   "sensor_config": {
     "acceleration_bias_mps2": {

@@ -16,6 +16,12 @@
 //  * `test_native_loop_never_calls_python_interval_or_rng` exists to prove
 //    no Python interval/RNG code runs inside a native window — vacuous in a
 //    pure C++ test; the retained half is the committed physics_steps count.
+//  * BoundaryRider.act() returns RiderPosture() on the welded oracle
+//    recipe; the lumped recipe's begin_control rejects posture commands
+//    (rider commands require articulated_planar), so the ported callback
+//    returns std::nullopt. The asserted contract — act runs once per
+//    staged boundary, never on retry/poll, and reset reseeds — is
+//    unchanged.
 #include "ft2_reference_support.hpp"
 #include "research_reference_support.hpp"
 #include "recording/analysis_detail.hpp"
@@ -131,6 +137,84 @@ void test_stop_on_ended_episode_preserves_original_reason() {
     env->stop();
     bt::require(text(env->status(), "reason") == "duration",
                 "an operator stop after the episode keeps the real outcome");
+}
+
+// tests/reference/test_native_research_environment.py::BoundaryRider —
+// reset() records the seed and clears the call log; act() appends the
+// staged observation time. The oracle twin returns RiderPosture() for the
+// welded plant; the lumped recipe cannot carry posture commands, so the
+// port returns std::nullopt (see the header substitution note).
+class BoundaryRider : public research::RiderBehavior {
+public:
+    BoundaryRider() = default;
+    ~BoundaryRider() override = default;
+    BoundaryRider(const BoundaryRider &) = delete;
+    BoundaryRider &operator=(const BoundaryRider &) = delete;
+    BoundaryRider(BoundaryRider &&) = delete;
+    BoundaryRider &operator=(BoundaryRider &&) = delete;
+    void reset(std::string_view seed_decimal) override {
+        seeds.emplace_back(seed_decimal);
+        times.clear();
+    }
+    [[nodiscard]] std::optional<::rider::RiderPosture>
+    act(double time_s, const research::RiderSignals &) override {
+        times.push_back(time_s);
+        return std::nullopt;
+    }
+    std::vector<std::string> seeds;
+    std::vector<double> times;
+};
+
+// tests/reference/test_native_research_environment.py::
+//   test_custom_rider_callback_runs_once_per_external_boundary
+// The staged-command contract of PolicySession::begin_advance
+// (policy_session.cpp): the rider behavior's act() fires exactly once while
+// the command is staged; a zero-budget advance_pending is a pure poll that
+// never re-fires it, and completing the window adds no call. reset(seed=59)
+// reseeds policy and behavior through start_policy — the seeds keep every
+// reset and the recorded call times clear.
+[[gnu::noinline]] void
+test_custom_rider_callback_runs_once_per_external_boundary() {
+    auto policy = std::make_unique<CountingPolicy>();
+    auto *counted = policy.get();
+    auto behavior = std::make_unique<BoundaryRider>();
+    auto *rider = behavior.get();
+    research::PolicySession session(environment(), std::move(policy),
+                                    std::move(behavior));
+    bt::require(rider->seeds == std::vector<std::string>{"19"} &&
+                    counted->seeds == std::vector<std::string>{"19"},
+                "session construction resets policy and behavior once");
+    session.begin_advance();
+    bt::require(rider->times == std::vector<double>{0.},
+                "staging a boundary fires the rider act exactly once");
+    for (int poll = 0; poll < 3; ++poll)
+        bt::require(!session.advance_pending(0.).has_value(),
+                    "a zero-budget poll leaves the window pending");
+    bt::require(rider->times.size() == 1 && counted->calls.size() == 1,
+                "polling never re-fires policy or rider act");
+    const auto completed = session.advance_pending();
+    bt::require(completed.has_value(),
+                "the unbounded poll completes the staged window");
+    bt::require(rider->times.size() == 1 && counted->calls.size() == 1,
+                "the completed boundary still cost exactly one act");
+    session.reset("59");
+    bt::require(rider->seeds == std::vector<std::string>({"19", "59"}) &&
+                    counted->seeds == std::vector<std::string>({"19", "59"}),
+                "reset reseeds policy and behavior to the chosen seed");
+    bt::require(rider->times.empty(),
+                "the behavior call log clears on reset");
+    // The source ends here; the port keeps the once-per-boundary pin live
+    // across the reseed — the first staged window of the new episode fires
+    // act exactly once at t=0 and no poll repeats it.
+    session.begin_advance();
+    bt::require(rider->times == std::vector<double>{0.},
+                "the reseeded boundary stages a fresh act at t=0");
+    for (int poll = 0; poll < 3; ++poll)
+        bt::require(!session.advance_pending(0.).has_value(),
+                    "a reseeded window polls without a repeat act");
+    const auto reseeded = session.advance_pending();
+    bt::require(reseeded.has_value() && rider->times.size() == 1,
+                "the reseeded window completes with exactly one act");
 }
 
 // ===========================================================================
@@ -711,6 +795,7 @@ int main() {
         test_delay_full_commands_immediate_brakes_and_recording(80);
         test_scripted_rider_and_demand_are_sampled_at_physics_rate();
         test_native_loop_never_calls_python_interval_or_rng();
+        test_custom_rider_callback_runs_once_per_external_boundary();
         test_reset_seed_generation_snapshot_and_facade_ownership();
         test_invalid_boundary_calls_do_not_change_state();
         test_zero_budget_retains_single_window_and_no_tail_flush();

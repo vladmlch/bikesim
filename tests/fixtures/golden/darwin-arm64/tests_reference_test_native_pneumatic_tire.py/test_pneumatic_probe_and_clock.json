@@ -1,0 +1,638 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "names",
+  "nbytes": 17621,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   17621
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "rejected set_state preserves the state wire",
+  "nbytes": 5760,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 17621,
+  "rtol": null,
+  "shape": [
+   720
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.period",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 23381,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "interval 1",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 23389,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "interval 2",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 25725,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "interval 3",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 28061,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "interval 4",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 30397,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "probe component names",
+  "nbytes": 218,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 32733,
+  "rtol": null,
+  "shape": [
+   218
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "probe name fork_spring",
+  "nbytes": 11,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 32951,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "probe fork_spring",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 32962,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "probe name fork_damper",
+  "nbytes": 11,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33170,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "probe fork_damper",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33181,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "probe name shock_coil",
+  "nbytes": 10,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33389,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "probe shock_coil",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33399,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "probe name shock_bumper",
+  "nbytes": 12,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33607,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "probe shock_bumper",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33619,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "probe name shock_damper",
+  "nbytes": 12,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33827,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "probe shock_damper",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 33839,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "probe name shock_top_out",
+  "nbytes": 13,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34047,
+  "rtol": null,
+  "shape": [
+   13
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "probe shock_top_out",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34060,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "probe name shock_upper_stop",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34268,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "probe shock_upper_stop",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34284,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "probe name shock_hbo",
+  "nbytes": 9,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34492,
+  "rtol": null,
+  "shape": [
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "probe shock_hbo",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34501,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "probe name tires",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34709,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "probe tires",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34714,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "probe name road_rolling",
+  "nbytes": 12,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34922,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "probe road_rolling",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 34934,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "probe name aerodynamic",
+  "nbytes": 11,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35142,
+  "rtol": null,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "probe aerodynamic",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35153,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "probe name rider_interfaces",
+  "nbytes": 16,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35361,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "probe rider_interfaces",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35377,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "probe name chain",
+  "nbytes": 5,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35585,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "probe chain",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35590,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "probe name freehub",
+  "nbytes": 7,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35798,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "probe freehub",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 35805,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "probe name drive_bearings",
+  "nbytes": 14,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36013,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "probe drive_bearings",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36027,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "probe name ideal_transmission",
+  "nbytes": 18,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36235,
+  "rtol": null,
+  "shape": [
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "probe ideal_transmission",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36253,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "probe name rider_joint_envelope",
+  "nbytes": 20,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36461,
+  "rtol": null,
+  "shape": [
+   20
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "probe rider_joint_envelope",
+  "nbytes": 208,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36481,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "probe after.step",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36689,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|b1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "probe has_sample",
+  "nbytes": 1,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36697,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "probe interval_id",
+  "nbytes": 8,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36698,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "post-probe interval",
+  "nbytes": 2336,
+  "node": "tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock",
+  "offset": 36706,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ }
+]

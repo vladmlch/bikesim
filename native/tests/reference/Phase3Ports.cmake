@@ -547,7 +547,8 @@ bike_add_reference_test(native_research_capture ENGINE
   SOURCES test_native_research_capture.cpp LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_environment ENGINE
-  SOURCES test_native_research_environment.cpp LIBRARIES bike_app
+  SOURCES test_native_research_environment.cpp research_reference_support.cpp
+  LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_failures ENGINE
   SOURCES test_native_research_failures.cpp LIBRARIES bike_app

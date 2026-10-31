@@ -16276,8 +16276,8 @@
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
       "source_symbol": "test_pneumatic_golden_episode_event_rich",
-      "line": 372,
-      "end_line": 428,
+      "line": 558,
+      "end_line": 619,
       "owner_task": "T52",
       "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_golden_episode_event_rich",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
@@ -16286,7 +16286,8 @@
       "comparison_class": "bitwise-oracle",
       "disposition": "planned",
       "evidence": [
-        "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted"
+        "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted",
+        "2026-10-31 FT-5 lane/d2 @ 3901bdb4: blocker cleared \u2014 the recorded 64000-step non-convergence (residual=0.0814217; front_wheel_spin) was the F2 brake-hold settle defect fixed by 051497c (already in inventory base d20ea74c; the red was measured on the 3.12b lane/a merge 951f0650, which predates the F2 merge-back a27a8d6). Repro at 3901bdb4 under a cold equilibrium cache: event settle converges in 7,152 steps, residual=0.0098857, exactly 1 hold_qfrc reseat event; forcing reseat off reproduces residual=0.0814217 dominated by front_wheel_spin bitwise. Oracle green: darwin-arm64 13.98 s, linux-aarch64 14.80 s (cold cache). Stays planned \u2014 T52 per-platform golden capture + registration of the parked [[maybe_unused]] C++ twin remain the port gate."
       ]
     },
     {

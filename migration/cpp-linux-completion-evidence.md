@@ -10591,3 +10591,170 @@ integration-level `full` gate remains the scheduled accumulation
 checkpoint (audit debt §2.5.1). Watch item for later merges: the
 `a24d26f6` suppression is dormant under integration's NOLINT — remove
 when tidy stops matching it, per its `remove_when`.
+
+## 2026-10-31 — lane/c tranche-B merge-back (merge `95d987c0`)
+
+Lane/c tip `094e885b` (base `d20ea74c`; `2540b79d` uv.lock re-sync,
+`710e7ff3` the tranche-B port, `094e885b` the review fix). Batch
+scope: `tests/portability/{test_ci_lanes,test_release_gate,
+test_native_dependencies,test_native_coverage_tools,
+test_viewer_launch_platform,test_worker_platform,test_development_docs,
+test_baseline,test_headless_imports,test_dependency_policy}.py` +
+`tests/test_execution_identity.py` → the extended
+`migration_T53_portability.cmake` contract script (~2,361 lines; 86
+named Darwin cases / 80 Linux cases) plus new
+`native/tests/reference/test_worker_platform.cpp`. Merged `--no-ff`
+into integration at tip `870473f3`.
+
+### Review findings and lane-side fix
+
+- **Ledger hygiene (audit §3.3 classes 1/3/4):** the lane's 173
+  changed records arrived with empty `collected_node_ids` (176/179 of
+  its claimed batch), `comparison_class: "unassigned"` (173), and
+  descriptive `native_test_id`s that were not real registered anchors;
+  four `test_dependency_policy.py` rows were not written at all. Fixed
+  on lane/c as `094e885b fix(3.36t2b): measured collected_node_ids/
+  comparison_class + real native_test_id anchors` — measured every
+  file's pytest collection, assigned `contract`/`python-only`, and
+  re-anchored IDs to real CTest targets/functions (e.g.
+  `reference.native_research_recording_lifecycle` for the descriptive
+  viewer names, `migration_T53_portability::<case>` for script cases).
+  Post-fix batch vs base: 177 records (124 port / 53 drop).
+- **Port quality:** spot checks confirm `migration_T53_portability`
+  exercises real artifacts — scratch `cmake_minimum_required` projects
+  configure the committed `Bike*.cmake` modules, CoverageTools
+  resolution probes distinguish override/sibling/PATH/xcrun/missing/
+  merge-failure/invalid-export/format arms, docs contracts keep known
+  divergences as named skips rather than weakened asserts.
+  `test_worker_platform.cpp` asserts real platform primitives
+  (`sysctlbyname("hw.perflevel0.physicalcpu")` on Darwin,
+  `sched_getaffinity(0)` narrowing/restore on Linux,
+  hardware-concurrency fallback, ≥1 worker) — not smoke tests.
+- **Duplicate `test_execution_identity.py` port (add/add):** lane/c
+  carried a 512-line alternate `test_execution_identity.cpp`; the file
+  was already ported and merged in the lane/d 3.35 batch (603-line
+  integration implementation + registrations + landed ledger rows).
+  Resolution keeps integration's implementation, registration and
+  ledger rows; lane/c's independent `worker_platform` port is the real
+  contribution. The task report carries a merge addendum reconciling
+  ownership and its counter arithmetic (151 lane-owned merged rows:
+  104 port / 47 drop).
+- **Drop verdict:** 53 drops all cite real existing native anchors
+  (`migration_T53_portability` cases, `reference.*` targets, or
+  explicit Python-interpreter-internals justifications for
+  multiprocessing start-method/spawn semantics that have no C++
+  analogue); ~15 spot-checks against the tooling replacement map found
+  no stale/fake path.
+- **`python-removal.json`:** all 11 batch files → `replacement_landed`
+  with existing `replacement_paths` + real `verification_ids`
+  (`tests/test_execution_identity.py` was already landed via 3.35).
+- **uv.lock:** byte-identical across base/lane/pre-merge/merge
+  (sha256 `4354d9bc…`) — the lane's re-resolution reproduced
+  integration's resolution exactly.
+- **`summary.cpp` NOLINT:** the lane added a trailing-inline variant;
+  merge kept integration's `// NOLINTNEXTLINE(concurrency-mt-unsafe)`
+  form, matching the `check_reports.cpp` precedent scope.
+
+### Conflicts / resolutions
+
+Four files conflicted; all resolved and union-checked:
+
+- `migration/test-port-map.json` — key-exact union: 177 batch rows
+  merged (151 resolved to lane values, all 26
+  `test_execution_identity.py` rows resolved to integration's
+  already-landed 3.35 values — including 6 where the lane had `drop`
+  and integration already had `port`; merged keeps the stronger row).
+- `migration/python-removal.json` — key-exact union on `path`.
+- `native/tests/reference/Phase3Ports.cmake` — registration union:
+  kept integration's `execution_identity` (links `bike_replay`) + added
+  lane's `worker_platform` (links `bike_batch`); no duplicate survives.
+- `native/tests/reference/test_execution_identity.cpp` — took
+  integration's (3.35, already qualified).
+- `native/src/batch/summary.cpp` — kept integration's NOLINTNEXTLINE.
+- `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-C336t2b-report.md`
+  — lane report force-added (dir is ignored) with the merge addendum.
+
+Post-merge programmatic check: both ledgers canonical
+(`json.dumps(indent=2, ensure_ascii=True)` + trailing LF); union
+properties on the committed merge — `test-port-map` 0 missing /
+0 wrong / 0 extra / 459 contested rows all resolved to a real parent
+value; `python-removal` 0 missing / 0 wrong / 24 contested /
+0 contested-bad. No conflict markers remain in tree.
+
+### Ledger deltas (pre-merge `870473f3` → merge `95d987c0`)
+
+- `test-port-map.json`: 2,394 → **2,394** records; headers
+  2394/2378/16 unchanged. Dispositions: `port` 1364 → **1468** (+104),
+  `golden` 390 → **390** (0), `drop` 355 → **398** (+43),
+  `planned` 285 → **138** (−147). Empty `collected_node_ids`
+  737 → **587** (−150); total collected nodes 3025 → **3248** (+223).
+  (−147 = 104 ports + 43 newly-dropped; 4 more drop rows were already
+  `drop` at integration. The 26 execution-identity rows were already
+  `port` pre-merge via 3.35, so they don't move totals.)
+- `python-removal.json`: `replacement_landed` 148 → **158** (+10),
+  `planned` 387 → **377** (−10) — the 10 portability files;
+  `tests/test_execution_identity.py` was already `replacement_landed`.
+
+### Merge-back verification
+
+New/changed registrations vs merge-base `d20ea74c`: Phase3Ports.cmake
++1 — **`reference.worker_platform`** (the `execution_identity`
+registration resolves to the pre-existing 3.35 one);
+`migration_T53_portability` re-runs the extended script (its
+registration is unchanged; content is the tranche-B diff). `reference.
+execution_identity` re-run as conflict-resolution insurance.
+Checks.cmake unchanged by this merge.
+
+- **darwin-arm64** (`native/build` + `build/native-release`,
+  AppleClang): `cmake --build native/build -j6` → **exit 0**;
+  root-graph reconfigure + build (picks up the new registration) →
+  **exit 0**. `ctest -R '^(reference\.worker_platform|reference\.
+  execution_identity|migration_T53_portability)$'` → **3/3 PASS, exit
+  0**: `migration_T53_portability` 296.29 s — **86 cases**, 4
+  by-design skips (`policy_fortify_source_follows_optimized_configs`
+  Linux-only; two dev-docs divergences documented at HEAD;
+  `coverage_requires_an_llvm_clang_family_compiler` — this host's
+  `g++` is a clang alias so the live GNU rejection isn't exercised);
+  `reference.execution_identity` 1.89 s; `reference.worker_platform`
+  0.27 s.
+  Direct invocation as prescribed —
+  `cmake -DREPO_ROOT=$PWD -DSCRATCH_DIR=/tmp/t53p-merge -P
+  native/tests/migration/migration_T53_portability.cmake` → **exit 1**,
+  same 86 cases / same 4 skips; only failure is
+  `baseline_context_record_has_required_sections`
+  (`native_check_context.json` + `native_sources.json` missing under
+  `/tmp`). The script takes the real build dir as
+  `dirname(SCRATCH_DIR)`, so an out-of-tree scratch cannot satisfy the
+  produced-records case — the registered invocation uses
+  `${CMAKE_BINARY_DIR}/migration_T53_portability` and passed above.
+- **linux-aarch64** (container `bike-dev-python-free-cpp`; `/src`
+  synced — `test-port-map.json` + the T53 script sha256-identical
+  host/container): `/build/root-clang` pre-existing clang++-18 Release
+  tree auto-reconfigured; scoped build of
+  `reference.worker_platform` + `reference.execution_identity` clean
+  (exit 0). Same ctest regex → **3/3 PASS, exit 0**:
+  `migration_T53_portability` 31.25 s — **80 cases**, 4 by-design
+  skips (`root_identity_equals_the_legacy_graph` Darwin-only; the two
+  dev-docs divergences; coverage format-probe — no instrumented-link
+  toolchain, missing `libclang_rt.profile` in the lane image);
+  `reference.execution_identity` 1.19 s; `reference.worker_platform`
+  0.01 s.
+
+### Assessment
+
+Merge `95d987c0` is clean. The one substantive finding was the
+add/add `execution_identity` duplicate — resolved to the already-
+qualified 3.35 implementation with ledger/report arithmetic
+reconciled and documented in the task report addendum; no assertion
+was weakened (the merged ledger kept `port` wherever either parent
+landed one). Lane-side ledger hygiene needed one fix commit
+(`094e885b`); after it, all 177 batch rows carry measured
+`collected_node_ids`, real `comparison_class`, and anchored
+`native_test_id`s. Scoped merge-back verification only — no
+`run_tests.sh native` gate — per protocol; the integration `full` gate
+remains the scheduled accumulation checkpoint (audit debt §2.5.1).
+Watch items: the 4-argument `g++`-alias skip and the missing
+`libclang_rt.profile` format-probe skip mean two coverage
+rejection/probe arms have no live exercise in the qualified lanes;
+the `/tmp`-style direct script invocation requires SCRATCH_DIR's parent
+to be a real build dir (registered/CTest invocation is unaffected).

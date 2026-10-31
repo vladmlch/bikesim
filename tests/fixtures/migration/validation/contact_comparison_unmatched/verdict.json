@@ -1,0 +1,15 @@
+{
+  "criteria": {
+    "energy": true,
+    "events": false,
+    "no_native_contact": true,
+    "normal_impulse_ns": true,
+    "vertical_impulse_ns": true
+  },
+  "event_error_s": null,
+  "passed": false,
+  "relative_errors": {
+    "normal_impulse_ns": 0.02,
+    "vertical_impulse_ns": 0.01
+  }
+}

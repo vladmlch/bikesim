@@ -21267,6 +21267,366 @@
       "notes": "compiled CoM + static contact loads on a three-body resting fixture; error rows for empty contacts and swapped ids",
       "produced_by": "mujoco.MjModel.from_xml_string + mj_forward + mass_properties.py",
       "recipe": "RCP-02"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 502,
+          "path": "validation/tire_curve/config.json",
+          "sha256": "73968c47448b6785dfebf5f4fea8d335dc30cb10c6f47653cc68676a918f684a"
+        },
+        {
+          "bytes": 676,
+          "path": "validation/tire_curve/verdict.json",
+          "sha256": "ab184b4d8e3fbf7869189e5788abb61cae12da716e7fdc386cbf24d2c49f9113"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/tire_curve",
+      "notes": "monotone table, interval integral, unilateral damping",
+      "produced_by": "TabulatedTireSpec.elastic_response/normal_contact per sample",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 552,
+          "path": "validation/tire_calibration/config.json",
+          "sha256": "b7fe14d649ec7fee8572872c540bb912cfeb3cf1dd490a5fa9aa7885cf190a99"
+        },
+        {
+          "bytes": 635,
+          "path": "validation/tire_calibration/verdict.json",
+          "sha256": "401838186b4fd76998424f1bbc2a278cc2766e92194698e2b48347450fc48cb7"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/tire_calibration",
+      "notes": "explicit curve, geometry and provenance schema",
+      "produced_by": "calibration_from_record; the native wrapper adds the constant parameterized_unvalidated status",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 973,
+          "path": "validation/datasets/config.json",
+          "sha256": "addcab684ea4e1d7e9710e1ee48b6da9b6e5a89d667153c5608523fa38501b29"
+        },
+        {
+          "bytes": 835,
+          "path": "validation/datasets/verdict.json",
+          "sha256": "8a3d4bb05d2777bb7c99efc25a56dc8ece42496f7e1f208321df536a2c2ceec3"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/datasets",
+      "notes": "seven unit schemas and whole-experiment split gates",
+      "produced_by": "validate_dataset(payload, allow_synthetic=True)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 946,
+          "path": "validation/dataset_hash/config.json",
+          "sha256": "0f8bdf531643cc1b9fb6712a7b37889fd045d298efe86674bb6c8138a10ee922"
+        },
+        {
+          "bytes": 67,
+          "path": "validation/dataset_hash/verdict.json",
+          "sha256": "3d12c0ce8d4c8a30ab6aa8f5c2e4121143a1e0d084061eba3d06296ec7919863"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/dataset_hash",
+      "notes": "canonical ASCII finite-JSON SHA-256",
+      "produced_by": "dataset_hash(validate_dataset())",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 136,
+          "path": "validation/holdout_metrics/config.json",
+          "sha256": "e67a6265f7a57f38df5f3231daedca72e1a78cda6894aa05b84bcb391fd3ec8e"
+        },
+        {
+          "bytes": 66,
+          "path": "validation/holdout_metrics/verdict.json",
+          "sha256": "572c1443958a5938aea9cdf46e97db849b8f04907740119efc9e2043f9418565"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/holdout_metrics",
+      "notes": "bias, maximum absolute error and RMSE reductions",
+      "produced_by": "holdout_metrics(measured, predicted)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1366,
+          "path": "validation/calibration_report/config.json",
+          "sha256": "6605b32224970929e63fefb9c5bee2c2055198918dd0915c622c0fa3cffa05b4"
+        },
+        {
+          "bytes": 1167,
+          "path": "validation/calibration_report/verdict.json",
+          "sha256": "3d2ee3b05bf453877b9d04d911505a02daa4731ac88f746cbe4e319ae42ceb4c"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/calibration_report",
+      "notes": "per-experiment errors, dataset/budget hashes and the no-promotion status",
+      "produced_by": "calibration_report(dataset, predictions, output, parameters, bounds, error_budget)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 123,
+          "path": "validation/quasistatic_front_load/config.toml",
+          "sha256": "b541b92d1c87fe63eb2d3497ab20c72f643dfdd2765270fbe959a4eefd553f9e"
+        },
+        {
+          "bytes": 19,
+          "path": "validation/quasistatic_front_load/verdict.json",
+          "sha256": "6189d26c74ce8e9798d541e993a43c1085cc0870cee0df1c74f8ff0fdcaebfd1"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/quasistatic_front_load",
+      "notes": "explicit gravity and acceleration load transfer",
+      "produced_by": "quasistatic_front_load(100, 1.2, .55, .9, 0, 1.5)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 43,
+          "path": "validation/grade_feasibility/config.toml",
+          "sha256": "bcc18ac7a4c28a1d940089f32a540f63c260e2ed3de12f563c13981fd8ee6313"
+        },
+        {
+          "bytes": 128,
+          "path": "validation/grade_feasibility/verdict.json",
+          "sha256": "254a34ab01030dca57c29e936b415abc66646bb686726ef0003dd24f8653bc05"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/grade_feasibility",
+      "notes": "necessary margin only; never climb sufficiency",
+      "produced_by": "necessary_traction_margin(.8, .55, .31); the native wrapper adds the two explicit no-promotion flags",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 525,
+          "path": "validation/persistent_events/config.json",
+          "sha256": "d5339fe277c30f26c43da939de0a27a67ff7ebc8dd2558ddc0e36df5f83c3aa3"
+        },
+        {
+          "bytes": 109,
+          "path": "validation/persistent_events/verdict.json",
+          "sha256": "207b5eefea8712d9c7208a7567f0ef34a8e6394922b0b89ebc498ef9e16553fd"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/persistent_events",
+      "notes": "state transitions confirm only after the dwell persists",
+      "produced_by": "_events(rows, persistence_s=.005)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 517,
+          "path": "validation/contact_comparison/config.json",
+          "sha256": "739eb3110e7bf00cf6685e9f2cc6eaab4ea8a53406e5f56fbd977777635c98d6"
+        },
+        {
+          "bytes": 293,
+          "path": "validation/contact_comparison/verdict.json",
+          "sha256": "e81e57d3f184deeeff2ab70256aeb73edfbdf1e12105e7deeb15c7154f3bfacc"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_comparison",
+      "notes": "impulse/event/energy and no-native-contact criteria",
+      "produced_by": "contact_comparison(coarse, reference)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 586,
+          "path": "validation/contact_comparison_unmatched/config.json",
+          "sha256": "10ebfab0f113e26308b32525e690c0dd542af26031481803c735be445eeec042"
+        },
+        {
+          "bytes": 294,
+          "path": "validation/contact_comparison_unmatched/verdict.json",
+          "sha256": "2e4823de0c9b517d03bdee343a37c002620f24176d050481c37f6799088ccd34"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_comparison_unmatched",
+      "notes": "event mismatch yields a null event_error_s",
+      "produced_by": "contact_comparison with mismatched event lists",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 26,
+          "path": "validation/contact_case_step/config.toml",
+          "sha256": "abe4b0429a330648a838c709fbebddc0577f668f4c2b2b1ee3d29950beae8d75"
+        },
+        {
+          "bytes": 14235,
+          "path": "validation/contact_case_step/verdict.json",
+          "sha256": "2588a1b11844cc70e5d1980e46897c19bf52a79e1d4bfdfea52ffd02f12900e2"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_case_step",
+      "notes": "declared analytic rasterization, arithmetic-only case",
+      "produced_by": "contact_case_vertices('step', .01)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 33,
+          "path": "validation/contact_case_edge_unload/config.toml",
+          "sha256": "058b0e78fab47c4a9d065debfb5570d29b2624b170e471b99aa190fe707e9468"
+        },
+        {
+          "bytes": 14234,
+          "path": "validation/contact_case_edge_unload/verdict.json",
+          "sha256": "9ba3d2b7d3ca364970a04576cb0becd04df112ee39eee121aee26881dfb51cc3"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_case_edge_unload",
+      "notes": "declared analytic rasterization, arithmetic-only case",
+      "produced_by": "contact_case_vertices('edge_unload', .01)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 31,
+          "path": "validation/contact_case_recontact/config.toml",
+          "sha256": "70df8e93ec9317bbebc260aaa037a1c1886e9bf73bc09f98844e04a8fd0dcc73"
+        },
+        {
+          "bytes": 14074,
+          "path": "validation/contact_case_recontact/verdict.json",
+          "sha256": "043abbb587e807181061b4ffee18e3563488ccb7669df11e286eea7a88dfac25"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_case_recontact",
+      "notes": "declared analytic rasterization, arithmetic-only case",
+      "produced_by": "contact_case_vertices('recontact', .01)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 29,
+          "path": "validation/contact_case_incline/config.toml",
+          "sha256": "a2bc2720c1b4723e61f20d288738a15433425b8021b3d2640de6077c746f15dd"
+        },
+        {
+          "bytes": 18900,
+          "path": "validation/contact_case_incline/verdict.json",
+          "sha256": "8c5af8e30ae423509c582858142910a15d03c75a023e06d65898f12027657fc7"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_case_incline",
+      "notes": "declared analytic rasterization, arithmetic-only case",
+      "produced_by": "contact_case_vertices('incline', .01)",
+      "recipe": "RCP-16"
     }
   ],
   "negative_controls": [

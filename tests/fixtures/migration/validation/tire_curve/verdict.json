@@ -1,0 +1,32 @@
+[
+  {
+    "contact_stored_energy_j": 1.25,
+    "elastic_force_n": 500.0,
+    "normal_force_n": 500.0,
+    "stored_energy_j": 1.25
+  },
+  {
+    "contact_stored_energy_j": 1.25,
+    "elastic_force_n": 500.0,
+    "normal_force_n": 0.0,
+    "stored_energy_j": 1.25
+  },
+  {
+    "contact_stored_energy_j": 11.875,
+    "elastic_force_n": 1750.0,
+    "normal_force_n": 1600.0,
+    "stored_energy_j": 11.875
+  },
+  {
+    "contact_stored_energy_j": 52.0,
+    "elastic_force_n": 3400.0,
+    "normal_force_n": 3200.0,
+    "stored_energy_j": 52.0
+  },
+  {
+    "contact_stored_energy_j": 90.5,
+    "elastic_force_n": 4300.0,
+    "normal_force_n": 4350.0,
+    "stored_energy_j": 90.5
+  }
+]

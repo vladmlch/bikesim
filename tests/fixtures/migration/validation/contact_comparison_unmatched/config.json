@@ -1,0 +1,30 @@
+{
+  "coarse": {
+    "contact_events": [
+      {
+        "state": "loaded",
+        "time_s": 0.01
+      },
+      {
+        "state": "unloaded",
+        "time_s": 0.02
+      }
+    ],
+    "energy_residual_ratio": 0.01,
+    "native_wheel_contact_count": 0.0,
+    "normal_impulse_ns": 102.0,
+    "vertical_impulse_ns": 101.0
+  },
+  "reference": {
+    "contact_events": [
+      {
+        "state": "loaded",
+        "time_s": 0.012
+      }
+    ],
+    "energy_residual_ratio": 0.02,
+    "native_wheel_contact_count": 0.0,
+    "normal_impulse_ns": 100.0,
+    "vertical_impulse_ns": 100.0
+  }
+}

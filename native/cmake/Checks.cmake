@@ -125,6 +125,30 @@ if(BUILD_TESTING)
   endif()
 endif()
 
+# --- migration_T336_portability: portability tooling contracts (3.36t2a) --
+# cmake -P script cases: drives the produced bike-native-checks --inspect-tool
+# surface, real negative-compile fixtures and the emitted
+# native_check_context.json for the toolchain/sanitizer-runtime contracts of
+# tests/portability/{test_native_toolchain,test_native_runtime}.py.
+if(BUILD_TESTING)
+  add_test(NAME migration_T336_portability
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T336_portability"
+      -D "CHECKS_BINARY=$<TARGET_FILE:bike-native-checks>"
+      -D "BUILD_DIR=${CMAKE_BINARY_DIR}"
+      -P "${_checks_native_dir}/tests/migration/migration_T336_portability.cmake")
+  set_tests_properties(migration_T336_portability PROPERTIES
+    LABELS "migration;t336;portability" TIMEOUT 1200)
+  if(NOT TARGET migration_T336_portability)
+    add_custom_target(migration_T336_portability
+      COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
+              -R "^migration_T336_portability$" --no-tests=error --output-on-failure
+      DEPENDS bike-native-checks
+      USES_TERMINAL)
+  endif()
+endif()
+
 # --- migration_T56: fixture contract for the produced orchestrator --------
 if(BUILD_TESTING)
   add_test(NAME migration_T56

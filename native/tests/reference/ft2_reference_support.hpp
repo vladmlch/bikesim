@@ -257,9 +257,24 @@ research_variant(std::string_view name,
                  std::optional<std::array<double, 3>> accel_bias =
                      std::nullopt,
                  std::optional<double> gyro_bias = std::nullopt,
-                 std::optional<double> dropout = std::nullopt) {
+                 std::optional<double> dropout = std::nullopt,
+                 std::optional<runtime::ResearchPrograms> programs =
+                     std::nullopt,
+                 std::optional<double> weld_foot_min_normal_n =
+                     std::nullopt) {
     auto bootstrap = research_bootstrap(name);
     if (capture) bootstrap.config.capture_mode = *capture;
+    if (programs) bootstrap.config.programs = std::move(*programs);
+    if (weld_foot_min_normal_n) {
+        // violating_physics()'s weld_foot_min_normal_n=100 trigger rides in
+        // the rider_controller document — the same doc the runtime ctor
+        // decodes into rider::SpindleConfig.
+        runtime_reference::set_member(
+            bootstrap.ride.config.rider_controller,
+            "weld_foot_min_normal_n",
+            bio::Value{bio::Number{
+                bio::repr_binary64(*weld_foot_min_normal_n)}});
+    }
     if (accel_bias) bootstrap.config.sensors.acceleration_bias = *accel_bias;
     if (gyro_bias) bootstrap.config.sensors.gyro_bias = *gyro_bias;
     if (dropout) bootstrap.config.sensors.dropout_probability = *dropout;
@@ -277,8 +292,19 @@ research_variant(std::string_view name,
     if (control_steps) bootstrap.config.control_steps = *control_steps;
     if (sensor_steps) bootstrap.config.sensor_steps = *sensor_steps;
     if (delay_steps) bootstrap.config.delay_steps = *delay_steps;
-    if (stop_on_model_violation)
+    if (stop_on_model_violation) {
         bootstrap.config.stop_on_model_violation = *stop_on_model_violation;
+        // The research runtime requires its strictness flag to match the
+        // physical runtime's — patch the ride config and the staged
+        // state.runtime document together, like the decimation leg.
+        bootstrap.ride.config.strict = *stop_on_model_violation;
+        auto monitor = runtime_reference::member(
+            bootstrap.ride.state.runtime, "monitor");
+        runtime_reference::set_member(
+            monitor, "strict", bio::Value{*stop_on_model_violation});
+        runtime_reference::set_member(
+            bootstrap.ride.state.runtime, "monitor", std::move(monitor));
+    }
     if (energy_residual)
         bootstrap.config.maximum_energy_residual_ratio = *energy_residual;
     if (seed) bootstrap.config.seed_decimal = *seed;

@@ -94,6 +94,23 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
         std::string(arguments[1]) == "--check-child")
         check_child(arguments.subspan(2));
 
+    // --inspect-tool PATH: the direct surface of native_toolchain.inspect_tool
+    // — prints the inspection record as JSON on stdout; a CheckError (the
+    // ported ValueError) reports on stderr and exits 1.
+    if (arguments.size() == 3 &&
+        std::string(arguments[1]) == "--inspect-tool") {
+        try {
+            const bike::checks::Value inspection =
+                bike::checks::inspect_tool(
+                    bike::checks::fs::path(arguments[2]));
+            std::cout << bike::checks::dump_json(inspection) << "\n";
+            return 0;
+        } catch (const std::exception &error) {
+            std::cerr << error.what() << "\n";
+            return 1;
+        }
+    }
+
     const std::string prog =
         program_name(!arguments.empty() ? arguments.front() : nullptr);
     std::string kind;

@@ -279,6 +279,25 @@ struct SourceManifest {
     const std::string &kind, const Value &context,
     const std::map<std::string, std::string> &environment);
 
+// Ports _compiler_launcher(): the context compiler record's launcher
+// spelling as an argv prefix list — a nonempty string counts as one
+// launcher token; absent/null/other types behave like the oracle.
+[[nodiscard]] std::vector<std::string> compiler_launcher(const Value &context);
+
+// Ports native_toolchain.inspect_tool(): "--version" plus compiler
+// target/resource probes for recognized families; raises CheckError (the
+// ported ValueError) when the path is not an executable file, the version
+// query fails or produces no output, or the banner matches no known
+// compiler/analysis family.
+[[nodiscard]] Value inspect_tool(const fs::path &path);
+
+// Ports _inspect_sweep_tool(): records tool_inspection/tool_resolved or
+// tool_inspection_error on the summary; returns true only when the tool
+// identifies as a toolchain family other than the kind's expected set —
+// a selection error, mirrored into summary errors and tool health.
+[[nodiscard]] bool inspect_sweep_tool(const std::string &kind,
+                                      const fs::path &tool, Value &summary);
+
 // Ports _temporary_database(): <build>/native_check_work/<kind>/<run_id>/
 // entry-NNNN/compile_commands.json containing exactly this entry.
 [[nodiscard]] fs::path temporary_database(const fs::path &build,

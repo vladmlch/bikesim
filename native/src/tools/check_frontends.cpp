@@ -20,8 +20,16 @@
 namespace bike::checks {
 namespace {
 
-constexpr std::array<std::string_view, 53> kGccWarningFlags{
-    "-Wall", "-Wextra", "-Wpedantic", "-Werror", "-Wconversion",
+// _GCC_REQUIRED_FLAGS: mandatory diagnostics for the secondary frontend —
+// probed first and never dropped.
+constexpr std::array<std::string_view, 2> kGccRequiredFlags{
+    "-Werror", "-Wpedantic",
+};
+
+// _GCC_OPTIONAL_WARNING_FLAGS: probed per run — a batch rejection probes
+// each spelling individually so one unsupported name drops only itself.
+constexpr std::array<std::string_view, 51> kGccOptionalWarningFlags{
+    "-Wall", "-Wextra", "-Wconversion",
     "-Wsign-conversion", "-Wdouble-promotion", "-Wshadow", "-Wcast-qual",
     "-Wformat=2", "-Wundef", "-Wimplicit-fallthrough", "-Wnon-virtual-dtor",
     "-Wold-style-cast", "-Woverloaded-virtual", "-Wnull-dereference",
@@ -39,6 +47,161 @@ constexpr std::array<std::string_view, 53> kGccWarningFlags{
     "-Wframe-larger-than=8192", "-Wmissing-declarations", "-Wswitch-enum",
 };
 
+// _GCC_WARNING_FLAGS: required + optional, the default when no probe runs.
+std::vector<std::string> default_frontend_flags() {
+    std::vector<std::string> flags;
+    flags.reserve(kGccRequiredFlags.size() + kGccOptionalWarningFlags.size());
+    for (const std::string_view flag: kGccRequiredFlags)
+        flags.emplace_back(flag);
+    for (const std::string_view flag: kGccOptionalWarningFlags)
+        flags.emplace_back(flag);
+    return flags;
+}
+
+// repr() of a Python str list — used in the frontend-probe diagnostics so
+// the message keeps the oracle's exact rendering.
+std::string repr_str_list(const std::vector<std::string> &items) {
+    std::string out = "[";
+    bool first = true;
+    for (const std::string &item: items) {
+        if (!first) out += ", ";
+        first = false;
+        out += '\'';
+        for (const char ch: item) {
+            if (ch == '\\' || ch == '\'') out += '\\';
+            out += ch;
+        }
+        out += '\'';
+    }
+    out += ']';
+    return out;
+}
+
+std::string repr_value_list(const Array &items) {
+    std::vector<std::string> strings;
+    for (const Value &item: items)
+        if (const auto *text = std::get_if<std::string>(&item.data))
+            strings.push_back(*text);
+    return repr_str_list(strings);
+}
+
+// _probe_frontend_warning_flags: prove the mandatory flags, batch-probe
+// the optional warning names, then probe individually on a batch failure.
+// Returns the applied flag list plus the per-flag rejection records.
+struct FrontendFlagProbe {
+    std::vector<std::string> flags;
+    Array unavailable;
+};
+FrontendFlagProbe probe_frontend_warning_flags(
+    const fs::path &tool, const fs::path &work_directory,
+    const fs::path &log_directory) {
+    const fs::path probe_directory = work_directory / "warning-probe";
+    std::error_code ec;
+    fs::create_directories(probe_directory, ec);
+    const fs::path probe_source = probe_directory / "probe.cpp";
+    {
+        std::ofstream stream(probe_source, std::ios::binary | std::ios::trunc);
+        stream << "int main() { return 0; }\n";
+        if (!stream)
+            throw CheckError("cannot write frontend warning probe: " +
+                             probe_source.string());
+    }
+    std::vector<std::string> base{tool.string(), "-std=c++23",
+                                  "-fsyntax-only"};
+    for (const std::string_view flag: kGccRequiredFlags)
+        base.emplace_back(flag);
+    // Oracle: [tool, *base, probe_source] — the probe TU must reach the
+    // driver or the mandatory-flags probe self-rejects on "no input".
+    std::vector<std::string> required_argv = base;
+    required_argv.push_back(probe_source.string());
+    Value required_record = run_process(
+        required_argv, probe_directory, log_directory,
+        "frontend-required-flags");
+    if (!record_health_ok(required_record))
+        throw CheckError(
+            "secondary frontend " + tool.string() +
+            " rejects mandatory flags " +
+            repr_str_list({"-Werror", "-Wpedantic"}) + ": " +
+            repr_value_list(
+                std::get<Array>(member(required_record, "diagnostics")->data)));
+    std::vector<std::string> batch_argv = base;
+    for (const std::string_view flag: kGccOptionalWarningFlags)
+        batch_argv.emplace_back(flag);
+    batch_argv.push_back(probe_source.string());
+    Value batch_record = run_process(batch_argv, probe_directory,
+                                     log_directory, "frontend-warning-batch");
+    std::vector<std::string> applied;
+    Array unavailable;
+    if (record_health_ok(batch_record)) {
+        for (const std::string_view flag: kGccOptionalWarningFlags)
+            applied.emplace_back(flag);
+    } else {
+        for (const std::string_view flag: kGccOptionalWarningFlags) {
+            // re.sub(r"[^A-Za-z0-9]+", "_", flag).strip("_")
+            std::string sanitized;
+            bool in_run = false;
+            for (const char ch: flag) {
+                const bool alnum = (ch >= 'A' && ch <= 'Z') ||
+                                   (ch >= 'a' && ch <= 'z') ||
+                                   (ch >= '0' && ch <= '9');
+                if (alnum) {
+                    sanitized += ch;
+                    in_run = false;
+                } else if (!in_run) {
+                    sanitized += '_';
+                    in_run = true;
+                }
+            }
+            while (!sanitized.empty() && sanitized.front() == '_')
+                sanitized.erase(sanitized.begin());
+            while (!sanitized.empty() && sanitized.back() == '_')
+                sanitized.pop_back();
+            std::vector<std::string> flag_argv = base;
+            flag_argv.emplace_back(flag);
+            flag_argv.push_back(probe_source.string());
+            Value record = run_process(flag_argv, probe_directory,
+                                       log_directory,
+                                       "frontend-warning-" + sanitized);
+            if (record_health_ok(record)) {
+                applied.emplace_back(flag);
+            } else {
+                unavailable.push_back(vobj({
+                    {"flag", vstr(std::string(flag))},
+                    {"returncode",
+                     *member(record, "returncode")},
+                    {"diagnostics",
+                     *member(record, "diagnostics")},
+                }));
+            }
+        }
+    }
+    if (applied.empty())
+        throw CheckError(
+            "secondary frontend " + tool.string() +
+            " accepts none of the optional warning policy; it is not a "
+            "usable analysis frontend");
+    FrontendFlagProbe probe;
+    for (const std::string_view flag: kGccRequiredFlags)
+        probe.flags.emplace_back(flag);
+    probe.flags.insert(probe.flags.end(), applied.begin(), applied.end());
+    probe.unavailable = std::move(unavailable);
+    return probe;
+}
+
+// _EXPECTED_TOOL_FAMILY: the toolchain family each resolved sweep tool must
+// identify as; anything else is a selection error.
+const std::vector<std::string> &expected_tool_family(const std::string &kind) {
+    static const std::vector<std::string> tidy{"clang-tidy"};
+    static const std::vector<std::string> analyzer{"clang"};
+    static const std::vector<std::string> cppcheck{"cppcheck"};
+    static const std::vector<std::string> gcc{"gcc"};
+    if (kind == "tidy") return tidy;
+    if (kind == "analyzer") return analyzer;
+    if (kind == "cppcheck") return cppcheck;
+    if (kind == "frontends" || kind == "odr") return gcc;
+    throw CheckError("unknown native sweep kind: " + kind);
+}
+
 // zero-padded 4-wide index, matching the oracle's "%04d" record naming
 std::string padded_index(std::size_t index) {
     std::ostringstream out;
@@ -46,14 +209,17 @@ std::string padded_index(std::size_t index) {
     return out.str();
 }
 
-// _tool_argv: per-kind process argv construction.
+// _tool_argv: per-kind process argv construction. `frontend_flags` is the
+// probed (or default) GCC warning set for the gcc-side kinds.
 std::vector<std::string> tool_argv(const std::string &kind,
                                    const fs::path &tool,
                                    const CompileEntry &entry,
                                    const Value &context, const fs::path &build,
                                    const std::string &run_id, std::size_t index,
-                                   const std::string &pass_name) {
+                                   const std::string &pass_name,
+                                   const std::vector<std::string> &frontend_flags) {
     const fs::path &source = entry.source;
+    const std::vector<std::string> launcher = compiler_launcher(context);
     if (kind == "tidy") {
         const fs::path database =
             temporary_database(build, kind, run_id, index, entry);
@@ -74,23 +240,26 @@ std::vector<std::string> tool_argv(const std::string &kind,
         return argv;
     }
     if (kind == "analyzer") {
+        // Entries begin with [*launcher, compiler]: preserve the launcher
+        // spelling and replace the compiler slot with the analyzer driver.
+        std::vector<std::string> arguments(entry.arguments.begin(),
+                                           entry.arguments.end());
+        arguments.at(launcher.size()) = tool.string();
         std::vector<std::string> cleaned;
-        cleaned.reserve(entry.arguments.size());
+        cleaned.reserve(arguments.size());
         std::size_t position = 0;
-        while (position < entry.arguments.size()) {
-            const std::string &argument = entry.arguments[position];
-            if (position == 0) {
-                cleaned.push_back(tool.string());
-            } else if (argument == "-o") {
+        while (position < arguments.size()) {
+            const std::string &argument = arguments[position];
+            if (argument == "-o") {
                 position += 2;
                 continue;
-            } else if (argument == "-c" || argument == "-MD" ||
-                       argument == "-MMD" || argument == "-MP") {
+            }
+            if (argument == "-c" || argument == "-MD" ||
+                argument == "-MMD" || argument == "-MP") {
                 position += 1;
                 continue;
-            } else {
-                cleaned.push_back(argument);
             }
+            cleaned.push_back(argument);
             position += 1;
         }
         if (cleaned.empty()) cleaned.push_back(tool.string());
@@ -142,11 +311,13 @@ std::vector<std::string> tool_argv(const std::string &kind,
     }
     const std::vector<std::string> gcc_args = gcc_context_args(entry, context);
     if (kind == "frontends") {
-        std::vector<std::string> argv = {tool.string(), "-std=c++23",
-                                         "-fsyntax-only"};
+        // [*launcher, tool, ...]: the configured compiler launcher wraps
+        // the secondary frontend invocation exactly as the oracle spells it.
+        std::vector<std::string> argv(launcher.begin(), launcher.end());
+        argv.insert(argv.end(), {tool.string(), "-std=c++23",
+                                 "-fsyntax-only"});
         argv.insert(argv.end(), gcc_args.begin(), gcc_args.end());
-        for (const std::string_view flag: kGccWarningFlags)
-            argv.emplace_back(flag);
+        argv.insert(argv.end(), frontend_flags.begin(), frontend_flags.end());
         argv.push_back(source.string());
         return argv;
     }
@@ -158,13 +329,14 @@ std::vector<std::string> tool_argv(const std::string &kind,
             build / "native_check_work" / kind / run_id / object_name;
         std::error_code ec;
         fs::create_directories(object_path.parent_path(), ec);
-        std::vector<std::string> argv = {
+        std::vector<std::string> argv(launcher.begin(), launcher.end());
+        argv.insert(argv.end(), {
             tool.string(), "-std=c++23", "-O2", "-flto=auto",
             "-ffat-lto-objects", "-Wno-psabi",
             // Sweep TUs may each define `main`; rename it uniquely per TU so
             // the relocatable link sees no duplicate-symbol conflict.
             rename_macro,
-        };
+        });
         argv.insert(argv.end(), gcc_args.begin(), gcc_args.end());
         argv.insert(argv.end(), {"-c", source.string(), "-o",
                                  object_path.string()});
@@ -195,6 +367,31 @@ void report_alpha_findings(const Value &record, const fs::path &source) {
 }
 
 } // namespace
+
+bool inspect_sweep_tool(const std::string &kind, const fs::path &tool,
+                        Value &summary) {
+    Value inspection;
+    try {
+        inspection = inspect_tool(tool);
+    } catch (const CheckError &error) {
+        set_member(summary, "tool_inspection_error", vstr(error.what()));
+        return false;
+    }
+    set_member(summary, "tool_inspection", inspection);
+    set_member(summary, "tool_resolved",
+               *member(inspection, "resolved_path"));
+    const std::string family =
+        std::get<std::string>(member(inspection, "family")->data);
+    const auto &expected = expected_tool_family(kind);
+    if (std::ranges::find(expected, family) == expected.end()) {
+        std::get<Array>(member_mut(summary, "errors")->data)
+            .push_back(vstr("resolved " + kind + " tool " + tool.string() +
+                            " identifies as '" + family +
+                            "'; expected one of " + repr_str_list(expected)));
+        return true;
+    }
+    return false;
+}
 
 int run_sweep(const std::string &kind, const fs::path &build) {
     const fs::path build_dir = canonical_path(build);
@@ -338,6 +535,40 @@ int run_sweep(const std::string &kind, const fs::path &build) {
     bool blocking_findings = false;
     bool report_only_findings = false;
     bool tool_health_failed = !record_health_ok(version);
+    // Tool identity/capability evidence: the version banner must name the
+    // expected toolchain family for this kind (wrong-family tools are a
+    // selection error); uninspectable tools are recorded but remain gated by
+    // the sweep's own diagnostics.
+    tool_health_failed = inspect_sweep_tool(kind, tool, summary) ||
+                         tool_health_failed;
+
+    std::vector<std::string> frontend_flags = default_frontend_flags();
+    if (kind == "frontends" || kind == "odr") {
+        try {
+            FrontendFlagProbe probe = probe_frontend_warning_flags(
+                tool, build_dir / "native_check_work" / kind / run_id,
+                log_directory);
+            frontend_flags = std::move(probe.flags);
+            Array applied;
+            for (const std::string &flag: frontend_flags)
+                applied.push_back(vstr(flag));
+            set_member(summary, "warning_flags",
+                       vobj({{"applied", varr(std::move(applied))},
+                             {"unavailable",
+                              varr(std::move(probe.unavailable))}}));
+        } catch (const CheckError &error) {
+            auto *errors = member_mut(summary, "errors");
+            std::get<Array>(errors->data).push_back(vstr(error.what()));
+            set_member(summary, "records", varr(std::move(records)));
+            set_member(summary, "tool_health", vstr("failed"));
+            set_member(summary, "log_directory",
+                       vstr(log_directory.string()));
+            write_summary(build_dir, kind, summary);
+            std::cerr << "native " << kind << " failed: " << error.what()
+                      << "\n";
+            return 1;
+        }
+    }
     std::vector<fs::path> object_paths;
     if (kind == "odr") {
         for (std::size_t index = 0; index < entries.size(); ++index) {
@@ -358,7 +589,7 @@ int run_sweep(const std::string &kind, const fs::path &build) {
                     continue;
                 const std::vector<std::string> argv =
                     tool_argv(kind, tool, entry, context, build_dir, run_id,
-                              index, pass_name);
+                              index, pass_name, frontend_flags);
                 std::string name = padded_index(index);
                 name += '-';
                 name += entry.source.stem().string();

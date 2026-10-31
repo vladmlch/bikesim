@@ -891,6 +891,177 @@ Value version_record(const fs::path &tool, const fs::path &log_directory) {
     return record;
 }
 
+namespace {
+
+// str.strip() over ASCII whitespace for inspection banner text.
+std::string strip_ascii(std::string text) {
+    const auto first = text.find_first_not_of(" \t\n\v\f\r");
+    const auto last = text.find_last_not_of(" \t\n\v\f\r");
+    return first == std::string::npos ? std::string()
+                                      : text.substr(first, last - first + 1);
+}
+
+// repr() of a Python str: single-quoted with the escapes repr() emits for
+// the characters that appear in tool banners and diagnostics.
+std::string repr_str(const std::string &text) {
+    std::string out = "'";
+    for (const char ch: text) {
+        if (ch == '\\' || ch == '\'') {
+            out += '\\';
+            out += ch;
+        } else if (ch == '\n') {
+            out += "\\n";
+        } else {
+            out += ch;
+        }
+    }
+    out += '\'';
+    return out;
+}
+
+// Ports native_toolchain._query(): one argv-only inspection probe with a
+// deadline, recording argv/returncode/stdout/stderr/launch_error — the
+// light record (no log files, no diagnostics classification).
+Value run_query(const std::vector<std::string> &argv, double timeout_s = 60.0) {
+    platform::ProcessOptions options;
+    options.timeout_s = timeout_s;
+    std::string out;
+    std::string err;
+    std::optional<std::int64_t> returncode;
+    std::optional<std::string> launch_error;
+    const auto before = std::chrono::steady_clock::now();
+    try {
+        const platform::ProcessResult result =
+            platform::run(argv, fs::current_path(), options);
+        out = utf8_replace(result.out);
+        err = utf8_replace(result.err);
+        const double elapsed =
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - before)
+                .count();
+        if (result.exit_code == 137 && elapsed >= timeout_s - 0.5) {
+            // subprocess.TimeoutExpired: the oracle records the exception
+            // text as launch_error and leaves returncode null.
+            std::string rendered;
+            for (const auto &token: argv) {
+                if (!rendered.empty()) rendered += ", ";
+                rendered += repr_str(token);
+            }
+            std::ostringstream timeout_text;
+            timeout_text << timeout_s;
+            launch_error = "Command '[" + rendered + "]' timed out after " +
+                           timeout_text.str() + " seconds";
+        } else {
+            returncode = python_returncode(result.exit_code);
+        }
+    } catch (const std::invalid_argument &error) {
+        launch_error = error.what();
+    } catch (const std::system_error &error) {
+        launch_error = error.what();
+    } catch (const std::runtime_error &error) {
+        launch_error = error.what();
+    }
+    Array argv_values;
+    argv_values.reserve(argv.size());
+    for (const auto &argument: argv) argv_values.push_back(vstr(argument));
+    return vobj({
+        {"argv", varr(std::move(argv_values))},
+        {"returncode", returncode.has_value() ? vint(*returncode) : vnull()},
+        {"stdout", vstr(std::move(out))},
+        {"stderr", vstr(std::move(err))},
+        {"launch_error",
+         launch_error.has_value() ? vstr(*launch_error) : vnull()},
+    });
+}
+
+// _FAMILY_PATTERNS in match order: the clang-tidy banner is a distro
+// "LLVM version X" line with no clang-tidy token, so it must be probed
+// before the plain "clang" family word.
+std::optional<std::string> classify_family(const std::string &version_text) {
+    static const std::array<std::pair<const char *, std::regex>, 4> patterns{
+        std::pair{"clang-tidy",
+                  std::regex("clang-tidy|LLVM version",
+                             std::regex_constants::icase)},
+        std::pair{"cppcheck",
+                  std::regex("cppcheck", std::regex_constants::icase)},
+        std::pair{"clang", std::regex("clang", std::regex_constants::icase)},
+        std::pair{"gcc",
+                  std::regex("\\(GCC\\)|Free Software Foundation",
+                             std::regex_constants::icase)},
+    };
+    for (const auto &[name, pattern]: patterns)
+        if (std::regex_search(version_text, pattern)) return name;
+    return std::nullopt;
+}
+
+} // namespace
+
+Value inspect_tool(const fs::path &path) {
+    if (!is_executable_file(path))
+        throw CheckError("cannot inspect tool that is not an executable file: " +
+                         path.string());
+    Value version_query = run_query({path.string(), "--version"});
+    const std::string version_text = strip_ascii(
+        record_stdout_text(version_query) + "\n" +
+        record_stderr_text(version_query));
+    const bool launched = io::is_null(*member(version_query, "launch_error"));
+    const auto returncode = record_returncode(version_query);
+    if (!launched || !returncode.has_value() || *returncode != 0 ||
+        version_text.empty())
+        throw CheckError("tool " + path.string() +
+                         " did not identify itself (--version failed)");
+    const auto family = classify_family(version_text);
+    const std::string first_line = split_lines(version_text).front();
+    if (!family.has_value())
+        throw CheckError("tool " + path.string() +
+                         " is not a recognized compiler or analysis tool: " +
+                         repr_str(first_line));
+    Value record = vobj({
+        {"path", vstr(path.string())},
+        {"resolved_path", vstr(canonical_path(path).string())},
+        {"family", vstr(*family)},
+        {"version", vstr(first_line)},
+        {"version_query", std::move(version_query)},
+        {"target_query", vnull()},
+        {"target", vnull()},
+        {"resource_query", vnull()},
+        {"resource_dir", vnull()},
+    });
+    if (*family == "clang" || *family == "gcc") {
+        const bool clang = *family == "clang";
+        const std::vector<std::string> target_spellings =
+            clang ? std::vector<std::string>{"-print-target-triple", "-dumpmachine"}
+                  : std::vector<std::string>{"-dumpmachine", "-print-target-triple"};
+        const std::vector<std::string> resource_spellings =
+            clang ? std::vector<std::string>{"-print-resource-dir", "-print-search-dirs"}
+                  : std::vector<std::string>{"-print-search-dirs", "-print-resource-dir"};
+        struct ProbeSet {
+            std::string_view label;
+            const std::vector<std::string> *spellings;
+            std::string_view field;
+        };
+        const ProbeSet probe_sets[2] = {
+            {"target", &target_spellings, "target"},
+            {"resource", &resource_spellings, "resource_dir"},
+        };
+        for (const ProbeSet &probe: probe_sets) {
+            for (const std::string &spelling: *probe.spellings) {
+                Value query = run_query({path.string(), spelling});
+                set_member(record, std::string(probe.label) + "_query", query);
+                const auto query_rc = record_returncode(query);
+                const std::string stdout_text =
+                    strip_ascii(record_stdout_text(query));
+                if (query_rc.has_value() && *query_rc == 0 &&
+                    !stdout_text.empty()) {
+                    set_member(record, std::string(probe.field),
+                               vstr(split_lines(stdout_text).front()));
+                    break;
+                }
+            }
+        }
+    }
+    return record;
+}
+
 std::optional<std::int64_t> record_returncode(const Value &record) {
     const Value *value = member(record, "returncode");
     if (value == nullptr || io::is_null(*value)) return std::nullopt;

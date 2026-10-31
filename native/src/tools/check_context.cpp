@@ -802,24 +802,15 @@ void validate_compilation_context(const std::vector<std::string> &argv,
     const Value *compiler = member(context, "compiler");
     const fs::path configured_compiler =
         canonical_path(std::get<std::string>(member(*compiler, "path")->data));
-    std::vector<std::string> launcher;
-    if (const Value *launcher_value = member(*compiler, "launcher")) {
-        if (const auto *text =
-                std::get_if<std::string>(&launcher_value->data)) {
-            if (!text->empty()) launcher.push_back(*text);
-        } else if (const auto *array =
-                       std::get_if<Array>(&launcher_value->data)) {
-            for (const Value &item: *array) {
-                if (!std::holds_alternative<std::string>(item.data))
-                    throw CheckError(
-                        "configured compiler launcher must be a string list");
-                launcher.push_back(std::get<std::string>(item.data));
-            }
-        } else {
-            throw CheckError(
-                "configured compiler launcher must be a string list");
-        }
-    }
+    // The oracle's entry validator is stricter than _compiler_launcher(): a
+    // present-but-null launcher member fails closed here, while the argv-side
+    // helper treats null as absent.
+    if (const Value *launcher_value = member(*compiler, "launcher");
+        launcher_value != nullptr &&
+        !std::holds_alternative<std::string>(launcher_value->data) &&
+        !std::holds_alternative<Array>(launcher_value->data))
+        throw CheckError("configured compiler launcher must be a string list");
+    const std::vector<std::string> launcher = compiler_launcher(context);
     std::size_t compiler_index = 0;
     if (!launcher.empty()) {
         const auto configured_launcher =
@@ -1379,6 +1370,30 @@ std::vector<std::string> darwin_tool_candidates(const std::string &kind) {
 
 } // namespace
 
+std::vector<std::string> compiler_launcher(const Value &context) {
+    std::vector<std::string> launcher;
+    const Value *compiler = member(context, "compiler");
+    if (compiler == nullptr) return launcher;
+    if (const Value *launcher_value = member(*compiler, "launcher")) {
+        if (const auto *text =
+                std::get_if<std::string>(&launcher_value->data)) {
+            if (!text->empty()) launcher.push_back(*text);
+        } else if (const auto *array =
+                       std::get_if<Array>(&launcher_value->data)) {
+            for (const Value &item: *array) {
+                if (!std::holds_alternative<std::string>(item.data))
+                    throw CheckError(
+                        "configured compiler launcher must be a string list");
+                launcher.push_back(std::get<std::string>(item.data));
+            }
+        } else if (!io::is_null(*launcher_value)) {
+            throw CheckError(
+                "configured compiler launcher must be a string list");
+        }
+    }
+    return launcher;
+}
+
 std::pair<fs::path, std::string> resolve_tool(
     const std::string &kind, const Value &context,
     const std::map<std::string, std::string> &environment) {
@@ -1532,12 +1547,7 @@ std::vector<std::string> gcc_context_args(const CompileEntry &entry,
         "-I", "-D", "-U", "-isystem", "-iquote", "-idirafter", "-imacros",
         "-isysroot", "--sysroot=",
     };
-    std::size_t position = 1;
-    if (const Value *launcher = member(*member(context, "compiler"), "launcher")) {
-        if (const auto *items = std::get_if<Array>(&launcher->data)) position += items->size();
-        else if (const auto *text = std::get_if<std::string>(&launcher->data);
-                 text != nullptr && !text->empty()) ++position;
-    }
+    std::size_t position = 1 + compiler_launcher(context).size();
     const std::optional<fs::path> configured = configured_sysroot(context);
     const auto check_sysroot = [&](const std::string &value) {
         const fs::path selected = canonical_path(value, &directory);

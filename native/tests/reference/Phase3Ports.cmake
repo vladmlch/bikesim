@@ -647,3 +647,18 @@ bike_add_reference_test(runtime_single_path ENGINE
 bike_add_reference_test(pneumatic_physical_runtime ENGINE
   SOURCES test_pneumatic_physical_runtime.cpp LIBRARIES bike_app bike_cli
   LABELS t53 frontend slow)
+# 3.36-B portability/tooling batch — worker platform contracts from
+# tests/portability/test_worker_platform.py: performance-core selection on
+# Darwin (perflevel sysctl) and Linux (process affinity) plus the hardware
+# fallback. Multiprocessing start-method and interpreter-worker probes
+# stay `drop` — native workers are std::jthread/std::thread.
+bike_add_reference_test(worker_platform
+  SOURCES test_worker_platform.cpp LIBRARIES bike_batch
+  LABELS t53 portability)
+# 3.36-B execution identity — tests/test_execution_identity.py ports the
+# legacy/identity-schema-2 record validation, exact-key/null/type rules,
+# named-field compatibility checks and non-mutating validation through the
+# bike_replay execution contract.
+bike_add_reference_test(execution_identity ENGINE
+  SOURCES test_execution_identity.cpp LIBRARIES bike_replay bike_recording
+  LABELS t53 replay portability)

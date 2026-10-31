@@ -10275,3 +10275,145 @@ ports (70 port / 43 drop) with zero golden fixtures; the batch gate
 `run_tests.sh` — bounded merge-back scope per protocol; the
 integration-level `full` gate remains the scheduled accumulation
 checkpoint after the pending merges.
+
+## 2026-10-31 — lane/d batch 3.35 platform files merge-back (merge `d062beef` + `b7617d01`)
+
+Lane/d tip `1527177c` (base `5308c55a`, twelve commits: eight `feat(3.35)`
+port commits `0f586027`/`b63435b2`/`9cfaa2b8`/`b129f9fb`/`9b1f9070`/
+`4f922ff0`/`24efb1c8`/`43f8c4b1`, two `docs(3.35)` ledger/report commits
+`9cc1cb43`/`49494d2c`, the 3.34 NOLINT follow-up `d462a8b2`, plus two
+review fixes added during this merge-back: `d3facffc` (canonical ledger
+reserialization + measured `collected_node_ids`/`comparison_class` +
+report counters) and `1527177c` (`add_dependencies` for the
+subprocess/link-probe test binaries)). Merged `--no-ff` into integration
+at tip `d20ea74c` in two steps: the batch itself (`d062beef`) and the
+review-fix commit (`b7617d01`); both auto-merged, zero conflict hunks.
+
+Review found and fixed (defect classes from the 10-28 audit, §3.3):
+- **Serializer drift (class 1):** the lane had rewritten
+  `test-port-map.json` at indent=1 and `python-removal.json` at indent=1
+  with no trailing LF — ~63k lines of whitespace-only churn. Re-dumped
+  both at canonical `json.dumps(indent=2, ensure_ascii=True)` + single
+  LF on the lane; the merge then carried only content diffs.
+- **Placeholder fields on landed rows (class 3):** all 104 port/golden
+  batch rows had empty `collected_node_ids`, the 3.02 AST-inventory
+  `assertions_capture` placeholder and `comparison_class: "unassigned"`;
+  the 16 new drops were also `unassigned`. Measured via
+  `pytest --collect-only` (357 nodes, 0 collisions) and filled:
+  `contract` ×70, `bitwise-oracle` ×34, `python-only` ×16; measured
+  `assertions_capture` phrased per existing convention
+  (native port / oracle green darwin-arm64 + linux-aarch64).
+- **Report counters (class 2):** `task-C335-report.md` per-file table
+  was wrong for five files (numeric_portability reported 2/21/1 vs
+  actual 0/23/0, platform_blas 1/11/0 vs 0/11/1, linkage "4/0/0(3)" vs
+  2/0/1, headless 4/0/0 vs 2/0/2, golden_hook 5 drops vs actual 12) and
+  the commit list omitted three commits. Totals (132 = 70+34+28) were
+  already correct; corrected the rows and list.
+- **Registration completeness:** `reference.native_linux_headless`
+  drives `bin/bike-ride` and `reference.native_platform_linkage`
+  enumerates `bin/` artifacts, but no `add_dependencies` declared them —
+  surfaced as a headless failure (`parse_json: document is empty`) on a
+  stale Oct-30 `bike-ride`. Added `add_dependencies` for both, mirroring
+  the `reference.ride_backend_cli` precedent.
+
+Unchanged, verified: `test_golden_hook.py`'s 12 records were already
+`drop`/`python-only` with covering evidence (`reference.golden_support`)
+at the lane base; left as-is. No T01 "records source assertions" strings
+on batch rows; all golden rows carry
+`golden_platforms: [darwin-arm64, linux-aarch64]`; `native_test_id`
+format consistent; all `native_source` paths exist; all 9
+`python-removal.json` landed rows name existing `replacement_paths` and
+real `verification_ids` (`reference.async_close` is a real pre-existing
+CTest at Phase3Ports.cmake:581). Port assertion quality spot-checked
+(async_recovery, numeric_portability, platform_blas): per-test comments
+name the pytest node, `bt::require` mirrors each Python assertion,
+golden consumers end in `node_.done()`, pytest edits are capture-site
+`_golden.record` additions only — no weakening. The `before_close` seam
+in `runtime/accounting.{hpp,cpp}` forwards test fault injection to the
+pre-existing `AsyncCloseRunner::BeforeClose` hook with a defaulted empty
+arg — production call sites unaffected.
+
+### Merge surface and conflict decisions
+
+- `migration/test-port-map.json` — auto-merged; verified
+  programmatically post-merge: **2,394 unique
+  (`source_path`,`source_symbol`) records**, order identical to the
+  integration parent, headers **2394/2378** (`class_test_methods` 16)
+  identical to integration's, canonical bytes (indent=2, ascii, single
+  LF). Row-level union recomputed against both parents: **0 missing /
+  0 wrong / 0 contested** — the lane's 120 qualified rows applied over
+  integration's newer values (numerics_discovery et al., stale on the
+  lane by construction).
+- `migration/python-removal.json` — auto-merged; verified: **535**
+  `path`-keyed rows, union exact (0 missing/wrong/contested) — the
+  lane's 9 landed rows (`planned` → `replacement_landed` with real
+  `replacement_paths`/`verification_ids`) over integration's copy.
+- `native/tests/reference/Phase3Ports.cmake` — auto-merged (adjacent
+  additions in different regions); union verified: integration's four
+  research registrations (`native_research_capture_contracts`,
+  `native_research_frontend_contracts`, `native_research_recording_
+  lifecycle`, `native_research_sweep`) and the lane's nine batch
+  registrations + `add_dependencies` lines all present.
+- `native/cmake/Checks.cmake` — lane untouched; integration's version.
+- `native/src/runtime/accounting.{hpp,cpp}` (test seam),
+  `native/src/batch/summary.cpp` (3.34 NOLINT), the 8 new
+  `native/tests/reference/test_*.cpp`, the two capture-site-edited
+  pytest files, `task-C335-report.md`, 640 golden files
+  (320 darwin-arm64 + 320 linux-aarch64) — byte-identical to the lane.
+- `migration/cpp-linux-completion-evidence.md` — lane did not touch it;
+  integration's version retained (this section is the merge-back
+  append).
+- Pre-existing worktree dirt untouched: `uv.lock` (modified) and
+  `migration/tooling-replacement-map-2026-10-31.md` (untracked) were
+  dirty on the integration worktree before this merge-back; left as-is.
+
+### Ledger deltas (pre-merge `d20ea74c` → merge `b7617d01`)
+
+- `test-port-map.json`: 2,394 → **2,394** records (in-place
+  qualification); headers **2394/2378** unchanged and equal to the
+  actual count. Rows changed: exactly **120**, all in the 9 batch
+  files (golden_hook's 12 drops pre-date the lane). Dispositions:
+  `port` 1272 → **1342** (+70), `golden` 356 → **390** (+34),
+  `drop` 173 → **189** (+16), `planned` 593 → **473** (−120). Empty
+  `collected_node_ids` 1045 → **925** (−120); total collected nodes
+  2426 → **2767** (+341); `T01 records source assertions`
+  placeholders **423 → 423** unchanged.
+- `python-removal.json`: `replacement_landed` 133 → **142** (+9),
+  `planned` 402 → **393** (−9); exactly the 9 batch rows changed.
+
+### Merge-back verification
+
+New/changed registrations (Phase3Ports.cmake diff vs merge-base):
+`reference.execution_identity`, `reference.native_platform_replay`,
+`reference.recording_platform_compat`, `reference.async_recovery`,
+`reference.native_platform_recording`, `reference.native_linux_headless`,
+`reference.native_platform_linkage`, `reference.native_numeric_portability`,
+`reference.native_platform_blas` — 9 tests.
+
+- **darwin-arm64** (`build/native-release`, AppleClang): reconfigure +
+  build OK; `ctest -R` on the 9 registrations → **9/9 Passed, exit 0**
+  (60 s). First run 8/9: `native_linux_headless` failed on a stale
+  Oct-30 `bike-ride` (`unknown PhysicalDriveConfig parameter(s):
+  battery` → empty stdout); rebuilt `bike-ride` → pass; motivated the
+  `add_dependencies` review fix.
+- **linux-aarch64** (container `bike-dev-python-free-cpp`, `/src` tar
+  snapshot synced — `test-port-map.json` sha256 `25a3b35c…` identical
+  host/container): fresh `/build/root-clang` (clang++-18, Ninja, 340
+  targets) built clean; `ctest -R` → **9/9 Passed, exit 0** (69 s).
+  Note: `container.sh configure root-clang root` defaults CXX to
+  `/usr/bin/c++` (GCC 13), which hits documented-baseline
+  `-Werror=null-dereference` on upstream TUs; reconfigured with
+  `CXX=/usr/bin/clang++-18` as the `gate` lane does.
+
+### Assessment
+
+Clean merge: zero conflict hunks; both JSON ledgers verified
+key-exact-union against both parents with canonical bytes restored;
+non-ledger files byte-identical to the owning parent; Phase3Ports union
+verified. Review caught serializer drift, unmeasured/placeholder fields
+on all 104 landed rows, wrong report counters and a missing
+`add_dependencies` — all fixed on lane/d before merge (`d3facffc`,
+`1527177c`). The 9 batch CTests are green on darwin-arm64 and
+linux-aarch64. No `run_tests.sh` — bounded merge-back scope per
+protocol; the integration-level `full` gate remains the scheduled
+accumulation checkpoint.

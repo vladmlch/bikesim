@@ -40441,13 +40441,21 @@
       "line": 704,
       "end_line": 718,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_broken_required_override_fails_before_sweep",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_override_tidy,b29_override_analyzer,b29_override_cppcheck,b29_override_frontends,b29_override_odr",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_broken_required_override_fails_before_sweep[tidy-CLANG_TIDY]",
+        "tests/reference/test_native_check_tools.py::test_broken_required_override_fails_before_sweep[analyzer-ANALYZER_CLANG]",
+        "tests/reference/test_native_check_tools.py::test_broken_required_override_fails_before_sweep[cppcheck-CPPCHECK]",
+        "tests/reference/test_native_check_tools.py::test_broken_required_override_fails_before_sweep[frontends-GXX]",
+        "tests/reference/test_native_check_tools.py::test_broken_required_override_fails_before_sweep[odr-GXX]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s), 4 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_override_tidy,b29_override_analyzer,b29_override_cppcheck,b29_override_frontends,b29_override_odr); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40455,13 +40463,17 @@
       "line": 668,
       "end_line": 691,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_gxx_prefers_gnu_compiler_sibling_over_default",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_gxx_sibling",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_gxx_prefers_gnu_compiler_sibling_over_default"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_gxx_sibling); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40469,13 +40481,17 @@
       "line": 2455,
       "end_line": 2458,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_native_support_modules_match_the_python_reference",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_support_modules",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_native_support_modules_match_the_python_reference"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 1 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_support_modules); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40483,13 +40499,17 @@
       "line": 1542,
       "end_line": 1563,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_qualified_coverage_configure_records_tool_evidence",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_qualified,b29_cov_tool_evidence",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_qualified_coverage_configure_records_tool_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 8 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_qualified,b29_cov_tool_evidence); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40497,13 +40517,17 @@
       "line": 1326,
       "end_line": 1372,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_qualified_rtsan_configure_enables_the_lane",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_rtsan_qualified",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_qualified_rtsan_configure_enables_the_lane"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 16 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_rtsan_qualified); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40511,13 +40535,17 @@
       "line": 1481,
       "end_line": 1496,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_coverage_fails_for_a_non_clang_compiler",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_non_clang",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_coverage_fails_for_a_non_clang_compiler"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_non_clang); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40525,13 +40553,17 @@
       "line": 1453,
       "end_line": 1478,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_coverage_fails_on_a_flag_rejecting_compiler_fixture",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_flag_reject",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_coverage_fails_on_a_flag_rejecting_compiler_fixture"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_flag_reject); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40539,13 +40571,17 @@
       "line": 1499,
       "end_line": 1517,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_coverage_fails_on_an_unresolvable_tool_override",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_bad_override",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_coverage_fails_on_an_unresolvable_tool_override"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_bad_override); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40553,13 +40589,17 @@
       "line": 1520,
       "end_line": 1539,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_coverage_fails_when_the_tool_chain_cannot_merge",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_merge_fail",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_coverage_fails_when_the_tool_chain_cannot_merge"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_merge_fail); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40567,13 +40607,17 @@
       "line": 1243,
       "end_line": 1263,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_rtsan_fails_on_a_flag_rejecting_compiler_fixture",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_rtsan_flag_reject",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_rtsan_fails_on_a_flag_rejecting_compiler_fixture"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_rtsan_flag_reject); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40581,13 +40625,17 @@
       "line": 1266,
       "end_line": 1281,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_rtsan_fails_on_a_known_lacking_compiler",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_rtsan_lacking",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_rtsan_fails_on_a_known_lacking_compiler"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_rtsan_lacking); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40595,13 +40643,17 @@
       "line": 1307,
       "end_line": 1323,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_requested_rtsan_fails_when_the_runtime_is_unresolvable",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_rtsan_no_runtime",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_requested_rtsan_fails_when_the_runtime_is_unresolvable"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 3 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_rtsan_no_runtime); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40609,13 +40661,17 @@
       "line": 1566,
       "end_line": 1620,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_rtsan_control_source_reports_the_sanitizer_diagnostic",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_rtsan_control",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_rtsan_control_source_reports_the_sanitizer_diagnostic"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 8 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_rtsan_control); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40623,13 +40679,17 @@
       "line": 1882,
       "end_line": 1887,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema1_context_remains_supported",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema1_supported",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema1_context_remains_supported"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema1_supported); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40637,13 +40697,17 @@
       "line": 2071,
       "end_line": 2078,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_capability_enabled_without_support_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_rtsan_unsupported",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_capability_enabled_without_support_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_rtsan_unsupported); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40651,13 +40715,17 @@
       "line": 2211,
       "end_line": 2219,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_capability_evidence_rejects_empty_object",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_empty_evidence",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_capability_evidence_rejects_empty_object"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_empty_evidence); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40665,13 +40733,17 @@
       "line": 1869,
       "end_line": 1879,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_context_loads_on_matching_host",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_host",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_context_loads_on_matching_host"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 6 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_host); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40679,13 +40751,17 @@
       "line": 2035,
       "end_line": 2044,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_darwin_sysroot_drift_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_sysroot_drift",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_darwin_sysroot_drift_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_sysroot_drift); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40693,13 +40769,17 @@
       "line": 2153,
       "end_line": 2172,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_enabled_sanitizer_records_a_real_runtime",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_enabled",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_enabled_sanitizer_records_a_real_runtime"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_enabled); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40707,13 +40787,17 @@
       "line": 2175,
       "end_line": 2188,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_enabled_sanitizer_requires_requested",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_not_requested",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_enabled_sanitizer_requires_requested"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_not_requested); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40721,13 +40805,17 @@
       "line": 2099,
       "end_line": 2112,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_enabled_sanitizer_runtime_must_be_recorded",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_runtime_null",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_enabled_sanitizer_runtime_must_be_recorded"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_runtime_null); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40735,13 +40823,17 @@
       "line": 1941,
       "end_line": 1966,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_explicit_sysroot_directory_is_accepted",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_explicit_sysroot",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_explicit_sysroot_directory_is_accepted"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 1 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_explicit_sysroot); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40749,13 +40841,17 @@
       "line": 2047,
       "end_line": 2054,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_invalid_stdlib_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_bad_stdlib",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_invalid_stdlib_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_bad_stdlib); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40763,13 +40859,17 @@
       "line": 2414,
       "end_line": 2423,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_absent_compile_database_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_no_db",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_absent_compile_database_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_no_db); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40777,13 +40877,17 @@
       "line": 1890,
       "end_line": 1906,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_context_loads_and_records_no_sdk",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_linux_loads",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_context_loads_and_records_no_sdk"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 6 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_linux_loads); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40791,13 +40895,17 @@
       "line": 1988,
       "end_line": 2000,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_context_must_not_record_sdk",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_linux_sdk",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_context_must_not_record_sdk"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_linux_sdk); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40805,13 +40913,17 @@
       "line": 2288,
       "end_line": 2300,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_duplicate_translation_unit_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_dup_tu",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_duplicate_translation_unit_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_dup_tu); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40819,13 +40931,17 @@
       "line": 1909,
       "end_line": 1920,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_entries_without_sysroot_validate",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_entries_no_sysroot",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_entries_without_sysroot_validate"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 1 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_entries_no_sysroot); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40833,13 +40949,18 @@
       "line": 2272,
       "end_line": 2285,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_invalid_library_path_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_library_path_missing,b29_library_path_dir",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_invalid_library_path_fails[missing-file]",
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_invalid_library_path_fails[plain-directory]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_library_path_missing,b29_library_path_dir); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40847,13 +40968,19 @@
       "line": 2393,
       "end_line": 2411,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_malformed_command_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_bad_args,b29_linux_bad_cmd,b29_linux_no_cmd",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_malformed_command_fails[bad-arguments]",
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_malformed_command_fails[bad-command]",
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_malformed_command_fails[no-command]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_bad_args,b29_linux_bad_cmd,b29_linux_no_cmd); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40861,13 +40988,17 @@
       "line": 2018,
       "end_line": 2029,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_missing_sysroot_path_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_missing_sysroot",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_missing_sysroot_path_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_missing_sysroot); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40875,13 +41006,17 @@
       "line": 2303,
       "end_line": 2326,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_missing_translation_unit_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_missing_tu",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_missing_translation_unit_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_missing_tu); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40889,13 +41024,17 @@
       "line": 2370,
       "end_line": 2387,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_relative_dependency_path_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_rel_include",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_relative_dependency_path_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_rel_include); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40903,13 +41042,17 @@
       "line": 2255,
       "end_line": 2266,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_stale_compiler_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_stale_compiler",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_stale_compiler_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_stale_compiler); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40917,13 +41060,17 @@
       "line": 1923,
       "end_line": 1938,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_sysroot_argument_is_rejected",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_linux_sysroot_arg",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_sysroot_argument_is_rejected"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_linux_sysroot_arg); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40931,13 +41078,17 @@
       "line": 2003,
       "end_line": 2015,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_wrong_sdk_source_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_linux_sdk_source",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_wrong_sdk_source_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_linux_sdk_source); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40945,13 +41096,18 @@
       "line": 2347,
       "end_line": 2367,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_wrong_selected_flags_fail",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_gnu_std,b29_linux_omitted_option",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_wrong_selected_flags_fail[extensions-std]",
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_wrong_selected_flags_fail[omitted-option]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_gnu_std,b29_linux_omitted_option); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40959,13 +41115,17 @@
       "line": 2329,
       "end_line": 2341,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_linux_wrong_target_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_linux_wrong_target",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_linux_wrong_target_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_linux_wrong_target); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40973,13 +41133,17 @@
       "line": 2222,
       "end_line": 2229,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_missing_numerics_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_no_numerics",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_missing_numerics_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_no_numerics); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -40987,13 +41151,17 @@
       "line": 1969,
       "end_line": 1976,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_missing_platform_record_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_no_platform",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_missing_platform_record_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_no_platform); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41001,13 +41169,17 @@
       "line": 1979,
       "end_line": 1985,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_platform_host_mismatch_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_host_mismatch,b29_schema2_foreign_system",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_platform_host_mismatch_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_host_mismatch,b29_schema2_foreign_system); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41015,13 +41187,17 @@
       "line": 2191,
       "end_line": 2197,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_sanitizer_compiler_identity_required",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_no_compiler_id",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_sanitizer_compiler_identity_required"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_no_compiler_id); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41029,13 +41205,17 @@
       "line": 2141,
       "end_line": 2150,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_sanitizer_runtime_must_be_a_file",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_runtime_dir",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_sanitizer_runtime_must_be_a_file"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_runtime_dir); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41043,13 +41223,17 @@
       "line": 2132,
       "end_line": 2138,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_sanitizer_runtime_must_be_absolute",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_runtime_relative",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_sanitizer_runtime_must_be_absolute"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_runtime_relative); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41057,13 +41241,17 @@
       "line": 2122,
       "end_line": 2129,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_sanitizer_runtime_must_exist",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_runtime_missing",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_sanitizer_runtime_must_exist"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_runtime_missing); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41071,13 +41259,17 @@
       "line": 2115,
       "end_line": 2119,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_sanitizer_runtime_record_required",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::t56_ctx_schema2_asan_no_runtime",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_sanitizer_runtime_record_required"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::t56_ctx_schema2_asan_no_runtime); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41085,13 +41277,17 @@
       "line": 2200,
       "end_line": 2208,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_sanitizer_target_may_be_null_or_triple",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_asan_bad_target",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_sanitizer_target_may_be_null_or_triple"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_asan_bad_target); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41099,13 +41295,17 @@
       "line": 2057,
       "end_line": 2068,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_schema2_stdlib_mode_mismatch_fails",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_schema2_stdlib_mode",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_schema2_stdlib_mode_mismatch_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 0 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_schema2_stdlib_mode); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41113,13 +41313,17 @@
       "line": 639,
       "end_line": 665,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_tidy_prefers_configured_compiler_sibling_over_default",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_tidy_sibling",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_tidy_prefers_configured_compiler_sibling_over_default"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_tidy_sibling); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41127,13 +41331,17 @@
       "line": 1284,
       "end_line": 1304,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_unrequested_rtsan_capability_is_explicitly_unsupported",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_rtsan_unrequested",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_unrequested_rtsan_capability_is_explicitly_unsupported"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 7 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_rtsan_unrequested); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_check_tools.py",
@@ -41141,13 +41349,17 @@
       "line": 721,
       "end_line": 738,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_check_tools::test_wrong_family_tool_is_a_selection_error",
-      "native_source": "native/tests/reference/test_native_check_tools.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_wrong_family",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_check_tools.py::test_wrong_family_tool_is_a_selection_error"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 4 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_wrong_family); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_contract_checks.py",
@@ -41155,13 +41367,17 @@
       "line": 310,
       "end_line": 326,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_contract_checks::test_coverage_failing_merge_tool_reports_command_and_log",
-      "native_source": "native/tests/reference/test_native_contract_checks.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_merge_fail",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_contract_checks.py::test_coverage_failing_merge_tool_reports_command_and_log"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 5 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_merge_fail); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_contract_checks.py",
@@ -41169,13 +41385,17 @@
       "line": 329,
       "end_line": 344,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_contract_checks::test_coverage_records_tool_resolution_evidence",
-      "native_source": "native/tests/reference/test_native_contract_checks.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_cov_tool_evidence,b29_cov_qualified",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_contract_checks.py::test_coverage_records_tool_resolution_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 6 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_cov_tool_evidence,b29_cov_qualified); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_contract_checks.py",
@@ -41183,13 +41403,17 @@
       "line": 296,
       "end_line": 307,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_contract_checks::test_coverage_rejects_a_provenance_for_a_different_build",
-      "native_source": "native/tests/reference/test_native_contract_checks.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_prov_wrong_build",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_contract_checks.py::test_coverage_rejects_a_provenance_for_a_different_build"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_prov_wrong_build); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_contract_checks.py",
@@ -41197,13 +41421,17 @@
       "line": 284,
       "end_line": 293,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_contract_checks::test_coverage_rejects_malformed_provenance",
-      "native_source": "native/tests/reference/test_native_contract_checks.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_prov_malformed",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_contract_checks.py::test_coverage_rejects_malformed_provenance"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_prov_malformed); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_contract_checks.py",
@@ -41211,13 +41439,17 @@
       "line": 274,
       "end_line": 281,
       "owner_task": "T53",
-      "native_test_id": "ported::tests::reference::test_native_contract_checks::test_coverage_requires_zero_excluded_native_tests",
-      "native_source": "native/tests/reference/test_native_contract_checks.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
-      "disposition": "planned",
-      "evidence": []
+      "native_test_id": "migration_T56::b29_run_coverage_no_tests",
+      "native_source": "native/tests/migration/migration_T56_check.cmake",
+      "collected_node_ids": [
+        "tests/reference/test_native_contract_checks.py::test_coverage_requires_zero_excluded_native_tests"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s), 2 assert statement(s) in source body; oracle not rerun (batch ports checker/fixture contracts, no live-oracle/golden comparisons)",
+      "comparison_class": "contract",
+      "disposition": "port",
+      "evidence": [
+        "2026-10-31 3.29b2 lane/e: ported to native/tests/migration/migration_T56_check.cmake (migration_T56::b29_run_coverage_no_tests); CTest migration_T56 green on darwin-arm64 (build/native-release, 1630.55s) and linux-aarch64 (container bike-dev-pfc-lane-e /build/root-clang clang++-18, 1451.05s)"
+      ]
     },
     {
       "source_path": "tests/reference/test_native_linux_headless.py",

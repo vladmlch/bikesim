@@ -15124,15 +15124,16 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_native_check_tools.cpp"
+      "native/tests/migration/migration_T56_check.cmake",
+      "native/tests/rtsan_control.cpp"
     ],
     "verification_ids": [
-      "migration_T53",
+      "migration_T56",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "efc5d77e5e1b01eb30aa9d416ee76355fc4cf23069644399742a14d5a99ef137",
     "snapshot_line_count": 1042,
     "tracked": true,
@@ -15181,15 +15182,15 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_native_contract_checks.cpp"
+      "native/tests/migration/migration_T56_check.cmake"
     ],
     "verification_ids": [
-      "migration_T53",
+      "migration_T56",
       "source_assertion_map",
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "3d38164e557c15379480ed5de6753b5130dee0190a7d3507dbfe1d26b4e8b42b",
     "snapshot_line_count": 755,
     "tracked": true,

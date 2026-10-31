@@ -48,7 +48,9 @@ io::Value summarize(std::span<const Job> jobs,std::span<const Result> results,do
     }
     Object codes;for(const auto& [code,count]:counts)codes.emplace_back(std::to_string(code),integer(count));
     Object policy;
-    if(const char* threads=std::getenv("OPENBLAS_NUM_THREADS");threads&&*threads)
+    // getenv is process-wide read-only here: no thread mutates the
+    // environment, so the read cannot race (check_reports.cpp precedent).
+    if(const char* threads=std::getenv("OPENBLAS_NUM_THREADS");threads&&*threads) // NOLINT(concurrency-mt-unsafe)
         policy.emplace_back("OPENBLAS_NUM_THREADS",text(threads));
     return Value{Object{{"jobs",integer(static_cast<std::int64_t>(results.size()))},{"exit_codes",Value{std::move(codes)}},
         {"workers",integer(static_cast<std::int64_t>(workers))},

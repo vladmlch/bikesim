@@ -16373,8 +16373,8 @@
     {
       "source_path": "tests/reference/test_native_pneumatic_tire.py",
       "source_symbol": "test_pneumatic_probe_and_clock",
-      "line": 832,
-      "end_line": 909,
+      "line": 1052,
+      "end_line": 1137,
       "owner_task": "T52",
       "native_test_id": "reference.native_pneumatic_tire::test_pneumatic_probe_and_clock",
       "native_source": "native/tests/reference/test_native_pneumatic_tire.cpp",
@@ -16383,7 +16383,8 @@
       "comparison_class": "bitwise-oracle",
       "disposition": "planned",
       "evidence": [
-        "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted"
+        "2026-10-24 3.12b lane/a: STOPPED \u2014 baseline-red on the unmodified oracle (documented baseline family); C++ port authored in native/tests/reference/test_native_pneumatic_tire.cpp but parked ([[maybe_unused]], not registered in main) until the oracle is green and goldens exist on both platforms; partial sidecars deleted",
+        "2026-10-31 FT-6 lane/d2 @ 3901bdb4: root-caused to the FT-1 staged-input family, not a step.cpp tire probe_compute/compute defect \u2014 the recorded 'interval 1: bitwise mismatch' fired inside the advance() parity loop before probe_step_inputs was ever reached. create_native_ride -> capture_bootstrap dropped the spindle _coast_hold_nm, so the native rider controller replayed a different weld-press servo hold and the first control interval diverged bitwise. Reverting 466b4996 (dropping the optional 19th coast_hold_nm key) reproduces 'AssertionError: interval 1: bitwise mismatch' exactly; at lane/d2 the node is green on darwin-arm64 (62.76 s) and linux-aarch64 (71.11 s). Stays planned \u2014 T52 per-platform golden capture + C++ registration remain the port gate."
       ]
     },
     {

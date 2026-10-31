@@ -18224,11 +18224,18 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_native_runtime.cpp"
+      "native/tests/migration/migration_T336_portability.cmake",
+      "native/tests/sanitizer_control.cpp",
+      "native/tests/rtsan_control.cpp"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T336_portability",
+      "sanitizer_clean_control",
+      "rtsan_clean_control",
+      "sanitizer_negative_control"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "068d931d0a1fde15ce12ad3e67c6d04583c3420784facda870dabce5365319c7",
     "snapshot_line_count": 1308,
     "tracked": true,
@@ -18243,11 +18250,13 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_native_toolchain.cpp"
+      "native/tests/migration/migration_T336_portability.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "migration_T336_portability"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "4d4a8706c64aee9dcb548db8305263618bd03ec99b2a063c44399f19fbcfd622",
     "snapshot_line_count": 644,
     "tracked": true,
@@ -18281,11 +18290,14 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_offline_bundle.cpp"
+      "packaging/CMakeLists.txt",
+      "native/tests/package/package_smoke.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "package_smoke"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "6c19c7f748cfc966b1486b62db6308e6dec3340db7eedd78f2ac137497ece726",
     "snapshot_line_count": 570,
     "tracked": true,
@@ -18300,11 +18312,16 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_offline_install.cpp"
+      "packaging/CMakeLists.txt",
+      "native/tests/package/package_smoke.cmake",
+      "native/tests/install/install_smoke.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "package_smoke",
+      "install_smoke"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "25f9b0bdb73b93d98de96934f8fefc45bac68a74f69e36ec4974673be1e95954",
     "snapshot_line_count": 733,
     "tracked": true,
@@ -18319,11 +18336,14 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_offline_tools.cpp"
+      "packaging/CMakeLists.txt",
+      "native/tests/package/package_smoke.cmake"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "package_smoke"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "ed3e74fdd7db98353af72c4bca44d5d1f8544fb630ec7063e6efe869b0be2abd",
     "snapshot_line_count": 182,
     "tracked": true,
@@ -18390,11 +18410,16 @@
     "owner_task": "T53",
     "action": "port_assertions_and_fixture_orchestration",
     "replacement_paths": [
-      "native/tests/reference/test_qualification_report.cpp"
+      ".github/workflows/portability.yml",
+      "tools/ci_presets.sh",
+      "docs/releases/python-free-qualification.md"
     ],
-    "verification_ids": [],
+    "verification_ids": [
+      "source_assertion_map",
+      "release_capability_matrix"
+    ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "45253fdf9774b3103610e8f66f0159eddf7d0a2c028fb1c3796ce85d26e56d9a",
     "snapshot_line_count": 743,
     "tracked": true,

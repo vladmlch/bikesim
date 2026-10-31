@@ -105,6 +105,10 @@ def _synthetic_ctx(tmp_path):
             'loss_j': 0., 'active_work_j': 0., 'external_work_j': 0.,
             'solver_work_j': 0., 'muscle_signed_j': 0., 'muscle_positive_j': 0.,
             'motor_signed_j': 0., 'motor_positive_j': 0., 'constraint_absolute_j': 0.,
+            # F1 closure channel: cumulative accumulators the real runtime
+            # starts at 0. (PhysicalRuntime.__init__/reset), same as every
+            # other work counter carried by this fresh-episode context.
+            'closure_signed_j': 0., 'closure_absolute_j': 0.,
             'history': None, 'model_status': None}
 
 

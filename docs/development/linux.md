@@ -54,7 +54,7 @@ list. macOS arm64 is a separately qualified lane, not evidence for Linux.
   Linux-native toolchain` before dependency discovery. Likewise no
   `DYLD_*`, Accelerate, or `mjpython` re-exec applies.
 
-## Container lane (C++ + Linux completion)
+### Container lane (C++ + Linux completion)
 
 The committed recipe is in `tools/linux/Dockerfile`; the driver is
 `tools/linux/container.sh`. It targets Docker linux/arm64 and pins Ubuntu
@@ -121,7 +121,7 @@ and its C++ checker have their qualification gate in Phase 2. Until that
 gate passes, use the Python checker invocations listed in Task 1.19 for
 Linux binding sweeps.
 
-### Python-free root graph: Phase 2 source implementation
+#### Python-free root graph: Phase 2 source implementation
 
 The 2026-10-21 Phase 2 changes use the same `BikePlatform`,
 `BikeCompilerPolicy`, schema-2 dependency-lock selection and check-context

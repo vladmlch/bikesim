@@ -11321,3 +11321,94 @@ insertion); lane/c3's own comment refs (873-931) match the merged file.
   refresh is a dedicated capture task, and a darwin-only refresh
   would leave the platform pair asymmetric regardless.
 - No docker/container.sh/linux runs — coordinator guard honored.
+
+## 2026-10-31 — lane/d4 FT-7 T09/T10 frozen-oracle triage: verified recapture + one real port defect (`lane/d4`)
+
+- Reproduced blockers at integration tip `907687f1` (Darwin arm64):
+  `migration_T09` FAIL "post-advance integration vector matches the
+  oracle" (exit 8); `migration_T10` FAIL "first transition matches the
+  Python oracle" (exit 8).
+- Bisect: the T01-era `bootstrap/welded` and `research/delayed_bootstrap`
+  captures predate the reviewed welded-plant physics changes (F1
+  `ec9b031e` + fix rounds, FT-3 `96dad67c`/`a0e35355`, `b21c63ec`
+  PHASE 3). Committed welded model.mjb sha `f8e48e9e…`; a fresh
+  `make_python_ride(strict=False, decimation=1)` capture produces
+  `fd757045…` — fix-explained model drift.
+- Live-oracle parity proofs BEFORE any recapture (production numba
+  kernels, `NATIVE_TEST_BUILD_PATH=native/build`):
+  - T09: `NativeRideRuntime` over a fresh `capture_bootstrap` advanced
+    4 steps with `RideControl(motor=25, human=10)` == live
+    `advance_python` — **0/292 integration elements divergent** at
+    atol=rtol=1e-9; fresh t=0 state restored **bitwise**.
+  - T10: `NativeResearchRuntime` staged on the `_t10_capture` docs ==
+    live research env (welded physics, flat track, seed 210,
+    `--actuator-delay 0.01`, `--diagnostic-model-limits`, `--assist`)
+    across **3 transitions / 4 observations, 0 divergent fields** at
+    1e-9 (step 24, t=0.03).
+- **Classification: (a) stale frozen fixtures — verified recapture.**
+  `tools/migration/_ft7_recapture.py` re-runs RCP-01 verbatim
+  (`_bootstrap_payload` + `advance_python x4` + `sim.reset() x2`) and
+  `_t10_capture` + RCP-03 (`env.json` + 3 `env.step` transitions)
+  through `capture_reference.FixtureWriter`/`write_canonical` — the
+  same tagged codec and file layout. Structural payloads are unchanged
+  (state.arrays a004–a014 identical across the boundary); only
+  physics-dependent floats moved. Reset digests stay byte-identical
+  (reset/1 == reset/2). `oracle-manifest.json` file records rebuilt
+  from the writer's actual records; inputs re-pointed to this
+  worktree's TOMLs (`viewer_physics_welded.toml` sha
+  `6385864c…`→`b2123f3…`); `delayed_bootstrap.expected` corrected to
+  `valid: true` (the healthy plant diagnoses no model-limits
+  violation). `test-port-map.json` evidence appended for
+  `owned_ride_runtime_bootstrap_contract` (T09),
+  `owned_research_bootstrap_contract` (T10),
+  `test_tire_channel_parity_across_backends`,
+  `test_strict_flush_rejection_preserves_retained_evidence`.
+- **Classification: (b) real defect exposed by the recapture — fixed.**
+  `reference.native_runtime_accounting`'s effort-fold check
+  (`observe_effort` vs `SpindleController::solved_effort`) diverged at
+  `rider_joint_power_violations` (solved 1 violation, observed 0 at
+  260 W hip power). Root cause: `spindle_controller.cpp` solved_effort
+  read the raw `config_.joint_power_limit_w` (250 W capability cap)
+  while the oracle `rider_effort.py joint_effort_limits` and the
+  accounting path read the resolved `delivered_joint_budget_w()`
+  (375 W declared re-band). Under the old capture
+  `delivered_joint_power_budget_w` was null so both reads coincided at
+  250 W — the defect was invisible until the F1-era config declared
+  the re-band. Fix: `config_.delivered_joint_budget_w()` at the
+  violation check (one field, mirrors
+  `physical_config.py:508-512`).
+- Oracle-stale test semantics retired with evidence (not suppressed):
+  - `test_t10.cpp`: the re-scoped plant emits **no** pending reference
+    rejection across the captured windows (transitions now carry
+    `model_valid=true`); the seam asserts drain-empty + drain-at-most-
+    once. Positive drain coverage stays in
+    `reference.native_runtime_accounting` (welded floor pin,
+    `weld_foot_min_normal_n=100`).
+  - `test_native_recording_retention.cpp`: the strict-flush check now
+    pins the same floor via `welded_runtime(floor_pin=true)` in
+    `recording_test_support.hpp` — the healthy fixture no longer trips
+    the monitor inside 800 steps.
+  - `test_tire_channel_parity_across_backends`: darwin-arm64 golden
+    pair re-recorded (BIKE_GOLDEN_CAPTURE) — the recorded docs pin
+    `model_digest` to the committed `bootstrap/welded/model.mjb`
+    image; the node's live pytest run passed and the whole
+    `test_native_numeric_completion.py` file passed except the
+    ledger-documented `float32_shifting` stale pin
+    (disposition `drop`).
+- Byte-flip negative controls: sign-bit flip in
+  `steps_control_integration.f64` → T09 exit 8; byte corruption in
+  `delayed_bootstrap/state.arrays/a000.f64` → T10 exit 8; fixtures
+  restored byte-exact.
+- Verification (both graphs): `native/build` ctest
+  T05/T08/T09/T10/T12 = 5/5 pass; `build/native-release` ctest
+  T05/T08/T09/T10/T12 + `native_numeric_domains` +
+  `native_numeric_completion` + `monitor_strictness` +
+  `native_runtime_bootstrap` + `native_recording_retention` +
+  `native_runtime_accounting` + `batch` + `native_spindle_controller`/
+  `native_rider_allocation`/`native_rider_dynamics`/
+  `native_rider_forces` — all green (exit 0). Final
+  `bash tools/run_tests.sh native` gate result recorded in
+  `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-FT7-report.md`.
+- No docker/container use — coordinator guard honored; Darwin only.
+  Linux-aarch64 legs of the recaptured fixtures/golden pair deferred
+  with the linux wave (same convention as FT-3 `3b32934f`).

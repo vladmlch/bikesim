@@ -276,7 +276,11 @@ void test_failed_sealing_leaves_active_evidence_available() {
 }
 
 void test_strict_flush_rejection_preserves_retained_evidence() {
-    const auto rig = welded_runtime("full", 7, /*strict=*/true);
+    // The healthy welded plant no longer trips the monitor inside 800
+    // steps — pin weld_foot_min_normal_n=100 (the same trigger
+    // welded_floor_docs uses) so the strict rejection is deterministic.
+    const auto rig = welded_runtime("full", 7, /*strict=*/true,
+                                    /*floor_pin=*/true);
     throws<runtime::InvalidReferenceRun>([&] { advance(*rig->runtime, 800); }, "",
                                        "strict accounting rejection propagates");
     const auto episode = rig->runtime->seal_episode();

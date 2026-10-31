@@ -509,7 +509,8 @@ inline void replace_config_key(std::string &text, std::string_view key,
 inline std::unique_ptr<WeldedRuntime> welded_runtime(
         std::optional<std::string> retention = std::nullopt,
         std::optional<int> decimation = std::nullopt,
-        bool strict = false) {
+        bool strict = false,
+        bool floor_pin = false) {
     auto rig = std::make_unique<WeldedRuntime>();
     // state.json declares payloads capture-root-relative
     // ("bootstrap/welded/state.arrays/…"); resolve_declared climbs ancestors,
@@ -532,6 +533,13 @@ inline std::unique_ptr<WeldedRuntime> welded_runtime(
         replace_config_key(config, "measurement_decimation", "1",
                            std::to_string(*decimation));
     if (strict) replace_config_key(config, "strict", "false", "true");
+    // The re-scoped welded plant is healthy: a strict run needs the same
+    // weld_foot_min_normal_n=100 pin welded_floor_docs applies, so the
+    // weld-envelope monitor trips a deterministic early violation instead
+    // of relying on the pre-F1 fixture's incidental rejection.
+    if (floor_pin)
+        replace_config_key(config, "weld_foot_min_normal_n", "-1050.0",
+                           "100.0");
     {
         std::ofstream out(config_path);
         out << config;

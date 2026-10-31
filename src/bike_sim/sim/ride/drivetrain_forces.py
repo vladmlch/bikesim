@@ -204,6 +204,9 @@ class DrivetrainForceApplier:
         # The pending state derives entirely from committed state -- applied
         # ratio vs ``shifting.gear_ratio`` and ``cut_remaining_s`` -- so a
         # snapshot restored mid-window resumes the sweep with no extra field.
+        # The sprocket-geometric hub is the exception: its ratio must
+        # identify an integer rear sprocket, so it keeps the single-step
+        # landing it always had and only the ideal hub sweeps.
         applied_ratio = (self.ideal_hub.ratio if self.ideal_hub is not None
                          else self.shifting.gear_ratio)
         required = float(data.qvel[wheel_dof]) / applied_ratio * 60. / (2. * pi)
@@ -217,24 +220,33 @@ class DrivetrainForceApplier:
             # rejected gear change leaves the hub's own staging rolled back,
             # so the candidate (EMAs, counters, gear) is published only after
             # the hub commit succeeds.
+            from bike_sim.sim.ride.geometric_freehub import GeometricFreehubConstraint
+            geometric = isinstance(self.ideal_hub, GeometricFreehubConstraint)
             shifter = self.shifting.clone()
             shifted = shifter.update(float(data.qvel[crank_dof]) * 60. / (2. * pi),
                 required, dt, pedaling=enabled and effort > 0., braking=braking,
                 rear_in_contact=rear_in_contact, rear_slip_mps=rear_slip_mps)
+            if shifted and geometric:
+                # The sprocket-geometric model resolves only integer cogs:
+                # an intermediate sweep ratio is not representable, so the
+                # committed ratio still lands in one step at the shift
+                # instant -- and still lands before the candidate publishes.
+                self.ideal_hub.set_ratio(model, data, shifter.gear_ratio)
             self.shifting = shifter
             if shifted:
                 self.shift_time_s = float(data.time)
-            if self.shifting.cut_remaining_s > 0.:
-                remaining = self.shifting.cut_remaining_s + dt
-                # Each step retires the fraction dt/remaining of the ratio
-                # gap, so the applied ratio reaches the decision exactly when
-                # the cut does -- a linear sweep, and set_ratio's own early
-                # return makes a zero gap free.
-                self.ideal_hub.set_ratio(model, data, self.ideal_hub.ratio
-                    + (self.shifting.gear_ratio - self.ideal_hub.ratio) * dt / remaining)
-            elif self.ideal_hub.ratio != self.shifting.gear_ratio:
-                # A restored or otherwise stranded pending gap still lands.
-                self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
+            if not geometric:
+                if self.shifting.cut_remaining_s > 0.:
+                    remaining = self.shifting.cut_remaining_s + dt
+                    # Each step retires the fraction dt/remaining of the ratio
+                    # gap, so the applied ratio reaches the decision exactly when
+                    # the cut does -- a linear sweep, and set_ratio's own early
+                    # return makes a zero gap free.
+                    self.ideal_hub.set_ratio(model, data, self.ideal_hub.ratio
+                        + (self.shifting.gear_ratio - self.ideal_hub.ratio) * dt / remaining)
+                elif self.ideal_hub.ratio != self.shifting.gear_ratio:
+                    # A restored or otherwise stranded pending gap still lands.
+                    self.ideal_hub.set_ratio(model, data, self.shifting.gear_ratio)
             required = float(data.qvel[wheel_dof]) / self.ideal_hub.ratio * 60. / (2. * pi)
         # The pedaling policy advances on a detached candidate; a rejected
         # ceiling (or a mid-update failure) leaves the live policy untouched

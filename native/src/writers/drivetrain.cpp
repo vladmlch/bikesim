@@ -64,10 +64,23 @@ namespace drivetrain {
         if (!s.ideal_hub)
             return;
         const TransmissionSnapshot &hub = *s.ideal_hub;
-        // The ideal-hub ratio is always the shifter's current gear.
-        if (hub.ratio != static_cast<double>(config.policies.gearing.front_teeth) /
-                         s.shifting.rear_teeth)
+        // The ideal-hub ratio sits at the shifter's current gear outside a
+        // shift cut. While the cut sweeps it moves linearly between the
+        // from/to cog ratios (drivetrain_forces.py), so the valid domain is
+        // the closed interval the two cogs bound — the geometric model's
+        // single-step landing still sits exactly on an endpoint.
+        const double to_ratio = static_cast<double>(config.policies.gearing.front_teeth) /
+                                s.shifting.rear_teeth;
+        if (s.shifting.cut_remaining_s > 0.) {
+            const double from_ratio =
+                    static_cast<double>(config.policies.gearing.front_teeth) /
+                    s.shifting.from_teeth;
+            if (hub.ratio < std::min(from_ratio, to_ratio) ||
+                hub.ratio > std::max(from_ratio, to_ratio))
+                throw std::invalid_argument("transmission ratio/gear mismatch");
+        } else if (hub.ratio != to_ratio) {
             throw std::invalid_argument("transmission ratio/gear mismatch");
+        }
         if (config.transmission_model == "geometric_ideal_mid_drive") {
             if (hub.rear_teeth != s.shifting.rear_teeth)
                 throw std::invalid_argument("transmission rear-teeth mismatch");
@@ -737,7 +750,17 @@ namespace drivetrain {
                                                PedalingPolicy &pedaling) {
         const auto crank = crank_joint_, wheel = wheel_joint_;
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
-        double required = v[static_cast<std::size_t>(wheel.dof)] / shifting_.gear_ratio() *
+        // The physically applied ratio is the freehub's own, not the
+        // shifter's committed decision (drivetrain_forces.py): spec S6's
+        // shift transaction spends the declared shift time moving the chain
+        // between cogs, so on the ideal hub the effective ratio sweeps
+        // through the unload window instead of flipping in one step. The
+        // sprocket-geometric model resolves only integer cogs — an
+        // intermediate sweep ratio is not representable, so its committed
+        // ratio still lands in the single step it always did.
+        const double applied = ideal_hub_ ? ideal_hub_->ratio()
+                                          : shifting_.gear_ratio();
+        double required = v[static_cast<std::size_t>(wheel.dof)] / applied *
                           60. / (2. * std::numbers::pi);
         const double effort = in.control.human_torque_nm.value_or(config_.human_torque_nm);
         const bool enabled = in.active && in.control.rider_enabled && effort_;
@@ -755,13 +778,12 @@ namespace drivetrain {
             const bool shifted = shifting_scratch_.update(
                 v[static_cast<std::size_t>(crank.dof)] * 60. / (2. * std::numbers::pi),
                 required, in.dt, enabled && effort > 0., in.braking, in.contact, in.slip);
-            if (shifted) {
+            const auto stage_ratio = [this, &bank](double ratio) {
                 // Compose onto the candidate already staged this tick or
                 // seed the bank slot from the live transmission.
                 if (bank.ideal_hub_staged) {
-                    ideal_hub_->stage_ratio_into(
-                        data_, shifting_scratch_.gear_ratio(),
-                        engaged(bank.ideal_hub));
+                    ideal_hub_->stage_ratio_into(data_, ratio,
+                                                 engaged(bank.ideal_hub));
                 } else {
                     // Engage-once: the slot keeps its vectors/lanes across
                     // ticks; emplace() would release them for no reason.
@@ -769,14 +791,44 @@ namespace drivetrain {
                             bank.ideal_hub ? *bank.ideal_hub
                                            : bank.ideal_hub.emplace();
                     ideal_hub_->make_update_into(update);
-                    ideal_hub_->stage_ratio_into(
-                        data_, shifting_scratch_.gear_ratio(), update);
+                    ideal_hub_->stage_ratio_into(data_, ratio, update);
                     bank.ideal_hub_staged = true;
                 }
-                bank.snapshot.shift_time_s = data_->time;
-            }
+            };
+            if (shifted && geometric_hub_)
+                // Integer cogs only: the committed gear lands at the shift
+                // instant, ahead of the candidate's publication — the same
+                // single step the oracle's geometric hub takes.
+                stage_ratio(shifting_scratch_.gear_ratio());
             bank.shifting = shifting_scratch_.state();
-            required = v[static_cast<std::size_t>(wheel.dof)] / shifting_scratch_.gear_ratio() *
+            if (shifted)
+                bank.snapshot.shift_time_s = data_->time;
+            if (!geometric_hub_) {
+                double staged = applied;
+                if (shifting_scratch_.state().cut_remaining_s > 0.) {
+                    const double remaining =
+                            shifting_scratch_.state().cut_remaining_s + in.dt;
+                    // Each step retires the fraction dt/remaining of the
+                    // ratio gap, so the applied ratio reaches the decision
+                    // exactly when the cut does — a linear sweep, and the
+                    // staging call's own early return makes a zero gap free.
+                    staged = applied + (shifting_scratch_.gear_ratio() - applied) *
+                                       in.dt / remaining;
+                } else if (applied != shifting_scratch_.gear_ratio()) {
+                    // A restored or otherwise stranded pending gap still lands.
+                    staged = shifting_scratch_.gear_ratio();
+                }
+                if (staged != applied)
+                    stage_ratio(staged);
+            }
+            // The staged candidate IS the ratio the pedaling update
+            // observes — Python's set_ratio publishes immediately, so a
+            // tick carrying a staged ratio reads it from the candidate;
+            // otherwise it reads the live applied ratio.
+            const double published = bank.ideal_hub_staged
+                                         ? bank.ideal_hub->state.ratio
+                                         : applied;
+            required = v[static_cast<std::size_t>(wheel.dof)] / published *
                        60. / (2. * std::numbers::pi);
             torque_factor = shifting_scratch_.torque_factor();
         }

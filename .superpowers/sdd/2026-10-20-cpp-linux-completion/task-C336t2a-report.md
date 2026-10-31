@@ -172,7 +172,7 @@ committed).
 | `bash tools/run_tests.sh native` (darwin-arm64), run 2 | **exit 8 at the CTest phase** — build + all sweeps green, CTest **60/62**; the 2 reds are `migration_T09` + `migration_T10`, baseline-verbatim frozen-oracle failures (see below) |
 | post-abort phase: extension resolution (`load_native`) | green — `native/build/bike_native.cpython-313-darwin.so` |
 | post-abort phase: `bike-native-checks --kind contracts --build native/build` | **green — 12/12** (provider_binding_boundary, manifest_selection, loader_provenance, iso_language_mode_and_hardening, analysis_policy, selected_artifact_assertions, contract_source_manifest_membership, ctest_contract_cases, engine_call_wrappers, benchmark_manifest_membership, pure_core_python_free, hot_kernel_dependency_free) |
-| post-abort phase: `pytest tests/reference/test_native_*.py tests/reference/test_golden_episode*.py` (`run_with_native_runtime`, 3,086 items) | **in flight at report commit** — progressed past `test_native_check_tools.py` with no failures emitted; currently inside `test_standalone_header_sweep_compiles_first_party_headers` (the designed ~85–90 min serial full-header sweep, `timeout=7200`), which is running long on a load-avg-13 host |
+| post-abort phase: `pytest tests/reference/test_native_*.py tests/reference/test_golden_episode*.py` (`run_with_native_runtime`, 3,086 items) | **3,204 passed / 41 failed / 1 skipped, 6,953 s** — all 41 reds are live-parity/frozen-oracle family and **A/B-verified baseline-verbatim**: every one appears in the `pfc-gate` `.pytest_cache` `lastfailed` recorded at `d20ea74c` (this batch's base, zero batch changes); zero reds attributable to this batch |
 
 Notes on the Linux run: sanitizer_negative_control is registered only
 under `NATIVE_SANITIZE=ON` (verified in the Darwin asan tree instead);
@@ -245,7 +245,19 @@ remaining gate phases were run standalone under the identical
 `NATIVE_TEST_BUILD_PATH=native/build` / `native_runtime.py run`
 environment: extension resolution green, `--kind contracts` **12/12
 green**, and the `test_native_*`/`test_golden_episode*` pytest phase —
-see the table row above.
+3,204/41/1 (see the table row above). The 41 pytest reds span
+`test_native_{distributed_tire,numeric_completion,pneumatic_tire,
+research_capture,research_environment,research_recording,
+ride_frontend,runtime_commands,runtime_rollout,runtime_step,
+viewer_snapshot}.py` — the live-parity/frozen-oracle family the
+evidence doc has tracked as documented reds (the "A/B-verified
+pre-existing `test_native_runtime_step.py` live-parity reds" entry);
+set-intersection against `pfc-gate`'s `lastfailed` at `d20ea74c` is
+exact (41/41 present), so none are batch-attributable. The Python
+files this batch migrates (`tests/portability/test_{native_toolchain,
+native_runtime,offline_bundle,offline_install,offline_tools,
+qualification_report}.py`) contribute zero entries to either failure
+list.
 
 ## Port-authored bugs found and fixed during red→green
 
@@ -299,6 +311,14 @@ see the table row above.
 
 ## Unresolved concerns
 
+- `run_tests.sh native` cannot exit 0 on this host while the
+  documented baseline reds stand: the CTest phase fails at
+  `migration_T09`/`migration_T10` (frozen-oracle, A/B-verified
+  baseline-verbatim — see above), and the later pytest phase carries
+  the 41-red live-parity family — also baseline-verbatim at
+  `d20ea74c`. Batch scope is unaffected; all reds pre-date this
+  batch's base and none intersect its changed sources. Fixing them is
+  upstream physics/oracle work outside this tranche.
 - `rtsan_negative_control` has no executed evidence on this host
   (AppleClang lacks RTSan; the context records `supported:false`). No
   ledger record routes to it; it runs on the upstream-clang lanes.
@@ -306,3 +326,6 @@ see the table row above.
 - Qualification lanes in `docs/releases/python-free-qualification.md`
   remain "Not run" — this batch lands the report-generator's native
   successor (checklist + workflow), not release qualification itself.
+- `stash@{0}` ("stale check_* crumbs from dead agent") remains
+  unapplied — its meaningful content landed as `fe5f65ac`; drop is a
+  maintainer action outside this batch.

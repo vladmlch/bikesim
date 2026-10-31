@@ -10758,3 +10758,133 @@ Watch items: the 4-argument `g++`-alias skip and the missing
 rejection/probe arms have no live exercise in the qualified lanes;
 the `/tmp`-style direct script invocation requires SCRATCH_DIR's parent
 to be a real build dir (registered/CTest invocation is unaffected).
+
+## 2026-10-31 — lane/c3 FT-3 delivery fix (`96dad67c`) + Task 3.09 Option-1 measured evidence
+
+Scope: FT-3 delivered/sensed-torque regression in the realistic-pedelec
+shift path and the Task 3.09 acceptance slice, under the Option-1 ruling
+(honest rider-plant delivery fix; no threshold, constant, golden, or
+scope changes). Python oracle and native mirror changed together
+(ADR-0003).
+
+### The fix (Python + native mirror, `96dad67c`)
+
+Three delivery-path defects, each an honest physics gap:
+
+1. `DrivetrainForceApplier`: the applied freehub ratio swept
+   instantaneously at shift commit, so the crank violated the new
+   boundary by the whole gear step and the solved catch read at the weld
+   as a ~50-100 N·m inertial spike followed by a freewheel collapse. The
+   applied ratio now sweeps linearly through the declared 0.2 s cut
+   (`set_ratio` staged per tick), keeping the chain engaged; pending
+   state derives from committed state only (no new serialized field).
+2. `PedalingPolicy`: the limb-velocity wish was the raw wheel-implied
+   cadence, so a wheel-slip burst commanding ~200 rpm was issued to the
+   legs' IK/PD. The wish is now `min(required, cadence_ema)` — instant
+   down-tracking (the engaged drivetrain decelerates the legs anyway) but
+   perceptual-bandwidth up-tracking (wheelspin is not a command to spin
+   faster). Reuses the existing serialized `_cadence_ema`; zero new state.
+3. `ArticulatedRiderController`/`SpindleController` weld servo: the
+   delivery residual integrated unconditionally — during freewheel it
+   read a missing load as tracking error and during catch transients it
+   read >task+25 N·m spikes as sustained press; the learned hold was
+   applied unbounded on top of the commanded task, so a 30 % unload still
+   requested the settled press. The update now requires the drivetrain to
+   accept torque (`rate >= target`) and the reading to stay inside servo
+   authority (`weld <= task+weld_servo_limit` pedaling, `|weld| <=
+   weld_servo_limit` coasting); the applied hold is clipped to `±task`
+   (a delivery correction larger than the demand is not a tracking term;
+   the hold state itself keeps integrating).
+
+Mirrored: `native/src/drivetrain/pedaling.cpp` (wish),
+`native/src/rider/spindle_controller.cpp` (both servo gates + hold clip).
+`reference.test_native_drive_policies` (20 nodes incl. pedaling/coasting/
+shifting branches) passes bitwise against the rebuilt
+`native/build/bike_native...so`.
+
+### Measured evidence (darwin-arm64, oracle pytest + native binary)
+
+- `test_flat_launch_delivers_crank_torque` (the FT-3 delivery node):
+  **PASSES** — was baseline-red `0.5875 < 0.8` (ledger line 1068). The
+  closed-form delivery contract is restored: during the 0.2 s cut the
+  commanded ~6-7 N·m now reaches `crank_task_nm` (was ~17-33 under the
+  unbounded hold), and the weld sensor follows the physical load rather
+  than servo windup.
+- `test_tissue_damping_does_not_eat_the_muscle_budget`: **PASSES**
+  (894 s oracle run).
+- `test_fifteen_percent_climb_holds_12_kmh`: **PASSES** — was
+  baseline-red on `not _violations_after(rows)` (chronic
+  attachment-cone/`rider_strength.*` from interval 401); the servo
+  anti-windup fixes eliminated the oracle-side violations.
+- `test_flat_reaches_25_kmh_within_10_s`: still red — cadence-in-band
+  **0.7658** vs baseline 0.7602 (bar 0.8; all out-of-band rows remain
+  cadence >115 at launch/shift wheelspin spin-ups). Native binary:
+  cadence_in_band **0.8244** (now clears 0.8), balance_lost 0, 364 late
+  `rider_strength.*` violations (native parity gap persists, down from
+  538).
+- `test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`:
+  still red on TWO distinct layers. (a) Shift-count premise: under HEAD
+  multi-cog the flat launch produces **4 upshifts -> `len(shifts) >= 5`
+  fails at line 161** before any window is checked; the >=5 premise was
+  authored 2026-10-04 under one-cog throws, pre-dating `b21c63ec`
+  multi-cog selection by 18 days. (b) Under a one-cog diagnostic revert
+  (10 shifts, matching the baseline's throw pattern) every checked window
+  still fails the ratio bar — first window t=1.17 human=9.05, motor=0.0
+  (baseline human 11.76, motor 1.10). Native binary: 5 shifts, 4 windows
+  checked, all failing, worst ratio 0.3413.
+- `test_savage_is_ridden_to_the_end`: oracle x_max **58.306 m** (baseline
+  53.0; still <120 — documented 25 %-plateau capability bound). Native
+  darwin binary now RUNS the full episode: x_max **58.348 m**, plateau
+  mean **6.530 km/h** (≥6 bar passes), balance_lost 0, ends
+  `crash:loop_out` — the interval-0 `attachment normal has no planar
+  component` abort no longer reproduces; native/oracle x_max now agree.
+
+### Why the shift-motor bar remains red (measured causal chain)
+
+The delivery path is fixed — the residual failure is launch wheelspin
+physics, not delivery:
+
+- Pre-window the drivetrain already freewheels: wheel-slip inflates
+  `required_cadence` ~10-20 rpm above actual (`freehub_engaged=0`).
+- The legs' force-velocity limit (joint speed ceiling ~20 rad/s ≈
+  ~140-190 rpm crank equivalent) caps delivered press at ~1-2 N·m during
+  the freewheel — below the `engage_torque_nm=4` floor — motor off.
+- The ~6 N·m commanded press spins the free crank up to the
+  slip-inflated boundary (cadence 135→210); the solved catch reads a
+  12-38 N·m weld spike; `cadence_ema` then crosses `coast_above_rpm=120`
+  and the policy coasts → `assist_sensor=0` → motor gated.
+- At 150-210 rpm the motor's own shaft-rpm torque-curve ceiling is ~0 —
+  it cannot deliver assist outside its envelope even while sensed.
+
+Every element is honest physics (wheel slip on the declared tire,
+one-way freehub, leg speed limits, pedelec gating, motor curve). The
+bar's premise — a clean 30 % unload the motor tracks through its lag —
+does not hold while the wheel is spinning out. Per the Task-3.09 stop
+rule this is reported as evidence, not re-scoped.
+
+Also measured: the oracle's pre-shift `crank_task` overshoot
+(~17-33 N·m against a ~6 command) is gone — the hold can no longer
+inflate the delivered press past the commanded demand.
+
+### Ledger updates
+
+- `migration/test-port-map.json`: evidence strings appended to records
+  113 (flat_launch), 1327 (flat), 1328 (shift), 1329 (climb), 1330
+  (savage) with the post-fix numbers; all dispositions remain `planned`
+  pending the Task-3.09 decision and linux-aarch64 qualification.
+
+### Open items / stop-rule notes
+
+- linux-aarch64 container verification is queued but not yet executed
+  (`tools/linux/container.sh sync` + `bike-dev-pfc-lane-c`); the
+  oracle-side measurements above are darwin-arm64.
+- The native-only parity gaps remain explicitly open: flat/climb late
+  `rider_strength.*` violations (364/849) with zero on the oracle flat,
+  and the engagement-measurand gap on record 113 (native 69.6 % vs
+  oracle 87.8 %) — the latter is unchanged by this fix (assist gating on
+  dead-spot depth, not the shift path).
+- The savage 25 % plateau stall persists as a capability bound
+  (x_max ~58 m both sides) — unchanged, still awaiting the explicit
+  re-scope decision.
+- Final `bash tools/run_tests.sh native` gate not yet run; builds
+  `native/build` and `build/native-release` are green on this tree.

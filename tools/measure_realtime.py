@@ -184,9 +184,25 @@ def measure_realtime(track_path, physics_path, duration_s, *, out, dt_s=.0005,
     flush_wall=time.perf_counter()-tick
     wall=float(costs.sum())+flush_wall
     root=Path(__file__).resolve().parents[1]
-    git=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=True)
-    status=subprocess.run(['git','status','--porcelain','--','src/bike_sim','tools/measure_realtime.py'],
-                          cwd=root,capture_output=True,text=True,check=True)
+    # A synced container lane (tools/linux/container.sh) ships sources
+    # without .git; degrade git provenance to nulls the same way
+    # tools/portability_baseline.py reports an unverifiable checkout —
+    # source_sha256 still fingerprints the measured tree. Inside a real
+    # work tree the probes stay strict (check=True) as before.
+    git_sha=None
+    working_tree_dirty=None
+    try:
+        inside=subprocess.run(['git','rev-parse','--is-inside-work-tree'],
+                              cwd=root,capture_output=True,text=True)
+        in_work_tree=inside.returncode == 0 and inside.stdout.strip() == 'true'
+    except OSError:
+        in_work_tree=False
+    if in_work_tree:
+        git=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=True)
+        status=subprocess.run(['git','status','--porcelain','--','src/bike_sim','tools/measure_realtime.py'],
+                              cwd=root,capture_output=True,text=True,check=True)
+        git_sha=git.stdout.strip()
+        working_tree_dirty=bool(status.stdout.strip())
     from bike_sim.validation.environment import source_fingerprint
     import bike_sim
     import mujoco
@@ -196,9 +212,9 @@ def measure_realtime(track_path, physics_path, duration_s, *, out, dt_s=.0005,
         'factor':float(costs.size*dt/wall),'step_ms_mean':float(costs.mean()*1e3),
         'step_ms_p50':float(np.percentile(costs,50)*1e3),
         'step_ms_p95':float(np.percentile(costs,95)*1e3),
-        'step_ms_p99':float(np.percentile(costs,99)*1e3),'git_sha':git.stdout.strip(),
+        'step_ms_p99':float(np.percentile(costs,99)*1e3),'git_sha':git_sha,
         'machine':platform.platform(),'track':str(track_path),'physics':str(physics_path),
-        'working_tree_dirty':bool(status.stdout.strip()),
+        'working_tree_dirty':working_tree_dirty,
         'source_sha256':source_fingerprint(root/'src/bike_sim'),
         'requested_duration_s':float(duration_s),'source_timestep_s':source_cfg.timestep_s,
         'effective_timestep_s':dt,'controller_interval_s':sim.physical.control_clock.period_s,

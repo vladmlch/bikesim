@@ -80,16 +80,25 @@ def test_real_checkout_baseline(tmp_path):
     report = collect_baseline(REPO_ROOT)
     assert report["schema_version"] == 1
     assert "uv.lock" not in report["missing_inputs"]
-    assert report["git"]["verified"] is True
-    assert report["git"]["commit"] is not None
-    assert len(report["git"]["commit"]) == 40
+    inside = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=REPO_ROOT, capture_output=True, text=True)
+    if inside.returncode == 0 and inside.stdout.strip() == "true":
+        assert report["git"]["verified"] is True
+        assert report["git"]["commit"] is not None
+        assert len(report["git"]["commit"]) == 40
+    else:
+        # tools/linux/container.sh sync copies sources without .git — a
+        # synced lane has no checkout identity to verify by design.
+        assert report["git"]["verified"] is False
     # The native dependency contract pins MuJoCo exactly; the locked
     # environment must satisfy it for this baseline to be meaningful.
     declared = report["packages"]["declared"]
     assert declared["mujoco"]["version"] == "3.12.0"
     assert declared["numpy"]["version"] == "2.5.2"
-    # Genuinely absent inputs are named, not silently dropped.
-    assert ".python-version" in report["missing_inputs"]
+    # Genuinely absent inputs are named, not silently dropped. The CPython
+    # pin landed at 160ead37 (2026-10-20), so .python-version is present.
+    assert ".python-version" not in report["missing_inputs"]
     # T28 adds .github/workflows/portability.yml, so .github is no longer
     # an absent input; the remaining entries below are still missing.
     assert ".github" not in report["missing_inputs"]

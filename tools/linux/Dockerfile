@@ -26,7 +26,7 @@ RUN test "$(uname -m)" = aarch64 \
     && apt-get install -y --no-install-recommends \
         ca-certificates curl git jq rsync unzip xz-utils file pkg-config \
         clang clang-18 clang-tidy clang-tidy-18 clang-tools-18 \
-        llvm-18 lld-18 g++ g++-13 \
+        llvm-18 lld-18 libclang-rt-18-dev g++ g++-13 \
         cmake make ninja-build cppcheck shellcheck \
         libwayland-dev wayland-protocols libxkbcommon-dev xorg-dev libgl-dev \
         xvfb xauth libgl1-mesa-dri mesa-utils \

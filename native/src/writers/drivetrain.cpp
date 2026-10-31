@@ -826,7 +826,7 @@ namespace drivetrain {
             // tick carrying a staged ratio reads it from the candidate;
             // otherwise it reads the live applied ratio.
             const double published = bank.ideal_hub_staged
-                                         ? bank.ideal_hub->state.ratio
+                                         ? engaged(bank.ideal_hub).state.ratio
                                          : applied;
             required = v[static_cast<std::size_t>(wheel.dof)] / published *
                        60. / (2. * std::numbers::pi);

@@ -10888,3 +10888,62 @@ inflate the delivered press past the commanded demand.
   re-scope decision.
 - Final `bash tools/run_tests.sh native` gate not yet run; builds
   `native/build` and `build/native-release` are green on this tree.
+
+### Mirror-completion commit `a0e35355` (2026-10-31)
+
+Post-commit inspection found the `96dad67c` sweep had two defects:
+
+- The ratio sweep was **oracle-only**: `DrivetrainWriter::stage_pedal_advance`
+  still flipped the applied ratio at the shift instant and divided the wheel
+  rate by the committed gear, so the native mirror diverged every tick the
+  cut was open.
+- The sweep **broke the sprocket-geometric oracle**:
+  `GeometricFreehubConstraint.set_ratio` resolves only integer cogs and
+  rejected every intermediate ratio
+  (`test_shifting_prepared_state_and_clock[contact-geometric_ideal_mid_drive]`
+  raised `ValueError: geometric ratio must identify an integer rear
+  sprocket`). Under the geometric model the committed cog keeps the
+  single-step landing it always had; only the ideal hub sweeps.
+
+`a0e35355` mirrors both branches in `stage_pedal_advance` (applied-ratio
+required cadence, geometric flip on `shifted`, ideal sweep +
+stranded-gap landing, pedaling update reads the staged candidate) and
+relaxes the snapshot validator's ratio==gear invariant to the closed
+from/to interval while `cut_remaining_s > 0`. `Transmission::ratio()`
+was added as a scalar accessor so the warm tick does not allocate a
+snapshot. `bank.ideal_hub->` is read through `engaged()` (the codebase's
+checked-optional pattern — the tidy sweep correctly rejected the raw
+`->` as `bugprone-unchecked-optional-access`).
+
+Verified on the committed tree (`a0e35355`, darwin-arm64):
+
+- `test_native_drivetrain.py`: **175 passed** (geometric shifting goldens
+  green again; the ideal sweep path covered by parity).
+- `test_flat_launch_delivers_crank_torque`: **PASSES** (re-confirmed).
+- `test_tissue_damping_does_not_eat_the_muscle_budget`: **PASSES**
+  (260 s oracle run).
+- `test_fifteen_percent_climb_holds_12_kmh`: **PASSES** (re-confirmed).
+- `test_flat_reaches_25_kmh_within_10_s`: cadence-in-band **0.7447**
+  (still <0.8, Task-3.09 baseline-red family). This supersedes the
+  interim 0.7658 figure: the `a0e35355` oracle code path for
+  `ideal_mid_drive` is bitwise-identical to `96dad67c`, so the interim
+  number reflects a transient exploration-tree state rather than the
+  committed multi-cog behaviour; the committed-state measurement is
+  0.7447. Native binary re-measurement pending the in-flight gate.
+- `test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`:
+  unchanged — **4 upshifts -> `len(shifts) >= 5` fails at line 161**
+  (committed multi-cog vs the 2026-10-04 one-cog premise). Window
+  telemetry now shows the commanded unload delivered: e.g. shift window
+  at t=2.05, human 4.4-4.9 N·m against command ~6.2 with the unload
+  factor applied, motor 30.4 N·m following (ratio ~6.9 inside the
+  window) — the FT-3 delivery mechanism works; the bar fails on the
+  shift-count premise plus launch wheelspin, not on delivery.
+- `test_savage_is_ridden_to_the_end`: oracle x_max **58.306 m**
+  (unchanged; the `a0e35355` oracle path is bitwise-identical for
+  `ideal_mid_drive`). Native binary pending the in-flight gate.
+- `bash tools/run_tests.sh native` (in-flight): `check_tidy` initially
+  failed on the raw `bank.ideal_hub->` access above; fixed via
+  `engaged()` and the sweep re-run is in progress. Remaining sweeps +
+  CTest + native/golden pytest pending.
+- `full` profile (required for physics-path changes) not yet run — see
+  open items.

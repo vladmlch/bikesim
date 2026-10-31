@@ -11186,3 +11186,138 @@ of stopped docker containers, `/dev/disk3s5` hit 100 % mid-run:
   `container.sh gate native` is now blocked by the plan-change directive
   itself, not by evidence gaps — recorded as **deferred per
   coordinator**, not as failure.
+
+## 2026-10-31 — lane/c3 FT-3/FT-4 pedelec delivery fix merge-back (merge `352375e3`)
+
+Lane/c3 tip `023350ed` — 7 commits over base `a8296085`: `96dad67c`
+the rider-plant unload fix (applied-ratio sweep + cadence wish + weld
+servo authority gates), `a0e35355` the native sweep mirror + geometric
+landing restoration, `60b167ae` the `engaged()` checked-optional tidy,
+`df0c2421`/`a2330b59`/`8df4bda5` evidence, `023350ed` the FT-3/FT-4
+report. Physics-path change — mirrored Python↔native per ADR-0003.
+Reviewed against the FT-1 mirror-rigor precedent before merge.
+
+### Mirror review (exact, no defects)
+
+- `physics/pedaling.py` ↔ `native/src/drivetrain/pedaling.cpp`:
+  `wish = max(min(required, cadence_ema)*2π/60, 0)` — identical op order
+  (clamp `required≥0` first, min against the always-engaged EMA — the
+  C++ `engaged(state_.cadence_ema)` mirrors Python's never-None
+  invariant exactly, logic_error vs TypeError on violation).
+- `sim/ride/drivetrain_forces.py` ↔ `writers/drivetrain.cpp
+  ::stage_pedal_advance`: applied = live hub ratio else committed gear;
+  geometric lands `set_ratio(gear)`/`stage_ratio(gear)` on the shift
+  tick ahead of the candidate publish in both; the ideal-hub sweep
+  `applied + gap*dt/(cut_remaining+dt)` uses the post-update
+  `cut_remaining_s` in both; stranded-gap landing identical; post-block
+  `required` divides wheel rate by the published (Python live /
+  C++ staged-candidate) ratio. `geometric_hub_` ==
+  `transmission_model == "geometric_ideal_mid_drive"` ==
+  `isinstance(ideal_hub, GeometricFreehubConstraint)` — verified at
+  construction (drivetrain_forces.py:70-75).
+- `rider_control.py` ↔ `spindle_controller.cpp::compute`: pedaling
+  branch gate `weld is not None/has_value && advance && rate >=
+  target && weld <= task+limit` — identical; hold clip `±task` ==
+  ternary (task>0 always: waveform `mean*(1+depth·cos) > 0` for
+  `depth<1`, so np.clip bounds well-formed; NaN propagates identically).
+  Coasting gate `|weld| <= weld_servo_limit` — identical; hold and
+  total clamps unchanged.
+- `engaged(bank.ideal_hub).state.ratio` == `bank.ideal_hub->state.ratio`
+  on the invariant-engaged slot — checked unwrap, no semantics change.
+- Snapshot validator `hub.ratio == committed gear` relaxed to the
+  closed from/to interval **only while `cut_remaining_s > 0`** —
+  physics-required domain correction (mid-sweep snapshots are
+  legitimate), an internal invariant bound, NOT an acceptance bar;
+  exact equality still enforced outside a cut and the geometric
+  landing still sits on endpoints.
+- No acceptance-bar/threshold changes anywhere in the diff: no test
+  files, fixtures, `_golden.py`, or `tools/migration/*` touched.
+
+### Conflicts / resolutions
+
+Two conflicts, both resolved as unions:
+
+- `migration/test-port-map.json` — 4 hunks, all evidence-array
+  appends on the 4 `test_realistic_pedelec_acceptance` records (both
+  sides appended: HEAD the FT-1 note ~09:03, lane the FT-3/FT-4
+  measurements 10:30+). Kept chronological order: FT-1 entry then
+  lane/c3 entries. Committed-merge union verified programmatically:
+  2394 records, 0 missing / 0 extra / 0 contested non-evidence fields;
+  all 4 contested rows are pure evidence-unions; dispositions all from
+  HEAD (every record stays `planned`); canonical
+  `json.dumps(indent=2, ensure_ascii=True)` + trailing LF byte-exact.
+- `migration/cpp-linux-completion-evidence.md` — both-append at EOF;
+  kept HEAD's lane/f merge-back section then lane/c3's FT-3 section.
+
+Auto-merged clean: all physics files byte-identical to lane/c3
+(HEAD never touched them since base); `spindle_controller.cpp` carries
+both fixes correctly (lane/c3's compute-path servo gates ~L1170-1220 +
+HEAD's FT-1 write-path clip ~L1430, disjoint hunks).
+`python-removal.json` untouched (lane/c3 doesn't modify it).
+Cosmetic note: FT-1's `rider_control.py:1375-1382` comment reference
+is stale post-merge (write() now ~L1402 after lane/c3's +29-line
+insertion); lane/c3's own comment refs (873-931) match the merged file.
+
+### Ledger deltas (pre-merge `d1d26d3f` → merge `352375e3`)
+
+- `test-port-map.json`: 2394 → **2394** records; all dispositions
+  unchanged. The 4 `test_realistic_pedelec_acceptance` records and
+  `test_flat_launch_delivers_crank_torque` stay **`planned`** — pure
+  evidence appends (14 strings), honest numbers: cadence-in-band
+  0.7447 oracle / 0.7536 native-darwin / 0.7464 native-linux all <0.8;
+  savage x_max 58.3 m vs 120 m bar; rider_strength violations
+  documented as a persisting native parity gap (284 flat).
+  Option-1 honored: delivery fixed, acceptance NOT rebar'd.
+- `python-removal.json`: untouched.
+
+### Merge-back verification (darwin-arm64, committed merge)
+
+- Builds: `cmake --build native/build -j6` exit 0;
+  `cmake --build build/native-release -j6` exit 0.
+- Live-oracle bitwise parity (ADR-0003 gates, NATIVE_TEST_BUILD_PATH=
+  native/build): `test_native_drivetrain.py` **175/175** (10:24),
+  `test_native_drive_policies.py` **102/102**,
+  `test_native_spindle_controller.py`+`test_pedaling_policy.py`+
+  `test_drivetrain_policy_clone.py` **59 passed/1 skipped**,
+  `test_solved_intervals[crank_effort-dense-elastic_chain-plain]`
+  PASS — mirror proven bitwise on the merged tree.
+- Oracle acceptance slice: `test_flat_launch_delivers_crank_torque`
+  **PASS** (was baseline-red 0.5875<0.8 — the FT-3 delivery fix works);
+  `test_fifteen_percent_climb_holds_12_kmh` **PASS** (was baseline-red
+  on `_violations_after`; servo anti-windup eliminated oracle
+  violations). Documented-red set reproduced exactly:
+  `test_flat_reaches_25_kmh_within_10_s` FAIL cadence 0.74468<0.8
+  (lane: 0.7447), `test_motor_follows_the_rider_through_a_shift…`
+  FAIL `len(shifts)=4>=5` premise at line 161 (throws [116,204,314,443]
+  = lane's oracle measurement), `test_savage_is_ridden_to_the_end`
+  FAIL x_max 58.302 m <120 `crash:loop_out` (lane: 58.306 — 4 mm FP
+  delta, same plateau-stall family). No NEW oracle reds.
+- `ctest --test-dir build/native-release` scoped run: **13/14 pass**
+  (pedal_waveform, pedaling_policy, drivetrain_policy_clone,
+  native_rider_contacts/contact_math/allocation/dynamics/
+  information_boundary/forces, closed_form_rider, native_rider_intent,
+  native_spindle_controller, realistic_pedelec_acceptance 38 s).
+  **`reference.native_drivetrain` FAILS — STALE GOLDEN, not a mirror
+  defect**: first mismatch `$.crank_target_rate_rad_s` elem 0
+  (expected 0x400b5f55… old wish semantics; actual 0x40080e4a… new).
+  The test exists only in the release tree (not registered in
+  `native/build`'s ctest — the lane's "CTest 60/62" gate never ran it;
+  uncovered verification gap, now surfaced). Diagnostic re-capture of
+  `test_native_drivetrain.py` (BIKE_GOLDEN_CAPTURE=/tmp,
+  175 nodes green vs live oracle) diffs **292 bitwise comparisons in
+  39 fixture files — ALL in fix-changed fields**: 274×
+  `crank_target_rate_rad_s` (the wish), 6× `required_cadence_rpm`
+  (applied-ratio division), 4× `ratio`/`required_ema`/`coefficients`
+  (sweep-adjacent). Zero unexplained drift; `.json` non-numeric leaves
+  identical → pure value drift, the expected consequence of a bitwise
+  physics fix vs capture-time fixtures. The `native` gate is
+  unaffected (its ctest runs native/build where no reference.* tests
+  are registered). **Action deferred to coordinator**: re-capture
+  `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/
+  tests_reference_test_native_drivetrain.py/` per the 52ad66c1
+  two-platform convention — darwin capture already staged and verified
+  (/tmp/ft3-golden-recap, 175 nodes); linux capture blocked by the
+  docker guard this wave. Not landed inside the merge-back: fixture
+  refresh is a dedicated capture task, and a darwin-only refresh
+  would leave the platform pair asymmetric regardless.
+- No docker/container.sh/linux runs — coordinator guard honored.

@@ -176,8 +176,13 @@ above.
 
 - `migration/test-port-map.json`: all 179 records for the 11 tranche
   files carry `disposition` (126 `port` / 53 `drop`), `native_test_id`
-  naming the landing test, refreshed `line`/`end_line`, and dated
-  `2026-10-31 3.36t2b lane/c` evidence entries citing the port target or
+  naming the landing test (real `ctest::function` ids only — the merge-back
+  review round re-anchored four descriptive/nonexistent
+  `reference.research_recording_lifecycle`/`frontend_windows` cites onto
+  `reference.native_research_recording_lifecycle::*` and real
+  `frontend_windows` functions), measured `collected_node_ids` +
+  `comparison_class` + `assertions_capture` (pytest --collect-only,
+  325 nodes), and dated evidence entries citing the port target or
   the drop rationale; 0 records remain `planned`.
 - `migration/python-removal.json`: all 11 file rows updated to
   `action: port_assertions_and_fixture_orchestration` with

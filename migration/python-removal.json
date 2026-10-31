@@ -18477,7 +18477,7 @@
     ],
     "verification_ids": [
       "reference.frontend_windows",
-      "reference.research_recording_lifecycle"
+      "reference.native_research_recording_lifecycle"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence; no deletion in Phase 3",
     "status": "replacement_landed",

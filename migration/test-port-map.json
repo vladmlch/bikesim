@@ -31587,9 +31587,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_baseline.py::test_git_checkout_reports_dirty_without_mutation"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 git-porcelain mutation accounting belongs to the deleted aggregator; native commit binding is the read-only git rev-parse in ci_presets.sh"
@@ -31603,9 +31605,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::baseline_missing_inputs_are_explicit_and_fail_closed",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_baseline.py::test_missing_checkout_inputs_are_explicit"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::baseline_missing_inputs_are_explicit_and_fail_closed in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31619,9 +31623,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::baseline_context_record_has_required_sections",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_baseline.py::test_real_checkout_baseline"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::baseline_context_record_has_required_sections in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31635,9 +31641,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::baseline_context_record_has_required_sections",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_baseline.py::test_report_has_required_sections"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::baseline_context_record_has_required_sections in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31651,9 +31659,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_building_lanes_select_their_build_for_tests"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same BUILD-env argv plumbing of the deleted Python runner; build selection is the preset's binaryDir"
@@ -31667,9 +31677,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_rejects_unsupported_preset_and_mode",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_cli_rejects_unsupported_lane"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_rejects_unsupported_preset_and_mode in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31683,9 +31695,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_compiler_resolution_cxx_override_wins"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 CXX-env resolution seam of the deleted registry; native compilers are CMake-selected per preset toolchain"
@@ -31699,9 +31713,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_compiler_resolution_fails_closed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 missing-compiler fails closed at CMake project() probe; the resolver registry is deleted"
@@ -31715,9 +31731,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_compiler_resolution_prefers_declared_then_candidates"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 monkeypatched resolver of the deleted Python registry; native compiler selection is CMake's own (policy_under_each_available_compiler)"
@@ -31731,9 +31749,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_coverage_lanes_require_llvm_tools"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 the required_tools registry is deleted; llvm-profdata/llvm-cov resolution is CoverageTools.cmake (coverage_* cases)"
@@ -31747,9 +31767,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_declared_compiler_for_coverage_lanes"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 coverage toolchain is the CoverageTools.cmake-qualified LLVM pair, exercised by the coverage_* cases"
@@ -31763,9 +31785,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_declared_compiler_per_native_lane"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 per-lane compiler registry is deleted; presets carry toolchain compilers and the workflow lane selects the preset"
@@ -31779,9 +31803,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_asserts_host_platform_before_work",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_every_lane_asserts_platform_first"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_asserts_host_platform_before_work in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31795,9 +31821,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_every_lane_uses_frozen_native_group"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 uv frozen-group provisioning is interpreter setup; the native lane is Python-free by construction (root_configure_starts_no_interpreter)"
@@ -31811,9 +31839,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_lane_inventory_and_mode_matrix",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_every_required_lane_exists_plus_trusted_lanes"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_lane_inventory_and_mode_matrix in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31827,9 +31857,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_fails_closed_and_preserves_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_failed_command_stops_the_lane"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_fails_closed_and_preserves_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31843,9 +31875,27 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-asan]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-clang-release]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-coverage]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-full]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-gcc-debug]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-manual-gui]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-offline]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-release]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[linux-rtsan]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-appleclang-release]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-asan]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-coverage]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-full]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-manual-gui]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-offline]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-release]",
+        "tests/portability/test_ci_lanes.py::test_lane_commands_are_absolute_argv_arrays[macos-rtsan]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 17 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 argv-array builder of the deleted Python lane runner; the native lane is a fixed shell script (ci_presets.sh) with literal commands"
@@ -31859,9 +31909,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_lane_commands_do_not_execute"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 subprocess-spy seam of the deleted Python runner; the native runner's commands execute under set -euo pipefail"
@@ -31875,9 +31927,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_fails_closed_and_preserves_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_lane_failure_exit_code_is_preserved"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_fails_closed_and_preserves_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31891,9 +31945,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_lane_inventory_and_mode_matrix",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_lane_names_match_toolchain_matrix"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_lane_inventory_and_mode_matrix in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31907,9 +31963,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_fails_closed_and_preserves_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_lane_runs_every_command_when_all_pass"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_fails_closed_and_preserves_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31923,9 +31981,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_lane_inventory_and_mode_matrix",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_lane_spec_expectations_match_name"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_lane_inventory_and_mode_matrix in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31939,9 +31999,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_never_invokes_apple_sdk",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_linux_lane_does_not_use_apple_sdk"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_never_invokes_apple_sdk in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31955,9 +32017,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_linux_lanes_do_not_remove_macos_expectations"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 the Python required_tools registry is deleted; Darwin tool expectations live in CoverageTools.cmake's xcrun fallback and the macos workflow lanes"
@@ -31971,9 +32035,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::workflow_runner_os_matches_lane_names_and_gating",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_macos_lane_is_not_removed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::workflow_runner_os_matches_lane_names_and_gating in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -31987,9 +32053,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_asserts_host_platform_before_work",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_macos_lane_platform_assertion_passes_on_macos"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_asserts_host_platform_before_work in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32003,9 +32071,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_no_lane_invokes_uv_lock_or_upgrades"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 uv lock/upgrade argv contract of the deleted Python runner; the native lane runs tools/ci_presets.sh only"
@@ -32019,9 +32089,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_never_invokes_apple_sdk",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_no_lane_uses_apple_sdk_options_on_linux"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_never_invokes_apple_sdk in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32035,9 +32107,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_offline_rehearsal_uses_checked_in_tools",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_offline_lane_uses_checked_in_offline_tools"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_offline_rehearsal_uses_checked_in_tools in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32051,9 +32125,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_asserts_host_platform_before_work",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_platform_assertion_rejects_wrong_os"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_asserts_host_platform_before_work in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32067,9 +32143,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_runs_the_bounded_analysis_sweep_set",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_required_analysis_tools_checked"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_runs_the_bounded_analysis_sweep_set in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32083,9 +32161,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_unique_build_dir_per_preset",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_unique_build_path_per_lane"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_unique_build_dir_per_preset in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32099,9 +32179,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::ci_presets_rejects_unsupported_preset_and_mode",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_unsupported_lane_name_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::ci_presets_rejects_unsupported_preset_and_mode in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32115,9 +32197,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::workflow_runner_os_matches_lane_names_and_gating",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_workflow_matrix_covers_both_oses_and_required_lanes"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::workflow_runner_os_matches_lane_names_and_gating in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32131,9 +32215,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::workflow_trusted_lanes_dispatch_and_environment_gated",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_workflow_never_runs_fork_code_on_trusted_runners"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::workflow_trusted_lanes_dispatch_and_environment_gated in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32147,9 +32233,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::workflow_jobs_run_lane_and_upload_evidence",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_workflow_runs_the_lane_runner_and_uploads_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::workflow_jobs_run_lane_and_upload_evidence in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32163,9 +32251,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::workflow_triggers_and_read_only_permissions",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_workflow_triggers_and_permissions"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::workflow_triggers_and_read_only_permissions in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32179,9 +32269,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::workflow_pins_actions_by_full_sha",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_ci_lanes.py::test_workflow_yaml_parses_and_every_use_is_full_sha"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::workflow_pins_actions_by_full_sha in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32594,8 +32686,10 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_check_dependencies_enforces_exact_native_pins"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -32610,8 +32704,10 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_fallback_mirrors_the_exact_native_pins"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -32647,8 +32743,8 @@
       "collected_node_ids": [
         "tests/portability/test_dependency_policy.py::test_preserved_scientific_pins_and_python_floor"
       ],
-      "assertions_capture": "2026-10-28: measured \u2014 pytest collected 1 node(s) on darwin-arm64, 3 assert statement(s) in source body",
-      "comparison_class": "unassigned",
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-28 3.36 lane/c: live-oracle red at HEAD \u2014 the oracle asserts requires-python == \">=3.13\" verbatim while pyproject.toml carries \">=3.13,<3.14\" (uv-run pytest -x test_preserved_scientific_pins_and_python_floor: FAILED, '>=3.13,<3.14' != '>=3.13'); retained planned pending upstream resolution of assertion vs pin. The four declared-pin checks that do hold are covered by migration_T53_portability::preserved_scientific_pins",
@@ -32663,8 +32759,10 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_required_dependencies_fallback_is_retained"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -32679,8 +32777,10 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
+      "collected_node_ids": [
+        "tests/portability/test_dependency_policy.py::test_required_dependencies_returns_direct_exact_native_pins"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
       "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
@@ -32965,9 +33065,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_no_personal_paths_in_active_instructions",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_active_instructions_do_not_require_personal_paths"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_no_personal_paths_in_active_instructions in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32981,9 +33083,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_agents_reference_source_convention",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_agents_md_uses_reference_source_convention"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_agents_reference_source_convention in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -32997,9 +33101,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_linux_guide_carries_the_workflow",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_linux_guide_carries_the_native_workflow"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_linux_guide_carries_the_workflow in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33013,9 +33119,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_linux_guide_records_qualification",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_linux_guide_records_measured_qualification"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_linux_guide_records_qualification in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33029,9 +33137,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_macos_guide_platform_specifics",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_macos_guide_retains_platform_specifics"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_macos_guide_platform_specifics in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33045,9 +33155,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_links_and_referenced_paths_resolve",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_new_guide_links_and_referenced_paths_exist"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_links_and_referenced_paths_resolve in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33061,9 +33173,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_guides_share_level2_headings",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_platform_guides_share_workflow_headings"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_guides_share_level2_headings in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33077,9 +33191,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_ride_links_platform_guides",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_ride_platform_section_links_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_ride_links_platform_guides in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33093,9 +33209,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dev_docs_troubleshooting_symptoms_and_bounded_remediation",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_development_docs.py::test_troubleshooting_covers_required_symptoms"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dev_docs_troubleshooting_symptoms_and_bounded_remediation in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33109,9 +33227,15 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_headless_imports.py::test_cli_help_without_display[bike_sim.cli.ride]",
+        "tests/portability/test_headless_imports.py::test_cli_help_without_display[bike_sim.cli.research]",
+        "tests/portability/test_headless_imports.py::test_cli_help_without_display[bike_sim.cli.batch]",
+        "tests/portability/test_headless_imports.py::test_cli_help_without_display[bike_sim.cli.replay]",
+        "tests/portability/test_headless_imports.py::test_cli_help_without_display[bike_sim.cli.recording]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 interpreter/entry-point machinery; native CLI help is exercised headlessly by the reference CLI tests"
@@ -33125,9 +33249,12 @@
       "owner_task": "T53",
       "native_test_id": "reference.recording_cli::test_time_scale_remains_interactive_only",
       "native_source": "native/tests/reference/test_recording_cli.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_headless_imports.py::test_explicit_time_scale_requires_a_viewer_even_at_one[1]",
+        "tests/portability/test_headless_imports.py::test_explicit_time_scale_requires_a_viewer_even_at_one[8]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.recording_cli::test_time_scale_remains_interactive_only in native/tests/reference/test_recording_cli.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -33141,9 +33268,17 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.cli.ride]",
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.cli.research]",
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.cli.batch]",
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.cli.replay]",
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.cli.recording]",
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.sim.ride.physical_driver]",
+        "tests/portability/test_headless_imports.py::test_import_without_display[bike_sim.sim.research.configuration]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 7 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 fresh-interpreter import machinery; the native CLI starts no interpreter and reference tests run headless without a display by construction"
@@ -33549,9 +33684,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_sibling_tools_precede_path_candidates",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_compiler_sibling_tools_precede_path_candidates"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_sibling_tools_precede_path_candidates in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33565,9 +33702,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_missing_llvm_cov_override_fails_closed",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_explicit_missing_llvm_cov_override_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_missing_llvm_cov_override_fails_closed in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33581,9 +33720,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_explicit_override_wins_over_sibling",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_explicit_override_wins_over_sibling"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_explicit_override_wins_over_sibling in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33597,9 +33738,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_invalid_export_fails_closed",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_export_without_valid_control_data_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_invalid_export_fails_closed in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33613,9 +33756,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_merge_failure_names_the_command",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_failing_merge_tool_fails_with_command_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_merge_failure_names_the_command in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33629,9 +33774,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_xcrun_is_last_resort_on_darwin_never_on_linux",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_linux_tool_search_never_invokes_xcrun"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_xcrun_is_last_resort_on_darwin_never_on_linux in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33645,9 +33792,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_missing_compiler_fails_closed",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_missing_compiler_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_missing_compiler_fails_closed in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33661,9 +33810,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_requires_an_llvm_clang_family_compiler",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_non_clang_compiler_is_rejected"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_requires_an_llvm_clang_family_compiler in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33677,9 +33828,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_real_toolchain_probe_and_resolution_record",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_probe_result_records_tool_versions_and_export"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_real_toolchain_probe_and_resolution_record in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33693,9 +33846,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_real_toolchain_probe_and_resolution_record",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_real_toolchain_resolves_and_passes_the_format_probe"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_real_toolchain_probe_and_resolution_record in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33709,9 +33864,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_unknown_override_keys_fail"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 env-map arity is an argparse contract; CoverageTools.cmake reads exactly the two documented override variables"
@@ -33725,9 +33882,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::coverage_xcrun_is_last_resort_on_darwin_never_on_linux",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_coverage_tools.py::test_xcrun_is_a_darwin_only_last_resort"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::coverage_xcrun_is_last_resort_on_darwin_never_on_linux in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33741,9 +33900,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_alias_to_a_different_version_is_fatal"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 wheel-directory alias resolution is interpreter-site-packages machinery; the lock binds exact archives+member sha256"
@@ -33757,9 +33918,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_binds_member_and_archive_hashes",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_cli_fails_closed_when_mujoco_is_absent"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_binds_member_and_archive_hashes in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33773,9 +33936,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_cli_rejects_a_nonexistent_interpreter"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 the --python interpreter argv contract belongs to the deleted probe CLI"
@@ -33789,9 +33954,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_cli_rejects_a_relative_interpreter_path"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same interpreter-path validation"
@@ -33805,9 +33972,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_pins_the_engine_exactly",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_cli_reports_named_error_for_a_wrong_mujoco_version"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_pins_the_engine_exactly in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33821,9 +33990,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_cli_stdout_is_pure_schema_json_for_doctor"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 doctor-CLI stdout purity is argparse plumbing of the deleted probe"
@@ -33837,9 +34008,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_conflicting_real_images_are_fatal"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same; the lock selects one verified member set per platform"
@@ -33853,9 +34026,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_selects_platform_library_names",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_darwin_selects_the_versioned_dylib"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_selects_platform_library_names in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33869,9 +34044,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_selects_platform_library_names",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_linux_library_selection_is_not_a_dylib_glob"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_selects_platform_library_names in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33885,9 +34062,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_pins_the_engine_exactly",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_missing_exact_engine_is_fatal"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_pins_the_engine_exactly in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33901,9 +34080,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_nonexistent_package_directory_is_fatal"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 wheel filesystem probing is interpreter-side; acquisition is the checked-in lock+extract path"
@@ -33917,9 +34098,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::committed_provider_records_qualify_bound_operations",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_numerics_ops_include_solve_eigh_and_ilp64_dots"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::committed_provider_records_qualify_bound_operations in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33933,9 +34116,12 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::committed_provider_records_qualify_bound_operations",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_numpy_ilp64_ddot_import_qualifies_both_faces[Darwin-cblas_ddot$NEWLAPACK$ILP64-_macho_undefined_symbols]",
+        "tests/portability/test_native_dependencies.py::test_numpy_ilp64_ddot_import_qualifies_both_faces[Linux-scipy_cblas_ddot64_-_elf_undefined_symbols]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::committed_provider_records_qualify_bound_operations in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33949,9 +34135,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::committed_provider_records_qualify_bound_operations",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_numpy_lp64_ddot_import_cannot_qualify_the_ilp64_face"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::committed_provider_records_qualify_bound_operations in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33965,9 +34153,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::committed_provider_records_qualify_bound_operations",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_op_symbol_tail_does_not_confuse_dgesvd_with_dgesv"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::committed_provider_records_qualify_bound_operations in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33981,9 +34171,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_selects_platform_library_names",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_package_directory_with_spaces_selects_exactly"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_selects_platform_library_names in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -33997,9 +34189,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_probe_dependencies_reports_this_environment"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 live interpreter-site-packages probing has no subject; the committed lock is the dependency identity"
@@ -34013,9 +34207,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::cross_compiling_configure_is_refused_BikePlatform",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_unsupported_platform_is_named"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::cross_compiling_configure_is_refused_BikePlatform in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34029,9 +34225,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_unversioned_alias_resolves_to_the_same_image"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same interpreter-side alias machinery"
@@ -34045,9 +34243,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_unversioned_real_library_cannot_prove_the_version"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same; version proof now comes from the lock's pinned archive/member digests"
@@ -34061,9 +34261,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_binds_member_and_archive_hashes",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_validate_dependencies_accepts_a_complete_document"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_binds_member_and_archive_hashes in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34077,9 +34279,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_selects_platform_library_names",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_validate_dependencies_checks_library_name_against_platform"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_selects_platform_library_names in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34093,9 +34297,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_pins_the_engine_exactly",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_validate_dependencies_enforces_the_engine_pin"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_pins_the_engine_exactly in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34109,9 +34315,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_binds_member_and_archive_hashes",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_validate_dependencies_rejects_non_object_and_wrong_schema"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_binds_member_and_archive_hashes in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34125,9 +34333,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_binds_member_and_archive_hashes",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_validate_dependencies_requires_absolute_existing_paths"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_binds_member_and_archive_hashes in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34141,9 +34351,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_binds_member_and_archive_hashes",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_validate_dependencies_requires_real_sections"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_binds_member_and_archive_hashes in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -34157,9 +34369,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_versioned_name_itself_may_be_a_symlink"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 wheel symlink resolution is interpreter-site-packages machinery; the lock pins the extracted member sha256 directly"
@@ -34173,9 +34387,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::dependency_lock_pins_the_engine_exactly",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_native_dependencies.py::test_wrong_version_is_rejected_before_lookup"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::dependency_lock_pins_the_engine_exactly in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39486,9 +39702,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_all_rows_pass_releases_with_evidence_links"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39502,9 +39720,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_never_allows_silent_baseline_escape",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_approved_macos_full_baseline_row_accepts_baseline_unchanged"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_never_allows_silent_baseline_escape in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39518,9 +39738,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_never_allows_silent_baseline_escape",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_baseline_unchanged_on_a_plain_row_is_invalid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_never_allows_silent_baseline_escape in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39534,9 +39756,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_cli_release_blocked_on_empty_evidence_dir"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39550,9 +39774,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_cli_release_blocked_when_a_macos_record_is_missing"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39566,9 +39792,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_cli_release_pass_with_full_evidence"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39582,9 +39810,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_duplicate_conflicting_records_are_ambiguous"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 record-dedup/ambiguity was evaluator state; the checklist is a fixed required-row table"
@@ -39598,9 +39828,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_evidence_file_hash_mismatch_is_invalid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39614,9 +39846,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_evidence_object_form_binds_path_and_hash"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39630,9 +39864,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_extra_records_never_satisfy_required_rows"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39646,9 +39882,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_failed_record_fails_its_gate"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39662,9 +39900,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_fingerprint_equivalence_is_explicit_not_silent"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 fingerprint-equivalence policy was evaluator state; qualification rows bind lane+commit+exit literally"
@@ -39678,9 +39918,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_generated_requirements_cover_the_approved_matrix"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39694,9 +39936,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_generated_requirements_pass_release_when_all_rows_satisfied"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39710,9 +39954,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_invalid_extra_record_is_a_problem"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 extra-record validation was evaluator state; the checklist's row set is exhaustive and fixed"
@@ -39726,9 +39972,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_sanitizer_lanes_have_paired_controls",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_invalid_sanitizer_negative_control_fails"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_sanitizer_lanes_have_paired_controls in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39742,9 +39990,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_never_allows_silent_baseline_escape",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_linux_baseline_unchanged_is_invalid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_never_allows_silent_baseline_escape in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39758,9 +40008,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_linux_only_results_cannot_release"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39774,9 +40026,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_manually_typed_pass_without_evidence_does_not_satisfy"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39790,9 +40044,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_matching_evidence_file_and_hash_satisfies"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39806,9 +40062,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_missing_evidence_file_under_evidence_dir_is_invalid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39822,9 +40080,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_missing_gates_is_a_required_set_comparison"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39838,9 +40098,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_missing_gui_row_blocks"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39854,9 +40116,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_missing_numerical_qualification_blocks"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39870,9 +40134,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_missing_offline_mode_blocks"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39886,9 +40152,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_platform_aliases_normalize_without_collapsing_architectures"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 record-platform alias normalization was evaluator state; the checklist names qualified lanes verbatim"
@@ -39902,9 +40170,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_record_without_evidence_hash_is_invalid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39918,9 +40188,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_release_report_is_deterministic_and_complete"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39934,9 +40206,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_pins_the_required_lane_rows",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_requirements_with_duplicate_rows_are_rejected"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_pins_the_required_lane_rows in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39950,9 +40224,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_stale_source_commit_blocks_release"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39966,9 +40242,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_status_pass_with_nonzero_exit_is_invalid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39982,9 +40260,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_never_allows_silent_baseline_escape",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_unapproved_baseline_unchanged_is_invalid_even_on_the_baseline_row"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_never_allows_silent_baseline_escape in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -39998,9 +40278,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_sanitizer_lanes_have_paired_controls",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_valid_sanitizer_negative_control_satisfies"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_sanitizer_lanes_have_paired_controls in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -40014,9 +40296,11 @@
       "owner_task": "T53",
       "native_test_id": "migration_T53_portability::release_checklist_binds_source_commit_and_exit_code",
       "native_source": "native/tests/migration/migration_T53_portability.cmake",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_release_gate.py::test_zero_tests_fails_the_record"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner migration_T53_portability::release_checklist_binds_source_commit_and_exit_code in native/tests/migration/migration_T53_portability.cmake; verified green on darwin-arm64 (build/native-release)"
@@ -40102,9 +40386,13 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_existing_launcher_does_not_relaunch[sentinel]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_existing_launcher_does_not_relaunch[marker]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_existing_launcher_does_not_relaunch[executable]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 mjpython sentinel/marker mechanics are interpreter-side"
@@ -40118,9 +40406,16 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_reexec_preserves_argv_and_fallback[False-None]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_reexec_preserves_argv_and_fallback[False-]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_reexec_preserves_argv_and_fallback[False-/existing/one:/existing/two]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_reexec_preserves_argv_and_fallback[True-None]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_reexec_preserves_argv_and_fallback[True-]",
+        "tests/portability/test_viewer_launch_platform.py::test_darwin_reexec_preserves_argv_and_fallback[True-/existing/one:/existing/two]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 6 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 os.execv argv/DYLD_FALLBACK mechanics are interpreter-side"
@@ -40134,9 +40429,13 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_failed_macos_exec_restores_environment_and_allows_retry[None-None]",
+        "tests/portability/test_viewer_launch_platform.py::test_failed_macos_exec_restores_environment_and_allows_retry[prior-marker-/prior/lib]",
+        "tests/portability/test_viewer_launch_platform.py::test_failed_macos_exec_restores_environment_and_allows_retry[-]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 execv failure/restore mechanics are interpreter-side"
@@ -40150,9 +40449,14 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_launcher_runs_before_viewer_import_or_model_setup[playground]",
+        "tests/portability/test_viewer_launch_platform.py::test_launcher_runs_before_viewer_import_or_model_setup[legacy_ride]",
+        "tests/portability/test_viewer_launch_platform.py::test_launcher_runs_before_viewer_import_or_model_setup[resolved_physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_launcher_runs_before_viewer_import_or_model_setup[resolved_physical_async]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 import-order monkeypatching is interpreter-side; native owner ordering is covered by frontend_windows lifecycle cases"
@@ -40166,9 +40470,13 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_linux_never_looks_up_or_reexecutes_mjpython[None]",
+        "tests/portability/test_viewer_launch_platform.py::test_linux_never_looks_up_or_reexecutes_mjpython[False]",
+        "tests/portability/test_viewer_launch_platform.py::test_linux_never_looks_up_or_reexecutes_mjpython[True]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 interpreter re-exec machinery; the native viewer is a linked executable, never a re-launched interpreter"
@@ -40182,9 +40490,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_missing_macos_launcher_is_actionable_and_retryable"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 missing-launcher retry mechanics are interpreter-side; the native no-GUI failure is an actionable configure/run diagnostic"
@@ -40196,14 +40506,19 @@
       "line": 340,
       "end_line": 355,
       "owner_task": "T53",
-      "native_test_id": "reference.frontend_windows::window close/exit contract incl. cleanup failure",
+      "native_test_id": "reference.frontend_windows::test_window_construction_error_still_accounts_and_closes",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_normal_window_close_keeps_exit_contract_and_reports_cleanup_failure[False-physical-0]",
+        "tests/portability/test_viewer_launch_platform.py::test_normal_window_close_keeps_exit_contract_and_reports_cleanup_failure[False-replay-2]",
+        "tests/portability/test_viewer_launch_platform.py::test_normal_window_close_keeps_exit_contract_and_reports_cleanup_failure[True-physical-0]",
+        "tests/portability/test_viewer_launch_platform.py::test_normal_window_close_keeps_exit_contract_and_reports_cleanup_failure[True-replay-2]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.frontend_windows::window close/exit contract incl. cleanup failure in native/tests/reference/test_frontend_windows.cpp; verified green on darwin-arm64 (build/native-release)"
+        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.frontend_windows::test_window_construction_error_still_accounts_and_closes in native/tests/reference/test_frontend_windows.cpp; verified green on darwin-arm64 (build/native-release)"
       ]
     },
     {
@@ -40212,14 +40527,18 @@
       "line": 228,
       "end_line": 245,
       "owner_task": "T53",
-      "native_test_id": "reference.frontend_windows::key actions defer to the window owner (Action::close)",
+      "native_test_id": "reference.frontend_windows::test_physical_window_bounds_rendering_and_leaves_no_files_when_off",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_playback_quit_during_launch_is_deferred_to_window_owner[81]",
+        "tests/portability/test_viewer_launch_platform.py::test_playback_quit_during_launch_is_deferred_to_window_owner[113]",
+        "tests/portability/test_viewer_launch_platform.py::test_playback_quit_during_launch_is_deferred_to_window_owner[256]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.frontend_windows::key actions defer to the window owner (Action::close) in native/tests/reference/test_frontend_windows.cpp; verified green on darwin-arm64 (build/native-release)"
+        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.frontend_windows::test_physical_window_bounds_rendering_and_leaves_no_files_when_off in native/tests/reference/test_frontend_windows.cpp; verified green on darwin-arm64 (build/native-release)"
       ]
     },
     {
@@ -40228,14 +40547,16 @@
       "line": 398,
       "end_line": 434,
       "owner_task": "T53",
-      "native_test_id": "reference.research_recording_lifecycle::normal close finishes exactly once",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_finish_second_ctrl_c_during_seal_journals_and_publishes",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_research_viewer_normal_close_finishes_once"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.research_recording_lifecycle::normal close finishes exactly once in native/tests/reference/test_research_recording_lifecycle.cpp; verified green on darwin-arm64 (build/native-release)"
+        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.native_research_recording_lifecycle::test_finish_second_ctrl_c_during_seal_journals_and_publishes in native/tests/reference/test_research_recording_lifecycle.cpp; verified green on darwin-arm64 (build/native-release)"
       ]
     },
     {
@@ -40244,14 +40565,19 @@
       "line": 360,
       "end_line": 395,
       "owner_task": "T53",
-      "native_test_id": "reference.research_recording_lifecycle::attach/construction failure closes the launch owner",
+      "native_test_id": "reference.native_research_recording_lifecycle::test_frontend_failure_between_windows_is_not_replay_eligible",
       "native_source": "native/tests/reference/test_research_recording_lifecycle.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_research_viewer_setup_failure_closes_environment[False-construction]",
+        "tests/portability/test_viewer_launch_platform.py::test_research_viewer_setup_failure_closes_environment[False-attach]",
+        "tests/portability/test_viewer_launch_platform.py::test_research_viewer_setup_failure_closes_environment[True-construction]",
+        "tests/portability/test_viewer_launch_platform.py::test_research_viewer_setup_failure_closes_environment[True-attach]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.research_recording_lifecycle::attach/construction failure closes the launch owner in native/tests/reference/test_research_recording_lifecycle.cpp; verified green on darwin-arm64 (build/native-release)"
+        "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.native_research_recording_lifecycle::test_frontend_failure_between_windows_is_not_replay_eligible in native/tests/reference/test_research_recording_lifecycle.cpp; verified green on darwin-arm64 (build/native-release)"
       ]
     },
     {
@@ -40262,9 +40588,22 @@
       "owner_task": "T53",
       "native_test_id": "reference.frontend_windows::test_viewer_import_failure_still_closes_physical_and_replay_owners",
       "native_source": "native/tests/reference/test_frontend_windows.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[False-import-physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[False-import-replay]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[False-launch-physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[False-launch-replay]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[False-interrupt-physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[False-interrupt-replay]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[True-import-physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[True-import-replay]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[True-launch-physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[True-launch-replay]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[True-interrupt-physical]",
+        "tests/portability/test_viewer_launch_platform.py::test_viewer_failure_closes_owner_and_preserves_primary[True-interrupt-replay]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 12 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.frontend_windows::test_viewer_import_failure_still_closes_physical_and_replay_owners in native/tests/reference/test_frontend_windows.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -40278,9 +40617,13 @@
       "owner_task": "T53",
       "native_test_id": "reference.worker_platform::performance_cores_always_positive + platform_source",
       "native_source": "native/tests/reference/test_worker_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_cpu_fallback_respects_process_availability[4-64-4]",
+        "tests/portability/test_worker_platform.py::test_cpu_fallback_respects_process_availability[None-8-8]",
+        "tests/portability/test_worker_platform.py::test_cpu_fallback_respects_process_availability[None-None-1]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.worker_platform::performance_cores_always_positive + platform_source in native/tests/reference/test_worker_platform.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -40294,9 +40637,14 @@
       "owner_task": "T53",
       "native_test_id": "reference.worker_platform::performance_cores_uses_platform_source (Darwin arm)",
       "native_source": "native/tests/reference/test_worker_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_darwin_performance_core_query[8\\n-0-8]",
+        "tests/portability/test_worker_platform.py::test_darwin_performance_core_query[0-0-1]",
+        "tests/portability/test_worker_platform.py::test_darwin_performance_core_query[unknown-0-3]",
+        "tests/portability/test_worker_platform.py::test_darwin_performance_core_query[8-1-3]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.worker_platform::performance_cores_uses_platform_source (Darwin arm) in native/tests/reference/test_worker_platform.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -40310,9 +40658,12 @@
       "owner_task": "T53",
       "native_test_id": "reference.worker_platform::performance_cores_uses_platform_source (fallback arm)",
       "native_source": "native/tests/reference/test_worker_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_darwin_query_failure_uses_affinity_fallback[failure0]",
+        "tests/portability/test_worker_platform.py::test_darwin_query_failure_uses_affinity_fallback[failure1]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.worker_platform::performance_cores_uses_platform_source (fallback arm) in native/tests/reference/test_worker_platform.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -40326,9 +40677,13 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_invalid_explicit_start_method_creates_no_resources[not-a-method]",
+        "tests/portability/test_worker_platform.py::test_invalid_explicit_start_method_creates_no_resources[]",
+        "tests/portability/test_worker_platform.py::test_invalid_explicit_start_method_creates_no_resources[7]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same multiprocessing start-method machinery"
@@ -40342,9 +40697,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.worker_platform::performance_cores_uses_platform_source",
       "native_source": "native/tests/reference/test_worker_platform.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_linux_cpu_count_does_not_query_apple"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.worker_platform::performance_cores_uses_platform_source in native/tests/reference/test_worker_platform.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -40358,9 +40715,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_linux_spawn_and_retained_darwin_policy"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 multiprocessing start methods; native workers are std::jthread/std::thread with no start-method axis"
@@ -40374,9 +40733,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_missing_spawn_does_not_fall_back_to_fork"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same multiprocessing start-method machinery"
@@ -40390,9 +40751,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_mjpython_worker_probe"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 mjpython interpreter subprocess probe; no interpreter worker exists natively"
@@ -40406,9 +40769,14 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_real_cli_async_entry_points[module-research]",
+        "tests/portability/test_worker_platform.py::test_real_cli_async_entry_points[module-ride]",
+        "tests/portability/test_worker_platform.py::test_real_cli_async_entry_points[uv-console-research]",
+        "tests/portability/test_worker_platform.py::test_real_cli_async_entry_points[uv-console-ride]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 4 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 exit-parity across CLI entry points is subsumed by reference.async_close's bitwise sample comparison"
@@ -40422,9 +40790,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_ride_research_forwards_explicit_async_option"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 argparse plumbing; async_telemetry lands on the request directly (test_async_close research_seed)"
@@ -40438,9 +40808,12 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/portability/test_worker_platform.py::test_threaded_parent_worker_probe[False-0]",
+        "tests/portability/test_worker_platform.py::test_threaded_parent_worker_probe[True-130]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 interpreter subprocess worker probe; native interrupt->130 lives in cli/batch.cpp + process_pool cancelled-launch path"
@@ -42984,9 +43357,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::recorded_side_is_validated",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_differences_validate_both_sides"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::recorded_side_is_validated in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43000,9 +43375,18 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::field_type_and_null_rules",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-runtime_schema-True]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-runtime_schema-2]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[native-python_source_sha256-not-a-digest]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-extension_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-native_source_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[python-mujoco_library_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[native-extension_sha256-None]",
+        "tests/test_execution_identity.py::test_field_type_and_null_rules[native-mujoco_version-]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 8 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::field_type_and_null_rules in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43016,9 +43400,13 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::integer_abi_change_is_a_named_failure",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_integer_abi_change_is_a_named_failure[v2_native-path0]",
+        "tests/test_execution_identity.py::test_integer_abi_change_is_a_named_failure[v2_native-path1]",
+        "tests/test_execution_identity.py::test_integer_abi_change_is_a_named_failure[v2_native_linux-path2]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::integer_abi_change_is_a_named_failure in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43032,9 +43420,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::legacy_native_read_stays_valid",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_native_read_stays_valid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::legacy_native_read_stays_valid in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43048,9 +43438,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::legacy_read_stays_valid",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_read_stays_valid"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::legacy_read_stays_valid in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43064,9 +43456,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::legacy_rejects_the_v2_field_set",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_rejects_the_v2_field_set"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::legacy_rejects_the_v2_field_set in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43080,9 +43474,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_legacy_vs_v2_reports_the_missing_identity_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same differ machinery; legacy-vs-v2 rejects closed in check_execution as historical"
@@ -43096,9 +43492,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_library_list_length_difference_is_indexed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same differ machinery"
@@ -43112,9 +43510,15 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::linux_file_identity_rules",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path0-32]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path1-apple-system]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path2-None]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path3-FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF]",
+        "tests/test_execution_identity.py::test_linux_file_identity_rules[path4-fabricated]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::linux_file_identity_rules in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43128,9 +43532,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::recorded_mismatch_names_the_field",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_mismatch_names_the_field"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::recorded_mismatch_names_the_field in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43144,9 +43550,16 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::native_context_requires_exactly_six_keys",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[build_type]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[compiler_id]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[compiler_version]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[numerical_flags]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[platform]",
+        "tests/test_execution_identity.py::test_native_context_requires_exactly_six_keys[numerics]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 6 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::native_context_requires_exactly_six_keys in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43160,9 +43573,37 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::nested_field_rules_fail_closed",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path0-FreeBSD]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path1-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path2-ARM 64]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path3-bad3]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path4-bad4]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path5-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path6-   ]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path7-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path8-None]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path9-untracked]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path10-untracked]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path11-MKL]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path12-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path13-True]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path14-64]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path15-32]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path16-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path17-bad17]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path18-0]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path19-True]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path20-bad20]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path21-blas]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path22-file]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path23-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path24-None]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path25-]",
+        "tests/test_execution_identity.py::test_nested_field_rules_fail_closed[path26-untracked]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 27 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::nested_field_rules_fail_closed in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43176,9 +43617,17 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::noncanonical_identity_schema_fails",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[True]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[False]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[1]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[3]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[2]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[2.0]",
+        "tests/test_execution_identity.py::test_noncanonical_identity_schema_fails[None]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 7 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::noncanonical_identity_schema_fails in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43192,9 +43641,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_os_and_backend_pairing_change_reports_the_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same differ machinery; pairing mismatches reject in validate_execution (os_change_is_a_named_failure)"
@@ -43208,9 +43659,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::os_change_is_a_named_failure",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_os_change_is_a_named_failure"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::os_change_is_a_named_failure in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43224,9 +43677,11 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_provider_hash_names_the_indexed_library_path"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 same differ machinery; indexed digest paths reject in validate_execution (nested_field_rules)"
@@ -43240,9 +43695,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::python_v2_context_is_only_platform_and_numerics",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_python_v2_context_is_only_platform_and_numerics"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::python_v2_context_is_only_platform_and_numerics in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43256,9 +43713,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::compatible_accepts_identity",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_require_execution_compatible_accepts_identity"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::compatible_accepts_identity in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43272,9 +43731,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::compatible_raises_with_named_fields",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_require_execution_compatible_raises_with_named_fields"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::compatible_raises_with_named_fields in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43288,9 +43749,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::compatible_rejects_legacy_recorded",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_require_execution_compatible_rejects_legacy_recorded"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::compatible_rejects_legacy_recorded in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43304,9 +43767,27 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path0-x86_64]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path1-musl]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path2-26B001]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path3-3.14.4]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path4-cpython-315-darwin]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path5-26B001]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path6-2.5.3]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path7-Apple M3]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path8-8]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path9-openmp]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path10-macos-26B001+accelerate-00000000-0000-4000-8000-000000000000+sdk-26A425]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native_linux-path11-9999999999999999999999999999999999999999999999999999999999999999]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path12--O3 -ffp-contract=off -ffast-math]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path13-21.0.1]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path14-9999999999999999999999999999999999999999999999999999999999999999]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path15-9999999999999999999999999999999999999999999999999999999999999999]",
+        "tests/test_execution_identity.py::test_single_field_mismatch_reports_the_dotted_key[v2_native-path16-3.12.1]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 17 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 record-vs-record recursive differ has no native subject; bound-field compare names fields via check_execution"
@@ -43320,9 +43801,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::unknown_identity_schema_is_not_guessed",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_unknown_identity_schema_is_not_guessed"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::unknown_identity_schema_is_not_guessed in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43336,9 +43819,13 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::v2_records_validate",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_v2_records_validate[v2_python]",
+        "tests/test_execution_identity.py::test_v2_records_validate[v2_native]",
+        "tests/test_execution_identity.py::test_v2_records_validate[v2_native_linux]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 3 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::v2_records_validate in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43352,9 +43839,12 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::v2_rejects_missing_and_extra_top_level_keys",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_v2_rejects_missing_and_extra_top_level_keys[v2_python]",
+        "tests/test_execution_identity.py::test_v2_rejects_missing_and_extra_top_level_keys[v2_native]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 2 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::v2_rejects_missing_and_extra_top_level_keys in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43368,9 +43858,11 @@
       "owner_task": "T53",
       "native_test_id": "reference.execution_identity::validation_does_not_mutate",
       "native_source": "native/tests/reference/test_execution_identity.cpp",
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_validation_does_not_mutate_the_record"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s)",
+      "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: ported \u2014 native owner reference.execution_identity::validation_does_not_mutate in native/tests/reference/test_execution_identity.cpp; verified green on darwin-arm64 (build/native-release)"
@@ -43384,9 +43876,15 @@
       "owner_task": "T53",
       "native_test_id": null,
       "native_source": null,
-      "collected_node_ids": [],
-      "assertions_capture": "completion 3.02 AST inventory of supplied source; no pytest collection or execution",
-      "comparison_class": "unassigned",
+      "collected_node_ids": [
+        "tests/test_execution_identity.py::test_validation_imports_nothing[legacy_python]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[legacy_native]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[v2_python]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[v2_native]",
+        "tests/test_execution_identity.py::test_validation_imports_nothing[v2_native_linux]"
+      ],
+      "assertions_capture": "2026-10-31: measured \u2014 pytest collected 5 node(s)",
+      "comparison_class": "python-only",
       "disposition": "drop",
       "evidence": [
         "2026-10-31 3.36t2b lane/c: dropped \u2014 sys.modules accounting is interpreter bookkeeping; validate_execution is a pure io::Value function"

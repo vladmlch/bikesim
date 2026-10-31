@@ -1,0 +1,20 @@
+{
+  "integration_sha256": "4025754a0208014ee88d76bf0de0eccf3ae0b4397d7b592e714824121030e4e4",
+  "integration_width": 292,
+  "model_dims": {
+    "na": 0,
+    "nbody": 28,
+    "neq": 7,
+    "ngeom": 94,
+    "njnt": 26,
+    "nq": 26,
+    "nsensor": 17,
+    "nsensordata": 31,
+    "nsite": 33,
+    "ntendon": 1,
+    "nu": 12,
+    "nv": 26,
+    "nwrap": 2
+  },
+  "model_sha256": "55fde9b3768108806b35f4ab1998b379bd3a7455da23fcd8c55ffe43e6840b09"
+}

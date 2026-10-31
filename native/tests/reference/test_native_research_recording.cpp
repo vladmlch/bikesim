@@ -401,7 +401,13 @@ void test_shared_export_native_rows_and_complete_provenance() {
         const auto index = bike::io::parse_json(
             read_bytes(base.string() + ".json"));
         const auto payload = read_bytes(base.string() + ".bin");
-        std::string oracle_commit, oracle_source_sha;
+        // The recorded provenance is string-or-null across capture
+        // environments: a checkout without .git (the Linux container's
+        // /src copy) stamps null model_commit/model_source_dirty. The
+        // recorded Values are re-seated verbatim so the port stays
+        // capture-environment-agnostic.
+        bike::io::Value oracle_commit, oracle_source_sha;
+        bool provenance_found = false;
         for (const auto &entry : std::get<bike::io::Value::Array>(index.data))
             if (rd::string(rd::field(entry, "label")) ==
                 "export.summary.other") {
@@ -415,12 +421,12 @@ void test_shared_export_native_rows_and_complete_provenance() {
                         .lexeme));
                 const auto recorded = bike::io::parse_json(
                     payload.substr(offset, nbytes));
-                oracle_commit = rd::string(
-                    rd::field(recorded, ".model_commit"));
-                oracle_source_sha = rd::string(
-                    rd::field(recorded, ".model_source_sha256"));
+                oracle_commit = rd::field(recorded, ".model_commit");
+                oracle_source_sha = rd::field(
+                    recorded, ".model_source_sha256");
+                provenance_found = true;
             }
-        bt::require(!oracle_commit.empty() && !oracle_source_sha.empty(),
+        bt::require(provenance_found,
                     "the golden entry carries the oracle provenance");
         const auto hex = [](std::string_view value, std::size_t digits) {
             return value.size() == digits &&
@@ -429,16 +435,35 @@ void test_shared_export_native_rows_and_complete_provenance() {
                               (c >= 'a' && c <= 'f');
                    });
         };
+        const auto string_or_null = [](const bike::io::Value &value) {
+            return bike::io::is_null(value) ||
+                   std::holds_alternative<std::string>(value.data);
+        };
+        bt::require(
+            string_or_null(oracle_commit) && string_or_null(oracle_source_sha),
+            "oracle provenance is string-or-null");
         auto &object = std::get<bike::io::Value::Object>(summary.data);
         for (auto &[name, member] : object)
             if (name == "model_commit") {
-                bt::require(hex(rd::string(member), 40),
-                            "native model_commit is a git object id");
-                member = bike::io::Value{oracle_commit};
+                // A native build without git provenance stamps null; a
+                // checkout stamps a git object id.
+                if (const auto *s = std::get_if<std::string>(&member.data))
+                    bt::require(hex(*s, 40),
+                                "native model_commit is a git object id");
+                else
+                    bt::require(bike::io::is_null(member),
+                                "native model_commit is a git object id or "
+                                "null");
+                member = oracle_commit;
             } else if (name == "model_source_sha256") {
-                bt::require(hex(rd::string(member), 64),
-                            "native model_source_sha256 is a sha256");
-                member = bike::io::Value{oracle_source_sha};
+                if (const auto *s = std::get_if<std::string>(&member.data))
+                    bt::require(hex(*s, 64),
+                                "native model_source_sha256 is a sha256");
+                else
+                    bt::require(bike::io::is_null(member),
+                                "native model_source_sha256 is a sha256 or "
+                                "null");
+                member = oracle_source_sha;
             }
     }
     ft2_reference::consume_tree(

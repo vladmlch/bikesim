@@ -1,0 +1,32 @@
+[
+  {
+    "media_type": "application/toml",
+    "name": "track.toml",
+    "sha256": "5508e4299d042e7fc09ddd39e89f4fb3243e51f28b11978cbe0b4dffe6d03e35"
+  },
+  {
+    "media_type": "application/x-npy",
+    "name": "terrain_vertices.npy",
+    "sha256": "963ed70960966eb824a781f76fc63428b5b1dc167da0ba74fef648344e6f1ece"
+  },
+  {
+    "media_type": "application/json",
+    "name": "resolved_config.json",
+    "sha256": "7d310dbf64d610770eabf9b4f66f4bfba382a791b816c81e73291ad1b9a6a753"
+  },
+  {
+    "media_type": "application/json",
+    "name": "rider_joint_envelope.json",
+    "sha256": "4e9cacbce5b7a39d369f3e1d7eacedbef5386c56e1707045ea140621baa43f64"
+  },
+  {
+    "media_type": "application/json",
+    "name": "rider_joint_strength.json",
+    "sha256": "0921312611e18611da3e384d2827e63c183eb642f0b9be1cbbf0a58480eee5f8"
+  },
+  {
+    "media_type": "application/json",
+    "name": "recipe.json",
+    "sha256": "960c5b1210d55ed376fd3f0e91803d8d04598476de1502f72972d676760b18b4"
+  }
+]

@@ -15623,7 +15623,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "9483ec5b4334029e5be87e77ca72efc997d84a82f0274cc6368a710d76118f29",
     "snapshot_line_count": 62,
     "tracked": true,
@@ -15741,7 +15741,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "71c2fe4a781952ed0bd63d24e8033e9fffd142a12a3cf4887c4de3095efbdc41",
     "snapshot_line_count": 142,
     "tracked": true,
@@ -15916,7 +15916,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "e61c3c2021200a95490ea5b858e7641ff2db00fde419c6c4dc871a5ba59f4bf0",
     "snapshot_line_count": 248,
     "tracked": true,
@@ -15994,7 +15994,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "1bf230d87a731298bc8bb44f6438ca30dd8ce2e5bfd37a044587b38338bba25f",
     "snapshot_line_count": 208,
     "tracked": true,
@@ -16015,7 +16015,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "2bc2b754098131c9a63e5fb36ba0a184d24aae44f21fd96b2b2a9ac6387ad166",
     "snapshot_line_count": 225,
     "tracked": true,
@@ -16232,7 +16232,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "29b7b30c06283656da69eed3dd3ae8bfccee2eba98105936ed28972e4609c1c7",
     "snapshot_line_count": 58,
     "tracked": true,

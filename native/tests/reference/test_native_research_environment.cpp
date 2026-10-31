@@ -372,7 +372,9 @@ void test_delay_full_commands_immediate_brakes_and_recording(
     runtime::RideControl immediate;
     immediate.motor_torque_nm = 0.;
     immediate.human_torque_nm = 1.;
-    immediate.posture = rider::RiderPosture{.torso_lean_rad = .01};
+    rider::RiderPosture leaned{};
+    leaned.torso_lean_rad = .01;
+    immediate.posture = leaned;
     // RideControl(2., .5, 0., 0., None, False)
     runtime::RideControl bounded;
     bounded.motor_torque_nm = 2.;
@@ -435,11 +437,13 @@ void test_scripted_rider_and_demand_are_sampled_at_physics_rate() {
         "test_scripted_rider_and_demand_are_sampled_at_physics_rate");
     runtime::ResearchPrograms programs;
     programs.reaction_delay_s = .0025;
+    rider::RiderPosture leaned{};
+    leaned.torso_lean_rad = .01;
     programs.rider_frames = {
         {.time_s = 0., .posture = rider::RiderPosture{},
          .human_torque_nm = 0.},
         {.time_s = .021,
-         .posture = rider::RiderPosture{.torso_lean_rad = .01},
+         .posture = leaned,
          .human_torque_nm = 1.},
         {.time_s = .04, .posture = rider::RiderPosture{},
          .human_torque_nm = 0.}};
@@ -537,7 +541,12 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
         const auto index = bike::io::parse_json(
             read_bytes(base.string() + ".json"));
         const auto payload = read_bytes(base.string() + ".bin");
-        std::string oracle_commit, oracle_source_sha;
+        // Capture-time provenance is string-or-null across platforms: a
+        // checkout without .git (the Linux container's /src copy) records
+        // null model_commit/model_source_dirty. The recorded Value is
+        // re-seated verbatim so the port stays capture-environment-agnostic.
+        bike::io::Value oracle_commit, oracle_source_sha;
+        bool provenance_found = false;
         for (const auto &entry : std::get<bike::io::Value::Array>(index.data))
             if (rd::string(rd::field(entry, "label")) ==
                 "metadata.other") {
@@ -551,19 +560,26 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
                         .lexeme));
                 const auto recorded = bike::io::parse_json(
                     payload.substr(offset, nbytes));
-                oracle_commit = rd::string(
-                    rd::field(recorded, ".model_commit"));
-                oracle_source_sha = rd::string(
-                    rd::field(recorded, ".model_source_sha256"));
+                oracle_commit = rd::field(recorded, ".model_commit");
+                oracle_source_sha =
+                    rd::field(recorded, ".model_source_sha256");
+                provenance_found = true;
             }
-        bt::require(!oracle_commit.empty() && !oracle_source_sha.empty(),
+        bt::require(provenance_found,
                     "the golden entry carries the oracle provenance");
+        const auto string_or_null = [](const bike::io::Value &value) {
+            return bike::io::is_null(value) ||
+                   std::holds_alternative<std::string>(value.data);
+        };
+        bt::require(
+            string_or_null(oracle_commit) && string_or_null(oracle_source_sha),
+            "oracle provenance is string-or-null");
         auto &object = std::get<bike::io::Value::Object>(metadata.data);
         for (auto &[name, member] : object) {
             if (name == "model_commit")
-                member = bike::io::Value{oracle_commit};
+                member = oracle_commit;
             else if (name == "model_source_sha256")
-                member = bike::io::Value{oracle_source_sha};
+                member = oracle_source_sha;
         }
         for (const std::string_view section :
              {"execution", "experiment", "sensor_config", "setup"})

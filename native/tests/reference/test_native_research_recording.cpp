@@ -35,13 +35,17 @@
 //  * PolicySession(reference='ghost.module:Missing') ↔ a policy whose
 //    metadata() carries the ghost reference; the native session has no
 //    reference parameter — run_metadata.policy is the same sink either way.
+#include "ft2_reference_support.hpp"
 #include "research_reference_support.hpp"
 #include "io/json.hpp"
+#include "io/npy.hpp"
 #include "recording/reader.hpp"
 #include "replay/export.hpp"
 #include "replay/input.hpp"
 #include "replay/input_detail.hpp"
+#include "replay/rebuild.hpp"
 #include <map>
+#include <set>
 #include <sstream>
 
 namespace {
@@ -275,6 +279,215 @@ void test_changed_execution_is_not_relabelled_as_startup_identity(
                 "the recorded execution keeps the startup value");
 }
 
+// tests/reference/test_native_research_recording.py::
+//   test_shared_export_native_rows_and_complete_provenance
+// The golden-qualified leg the file header deferred: the native export of
+// the frozen research_flat capture replays the oracle's rows byte-for-byte.
+// research.execution is the sole intentional summary difference (paired
+// owner identity), popped before the tree compare exactly like the Python
+// deepcopy+del leg.
+constexpr std::string_view kNode =
+    "tests/reference/test_native_research_recording.py::";
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_shared_export_native_rows_and_complete_provenance() {
+    bt::oracle::Node node(
+        std::string(kNode) +
+        "test_shared_export_native_rows_and_complete_provenance");
+    const auto env = ft2_reference::research_variant("research_flat",
+                                                     std::nullopt, 3);
+    char label[48];
+    for (std::size_t index = 0; index < 2; ++index) {
+        std::snprintf(label, sizeof(label), "step.%zu.transition", index);
+        ft2_reference::consume_tree(
+            node, step(*env, motor_control(0.)).as_wire(), label);
+    }
+    env->stop();
+    const auto destination =
+        std::filesystem::temp_directory_path() / "ft2_dbg_recording";
+    std::error_code cleanup_ignored;
+    std::filesystem::remove_all(destination, cleanup_ignored);
+    (void)bike::replay::export_legacy(*env, destination);
+    const auto input = bike::replay::load_legacy_input(destination);
+    // manifest.execution == recipe.execution — the env-internal recipe
+    // stamps the configuration_metadata execution doc (the same doc the
+    // export's summary-vs-recipe gate compares). This is the native-doc
+    // substitution of the adapter's v2 manifest block; backend 'native'
+    // and the live binary's probe fields are the checked contract.
+    const std::set<std::string> expected_execution{
+        "backend", "native_source_sha256", "execution_identity",
+        "mujoco_library_sha256", "numeric_provider",
+        "executable_sha256", "source_identity_scope"};
+    const auto &execution = rd::field(input.manifest, "execution");
+    bt::require(bike::replay::detail::keys(execution) == expected_execution,
+                "manifest execution carries the native identity doc set");
+    bt::require(rd::string(rd::field(execution, "backend")) == "native",
+                "the native export stamps the native backend");
+    // SCHEMA2_FILES | {ENVELOPE_FILE, STRENGTH_FILE}.
+    const std::set<std::string> expected_files{
+        "summary.json", "commands_requested.jsonl", "commands_applied.jsonl",
+        "observations.jsonl", "transitions.jsonl", "states.npz",
+        "terrain_vertices.npy", "track.toml", "trace.csv",
+        "episode_metrics.json", "telemetry.csv", "intervals.jsonl",
+        "rider_joint_envelope.json", "rider_joint_strength.json"};
+    bt::require(bike::replay::detail::keys(
+                    rd::field(input.manifest, "file_sha256")) ==
+                    expected_files,
+                "the manifest digests the schema-2 file set plus rider "
+                "envelope/strength");
+    const auto &research = rd::field(input.summary, "research");
+    // `not summary['research']['execution_changed_during_run']`: the
+    // live-stamped execution doc evaluates the receipt all-false.
+    const auto &changed =
+        rd::field(research, "execution_changed_during_run");
+    bt::require(std::holds_alternative<bool>(changed.data) &&
+                    !std::get<bool>(changed.data),
+                "an unmodified run keeps its startup execution identity");
+    // deepcopy+del summary['research']['execution'] ↔ pop on a copy; the
+    // adapter's save writes the thinner snapshot.summary shape, so the
+    // raw-export sections and the receipt-injected research keys the
+    // adapter block does not carry leave the compare too — while
+    // run_metadata resets to the adapter's empty dict.
+    auto summary = input.summary;
+    {
+        auto &object = std::get<bike::io::Value::Object>(summary.data);
+        for (auto &[name, member] : object)
+            if (name == "research") {
+                auto &block =
+                    std::get<bike::io::Value::Object>(member.data);
+                (void)rd::pop(block, "execution");
+                for (const auto *key : {"capture_mode",
+                                        "configuration_changed_during_run",
+                                        "identity_check_error",
+                                        "measurement_decimation",
+                                        "physical_downsampling"})
+                    for (auto it = block.begin(); it != block.end(); ++it)
+                        if (it->first == key) {
+                            block.erase(it);
+                            break;
+                        }
+                for (auto &[key, value] : block)
+                    if (key == "run_metadata")
+                        value = bike::io::Value{bike::io::Value::Object{}};
+            }
+    }
+    for (const auto *section : {"compatibility_export", "episode_metrics",
+                                "recording_extents",
+                                "research_replay_contract", "execution",
+                                "experiment", "sensor_config", "setup"}) {
+        auto &object = std::get<bike::io::Value::Object>(summary.data);
+        for (auto it = object.begin(); it != object.end(); ++it)
+            if (it->first == section) {
+                object.erase(it);
+                break;
+            }
+    }
+    // Capture-time provenance substitution: the oracle's export stamped
+    // its live git HEAD and python_source_sha256; the native export stamps
+    // live HEAD and native_source_sha256 — commit- and backend-dependent
+    // by construction (same owner-identity class as research.execution).
+    // The port checks the native stamps are well-formed, then re-seats
+    // the oracle-recorded values read straight out of this node's
+    // committed golden entry so the port stays platform- and
+    // commit-agnostic.
+    {
+        const auto base = bt::oracle::root() /
+                          std::string(bt::oracle::platform()) /
+                          bt::oracle::node_path(
+                              std::string(kNode) +
+                              "test_shared_export_native_rows_and_complete_"
+                              "provenance");
+        const auto index = bike::io::parse_json(
+            read_bytes(base.string() + ".json"));
+        const auto payload = read_bytes(base.string() + ".bin");
+        std::string oracle_commit, oracle_source_sha;
+        for (const auto &entry : std::get<bike::io::Value::Array>(index.data))
+            if (rd::string(rd::field(entry, "label")) ==
+                "export.summary.other") {
+                const auto offset = static_cast<std::size_t>(std::stoull(
+                    std::get<bike::io::Number>(
+                        rd::field(entry, "offset").data)
+                        .lexeme));
+                const auto nbytes = static_cast<std::size_t>(std::stoull(
+                    std::get<bike::io::Number>(
+                        rd::field(entry, "nbytes").data)
+                        .lexeme));
+                const auto recorded = bike::io::parse_json(
+                    payload.substr(offset, nbytes));
+                oracle_commit = rd::string(
+                    rd::field(recorded, ".model_commit"));
+                oracle_source_sha = rd::string(
+                    rd::field(recorded, ".model_source_sha256"));
+            }
+        bt::require(!oracle_commit.empty() && !oracle_source_sha.empty(),
+                    "the golden entry carries the oracle provenance");
+        const auto hex = [](std::string_view value, std::size_t digits) {
+            return value.size() == digits &&
+                   std::ranges::all_of(value, [](char c) {
+                       return (c >= '0' && c <= '9') ||
+                              (c >= 'a' && c <= 'f');
+                   });
+        };
+        auto &object = std::get<bike::io::Value::Object>(summary.data);
+        for (auto &[name, member] : object)
+            if (name == "model_commit") {
+                bt::require(hex(rd::string(member), 40),
+                            "native model_commit is a git object id");
+                member = bike::io::Value{oracle_commit};
+            } else if (name == "model_source_sha256") {
+                bt::require(hex(rd::string(member), 64),
+                            "native model_source_sha256 is a sha256");
+                member = bike::io::Value{oracle_source_sha};
+            }
+    }
+    ft2_reference::consume_tree(
+        node, vread::wire_from_value(summary, "export.summary"),
+        "export.summary");
+    for (const std::string_view name :
+         {"observations.jsonl", "transitions.jsonl",
+          "commands_requested.jsonl", "commands_applied.jsonl",
+          "intervals.jsonl"}) {
+        runtime::WireArray rows;
+        for (const auto &document : bike::replay::detail::json_lines(
+                 read_bytes(destination / std::string(name))))
+            rows.push_back(vread::wire_from_value(
+                document, "export." + std::string(name)));
+        ft2_reference::consume_tree(node, runtime::Wire{std::move(rows)},
+                                    "export." + std::string(name));
+    }
+    ft2_reference::consume_tree(
+        node, vread::wire_from_value(input.metrics, "export.episode_metrics"),
+        "export.episode_metrics");
+    const auto archive =
+        bike::io::parse_npz(bike::io::read_numpy_bytes(
+            destination / "states.npz"));
+    for (const std::string_view member : {"initial", "final"}) {
+        const auto found = std::ranges::find_if(
+            archive, [&](const auto &entry) {
+                return entry.first == member;
+            });
+        bt::require(found != archive.end(),
+                    "states.npz carries the " + std::string(member) +
+                        " member");
+        node.f64(found->second.doubles(),
+                 std::string("states.npz ") + std::string(member));
+    }
+    // rebuild_environment(): the staged replay input composes a checked
+    // fresh plant at step zero.
+    bike::replay::FixedAssets assets(input);
+    auto request = bike::replay::request_from_input(input, assets);
+    auto prepared = bike::research::prepare_environment(std::move(request));
+    bike::replay::verify_configuration(input, *prepared);
+    const auto rebuilt =
+        runtime::make_research(std::move(prepared->bootstrap));
+    bt::require(rebuilt->snapshot().step == 0,
+                "the rebuilt environment starts at step zero");
+    rebuilt->close();
+    node.done();
+}
+NATIVE_DIAG_POP
+
 } // namespace
 
 int main() {
@@ -290,5 +503,6 @@ int main() {
             "executable_sha256");
         test_changed_execution_is_not_relabelled_as_startup_identity(
             "mujoco_library_sha256");
+        test_shared_export_native_rows_and_complete_provenance();
     });
 }

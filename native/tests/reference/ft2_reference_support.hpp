@@ -31,12 +31,16 @@
 
 #include "diag.hpp"
 
+#include "engine_identity.hpp"
+#include "io/float_format.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
+#include "platform/provenance.hpp"
 #include "research/environment.hpp"
 #include "runtime/bootstrap.hpp"
 #include "runtime/bootstrap_io.hpp"
 #include "runtime/control.hpp"
+#include "runtime/provenance.hpp"
 #include "runtime/research.hpp"
 #include "runtime/research_io.hpp"
 #include "runtime/runtime.hpp"
@@ -109,8 +113,121 @@ research_bootstrap(std::string_view name) {
     for (std::size_t index = 0; index < scale_list.size(); ++index)
         bootstrap.config.noise_std[index] =
             bio::as_double(scale_list[index], "noise_std");
+    std::string stamped_recipe;
     const auto *metadata = bio::find_member(object, "metadata");
-    if (metadata != nullptr) bootstrap.config.metadata = *metadata;
+    if (metadata != nullptr) {
+        auto restored = *metadata;
+        // summarize()/identity_receipt()/the export's summary-vs-recipe
+        // consistency gate read the same construction-time stamps
+        // configuration_metadata seats in a real native env: the
+        // experiment/sensor_config serializations (oracle-identical), the
+        // settled owner's setup.equilibrium doc, the building binary's
+        // source manifest + configuration digest, and the live execution
+        // doc. Nothing changes during the run, so the receipt evaluates
+        // all-false — exactly like create_native_research on an unmutated
+        // environment.
+        for (const auto *key : {"experiment", "sensor_config"}) {
+            if (const auto *member = bio::find_member(object, key))
+                runtime_reference::set_member(restored, key, *member);
+        }
+        if (const auto *equilibrium = bio::find_member(object, "equilibrium"))
+            runtime_reference::set_member(
+                restored, "setup",
+                bio::Value{bio::Value::Object{
+                    {"equilibrium", *equilibrium}}});
+        // physical_configuration_metadata's construction-time stamps.
+        const auto identity = runtime::runtime_identity();
+        const auto engine = engine::identity();
+        const auto build = bike::platform::build_identity();
+        const auto text = [](std::string_view value) {
+            return bio::Value{std::string(value)};
+        };
+        runtime_reference::set_member(
+            restored, "model_source_sha256",
+            text(identity.native_source_sha256));
+        // configuration_digest() — metadata.cpp's re-hashing twin: the
+        // articulated joint paths substitute their recorded digests before
+        // the canonical serialization is hashed.
+        {
+            auto hashable = runtime_reference::member(restored,
+                                                    "resolved_config");
+            auto physics = runtime_reference::member(hashable, "physics");
+            auto articulated =
+                runtime_reference::member(physics, "articulated");
+            const auto &resolved_object = bio::as_object(
+                hashable, "resolved_config");
+            for (const auto *key : {"joint_envelope", "joint_strength"}) {
+                const auto *digest = bio::find_member(
+                    resolved_object, std::string(key) + "_sha256");
+                runtime_reference::set_member(
+                    articulated, std::string(key) + "_path",
+                    digest ? *digest : bio::Value{});
+            }
+            runtime_reference::set_member(physics, "articulated",
+                                          std::move(articulated));
+            runtime_reference::set_member(hashable, "physics",
+                                          std::move(physics));
+            const auto canonical = bio::canonical_json(hashable);
+            runtime_reference::set_member(
+                restored, "configuration_sha256",
+                text(bio::sha256(std::as_bytes(
+                    std::span{canonical.data(), canonical.size()}))));
+        }
+        bio::Value execution{bio::Value::Object{
+            {"backend", text("native")},
+            {"native_source_sha256",
+             text(identity.native_source_sha256)},
+            {"execution_identity",
+             text(bike::platform::execution_identity())},
+            {"mujoco_library_sha256",
+             text(engine.library_sha256)},
+            {"numeric_provider", text(engine.numeric_provider)},
+            {"executable_sha256", text(build.executable_sha256)},
+            {"source_identity_scope",
+             text("compiled first-party source manifest; running "
+                  "image hashed separately")}}};
+        runtime_reference::set_member(restored, "execution", execution);
+        bootstrap.config.metadata = std::move(restored);
+        // The env's internal recipe asset stamps the same execution doc —
+        // the export's summary-vs-recipe gate compares the two. The
+        // stamped bytes are handed to the asset loader below.
+        const fs::path recipe_path = dir(name) / "assets" / "recipe.json";
+        if (fs::exists(recipe_path)) {
+            auto recipe = bio::parse_json(bt::text(recipe_path));
+            runtime_reference::set_member(recipe, "execution", execution);
+            stamped_recipe = bio::canonical_json(recipe) + '\n';
+        }
+    }
+    // assets.json + assets/ restore the immutable input asset set
+    // snapshot_research_assets stamped at capture — legacy/full exports
+    // require config.assets; the frozen research.json omits it.
+    const fs::path manifest_path = dir(name) / "assets.json";
+    if (fs::exists(manifest_path)) {
+        auto assets = std::make_shared<std::vector<runtime::ResearchAsset>>();
+        const bio::Value manifest = bio::parse_json(bt::text(manifest_path));
+        for (const auto &entry :
+             bio::as_array(manifest, "assets manifest")) {
+            const auto &fields = bio::as_object(entry, "asset entry");
+            runtime::ResearchAsset asset;
+            asset.name =
+                bio::as_string(*bio::find_member(fields, "name"), "name");
+            asset.media_type = bio::as_string(
+                *bio::find_member(fields, "media_type"), "media_type");
+            asset.sha256 = bio::as_string(
+                *bio::find_member(fields, "sha256"), "sha256");
+            const std::string bytes =
+                (asset.name == "recipe.json" && !stamped_recipe.empty())
+                    ? stamped_recipe
+                    : bt::text(dir(name) / "assets" / asset.name);
+            asset.content.reserve(bytes.size());
+            for (const char unit : bytes)
+                asset.content.push_back(static_cast<std::byte>(unit));
+            if (asset.name == "recipe.json" && !stamped_recipe.empty())
+                asset.sha256 = bio::sha256(asset.content);
+            assets->push_back(std::move(asset));
+        }
+        bootstrap.config.assets = std::move(assets);
+    }
     return bootstrap;
 }
 
@@ -165,6 +282,60 @@ research_variant(std::string_view name,
     if (energy_residual)
         bootstrap.config.maximum_energy_residual_ratio = *energy_residual;
     if (seed) bootstrap.config.seed_decimal = *seed;
+    // The experiment/sensor_config documents embedded in metadata are
+    // construction-time serializations of the request — the same knobs the
+    // config patches above change, in document units (seconds, decimals).
+    if (std::holds_alternative<bio::Value::Object>(
+            bootstrap.config.metadata.data)) {
+        const auto patch_member = [&](std::string_view member,
+                                      std::string_view key,
+                                      bio::Value value) {
+            auto doc =
+                runtime_reference::member(bootstrap.config.metadata,
+                                          std::string(member));
+            runtime_reference::set_member(doc, std::string(key),
+                                          std::move(value));
+            runtime_reference::set_member(bootstrap.config.metadata,
+                                          std::string(member),
+                                          std::move(doc));
+        };
+        const auto real = [](double value) {
+            return bio::Value{bio::Number{bio::repr_binary64(value)}};
+        };
+        if (decimation)
+            patch_member("experiment", "record_decimation",
+                         runtime_reference::num(*decimation));
+        if (control_steps)
+            patch_member("experiment", "control_period_s",
+                         real(static_cast<double>(*control_steps) *
+                              bootstrap.config.timestep_s));
+        if (sensor_steps) {
+            patch_member("experiment", "sensor_period_s",
+                         real(static_cast<double>(*sensor_steps) *
+                              bootstrap.config.timestep_s));
+            patch_member("sensor_config", "sample_period_s",
+                         real(static_cast<double>(*sensor_steps) *
+                              bootstrap.config.timestep_s));
+        }
+        if (max_steps)
+            patch_member("experiment", "duration_s",
+                         real(static_cast<double>(*max_steps) *
+                              bootstrap.config.timestep_s));
+        if (delay_steps)
+            patch_member("experiment", "actuator_delay_s",
+                         real(static_cast<double>(*delay_steps) *
+                              bootstrap.config.timestep_s));
+        if (stop_on_model_violation)
+            patch_member("experiment", "stop_on_model_violation",
+                         bio::Value{*stop_on_model_violation});
+        if (energy_residual)
+            patch_member("experiment", "maximum_energy_residual_ratio",
+                         real(*energy_residual));
+        if (seed)
+            patch_member("experiment", "seed",
+                         runtime_reference::num(
+                             std::stoll(*seed)));
+    }
     // A longer episode, a different sensor cadence or a different seed
     // needs a regenerated tape; a different delivery config (the Python
     // _noise seam's bias/dropout injection) only re-runs the pipeline's

@@ -90,6 +90,11 @@ endfunction()
 # requires the sorted name set to equal <expected;names>.
 function(expect_json_item_names name file)
   cmake_parse_arguments(J "" "" "PATH;EXPECT" ${ARGN})
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
   file(READ "${file}" _doc)
   string(JSON _count ERROR_VARIABLE _err LENGTH "${_doc}" ${J_PATH})
   if(_err)
@@ -125,6 +130,11 @@ endfunction()
 # expect_json_contains(<name> <file> <path-to-array-of-strings> <needle>)
 # Requires at least one string element of the array to contain <needle>.
 function(expect_json_contains name file needle)
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
   file(READ "${file}" _doc)
   string(JSON _count ERROR_VARIABLE _err LENGTH "${_doc}" ${ARGN})
   if(_err)
@@ -178,6 +188,11 @@ endfunction()
 # the sorted value set to equal EXPECT.
 function(expect_json_member_set name file)
   cmake_parse_arguments(J "" "MEMBER" "PATH;EXPECT" ${ARGN})
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
   file(READ "${file}" _doc)
   string(JSON _count ERROR_VARIABLE _err LENGTH "${_doc}" ${J_PATH})
   if(_err)
@@ -239,6 +254,11 @@ function(expect_json_equal name file)
     list(APPEND _b "${ARGV${_i}}")
     math(EXPR _i "${_i} + 1")
   endwhile()
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
   file(READ "${file}" _doc)
   string(JSON _va ERROR_VARIABLE _erra GET "${_doc}" ${_a})
   string(JSON _vb ERROR_VARIABLE _errb GET "${_doc}" ${_b})
@@ -258,6 +278,11 @@ endfunction()
 # expect_json_nonzero(<name> <file> <member-path...>)
 # Requires the decoded numeric member to be nonzero.
 function(expect_json_nonzero name file)
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
   file(READ "${file}" _doc)
   string(JSON _val ERROR_VARIABLE _err GET "${_doc}" ${ARGN})
   if(_err)
@@ -1371,10 +1396,15 @@ run_case(b29_tidy_missing_build EXPECT_EXIT FAIL
   COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
         "${CHECKS_BINARY}" --kind tidy --build "${SCRATCH_DIR}/not-configured")
 
-# the shell wrapper routes a missing build to the fail-closed controller
+# the shell wrapper routes a missing build to the fail-closed controller.
+# BIKE_NATIVE_CHECKS pins the produced binary so the case does not depend
+# on the repo-root fallback existing inside the lane (the container keeps
+# build trees under /build, not /src/build).
 run_case(b29_tidy_wrapper_missing_build EXPECT_EXIT FAIL
   EXPECT_STDERR "build directory does not exist"
-  COMMAND bash "${REPO_ROOT}/tools/check_native_tidy.sh"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "BIKE_NATIVE_CHECKS=${CHECKS_BINARY}"
+        bash "${REPO_ROOT}/tools/check_native_tidy.sh"
         "${SCRATCH_DIR}/not-configured" "${REPO_ROOT}/native/src")
 
 # ---------------------------------------------------------------------------
@@ -2653,6 +2683,1440 @@ else()
       endif()
     endif()
   endif()
+endif()
+
+# ===========================================================================
+# Batch 3.29b2 — check_tools / contract_checks remainder (T53)
+#
+# Remaining ported rows: tool resolution/override contracts, schema-2
+# platform-context validation (incl. the Linux no-SDK lane), capability
+# record validation, RTSan/coverage configure-time qualification, the RTSan
+# control pair, support-module parity and the coverage-provenance rows.
+#
+# Driver-capability probing below mirrors the reference helpers: candidate
+# order (configured compiler, CXX, PATH spellings, known toolchains), the
+# --version family classify, the -fsanitize=realtime accept probe and the
+# CoverageTools resolution order (sibling -> PATH -> xcrun). Where no driver
+# qualifies the cases report an explicit skip — never a silent pass.
+# ===========================================================================
+
+# expect_json_type(<name> <file> <TYPE> <member-path...>) — the JSON member
+# at the path must exist with the given string(JSON TYPE) kind.
+function(expect_json_type name file expected)
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
+  file(READ "${file}" _doc)
+  string(JSON _t ERROR_VARIABLE _e TYPE "${_doc}" ${ARGN})
+  if(_e)
+    set(_failures "${_failures}\n  ${name}: json path '${ARGN}' failed: ${_e}"
+      PARENT_SCOPE)
+  elseif(NOT _t STREQUAL expected)
+    set(_failures
+      "${_failures}\n  ${name}: json '${ARGN}' type is '${_t}', expected '${expected}'"
+      PARENT_SCOPE)
+  endif()
+endfunction()
+
+# expect_json_substring(<name> <file> <needle> <member-path...>) — the
+# string member at the path must contain <needle>.
+function(expect_json_substring name file needle)
+  if(NOT EXISTS "${file}")
+    set(_failures "${_failures}\n  ${name}: JSON document not found: ${file}"
+      PARENT_SCOPE)
+    return()
+  endif()
+  file(READ "${file}" _doc)
+  string(JSON _val ERROR_VARIABLE _e GET "${_doc}" ${ARGN})
+  if(_e)
+    set(_failures "${_failures}\n  ${name}: json path '${ARGN}' failed: ${_e}"
+      PARENT_SCOPE)
+    return()
+  endif()
+  string(FIND "${_val}" "${needle}" _pos)
+  if(_pos EQUAL -1)
+    set(_failures
+      "${_failures}\n  ${name}: json '${ARGN}' is '${_val}', missing '${needle}'"
+      PARENT_SCOPE)
+  endif()
+endfunction()
+
+# b29_tool_family(<path> <out-var>) — mirrors inspect_tool's banner classify
+# (order: clang-tidy/cppcheck first so a plain "LLVM version" banner is not
+# misread): returns clang, clang-tidy, cppcheck, gcc or "".
+function(b29_tool_family path out_var)
+  execute_process(COMMAND "${path}" --version
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 30)
+  set(_banner "${_o}\n${_e}")
+  string(STRIP "${_banner}" _banner)
+  set(_family "")
+  if(_rc EQUAL 0 AND NOT _banner STREQUAL "")
+    if(_banner MATCHES "[Cc][Ll][Aa][Nn][Gg]-[Tt][Ii][Dd][Yy]|LLVM version")
+      set(_family "clang-tidy")
+    elseif(_banner MATCHES "[Cc][Pp][Pp][Cc][Hh][Ee][Cc][Kk]")
+      set(_family "cppcheck")
+    elseif(_banner MATCHES "[Cc][Ll][Aa][Nn][Gg]")
+      set(_family "clang")
+    elseif(_banner MATCHES "\\(GCC\\)|Free Software Foundation")
+      set(_family "gcc")
+    endif()
+  endif()
+  set(${out_var} "${_family}" PARENT_SCOPE)
+endfunction()
+
+# b29_driver_major(<path> <out-var>) — first dotted-version integer in the
+# driver's --version banner (the oracle's _compiler_major_version).
+function(b29_driver_major path out_var)
+  execute_process(COMMAND "${path}" --version
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 30)
+  set(_banner "${_o}\n${_e}")
+  set(_major "")
+  if(_rc EQUAL 0 AND _banner MATCHES "([0-9]+)\\.[0-9]+")
+    set(_major "${CMAKE_MATCH_1}")
+  endif()
+  set(${out_var} "${_major}" PARENT_SCOPE)
+endfunction()
+
+# b29_driver_accepts_rtsan(<driver> <dir> <out-var>) — compile+link probe of
+# the real lane flag, mirroring _driver_accepts_rtsan.
+function(b29_driver_accepts_rtsan driver dir out_var)
+  file(MAKE_DIRECTORY "${dir}")
+  file(WRITE "${dir}/rtsan_accept_probe.cpp" "int main() { return 0; }\n")
+  execute_process(COMMAND "${driver}" -std=c++23 -fsanitize=realtime
+    "${dir}/rtsan_accept_probe.cpp" -o "${dir}/rtsan_accept_probe"
+    RESULT_VARIABLE _rc OUTPUT_QUIET ERROR_QUIET TIMEOUT 120)
+  if(_rc EQUAL 0)
+    set(${out_var} TRUE PARENT_SCOPE)
+  else()
+    set(${out_var} FALSE PARENT_SCOPE)
+  endif()
+endfunction()
+
+# b29_driver_accepts_coverage(<driver> <dir> <out-var>) — compile+link probe
+# of the real coverage flags, mirroring the produced lane probe; a driver
+# without the profile runtime library cannot qualify the lane.
+function(b29_driver_accepts_coverage driver dir out_var)
+  file(MAKE_DIRECTORY "${dir}")
+  file(WRITE "${dir}/cov_accept_probe.cpp" "int main() { return 0; }\n")
+  execute_process(COMMAND "${driver}" -std=c++23
+    -fprofile-instr-generate -fcoverage-mapping
+    "${dir}/cov_accept_probe.cpp" -o "${dir}/cov_accept_probe"
+    RESULT_VARIABLE _rc OUTPUT_QUIET ERROR_QUIET TIMEOUT 120)
+  if(_rc EQUAL 0)
+    set(${out_var} TRUE PARENT_SCOPE)
+  else()
+    set(${out_var} FALSE PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Real C++ drivers to probe, most relevant first — mirrors
+# _compiler_candidates: produced compiler, CXX, PATH spellings, known
+# toolchain locations, then versioned distro spellings, deduped by real path.
+set(_b29_candidate_names "${_b29_compiler}" "$ENV{CXX}" "c++" "clang++" "g++"
+  "/usr/bin/clang++" "/opt/homebrew/opt/llvm/bin/clang++"
+  "/usr/local/opt/llvm/bin/clang++")
+foreach(_dir /usr/bin /usr/local/bin /opt/homebrew/bin)
+  if(IS_DIRECTORY "${_dir}")
+    file(GLOB _clangs LIST_DIRECTORIES false "${_dir}/clang++-*")
+    list(SORT _clangs ORDER DESCENDING)
+    list(APPEND _b29_candidate_names ${_clangs})
+    file(GLOB _gccs LIST_DIRECTORIES false "${_dir}/g++-*")
+    list(SORT _gccs ORDER DESCENDING)
+    list(APPEND _b29_candidate_names ${_gccs})
+  endif()
+endforeach()
+set(_b29_candidates "")
+foreach(_name IN LISTS _b29_candidate_names)
+  if(_name STREQUAL "")
+    continue()
+  endif()
+  set(_located "")
+  if(IS_ABSOLUTE "${_name}")
+    if(EXISTS "${_name}" AND NOT IS_DIRECTORY "${_name}")
+      set(_located "${_name}")
+    endif()
+  else()
+    find_program(_located NAMES "${_name}" NO_CACHE)
+  endif()
+  if(NOT _located)
+    continue()
+  endif()
+  # Dedup on the invoked path, not REAL_PATH: clang resolves symlinks to
+  # the same binary under both 'clang' and 'clang++' spellings, and the
+  # driver is argv[0]-sensitive — 'clang' does not link the C++ stdlib.
+  list(FIND _b29_candidates "${_located}" _seen)
+  if(_seen EQUAL -1)
+    list(APPEND _b29_candidates "${_located}")
+  endif()
+endforeach()
+
+# b29_cov_describe(<candidate> <major> <out-var>) — mirror of
+# _bike_coverage_describe: resolved tool with an LLVM banner whose major
+# matches the selected compiler's.
+function(b29_cov_describe candidate major out_var)
+  set(_located "")
+  if(IS_ABSOLUTE "${candidate}")
+    if(EXISTS "${candidate}" AND NOT IS_DIRECTORY "${candidate}")
+      set(_located "${candidate}")
+    endif()
+  else()
+    find_program(_located NAMES "${candidate}" NO_CACHE)
+  endif()
+  set(_found "")
+  if(_located)
+    execute_process(COMMAND "${_located}" --version
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 30)
+    set(_banner "${_o}\n${_e}")
+    if(_rc EQUAL 0 AND _banner MATCHES "[Ll][Ll][Vv][Mm]|clang"
+        AND NOT major STREQUAL "")
+      string(REGEX MATCH "([0-9]+)\\.[0-9]+" _v "${_banner}")
+      if(NOT _v STREQUAL "" AND CMAKE_MATCH_1 STREQUAL "${major}")
+        set(_found "${_located}")
+      endif()
+    endif()
+  endif()
+  set(${out_var} "${_found}" PARENT_SCOPE)
+endfunction()
+
+# b29_cov_tool_resolve(<tool> <compiler> <major> <out-var>) — mirror of
+# _bike_resolve_coverage_tool's discovery tiers (no env override — the
+# oracle's capability probe resolves with empty overrides).
+function(b29_cov_tool_resolve tool compiler major out_var)
+  get_filename_component(_dir "${compiler}" DIRECTORY)
+  get_filename_component(_cname "${compiler}" NAME)
+  set(_names "")
+  if(_cname MATCHES "^((.*-)?)(clang\\+\\+|clang)(-([0-9]+(\\.[0-9]+)*))?$")
+    set(_prefix "${CMAKE_MATCH_1}")
+    set(_suffix "${CMAKE_MATCH_5}")
+    if(NOT _suffix STREQUAL "")
+      list(APPEND _names "${tool}-${_suffix}" "${_prefix}${tool}-${_suffix}")
+    endif()
+    list(APPEND _names "${tool}" "${_prefix}${tool}")
+  endif()
+  list(REMOVE_DUPLICATES _names)
+  set(_found "")
+  foreach(_n IN LISTS _names)
+    b29_cov_describe("${_dir}/${_n}" "${major}" _found)
+    if(_found)
+      break()
+    endif()
+  endforeach()
+  if(NOT _found AND NOT major STREQUAL "")
+    b29_cov_describe("${tool}-${major}" "${major}" _found)
+  endif()
+  if(NOT _found)
+    b29_cov_describe("${tool}" "${major}" _found)
+  endif()
+  if(NOT _found AND _t56_system STREQUAL "Darwin")
+    find_program(_xcrun NAMES xcrun NO_CACHE)
+    if(_xcrun)
+      execute_process(COMMAND "${_xcrun}" --find "${tool}"
+        RESULT_VARIABLE _xrc OUTPUT_VARIABLE _located ERROR_QUIET
+        OUTPUT_STRIP_TRAILING_WHITESPACE TIMEOUT 30)
+      if(_xrc EQUAL 0)
+        b29_cov_describe("${_located}" "${major}" _found)
+      endif()
+    endif()
+  endif()
+  set(${out_var} "${_found}" PARENT_SCOPE)
+endfunction()
+
+# b29_flag_reject_driver(<path> <real> <flag> <label>) — the oracle's
+# flag-rejecting compiler fixture: forwards everything except one flag.
+function(b29_flag_reject_driver path real flag label)
+  file(WRITE "${path}"
+    "#!/bin/sh\n"
+    "for arg in \"$@\"; do\n"
+    "  case \"$arg\" in\n"
+    "    *${flag}*)\n"
+    "      echo \"${label}-c++: unsupported argument ${flag}\" >&2\n"
+    "      exit 1 ;;\n"
+    "  esac\n"
+    "done\n"
+    "exec \"${real}\" \"$@\"\n")
+  file(CHMOD "${path}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+endfunction()
+
+# b29_shadow_rtsan_driver(<path> <real>) — forwards everything except rtsan
+# -print-file-name queries, echoed back unresolved (oracle's
+# _write_runtime_shadowing_driver).
+function(b29_shadow_rtsan_driver path real)
+  file(WRITE "${path}"
+    "#!/bin/sh\n"
+    "for arg in \"$@\"; do\n"
+    "  case \"$arg\" in\n"
+    "    -print-file-name=*rtsan*)\n"
+    "      echo \"\${arg#-print-file-name=}\"\n"
+    "      exit 0 ;;\n"
+    "  esac\n"
+    "done\n"
+    "exec \"${real}\" \"$@\"\n")
+  file(CHMOD "${path}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+endfunction()
+
+# b29_broken_profdata(<path> <major>) — resolved-but-incompatible
+# llvm-profdata stand-in (oracle's _write_broken_profdata): matching LLVM
+# major so it resolves, then every merge fails rc=7 naming $0.
+function(b29_broken_profdata path major)
+  file(WRITE "${path}"
+    "#!/bin/sh\n"
+    "if [ \"\${1:-}\" = \"--version\" ]; then\n"
+    "  printf 'broken LLVM version ${major}.0.0\\n'\n"
+    "  exit 0\n"
+    "fi\n"
+    "if [ \"\${1:-}\" = \"merge\" ]; then\n"
+    "  printf '%s: incompatible profile format\\n' \"$0\" >&2\n"
+    "  exit 7\n"
+    "fi\n"
+    "exit 5\n")
+  file(CHMOD "${path}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+endfunction()
+
+# b29_fake_llvm_tools(<dir> <major>) — the oracle's _write_fake_llvm_tools:
+# banners report the compiler's LLVM major so the pair resolves; merge
+# writes a nonempty profile; export emits a valid llvm.coverage export.
+function(b29_fake_llvm_tools dir major)
+  file(MAKE_DIRECTORY "${dir}")
+  file(WRITE "${dir}/fake-llvm-profdata"
+    "#!/bin/sh\n"
+    "if [ \"\${1:-}\" = \"--version\" ]; then\n"
+    "  printf 'fake LLVM version ${major}.0.0\\n'\n"
+    "  exit 0\n"
+    "fi\n"
+    "if [ \"\${1:-}\" = \"merge\" ]; then\n"
+    "  shift\n"
+    "  output=''\n"
+    "  while [ \"$#\" -gt 0 ]; do\n"
+    "    if [ \"$1\" = \"-o\" ]; then shift; output=\"$1\"; fi\n"
+    "    shift\n"
+    "  done\n"
+    "  [ -n \"$output\" ] || exit 4\n"
+    "  printf 'merged profile\\n' > \"$output\"\n"
+    "  exit 0\n"
+    "fi\n"
+    "exit 5\n")
+  file(CHMOD "${dir}/fake-llvm-profdata"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+  file(WRITE "${dir}/fake-llvm-cov"
+    "#!/bin/sh\n"
+    "if [ \"\${1:-}\" = \"--version\" ]; then\n"
+    "  printf 'fake LLVM version ${major}.0.0\\n'\n"
+    "  exit 0\n"
+    "fi\n"
+    "if [ \"\${1:-}\" = \"report\" ]; then\n"
+    "  printf 'Filename Regions Missed Lines Cover\\n'\n"
+    "  printf '%s 2 0 100%%\\n' \"$2\"\n"
+    "  printf 'TOTAL 2 0 100%%\\n'\n"
+    "  exit 0\n"
+    "fi\n"
+    "if [ \"\${1:-}\" = \"export\" ]; then\n"
+    "  printf '%s\\n' '{\"type\":\"llvm.coverage.json.export\",\"version\":\"${major}.0.0\",\"data\":[{\"files\":[{\"filename\":\"control.cpp\",\"summary\":{\"lines\":{\"count\":4,\"covered\":3}}}]}]}'\n"
+    "  exit 0\n"
+    "fi\n"
+    "exit 5\n")
+  file(CHMOD "${dir}/fake-llvm-cov"
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+endfunction()
+
+# Scratch-configure the real native graph (the produced configure under
+# test): every case runs the same project the oracle configured.
+function(b29_scratch_configure name builddir)
+  cmake_parse_arguments(C "" "EXPECT_EXIT" "ARGS;ENV;NEEDLES" ${ARGN})
+  set(_options "-DCMAKE_BUILD_TYPE=Release"
+    "-DPython_EXECUTABLE=${_b29_python}")
+  if(_t56_system STREQUAL "Darwin" AND NOT _b29_sysroot STREQUAL "")
+    list(APPEND _options "-DCMAKE_OSX_SYSROOT=${_b29_sysroot}")
+  endif()
+  list(APPEND _options ${C_ARGS})
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E env ${C_ENV} "${CMAKE_COMMAND}"
+      -S "${REPO_ROOT}/native" -B "${builddir}" ${_options}
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 1200)
+  set(_combined "${_o}\n${_e}")
+  if(C_EXPECT_EXIT STREQUAL "FAIL")
+    if(_rc EQUAL 0)
+      set(_failures "${_failures}\n  ${name}: configure unexpectedly passed"
+        PARENT_SCOPE)
+    endif()
+  elseif(NOT _rc EQUAL ${C_EXPECT_EXIT})
+    set(_failures
+      "${_failures}\n  ${name}: expected configure exit ${C_EXPECT_EXIT}, got ${_rc}: ${_combined}"
+      PARENT_SCOPE)
+  endif()
+  foreach(_needle IN LISTS C_NEEDLES)
+    string(FIND "${_combined}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      set(_failures
+        "${_failures}\n  ${name}: configure output missing '${_needle}': ${_combined}"
+        PARENT_SCOPE)
+    endif()
+  endforeach()
+endfunction()
+
+# ---------------------------------------------------------------------------
+# Tool selection contracts (fixture manifest + compile database).
+
+# A deliberately nonexistent required override fails at resolution — before
+# an empty sweep could be labeled passing (the oracle's five-kind matrix).
+foreach(_pair "tidy CLANG_TIDY" "analyzer ANALYZER_CLANG" "cppcheck CPPCHECK"
+        "frontends GXX" "odr GXX")
+  string(REPLACE " " ";" _kv "${_pair}")
+  list(GET _kv 0 _kind)
+  list(GET _kv 1 _env)
+  set(_missing "${SCRATCH_DIR}/missing-${_kind}-override")
+  run_case(b29_override_${_kind} EXPECT_EXIT FAIL
+    EXPECT_STDERR "invalid ${_kind} override"
+    COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+          "${_env}=${_missing}"
+          "${CHECKS_BINARY}" --kind ${_kind} --build "${_fx}/build")
+  expect_json(b29_override_${_kind}
+    "${_fx}/build/native_check_summaries/${_kind}.json" "failed" status)
+  expect_json_contains(b29_override_${_kind}
+    "${_fx}/build/native_check_summaries/${_kind}.json" "override" errors)
+  expect_json(b29_override_${_kind}
+    "${_fx}/build/native_check_summaries/${_kind}.json" 0
+    translation_unit_count)
+endforeach()
+
+# A real executable from the wrong toolchain family is a selection error,
+# not a passing sweep: the configured clang++ is invoked as clang-tidy and
+# its process record reports the health failure.
+run_case(b29_wrong_family EXPECT_EXIT FAIL
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_b29_compiler}"
+        "${CHECKS_BINARY}" --kind tidy --build "${_fx}/build")
+set(_wf_sum "${_fx}/build/native_check_summaries/tidy.json")
+expect_json(b29_wrong_family "${_wf_sum}" "failed" tool_health)
+expect_json(b29_wrong_family "${_wf_sum}" "failed" status)
+expect_json_nonzero(b29_wrong_family "${_wf_sum}" records 0 returncode)
+
+# The configured compiler's own toolchain sibling wins over the recorded
+# default — tidy resolves the clang-tidy-18 sitting next to clang++-18, not
+# the unrelated default spelling.
+set(_fx_sib "${SCRATCH_DIR}/b29-sibling-tidy")
+file(MAKE_DIRECTORY "${_fx_sib}/build" "${_fx_sib}/llvm-18/bin")
+b29_mock_tool("${_fx_sib}/llvm-18/bin/clang++-18")
+b29_mock_tool("${_fx_sib}/llvm-18/bin/clang-tidy-18")
+b29_mock_tool("${_fx_sib}/unrelated-clang-tidy")
+set(_c "${_context_json}")
+string(JSON _c SET "${_c}" source_roots "[\"${_fx}/native\"]")
+string(JSON _c SET "${_c}" target_contexts "{\"bike_native\":${_b29_tc}}")
+string(JSON _c SET "${_c}" analysis_suppressions_manifest
+  "\"${_fx}/suppressions.json\"")
+string(JSON _c SET "${_c}" compiler path
+  "\"${_fx_sib}/llvm-18/bin/clang++-18\"")
+string(JSON _c SET "${_c}" compiler id "\"Clang\"")
+string(JSON _c SET "${_c}" tool_defaults tidy
+  "\"${_fx_sib}/unrelated-clang-tidy\"")
+file(WRITE "${_fx_sib}/build/native_check_context.json" "${_c}")
+file(WRITE "${_fx_sib}/build/native_sources.json"
+  "{\"schema_version\":1,\"first_party_roots\":[\"${_fx}/native\"],"
+  "\"sources\":[{\"path\":\"${_fx}/native/src/one.cpp\","
+  "\"target\":\"bike_native\",\"context\":\"bike_native:fixture\"}]}\n")
+file(WRITE "${_fx_sib}/build/compile_commands.json"
+  "[{\"directory\":\"${_fx}\",\"file\":\"${_fx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\",\"arguments\":["
+  "\"${_fx_sib}/llvm-18/bin/clang++-18\",${_b29_drv_args_json},"
+  "\"-c\",\"${_fx}/native/src/one.cpp\","
+  "\"-o\",\"CMakeFiles/bike_native.dir/one.cpp.o\"]}]\n")
+run_case(b29_tidy_sibling EXPECT_EXIT 0
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "${CHECKS_BINARY}" --kind tidy --build "${_fx_sib}/build")
+expect_json(b29_tidy_sibling
+  "${_fx_sib}/build/native_check_summaries/tidy.json"
+  "${_fx_sib}/llvm-18/bin/clang-tidy-18" tool)
+
+# The GNU secondary frontend is the configured compiler's own spelling —
+# the sweep resolves g++-13 (the compiler itself), not the unrelated
+# recorded gxx default.
+set(_fx_gxx "${SCRATCH_DIR}/b29-sibling-gxx")
+file(MAKE_DIRECTORY "${_fx_gxx}/build" "${_fx_gxx}/gcc-13/bin")
+b29_mock_tool("${_fx_gxx}/gcc-13/bin/g++-13")
+b29_mock_tool("${_fx_gxx}/unrelated-gxx")
+set(_c "${_context_json}")
+string(JSON _c SET "${_c}" source_roots "[\"${_fx}/native\"]")
+string(JSON _c SET "${_c}" target_contexts "{\"bike_native\":${_b29_tc}}")
+string(JSON _c SET "${_c}" analysis_suppressions_manifest
+  "\"${_fx}/suppressions.json\"")
+string(JSON _c SET "${_c}" compiler path "\"${_fx_gxx}/gcc-13/bin/g++-13\"")
+string(JSON _c SET "${_c}" compiler id "\"GNU\"")
+string(JSON _c SET "${_c}" tool_defaults gxx "\"${_fx_gxx}/unrelated-gxx\"")
+file(WRITE "${_fx_gxx}/build/native_check_context.json" "${_c}")
+file(WRITE "${_fx_gxx}/build/native_sources.json"
+  "{\"schema_version\":1,\"first_party_roots\":[\"${_fx}/native\"],"
+  "\"sources\":[{\"path\":\"${_fx}/native/src/one.cpp\","
+  "\"target\":\"bike_native\",\"context\":\"bike_native:fixture\"}]}\n")
+file(WRITE "${_fx_gxx}/build/compile_commands.json"
+  "[{\"directory\":\"${_fx}\",\"file\":\"${_fx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\",\"arguments\":["
+  "\"${_fx_gxx}/gcc-13/bin/g++-13\",${_b29_drv_args_json},"
+  "\"-c\",\"${_fx}/native/src/one.cpp\","
+  "\"-o\",\"CMakeFiles/bike_native.dir/one.cpp.o\"]}]\n")
+run_case(b29_gxx_sibling EXPECT_EXIT 0
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "${CHECKS_BINARY}" --kind frontends --build "${_fx_gxx}/build")
+expect_json(b29_gxx_sibling
+  "${_fx_gxx}/build/native_check_summaries/frontends.json"
+  "${_fx_gxx}/gcc-13/bin/g++-13" tool)
+
+# ---------------------------------------------------------------------------
+# Schema-2 platform context — the produced context on the real host.
+# _ctx is reused as JSON scratch by the contract-fixture mutations above; a
+# dedicated variable keeps the path spelling stable here.
+set(_b29_ctx "${BUILD_DIR}/native_check_context.json")
+
+# test_schema2_context_loads_on_matching_host: the emitted context records
+# this host's system, the platform-correct stdlib, and the SDK/sysroot pair
+# (equal on Darwin, absent on Linux).
+expect_json(b29_schema2_host "${_b29_ctx}" "${_t56_system}" platform system)
+if(_t56_system STREQUAL "Darwin")
+  expect_json(b29_schema2_host "${_b29_ctx}" "libc++" stdlib name)
+  expect_json_type(b29_schema2_host "${_b29_ctx}" STRING sysroot)
+  expect_json_equal(b29_schema2_host "${_b29_ctx}" sdk = sysroot)
+else()
+  # The oracle asserts membership, not a fixed name: the produced Linux
+  # lane is libstdc++ today, but either supported stdlib is honest.
+  file(READ "${_b29_ctx}" _host_doc)
+  string(JSON _host_stdlib ERROR_VARIABLE _host_stdlib_err
+    GET "${_host_doc}" stdlib name)
+  if(_host_stdlib_err OR
+      (NOT _host_stdlib STREQUAL "libc++" AND
+       NOT _host_stdlib STREQUAL "libstdc++"))
+    set(_failures
+      "${_failures}\n  b29_schema2_host: stdlib.name '${_host_stdlib}' is not libc++/libstdc++")
+  endif()
+  expect_json_type(b29_schema2_host "${_b29_ctx}" NULL sdk)
+  expect_json_type(b29_schema2_host "${_b29_ctx}" NULL sysroot)
+endif()
+
+# test_schema1_context_remains_supported: schema 1 keeps the Darwin-shaped
+# SDK contract. On Darwin the produced context already carries it; on Linux
+# a fixture SDK directory carries the same records the legacy schema
+# requires — the produced validator accepts either.
+set(_s1 "${_s2}")
+string(JSON _s1 SET "${_s1}" schema_version "1")
+if(NOT _t56_system STREQUAL "Darwin")
+  file(MAKE_DIRECTORY "${SCRATCH_DIR}/schema1-sdk")
+  file(REAL_PATH "${SCRATCH_DIR}/schema1-sdk" _s1_sdk)
+  string(JSON _s1 SET "${_s1}" sdk "\"${_s1_sdk}\"")
+  string(JSON _s1 SET "${_s1}" sdk_requested "\"${_s1_sdk}\"")
+  string(JSON _s1 SET "${_s1}" sdk_source "\"explicit\"")
+endif()
+t56_ctx_case(ctx-b29-schema1 "${_s1}")
+run_case(b29_schema1_supported EXPECT_EXIT 0
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_linux_context_loads_and_records_no_sdk — Linux-only: the
+# produced Linux context records the no-SDK shape and libstdc++.
+if(NOT _t56_system STREQUAL "Darwin")
+  expect_json_type(b29_schema2_linux_loads "${_b29_ctx}" NULL sdk)
+  expect_json_type(b29_schema2_linux_loads "${_b29_ctx}" NULL sdk_requested)
+  expect_json(b29_schema2_linux_loads "${_b29_ctx}" "not-applicable" sdk_source)
+  expect_json_type(b29_schema2_linux_loads "${_b29_ctx}" NULL sysroot)
+  expect_json(b29_schema2_linux_loads "${_b29_ctx}" "libstdc++" stdlib name)
+  expect_json(b29_schema2_linux_loads "${_b29_ctx}" "ASSERTIONS"
+    stdlib hardening mode)
+endif()
+
+# test_schema2_platform_host_mismatch_fails: a context claiming the other
+# system is rejected against the real host (both directions — the Darwin
+# half already exists as t56_ctx_schema2_foreign_system).
+if(_t56_system STREQUAL "Darwin")
+  set(_foreign "Linux")
+else()
+  set(_foreign "Darwin")
+endif()
+string(JSON _bad SET "${_s2}" platform system "\"${_foreign}\"")
+string(JSON _bad SET "${_bad}" platform host_system "\"${_foreign}\"")
+t56_ctx_case(ctx-b29-foreign-system "${_bad}")
+run_case(b29_schema2_foreign_system EXPECT_EXIT FAIL
+  EXPECT_STDERR "on a '${_t56_system}' host"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_darwin_sysroot_drift_fails — Darwin-only: a sysroot that
+# exists but is not the selected SDK fails the pairing.
+if(_t56_system STREQUAL "Darwin")
+  file(MAKE_DIRECTORY "${SCRATCH_DIR}/drifted-sdk")
+  file(REAL_PATH "${SCRATCH_DIR}/drifted-sdk" _drifted)
+  string(JSON _bad SET "${_s2}" sysroot "\"${_drifted}\"")
+  t56_ctx_case(ctx-b29-sysroot-drift "${_bad}")
+  run_case(b29_schema2_sysroot_drift EXPECT_EXIT FAIL
+    EXPECT_STDERR "does not equal the selected SDK"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+          --validate-only)
+endif()
+
+# test_schema2_stdlib_mode_mismatch_fails — Linux-only: a hardening mode the
+# produced stdlib does not carry is rejected (ASSERTIONS is libstdc++-only,
+# so the invalid spelling is selected from the produced record's name).
+if(NOT _t56_system STREQUAL "Darwin")
+  file(READ "${_b29_ctx}" _sm_doc)
+  string(JSON _sm_stdlib GET "${_sm_doc}" stdlib name)
+  if(_sm_stdlib STREQUAL "libstdc++")
+    set(_sm_mode "FAST")
+  else()
+    set(_sm_mode "ASSERTIONS")
+  endif()
+  string(JSON _bad SET "${_s2}" stdlib hardening mode "\"${_sm_mode}\"")
+  t56_ctx_case(ctx-b29-stdlib-mode "${_bad}")
+  run_case(b29_schema2_stdlib_mode EXPECT_EXIT FAIL
+    EXPECT_STDERR "stdlib hardening mode '${_sm_mode}' is invalid for ${_sm_stdlib}"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+          --validate-only)
+endif()
+
+# test_schema2_linux_context_must_not_record_sdk — Linux-only: even an
+# existing directory is a recorded Apple SDK the Linux context rejects.
+if(NOT _t56_system STREQUAL "Darwin")
+  string(JSON _bad SET "${_s2}" sdk "\"${SCRATCH_DIR}\"")
+  t56_ctx_case(ctx-b29-linux-sdk "${_bad}")
+  run_case(b29_schema2_linux_sdk EXPECT_EXIT FAIL
+    EXPECT_STDERR "Linux native check context must not record an Apple SDK"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+          --validate-only)
+endif()
+
+# test_schema2_missing_numerics_fails — the whole numerics record, not just
+# its backend (the backend half is t56_ctx_schema2_no_numerics).
+string(JSON _bad REMOVE "${_s2}" numerics)
+t56_ctx_case(ctx-b29-no-numerics "${_bad}")
+run_case(b29_schema2_no_numerics EXPECT_EXIT FAIL
+  EXPECT_STDERR "native check context has no numerics record"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_linux_invalid_library_path_fails — both oracle params: an
+# absent path and a plain (non-.framework) directory are invalid
+# library_paths entries.
+string(JSON _bad SET "${_s2}" library_paths
+  "[\"${SCRATCH_DIR}/missing-libprovider.so\"]")
+t56_ctx_case(ctx-b29-library-missing "${_bad}")
+run_case(b29_library_path_missing EXPECT_EXIT FAIL
+  EXPECT_STDERR "missing context library_paths entry"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+file(MAKE_DIRECTORY "${SCRATCH_DIR}/libprovider-dir")
+file(REAL_PATH "${SCRATCH_DIR}/libprovider-dir" _lib_dir)
+string(JSON _bad SET "${_s2}" library_paths "[\"${_lib_dir}\"]")
+t56_ctx_case(ctx-b29-library-dir "${_bad}")
+run_case(b29_library_path_dir EXPECT_EXIT FAIL
+  EXPECT_STDERR "context library_paths entry is neither a library file nor a framework directory"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# ---------------------------------------------------------------------------
+# Schema-2 capability records — sanitizer runtime, identity, target and
+# request consistency. The asan record carries the oracle's cases verbatim.
+
+# test_schema2_enabled_sanitizer_runtime_must_be_recorded — an enabled lane
+# whose runtime is null could never be preloaded.
+string(JSON _bad SET "${_s2}" capabilities asan supported "true")
+string(JSON _bad SET "${_bad}" capabilities asan requested "true")
+string(JSON _bad SET "${_bad}" capabilities asan enabled "true")
+string(JSON _bad SET "${_bad}" capabilities asan runtime "null")
+t56_ctx_case(ctx-b29-asan-runtime-null "${_bad}")
+run_case(b29_schema2_asan_runtime_null EXPECT_EXIT FAIL
+  EXPECT_STDERR "is enabled without a recorded sanitizer runtime"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_sanitizer_runtime_must_exist — an enabled lane's runtime
+# record must resolve to a real file.
+string(JSON _bad SET "${_s2}" capabilities asan supported "true")
+string(JSON _bad SET "${_bad}" capabilities asan requested "true")
+string(JSON _bad SET "${_bad}" capabilities asan enabled "true")
+string(JSON _bad SET "${_bad}" capabilities asan runtime
+  "\"${SCRATCH_DIR}/absent/libasan.so\"")
+t56_ctx_case(ctx-b29-asan-runtime-absent "${_bad}")
+run_case(b29_schema2_asan_runtime_missing EXPECT_EXIT FAIL
+  EXPECT_STDERR "missing capability asan runtime"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_sanitizer_runtime_must_be_absolute — a relative spelling
+# resolves nowhere the runner could preload.
+string(JSON _bad SET "${_s2}" capabilities asan supported "true")
+string(JSON _bad SET "${_bad}" capabilities asan requested "true")
+string(JSON _bad SET "${_bad}" capabilities asan enabled "true")
+string(JSON _bad SET "${_bad}" capabilities asan runtime "\"libasan.so\"")
+t56_ctx_case(ctx-b29-asan-runtime-relative "${_bad}")
+run_case(b29_schema2_asan_runtime_relative EXPECT_EXIT FAIL
+  EXPECT_STDERR "missing capability asan runtime"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_sanitizer_runtime_must_be_a_file — a directory is not a
+# runtime image.
+file(MAKE_DIRECTORY "${SCRATCH_DIR}/libasan-dir.so")
+file(REAL_PATH "${SCRATCH_DIR}/libasan-dir.so" _asan_dir)
+string(JSON _bad SET "${_s2}" capabilities asan supported "true")
+string(JSON _bad SET "${_bad}" capabilities asan requested "true")
+string(JSON _bad SET "${_bad}" capabilities asan enabled "true")
+string(JSON _bad SET "${_bad}" capabilities asan runtime "\"${_asan_dir}\"")
+t56_ctx_case(ctx-b29-asan-runtime-dir "${_bad}")
+run_case(b29_schema2_asan_runtime_dir EXPECT_EXIT FAIL
+  EXPECT_STDERR "capability asan runtime is not a file"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_enabled_sanitizer_records_a_real_runtime — the green path:
+# an enabled lane with an existing runtime file loads.
+file(WRITE "${SCRATCH_DIR}/libasan-fixture.so" "runtime image\n")
+file(REAL_PATH "${SCRATCH_DIR}/libasan-fixture.so" _asan_rt)
+string(JSON _good SET "${_s2}" capabilities asan supported "true")
+string(JSON _good SET "${_good}" capabilities asan requested "true")
+string(JSON _good SET "${_good}" capabilities asan enabled "true")
+string(JSON _good SET "${_good}" capabilities asan runtime "\"${_asan_rt}\"")
+t56_ctx_case(ctx-b29-asan-enabled "${_good}")
+run_case(b29_schema2_asan_enabled EXPECT_EXIT 0
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+expect_json(b29_schema2_asan_enabled
+  "${_fixture_dir}/native_check_context.json" "ON"
+  capabilities asan enabled)
+expect_json(b29_schema2_asan_enabled
+  "${_fixture_dir}/native_check_context.json" "${_asan_rt}"
+  capabilities asan runtime)
+
+# test_schema2_enabled_sanitizer_requires_requested — enabled without a
+# requested lane is inconsistent.
+string(JSON _bad SET "${_s2}" capabilities asan supported "true")
+string(JSON _bad SET "${_bad}" capabilities asan requested "false")
+string(JSON _bad SET "${_bad}" capabilities asan enabled "true")
+string(JSON _bad SET "${_bad}" capabilities asan runtime "\"${_asan_rt}\"")
+t56_ctx_case(ctx-b29-asan-not-requested "${_bad}")
+run_case(b29_schema2_asan_not_requested EXPECT_EXIT FAIL
+  EXPECT_STDERR "is enabled without a requested lane"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_sanitizer_compiler_identity_required — the recorded compiler
+# identity selects the runtime; a record without it is meaningless.
+string(JSON _bad REMOVE "${_s2}" capabilities asan compiler_id)
+t56_ctx_case(ctx-b29-asan-no-compiler-id "${_bad}")
+run_case(b29_schema2_asan_no_compiler_id EXPECT_EXIT FAIL
+  EXPECT_STDERR "has no compiler identity record"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# test_schema2_sanitizer_target_may_be_null_or_triple — only a triple
+# string or null is a valid target record (the null half is exercised by
+# every passing context).
+string(JSON _bad SET "${_s2}" capabilities asan target "42")
+t56_ctx_case(ctx-b29-asan-bad-target "${_bad}")
+run_case(b29_schema2_asan_bad_target EXPECT_EXIT FAIL
+  EXPECT_STDERR "target must be a triple string or null"
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}"
+        --validate-only)
+
+# ---------------------------------------------------------------------------
+# Schema-2 Linux compile-database controls — the same fail-closed checks
+# under the real no-SDK context. The produced loader runs the identical
+# selection path on both platforms, so the platform-invariant diagnostics
+# run unconditionally; the sysroot/SDK-shaped cases stay Linux-gated like
+# their oracle records.
+
+set(_lx "${SCRATCH_DIR}/b29-linux-db")
+file(MAKE_DIRECTORY "${_lx}/native/src" "${_lx}/build")
+file(WRITE "${_lx}/native/src/one.cpp" "int first_party() { return 0; }\n")
+file(WRITE "${_lx}/native/src/two.cpp" "int second_party() { return 0; }\n")
+file(WRITE "${_lx}/suppressions.json"
+  "{\"schema_version\":1,\"suppressions\":[]}\n")
+b29_fixture_context("${_lx}/build" "${_lx}/native"
+  "{\"bike_native\":${_b29_tc}}" "${_lx}/suppressions.json")
+file(WRITE "${_lx}/build/native_sources.json"
+  "{\"schema_version\":1,\"first_party_roots\":[\"${_lx}/native\"],"
+  "\"sources\":[{\"path\":\"${_lx}/native/src/one.cpp\","
+  "\"target\":\"bike_native\",\"context\":\"bike_native:fixture\"}]}\n")
+b29_ccdb_entry(_lx_one "${_lx}" "${_lx}/native/src/one.cpp"
+  "CMakeFiles/bike_native.dir/one.cpp.o")
+file(WRITE "${_lx}/build/compile_commands.json" "[${_lx_one}]\n")
+
+# b29_linux_case(<case> <file-name> ...) — clone the linux fixture's
+# context/manifest into a per-case build dir before mutating the database.
+function(b29_linux_case case dirname)
+  set(_dir "${SCRATCH_DIR}/${dirname}")
+  file(MAKE_DIRECTORY "${_dir}")
+  file(COPY "${_lx}/build/native_check_context.json"
+            "${_lx}/build/native_sources.json"
+       DESTINATION "${_dir}")
+  set(${case} "${_dir}" PARENT_SCOPE)
+endfunction()
+
+# test_schema2_linux_stale_compiler_fails — argv[0] is not the configured
+# compiler.
+b29_linux_case(_lx_stale "b29-linux-stale")
+file(WRITE "${_lx_stale}/compile_commands.json"
+  "[{\"directory\":\"${_lx}\",\"file\":\"${_lx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\",\"arguments\":["
+  "\"/bin/sh\",${_b29_drv_args_json},\"-c\",\"${_lx}/native/src/one.cpp\","
+  "\"-o\",\"CMakeFiles/bike_native.dir/one.cpp.o\"]}]\n")
+run_case(b29_linux_stale_compiler EXPECT_EXIT FAIL
+  EXPECT_STDERR "compiler differs from configured C++ compiler"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_stale}")
+
+# test_schema2_linux_duplicate_translation_unit_fails — the produced check
+# is already dual-platform via b29_dup_tu; this record documents the
+# Linux-shaped selection exercising the same rejection.
+b29_linux_case(_lx_dup "b29-linux-dup")
+file(WRITE "${_lx_dup}/compile_commands.json" "[${_lx_one},${_lx_one}]\n")
+run_case(b29_linux_dup_tu EXPECT_EXIT FAIL
+  EXPECT_STDERR "duplicate identical translation unit"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_dup}")
+
+# test_schema2_linux_missing_translation_unit_fails — a manifested source
+# absent from the database fails selection by name.
+b29_linux_case(_lx_miss "b29-linux-missing")
+file(WRITE "${_lx_miss}/compile_commands.json" "[${_lx_one}]\n")
+file(READ "${_lx_miss}/native_sources.json" _doc)
+string(JSON _doc SET "${_doc}" sources 1
+  "{\"path\":\"${_lx}/native/src/two.cpp\",\"target\":\"bike_native\",\"context\":\"bike_native:fixture\"}")
+file(WRITE "${_lx_miss}/native_sources.json" "${_doc}")
+run_case(b29_linux_missing_tu EXPECT_EXIT FAIL
+  EXPECT_STDERR "missing expected translation units: two.cpp"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_miss}")
+
+# test_schema2_linux_wrong_target_fails — the -o attribution names a target
+# the source manifest never selected.
+b29_linux_case(_lx_target "b29-linux-target")
+file(WRITE "${_lx_target}/compile_commands.json"
+  "[{\"directory\":\"${_lx}\",\"file\":\"${_lx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/other_target.dir/one.cpp.o\",\"arguments\":["
+  "${_b29_argv_json},\"-c\",\"${_lx}/native/src/one.cpp\","
+  "\"-o\",\"CMakeFiles/other_target.dir/one.cpp.o\"]}]\n")
+run_case(b29_linux_wrong_target EXPECT_EXIT FAIL
+  EXPECT_STDERR "unexpected target context"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_target}")
+
+# test_schema2_linux_wrong_selected_flags_fail — both oracle params: the
+# extensions-mode standard spelling and a missing required compile option.
+b29_linux_case(_lx_gnu "b29-linux-gnu-std")
+file(WRITE "${_lx_gnu}/compile_commands.json"
+  "[{\"directory\":\"${_lx}\",\"file\":\"${_lx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\",\"arguments\":["
+  "\"${_b29_compiler}\",\"-std=gnu++23\",${_b29_drv_args_json},"
+  "\"-c\",\"${_lx}/native/src/one.cpp\","
+  "\"-o\",\"CMakeFiles/bike_native.dir/one.cpp.o\"]}]\n")
+run_case(b29_linux_gnu_std EXPECT_EXIT FAIL
+  EXPECT_STDERR "is not strict ISO C++23"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_gnu}")
+
+b29_linux_case(_lx_opt "b29-linux-omitted-opt")
+file(READ "${_lx_opt}/native_check_context.json" _doc)
+string(JSON _doc SET "${_doc}" target_contexts bike_native compile_options
+  "[\"-ffp-contract=off\"]")
+file(WRITE "${_lx_opt}/native_check_context.json" "${_doc}")
+file(WRITE "${_lx_opt}/compile_commands.json" "[${_lx_one}]\n")
+run_case(b29_linux_omitted_option EXPECT_EXIT FAIL
+  EXPECT_STDERR "omits target bike_native compile option"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_opt}")
+
+# test_schema2_linux_relative_dependency_path_fails — a relative -I
+# resolves against the entry directory and must exist.
+b29_linux_case(_lx_rel "b29-linux-rel-include")
+b29_ccdb_entry(_lx_rel_e "${_lx}" "${_lx}/native/src/one.cpp"
+  "CMakeFiles/bike_native.dir/one.cpp.o" "-I" "relative-include")
+file(WRITE "${_lx_rel}/compile_commands.json" "[${_lx_rel_e}]\n")
+run_case(b29_linux_rel_include EXPECT_EXIT FAIL
+  EXPECT_STDERR "missing dependency path in compilation database entry 0"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_rel}")
+
+# test_schema2_linux_malformed_command_fails — the three oracle params:
+# non-array arguments, an unparseable command string, and neither member.
+b29_linux_case(_lx_ba "b29-linux-bad-args")
+file(WRITE "${_lx_ba}/compile_commands.json"
+  "[{\"directory\":\"${_lx}\",\"file\":\"${_lx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\","
+  "\"arguments\":\"not-a-list\"}]\n")
+run_case(b29_linux_bad_args EXPECT_EXIT FAIL
+  EXPECT_STDERR "malformed arguments"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_ba}")
+
+b29_linux_case(_lx_bc "b29-linux-bad-cmd")
+file(WRITE "${_lx_bc}/compile_commands.json"
+  "[{\"directory\":\"${_lx}\",\"file\":\"${_lx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\","
+  "\"command\":\"${_b29_compiler} 'unterminated\"}]\n")
+run_case(b29_linux_bad_cmd EXPECT_EXIT FAIL
+  EXPECT_STDERR "malformed command"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_bc}")
+
+b29_linux_case(_lx_nc "b29-linux-no-cmd")
+file(WRITE "${_lx_nc}/compile_commands.json"
+  "[{\"directory\":\"${_lx}\",\"file\":\"${_lx}/native/src/one.cpp\","
+  "\"output\":\"CMakeFiles/bike_native.dir/one.cpp.o\"}]\n")
+run_case(b29_linux_no_cmd EXPECT_EXIT FAIL
+  EXPECT_STDERR "needs command or arguments"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_nc}")
+
+# test_schema2_linux_absent_compile_database_fails — a build without the
+# database cannot select anything.
+b29_linux_case(_lx_nodb "b29-linux-no-db")
+run_case(b29_linux_no_db EXPECT_EXIT FAIL
+  EXPECT_STDERR "missing compilation database"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/mock-tidy"
+        "${CHECKS_BINARY}" --kind tidy --build "${_lx_nodb}")
+
+# test_schema2_linux_entries_without_sysroot_validate — Linux-only: the
+# produced no-SDK context selects entries carrying no -isysroot.
+if(NOT _t56_system STREQUAL "Darwin")
+  run_case(b29_linux_entries_no_sysroot EXPECT_EXIT 0
+    COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+          "CLANG_TIDY=${_fx}/mock-tidy"
+          "${CHECKS_BINARY}" --kind tidy --build "${_lx}/build")
+  expect_json(b29_linux_entries_no_sysroot
+    "${_lx}/build/native_check_summaries/tidy.json" 1
+    translation_unit_count)
+endif()
+
+# test_schema2_linux_sysroot_argument_is_rejected — already covered on
+# Linux by t56_ctx_linux_sysroot_arg (the produced -isysroot injection over
+# the real compilation database above, run through --kind frontends).
+
+# test_schema2_explicit_sysroot_directory_is_accepted — Linux-only: an
+# existing sysroot recorded in the context and selected in the entry
+# validates.
+if(NOT _t56_system STREQUAL "Darwin")
+  b29_linux_case(_lx_es "b29-linux-explicit-sysroot")
+  file(MAKE_DIRECTORY "${_lx_es}/sysroot")
+  file(REAL_PATH "${_lx_es}/sysroot" _lx_es_sysroot)
+  file(READ "${_lx_es}/native_check_context.json" _doc)
+  string(JSON _doc SET "${_doc}" sysroot "\"${_lx_es_sysroot}\"")
+  file(WRITE "${_lx_es}/native_check_context.json" "${_doc}")
+  b29_ccdb_entry(_lx_es_e "${_lx}" "${_lx}/native/src/one.cpp"
+    "CMakeFiles/bike_native.dir/one.cpp.o"
+    "-isysroot" "${_lx_es_sysroot}")
+  file(WRITE "${_lx_es}/compile_commands.json" "[${_lx_es_e}]\n")
+  run_case(b29_linux_explicit_sysroot EXPECT_EXIT 0
+    COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+          "CLANG_TIDY=${_fx}/mock-tidy"
+          "${CHECKS_BINARY}" --kind tidy --build "${_lx_es}")
+  expect_json(b29_linux_explicit_sysroot
+    "${_lx_es}/native_check_summaries/tidy.json" 1
+    translation_unit_count)
+endif()
+
+# ---------------------------------------------------------------------------
+# Support-module parity — the oracle's AST/regex comparison over the same
+# two files, re-expressed in CMake so the C++ loader-rule exemption list
+# cannot drift from the Python reference while both exist.
+file(READ "${REPO_ROOT}/tools/check_native_contracts.py" _py_contracts)
+string(REGEX MATCH "_SUPPORT_TEST_MODULES[ \t\n]*=[ \t\n]*\\{([^}]*)\\}"
+  _sup_py_m "${_py_contracts}")
+if(_sup_py_m STREQUAL "")
+  set(_failures
+    "${_failures}\n  b29_support_modules: no _SUPPORT_TEST_MODULES in tools/check_native_contracts.py")
+else()
+  string(REGEX MATCHALL "'[^']+'" _sup_py "${CMAKE_MATCH_1}")
+  set(_sup_py_clean "")
+  foreach(_n IN LISTS _sup_py)
+    string(REPLACE "'" "" _n "${_n}")
+    list(APPEND _sup_py_clean "${_n}")
+  endforeach()
+endif()
+file(READ "${REPO_ROOT}/native/src/tools/check_contracts.cpp" _cc_contracts)
+string(REGEX MATCH
+  "std::array<std::string_view,[ \t]*([0-9]+)>[ \t\n]*kSupportTestModules[ \t\n]*\\{([^}]*)\\};"
+  _sup_cc_m "${_cc_contracts}")
+if(_sup_cc_m STREQUAL "")
+  set(_failures
+    "${_failures}\n  b29_support_modules: no kSupportTestModules in check_contracts.cpp")
+else()
+  set(_sup_cc_declared "${CMAKE_MATCH_1}")
+  string(REGEX MATCHALL "\"[^\"]+\"" _sup_cc "${CMAKE_MATCH_2}")
+  set(_sup_cc_clean "")
+  foreach(_n IN LISTS _sup_cc)
+    string(REPLACE "\"" "" _n "${_n}")
+    list(APPEND _sup_cc_clean "${_n}")
+  endforeach()
+  list(LENGTH _sup_cc_clean _sup_cc_count)
+  if(NOT _sup_cc_count EQUAL _sup_cc_declared)
+    set(_failures
+      "${_failures}\n  b29_support_modules: kSupportTestModules declares ${_sup_cc_declared} entries and lists ${_sup_cc_count}")
+  endif()
+endif()
+if(DEFINED _sup_py_clean AND DEFINED _sup_cc_clean)
+  list(SORT _sup_py_clean)
+  list(SORT _sup_cc_clean)
+  list(JOIN _sup_py_clean ";" _sup_py_joined)
+  list(JOIN _sup_cc_clean ";" _sup_cc_joined)
+  if(NOT _sup_cc_joined STREQUAL _sup_py_joined)
+    set(_failures
+      "${_failures}\n  b29_support_modules: C++ '${_sup_cc_joined}' != Python '${_sup_py_joined}'")
+  endif()
+endif()
+
+# ---------------------------------------------------------------------------
+# Coverage-provenance rows (test_native_contract_checks.py) — the produced
+# provenance surface is the contracts checker's loader-provenance record
+# and RunCoverage's fail-closed run.
+
+# test_coverage_rejects_malformed_provenance — an unparseable provenance
+# file fails at load, never mid-report.
+b29_contract_fixture(b29fx-malformed)
+file(WRITE "${b29fx-malformed_BUILD}/native_test_provenance.json"
+  "{not json")
+b29_contract_run(b29_prov_malformed EXPECT_EXIT FAIL
+  EXPECT_STDERR "malformed native loader provenance" NAME b29fx-malformed)
+
+# test_coverage_rejects_a_provenance_for_a_different_build — the recorded
+# selected build must equal the requested build.
+b29_contract_fixture(b29fx-wrong-build)
+file(MAKE_DIRECTORY "${SCRATCH_DIR}/b29fx-wrong-build/other-build")
+file(REAL_PATH "${SCRATCH_DIR}/b29fx-wrong-build/other-build" _other_build)
+file(WRITE "${b29fx-wrong-build_BUILD}/native_test_provenance.json"
+  "{\"schema_version\":1,\"selected_build\":\"${_other_build}\","
+  "\"imported_extension\":\"${b29fx-wrong-build_EXT}\","
+  "\"native_test_count\":1}\n")
+b29_contract_run(b29_prov_wrong_build EXPECT_EXIT FAIL
+  EXPECT_STDERR "selected build does not match" NAME b29fx-wrong-build)
+
+# test_coverage_requires_zero_excluded_native_tests — the produced lane
+# runs CTest with --no-tests=error under the exclusion labels; a run whose
+# whole selection is excluded fails closed rather than publishing an empty
+# report.
+set(_cov_x "${SCRATCH_DIR}/b29-coverage-excluded")
+file(MAKE_DIRECTORY "${_cov_x}")
+file(WRITE "${_cov_x}/CTestTestfile.cmake"
+  "add_test(excluded_one \"${CMAKE_COMMAND}\" -E true)\n"
+  "set_tests_properties(excluded_one PROPERTIES LABELS \"coverage\")\n"
+  "add_test(install_smoke \"${CMAKE_COMMAND}\" -E true)\n")
+run_case(b29_run_coverage_no_tests EXPECT_EXIT FAIL
+  EXPECT_STDERR "coverage CTest run failed"
+  COMMAND "${CMAKE_COMMAND}"
+        "-DBUILD_DIR=${_cov_x}" "-DCONFIG=Debug"
+        "-DCTEST=${_b29_ctest_exe}" "-DLLVM_COV=unused"
+        "-DLLVM_PROFDATA=unused"
+        -P "${REPO_ROOT}/native/cmake/RunCoverage.cmake")
+
+# ---------------------------------------------------------------------------
+# RTSan qualification — real driver probes, then scratch configures against
+# the produced policy. All gating is explicit: an absent toolchain prints a
+# STATUS skip, never a fabricated pass.
+
+# Driver probes. Only the family split matters for reachability: a GNU
+# driver on Darwin never reaches the RTSan/coverage gates (earlier
+# toolchain/stdlib checks fail it — the produced fail-closed layering is
+# equivalent, so the oracle's Darwin GNU cases resolve to the same
+# rejections only on the graph where GNU is qualified).
+set(_b29_clang_driver "")
+set(_b29_rtsan_capable "")
+set(_b29_rtsan_lacking_clang "")
+set(_b29_rtsan_lacking_other "")
+set(_b29_probe_i 0)
+foreach(_cand IN LISTS _b29_candidates)
+  b29_tool_family("${_cand}" _fam)
+  if(_fam STREQUAL "clang" AND _b29_clang_driver STREQUAL "")
+    set(_b29_clang_driver "${_cand}")
+  endif()
+  b29_driver_accepts_rtsan("${_cand}"
+    "${SCRATCH_DIR}/b29-probe-${_b29_probe_i}" _ok)
+  if(_ok)
+    if(_b29_rtsan_capable STREQUAL "")
+      set(_b29_rtsan_capable "${_cand}")
+    endif()
+  elseif(_fam STREQUAL "clang" AND _b29_rtsan_lacking_clang STREQUAL "")
+    set(_b29_rtsan_lacking_clang "${_cand}")
+  elseif(_b29_rtsan_lacking_other STREQUAL "")
+    set(_b29_rtsan_lacking_other "${_cand}")
+  endif()
+  math(EXPR _b29_probe_i "${_b29_probe_i} + 1")
+endforeach()
+# A lacking driver usable on this graph: clang-family everywhere; on Linux
+# any family reaches the rtsan gate because GNU is a qualified toolchain.
+set(_b29_rtsan_lacking "")
+if(NOT _b29_rtsan_lacking_clang STREQUAL "")
+  set(_b29_rtsan_lacking "${_b29_rtsan_lacking_clang}")
+elseif(NOT _t56_system STREQUAL "Darwin")
+  set(_b29_rtsan_lacking "${_b29_rtsan_lacking_other}")
+endif()
+
+# test_requested_rtsan_fails_on_a_flag_rejecting_compiler_fixture — C++23
+# works but -fsanitize=realtime is rejected; a requested lane must fail
+# naming the flag and the selected compiler.
+b29_flag_reject_driver("${SCRATCH_DIR}/no-rtsan-c++" "${_b29_compiler}"
+  "-fsanitize=realtime" "no-rtsan")
+b29_scratch_configure(b29_rtsan_flag_reject
+  "${SCRATCH_DIR}/b29-cfg-rtsan-flag-reject"
+  EXPECT_EXIT FAIL
+  ARGS "-DCMAKE_CXX_COMPILER=${SCRATCH_DIR}/no-rtsan-c++"
+       "-DNATIVE_RTSAN=ON"
+  NEEDLES "-fsanitize=realtime" "${SCRATCH_DIR}/no-rtsan-c++")
+
+if(_b29_rtsan_lacking STREQUAL "")
+  message(STATUS
+    "b29_rtsan_lacking/b29_rtsan_unrequested: every candidate accepts -fsanitize=realtime — skipped")
+else()
+  # test_requested_rtsan_fails_on_a_known_lacking_compiler — the measured
+  # negative on a real driver.
+  b29_scratch_configure(b29_rtsan_lacking
+    "${SCRATCH_DIR}/b29-cfg-rtsan-lacking"
+    EXPECT_EXIT FAIL
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_rtsan_lacking}" "-DNATIVE_RTSAN=ON"
+    NEEDLES "-fsanitize=realtime" "${_b29_rtsan_lacking}")
+
+  # test_unrequested_rtsan_capability_is_explicitly_unsupported — an
+  # unrequested lane records {requested:false, supported:false,
+  # enabled:false, runtime:null} with probe evidence — never a silent skip.
+  b29_scratch_configure(b29_rtsan_unrequested
+    "${SCRATCH_DIR}/b29-cfg-rtsan-unrequested"
+    EXPECT_EXIT 0
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_rtsan_lacking}")
+  set(_ru_ctx "${SCRATCH_DIR}/b29-cfg-rtsan-unrequested/native_check_context.json")
+  expect_json(b29_rtsan_unrequested "${_ru_ctx}" "OFF"
+    capabilities rtsan requested)
+  expect_json(b29_rtsan_unrequested "${_ru_ctx}" "OFF"
+    capabilities rtsan supported)
+  expect_json(b29_rtsan_unrequested "${_ru_ctx}" "OFF"
+    capabilities rtsan enabled)
+  expect_json_type(b29_rtsan_unrequested "${_ru_ctx}" NULL
+    capabilities rtsan runtime)
+  expect_json_equal(b29_rtsan_unrequested "${_ru_ctx}"
+    capabilities rtsan compiler_id = compiler id)
+  expect_json_substring(b29_rtsan_unrequested "${_ru_ctx}" "probe"
+    capabilities rtsan evidence control)
+endif()
+
+if(_b29_rtsan_capable STREQUAL "")
+  message(STATUS
+    "b29_rtsan_no_runtime/b29_rtsan_qualified/b29_rtsan_control: no RTSan-capable compiler on this host — skipped")
+else()
+  # test_requested_rtsan_fails_when_the_runtime_is_unresolvable — the flag
+  # probes pass but the runtime query echoes back unresolved: a setup
+  # failure distinct from flag rejection.
+  b29_shadow_rtsan_driver("${SCRATCH_DIR}/no-rtsan-runtime-c++"
+    "${_b29_rtsan_capable}")
+  b29_scratch_configure(b29_rtsan_no_runtime
+    "${SCRATCH_DIR}/b29-cfg-rtsan-no-runtime"
+    EXPECT_EXIT FAIL
+    ARGS "-DCMAKE_CXX_COMPILER=${SCRATCH_DIR}/no-rtsan-runtime-c++"
+         "-DNATIVE_RTSAN=ON"
+    NEEDLES "rtsan" "${SCRATCH_DIR}/no-rtsan-runtime-c++")
+
+  # test_qualified_rtsan_configure_enables_the_lane — the requested lane
+  # records enabled with a resolved runtime and run/violation evidence,
+  # and the built control behaves as contracted.
+  b29_scratch_configure(b29_rtsan_qualified
+    "${SCRATCH_DIR}/b29-cfg-rtsan-qualified"
+    EXPECT_EXIT 0
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_rtsan_capable}" "-DNATIVE_RTSAN=ON")
+  set(_rq_ctx "${SCRATCH_DIR}/b29-cfg-rtsan-qualified/native_check_context.json")
+  expect_json(b29_rtsan_qualified "${_rq_ctx}" "ON"
+    capabilities rtsan requested)
+  expect_json(b29_rtsan_qualified "${_rq_ctx}" "ON"
+    capabilities rtsan supported)
+  expect_json(b29_rtsan_qualified "${_rq_ctx}" "ON"
+    capabilities rtsan enabled)
+  expect_json_equal(b29_rtsan_qualified "${_rq_ctx}"
+    capabilities rtsan compiler_id = compiler id)
+  expect_json_substring(b29_rtsan_qualified "${_rq_ctx}" "probe"
+    capabilities rtsan evidence control)
+  expect_json_substring(b29_rtsan_qualified "${_rq_ctx}" "control"
+    capabilities rtsan evidence run_control)
+  expect_json_substring(b29_rtsan_qualified "${_rq_ctx}" "control"
+    capabilities rtsan evidence annotation_control)
+  expect_json_substring(b29_rtsan_qualified "${_rq_ctx}" "control"
+    capabilities rtsan evidence macro_control)
+  expect_json_substring(b29_rtsan_qualified "${_rq_ctx}"
+    "RealtimeSanitizer" capabilities rtsan evidence violation_control)
+  if(EXISTS "${_rq_ctx}")
+    file(READ "${_rq_ctx}" _rq_doc)
+    string(JSON _rq_rt ERROR_VARIABLE _rq_rt_err
+      GET "${_rq_doc}" capabilities rtsan runtime)
+    if(_rq_rt_err OR NOT EXISTS "${_rq_rt}" OR IS_DIRECTORY "${_rq_rt}")
+      set(_failures
+        "${_failures}\n  b29_rtsan_qualified: runtime '${_rq_rt}' is not a file")
+    elseif(NOT _rq_rt MATCHES "rtsan")
+      set(_failures
+        "${_failures}\n  b29_rtsan_qualified: runtime '${_rq_rt}' names no rtsan image")
+    endif()
+  endif()
+  execute_process(COMMAND "${CMAKE_COMMAND}" --build
+    "${SCRATCH_DIR}/b29-cfg-rtsan-qualified" --target native_rtsan_control
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 600)
+  if(NOT _rc EQUAL 0)
+    set(_failures
+      "${_failures}\n  b29_rtsan_qualified: control build failed (${_rc}): ${_o}${_e}")
+  else()
+    set(_rq_bin "${SCRATCH_DIR}/b29-cfg-rtsan-qualified/native_rtsan_control")
+    execute_process(COMMAND "${_rq_bin}"
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 60)
+    if(NOT _rc EQUAL 0)
+      set(_failures
+        "${_failures}\n  b29_rtsan_qualified: clean control rc=${_rc} ${_e}")
+    endif()
+    execute_process(COMMAND "${_rq_bin}" forbidden-allocation
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 60)
+    set(_v "${_o}\n${_e}")
+    if(_rc EQUAL 0)
+      set(_failures
+        "${_failures}\n  b29_rtsan_qualified: violation control exited 0")
+    else()
+      foreach(_needle "RealtimeSanitizer" "malloc")
+        string(FIND "${_v}" "${_needle}" _pos)
+        if(_pos EQUAL -1)
+          set(_failures
+            "${_failures}\n  b29_rtsan_qualified: violation output missing '${_needle}': ${_v}")
+        endif()
+      endforeach()
+    endif()
+  endif()
+
+  # test_rtsan_control_source_reports_the_sanitizer_diagnostic — the same
+  # source compiled by hand: instrumented violation reports, the
+  # uninstrumented twin exits clean (the annotation is load-bearing).
+  set(_rc_dir "${SCRATCH_DIR}/b29-rtsan-control")
+  file(MAKE_DIRECTORY "${_rc_dir}")
+  execute_process(COMMAND "${_b29_rtsan_capable}" -std=c++23 -g -O0
+    -fsanitize=realtime "${REPO_ROOT}/native/tests/rtsan_control.cpp"
+    -o "${_rc_dir}/rtsan_control"
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 300)
+  if(NOT _rc EQUAL 0)
+    set(_failures
+      "${_failures}\n  b29_rtsan_control: instrumented compile failed: ${_e}")
+  else()
+    execute_process(COMMAND "${_rc_dir}/rtsan_control"
+      RESULT_VARIABLE _rc ERROR_VARIABLE _e TIMEOUT 60)
+    if(NOT _rc EQUAL 0)
+      set(_failures
+        "${_failures}\n  b29_rtsan_control: clean mode rc=${_rc} ${_e}")
+    endif()
+    execute_process(COMMAND "${_rc_dir}/rtsan_control" forbidden-allocation
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 60)
+    set(_v "${_o}\n${_e}")
+    if(_rc EQUAL 0)
+      set(_failures
+        "${_failures}\n  b29_rtsan_control: instrumented violation exited 0")
+    else()
+      foreach(_needle "RealtimeSanitizer" "malloc")
+        string(FIND "${_v}" "${_needle}" _pos)
+        if(_pos EQUAL -1)
+          set(_failures
+            "${_failures}\n  b29_rtsan_control: violation output missing '${_needle}': ${_v}")
+        endif()
+      endforeach()
+    endif()
+  endif()
+  execute_process(COMMAND "${_b29_rtsan_capable}" -std=c++23 -g -O0
+    "${REPO_ROOT}/native/tests/rtsan_control.cpp"
+    -o "${_rc_dir}/rtsan_control_plain"
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 300)
+  if(NOT _rc EQUAL 0)
+    set(_failures
+      "${_failures}\n  b29_rtsan_control: plain compile failed: ${_e}")
+  else()
+    execute_process(COMMAND "${_rc_dir}/rtsan_control_plain"
+      forbidden-allocation
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 60)
+    set(_v "${_o}\n${_e}")
+    if(NOT _rc EQUAL 0)
+      set(_failures
+        "${_failures}\n  b29_rtsan_control: uninstrumented violation rc=${_rc} ${_v}")
+    elseif(_v MATCHES "RealtimeSanitizer")
+      set(_failures
+        "${_failures}\n  b29_rtsan_control: uninstrumented run reported a sanitizer diagnostic: ${_v}")
+    endif()
+  endif()
+endif()
+
+# ---------------------------------------------------------------------------
+# Coverage qualification — configure-time policy gates over real drivers.
+
+# test_requested_coverage_fails_on_a_flag_rejecting_compiler_fixture —
+# -fprofile-instr-generate is rejected; a requested lane must fail naming
+# the flag and the selected compiler. The fake wraps a clang-family driver:
+# only the clang spellings carry that flag (a GNU probe uses
+# -fprofile-arcs/-ftest-coverage, which the oracle's fixture does not
+# reject — its own candidate order already prefers the clang family).
+if(_b29_clang_driver STREQUAL "")
+  message(STATUS "b29_cov_flag_reject: no clang-family compiler on this host — skipped")
+else()
+  b29_flag_reject_driver("${SCRATCH_DIR}/no-coverage-c++" "${_b29_clang_driver}"
+    "-fprofile-instr-generate" "no-coverage")
+  b29_scratch_configure(b29_cov_flag_reject
+    "${SCRATCH_DIR}/b29-cfg-cov-flag-reject"
+    EXPECT_EXIT FAIL
+    ARGS "-DCMAKE_CXX_COMPILER=${SCRATCH_DIR}/no-coverage-c++"
+         "-DNATIVE_COVERAGE=ON"
+    NEEDLES "-fprofile-instr-generate" "${SCRATCH_DIR}/no-coverage-c++")
+endif()
+
+# test_requested_coverage_fails_for_a_non_clang_compiler — a requested
+# coverage lane against a GNU driver must fail the family gate. On Darwin a
+# GNU driver never reaches that gate (the platform/stdlib layers reject it
+# earlier — the fail-closed layering is equivalent, the oracle's toy
+# fixture simply bypassed them), so the produced check is exercised on the
+# real graph where GNU is the qualified toolchain.
+set(_b29_gnu_driver "")
+foreach(_cand IN LISTS _b29_candidates)
+  b29_tool_family("${_cand}" _fam)
+  if(_fam STREQUAL "gcc")
+    set(_b29_gnu_driver "${_cand}")
+    break()
+  endif()
+endforeach()
+if(_t56_system STREQUAL "Darwin")
+  message(STATUS
+    "b29_cov_non_clang: GNU driver on Darwin is rejected before the coverage-family gate — skipped")
+elseif(_b29_gnu_driver STREQUAL "")
+  message(STATUS
+    "b29_cov_non_clang: no GNU-family compiler on this host — skipped")
+else()
+  b29_scratch_configure(b29_cov_non_clang
+    "${SCRATCH_DIR}/b29-cfg-cov-non-clang"
+    EXPECT_EXIT FAIL
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_gnu_driver}" "-DNATIVE_COVERAGE=ON"
+    NEEDLES "LLVM clang-family")
+endif()
+
+# Coverage-capable driver detection — mirror of the oracle's
+# _coverage_capable_driver: first clang-family candidate whose
+# llvm-profdata/llvm-cov pair resolves under the produced resolution order.
+set(_b29_cov_driver "")
+set(_b29_cov_major "")
+set(_b29_cov_probe_i 0)
+foreach(_cand IN LISTS _b29_candidates)
+  b29_tool_family("${_cand}" _fam)
+  if(NOT _fam STREQUAL "clang")
+    continue()
+  endif()
+  b29_driver_major("${_cand}" _major)
+  if(_major STREQUAL "")
+    continue()
+  endif()
+  # The driver must actually compile+link an instrumented TU — resolved
+  # tools alone do not qualify the lane when the profile runtime is absent.
+  b29_driver_accepts_coverage("${_cand}"
+    "${SCRATCH_DIR}/b29-cov-probe-${_b29_cov_probe_i}" _cov_ok)
+  math(EXPR _b29_cov_probe_i "${_b29_cov_probe_i} + 1")
+  if(NOT _cov_ok)
+    continue()
+  endif()
+  b29_cov_tool_resolve("llvm-profdata" "${_cand}" "${_major}" _p)
+  if(NOT _p)
+    continue()
+  endif()
+  b29_cov_tool_resolve("llvm-cov" "${_cand}" "${_major}" _c)
+  if(NOT _c)
+    continue()
+  endif()
+  set(_b29_cov_driver "${_cand}")
+  set(_b29_cov_major "${_major}")
+  break()
+endforeach()
+
+if(_b29_cov_driver STREQUAL "")
+  message(STATUS
+    "b29_cov_bad_override/b29_cov_merge_fail/b29_cov_qualified/b29_cov_tool_evidence: no clang toolchain with qualified coverage tools on this host — skipped")
+else()
+  # test_requested_coverage_fails_on_an_unresolvable_tool_override — an
+  # explicit LLVM_PROFDATA override that does not resolve is a hard
+  # configure failure, never a silent fallthrough.
+  b29_scratch_configure(b29_cov_bad_override
+    "${SCRATCH_DIR}/b29-cfg-cov-bad-override"
+    EXPECT_EXIT FAIL
+    ENV ${_b29_clean_env} "LLVM_PROFDATA=${SCRATCH_DIR}/missing-llvm-profdata"
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_cov_driver}" "-DNATIVE_COVERAGE=ON"
+    NEEDLES "LLVM_PROFDATA" "${SCRATCH_DIR}/missing-llvm-profdata")
+
+  # test_coverage_failing_merge_tool_reports_command_and_log — a resolved
+  # profdata that cannot merge is a configure-time qualification failure
+  # naming the command, its status and the retained diagnostics directory
+  # (the produced lane qualifies the merge at configure: the same
+  # rejection, earlier).
+  b29_broken_profdata("${SCRATCH_DIR}/broken-llvm-profdata" "${_b29_cov_major}")
+  b29_scratch_configure(b29_cov_merge_fail
+    "${SCRATCH_DIR}/b29-cfg-cov-merge-fail"
+    EXPECT_EXIT FAIL
+    ENV ${_b29_clean_env} --unset=LLVM_COV
+        "LLVM_PROFDATA=${SCRATCH_DIR}/broken-llvm-profdata"
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_cov_driver}" "-DNATIVE_COVERAGE=ON"
+    NEEDLES "control-merge" "(7)" "${SCRATCH_DIR}/broken-llvm-profdata"
+            "diagnostics")
+  set(_mf_probe
+    "${SCRATCH_DIR}/b29-cfg-cov-merge-fail/native_check_work/compiler-policy/coverage-format")
+  if(EXISTS "${_mf_probe}/control-merge.stderr.log")
+    file(READ "${_mf_probe}/control-merge.stderr.log" _mf_log)
+    string(FIND "${_mf_log}" "incompatible profile format" _pos)
+    if(_pos EQUAL -1)
+      set(_failures
+        "${_failures}\n  b29_cov_merge_fail: retained merge log lacks the tool diagnostic: ${_mf_log}")
+    endif()
+  else()
+    set(_failures
+      "${_failures}\n  b29_cov_merge_fail: no retained control-merge.stderr.log")
+  endif()
+  if(NOT EXISTS "${_mf_probe}/control-merge.command.json")
+    set(_failures
+      "${_failures}\n  b29_cov_merge_fail: no retained control-merge.command.json")
+  endif()
+
+  # test_qualified_coverage_configure_records_tool_evidence +
+  # test_coverage_records_tool_resolution_evidence — one qualified
+  # configure with the oracle's env-resolved fake pair: the context records
+  # enabled plus control/tools/format-probe evidence, and the emitted
+  # coverage_tool_resolution.json names the resolved paths, versions and
+  # the passed probe (the produced lane's tool-resolution provenance).
+  b29_fake_llvm_tools("${SCRATCH_DIR}/fake-llvm" "${_b29_cov_major}")
+  b29_scratch_configure(b29_cov_qualified
+    "${SCRATCH_DIR}/b29-cfg-cov-qualified"
+    EXPECT_EXIT 0
+    ENV ${_b29_clean_env}
+        "LLVM_PROFDATA=${SCRATCH_DIR}/fake-llvm/fake-llvm-profdata"
+        "LLVM_COV=${SCRATCH_DIR}/fake-llvm/fake-llvm-cov"
+    ARGS "-DCMAKE_CXX_COMPILER=${_b29_cov_driver}" "-DNATIVE_COVERAGE=ON")
+  set(_cq_ctx "${SCRATCH_DIR}/b29-cfg-cov-qualified/native_check_context.json")
+  expect_json(b29_cov_qualified "${_cq_ctx}" "ON"
+    capabilities coverage requested)
+  expect_json(b29_cov_qualified "${_cq_ctx}" "ON"
+    capabilities coverage supported)
+  expect_json(b29_cov_qualified "${_cq_ctx}" "ON"
+    capabilities coverage enabled)
+  expect_json_substring(b29_cov_qualified "${_cq_ctx}" "probe"
+    capabilities coverage evidence control)
+  expect_json_substring(b29_cov_qualified "${_cq_ctx}" "llvm-profdata"
+    capabilities coverage evidence tools)
+  expect_json_substring(b29_cov_qualified "${_cq_ctx}" "llvm-cov"
+    capabilities coverage evidence tools)
+  expect_json_substring(b29_cov_qualified "${_cq_ctx}" "export"
+    capabilities coverage evidence format_probe)
+  set(_cq_tr
+    "${SCRATCH_DIR}/b29-cfg-cov-qualified/native_check_work/compiler-policy/coverage_tool_resolution.json")
+  expect_json(b29_cov_tool_evidence "${_cq_tr}"
+    "${SCRATCH_DIR}/fake-llvm/fake-llvm-profdata" llvm_profdata path)
+  expect_json(b29_cov_tool_evidence "${_cq_tr}"
+    "${SCRATCH_DIR}/fake-llvm/fake-llvm-cov" llvm_cov path)
+  expect_json_substring(b29_cov_tool_evidence "${_cq_tr}" "LLVM"
+    llvm_profdata version)
+  expect_json_substring(b29_cov_tool_evidence "${_cq_tr}" "LLVM"
+    llvm_cov version)
+  expect_json(b29_cov_tool_evidence "${_cq_tr}" "ON"
+    format_probe format_probe_passed)
 endif()
 
 if(NOT _failures STREQUAL "")

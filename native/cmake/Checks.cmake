@@ -184,6 +184,12 @@ if(BUILD_TESTING)
       -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
       -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T56"
       -P "${_checks_native_dir}/tests/migration/migration_T56_check.cmake")
+  # The case list includes real-tree sweeps (headers/diagnostic-controls/
+  # scripts over the selected build) plus scratch configures and instrumented
+  # control builds; give the whole script the same generous budget the T53
+  # portability fixture already declares.
+  set_tests_properties(migration_T56 PROPERTIES
+    LABELS "migration;t56" TIMEOUT 3600)
   if(NOT TARGET migration_T56)
     add_custom_target(migration_T56
       COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"

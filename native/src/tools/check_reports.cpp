@@ -520,10 +520,27 @@ const std::regex &located_pattern() {
     return pattern;
 }
 
+// Clang-family text diagnostics echo the flagged source beneath each located
+// diagnostic in "   NN | <source>" gutter form. The echoed source can itself
+// contain "warning:"/"error:" inside a literal (e.g. `std::cerr << command
+// << ": error: "`) — that is program text, not a diagnostic. Every real
+// diagnostic either carries a path:line(:column) origin or is a bare
+// driver/fatal message; neither opens with a numeric gutter, so gutter lines
+// are excluded from collection.
+bool is_snippet_gutter(std::string_view line) {
+    const auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
+    std::size_t pos = line.find_first_not_of(" \t");
+    if (pos == std::string_view::npos || !is_digit(line[pos])) return false;
+    while (pos < line.size() && is_digit(line[pos])) ++pos;
+    while (pos < line.size() && (line[pos] == ' ' || line[pos] == '\t')) ++pos;
+    return pos < line.size() && line[pos] == '|';
+}
+
 } // namespace
 
 bool is_diagnostic_line(std::string_view line) {
-    return std::regex_search(line.begin(), line.end(), diagnostic_pattern());
+    return !is_snippet_gutter(line) &&
+           std::regex_search(line.begin(), line.end(), diagnostic_pattern());
 }
 
 std::optional<LocatedDiagnostic> parse_located_diagnostic(

@@ -17807,16 +17807,18 @@
       "line": 167,
       "end_line": 182,
       "owner_task": "T53",
-      "native_source": "native/tests/reference/test_native_research_environment.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [
         "tests/reference/test_native_research_environment.py::test_publication_failure_retry_does_not_advance_twice"
       ],
       "assertions_capture": "2026-10-31: measured \u2014 pytest collected 1 node(s); live-oracle parity green on darwin-arm64 + linux-aarch64",
-      "comparison_class": "source-specific; assigned by T01 before implementation",
-      "disposition": "planned",
+      "comparison_class": "python-only",
+      "disposition": "drop",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 the probe injects a failure into the Python adapter _transition publication hook (monkeypatch on bike_sim.native.research._transition); no such hook exists in NativeResearchRuntime \u2014 the retained committed-step contract is covered by the ported zero-budget and invalid-boundary twins.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/d2 @ 3901bdb4: dropped \u2014 the committed-step contract the test protects is covered by the ported twins reference.native_research_environment::test_zero_budget_retains_single_window_and_no_tail_flush (a pending window holds its staged command across zero-budget polls and commits exactly once, publishing one transition) and test_invalid_boundary_calls_do_not_change_state (rejected boundary calls keep pending and leave integration state untouched). The injected adapter._transition failure is a Python-adapter-only seam deleted with the adapter at T63 \u2014 NativeResearchRuntime has no publication hook to monkeypatch; the native staged-completion design (PolicySession::advance_pending retains s.completed; begin_advance's staged command is never re-derived on retry, policy_session.cpp:190-243) mirrors the invariant. Python node itself green on darwin-arm64 (21.7 s pair) \u2014 it continues to guard the adapter until removal."
       ]
     },
     {
@@ -17888,7 +17890,8 @@
       "disposition": "planned",
       "evidence": [
         "2026-10-28 3.33a lane/a: remains planned \u2014 rider_behavior is a Python adapter object (bike_sim.native.research); NativeResearchRuntime has no behavior-callback hook \u2014 the port waits on a native equivalent.",
-        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task."
+        "2026-10-31 FT-1 lane/f: live-oracle parity green on darwin-arm64 + linux-aarch64 after the held-command fix \u2014 native SpindleController::write now mirrors the oracle's per-step directional_limit clip + accelerating-speed gate (was writing held torques verbatim; first divergence ctrl[3] act_rider_torso_hinge 82.51 vs 72.88 at step 114). Bootstrap coast_hold_nm serialization fixed earlier in the same task.",
+        "2026-10-31 FT-2 lane/d2 @ 3901bdb4: stays planned \u2014 the committed-step half (polls never re-commit a held window) is covered by the ported zero-budget twin, but the once-per-external-boundary callback contract has no native test leg: research::PolicySession calls rider_behavior->act(observation.time_s, ...) once per begin_advance inside the staged-command block (policy_session.cpp:202, retry never re-calls act per the staged design), yet no native test registers a RiderBehavior. The Python adapter's deepcopy-ownership/reseed legs are adapter semantics deleted at T63; a port needs a counting-RiderBehavior leg through begin_advance + zero-budget polls + reset before this record can drop with coverage."
       ]
     },
     {

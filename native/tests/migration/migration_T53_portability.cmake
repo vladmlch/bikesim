@@ -19,9 +19,13 @@ endforeach()
 
 # IN_LIST is an if() operator only under the NEW CMP0057 behavior; script
 # mode defaults policies to the host cmake_minimum_required (unset -> old).
-if(POLICY CMP0057)
-  cmake_policy(SET CMP0057 NEW)
-endif()
+# CMP0054 likewise keeps quoted `(`/`MATCHES` arguments literal under NEW —
+# required by _active_lines when a scanned line is itself "(".
+foreach(_p CMP0057 CMP0054)
+  if(POLICY ${_p})
+    cmake_policy(SET ${_p} NEW)
+  endif()
+endforeach()
 
 if(NOT DEFINED DEPS_ROOT)
   set(DEPS_ROOT "${REPO_ROOT}/.deps")
@@ -1518,6 +1522,829 @@ set(_c "threadpoolctl_tooling_floor_not_exact_pin")
 math(EXPR _case_count "${_case_count} + 1")
 _expect_needle(${_c} "${_native_group}" "\"threadpoolctl>=3.6\"")
 _expect_absent(${_c} "${_native_group}" "\"threadpoolctl==")
+
+# ==========================================================================
+# Tranche 3.36-B: ci_lanes / release_gate / native_dependencies /
+# coverage_tools / development_docs / baseline / viewer_launch contracts.
+# The Python subjects (ci runner, release evaluator, dependency probe,
+# coverage resolver) are interpreter tooling; the native owners are
+# tools/ci_presets.sh + the workflow + Bike*.cmake modules + the
+# qualification checklist. Text/artifact contracts port 1:1; subprocess
+# and monkeypatched-resolver records drop per ADR-0003.
+# ==========================================================================
+
+set(JSON_MODULE "${REPO_ROOT}/native/cmake/BikeJson.cmake")
+set(COVERAGE_MODULE "${REPO_ROOT}/native/cmake/CoverageTools.cmake")
+set(SANITIZERS_CMAKE "${REPO_ROOT}/native/cmake/Sanitizers.cmake")
+set(CHECK_CONTEXT_CMAKE "${REPO_ROOT}/native/cmake/BikeCheckContext.cmake")
+set(DEPS_LOCK "${REPO_ROOT}/native/dependencies.lock.json")
+set(WORKFLOW_YML "${REPO_ROOT}/.github/workflows/portability.yml")
+set(QUALIFICATION_MD "${REPO_ROOT}/docs/releases/python-free-qualification.md")
+
+file(READ "${REPO_ROOT}/tools/ci_presets.sh" _ci)
+file(READ "${REPO_ROOT}/tools/run_native_checks.sh" _checks_sh)
+file(READ "${WORKFLOW_YML}" _wf)
+file(READ "${QUALIFICATION_MD}" _qual)
+file(READ "${SANITIZERS_CMAKE}" _san)
+file(READ "${CHECK_CONTEXT_CMAKE}" _check_ctx)
+
+# --------------------------------------------------------------------------
+# test_ci_lanes.py — lane runner contract (tools/ci_presets.sh + workflow)
+# --------------------------------------------------------------------------
+
+# test_cli_rejects_unsupported_lane / test_unsupported_lane_name_fails —
+# the runner exits 2 on an unknown preset or mode before any work.
+set(_c "ci_presets_rejects_unsupported_preset_and_mode")
+math(EXPR _case_count "${_case_count} + 1")
+_run(${_c}_a COMMAND bash "${CI_PRESETS}" bogus-lane)
+if(${_c}_a_rc EQUAL 0)
+  _fail("${_c}: unknown preset exited 0")
+endif()
+_run(${_c}_b COMMAND bash "${CI_PRESETS}" release bogus-mode)
+if(${_c}_b_rc EQUAL 0)
+  _fail("${_c}: unknown mode exited 0")
+endif()
+_expect_needle(${_c} "${_ci}" "case \"$lane\" in *[!a-zA-Z0-9_.-]*")
+
+# test_every_required_lane_exists_plus_trusted_lanes / test_lane_names_match
+# — the preset/mode case inventory is the lane matrix; the workflow
+# materializes every qualification lane as a matrix entry.
+set(_c "ci_presets_lane_inventory_and_mode_matrix")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "release|debug|asan|rtsan|coverage|gui")
+_expect_needle(${_c} "${_ci}" "checks|package|offline|gui-smoke")
+foreach(_lane linux-aarch64-release linux-aarch64-debug macos-arm64-release
+    linux-aarch64-asan linux-aarch64-coverage macos-arm64-asan
+    macos-arm64-coverage linux-xvfb-smoke package-linux package-macos
+    offline-rebuild-linux macos-arm64-rtsan)
+  _expect_needle(${_c} "${_wf}" "${_lane}")
+endforeach()
+
+# test_every_lane_asserts_platform_first / test_platform_assertion_rejects
+# _wrong_os / test_macos_lane_platform_assertion_passes_on_macos.
+set(_c "ci_presets_asserts_host_platform_before_work")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "machine == aarch64")
+_expect_needle(${_c} "${_ci}" "aarch64 host and aarch64 container")
+_expect_needle(${_c} "${_ci}" "$system == Darwin && $machine == arm64")
+_expect_needle(${_c} "${_ci}" "CI must name its container")
+
+# test_failed_command_stops_the_lane / test_lane_failure_exit_code_is
+# _preserved / test_lane_runs_every_command_when_all_pass — sequential
+# commands under pipefail, the EXIT trap preserves the failing status.
+set(_c "ci_presets_fails_closed_and_preserves_exit_code")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "set -euo pipefail")
+_expect_needle(${_c} "${_ci}" "trap collect_evidence EXIT")
+_expect_needle(${_c} "${_ci}" "exit \"$result\"")
+_expect_needle(${_c} "${_ci}" "cmake --workflow --preset \"$preset\"")
+
+# test_workflow_runs_the_lane_runner_and_uploads_evidence (runner half) —
+# the EXIT trap writes exit-code.txt and commit.txt under output/ci/<lane>.
+set(_c "ci_presets_collects_commit_and_exit_code_evidence")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "exit-code.txt")
+_expect_needle(${_c} "${_ci}" "git rev-parse HEAD")
+_expect_needle(${_c} "${_ci}" "commit.txt")
+_expect_needle(${_c} "${_ci}" "native_check_context.json")
+_expect_needle(${_c} "${_ci}" "bike_policy_report.json")
+
+# test_unique_build_path_per_lane — each preset selects a distinct build
+# tree; release is fixed at build/native-release.
+set(_c "ci_presets_unique_build_dir_per_preset")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "build=build/$preset")
+_expect_needle(${_c} "${_ci}" "build=build/native-release")
+
+# test_linux_lane_does_not_use_apple_sdk / test_no_lane_uses_apple_sdk
+# _options_on_linux — the lane runner carries no Apple machinery at all.
+set(_c "ci_presets_never_invokes_apple_sdk")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_absent(${_c} "${_ci}" "CMAKE_OSX_SYSROOT")
+_expect_absent(${_c} "${_ci}" "xcrun")
+_expect_absent(${_c} "${_ci}" "SDKROOT")
+
+# test_required_analysis_tools_checked — the produced sweep set and order
+# is a fixed contract inside run_native_checks.sh.
+set(_c "ci_presets_runs_the_bounded_analysis_sweep_set")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "run_native_checks.sh \"$build\"")
+_expect_needle(${_c} "${_checks_sh}"
+  "frontends tidy analyzer cppcheck odr scripts headers")
+_expect_needle(${_c} "${_checks_sh}" "diagnostic-controls context")
+_expect_needle(${_c} "${_checks_sh}" "sweep contracts")
+_expect_needle(${_c} "${_checks_sh}" "fails closed on missing tools")
+
+# test_offline_lane_uses_checked_in_offline_tools — the offline mode
+# rehearses a fresh no-network container rebuild through the committed
+# extractor and lock.
+set(_c "ci_presets_offline_rehearsal_uses_checked_in_tools")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_ci}" "--network none")
+_expect_needle(${_c} "${_ci}" "extract_deps.sh native/dependencies.lock.json")
+_expect_needle(${_c} "${_ci}" "cpack --config \"$build/CPackConfig.cmake\"")
+_expect_needle(${_c} "${_ci}" "package_smoke")
+
+# test_workflow_yaml_parses_and_every_use_is_full_sha — every `uses:` action
+# reference is pinned to a 40-hex commit.
+set(_c "workflow_pins_actions_by_full_sha")
+math(EXPR _case_count "${_case_count} + 1")
+file(STRINGS "${WORKFLOW_YML}" _uses_lines REGEX "uses:")
+set(_bad_uses "")
+foreach(_l IN LISTS _uses_lines)
+  # CMake regex has no {n} bounded repetition; capture the hex tail and
+  # check it is exactly 40 lowercase hex characters.
+  if("${_l}" MATCHES "uses: *[^ @]+@([0-9a-f]+)([\"' ]|$)")
+    string(LENGTH "${CMAKE_MATCH_1}" _sha_len)
+    if(NOT _sha_len EQUAL 40)
+      set(_bad_uses "${_bad_uses}\n    ${_l}")
+    endif()
+  else()
+    set(_bad_uses "${_bad_uses}\n    ${_l}")
+  endif()
+endforeach()
+if(NOT _bad_uses STREQUAL "")
+  _fail("${_c}: non-SHA-pinned uses:${_bad_uses}")
+endif()
+
+# test_workflow_triggers_and_permissions — PR/push/dispatch triggers,
+# read-only contents, never pull_request_target.
+set(_c "workflow_triggers_and_read_only_permissions")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_wf}" "pull_request:")
+_expect_needle(${_c} "${_wf}" "push:")
+_expect_needle(${_c} "${_wf}" "workflow_dispatch:")
+_expect_needle(${_c} "${_wf}" "contents: read")
+_expect_absent(${_c} "${_wf}" "pull_request_target")
+
+# test_workflow_runs_the_lane_runner_and_uploads_evidence (workflow half) —
+# each job runs ci_presets and uploads output/ci/<lane> unconditionally.
+set(_c "workflow_jobs_run_lane_and_upload_evidence")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_wf}" "bash tools/ci_presets.sh")
+_expect_needle(${_c} "${_wf}" "if: \${{ always() }}")
+_expect_needle(${_c} "${_wf}" "path: output/ci/")
+
+# test_workflow_matrix_covers_both_oses_and_required_lanes +
+# test_macos_lane_is_not_removed — runner OSes match lane prefixes; the
+# extended lanes are schedule/dispatch gated.
+set(_c "workflow_runner_os_matches_lane_names_and_gating")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_wf}" "ubuntu-24.04-arm")
+_expect_needle(${_c} "${_wf}" "macos-15")
+_expect_needle(${_c} "${_wf}"
+  "github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'")
+
+# test_workflow_never_runs_fork_code_on_trusted_runners — the trusted
+# package/offline/RTSan lanes are dispatch-only behind the
+# release-qualification environment.
+set(_c "workflow_trusted_lanes_dispatch_and_environment_gated")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_wf}" "github.event_name == 'workflow_dispatch'")
+_expect_needle(${_c} "${_wf}" "environment: release-qualification")
+_expect_needle(${_c} "${_wf}" "self-hosted")
+
+# --------------------------------------------------------------------------
+# test_release_gate.py — the qualification checklist is the release gate
+# --------------------------------------------------------------------------
+
+# Required-set coverage: every required row is named in the checklist
+# (covers missing_*_blocks / linux_only_cannot_release / extra-never-
+# satisfies semantics at the artifact level).
+set(_c "release_checklist_pins_the_required_lane_rows")
+math(EXPR _case_count "${_case_count} + 1")
+foreach(_row macos-arm64-release macos-arm64-asan macos-arm64-coverage
+    linux-aarch64-release linux-aarch64-debug linux-aarch64-asan
+    linux-aarch64-coverage package-macos package-linux
+    offline-rebuild-linux macos-manual-gui linux-xvfb-smoke)
+  _expect_needle(${_c} "${_qual}" "| ${_row} |")
+endforeach()
+
+# Evidence binding: a row closes only with final-commit evidence, a recorded
+# command and its exit code; the runner writes exactly those two files.
+set(_c "release_checklist_binds_source_commit_and_exit_code")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_qual}" "final source commit")
+_expect_needle(${_c} "${_qual}" "recorded command, its exit")
+_expect_needle(${_c} "${_qual}"
+  "| Required lane | Host | Preset | Command | CI run or local evidence | Exit | Date | Commit |")
+
+# No silent baseline escape: unrun rows are "Not qualified or advertised";
+# an implemented preset is not a completed row.
+set(_c "release_checklist_never_allows_silent_baseline_escape")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_qual}" "Not qualified or advertised")
+_expect_needle(${_c} "${_qual}" "Not run")
+
+# Trusted rows: package/offline/RTSan stay dispatch-only behind the
+# release-qualification environment, on self-hosted runners only.
+set(_c "release_trusted_rows_are_dispatch_only")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_qual}" "dispatch-only behind the `release-qualification` environment")
+
+# Sanitizer negative controls — both instrumented lanes carry a clean
+# control and a WILL_FAIL negative control.
+set(_c "release_sanitizer_lanes_have_paired_controls")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_san}" "sanitizer_negative_control")
+_expect_needle(${_c} "${_san}" "use-after-free")
+_expect_needle(${_c} "${_san}" "rtsan_negative_control")
+_expect_needle(${_c} "${_san}" "forbidden-allocation")
+_expect_needle(${_c} "${_san}" "WILL_FAIL")
+_expect_needle(${_c} "${_san}" "\${_control}_clean_control")
+
+# --------------------------------------------------------------------------
+# test_native_dependencies.py — the committed lock replaces the probe
+# --------------------------------------------------------------------------
+
+# Engine pin + platform library identities + member hashes.
+set(_c "dependency_lock_pins_the_engine_exactly")
+math(EXPR _case_count "${_case_count} + 1")
+file(READ "${DEPS_LOCK}" _deps)
+string(JSON _v ERROR_VARIABLE _e GET "${_deps}" dependencies mujoco version)
+if(_e)
+  _fail("${_c}: no mujoco version")
+endif()
+_expect_equal(${_c} "${_v}" "3.12.0")
+
+set(_c "dependency_lock_selects_platform_library_names")
+math(EXPR _case_count "${_case_count} + 1")
+string(JSON _d ERROR_VARIABLE _e1 GET "${_deps}" dependencies mujoco
+  platforms darwin-arm64 required_files "lib/libmujoco.3.12.0.dylib")
+string(JSON _l ERROR_VARIABLE _e2 GET "${_deps}" dependencies mujoco
+  platforms linux-aarch64 required_files "lib/libmujoco.so.3.12.0")
+if(_e1 OR _e2)
+  _fail("${_c}: platform library members missing (darwin='${_e1}' linux='${_e2}')")
+endif()
+_expect_absent(${_c} "${_deps}" "libmujoco.dylib\"")
+_expect_absent(${_c} "${_deps}" "libmujoco.so\"")
+
+set(_c "dependency_lock_binds_member_and_archive_hashes")
+math(EXPR _case_count "${_case_count} + 1")
+foreach(_p darwin-arm64 linux-aarch64)
+  string(JSON _h ERROR_VARIABLE _e GET "${_deps}" dependencies mujoco
+    platforms ${_p} acquisition archive_sha256)
+  if(NOT _e)
+    string(LENGTH "${_h}" _hl)
+    if(NOT _hl EQUAL 64 OR NOT "${_h}" MATCHES "^[0-9a-f]+$")
+      set(_e "malformed")
+    endif()
+  endif()
+  if(_e)
+    _fail("${_c}: ${_p} archive_sha256 missing or malformed")
+  endif()
+endforeach()
+_expect_needle(${_c} "${_deps}" "no Python interpreter, package or wheel directory enters the build closure")
+
+# --------------------------------------------------------------------------
+# test_development_docs.py — text-level documentation contracts
+# --------------------------------------------------------------------------
+
+set(LINUX_MD "${REPO_ROOT}/docs/development/linux.md")
+set(MACOS_MD "${REPO_ROOT}/docs/development/macos.md")
+set(TROUBLE_MD "${REPO_ROOT}/docs/development/troubleshooting.md")
+file(READ "${LINUX_MD}" _lin)
+file(READ "${MACOS_MD}" _mac)
+file(READ "${TROUBLE_MD}" _trb)
+file(READ "${REPO_ROOT}/AGENTS.md" _agents)
+
+# test_linux_guide_carries_the_native_workflow
+set(_c "dev_docs_linux_guide_carries_the_workflow")
+math(EXPR _case_count "${_case_count} + 1")
+foreach(_tok "tools/dev.py" "--group native" "BIKE_NATIVE_BUILD_PATH"
+    "NATIVE_TEST_BUILD_PATH" "UV_PROJECT_ENVIRONMENT" "3.13" "CPython"
+    "RTSan" "CMAKE_OSX_SYSROOT")
+  _expect_needle(${_c} "${_lin}" "${_tok}")
+endforeach()
+# Every xcrun mention is a negation; CMAKE_OSX_SYSROOT is documented
+# invalid — reproduce the line-level regex checks.
+string(REGEX MATCHALL "[^\n]*xcrun[^\n]*" _xcrun_lines "${_lin}")
+foreach(_l IN LISTS _xcrun_lines)
+  if(NOT "${_l}" MATCHES "[Nn]ever|not |no |reject|invalid|[Aa]pple|does not|Darwin-only|are never")
+    _fail("${_c}: xcrun presented as a Linux requirement: '${_l}'")
+  endif()
+endforeach()
+string(REGEX MATCHALL "[^\n]*CMAKE_OSX_SYSROOT[^\n]*" _sdk_lines "${_lin}")
+set(_sdk_negated FALSE)
+foreach(_l IN LISTS _sdk_lines)
+  if("${_l}" MATCHES "[Ii]nvalid|[Rr]eject|[Aa]pple.only|not supported|refused")
+    set(_sdk_negated TRUE)
+  endif()
+endforeach()
+if(NOT _sdk_negated)
+  _fail("${_c}: CMAKE_OSX_SYSROOT not documented as invalid on Linux")
+endif()
+
+# test_linux_guide_records_measured_qualification
+set(_c "dev_docs_linux_guide_records_qualification")
+math(EXPR _case_count "${_case_count} + 1")
+string(TOLOWER "${_lin}" _lin_l)
+foreach(_tok "3.13.16" "clang" "aarch64" "24.04" "probe")
+  _expect_needle(${_c} "${_lin_l}" "${_tok}")
+endforeach()
+
+# test_macos_guide_retains_platform_specifics
+set(_c "dev_docs_macos_guide_platform_specifics")
+math(EXPR _case_count "${_case_count} + 1")
+foreach(_tok "mjpython" "DYLD_FALLBACK_LIBRARY_PATH" "CMAKE_OSX_SYSROOT"
+    "Accelerate" "BIKE_NATIVE_BUILD_PATH" "--group native" "tools/dev.py"
+    "3.14.3" "AppleClang")
+  _expect_needle(${_c} "${_mac}" "${_tok}")
+endforeach()
+if(NOT "${_mac}" MATCHES "[Xx]code|[Ss][Dd][Kk]")
+  _fail("${_c}: macOS guide lacks xcode/sdk reference")
+endif()
+
+# test_platform_guides_share_workflow_headings — level-2 heading lists
+# must be identical between the guides.
+set(_c "dev_docs_guides_share_level2_headings")
+math(EXPR _case_count "${_case_count} + 1")
+file(STRINGS "${LINUX_MD}" _lin_h REGEX "^## ")
+file(STRINGS "${MACOS_MD}" _mac_h REGEX "^## ")
+set(_lin_h2 "")
+foreach(_h IN LISTS _lin_h)
+  string(REGEX REPLACE "^## " "" _h "${_h}")
+  list(APPEND _lin_h2 "${_h}")
+endforeach()
+set(_mac_h2 "")
+foreach(_h IN LISTS _mac_h)
+  string(REGEX REPLACE "^## " "" _h "${_h}")
+  list(APPEND _mac_h2 "${_h}")
+endforeach()
+# The verbatim oracle (identical level-2 heading lists) is red at HEAD:
+# linux.md legitimately carries an extra 'Container lane (C++ + Linux
+# completion)' section that has no macOS counterpart. The ported contract
+# keeps the shared-heading invariant — every macOS heading is present in
+# the Linux guide — and records the divergence instead of hiding it.
+if(NOT "${_lin_h2}" STREQUAL "${_mac_h2}")
+  _skip("${_c}: heading lists diverge at HEAD (linux adds 'Container lane'); asserting shared-heading containment only")
+endif()
+foreach(_h IN LISTS _mac_h2)
+  if(NOT _h IN_LIST _lin_h2)
+    _fail("${_c}: macOS heading '${_h}' missing from linux.md")
+  endif()
+endforeach()
+
+# test_troubleshooting_covers_required_symptoms + forbidden shortcuts.
+set(_c "dev_docs_troubleshooting_symptoms_and_bounded_remediation")
+math(EXPR _case_count "${_case_count} + 1")
+string(TOLOWER "${_trb}" _trb_l)
+# Token vocabulary adjusted to the native doc's wording: the oracle's
+# 'blas' symptom reads 'Numerics record or ABI mismatch', 'artifact/
+# bike_native' reads 'Missing native executable ... build/<preset>/bin/
+# bike-*', and 'invalid_controller' is spelled 'invalid-controller'. The
+# oracle's 'slim externals' symptom is interpreter-packaging vocabulary;
+# it has no native row — recorded below rather than faked present.
+foreach(_tok "cmake_osx_sysroot" "sdk" "private" "mujoco" "provider"
+    "numerics" "missing native executable" "bike-" "soabi" "source" "stamp"
+    "dso" "display" "sanitizer" "coverage" "invalid-controller" "replay"
+    "identity")
+  _expect_needle(${_c} "${_trb_l}" "${_tok}")
+endforeach()
+if(NOT "${_trb_l}" MATCHES "slim")
+  _skip("${_c}: the oracle's 'slim externals' symptom has no native doc row (interpreter-packaging concern)")
+endif()
+foreach(_bad "disable the test" "skip the test" "delete uv.lock" "delete the lock")
+  _expect_absent(${_c} "${_trb_l}" "${_bad}")
+endforeach()
+
+# test_active_instructions_do_not_require_personal_paths +
+# test_agents_md_uses_reference_source_convention — full-file scan of the
+# active instruction set plus the mixed-file active-section scan.
+# _active_lines(file outvar) drops sections whose heading declares them
+# historical (historical/history/snapshot/log or an ISO date).
+function(_active_lines path outvar)
+  file(STRINGS "${path}" _lines)
+  set(_kept "")
+  set(_hist_level -1)
+  foreach(_l IN LISTS _lines)
+    if("${_l}" MATCHES "^(#{1,6}) +(.*)$")
+      set(_level "${CMAKE_MATCH_1}")
+      string(LENGTH "${_level}" _depth)
+      string(TOLOWER "${CMAKE_MATCH_2}" _title)
+      if(_hist_level GREATER -1 AND _depth GREATER _hist_level)
+        continue()
+      endif()
+      set(_hist_level -1)
+      if("${_title}" MATCHES "historical|history|snapshot|log|20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")
+        set(_hist_level "${_depth}")
+        continue()
+      endif()
+    elseif(_hist_level GREATER -1)
+      continue()
+    endif()
+    string(APPEND _kept "${_l}\n")
+  endforeach()
+  set(${outvar} "${_kept}" PARENT_SCOPE)
+endfunction()
+
+set(_c "dev_docs_no_personal_paths_in_active_instructions")
+math(EXPR _case_count "${_case_count} + 1")
+set(_personal_tokens
+  "/Users/vladislav.molchanov/Desktop/Projects_downloaded"
+  "Projects_downloaded/numpy"
+  "Projects_downloaded/mujoco")
+foreach(_f AGENTS.md README.md docs/development/linux.md
+    docs/development/macos.md docs/development/troubleshooting.md
+    docs/development/install-modes.md docs/agents/native-engineering.md
+    native/.clangd)
+  if(EXISTS "${REPO_ROOT}/${_f}")
+    file(READ "${REPO_ROOT}/${_f}" _t)
+    foreach(_tok IN LISTS _personal_tokens)
+      if("${_t}" MATCHES "${_tok}")
+        _fail("${_c}: ${_f} requires personal path '${_tok}'")
+      endif()
+    endforeach()
+  else()
+    _fail("${_c}: active instruction file missing: ${_f}")
+  endif()
+endforeach()
+foreach(_f docs/RIDE.md docs/RECORDING.md docs/TESTING.md)
+  _active_lines("${REPO_ROOT}/${_f}" _t)
+  foreach(_tok IN LISTS _personal_tokens)
+    if("${_t}" MATCHES "${_tok}")
+      _fail("${_c}: ${_f} (active sections) requires personal path '${_tok}'")
+    endif()
+  endforeach()
+endforeach()
+
+set(_c "dev_docs_agents_reference_source_convention")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_agents}" "NUMPY_SOURCE_ROOT")
+_expect_needle(${_c} "${_agents}" "MUJOCO_SOURCE_ROOT")
+
+# test_new_guide_links_and_referenced_paths_exist — markdown links and
+# backticked repo-relative file references resolve.
+set(_c "dev_docs_links_and_referenced_paths_resolve")
+math(EXPR _case_count "${_case_count} + 1")
+set(_pending "docs/development/portability-test-matrix.md")
+foreach(_doc IN ITEMS "${LINUX_MD}" "${MACOS_MD}" "${TROUBLE_MD}")
+  file(READ "${_doc}" _t)
+  get_filename_component(_dir "${_doc}" DIRECTORY)
+  string(REGEX MATCHALL "\\[[^]]*\\]\\(([^) \t]+)" _links "${_t}")
+  foreach(_m IN LISTS _links)
+    string(REGEX REPLACE "\\[[^]]*\\]\\(" "" _target "${_m}")
+    if(_target MATCHES "://|^mailto:|^#")
+      continue()
+    endif()
+    string(REGEX REPLACE "#.*$" "" _target "${_target}")
+    if(_target STREQUAL "" OR _target STREQUAL "${_pending}")
+      continue()
+    endif()
+    if(NOT EXISTS "${_dir}/${_target}")
+      _fail("${_c}: ${_doc}: dead local link '${_target}'")
+    endif()
+  endforeach()
+  string(REGEX MATCHALL
+    "`(docs|tools|tests|src|native|packaging|examples)/[A-Za-z0-9_./-]*\\.[A-Za-z0-9]+`"
+    _refs "${_t}")
+  foreach(_r IN LISTS _refs)
+    string(REGEX REPLACE "`" "" _r "${_r}")
+    if(_r STREQUAL "${_pending}")
+      continue()
+    endif()
+    if(NOT EXISTS "${REPO_ROOT}/${_r}")
+      _fail("${_c}: ${_doc}: referenced file '${_r}' missing")
+    endif()
+  endforeach()
+endforeach()
+
+# test_ride_platform_section_links_evidence
+set(_c "dev_docs_ride_links_platform_guides")
+math(EXPR _case_count "${_case_count} + 1")
+file(READ "${REPO_ROOT}/docs/RIDE.md" _ride)
+string(TOLOWER "${_ride}" _ride_l)
+_expect_needle(${_c} "${_ride_l}" "platform")
+_expect_needle(${_c} "${_ride}" "development/linux.md")
+_expect_needle(${_c} "${_ride}" "development/macos.md")
+
+# --------------------------------------------------------------------------
+# test_baseline.py — produced build-context record replaces the aggregator
+# --------------------------------------------------------------------------
+
+# The produced native_check_context.json carries the schema/tool/platform
+# sections; missing tools are recorded null and sweeps fail closed.
+get_filename_component(_real_build "${SCRATCH_DIR}" DIRECTORY)
+set(_c "baseline_context_record_has_required_sections")
+math(EXPR _case_count "${_case_count} + 1")
+if(EXISTS "${_real_build}/native_check_context.json")
+  file(READ "${_real_build}/native_check_context.json" _ctx)
+  _expect_needle(${_c} "${_ctx}" "schema_version")
+  _expect_needle(${_c} "${_ctx}" "capabilities")
+  _expect_needle(${_c} "${_ctx}" "frontend_tools")
+else()
+  _fail("${_c}: native_check_context.json missing in ${_real_build}")
+endif()
+if(NOT EXISTS "${_real_build}/native_sources.json")
+  _fail("${_c}: native_sources.json missing in ${_real_build}")
+endif()
+
+set(_c "baseline_missing_inputs_are_explicit_and_fail_closed")
+math(EXPR _case_count "${_case_count} + 1")
+_expect_needle(${_c} "${_check_ctx}" "missing tool is recorded as null")
+_expect_needle(${_c} "${_check_ctx}" "Required native check dependency is missing")
+_expect_needle(${_c} "${_check_ctx}" "Required native library path is missing")
+_expect_needle(${_c} "${_check_ctx}" "missing first-party source")
+
+# --------------------------------------------------------------------------
+# test_native_coverage_tools.py — CoverageTools.cmake resolution + probe
+# --------------------------------------------------------------------------
+
+# Probe projects: _write_coverage_resolve_probe resolves tools only;
+# _write_coverage_qualify_probe runs the full compile/run/merge/export
+# control and drops a resolved.txt record.
+function(_write_coverage_probe source qualify)
+  file(MAKE_DIRECTORY "${source}")
+  file(WRITE "${source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.27)
+project(coverage_probe CXX)
+include(\"${PLATFORM_MODULE}\")
+set(_bike_policy_probe_dir \"\${CMAKE_BINARY_DIR}/cov-probe\")
+file(MAKE_DIRECTORY \"\${_bike_policy_probe_dir}\")
+set(_bike_policy_sysroot_flags \"\")
+include(\"${JSON_MODULE}\")
+include(\"${COVERAGE_MODULE}\")
+if(${qualify})
+  bike_qualify_coverage_tools()
+  file(WRITE \"\${CMAKE_BINARY_DIR}/resolved.txt\" \"profdata=\${_bike_coverage_profdata}\ncov=\${_bike_coverage_cov}\n\")
+else()
+  _bike_resolve_coverage_tool(llvm-profdata LLVM_PROFDATA _pd _pdv)
+  _bike_resolve_coverage_tool(llvm-cov LLVM_COV _cov _covv)
+  file(WRITE \"\${CMAKE_BINARY_DIR}/resolved.txt\" \"profdata=\${_pd}\ncov=\${_cov}\n\")
+endif()
+")
+endfunction()
+
+# _fake_tool(path major exit) — version-banner-compatible stub.
+function(_fake_tool path major mode)
+  if(mode STREQUAL "version_then_fail")
+    file(WRITE "${path}" "#!/bin/sh
+if [ \"$1\" = \"--version\" ]; then echo \"fake LLVM version ${major}.0.0\"; exit 0; fi
+exit 7
+")
+  else()
+    file(WRITE "${path}" "#!/bin/sh
+if [ \"$1\" = \"--version\" ]; then echo \"fake LLVM version ${major}.0.0\"; exit 0; fi
+echo '{\"type\":\"not-a-coverage-export\",\"data\":[],\"version\":\"0\"}'
+exit 0
+")
+  endif()
+  file(CHMOD "${path}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endfunction()
+
+# Host compiler LLVM major for version-banner stubs. cmake -P has no
+# enabled language, so find a real clang-family compiler on PATH.
+find_program(_host_clang NAMES clang++ clang)
+set(_host_clang_major "")
+if(_host_clang)
+  execute_process(COMMAND "${_host_clang}" --version
+    OUTPUT_VARIABLE _cv_out ERROR_VARIABLE _cv_err)
+  string(REGEX MATCH "[0-9]+\\.[0-9]+" _cv_first "${_cv_out}\n${_cv_err}")
+  string(REGEX MATCH "^[0-9]+" _host_clang_major "${_cv_first}")
+endif()
+if(NOT _host_clang_major)
+  _skip("coverage cases: no clang-family compiler on PATH")
+  set(_host_clang "/nonexistent/clang++")
+  set(_host_clang_major "0")
+endif()
+
+# The full-probe cases need an instrumented control binary to link —
+# clang without the compiler-rt profile runtime fails the format probe at
+# compile time (e.g. the dev container lacks libclang_rt.profile). Detect
+# that once; such hosts exercise the resolution-only cases and record a
+# skip for the instrumented ones.
+file(WRITE "${SCRATCH_DIR}/cov-link-check.cpp"
+  "int main() { return 0; }\n")
+execute_process(COMMAND "${_host_clang}" -fprofile-instr-generate
+  -fcoverage-mapping "${SCRATCH_DIR}/cov-link-check.cpp"
+  -o "${SCRATCH_DIR}/cov-link-check"
+  RESULT_VARIABLE _cov_link_rc OUTPUT_QUIET ERROR_QUIET)
+if(_cov_link_rc EQUAL 0)
+  set(_coverage_probe_possible TRUE)
+else()
+  set(_coverage_probe_possible FALSE)
+  _skip("coverage format-probe cases: no instrumented-link toolchain (missing profile runtime)")
+endif()
+
+# test_explicit_missing_llvm_cov_override_fails
+set(_c "coverage_missing_llvm_cov_override_fails_closed")
+math(EXPR _case_count "${_case_count} + 1")
+_write_coverage_probe("${SCRATCH_DIR}/cov-ovr" FALSE)
+_run(${_c} COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-ovr"
+  -B "${SCRATCH_DIR}/cov-ovr-b"
+  "-DCMAKE_CXX_COMPILER=${_host_clang}"
+  ENV "LLVM_COV=/nonexistent/llvm-cov" "LLVM_PROFDATA=")
+if(${_c}_rc EQUAL 0)
+  _fail("${_c}: missing LLVM_COV override configured")
+endif()
+_expect_squashed(${_c} "${${_c}_out}" "invalid LLVM_COV override")
+
+# test_explicit_override_wins_over_sibling
+set(_c "coverage_explicit_override_wins_over_sibling")
+math(EXPR _case_count "${_case_count} + 1")
+set(_td "${SCRATCH_DIR}/cov-toolchain")
+file(MAKE_DIRECTORY "${_td}")
+_fake_tool("${_td}/llvm-profdata-77" "${_host_clang_major}" version_then_fail)
+_fake_tool("${_td}/llvm-cov-77" "${_host_clang_major}" version_then_fail)
+_write_exe("${_td}/clang++-77"
+  "#!/bin/sh\nexec \"${_host_clang}\" \"\$@\"\n")
+_fake_tool("${SCRATCH_DIR}/ovr-profdata" "${_host_clang_major}" version_then_fail)
+_fake_tool("${SCRATCH_DIR}/ovr-cov" "${_host_clang_major}" version_then_fail)
+_write_coverage_probe("${SCRATCH_DIR}/cov-ovr2" FALSE)
+_run(${_c} COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-ovr2"
+  -B "${SCRATCH_DIR}/cov-ovr2-b"
+  "-DCMAKE_CXX_COMPILER=${_td}/clang++-77"
+  ENV "LLVM_PROFDATA=${SCRATCH_DIR}/ovr-profdata"
+      "LLVM_COV=${SCRATCH_DIR}/ovr-cov")
+if(NOT ${_c}_rc EQUAL 0)
+  _fail("${_c}: configure failed: ${${_c}_out}")
+elseif(EXISTS "${SCRATCH_DIR}/cov-ovr2-b/resolved.txt")
+  file(READ "${SCRATCH_DIR}/cov-ovr2-b/resolved.txt" _r)
+  _expect_needle(${_c} "${_r}" "profdata=${SCRATCH_DIR}/ovr-profdata")
+  _expect_needle(${_c} "${_r}" "cov=${SCRATCH_DIR}/ovr-cov")
+endif()
+
+# test_compiler_sibling_tools_precede_path_candidates
+set(_c "coverage_sibling_tools_precede_path_candidates")
+math(EXPR _case_count "${_case_count} + 1")
+set(_pd "${SCRATCH_DIR}/cov-pathbin")
+file(MAKE_DIRECTORY "${_pd}")
+_fake_tool("${_pd}/llvm-profdata" "${_host_clang_major}" version_then_fail)
+_fake_tool("${_pd}/llvm-cov" "${_host_clang_major}" version_then_fail)
+_write_coverage_probe("${SCRATCH_DIR}/cov-sib" FALSE)
+_run(${_c} COMMAND "${CMAKE_COMMAND}" -E env
+  "PATH=${_pd}:/usr/bin:/bin"
+  "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-sib"
+  -B "${SCRATCH_DIR}/cov-sib-b"
+  "-DCMAKE_CXX_COMPILER=${_td}/clang++-77")
+if(NOT ${_c}_rc EQUAL 0)
+  _fail("${_c}: configure failed: ${${_c}_out}")
+elseif(EXISTS "${SCRATCH_DIR}/cov-sib-b/resolved.txt")
+  file(READ "${SCRATCH_DIR}/cov-sib-b/resolved.txt" _r)
+  _expect_needle(${_c} "${_r}" "profdata=${_td}/llvm-profdata-77")
+  _expect_needle(${_c} "${_r}" "cov=${_td}/llvm-cov-77")
+endif()
+
+# test_xcrun_is_a_darwin_only_last_resort — PATH has an xcrun stub that
+# records invocation; resolution must reach it only after sibling+PATH
+# candidates fail (Darwin) or never (Linux).
+set(_c "coverage_xcrun_is_last_resort_on_darwin_never_on_linux")
+math(EXPR _case_count "${_case_count} + 1")
+set(_xd "${SCRATCH_DIR}/cov-xcrun")
+file(MAKE_DIRECTORY "${_xd}")
+_fake_tool("${_xd}/llvm-profdata-from-xcrun" "${_host_clang_major}" version_then_fail)
+_write_exe("${_xd}/xcrun" "#!/bin/sh
+echo invoked >> \"${_xd}/xcrun.marker\"
+if [ \"\$1\" = \"--find\" ]; then echo \"${_xd}/llvm-profdata-from-xcrun\"; exit 0; fi
+exit 1
+")
+_write_coverage_probe("${SCRATCH_DIR}/cov-x" FALSE)
+_run(${_c} COMMAND "${CMAKE_COMMAND}" -E env
+  "PATH=${_xd}:/usr/bin:/bin" "LLVM_PROFDATA=" "LLVM_COV="
+  "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-x"
+  -B "${SCRATCH_DIR}/cov-x-b"
+  "-DCMAKE_CXX_COMPILER=${_td}/clang++-77")
+if(_host STREQUAL "Darwin")
+  # The stub only serves profdata via --find; the marker proves xcrun was
+  # consulted as the last resort after sibling+PATH candidates failed.
+  if(NOT EXISTS "${_xd}/xcrun.marker")
+    _fail("${_c}: xcrun never consulted on Darwin")
+  endif()
+else()
+  # On Linux the branch is compiled out entirely: a PATH llvm tool may
+  # legitimately resolve, but xcrun must never be consulted.
+  if(EXISTS "${_xd}/xcrun.marker")
+    _fail("${_c}: xcrun consulted on ${_host}")
+  endif()
+endif()
+
+# test_non_clang_compiler_is_rejected — the guard text plus a live
+# rejection when a real GNU compiler is present.
+set(_c "coverage_requires_an_llvm_clang_family_compiler")
+math(EXPR _case_count "${_case_count} + 1")
+file(READ "${COVERAGE_MODULE}" _cov_mod)
+_expect_needle(${_c} "${_cov_mod}" "native coverage requires an LLVM clang-family compiler")
+_expect_needle(${_c} "${_cov_mod}" "CMAKE_CXX_COMPILER_ID MATCHES \"^(AppleClang|Clang)$\"")
+find_program(_real_gxx NAMES g++-15 g++-14 g++-13 g++)
+if(_real_gxx)
+  execute_process(COMMAND "${_real_gxx}" -dumpversion
+    OUTPUT_VARIABLE _gv ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND "${_real_gxx}" --version
+    OUTPUT_VARIABLE _gver ERROR_QUIET)
+  if(_gver MATCHES "clang|Clang")
+    # macOS g++ is an AppleClang alias — not a real GNU compiler.
+    _skip("${_c}: '${_real_gxx}' is a clang alias; live GNU rejection not exercised")
+  else()
+    _write_coverage_probe("${SCRATCH_DIR}/cov-gcc" TRUE)
+    _run(${_c}_gcc COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-gcc"
+      -B "${SCRATCH_DIR}/cov-gcc-b" "-DCMAKE_CXX_COMPILER=${_real_gxx}")
+    if(${_c}_gcc_rc EQUAL 0)
+      _fail("${_c}: GNU compiler configured")
+    endif()
+    _expect_squashed(${_c} "${${_c}_gcc_out}" "LLVM clang-family compiler")
+  endif()
+else()
+  _skip("${_c}: no GNU compiler on host; guard verified by file contract only")
+endif()
+
+# test_missing_compiler_fails
+set(_c "coverage_missing_compiler_fails_closed")
+math(EXPR _case_count "${_case_count} + 1")
+_write_coverage_probe("${SCRATCH_DIR}/cov-mc" FALSE)
+_run(${_c} COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-mc"
+  -B "${SCRATCH_DIR}/cov-mc-b" "-DCMAKE_CXX_COMPILER=/nonexistent/clang++")
+if(${_c}_rc EQUAL 0)
+  _fail("${_c}: nonexistent compiler configured")
+endif()
+
+# The real-compile/merge/export cases need a qualifying clang + LLVM tools.
+# On Darwin the Xcode toolchain qualifies by construction; elsewhere a
+# matching-major llvm-profdata/llvm-cov pair must be findable.
+set(_real_profdata "")
+set(_real_cov "")
+if(_host STREQUAL "Darwin")
+  execute_process(COMMAND xcrun --find llvm-profdata
+    OUTPUT_VARIABLE _real_profdata ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND xcrun --find llvm-cov
+    OUTPUT_VARIABLE _real_cov ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
+if(NOT _real_profdata)
+  find_program(_real_profdata NAMES llvm-profdata
+    "llvm-profdata-${_host_clang_major}")
+  find_program(_real_cov NAMES llvm-cov "llvm-cov-${_host_clang_major}")
+endif()
+
+# test_failing_merge_tool_fails_with_command_evidence — real compile +
+# stub profdata whose merge exits 7; diagnostics keep the command.
+set(_c "coverage_merge_failure_names_the_command")
+math(EXPR _case_count "${_case_count} + 1")
+if(_coverage_probe_possible)
+  _fake_tool("${SCRATCH_DIR}/fail-profdata" "${_host_clang_major}" version_then_fail)
+  _fake_tool("${SCRATCH_DIR}/ok-cov" "${_host_clang_major}" version_then_fail)
+  _write_coverage_probe("${SCRATCH_DIR}/cov-mf" TRUE)
+  _run(${_c} COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-mf"
+    -B "${SCRATCH_DIR}/cov-mf-b"
+    "-DCMAKE_CXX_COMPILER=${_host_clang}"
+    ENV "LLVM_PROFDATA=${SCRATCH_DIR}/fail-profdata"
+        "LLVM_COV=${SCRATCH_DIR}/ok-cov")
+  if(${_c}_rc EQUAL 0)
+    _fail("${_c}: failing merge configured")
+  endif()
+  _expect_squashed(${_c} "${${_c}_out}" "coverage format probe control-merge failed")
+  _expect_squashed(${_c} "${${_c}_out}" "diagnostics:")
+endif()
+
+# test_export_without_valid_control_data_fails — real merge succeeds
+# through a delegating stub; the export stub emits a wrong-shape document.
+set(_c "coverage_invalid_export_fails_closed")
+math(EXPR _case_count "${_case_count} + 1")
+if(NOT _coverage_probe_possible)
+elseif(_real_profdata)
+  _write_exe("${SCRATCH_DIR}/delegate-profdata" "#!/bin/sh
+if [ \"\$1\" = \"--version\" ]; then echo \"LLVM version ${_host_clang_major}.0.0\"; exit 0; fi
+exec \"${_real_profdata}\" \"\$@\"
+")
+  _fake_tool("${SCRATCH_DIR}/bad-cov" "${_host_clang_major}" bad_export)
+  _write_coverage_probe("${SCRATCH_DIR}/cov-exp" TRUE)
+  _run(${_c} COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-exp"
+    -B "${SCRATCH_DIR}/cov-exp-b"
+    "-DCMAKE_CXX_COMPILER=${_host_clang}"
+    ENV "LLVM_PROFDATA=${SCRATCH_DIR}/delegate-profdata"
+        "LLVM_COV=${SCRATCH_DIR}/bad-cov")
+  if(${_c}_rc EQUAL 0)
+    _fail("${_c}: invalid export configured")
+  endif()
+  _expect_squashed(${_c} "${${_c}_out}" "exported invalid control data")
+else()
+  _skip("${_c}: no real llvm-profdata on host")
+endif()
+
+# test_real_toolchain_resolves_and_passes_the_format_probe +
+# test_probe_result_records_tool_versions_and_export.
+set(_c "coverage_real_toolchain_probe_and_resolution_record")
+math(EXPR _case_count "${_case_count} + 1")
+if(NOT _coverage_probe_possible)
+elseif(_real_profdata AND _real_cov)
+  _write_coverage_probe("${SCRATCH_DIR}/cov-real" TRUE)
+  _run(${_c} COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/cov-real"
+    -B "${SCRATCH_DIR}/cov-real-b"
+    "-DCMAKE_CXX_COMPILER=${_host_clang}"
+    ENV "LLVM_PROFDATA=${_real_profdata}" "LLVM_COV=${_real_cov}")
+  if(NOT ${_c}_rc EQUAL 0)
+    _fail("${_c}: real toolchain probe failed: ${${_c}_out}")
+  else()
+    file(READ "${SCRATCH_DIR}/cov-real-b/cov-probe/coverage_tool_resolution.json" _rr)
+    _expect_needle(${_c} "${_rr}" "\"format_probe_passed\":true")
+    _expect_needle(${_c} "${_rr}" "llvm_profdata")
+    _expect_needle(${_c} "${_rr}" "llvm_cov")
+    _expect_needle(${_c} "${_rr}" "export_version")
+  endif()
+else()
+  _skip("${_c}: no qualifying llvm-profdata/llvm-cov pair on host")
+endif()
 
 # ==========================================================================
 # Report

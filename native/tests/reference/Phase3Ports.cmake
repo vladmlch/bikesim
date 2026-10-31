@@ -727,3 +727,11 @@ bike_add_reference_test(native_platform_blas
   SOURCES test_native_platform_blas.cpp
   LIBRARIES bike_native_numerics
   LABELS t53 platform numerics)
+# 3.36-B portability/tooling batch — worker platform contracts from
+# tests/portability/test_worker_platform.py: performance-core selection on
+# Darwin (perflevel sysctl) and Linux (process affinity) plus the hardware
+# fallback. Multiprocessing start-method and interpreter-worker probes
+# stay `drop` — native workers are std::jthread/std::thread.
+bike_add_reference_test(worker_platform
+  SOURCES test_worker_platform.cpp LIBRARIES bike_batch
+  LABELS t53 portability)

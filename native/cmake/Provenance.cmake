@@ -407,7 +407,8 @@ message(STATUS "migration_T03: all checks passed")
         "-DBIKE_TARGET_SYSTEM=${BIKE_TARGET_SYSTEM}"
         "-DCMAKE_HOST_SYSTEM_PROCESSOR=${CMAKE_HOST_SYSTEM_PROCESSOR}"
         -P "${_t03_script}")
-    set_tests_properties(migration_T03 PROPERTIES TIMEOUT 1200)
+    set_tests_properties(migration_T03 PROPERTIES
+      LABELS "migration;t03;slow" TIMEOUT 1200)
   endif()
 
   # The focused build invocation is real: the custom target builds the native

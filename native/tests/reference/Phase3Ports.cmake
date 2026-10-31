@@ -210,7 +210,7 @@ endforeach()
 # definition), like the bike_native_bench_path.hpp pattern above.
 bike_add_reference_test(native_engine_errors ENGINE
   SOURCES test_native_engine_errors.cpp LIBRARIES bike_app
-  LABELS t53 checks)
+  LABELS t53 checks slow)
 add_dependencies(reference.native_engine_errors native_contract_tests)
 file(GENERATE OUTPUT
   "${CMAKE_CURRENT_BINARY_DIR}/support/bike_engine_errors_paths.hpp"

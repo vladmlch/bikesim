@@ -1,4 +1,41 @@
 #!/usr/bin/env bash
+# tools/run_tests.sh <profile> [preset] — the qualification gate on the
+# produced (interpreter-free) native graph only.
+#
+# Profiles (<build> is the preset's binaryDir: build/<preset>; release keeps
+# build/native-release, Task 3.41):
+#   quick  = cmake --workflow --preset <preset>
+#            (the preset's test step excludes the slow|audit|package labels)
+#   native = cmake --preset <preset> && cmake --build --preset <preset>,
+#            then tools/run_native_checks.sh <build> (every produced sweep
+#            plus the contracts kind), then
+#            ctest --test-dir <build> -LE 'slow|audit|package'
+#   full   = native, then the explicit label gates
+#            ctest -L slow / -L audit / -L package, each --no-tests=error so
+#            an absent registration fails instead of passing silently.
+#
+# `native asan` runs the same stages on build/asan: sanitizer runtimes come
+# from the preset's own link flags now, not a preload. The [preset] argument
+# replaces the old NATIVE_TEST_BUILD_PATH / NATIVE_TEST_BUILD_DIR=asan|rtsan|
+# coverage build selection.
+#
+# Successor map for the retired interpreter-driven gate stages:
+#   extension configure/build   -> cmake --preset / --build --preset on the
+#                                  root graph (there is no bindings extension
+#                                  to select or import);
+#   check_<name> sweep targets  -> tools/run_native_checks.sh <build>, which
+#                                  drives the produced bike-native-checks
+#                                  binary in fixed contract order;
+#   native_runtime preload      -> preset sanitizer link flags (Task 3.42);
+#   native/golden test legs     -> the `reference` CTest label set;
+#   NATIVE_TEST_PROVENANCE_PATH / the native_test_reporter plugin
+#                               -> CTest's <build>/Testing/ tree plus
+#                                  <build>/Testing/junit.xml; the Task 3.45
+#                                  CI lanes upload both.
+#
+# NATIVE_TEST_BUILD_PATH is still exported to the selected build directory:
+# consumers honoring the selection convention see a consistent environment
+# (the contracts kind rejects a mismatched value).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -6,87 +43,28 @@ cd "$REPO_ROOT"
 
 usage() {
   cat <<'EOF'
-Usage: bash tools/run_tests.sh [quick|native|full] [pytest arguments...]
+Usage: bash tools/run_tests.sh [quick|native|full] [preset]
 
-  quick   Run Python tests without the slow marker or direct native tests.
-  native  Configure/build the selected extension, run every native sweep and
-          CTest, then native/golden tests against that extension.
-  full    Run the same native preflight, then all tests including slow episodes.
+  quick   Configure, build and test the selected preset in one workflow run;
+          its test step excludes the slow, audit and package label gates.
+  native  Configure and build the selected preset, run every produced native
+          sweep plus the structural contracts check, then CTest without the
+          slow, audit and package labels.
+  full    The native profile, then the explicit slow, audit and package
+          label gates (--no-tests=error, so an absent registration fails).
   -h, --help  Show this help.
 
-All profiles use -q --durations=10 and forward additional pytest arguments.
-NATIVE_TEST_BUILD_PATH selects an absolute build directory. The legacy
-NATIVE_TEST_BUILD_DIR values '', asan, rtsan, and coverage remain supported.
+preset selects a configure preset from CMakePresets.json (default: release).
+Its binaryDir is the build directory: build/<preset>; release keeps
+build/native-release. `native asan` runs the same stages on build/asan —
+sanitizer runtimes come from the preset's own link flags.
 EOF
 }
 
-native_uv() {
-  uv run --frozen --group native "$@"
-}
-
-# T56: the produced check orchestrator replaces the Python sweep driver for
-# every kind. The binary lives in the standalone build; the transition gate
-# still analyzes the selected legacy build dir (--build below).
-# shellcheck source=/dev/null
-source "$REPO_ROOT/tools/native_common.sh"
-
-ensure_native_checks() {
-  # Configure the standalone graph on first use, then always (incrementally)
-  # rebuild the checker so the gate never sweeps with a stale binary.
-  local produced_dir="$REPO_ROOT/build/native-release"
-  if [[ ! -f "$produced_dir/CMakeCache.txt" ]]; then
-    cmake -S "$REPO_ROOT" -B "$produced_dir" \
-      -DCMAKE_BUILD_TYPE=Release \
-      -DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_BUILD_GUI=OFF \
-      -DBIKE_DEPENDENCY_ROOT="$REPO_ROOT/.deps"
-  fi
-  cmake --build "$produced_dir" --target bike-native-checks
-}
-
 profile="${1:-quick}"
-if (($# > 0)); then
-  shift
-fi
-
-pytest_args=(-q --durations=10)
-# output/ is gitignored scratch space (probe fixtures, extracted bundles,
-# vendored trees). It can contain whole copied test suites that collide
-# with the real tests by module name; run artifacts are never suite
-# members, so every profile ignores that directory during collection.
-pytest_args+=(--ignore "$REPO_ROOT/output")
-# Python dev mode: DeprecationWarning/ResourceWarning surface + extra
-# runtime checks — free on every profile.
-export PYTHONDEVMODE=1
+preset="${2:-release}"
 case "$profile" in
-  quick)
-    pytest_args+=(-m 'not slow')
-    # malloc debugging on the fast profile only — `full` measures realtime.
-    # These are Darwin allocator variables; they must never be exported on
-    # Linux, where invented allocator settings would perturb numerical and
-    # performance baselines instead of debugging them.
-    if [[ "$(uname -s)" == Darwin ]]; then
-      export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
-    fi
-    # Direct native tests require the selected, built extension. Keep the
-    # tool-controller unit tests in quick; the native profile owns the rest.
-    for native_file in "$REPO_ROOT"/tests/reference/test_native_*.py; do
-      [[ -e "$native_file" ]] || continue
-      if [[ "${native_file##*/}" != test_native_check_tools.py ]]; then
-        pytest_args+=(--ignore "$native_file")
-      fi
-    done
-    ;;
-  native)
-    # The full native verification chain is shared with `full` below.
-    # Darwin allocator debugging only — never exported on Linux.
-    if [[ "$(uname -s)" == Darwin ]]; then
-      export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
-    fi
-    native_files=(tests/reference/test_native_*.py tests/reference/test_golden_episode*.py)
-    pytest_args+=("${native_files[@]}")
-    ;;
-  full)
-    ;;
+  quick|native|full) ;;
   -h|--help)
     usage
     exit 0
@@ -97,63 +75,66 @@ case "$profile" in
     exit 2
     ;;
 esac
+case "$preset" in
+  release|debug|gui|asan|rtsan|coverage) ;;
+  *)
+    printf 'Unknown preset: %s\n' "$preset" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+if (($# > 2)); then
+  printf 'Unexpected extra arguments: the gate takes <profile> [preset] only.\n' >&2
+  usage >&2
+  exit 2
+fi
 
-# Every consumer that must run under the selected build's sanitizer runtime
-# goes through tools/native_runtime.py: it loads the build's validated
-# schema-2 context, cross-checks it against the CMakeCache selections,
-# resolves the compiler-matched runtime by the recorded toolchain identity
-# (never the driver basename), prepends it to the platform preload variable
-# and runs the argv array — propagating the child's exit status and failing
-# closed on any inconsistent state. Uninstrumented builds pass the caller
-# environment through unchanged.
-run_with_native_runtime() {
-  native_uv python "$REPO_ROOT/tools/native_runtime.py" run \
-    --build "${NATIVE_TEST_BUILD_PATH:?NATIVE_TEST_BUILD_PATH must select the build}" -- "$@"
-}
+build_dir="$REPO_ROOT/build/$preset"
+if [[ "$preset" == release ]]; then
+  build_dir="$REPO_ROOT/build/native-release"
+fi
 
-preflight_native() {
-  local build_dir="$1"
-  local target
-
-  if [[ -z "${NATIVE_TEST_PROVENANCE_PATH:-}" ]]; then
-    export NATIVE_TEST_PROVENANCE_PATH="$build_dir/native_test_provenance.json"
+# Darwin allocator debugging wraps only the ordinary `ctest -LE
+# 'slow|audit|package'` invocation — wherever a profile runs it — in a
+# subshell. Never exported on Linux, and never around `ctest -L slow`,
+# which contains realtime measurements (Task 3.10).
+run_ordinary_leg() {
+  if [[ "$(uname -s)" == Darwin ]]; then
+    (
+      export MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1
+      "$@"
+    )
+  else
+    "$@"
   fi
-  printf 'selected native build: %s\n' "$build_dir"
-  native_uv python -c 'import mujoco, nanobind, sys; sys.exit(0 if mujoco.__version__ == "3.12.0" else f"native build requires MuJoCo 3.12.0, found {mujoco.__version__}")'
-  native_uv cmake -S "$REPO_ROOT/native" -B "$build_dir"
-  native_uv cmake --build "$build_dir"
-  ensure_native_checks
-  local checks_bin
-  checks_bin="$(bike_checks_binary "$build_dir")"
-  printf 'produced check orchestrator: %s\n' "$checks_bin"
-  for target in frontends tidy analyzer cppcheck odr scripts; do
-    native_uv cmake --build "$build_dir" --target "check_$target"
-  done
-  for kind in headers diagnostic-controls context; do
-    "$checks_bin" --kind "$kind" --build "$build_dir"
-  done
-
-  # Fail fast when the selected build's sanitizer runtime cannot be
-  # resolved — the helper validates the recorded context and rejects a
-  # stale or unresolvable lane before any instrumented consumer launches.
-  run_with_native_runtime python -c 'import sys'
-  run_with_native_runtime ctest --test-dir "$build_dir" --output-on-failure
-  local extension_path
-  extension_path="$(run_with_native_runtime python -c 'from native_loader import load_native; print(load_native().__file__)')"
-  printf 'selected native extension: %s\n' "$extension_path"
-  run_with_native_runtime "$checks_bin" --kind contracts --build "$build_dir" --repo-root "$REPO_ROOT"
 }
 
-if [[ "$profile" == native || "$profile" == full ]]; then
-  export PYTHONPATH="$REPO_ROOT/tests/reference${PYTHONPATH:+:$PYTHONPATH}"
-  selected_build="$(native_uv python -c 'import os, sys; sys.path.insert(0, "tests/reference"); from native_loader import selected_build; print(selected_build(os.environ))')"
-  export NATIVE_TEST_BUILD_PATH="$selected_build"
-  preflight_native "$selected_build"
-  pytest_args+=(-p native_test_reporter)
-fi
+run_native_gate() {
+  cmake --preset "$preset"
+  cmake --build --preset "$preset"
+  printf 'selected native build: %s\n' "$build_dir"
+  export NATIVE_TEST_BUILD_PATH="$build_dir"
+  bash "$REPO_ROOT/tools/run_native_checks.sh" "$build_dir"
+  run_ordinary_leg ctest --test-dir "$build_dir" -LE 'slow|audit|package' \
+    -j8 --no-tests=error --output-on-failure \
+    --output-junit "$build_dir/Testing/junit.xml"
+}
 
-if [[ "$profile" == native || "$profile" == full ]]; then
-  run_with_native_runtime python -m pytest "${pytest_args[@]}" "$@"
-else
-  exec uv run python -m pytest "${pytest_args[@]}" "$@"
-fi
+case "$profile" in
+  quick)
+    # The workflow's test step is the ordinary `ctest -LE 'slow|audit|package'`
+    # leg, so the same Darwin allocator debugging wraps the whole invocation;
+    # the configure/build steps ignore the variables.
+    run_ordinary_leg cmake --workflow --preset "$preset"
+    ;;
+  native)
+    run_native_gate
+    ;;
+  full)
+    run_native_gate
+    for label in slow audit package; do
+      ctest --test-dir "$build_dir" -L "$label" --no-tests=error \
+        --output-on-failure
+    done
+    ;;
+esac

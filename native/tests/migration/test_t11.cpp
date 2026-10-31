@@ -393,6 +393,16 @@ constexpr std::string_view kChannelsPlan = R"({
         {"name": "__meta_valid", "path": ["meta"], "op": "valid"}]
 })";
 
+// GCC 13 -O2 mis-analyzes libstdc++'s std::variant index write through the
+// Wire move-construct -> pair -> vector::emplace_back inline chain below as a
+// 1-byte store into a size-0 region (variant:480 _M_index). The header code is
+// correct; the diagnostic is the documented GCC -Wstringop-overflow
+// false-positive class on <variant>. Clang has no such warning group, so the
+// pragma stays GCC-only and scoped to this function.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 [[nodiscard]] WireObject drive_members(Wire watts, Wire gear,
                                        Wire coasting) {
     WireObject out;
@@ -401,6 +411,9 @@ constexpr std::string_view kChannelsPlan = R"({
     out.emplace_back("coasting", std::move(coasting));
     return out;
 }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")

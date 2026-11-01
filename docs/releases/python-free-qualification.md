@@ -17,18 +17,18 @@ desktop GUI acceptance row.
 
 | Required lane | Host | Preset | Command | CI run or local evidence | Exit | Date | Commit |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| macos-arm64-release | macOS arm64 | release | `bash tools/ci_presets.sh release` | Not run | — | — | — |
-| macos-arm64-asan | macOS arm64 | asan | `bash tools/ci_presets.sh asan` | Not run | — | — | — |
-| macos-arm64-coverage | macOS arm64 | coverage | `bash tools/ci_presets.sh coverage` | Not run | — | — | — |
-| linux-aarch64-release | aarch64 host + container | release | `bash tools/ci_presets.sh release` | Not run | — | — | — |
-| linux-aarch64-debug | aarch64 host + container | debug | `bash tools/ci_presets.sh debug` | Not run | — | — | — |
-| linux-aarch64-asan | aarch64 host + container | asan | `bash tools/ci_presets.sh asan` | Not run | — | — | — |
-| linux-aarch64-coverage | aarch64 host + container | coverage | `bash tools/ci_presets.sh coverage` | Not run | — | — | — |
-| package-macos | macOS arm64 | release | `bash tools/ci_presets.sh release package` | Not run | — | — | — |
-| package-linux | aarch64 host + container | release | `bash tools/ci_presets.sh release package` | Not run | — | — | — |
-| offline-rebuild-linux | fresh aarch64 container, network disabled | release | `bash tools/ci_presets.sh release offline` | Not run | — | — | — |
+| macos-arm64-release | macOS arm64 (M4 Max, macOS 27.0.1) | release | `bash tools/ci_presets.sh release package` (superset of the `checks` mode: identical workflow + sweeps) | `output/ci/Darwin-arm64-release-package/`; 181/181 ordinary CTest, all 10 sweeps green; [task-403-report](../../.superpowers/sdd/2026-10-20-cpp-linux-completion/task-403-report.md) | 0 | 2026-11-01 | c5e114f9159a1b5fcdf074123c72a0bb653dab84 |
+| macos-arm64-asan | macOS arm64 | asan | `bash tools/ci_presets.sh asan` | Not run — deferred; not qualified | — | — | — |
+| macos-arm64-coverage | macOS arm64 | coverage | `bash tools/ci_presets.sh coverage` | Not run — deferred; not qualified | — | — | — |
+| linux-aarch64-release | aarch64 host + container | release | `bash tools/ci_presets.sh release` | Not run — deferred to the linux wave; not qualified | — | — | — |
+| linux-aarch64-debug | aarch64 host + container | debug | `bash tools/ci_presets.sh debug` | Not run — deferred to the linux wave; not qualified | — | — | — |
+| linux-aarch64-asan | aarch64 host + container | asan | `bash tools/ci_presets.sh asan` | Not run — deferred to the linux wave; not qualified | — | — | — |
+| linux-aarch64-coverage | aarch64 host + container | coverage | `bash tools/ci_presets.sh coverage` | Not run — deferred to the linux wave; not qualified | — | — | — |
+| package-macos | macOS arm64 (M4 Max, macOS 27.0.1) | release | `bash tools/ci_presets.sh release package` | `output/ci/Darwin-arm64-release-package/` (`exit-code.txt`=0); `package_smoke` 76.77 s, `-L package` 3/3, `-L audit` 4/4; binary TGZ `de0f6870…826d7b`, source TGZ `c75d1978…b8d1` | 0 | 2026-11-01 | c5e114f9159a1b5fcdf074123c72a0bb653dab84 |
+| package-linux | aarch64 host + container | release | `bash tools/ci_presets.sh release package` | Not run — deferred to the linux wave; not qualified | — | — | — |
+| offline-rebuild-linux | fresh aarch64 container, network disabled | release | `bash tools/ci_presets.sh release offline` | Not run — linux-only lane, deferred; not qualified | — | — | — |
 | macos-manual-gui | user's real macOS display | gui | `cmake --workflow --preset gui`; complete [viewer acceptance](../development/viewer-platform-acceptance.md) | User acceptance pending | — | — | — |
-| linux-xvfb-smoke | aarch64 container + Xvfb | gui | `bash tools/ci_presets.sh gui gui-smoke` | Not run; smoke only | — | — | — |
+| linux-xvfb-smoke | aarch64 container + Xvfb | gui | `bash tools/ci_presets.sh gui gui-smoke` | Not run; smoke only — deferred to the linux wave | — | — | — |
 
 For direct Linux invocation set a unique `BIKE_LINUX_CONTAINER` first.
 CI sets a name from run ID, attempt and lane. No old container or worktree
@@ -42,6 +42,13 @@ dispatch-only behind the `release-qualification` environment.
 
 - Run `ctest --test-dir build/native-release -L slow --no-tests=error --output-on-failure`
   on both actual performance hosts; preserve the measurements and machine identity.
+  2026-11-01 darwin-arm64 leg (Mac16,5 M4 Max, c5e114f9): exit 8, 47/49 —
+  the two reds are the documented `reference.golden_episode_tool` 3.03
+  fixture debt and `reference.native_pneumatic_tire`
+  `observations_declare_multi_contact` ~8e-7 seal-path parity gap
+  (lane/h2-documented). The seven `planned` ledger exceptions
+  (`ledger-reconciliation-2026-10-31.md` §7) stay `planned` by ruling —
+  see the 4.03 report for the per-record runtime state. Linux leg unrun.
 - Run the same final source against both platform golden captures, with
   every node/entry accounted for by the test-port and removal ledgers.
 - Run the completeness and documentation audits at the Phase 4 points

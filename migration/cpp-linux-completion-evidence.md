@@ -11457,3 +11457,84 @@ pin `test_numpy_float32_shifting_metadata_retains_baseline_bits`.
 Darwin gate exit 0 awaits that pin's owner lane (deliberate live-oracle
 red per `test-port-map.json`); all FT-7-scoped reds repaired with
 oracle-parity evidence.
+
+### Task 4.03 release qualification — darwin-arm64 wave (2026-11-01, `c5e114f9`)
+
+`bash tools/ci_presets.sh release package` on
+`.worktrees/pfc-lane-e` (Mac16,5, M4 Max, macOS 27.0.1, AppleClang
+21.0.0.21000401, CMake 4.4.3) → **exit 0** after an acquisition retry:
+`.deps` held extracted trees so `acquire_deps.sh` refused
+(`destination already contains cairo-1.18.4`); extracted dirs were
+dropped (keeping `.deps/_archives`) and all seven dependencies
+re-verified SHA-256 + re-extracted without network.
+
+- Workflow: configure 21.8 s; build 772/772; ordinary CTest
+  **181/181** (`install_smoke` 9.53 s, `migration_T336r_portability`
+  1.12 s inside the ordinary leg).
+- `tools/run_native_checks.sh`: all 10 sweep kinds green —
+  frontends/tidy/cppcheck/odr/headers findings none, scripts
+  (shellcheck 0.11.0) clean, analyzer **report-only** tool-health ok,
+  diagnostic-controls 6/0, context SDK/hardening controls as designed,
+  contracts 12/12 incl. `pure_core_python_free` +
+  `hot_kernel_dependency_free`.
+- Package legs: `package_smoke` 76.77 s; `cpack -G TGZ` binary
+  `bike-sim-0.0.0-darwin-arm64.tar.gz` (87 527 058 B, sha256
+  `de0f6870fd6f80e0ab8ad417b2a7e3229c4ba751c7d2b4a9ce7f932490826d7b`);
+  source `bike-sim-0.0.0-source.tar.gz` (202 436 223 B, sha256
+  `c75d1978f082e6066c6e806713a7c63099bec20e5ba5579f6d34fdcbb163b8d1`).
+- Explicit label legs on `build/native-release`:
+  `-L package --no-tests=error` → **3/3** (`package_smoke`,
+  `no_python`, `audit_negative_controls`), exit 0;
+  `-L audit --no-tests=error` → **4/4** exit 0 —
+  `python_audit_source`/`python_audit_documentation` pass as designed
+  WILL_FAIL measured failures (direct source-mode run exits 1 listing
+  **611 remaining edge(s)** — the T62/T63 deletion surface);
+  `-L slow -j4 --no-tests=error` → **47/49, exit 8** with exactly the
+  documented reds: `reference.golden_episode_tool` (3.03 `episode.npz`
+  acquisition debt) and `reference.native_pneumatic_tire`
+  `test_pneumatic_observations_declare_multi_contact` (lane/h2-documented
+  ~8e-7 seal-path parity gap). No undocumented red.
+  `reference.coupled_rider_task` passed (1576.55 s),
+  `reference.realistic_pedelec_acceptance` passed emitting the still
+  sub-bar metrics (savage x_max 58.352 < 120 m, cadence band 0.7651,
+  354 late violations, crash:loop_out) — the seven §7 `planned` ledger
+  records remain `planned` by ruling; `test_pneumatic_probe_and_clock`
+  remains parked in source (`test_native_pneumatic_tire.cpp:1137-1142`).
+- Staged install `cmake --install --prefix build/qualify-403/prefix`
+  → exit 0 (242 MiB; `LC_RPATH=@loader_path/../lib`; zero Python load
+  commands in all 15 binaries; zero `.py`/`.pyc`/`site-packages`).
+  Installed CLI contract: 13 entry points `--help`→0,
+  `--bogus-flag`→2, `bike-batch --dry-run` expands 12 jobs,
+  `bike-ride --list-tracks`/`--dump-track flat`→0, `bike-settle`→`.npz`,
+  `bike-export --json-only`→`coordinates.json`; documented diagnostic
+  baselines (`energy.constraint_work` exit-2 shape; undersized
+  realtime window exit 1) reproduced, not treated as release failures.
+- Standalone arms: `install_smoke` 8.56 s + `migration_T336` 4.66 s +
+  `migration_T336r` 1.03 s → exit 0.
+- Provenance note (concurrency lesson): the parallel `-L slow` leg's
+  `migration_T56` ran its designed negative controls
+  (crash-analyzer / silent-diagnostic injections) against the same
+  build dir, overwriting `native_check_summaries/analyzer.json`
+  (`tool_health: failed`) at 21:52; the 22:13 `output/ci` evidence
+  copy captured that polluted file. The workflow transcript
+  (`403-release-package.log` lines 7911-7914) is authoritative:
+  analyzer tool-health ok, findings report-only. A standalone
+  `--kind analyzer` re-run finished → **exit 0**, `tool_health: ok`,
+  `finding_status: report-only`; `analyzer.json` + its log dir were
+  refreshed in the evidence copy and
+  `output/ci/Darwin-arm64-release-package/PROVENANCE-403.md` records
+  the three-run provenance (workflow green / T56 injection / re-run).
+  `diagnostic-controls/context/contracts`
+  summaries were rewritten honestly by the workflow's own later sweeps
+  (and T56's positive produced-build controls). Do not run `-L slow`
+  concurrently with a sweep workflow.
+- Ledger: **zero flips** — T61 owns no `python-removal.json` /
+  `test-port-map.json` rows (`task-graph.json` T61 `owned_sources: []`;
+  targets are the four evidence files, of which only
+  `python-free-qualification.md` exists at this wave). Deferred:
+  asan/coverage darwin lanes, all linux lanes, offline rehearsal, GUI
+  acceptance, plan-09 T61 JSON artifacts.
+- Full detail: `.superpowers/sdd/2026-10-20-cpp-linux-completion/task-403-report.md`;
+  transcript `/tmp/403-release-package.log`; evidence dir
+  `output/ci/Darwin-arm64-release-package/` (`exit-code.txt`=0,
+  `commit.txt`=`c5e114f9`).

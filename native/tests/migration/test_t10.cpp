@@ -364,20 +364,22 @@ void checks_construct_and_transitions() {
                     oracle_observations.size() == 4,
                 "oracle fixture carries 3 windows / 4 observations");
 
-    // The --diagnostic-model-limits capture runs non-strict: the first
-    // advance surfaces exactly one pending reference rejection — the
-    // RuntimeWarning the adapter emits at the held-GIL boundary — and it
-    // drains once.
+    // The --diagnostic-model-limits capture runs non-strict. Under the
+    // re-scoped welded plant the oracle diagnoses no model-limits violation
+    // across these windows (the recaptured transitions carry
+    // model_valid=true), so the seam drains empty and stays empty; positive
+    // drain coverage for a forced rejection lives in
+    // test_native_runtime_accounting (welded floor pin).
     runtime::RideControl command;
     command.motor_torque_nm = 10.;
     run->begin_control(command, 0., 0.);
     auto first_result = run->advance_control(std::nullopt, std::nullopt);
     bt::require(first_result.has_value(), "first window completes");
     const auto warning = run->take_pending_warning();
-    bt::require(warning.has_value() && !warning->empty(),
-                "pending reference rejection drains through the seam");
+    bt::require(!warning.has_value(),
+                "healthy plant surfaces no pending reference rejection");
     bt::require(!run->take_pending_warning().has_value(),
-                "the rejection drains exactly once");
+                "the rejection drains at most once");
     run->acknowledge_control();
     require_transition(engaged(first_result), oracle_transitions.front(),
                        "first transition matches the Python oracle");

@@ -1504,7 +1504,10 @@ EffortDiagnostics SpindleController::solved_effort(
                 incoming_velocity[static_cast<std::size_t>(joint.dof_adr)],
             0.);
         joint_power.emplace_back(joint.name, power);
-        if (power > config_.joint_power_limit_w + 1e-9)
+        // Oracle rider_effort.py joint_effort_limits reads the resolved
+        // delivered_joint_budget_w (declared re-band, else the capability
+        // cap) — not the raw joint_power_limit_w field.
+        if (power > config_.delivered_joint_budget_w() + 1e-9)
             power_violations.push_back(joint.name);
         if (std::abs(incoming_velocity[static_cast<std::size_t>(
                 joint.dof_adr)]) >

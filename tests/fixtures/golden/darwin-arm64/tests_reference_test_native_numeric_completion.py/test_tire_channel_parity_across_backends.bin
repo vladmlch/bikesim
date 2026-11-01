@@ -1,4 +1,4 @@
-[{"name":"config.json","bytes":26416},{"name":"state.json","bytes":32777},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":176},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]{
+[{"name":"config.json","bytes":26416},{"name":"state.json","bytes":32851},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":176},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]{
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -193,7 +193,7 @@
     "grip_pair_force_limit_n": null,
     "grip_pull_per_hand_n": 300.0,
     "grip_release_distance_m": 0.12,
-    "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-h/examples/research/rider_joint_envelope_anatomical.json",
+    "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/examples/research/rider_joint_envelope_anatomical.json",
     "joint_envelope_soft_k_nm_rad": 100.0,
     "joint_envelope_soft_margin_rad": 0.1,
     "joint_kd_nms_rad": 15.0,
@@ -202,7 +202,7 @@
     "joint_passive_damping_nms_rad": 0.0,
     "joint_power_limit_w": 250.0,
     "joint_speed_limit_rad_s": 20.0,
-    "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-h/examples/research/rider_strength_reference.json",
+    "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/examples/research/rider_strength_reference.json",
     "leg_track_damping_nms_rad": 0.0,
     "link_max_gap_m": 0.005,
     "pedal_ankle_amplitude_rad": 0.1,
@@ -943,7 +943,7 @@
     "clutch": null,
     "freewheel": null,
     "ideal_hub": {
-      "boundary": -0.01723421489906894,
+      "boundary": -0.011938388450751741,
       "coefficients": {
         "$array": "state.arrays/a004.f64",
         "dtype": "<f8",
@@ -960,7 +960,7 @@
         "$array": "state.arrays/a003.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "0a20dc19b8f2f3987678da8775c10b9a76c57b7a41a5176e0721b92009a55193",
+        "sha256": "5f6594908274bce96c9eb0fe8caaea9db978922bf110c4f9fc65bb1d3c8128cd",
         "shape": [
           2
         ]
@@ -1087,12 +1087,12 @@
     "$array": "state.arrays/a000.f64",
     "dtype": "<f8",
     "order": "C",
-    "sha256": "9054e51ddc33586bbd3e47e264b37fb24198ed473eeb2d0116406d9b27628d6b",
+    "sha256": "6fed8ef43f0a8551ba745d8df1fb06661b610cae720fa5c952513b989e8abc08",
     "shape": [
       292
     ]
   },
-  "model_digest": "f8e48e9e1702c4bf251d55134a3ffa7ea02d12c71dada689ccbb3be400d4caee",
+  "model_digest": "fd7570450377ffde1420641b725d32cf7c8119184a5eaa2ed421ee96474bd325",
   "model_dims": {
     "na": 0,
     "nbody": 28,
@@ -1126,7 +1126,7 @@
         "$array": "state.arrays/a001.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "95edc4a6c9cd3d222d4adf337025c31fa22dd95f5ba9b5ab12fa8a488246b7d8",
+        "sha256": "855cdffba8c1ef3c3806d95632fdf1e360e2c20d62dd39552eba7cc544ad5b44",
         "shape": [
           3
         ]
@@ -1148,7 +1148,7 @@
           0.0,
           0.0
         ],
-        "gap_m": 2.6449446968814527e-05,
+        "gap_m": 2.6466178314911614e-05,
         "in_platform": true,
         "moment_about_rider_origin_nm": [
           0.0,
@@ -1188,12 +1188,12 @@
           0.0,
           0.0
         ],
-        "hand_gap_m": 2.7217136576858063e-05,
+        "hand_gap_m": 2.720728384076274e-05,
         "overloaded": false,
         "pair_force_limit_n": null,
         "reachable": true,
         "release_loss_j": 0.0,
-        "shoulder_distance_m": 0.6072925900817038,
+        "shoulder_distance_m": 0.607294139133892,
         "trial_pair_force_n": 0.0
       },
       "grip_left": {
@@ -1210,17 +1210,17 @@
           0.0,
           0.0
         ],
-        "hand_gap_m": 2.721713657676618e-05,
+        "hand_gap_m": 2.720728384076274e-05,
         "overloaded": false,
         "pair_force_limit_n": null,
         "point_m": [
-          2.5337253583668837,
-          -0.1,
-          0.6098133159371635
+          2.5329551294995003,
+          -0.09999999999999999,
+          0.6098413568548032
         ],
         "reachable": true,
         "release_loss_j": 0.0,
-        "shoulder_distance_m": 0.6072925900817038,
+        "shoulder_distance_m": 0.607294139133892,
         "trial_pair_force_n": 0.0
       },
       "grip_right": {
@@ -1237,17 +1237,17 @@
           0.0,
           0.0
         ],
-        "hand_gap_m": 2.7217136576858063e-05,
+        "hand_gap_m": 2.720728384076274e-05,
         "overloaded": false,
         "pair_force_limit_n": null,
         "point_m": [
-          2.5337253583668837,
-          0.1,
-          0.6098133159371635
+          2.5329551294995003,
+          0.09999999999999999,
+          0.6098413568548032
         ],
         "reachable": true,
         "release_loss_j": 0.0,
-        "shoulder_distance_m": 0.6072925900817038,
+        "shoulder_distance_m": 0.607294139133892,
         "trial_pair_force_n": 0.0
       },
       "rear_pedal": {
@@ -1262,7 +1262,7 @@
           0.0,
           0.0
         ],
-        "gap_m": 2.717448530043622e-05,
+        "gap_m": 2.713192026275279e-05,
         "in_platform": true,
         "moment_about_rider_origin_nm": [
           0.0,
@@ -1300,7 +1300,7 @@
           0.0,
           0.0
         ],
-        "gap_m": 2.292929531466971e-05,
+        "gap_m": 2.292867342860096e-05,
         "in_platform": true,
         "moment_about_rider_origin_nm": [
           0.0,
@@ -1381,61 +1381,61 @@
       "foot_front": {
         "$dataclass": "bike_sim.physics.attachment_budget.AttachmentSample",
         "fields": {
-          "gap_m": 2.6449446968814527e-05,
+          "gap_m": 2.6466178314911614e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 39.37106120975888,
+          "normal_n": 39.39282746261259,
           "pull_n": 0.0,
-          "tangent_n": -9.67434277742316
+          "tangent_n": -9.646034909993935
         }
       },
       "foot_rear": {
         "$dataclass": "bike_sim.physics.attachment_budget.AttachmentSample",
         "fields": {
-          "gap_m": 2.717448530043622e-05,
+          "gap_m": 2.713192026275279e-05,
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 40.54125109541321,
+          "normal_n": 40.47039018649361,
           "pull_n": 0.0,
-          "tangent_n": 9.7255612913628
+          "tangent_n": 9.701206696459007
         }
       },
       "grip_left": {
         "$dataclass": "bike_sim.physics.attachment_budget.AttachmentSample",
         "fields": {
-          "gap_m": 2.721713657676618e-05,
+          "gap_m": 2.720728384076274e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 105.8949419185988,
+          "normal_n": 105.85667822573313,
           "pull_n": 0.0,
-          "tangent_n": 108.46587003359807
+          "tangent_n": 108.42971941530475
         }
       },
       "grip_right": {
         "$dataclass": "bike_sim.physics.attachment_budget.AttachmentSample",
         "fields": {
-          "gap_m": 2.7217136576858063e-05,
+          "gap_m": 2.720728384076274e-05,
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 105.89494191866591,
+          "normal_n": 105.85667822573136,
           "pull_n": 0.0,
-          "tangent_n": 108.4658700336488
+          "tangent_n": 108.42971941530298
         }
       },
       "saddle": {
         "$dataclass": "bike_sim.physics.attachment_budget.AttachmentSample",
         "fields": {
-          "gap_m": 2.292929531466971e-05,
+          "gap_m": 2.292867342860096e-05,
           "half_patch_m": 0.045,
           "kind": "saddle",
           "moment_nm": 0.0,
-          "normal_n": 454.84758562359275,
+          "normal_n": 454.8330040366891,
           "pull_n": 0.0,
-          "tangent_n": 165.2435274982791
+          "tangent_n": 165.26830013905155
         }
       }
     },
@@ -1456,7 +1456,7 @@
           0.0,
           0.0
         ],
-        "gap_m": 2.6449446968814527e-05,
+        "gap_m": 2.6466178314911614e-05,
         "in_platform": true,
         "moment_about_rider_origin_nm": [
           0.0,
@@ -1496,12 +1496,12 @@
           0.0,
           0.0
         ],
-        "hand_gap_m": 2.7217136576858063e-05,
+        "hand_gap_m": 2.720728384076274e-05,
         "overloaded": false,
         "pair_force_limit_n": null,
         "reachable": true,
         "release_loss_j": 0.0,
-        "shoulder_distance_m": 0.6072925900817038,
+        "shoulder_distance_m": 0.607294139133892,
         "trial_pair_force_n": 0.0
       },
       "grip_left": {
@@ -1518,17 +1518,17 @@
           0.0,
           0.0
         ],
-        "hand_gap_m": 2.721713657676618e-05,
+        "hand_gap_m": 2.720728384076274e-05,
         "overloaded": false,
         "pair_force_limit_n": null,
         "point_m": [
-          2.5337253583668837,
-          -0.1,
-          0.6098133159371635
+          2.5329551294995003,
+          -0.09999999999999999,
+          0.6098413568548032
         ],
         "reachable": true,
         "release_loss_j": 0.0,
-        "shoulder_distance_m": 0.6072925900817038,
+        "shoulder_distance_m": 0.607294139133892,
         "trial_pair_force_n": 0.0
       },
       "grip_right": {
@@ -1545,17 +1545,17 @@
           0.0,
           0.0
         ],
-        "hand_gap_m": 2.7217136576858063e-05,
+        "hand_gap_m": 2.720728384076274e-05,
         "overloaded": false,
         "pair_force_limit_n": null,
         "point_m": [
-          2.5337253583668837,
-          0.1,
-          0.6098133159371635
+          2.5329551294995003,
+          0.09999999999999999,
+          0.6098413568548032
         ],
         "reachable": true,
         "release_loss_j": 0.0,
-        "shoulder_distance_m": 0.6072925900817038,
+        "shoulder_distance_m": 0.607294139133892,
         "trial_pair_force_n": 0.0
       },
       "rear_pedal": {
@@ -1570,7 +1570,7 @@
           0.0,
           0.0
         ],
-        "gap_m": 2.717448530043622e-05,
+        "gap_m": 2.713192026275279e-05,
         "in_platform": true,
         "moment_about_rider_origin_nm": [
           0.0,
@@ -1608,7 +1608,7 @@
           0.0,
           0.0
         ],
-        "gap_m": 2.292929531466971e-05,
+        "gap_m": 2.292867342860096e-05,
         "in_platform": true,
         "moment_about_rider_origin_nm": [
           0.0,
@@ -1647,53 +1647,53 @@
         {
           "front_pedal": {
             "force_on_rider_n": [
-              -8.108277283751521,
-              -0.0,
-              39.72315708056773
+              -8.116459757551283,
+              6.381360116607093e-11,
+              39.73617905622075
             ],
-            "normal_n": 39.371061209758864,
-            "tangent_n": -9.674342777423156,
+            "normal_n": 39.39282746261258,
+            "tangent_n": -9.646034909993936,
             "would_separate": false,
             "would_slip": false
           },
           "grip_left": {
             "force_on_rider_n": [
-              -85.091308658284,
-              -1.5457969189912894e-10,
-              125.45139647253606
+              -85.06304032652326,
+              7.728979526451422e-11,
+              125.40701554489044
             ]
           },
           "grip_right": {
             "force_on_rider_n": [
-              -85.09130865834116,
-              1.545796918991298e-10,
-              125.45139647259784
+              -85.06304032652184,
+              -7.728979526451422e-11,
+              125.40701554488834
             ]
           },
           "rear_pedal": {
             "force_on_rider_n": [
-              10.434541918737542,
-              2.1290418252807082e-11,
-              40.36458742213903
+              10.461503854542201,
+              -6.387107420125689e-11,
+              40.28055151454432
             ],
-            "normal_n": 40.541251095413195,
-            "tangent_n": 9.7255612913628,
+            "normal_n": 40.47039018649362,
+            "tangent_n": 9.701206696459007,
             "would_separate": false,
             "would_slip": false
           },
           "saddle": {
             "force_on_rider_n": [
-              167.8195477408786,
+              167.83323683373956,
               -0.0,
-              453.90345771290725
+              453.8928036505979
             ],
-            "normal_n": 454.8475856235927,
-            "tangent_n": 165.24352749827906,
+            "normal_n": 454.83300403668903,
+            "tangent_n": 165.26830013905138,
             "would_separate": false,
             "would_slip": false
           }
         },
-        2.7995621682213753e-06
+        -0.0001416994402447586
       ]
     },
     "supports": {
@@ -1729,51 +1729,51 @@
       "$array": "state.arrays/a015.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "dbe0dc4a22c2474f4eb6dd50abb15b675d7165e99050ccf208fc06f7bbfd1ff6",
+      "sha256": "3d3334344cc584f3df59eec018c0e7bbd5e21a5bbbd88f6edd6dab5695a9eb9c",
       "shape": [
         9
       ]
     },
     "allocation_diagnostics": {
-      "crank_task_nm": -5.2946027007241486e-05,
-      "crank_task_shortfall_nm": 4.541426125345684,
+      "crank_task_nm": -0.005405130551425278,
+      "crank_task_shortfall_nm": 4.527716063264088,
       "invalid_controller": false,
       "solution_excitation_nm": {
         "$array": "state.arrays/a016.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "dbe0dc4a22c2474f4eb6dd50abb15b675d7165e99050ccf208fc06f7bbfd1ff6",
+        "sha256": "3d3334344cc584f3df59eec018c0e7bbd5e21a5bbbd88f6edd6dab5695a9eb9c",
         "shape": [
           9
         ]
       }
     },
-    "coast_hold_nm": -5.2946027007241486e-05,
+    "coast_hold_nm": -0.005405130551425278,
     "command_enabled": true,
     "effort_diagnostics": {
       "rider_activation_saturated": false,
       "rider_active_delivered_nm": {
-        "rider_elbow_left": 6.353296193201783,
-        "rider_elbow_right": 6.353296193201932,
-        "rider_hip_front": -29.799803727403084,
-        "rider_hip_rear": -12.31647773833578,
-        "rider_knee_front": -5.329161113215252,
-        "rider_knee_rear": 1.0227440142286444,
-        "rider_shoulder_left": -8.172626194299433,
-        "rider_shoulder_right": -8.172626194299564,
-        "rider_torso_hinge": 40.581174888511356
+        "rider_elbow_left": 6.350973177596864,
+        "rider_elbow_right": 6.350973177596731,
+        "rider_hip_front": -29.769432946739446,
+        "rider_hip_rear": -12.336551260224155,
+        "rider_knee_front": -5.324247574158644,
+        "rider_knee_rear": 1.043449969066252,
+        "rider_shoulder_left": -8.172006101698406,
+        "rider_shoulder_right": -8.172006101698257,
+        "rider_torso_hinge": 40.566156093230376
       },
       "rider_active_positive_power_limit_w": 750.0,
       "rider_active_request_nm": {
-        "rider_elbow_left": 6.353296193201783,
-        "rider_elbow_right": 6.353296193201932,
-        "rider_hip_front": -29.799803727403084,
-        "rider_hip_rear": -12.31647773833578,
-        "rider_knee_front": -5.329161113215252,
-        "rider_knee_rear": 1.0227440142286444,
-        "rider_shoulder_left": -8.172626194299433,
-        "rider_shoulder_right": -8.172626194299564,
-        "rider_torso_hinge": 40.581174888511356
+        "rider_elbow_left": 6.350973177596864,
+        "rider_elbow_right": 6.350973177596731,
+        "rider_hip_front": -29.769432946739446,
+        "rider_hip_rear": -12.336551260224155,
+        "rider_knee_front": -5.324247574158644,
+        "rider_knee_rear": 1.043449969066252,
+        "rider_shoulder_left": -8.172006101698406,
+        "rider_shoulder_right": -8.172006101698257,
+        "rider_torso_hinge": 40.566156093230376
       },
       "rider_effort_budget_exceeded": false,
       "rider_effort_observation": "incoming_request",
@@ -1787,118 +1787,118 @@
       "rear": false
     },
     "joint_capacity_nm": {
-      "rider_elbow_left": 30.513375980737532,
-      "rider_elbow_right": 30.513375980737536,
-      "rider_hip_front": 116.69790311774766,
-      "rider_hip_rear": 128.52552716927644,
-      "rider_knee_front": 133.83576358407245,
-      "rider_knee_rear": 53.18241607119911,
-      "rider_shoulder_left": 56.96651775673569,
-      "rider_shoulder_right": 56.96651775673569,
-      "rider_torso_hinge": 156.24228763981787
+      "rider_elbow_left": 30.51309212257063,
+      "rider_elbow_right": 30.513092122570626,
+      "rider_hip_front": 116.79644454025505,
+      "rider_hip_rear": 128.58934260534798,
+      "rider_knee_front": 133.95493966252863,
+      "rider_knee_rear": 53.1134559294076,
+      "rider_shoulder_left": 56.96636044565979,
+      "rider_shoulder_right": 56.96636044565979,
+      "rider_torso_hinge": 156.24104891007718
     },
     "joint_torques_nm": {
-      "rider_elbow_left": 6.353296193201783,
-      "rider_elbow_right": 6.353296193201932,
-      "rider_hip_front": -29.799803727403084,
-      "rider_hip_rear": -12.31647773833578,
-      "rider_knee_front": -5.329161113215252,
-      "rider_knee_rear": 1.0227440142286444,
-      "rider_shoulder_left": -8.172626194299433,
-      "rider_shoulder_right": -8.172626194299564,
-      "rider_torso_hinge": 40.581174888511356
+      "rider_elbow_left": 6.350973177596864,
+      "rider_elbow_right": 6.350973177596731,
+      "rider_hip_front": -29.769432946739446,
+      "rider_hip_rear": -12.336551260224155,
+      "rider_knee_front": -5.324247574158644,
+      "rider_knee_rear": 1.043449969066252,
+      "rider_shoulder_left": -8.172006101698406,
+      "rider_shoulder_right": -8.172006101698257,
+      "rider_torso_hinge": 40.566156093230376
     },
     "last_branch": null,
     "last_solution": null,
     "last_terms": {
       "rider_elbow_left": {
-        "active_delivered_nm": 6.353296193201783,
-        "active_request_nm": 6.353296193201783,
-        "command_nm": 6.353296193201783,
+        "active_delivered_nm": 6.350973177596864,
+        "active_request_nm": 6.350973177596864,
+        "command_nm": 6.350973177596864,
         "passive_damping_nm": -0.0,
         "pedaling_nm": 0.0,
-        "posture_nm": 6.353296193201783,
-        "requested_nm": 6.353296193201783,
+        "posture_nm": 6.350973177596864,
+        "requested_nm": 6.350973177596864,
         "saturated": false
       },
       "rider_elbow_right": {
-        "active_delivered_nm": 6.353296193201932,
-        "active_request_nm": 6.353296193201932,
-        "command_nm": 6.353296193201932,
+        "active_delivered_nm": 6.350973177596731,
+        "active_request_nm": 6.350973177596731,
+        "command_nm": 6.350973177596731,
         "passive_damping_nm": -0.0,
         "pedaling_nm": 0.0,
-        "posture_nm": 6.353296193201932,
-        "requested_nm": 6.353296193201932,
+        "posture_nm": 6.350973177596731,
+        "requested_nm": 6.350973177596731,
         "saturated": false
       },
       "rider_hip_front": {
-        "active_delivered_nm": -29.799803727403084,
-        "active_request_nm": -29.799803727403084,
-        "command_nm": -29.799803727403084,
+        "active_delivered_nm": -29.769432946739446,
+        "active_request_nm": -29.769432946739446,
+        "command_nm": -29.769432946739446,
         "passive_damping_nm": -0.0,
-        "pedaling_nm": -29.799803727403084,
+        "pedaling_nm": -29.769432946739446,
         "posture_nm": 0.0,
-        "requested_nm": -29.799803727403084,
+        "requested_nm": -29.769432946739446,
         "saturated": false
       },
       "rider_hip_rear": {
-        "active_delivered_nm": -12.31647773833578,
-        "active_request_nm": -12.31647773833578,
-        "command_nm": -12.31647773833578,
+        "active_delivered_nm": -12.336551260224155,
+        "active_request_nm": -12.336551260224155,
+        "command_nm": -12.336551260224155,
         "passive_damping_nm": -0.0,
-        "pedaling_nm": -12.31647773833578,
+        "pedaling_nm": -12.336551260224155,
         "posture_nm": 0.0,
-        "requested_nm": -12.31647773833578,
+        "requested_nm": -12.336551260224155,
         "saturated": false
       },
       "rider_knee_front": {
-        "active_delivered_nm": -5.329161113215252,
-        "active_request_nm": -5.329161113215252,
-        "command_nm": -5.329161113215252,
+        "active_delivered_nm": -5.324247574158644,
+        "active_request_nm": -5.324247574158644,
+        "command_nm": -5.324247574158644,
         "passive_damping_nm": -0.0,
-        "pedaling_nm": -5.329161113215252,
+        "pedaling_nm": -5.324247574158644,
         "posture_nm": 0.0,
-        "requested_nm": -5.329161113215252,
+        "requested_nm": -5.324247574158644,
         "saturated": false
       },
       "rider_knee_rear": {
-        "active_delivered_nm": 1.0227440142286444,
-        "active_request_nm": 1.0227440142286444,
-        "command_nm": 1.0227440142286444,
+        "active_delivered_nm": 1.043449969066252,
+        "active_request_nm": 1.043449969066252,
+        "command_nm": 1.043449969066252,
         "passive_damping_nm": -0.0,
-        "pedaling_nm": 1.0227440142286444,
+        "pedaling_nm": 1.043449969066252,
         "posture_nm": 0.0,
-        "requested_nm": 1.0227440142286444,
+        "requested_nm": 1.043449969066252,
         "saturated": false
       },
       "rider_shoulder_left": {
-        "active_delivered_nm": -8.172626194299433,
-        "active_request_nm": -8.172626194299433,
-        "command_nm": -8.172626194299433,
+        "active_delivered_nm": -8.172006101698406,
+        "active_request_nm": -8.172006101698406,
+        "command_nm": -8.172006101698406,
         "passive_damping_nm": -0.0,
         "pedaling_nm": 0.0,
-        "posture_nm": -8.172626194299433,
-        "requested_nm": -8.172626194299433,
+        "posture_nm": -8.172006101698406,
+        "requested_nm": -8.172006101698406,
         "saturated": false
       },
       "rider_shoulder_right": {
-        "active_delivered_nm": -8.172626194299564,
-        "active_request_nm": -8.172626194299564,
-        "command_nm": -8.172626194299564,
+        "active_delivered_nm": -8.172006101698257,
+        "active_request_nm": -8.172006101698257,
+        "command_nm": -8.172006101698257,
         "passive_damping_nm": -0.0,
         "pedaling_nm": 0.0,
-        "posture_nm": -8.172626194299564,
-        "requested_nm": -8.172626194299564,
+        "posture_nm": -8.172006101698257,
+        "requested_nm": -8.172006101698257,
         "saturated": false
       },
       "rider_torso_hinge": {
-        "active_delivered_nm": 40.581174888511356,
-        "active_request_nm": 40.581174888511356,
-        "command_nm": 40.581174888511356,
+        "active_delivered_nm": 40.566156093230376,
+        "active_request_nm": 40.566156093230376,
+        "command_nm": 40.566156093230376,
         "passive_damping_nm": -0.0,
         "pedaling_nm": 0.0,
-        "posture_nm": 40.581174888511356,
-        "requested_nm": 40.581174888511356,
+        "posture_nm": 40.566156093230376,
+        "requested_nm": 40.566156093230376,
         "saturated": false
       }
     },
@@ -2007,14 +2007,14 @@
     },
     "contacts": {
       "front_controller_grounded": true,
-      "front_load_n": 431.1141480291414,
+      "front_load_n": 430.97538507295474,
       "front_slip_mps": 0.0,
-      "front_support_n": 431.1141480291414,
+      "front_support_n": 430.97538507295474,
       "handlebar_load_n": 0.0,
       "rear_controller_grounded": true,
-      "rear_load_n": 593.1500459580951,
+      "rear_load_n": 593.0957524133402,
       "rear_slip_mps": 0.0,
-      "rear_support_n": 593.1500459580951
+      "rear_support_n": 593.0957524133402
     },
     "crash": {
       "event": null
@@ -2025,22 +2025,22 @@
       "closure_signed_j": 0.0,
       "constraint_absolute_j": 0.0,
       "elastic_energy_j": {
-        "fork_air": 11.97475666818207,
+        "fork_air": 11.961466268441043,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
         "shock_bumper": 0.0,
-        "shock_coil": 11.991666907938873,
+        "shock_coil": 11.989465116180689,
         "shock_top_out": 0.0,
         "shock_upper_stop": 0.0,
-        "tires": 2.068024560836377
+        "tires": 2.067316747353973
       },
       "electrical_work_j": 0.0,
-      "energy_scale_j": 26.03444813695732,
+      "energy_scale_j": 26.018248131975707,
       "external_work_j": 0.0,
       "initial_battery_j": 1800000.0,
-      "initial_energy_j": 652.9365138711099,
+      "initial_energy_j": 652.9126930906235,
       "loss_j": 0.0,
-      "mechanical_energy_j": 652.9365138711099,
+      "mechanical_energy_j": 652.9126930906235,
       "motor_positive_j": 0.0,
       "motor_signed_j": 0.0,
       "muscle_positive_j": 0.0,
@@ -2123,13 +2123,13 @@
   "schema": 1,
   "signals": {
     "crank_rate_rad_s": 0.0,
-    "front_load_share": 0.42090131682814014,
+    "front_load_share": 0.4208451632870304,
     "human_crank_torque_nm": 0.0,
     "pitch_rate_up_rad_s": -0.0,
     "specific_force_body_mps2": [
-      -0.054600414571974475,
+      -0.05706154476090415,
       0.0,
-      9.811134344171988
+      9.808305202488173
     ]
   },
   "tire": {
@@ -2161,16 +2161,16 @@
       "$array": "state.arrays/a002.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "7ed32fa906ed2cc9e03a6e33ae5cffd3d645711af7d38f968b2f5e3a3dd36c66",
+      "sha256": "24a6bd21e975b7e0139c606a18772ce50856567b88e2708817d6484093583c87",
       "shape": [
         22
       ]
     }
   }
 }
-               ÇPK’d @ó#+#±@´øpÇ•>æ8w?—ˇêmõ§ø™Ç”Âëï?Œ¡<Áëï?ˆy'Gù	Ø?ÃË‰ZQj?5Ø 6H
-¿?IÇçïì`±ø¬´eTv¿ ø€('‹%:Ã?£‘NÉÊ◊«ø˛ÒEò†ç?¡¸9©ﬂ; @?<¯∑¡´ø¸sù⁄ŸZ–?RaÀÁæœø® m¬¨—ø? Œ⁄9µ…ø∏ m¬¨—ø? Œ⁄9µ…ø∑†k(/—øgsCH7Ë™?˜
-Ÿ•¨^Ãø4z¸≈êø                                                                                                                                                                                                                                                                                                                                                                                                                                                        ‘¥QcJD@‰ÂÂubX ¿mi.z∆i@.ÊÂubX ¿j.z∆i@Gj‰ÔøÃ=¿saúQ¿‚ ¿^	¢(¿(´‘”(]?énqjﬂ¢|øÏ[ﬁàê@à"T¿                         V»s:A@q≥!:•ΩY?Ã∫wn@<¢f∏D@€|AZO?                2›£mÁô¿                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ?      ?      ?      ?      ?      ?      ?«[¿ç'≥?ß>˝wæH„>´hÒNÂ?hg´ıòå>      ?               Ä–†øûÔà@        » ∞J5^÷ø     òÅ@–†øûÔà@        ‡ÅwÊ§ì?ë∞ˆ4ÒQÇ>      ?               Ä$#µÚ¯?        » ∞J5^÷ø     ps@$#µÚ¯?        8ΩJJÕÂ`ø   ¢îm¬{wtïÿ•ëøúõõõõõ€?                                                ÄÓ v¶–âøöôôôôôπøx¶–yç]¿?ÄÓ v¶–âøöôôôôôπ?x¶–yç]¿?                                                                                                                                                ‘¥QcJD@‰ÂÂubX ¿mi.z∆i@.ÊÂubX ¿j.z∆i@Gj‰ÔøÃ=¿saúQ¿‚ ¿^	¢(¿(´‘”(]?‘¥QcJD@‰ÂÂubX ¿mi.z∆i@.ÊÂubX ¿j.z∆i@Gj‰ÔøÃ=¿saúQ¿‚ ¿^	¢(¿(´‘”(]?["front","rear"]["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        SN$°,F=trueò≈ƒåÉò◊?Öõ¸ìÃÃ?truefalseÖ‘hü˛Òz@{gPw·æÖ‘hü˛Òz@˙Øä¶à˚>ÚdLKcß?false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ?Ö‘hü˛Òz@3Ô®£Ôà@        » ∞J5^÷ø›Ü∑ó° >"terrain"‹X©gœxrø3‹X©gœxrø        Ö‘hü˛Òz@ µ2·ƒ*k?‚]C‡Ê?trueΩ4BTx>›Ü∑ó° >*J¥“˛§ øfalse"asphalt"r•õÍ>‹X©gœxrø+áŸŒ◊?Ö‘hü˛Òz@3Ô®£Ôà@         MJ!‰§ì?ú∑Ω=[?3‹X©gœxrø        Ö‘hü˛Òz@["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        ç¡e»=true<UoÆi<÷?(?π∂ÃÃ?truefalsen0˛m4âÇ@0˘˚üÙÖùæn0˛m4âÇ@	òEÖ$!Ó>Îº¶Bﬂ¯>false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ?n0˛m4âÇ@3m!©!µÚ¯?        » ∞J5^÷øÀ-Û˘T≤¥æ"terrain"ã¢‡EÃ eø3ã¢‡EÃ eø        n0˛m4âÇ@Ä=ÁT∞r?Ùk'¡°¶ı?trueÃÌ?ËòPË=À-Û˘T≤¥æ=˘o8ÍﬁÈ>false"asphalt"Qù3+Üœ>ã¢‡EÃ eø∫I+á÷?n0˛m4âÇ@3m!©!µÚ¯?        ,∆e ŒÂ`øÎÑåN!IN?3ã¢‡EÃ eø        n0˛m4âÇ@[{"name":"config.json","bytes":28493},{"name":"state.json","bytes":61505},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":8192},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]       {
+             ﬂ5¿oŸ @iê,Æ>´ø™€úsTw?¿\ﬁòp›°ø0sœKnxí?JìÒ{nxí?òp"ã±Ø?- îWé?]≤.óÌ	¿?◊∂Œ5`±øÀZ#ÅiøíHaÜ9Ã?ofµ\◊«øò(ŸÊüç?C'OlI: @z¥≥·%¿´ø√0t∆¸Y–?ºóˆ˝˝ΩœøqÔû∫»–ø?_ÀW\{¥…ø_Ôû∫»–ø?WÀW\{¥…ø´∫±õè
+—øRΩü/=O©?91\"óÃø d=ãø                                                                                                                                                                                                                                                                                                                                                                                                                                                        ÑmàÕwHD@£/X ¿˘4>Éeg@O/X ¿c4>Éeg@˘µæé˘ƒ=¿\F[éL¿@.`rP¨(¿†mBò¯±?4W¥≥ØÅ?†‰CÿH ê@±M%T¿                        ¿|Hbm@A@®öØ$~Yøº“eØn@∑’$˚D@\3– µ"Yø                1Üı∆—Êô¿                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ?      ?      ?      ?      ?      ?      ?Xÿø9(≥?»D˝wæH„>A	>?—MÂ?fÕ€úcRåæ      ?               Ä,’Ú‘ká@        » ∞J5^÷ø     òÅ@,’Ú‘ká@        ¿≥b¿-•ì?ÜIù¸°çæ      ?               Ä·+ùÔ¯?        » ∞J5^÷ø     ps@·+ùÔ¯?        XEÏÌ‰`ø   ¢îm¬„¥_'sàøúõõõõõ€?                                                ÄÓ v¶–âøöôôôôôπøx¶–yç]¿?ÄÓ v¶–âøöôôôôôπ?x¶–yç]¿?                                                                                                                                                ÑmàÕwHD@£/X ¿˘4>Éeg@O/X ¿c4>Éeg@˘µæé˘ƒ=¿\F[éL¿@.`rP¨(¿†mBò¯±?ÑmàÕwHD@£/X ¿˘4>Éeg@O/X ¿c4>Éeg@˘µæé˘ƒ=¿\F[éL¿@.`rP¨(¿†mBò¯±?["front","rear"]["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        `„€»È(a=true`.®>àò◊? ‘hÃÃ?truefalse%ã¯yÔz@¸†RÑN€>%ã¯yÔz@Ñ§◊ƒ3‡˙æºE|ΩXøfalse1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ?%ã¯yÔz@3ŒÕpœká@        » ∞J5^÷ø$6}¸On◊æ"terrain"0=ß˝Ær?30=ß˝Ær?        %ã¯yÔz@ Q~Ôk(k?nS$7'‹Ê?trueìåêwfﬂ>$6}¸On◊æ≠Éú˚„I?false"asphalt"ÉBóhàÔæ0=ß˝Ær?+áŸŒ◊?%ã¯yÔz@3ŒÕpœká@        ÄŸÄ?/•ì?∑˛≤"™ç[ø30=ß˝Ær?        %ã¯yÔz@["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        ûõ¥tı:3=true≈‚†qk<÷?‘÷cßÃÃ?truefalseHB¿Q√àÇ@†˝!q
+ï>HB¿Q√àÇ@ÿUœd„úËæFåÕä¯Ø˜æfalse1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ?HB¿Q√àÇ@3¸ùÔ¯?        » ∞J5^÷økVë3â¡æ"terrain"T‡»bÁár?3T‡»bÁár?        HB¿Q√àÇ@@ΩŸ‰Ør?‰I◊iú•ı?trueËdºÏî>kVë3â¡æ—¨uÄÎı>false"asphalt"9‡TÏÓﬁŸæT‡»bÁár?∫I+á÷?HB¿Q√àÇ@3¸ùÔ¯?        úüáÏ‰`ø32¸;ÿ¿Yø3T‡»bÁár?        HB¿Q√àÇ@[{"name":"config.json","bytes":28493},{"name":"state.json","bytes":64633},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":8192},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]       {
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -2365,7 +2365,7 @@
     "grip_pair_force_limit_n": null,
     "grip_pull_per_hand_n": 300.0,
     "grip_release_distance_m": 0.12,
-    "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-h/examples/research/rider_joint_envelope_anatomical.json",
+    "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/examples/research/rider_joint_envelope_anatomical.json",
     "joint_envelope_soft_k_nm_rad": 100.0,
     "joint_envelope_soft_margin_rad": 0.1,
     "joint_kd_nms_rad": 15.0,
@@ -2374,7 +2374,7 @@
     "joint_passive_damping_nms_rad": 0.0,
     "joint_power_limit_w": 250.0,
     "joint_speed_limit_rad_s": 20.0,
-    "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-h/examples/research/rider_strength_reference.json",
+    "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/pfc-lane-d/examples/research/rider_strength_reference.json",
     "leg_track_damping_nms_rad": 0.0,
     "link_max_gap_m": 0.005,
     "pedal_ankle_amplitude_rad": 0.1,
@@ -3192,7 +3192,7 @@
   "drive": {
     "angles": {
       "$tuple": [
-        -0.0
+        -0.03972053259651593
       ]
     },
     "clutch": null,
@@ -3227,24 +3227,59 @@
       "shift_pending": false
     },
     "last": {
+      "assist_demand_gated": true,
+      "assist_gain": 3.4,
+      "assist_mode": "turbo",
+      "assist_sensor_nm": 0.0,
+      "battery_empty": false,
+      "battery_energy_j": 1800000.0,
+      "cadence_rpm": -0.00845811227970077,
+      "chain_dissipation_power_w": 0.0,
       "chain_energy_j": 0.0,
+      "chain_extension_m": 0.0,
+      "chain_extension_rate_mps": 0.0,
+      "chain_tension_n": 0.0,
+      "coasting_reason": "no_effort",
+      "crank_rad_s": -0.0008857314467048519,
+      "crank_target_phase_rad": -0.030722129775180455,
+      "crank_target_rate_rad_s": 0.0,
+      "drive_shaft_rad_s": -0.0008857314467048519,
       "electrical_power_w": 0.0,
+      "energy_limited": false,
+      "freehub_deflection_rad": 0.0,
+      "freehub_dissipation_power_w": 0.0,
       "freehub_energy_j": 0.0,
+      "freehub_engaged": false,
       "freehub_torque_nm": 0.0,
       "gear_front_teeth": 22,
       "gear_ratio": 0.43137254901960786,
       "gear_rear_teeth": 51,
+      "human_command_nm": 0.0,
+      "human_sensor_nm": -0.0005876131770892438,
+      "human_setpoint_nm": 0.0,
       "human_torque_nm": 0.0,
+      "motor_control_source": "assist",
+      "motor_enabled": false,
       "motor_freewheel_dissipation_power_w": 0.0,
       "motor_freewheel_engaged": false,
       "motor_freewheel_torque_nm": 0.0,
+      "motor_limit_nm": null,
+      "motor_limited_request_nm": 0.0,
+      "motor_request_nm": 0.0,
+      "motor_setpoint_nm": null,
+      "motor_shaft_power_w": -0.0,
       "motor_torque_nm": 0.0,
+      "omits_suspension_coupling": true,
+      "required_cadence_rpm": 0.0,
+      "rider_mode": "coasting",
+      "safety_limited": false,
       "shift_active": false,
       "shift_count": 0,
       "shift_direction": "none",
       "shift_from_teeth": 51,
       "shift_time_s": null,
-      "shift_torque_factor": 1.0
+      "shift_torque_factor": 1.0,
+      "transmission_model": "ideal_mid_drive"
     },
     "last_time_s": null,
     "pending_actuation": null,
@@ -3269,13 +3304,13 @@
         "target_rate_rad_s": 0.0
       },
       "shifting": {
-        "cadence_ema": null,
+        "cadence_ema": -0.00433202863986218,
         "cooldown_s": 0.0,
         "cut_remaining_s": 0.0,
         "direction": "none",
         "from_teeth": 51,
         "rear_teeth": 51,
-        "required_ema": null,
+        "required_ema": -0.004296957032163784,
         "shift_count": 0
       }
     },
@@ -3308,7 +3343,7 @@
       "gear_ratio": 0.43137254901960786,
       "gear_rear_teeth": 51,
       "human_command_nm": 0.0,
-      "human_sensor_nm": 7.807934247868119e-06,
+      "human_sensor_nm": 7.807934246696132e-06,
       "human_setpoint_nm": 0.0,
       "human_torque_nm": 0.0,
       "motor_control_source": "external_request",
@@ -3389,19 +3424,19 @@
     }
   },
   "rider_contacts": {
-    "delivered_crank_torque_nm": 0.0,
+    "delivered_crank_torque_nm": -0.0005688595517999342,
     "diagnostics": {
       "front_pedal": {
         "enabled": true,
         "force_on_bike_n": [
-          -0.0,
-          -0.0,
-          -0.0
+          8.089477769026853,
+          8.508420149677834e-11,
+          -39.58635272371383
         ],
         "force_on_rider_n": [
-          0.0,
-          0.0,
-          0.0
+          -8.089477769026853,
+          -8.508420149677834e-11,
+          39.58635272371383
         ],
         "gap_m": 2.6529197041897528e-05,
         "in_platform": true,
@@ -3410,7 +3445,7 @@
           0.0,
           0.0
         ],
-        "normal_load_n": 0.0,
+        "normal_load_n": 39.226318161402936,
         "patches": [],
         "radial_energy_j": 0.0,
         "relative_power_w": 0.0,
@@ -3424,8 +3459,8 @@
             3
           ]
         },
-        "tangent_n": 0.0,
-        "vertical_force_on_rider_n": 0.0,
+        "tangent_n": -9.685811067858701,
+        "vertical_force_on_rider_n": 39.58635272371383,
         "would_separate": false,
         "would_slip": false
       },
@@ -3434,14 +3469,14 @@
         "elastic_energy_j": 0.0,
         "enabled": true,
         "force_on_bike_n": [
-          -0.0,
-          -0.0,
-          -0.0
+          170.31662540243917,
+          -4.3943970041879595e-25,
+          -251.07579836950458
         ],
         "force_on_rider_n": [
-          0.0,
-          0.0,
-          0.0
+          -170.31662540243917,
+          4.3943970041879595e-25,
+          251.07579836950458
         ],
         "hand_gap_m": 2.7104399996896276e-05,
         "overloaded": false,
@@ -3449,21 +3484,21 @@
         "reachable": true,
         "release_loss_j": 0.0,
         "shoulder_distance_m": 0.6073073870946402,
-        "trial_pair_force_n": 0.0
+        "trial_pair_force_n": 303.39217098560556
       },
       "grip_left": {
         "arm_reach_m": 0.6223297242629591,
         "elastic_energy_j": 0.0,
         "enabled": true,
         "force_on_bike_n": [
-          -0.0,
-          -0.0,
-          -0.0
+          85.1583127011917,
+          7.728995716584275e-11,
+          -125.53789918472275
         ],
         "force_on_rider_n": [
-          0.0,
-          0.0,
-          0.0
+          -85.1583127011917,
+          -7.728995716584275e-11,
+          125.53789918472275
         ],
         "hand_gap_m": 2.710439999673846e-05,
         "overloaded": false,
@@ -3476,21 +3511,21 @@
         "reachable": true,
         "release_loss_j": 0.0,
         "shoulder_distance_m": 0.6073073870946402,
-        "trial_pair_force_n": 0.0
+        "trial_pair_force_n": 151.69608549276268
       },
       "grip_right": {
         "arm_reach_m": 0.6223297242629591,
         "elastic_energy_j": 0.0,
         "enabled": true,
         "force_on_bike_n": [
-          -0.0,
-          -0.0,
-          -0.0
+          85.15831270124747,
+          -7.728995716584319e-11,
+          -125.53789918478185
         ],
         "force_on_rider_n": [
-          0.0,
-          0.0,
-          0.0
+          -85.15831270124747,
+          7.728995716584319e-11,
+          125.53789918478185
         ],
         "hand_gap_m": 2.7104399996896276e-05,
         "overloaded": false,
@@ -3503,19 +3538,19 @@
         "reachable": true,
         "release_loss_j": 0.0,
         "shoulder_distance_m": 0.6073073870946402,
-        "trial_pair_force_n": 0.0
+        "trial_pair_force_n": 151.69608549284288
       },
       "rear_pedal": {
         "enabled": true,
         "force_on_bike_n": [
-          -0.0,
-          -0.0,
-          -0.0
+          -10.32546265744986,
+          -8.516140141692955e-11,
+          -40.32163923850092
         ],
         "force_on_rider_n": [
-          0.0,
-          0.0,
-          0.0
+          10.32546265744986,
+          8.516140141692955e-11,
+          40.32163923850092
         ],
         "gap_m": 2.718223053543816e-05,
         "in_platform": true,
@@ -3524,7 +3559,7 @@
           0.0,
           0.0
         ],
-        "normal_load_n": 0.0,
+        "normal_load_n": 40.48420474977593,
         "patches": [],
         "radial_energy_j": 0.0,
         "relative_power_w": 0.0,
@@ -3538,22 +3573,22 @@
             3
           ]
         },
-        "tangent_n": 0.0,
-        "vertical_force_on_rider_n": 0.0,
+        "tangent_n": 9.668450535035536,
+        "vertical_force_on_rider_n": 40.32163923850092,
         "would_separate": false,
         "would_slip": false
       },
       "saddle": {
         "enabled": true,
         "force_on_bike_n": [
-          -0.0,
-          -0.0,
-          -0.0
+          -167.47940296555964,
+          0.0,
+          -453.83902743840906
         ],
         "force_on_rider_n": [
-          0.0,
-          0.0,
-          0.0
+          167.47940296555964,
+          -0.0,
+          453.83902743840906
         ],
         "gap_m": 2.2988174436921604e-05,
         "in_platform": true,
@@ -3562,7 +3597,7 @@
           0.0,
           0.0
         ],
-        "normal_load_n": 0.0,
+        "normal_load_n": 454.7838640251237,
         "patches": [],
         "radial_energy_j": 0.0,
         "relative_power_w": 0.0,
@@ -3576,8 +3611,8 @@
             3
           ]
         },
-        "tangent_n": 0.0,
-        "vertical_force_on_rider_n": 0.0,
+        "tangent_n": 164.89648348682002,
+        "vertical_force_on_rider_n": 453.83902743840906,
         "would_separate": false,
         "would_slip": false
       }
@@ -3640,9 +3675,9 @@
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 39.51906591236505,
+          "normal_n": 39.519065912365065,
           "pull_n": 0.0,
-          "tangent_n": -9.598816673245842
+          "tangent_n": -9.598816673245846
         }
       },
       "foot_rear": {
@@ -3652,9 +3687,9 @@
           "half_patch_m": 0.0,
           "kind": "foot",
           "moment_nm": 0.0,
-          "normal_n": 40.52451850397796,
+          "normal_n": 40.52451850397797,
           "pull_n": 0.0,
-          "tangent_n": 9.771161952484999
+          "tangent_n": 9.77116195248499
         }
       },
       "grip_left": {
@@ -3664,7 +3699,7 @@
           "half_patch_m": 0.0,
           "kind": "grip",
           "moment_nm": 0.0,
-          "normal_n": 105.5943573800868,
+          "normal_n": 105.59435738008679,
           "pull_n": 0.0,
           "tangent_n": 108.18244211664614
         }
@@ -3678,7 +3713,7 @@
           "moment_nm": 0.0,
           "normal_n": 105.59435738034159,
           "pull_n": 0.0,
-          "tangent_n": 108.18244211676462
+          "tangent_n": 108.18244211676463
         }
       },
       "saddle": {
@@ -3688,26 +3723,26 @@
           "half_patch_m": 0.045,
           "kind": "saddle",
           "moment_nm": 0.0,
-          "normal_n": 455.2300511562289,
+          "normal_n": 455.23005115622897,
           "pull_n": 0.0,
-          "tangent_n": 166.89405569572267
+          "tangent_n": 166.8940556957227
         }
       }
     },
     "last_time_s": null,
     "loss_step_j": 0.0,
     "pending_release_loss_j": 0.0,
-    "probe_delivered_crank_torque_nm": 7.807934247868119e-06,
+    "probe_delivered_crank_torque_nm": 7.807934246696132e-06,
     "probe_diagnostics": {
       "front_pedal": {
         "enabled": true,
         "force_on_bike_n": [
-          8.147124383544446,
+          8.14712438354445,
           2.1271287263545958e-11,
           -39.84367222522908
         ],
         "force_on_rider_n": [
-          -8.147124383544446,
+          -8.14712438354445,
           -2.1271287263545958e-11,
           39.84367222522908
         ],
@@ -3732,7 +3767,7 @@
             3
           ]
         },
-        "tangent_n": -9.598816673245844,
+        "tangent_n": -9.598816673245848,
         "vertical_force_on_rider_n": 39.84367222522908,
         "would_separate": false,
         "would_slip": false
@@ -3742,14 +3777,14 @@
         "elastic_energy_j": 0.0,
         "enabled": true,
         "force_on_bike_n": [
-          170.03190511002882,
+          170.0319051100288,
           -1.6543612251060553e-24,
-          -250.007175129341
+          -250.00717512934096
         ],
         "force_on_rider_n": [
-          -170.03190511002882,
+          -170.0319051100288,
           1.6543612251060553e-24,
-          250.007175129341
+          250.00717512934096
         ],
         "hand_gap_m": 2.7104399996896276e-05,
         "overloaded": false,
@@ -3764,14 +3799,14 @@
         "elastic_energy_j": 0.0,
         "enabled": true,
         "force_on_bike_n": [
-          85.01595255489933,
+          85.01595255489931,
           1.54578534205436e-10,
-          -125.00358756458981
+          -125.0035875645898
         ],
         "force_on_rider_n": [
-          -85.01595255489933,
+          -85.01595255489931,
           -1.54578534205436e-10,
-          125.00358756458981
+          125.0035875645898
         ],
         "hand_gap_m": 2.710439999673846e-05,
         "overloaded": false,
@@ -3784,19 +3819,19 @@
         "reachable": true,
         "release_loss_j": 0.0,
         "shoulder_distance_m": 0.6073073870946402,
-        "trial_pair_force_n": 151.17410192501546
+        "trial_pair_force_n": 151.17410192501544
       },
       "grip_right": {
         "arm_reach_m": 0.6223297242629591,
         "elastic_energy_j": 0.0,
         "enabled": true,
         "force_on_bike_n": [
-          85.01595255512949,
+          85.01595255512947,
           -1.5457853420543766e-10,
           -125.00358756475119
         ],
         "force_on_rider_n": [
-          -85.01595255512949,
+          -85.01595255512947,
           1.5457853420543766e-10,
           125.00358756475119
         ],
@@ -3816,14 +3851,14 @@
       "rear_pedal": {
         "enabled": true,
         "force_on_bike_n": [
-          -10.519032395063913,
+          -10.519032395063904,
           -2.1290429214519356e-11,
-          -40.33685862028101
+          -40.33685862028102
         ],
         "force_on_rider_n": [
-          10.519032395063913,
+          10.519032395063904,
           2.1290429214519356e-11,
-          40.33685862028101
+          40.33685862028102
         ],
         "gap_m": 2.718223053543816e-05,
         "in_platform": true,
@@ -3832,7 +3867,7 @@
           0.0,
           0.0
         ],
-        "normal_load_n": 40.52451850397797,
+        "normal_load_n": 40.52451850397798,
         "patches": [],
         "radial_energy_j": 0.0,
         "relative_power_w": 0.0,
@@ -3846,22 +3881,22 @@
             3
           ]
         },
-        "tangent_n": 9.771161952484995,
-        "vertical_force_on_rider_n": 40.33685862028101,
+        "tangent_n": 9.771161952484986,
+        "vertical_force_on_rider_n": 40.33685862028102,
         "would_separate": false,
         "would_slip": false
       },
       "saddle": {
         "enabled": true,
         "force_on_bike_n": [
-          -168.85195929469515,
+          -168.85195929469518,
           0.0,
-          -454.50747094477174
+          -454.5074709447718
         ],
         "force_on_rider_n": [
-          168.85195929469515,
+          168.85195929469518,
           -0.0,
-          454.50747094477174
+          454.5074709447718
         ],
         "gap_m": 2.2988174436921604e-05,
         "in_platform": true,
@@ -3870,7 +3905,7 @@
           0.0,
           0.0
         ],
-        "normal_load_n": 455.2300511562291,
+        "normal_load_n": 455.23005115622914,
         "patches": [],
         "radial_energy_j": 0.0,
         "relative_power_w": 0.0,
@@ -3884,8 +3919,8 @@
             3
           ]
         },
-        "tangent_n": 166.89405569572267,
-        "vertical_force_on_rider_n": 454.50747094477174,
+        "tangent_n": 166.8940556957227,
+        "vertical_force_on_rider_n": 454.5074709447718,
         "would_separate": false,
         "would_slip": false
       }
@@ -3902,53 +3937,53 @@
         {
           "front_pedal": {
             "force_on_rider_n": [
-              -8.147124383544446,
+              -8.14712438354445,
               -2.1271287263545958e-11,
               39.84367222522908
             ],
             "normal_n": 39.51906591236504,
-            "tangent_n": -9.598816673245844,
+            "tangent_n": -9.598816673245848,
             "would_separate": false,
             "would_slip": false
           },
           "grip_left": {
             "force_on_rider_n": [
-              -85.01595255489933,
+              -85.01595255489931,
               -1.54578534205436e-10,
-              125.00358756458981
+              125.0035875645898
             ]
           },
           "grip_right": {
             "force_on_rider_n": [
-              -85.01595255512949,
+              -85.01595255512947,
               1.5457853420543766e-10,
               125.00358756475119
             ]
           },
           "rear_pedal": {
             "force_on_rider_n": [
-              10.519032395063913,
+              10.519032395063904,
               2.1290429214519356e-11,
-              40.33685862028101
+              40.33685862028102
             ],
-            "normal_n": 40.52451850397797,
-            "tangent_n": 9.771161952484995,
+            "normal_n": 40.52451850397798,
+            "tangent_n": 9.771161952484986,
             "would_separate": false,
             "would_slip": false
           },
           "saddle": {
             "force_on_rider_n": [
-              168.85195929469515,
+              168.85195929469518,
               -0.0,
-              454.50747094477174
+              454.5074709447718
             ],
-            "normal_n": 455.2300511562291,
-            "tangent_n": 166.89405569572267,
+            "normal_n": 455.23005115622914,
+            "tangent_n": 166.8940556957227,
             "would_separate": false,
             "would_slip": false
           }
         },
-        7.807934247868119e-06
+        7.807934246696132e-06
       ]
     },
     "supports": {
@@ -4204,20 +4239,46 @@
         "use_saddle": true
       }
     },
-    "last_tick_step": -1,
+    "last_tick_step": 0,
     "policy": {
       "delayed": null,
       "effort_nm": 0.0,
       "inclination_rad": 0.0,
       "lean_rad": 0.0,
-      "samples": [],
+      "samples": [
+        {
+          "$tuple": [
+            0.0,
+            {
+              "crank_rate_rad_s": 0.0,
+              "front_load_share": null,
+              "human_crank_torque_nm": 0.0,
+              "pitch_rate_up_rad_s": 0.0,
+              "specific_force_body_mps2": {
+                "$tuple": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              }
+            }
+          ]
+        }
+      ],
       "surge_budget_s_left": 15.0,
-      "time_s": 0.0
+      "time_s": 0.01
     },
     "program": {
       "delayed_load_share": null,
       "lean_rad": 0.0,
-      "load_samples": [],
+      "load_samples": [
+        {
+          "$tuple": [
+            0.0,
+            null
+          ]
+        }
+      ],
       "pulses": [],
       "trim_rad": 0.0
     }
@@ -4225,10 +4286,15 @@
   "runtime": {
     "applied_control": {
       "crank_target_rate_rad_s": null,
-      "human_torque_nm": null,
+      "human_torque_nm": 0.0,
       "motor_limit_nm": null,
       "motor_torque_nm": null,
-      "posture": null,
+      "posture": {
+        "pelvis_offset_m": null,
+        "pelvis_pitch_rad": 0.0,
+        "torso_lean_rad": 0.0,
+        "use_saddle": true
+      },
       "rider_enabled": true
     },
     "balance": {
@@ -4316,7 +4382,17 @@
       }
     },
     "generation": 1,
-    "held_control": null,
+    "held_control": {
+      "rider_elbow_left": 6.359378663227908,
+      "rider_elbow_right": 6.359378663227824,
+      "rider_hip_front": -29.85258080814893,
+      "rider_hip_rear": -12.29740107393819,
+      "rider_knee_front": -5.309431106329409,
+      "rider_knee_rear": 1.0029406377768177,
+      "rider_shoulder_left": -8.174603982081493,
+      "rider_shoulder_right": -8.174603982081498,
+      "rider_torso_hinge": 40.64275363175619
+    },
     "held_rider_terms": null,
     "history": {
       "airtime_s": {
@@ -4379,7 +4455,7 @@
   "signals": {
     "crank_rate_rad_s": 0.0,
     "front_load_share": 0.418377917967661,
-    "human_crank_torque_nm": 7.807934247868119e-06,
+    "human_crank_torque_nm": 7.807934246696132e-06,
     "pitch_rate_up_rad_s": -0.0,
     "specific_force_body_mps2": [
       -0.14607783115595704,

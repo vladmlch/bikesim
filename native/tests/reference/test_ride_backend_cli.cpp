@@ -65,7 +65,7 @@ namespace io = bike::io;
     return root;
 }
 
-const std::string PROFILE =
+const std::string PROFILE = // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     (repo_root() / "examples/research/viewer_physics_welded.toml").string();
 
 cli::Arguments parse(std::string_view command,
@@ -171,14 +171,14 @@ void test_native_visual_scale_keeps_all_physics_settings() {
 
 // tests/reference/test_ride_backend_cli.py::test_explicit_scale_is_invalid_headless_even_one[scale]
 void test_explicit_scale_is_invalid_headless_even_one(std::string_view scale) {
-    throws<cli::ArgumentError>(
-        [&] {
-            (void)resolve({"--physics-config", PROFILE, "--headless",
-                           "--time-scale", std::string(scale)});
-        },
-        "--time-scale requires an interactive physical or research run",
-        "explicit --time-scale " + std::string(scale) +
-            " is invalid for a headless run");
+  throws<cli::ArgumentError>(
+      [&] {
+        (void)resolve(
+            {"--physics-config", PROFILE, "--headless", "--time-scale", scale});
+      },
+      "--time-scale requires an interactive physical or research run",
+      "explicit --time-scale " + std::string(scale) +
+          " is invalid for a headless run");
 }
 
 // tests/reference/test_ride_backend_cli.py::test_legacy_scale_and_native_rejected
@@ -252,7 +252,7 @@ void test_native_preflight_failure_precedes_ride_setup() {
     // long before physical_run constructs the runtime. Probe: a rejected
     // flag combination must win over a setup-stage failure — the error is
     // the validation message, never the missing-track load failure.
-    bt::TemporaryDirectory temporary("ride-cli-preflight");
+    bt::TemporaryDirectory const temporary("ride-cli-preflight");
     const auto missing_track =
         (temporary.path() / "no-such-track.toml").string();
     throws<cli::ArgumentError>(
@@ -286,7 +286,7 @@ void test_missing_artifact_names_directory_commands_and_code() {
     // a missing required input file fails nonzero naming the requested
     // path (the repair-spelling tokens have no native analog; dispatch maps
     // the acquisition failure to exit 1, not argparse's 2).
-    bt::TemporaryDirectory temporary("ride-cli-missing");
+    bt::TemporaryDirectory const temporary("ride-cli-missing");
     const auto missing = (temporary.path() / "no-such-physics.toml").string();
     const auto result = run_cli(
         BIKE_RIDE_PATH,
@@ -300,74 +300,73 @@ void test_missing_artifact_names_directory_commands_and_code() {
 
 // tests/reference/test_ride_backend_cli.py::test_cli_dispatches_every_live_and_headless_route
 void test_cli_dispatches_every_live_and_headless_route() {
-    bt::TemporaryDirectory temporary("ride-cli-dispatch");
-    const auto out = (temporary.path() / "out").string();
+  bt::TemporaryDirectory const temporary("ride-cli-dispatch");
+  const auto out = (temporary.path() / "out").string();
 
-    // Viewer route: the oracle's run_viewer stub observed (driver,
-    // out_root, time_scale=2, record=False). Natively the interactive
-    // branch of physical_run consumes the same resolved arguments through
-    // ride_viewer_options — the projection is the seam, not a stub (a real
-    // viewer is not spawned in a headless test environment).
-    const auto interactive =
-        resolve({"--backend", "native", "--physics-config", PROFILE,
-                 "--time-scale", "2", "--out", out});
-    const auto view = cli::ride_viewer_options(interactive->arguments,
-                                               timestep(*interactive));
-    bt::require(view.time_scale == 2 &&
-                    view.mode == bike::viewer::Mode::physical,
-                "the viewer route receives the explicit playback scale");
-    bt::require(!interactive->arguments.flag("headless") &&
-                    !interactive->arguments.flag("record") &&
-                    interactive->arguments.text("out") == out,
-                "the viewer route keeps --out and leaves recording off");
+  // Viewer route: the oracle's run_viewer stub observed (driver,
+  // out_root, time_scale=2, record=False). Natively the interactive
+  // branch of physical_run consumes the same resolved arguments through
+  // ride_viewer_options — the projection is the seam, not a stub (a real
+  // viewer is not spawned in a headless test environment).
+  const auto interactive =
+      resolve({"--backend", "native", "--physics-config", PROFILE,
+               "--time-scale", "2", "--out", out});
+  const auto view =
+      cli::ride_viewer_options(interactive->arguments, timestep(*interactive));
+  bt::require(view.time_scale == 2 && view.mode == bike::viewer::Mode::physical,
+              "the viewer route receives the explicit playback scale");
+  bt::require(!interactive->arguments.flag("headless") &&
+                  !interactive->arguments.flag("record") &&
+                  interactive->arguments.text("out") == out,
+              "the viewer route keeps --out and leaves recording off");
 
-    // Headless route through the real binary: the oracle's stub returned 7
-    // and main propagated it; natively the headless loop's own outcome code
-    // is the exit — 2 on both qualified platforms (the welded profile's
-    // constraint-work violation marks the run model-invalid; a clean run
-    // would be 0, so the code window is asserted while the summary contract
-    // pins the route itself).
-    const auto headless = run_cli(
-        BIKE_RIDE_PATH,
-        {"--backend", "native", "--physics-config", PROFILE, "--headless",
-         "--duration", "0.02", "--no-plots", "--check-policy", "diagnostic",
-         "--out", out});
-    bt::require((headless.code == 0 || headless.code == 2) &&
-                    contains(headless.out, "\"reason\":\"duration_reached\"") &&
-                    contains(headless.out, "\"backend\":\"native\"") &&
-                    contains(headless.out, "\"drive_mode\":\"articulated_effort\"") &&
-                    contains(headless.out, "\"timestep_s\":0.00125"),
-                "the headless route runs the physical episode to the "
-                "duration boundary and prints its summary");
+  // Headless route through the real binary: the oracle's stub returned 7
+  // and main propagated it; natively the headless loop's own outcome code
+  // is the exit — 2 on both qualified platforms (the welded profile's
+  // constraint-work violation marks the run model-invalid; a clean run
+  // would be 0, so the code window is asserted while the summary contract
+  // pins the route itself).
+  const auto headless = run_cli(
+      BIKE_RIDE_PATH, {"--backend", "native", "--physics-config", PROFILE,
+                       "--headless", "--duration", "0.02", "--no-plots",
+                       "--check-policy", "diagnostic", "--out", out});
+  bt::require(
+      (headless.code == 0 || headless.code == 2) &&
+          contains(headless.out, R"("reason":"duration_reached")") &&
+          contains(headless.out, R"("backend":"native")") &&
+          contains(headless.out, R"("drive_mode":"articulated_effort")") &&
+          contains(headless.out, "\"timestep_s\":0.00125"),
+      "the headless route runs the physical episode to the "
+      "duration boundary and prints its summary");
 
-    // --research route through the real binary: ride_command hands the
-    // resolved request to run_research (interactive=false under --headless);
-    // the run-result document is the research emission, not the physical
-    // ride summary.
-    const auto research = run_cli(
-        BIKE_RIDE_PATH,
-        {"--physics-config", PROFILE, "--research", "--headless",
-         "--duration", "0.02", "--check-policy", "diagnostic", "--out", out});
-    bt::require((research.code == 0 || research.code == 2) &&
-                    contains(research.out, "\"outcome\":\"duration\"") &&
-                    contains(research.out, "\"recording\":\"off\""),
-                "the research route runs the accounted episode to the "
-                "duration boundary");
+  // --research route through the real binary: ride_command hands the
+  // resolved request to run_research (interactive=false under --headless);
+  // the run-result document is the research emission, not the physical
+  // ride summary.
+  const auto research =
+      run_cli(BIKE_RIDE_PATH, {"--physics-config", PROFILE, "--research",
+                               "--headless", "--duration", "0.02",
+                               "--check-policy", "diagnostic", "--out", out});
+  bt::require((research.code == 0 || research.code == 2) &&
+                  contains(research.out, R"("outcome":"duration")") &&
+                  contains(research.out, R"("recording":"off")"),
+              "the research route runs the accounted episode to the "
+              "duration boundary");
 
-    // Standalone bike-research main: the oracle's research_cli.main stub
-    // returned episode_exit_code (9); natively research_command returns the
-    // real episode code — 0 on both qualified platforms for the lumped
-    // rider profile (a model-violating episode would be 2). --rider lumped
-    // keeps the equilibrium probe inside the unit-test budget; the dispatch
-    // contract being asserted is rider-independent.
-    const auto research_main = run_cli(
-        BIKE_RESEARCH_PATH, {"--rider", "lumped", "--duration", "0.02",
-                             "--out", out});
-    bt::require((research_main.code == 0 || research_main.code == 2) &&
-                    contains(research_main.out, "\"outcome\":\"duration\"") &&
-                    contains(research_main.out, "\"recording\":\"off\""),
-                "the research executable dispatches to its headless episode "
-                "and returns the episode code");
+  // Standalone bike-research main: the oracle's research_cli.main stub
+  // returned episode_exit_code (9); natively research_command returns the
+  // real episode code — 0 on both qualified platforms for the lumped
+  // rider profile (a model-violating episode would be 2). --rider lumped
+  // keeps the equilibrium probe inside the unit-test budget; the dispatch
+  // contract being asserted is rider-independent.
+  const auto research_main =
+      run_cli(BIKE_RESEARCH_PATH,
+              {"--rider", "lumped", "--duration", "0.02", "--out", out});
+  bt::require((research_main.code == 0 || research_main.code == 2) &&
+                  contains(research_main.out, R"("outcome":"duration")") &&
+                  contains(research_main.out, R"("recording":"off")"),
+              "the research executable dispatches to its headless episode "
+              "and returns the episode code");
 }
 
 } // namespace

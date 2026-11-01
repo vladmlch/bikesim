@@ -23,8 +23,6 @@
 namespace {
 
 using namespace recording_test;
-namespace rt = recording_test;
-namespace value = rec::value;
 
 // The exception RunCapture raises for appends outside `collecting`
 // (physical_frontend.py's RuntimeError surface).
@@ -33,31 +31,32 @@ template <class F> void logic_rejects(F &&action, std::string_view message) {
 }
 
 void test_disabled_capture_has_no_persistent_side_effect() {
-    bt::TemporaryDirectory root("capture-disabled");
-    const auto target = root.path() / "not-created";
-    rec::RunCapture capture(run_metadata(), false);
-    const auto publication = rec::finalize(capture, target);
-    bt::require(publication.directory.empty() && publication.report_status == "disabled",
-                "disabled finalize publishes nothing");
-    bt::require(!std::filesystem::exists(target),
-                "disabled finalize creates no output");
-    bt::require(capture.state() == rec::RunCapture::State::published,
-                "disabled capture reports published without a path");
+  bt::TemporaryDirectory const root("capture-disabled");
+  const auto target = root.path() / "not-created";
+  rec::RunCapture capture(run_metadata(), false);
+  const auto publication = rec::finalize(capture, target);
+  bt::require(publication.directory.empty() &&
+                  publication.report_status == "disabled",
+              "disabled finalize publishes nothing");
+  bt::require(!std::filesystem::exists(target),
+              "disabled finalize creates no output");
+  bt::require(capture.state() == rec::RunCapture::State::published,
+              "disabled capture reports published without a path");
 }
 
 void test_disabled_capture_still_validates_but_retains_nothing() {
-    bt::TemporaryDirectory root("capture-disabled-validate");
-    rec::RunCapture capture(run_metadata(), false);
-    capture.event(input_event(0, 0));
-    capture.add_episode(make_evidence(0, 1, {sample_row(0, 0.)}));
-    bt::require(capture.events().empty() && capture.episodes().empty(),
-                "disabled capture retains nothing");
-    throws<std::invalid_argument>([&] { capture.event(input_event(0, 0)); }, "",
-                                  "ordering rules apply when disabled too");
-    const auto publication = rec::finalize(capture, root.path() / "run");
-    bt::require(publication.directory.empty() &&
-                !std::filesystem::exists(root.path() / "run"),
-                "disabled finalize still creates nothing");
+  bt::TemporaryDirectory const root("capture-disabled-validate");
+  rec::RunCapture capture(run_metadata(), false);
+  capture.event(input_event(0, 0));
+  capture.add_episode(make_evidence(0, 1, {sample_row(0, 0.)}));
+  bt::require(capture.events().empty() && capture.episodes().empty(),
+              "disabled capture retains nothing");
+  throws<std::invalid_argument>([&] { capture.event(input_event(0, 0)); }, "",
+                                "ordering rules apply when disabled too");
+  const auto publication = rec::finalize(capture, root.path() / "run");
+  bt::require(publication.directory.empty() &&
+                  !std::filesystem::exists(root.path() / "run"),
+              "disabled finalize still creates nothing");
 }
 
 void test_conflicting_episode_ids_reject_atomically() {
@@ -186,8 +185,9 @@ void test_episode_journal_validates_its_construction() {
     rec::RunCapture capture(run_metadata(), true);
     // `EpisodeJournal(object(), 0)` and `EpisodeJournal(capture, True)` are
     // Python type-domain rejections; C++ carries them as types.
-    throws<std::invalid_argument>([&] { rec::EpisodeJournal bad(capture, -1); }, "",
-                                  "negative episode id rejected");
+    throws<std::invalid_argument>(
+        [&] { rec::EpisodeJournal const bad(capture, -1); }, "",
+        "negative episode id rejected");
 }
 
 void test_event_field_validation() {
@@ -244,10 +244,10 @@ void test_nested_mutable_source_input_cannot_modify_captured_metadata() {
     // mutating the source document can never rewrite captured metadata
     // (the oracle's MappingProxyType freeze is static in C++).
     const auto terrain_slot = [](Value::Object &object) -> Value & {
-        return const_cast<Value &>(*io::find_member(object, "terrain"));
+        return const_cast<Value &>(*io::find_member(object, "terrain")); // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
     };
     const auto grade_slot = [](Value &terrain) -> Value::Array & {
-        return const_cast<Value::Array &>(io::as_array(
+        return const_cast<Value::Array &>(io::as_array( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             *io::find_member(io::as_object(terrain, "terrain"), "grade"), "grade"));
     };
     Value nested{Value::Object{
@@ -256,11 +256,11 @@ void test_nested_mutable_source_input_cannot_modify_captured_metadata() {
         {"seed", Value{io::Number{"19"}}}}};
     rec::RunMetadata metadata = run_metadata("native", "ride");
     metadata.values = nested;
-    rec::RunCapture capture(std::move(metadata), true);
+    rec::RunCapture const capture(std::move(metadata), true);
     // Mutate the caller-side tree after construction input was staged.
-    auto &nested_object = const_cast<Value::Object &>(io::as_object(nested, "nested"));
+    auto &nested_object = const_cast<Value::Object &>(io::as_object(nested, "nested")); // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
     grade_slot(terrain_slot(nested_object))[0] = Value{io::Number{"9.9"}};
-    const_cast<Value &>(*io::find_member(nested_object, "seed")) = Value{io::Number{"-1"}};
+    const_cast<Value &>(*io::find_member(nested_object, "seed")) = Value{io::Number{"-1"}}; // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
     nested_object.emplace_back("new_key", Value{true});
     const auto &captured = io::as_object(capture.metadata().values, "metadata.values");
     const auto &captured_grade = io::as_array(*io::find_member(
@@ -274,11 +274,14 @@ void test_nested_mutable_source_input_cannot_modify_captured_metadata() {
 void test_event_and_summary_values_are_frozen() {
     Value values{Value::Object{
         {"request", Value{Value::Object{{"brake", Value{Value::Array{Value{io::Number{"0.5"}}}}}}}}}};
-    rec::InputEvent event = input_event(0, 0, "brake", 0., 0, values);
+    rec::InputEvent const event = input_event(0, 0, "brake", 0., 0, values);
     // Mutate the source after staging — the event owns its copy.
-    auto &request = const_cast<Value::Object &>(io::as_object(
-        *io::find_member(const_cast<Value::Object &>(io::as_object(values, "values")), "request"), "request"));
-    const_cast<Value::Array &>(io::as_array(*io::find_member(request, "brake"), "brake"))
+    auto const &request = const_cast<Value::Object &>( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
+        io::as_object(*io::find_member(const_cast<Value::Object &>( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
+                                           io::as_object(values, "values")),
+                                       "request"),
+                      "request"));
+    const_cast<Value::Array &>(io::as_array(*io::find_member(request, "brake"), "brake")) // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
         .push_back(Value{io::Number{"1.0"}});
     const auto &captured = io::as_array(*io::find_member(
         io::as_object(*io::find_member(io::as_object(event.values, "event.values"), "request"), "request"),
@@ -288,23 +291,25 @@ void test_event_and_summary_values_are_frozen() {
 }
 
 void test_finalize_publishes_once_and_retries_failed_publication() {
-    bt::TemporaryDirectory root("capture-finalize-once");
-    rec::RunCapture capture(run_metadata(), true);
-    capture.add_episode(make_evidence(0, 1, {sample_row(0, 0.)}));
-    bt::require(capture.state() == rec::RunCapture::State::collecting,
-                "pre-finalize state is collecting");
-    const auto first = rec::finalize(capture, root.path());
-    bt::require(capture.state() == rec::RunCapture::State::published &&
-                !first.directory.empty() &&
-                std::filesystem::exists(first.directory / "manifest.json"),
-                "first finalize seals a manifest");
-    const auto second = rec::finalize(capture, root.path());
-    std::size_t sealed = 0;
-    for (const auto &entry : std::filesystem::directory_iterator(root.path()))
-        if (std::filesystem::exists(entry.path() / "manifest.json")) ++sealed;
-    bt::require(second.directory == first.directory &&
-                second.report_status == first.report_status && sealed == 1,
-                "repeated finalize returns the cached publication without re-publishing");
+  bt::TemporaryDirectory const root("capture-finalize-once");
+  rec::RunCapture capture(run_metadata(), true);
+  capture.add_episode(make_evidence(0, 1, {sample_row(0, 0.)}));
+  bt::require(capture.state() == rec::RunCapture::State::collecting,
+              "pre-finalize state is collecting");
+  const auto first = rec::finalize(capture, root.path());
+  bt::require(capture.state() == rec::RunCapture::State::published &&
+                  !first.directory.empty() &&
+                  std::filesystem::exists(first.directory / "manifest.json"),
+              "first finalize seals a manifest");
+  const auto second = rec::finalize(capture, root.path());
+  std::size_t sealed = 0;
+  for (const auto &entry : std::filesystem::directory_iterator(root.path()))
+    if (std::filesystem::exists(entry.path() / "manifest.json"))
+      ++sealed;
+  bt::require(
+      second.directory == first.directory &&
+          second.report_status == first.report_status && sealed == 1,
+      "repeated finalize returns the cached publication without re-publishing");
 }
 
 void test_failed_publication_keeps_capture_retryable() {
@@ -328,15 +333,16 @@ void test_failed_publication_keeps_capture_retryable() {
 }
 
 void test_finalize_uses_default_duckdb_publisher() {
-    bt::TemporaryDirectory root("capture-finalize-duckdb");
-    rec::RunCapture capture(run_metadata(), true);
-    // The oracle sealed a zero-episode launch; the default DuckDB
-    // publication still writes a readable recording.
-    const auto publication = rec::finalize(capture, root.path() / "run");
-    bt::require(capture.state() == rec::RunCapture::State::published, "finalize publishes");
-    rec::Recording saved(publication.directory);
-    bt::require(saved.episode_ids().empty(),
-                "the sealed recording exposes the empty episode set");
+  bt::TemporaryDirectory const root("capture-finalize-duckdb");
+  rec::RunCapture capture(run_metadata(), true);
+  // The oracle sealed a zero-episode launch; the default DuckDB
+  // publication still writes a readable recording.
+  const auto publication = rec::finalize(capture, root.path() / "run");
+  bt::require(capture.state() == rec::RunCapture::State::published,
+              "finalize publishes");
+  rec::Recording const saved(publication.directory);
+  bt::require(saved.episode_ids().empty(),
+              "the sealed recording exposes the empty episode set");
 }
 
 void test_appends_are_rejected_after_publication() {
@@ -366,12 +372,14 @@ void test_interrupt_shield_defers_sigint_and_restores_handler() {
     // disposition the shield must restore on exit.
     const auto previous = std::signal(SIGINT, SIG_DFL);
     {
-        bike::platform::InterruptShield shield;
-        bt::require(shield.installed(), "main-thread shield installs the counting handler");
-        (void)std::raise(SIGINT);
-        bt::require(shield.deferred() == 1, "the shielded Ctrl-C is counted, not raised");
-        (void)std::raise(SIGINT);
-        bt::require(shield.deferred() == 2, "repeated SIGINT only defers again");
+      bike::platform::InterruptShield const shield;
+      bt::require(shield.installed(),
+                  "main-thread shield installs the counting handler");
+      (void)std::raise(SIGINT);
+      bt::require(shield.deferred() == 1,
+                  "the shielded Ctrl-C is counted, not raised");
+      (void)std::raise(SIGINT);
+      bt::require(shield.deferred() == 2, "repeated SIGINT only defers again");
     }
     bt::require(std::signal(SIGINT, previous) == SIG_DFL,
                 "the previous disposition is restored on exit");
@@ -381,8 +389,8 @@ void test_interrupt_shield_restores_on_body_failure() {
     const auto previous = std::signal(SIGINT, SIG_DFL);
     bool raised = false;
     try {
-        bike::platform::InterruptShield shield;
-        throw std::runtime_error("boom");
+      bike::platform::InterruptShield const shield;
+      throw std::runtime_error("boom");
     } catch (const std::runtime_error &) { raised = true; }
     bt::require(raised, "the shielded body still propagates its failure");
     bt::require(std::signal(SIGINT, previous) == SIG_DFL,

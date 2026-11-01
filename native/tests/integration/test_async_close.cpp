@@ -24,12 +24,10 @@
 #include <vector>
 
 namespace {
-namespace async = runtime;
 using runtime::AccountingConfig;
 using runtime::AccountingState;
 using runtime::AsyncCloseRunner;
 using runtime::AsyncPublicationError;
-using runtime::AsyncWorkerLost;
 using runtime::RawStep;
 
 // The synthetic rider-free raw — the _raw(i)/_synthetic_ctx twin: no effort
@@ -539,16 +537,16 @@ std::unique_ptr<res::PreparedEnvironment> research_seed(bool async_telemetry) {
 // exactly the one worker it needs. The [python-True] parametrization pins the
 // python-backend adapter seam and is a documented drop.
 [[gnu::noinline]] void construction_owns_only_needed_worker() {
-    runtime::PeriodAccounting sync_only(synthetic_config(), synthetic_state(), 1,
-        nullptr, nullptr);
-    bt::require(!sync_only.asynchronous(),
-        "a synchronous session owns no async worker");
-    runtime::AccountingConfig async_config = synthetic_config();
-    async_config.async_telemetry = true;
-    runtime::PeriodAccounting async_owner(async_config, synthetic_state(), 1,
-        nullptr, nullptr);
-    bt::require(async_owner.asynchronous(),
-        "async telemetry constructs exactly the worker it needs");
+  runtime::PeriodAccounting const sync_only(
+      synthetic_config(), synthetic_state(), 1, nullptr, nullptr);
+  bt::require(!sync_only.asynchronous(),
+              "a synchronous session owns no async worker");
+  runtime::AccountingConfig async_config = synthetic_config();
+  async_config.async_telemetry = true;
+  runtime::PeriodAccounting const async_owner(async_config, synthetic_state(),
+                                              1, nullptr, nullptr);
+  bt::require(async_owner.asynchronous(),
+              "async telemetry constructs exactly the worker it needs");
 }
 
 // test_python_driver_close_releases_worker_once — the driver-close twin on

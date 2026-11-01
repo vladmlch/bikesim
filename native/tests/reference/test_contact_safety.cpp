@@ -117,8 +117,8 @@ void test_concave_span_ignores_convex_crests() {
 }
 
 // StubGarden(S, z): the raw-facet (x, z) overload.
-const std::vector<double> kS{0.0, 0.2, 0.6, 1.4, 1.8, 2.4, 3.0};
-const std::vector<double> kSExit{0.0, 0.6, 1.4, 2.0, 2.6, 3.0};
+const std::vector<double> kS{0.0, 0.2, 0.6, 1.4, 1.8, 2.4, 3.0}; // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
+const std::vector<double> kSExit{0.0, 0.6, 1.4, 2.0, 2.6, 3.0}; // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
 
 double deg_of_atan(double slope) { return std::atan(slope) * 180. / std::numbers::pi; }
 
@@ -195,8 +195,9 @@ void test_hazards_report_every_unsafe_obstacle_kind() {
     for (std::size_t i = 0; i < hazards.size(); ++i)
         hazard_bytes(golden, hazards[i], i);
     std::vector<std::string> labels;
+    labels.reserve(hazards.size());
     for (const std::string &h : hazards)
-        labels.push_back(h.substr(0, h.find(':')));
+      labels.push_back(h.substr(0, h.find(':')));
     const std::vector<std::string> expected{
         "Bump@5m", "BowlPothole@12m", "SlopedPothole@20m", "SquareEdge@24m",
         "RockGarden@30m"};

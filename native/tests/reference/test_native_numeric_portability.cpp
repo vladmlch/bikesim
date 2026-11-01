@@ -102,7 +102,7 @@ void pneumatic(bt::oracle::Node& node_) {
 // counts the oracle entries one case records: the nonfinite
 // scalar/array agreement test records both the scalar-broadcast oracle
 // and the array oracle, and the port must equal each.
-void contract_node(std::string_view test, std::string_view op,
+void contract_node(std::string_view test, std::string_view op, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                    int compares_per_case = 1) {
     bt::oracle::Node node_{test};
     while (node_.has_next()) {
@@ -129,7 +129,7 @@ void interp_node(std::string_view test) {
 
 // rider:: fixed-shape mirrors on the recorded flat operands.
 [[nodiscard]] std::vector<double> rider_op(
-    std::string_view op, std::span<const double> a,
+    std::string_view op, std::span<const double> a, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     std::span<const double> b) {
     const auto fill = [](std::span<const double> src, auto& dst,
                          std::string_view what) {
@@ -169,7 +169,7 @@ void interp_node(std::string_view test) {
     throw std::invalid_argument("unknown rider op");
 }
 
-void rider_node(std::string_view test, std::string_view op) {
+void rider_node(std::string_view test, std::string_view op) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     bt::oracle::Node node_{test};
     while (node_.has_next()) {
         const auto a = node_.f64_input("input.a");

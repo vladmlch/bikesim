@@ -10,8 +10,6 @@
 
 namespace {
 
-using tyre_reference::fixture;
-
 // tests/reference/test_savage_track_surface.py::test_savage_is_asphalt_everywhere
 void test_savage_is_asphalt_everywhere() {
     const auto track = bike::terrain::load_track(tyre_reference::repo_file(

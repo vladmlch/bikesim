@@ -60,7 +60,7 @@ void test_accounted_hud_displays_realtime_factor_without_repeated_failure() {
     frame.state.generation = 1;
     frame.state.step = 8;
     frame.state.time_s = .01;
-    auto sample = std::make_shared<runtime::PhysicalSampleData>();
+    auto const sample = std::make_shared<runtime::PhysicalSampleData>();
     sample->interval_id = 1;
     sample->time_s = .01;
     sample->end_time_s = .01125;

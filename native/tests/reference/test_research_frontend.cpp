@@ -10,15 +10,14 @@
 
 namespace {
 using namespace research_reference;
-namespace sw = runtime::sample_wire;
 
 // tests/reference/test_research_frontend.py::
 //   test_partial_ticks_call_policy_once_and_stop_does_not_start_another
 void test_partial_ticks_call_policy_once_and_stop_does_not_start_another() {
     auto env = environment();
-    auto *const environment_ptr = env.get();
+    auto const *const environment_ptr = env.get();
     auto counting = std::make_unique<CountingPolicy>();
-    auto *const policy = counting.get();
+    auto const *const policy = counting.get();
     research::PolicySession session(std::move(env), std::move(counting));
     // advance_playback(session, 1): begin the window and deliver at most to
     // step 1 — the window stays latched and act() ran exactly once.

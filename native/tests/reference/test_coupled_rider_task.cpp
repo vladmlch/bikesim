@@ -17,13 +17,13 @@
 
 #include <cmath>
 #include <cstdio>
+#include <print>
 #include <string>
 #include <vector>
 
 namespace {
 namespace rr = rider_control_reference;
 namespace cfg = bike::configuration;
-namespace rcfg = ::runtime;
 namespace d = bike::numerics::dense;
 namespace sw = ::runtime::sample_wire;
 using bike::rider::Matrix;
@@ -150,8 +150,8 @@ test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step() {
                                                     "crank_torque_nm"));
         if (std::abs(**planned - solved) >=
             1e-3 * std::max(1., std::abs(**planned)))
-            std::fprintf(stderr, "MISMATCH t=%f planned=%.6f solved=%.6f\n",
-                         time_s(*rig), **planned, solved);
+          std::println(stderr, "MISMATCH t={:f} planned={:.6f} solved={:.6f}",
+                       time_s(*rig), **planned, solved);
         bt::require(std::abs(**planned - solved) <
                         1e-3 * std::max(1., std::abs(**planned)),
                     "the task coordinate predicts the measured weld torque");

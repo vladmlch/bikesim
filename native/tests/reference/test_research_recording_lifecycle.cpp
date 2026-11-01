@@ -61,8 +61,8 @@ namespace cli = bike::cli;
 // capsys twin, keeping ERROR/summary lines off the CTest log while letting a
 // failure message say what the command printed.
 [[nodiscard]] int run_cli(const cli::Arguments &args,
-                          std::string *out, std::string *err) {
-    std::ostringstream out_stream, err_stream;
+                          std::string *out, std::string *err) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+    const std::ostringstream out_stream, err_stream;
     auto *const cout_buf = std::cout.rdbuf(out_stream.rdbuf());
     auto *const cerr_buf = std::cerr.rdbuf(err_stream.rdbuf());
     const auto code = cli::research_command(args);
@@ -78,6 +78,11 @@ namespace cli = bike::cli;
 // monkeypatched env.seal_episode injection's native twin.
 class SealInterruptPolicy final : public CountingPolicy {
 public:
+    SealInterruptPolicy() = default;
+    SealInterruptPolicy(const SealInterruptPolicy &) = delete;
+    SealInterruptPolicy &operator=(const SealInterruptPolicy &) = delete;
+    SealInterruptPolicy(SealInterruptPolicy &&) = delete;
+    SealInterruptPolicy &operator=(SealInterruptPolicy &&) = delete;
     ~SealInterruptPolicy() override;
     bool armed = false;
     [[nodiscard]] io::Value metadata() const override {
@@ -93,6 +98,10 @@ class InterruptingPublication final : public research::ResearchPublication {
 public:
     explicit InterruptingPublication(std::shared_ptr<research::ResearchPublication> inner)
         : inner_(std::move(inner)) {}
+    InterruptingPublication(const InterruptingPublication &) = delete;
+    InterruptingPublication &operator=(const InterruptingPublication &) = delete;
+    InterruptingPublication(InterruptingPublication &&) = delete;
+    InterruptingPublication &operator=(InterruptingPublication &&) = delete;
     ~InterruptingPublication() override;
     [[nodiscard]] std::filesystem::path
     publish(std::span<const research::EpisodeReceipt> receipts,
@@ -136,92 +145,97 @@ void test_research_parser_defaults_off_and_resolves_check_policy() {
 // tests/reference/test_research_recording_lifecycle.py::
 //   test_policy_import_failure_publishes_zero_step_evidence
 void test_policy_import_failure_publishes_zero_step_evidence() {
-    Directory directory;
-    const auto output = directory.path / "run";
-    const auto out_text = output.string();
-    const std::vector<std::string_view> argv{
-        "--record", "--out", out_text, "--scenario", "flat", "--rider", "lumped",
-        "--duration", ".04", "--policy", "missing:factory"};
-    const auto args = cli::parse_arguments("bike-research", argv);
-    std::string out, err;
-    const auto code = run_cli(args, &out, &err);
-    bt::require(code == 3,
-                "a policy factory load failure exits 3 after publishing: " + err);
-    // manifests = list(output.glob('*/manifest.json'))
-    std::vector<std::filesystem::path> manifests;
-    for (const auto &entry : std::filesystem::directory_iterator(output))
-        if (std::filesystem::is_regular_file(entry.path() / "manifest.json"))
-            manifests.push_back(entry.path() / "manifest.json");
-    bt::require(manifests.size() == 1, "exactly one manifest publishes");
-    rec::Recording saved(manifests.front().parent_path());
-    const auto episode = saved.episode();
-    bt::require(io::as_int64(rd::field(episode, "physical_rows"), "physical_rows") == 0 &&
-                io::as_int64(rd::field(episode, "complete_control_steps"),
-                             "complete_control_steps") == 0,
-                "the failed launch publishes zero-step evidence");
-    bt::require(!io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
-                "policy-load failure evidence is not replay eligible");
-    bt::require(row_count(saved, "SELECT count(*) AS n FROM commands_requested") == 0,
-                "no command was ever requested");
-    bt::require(row_count(saved, "SELECT count(*) AS n FROM observations") == 1,
-                "only the startup observation is retained");
+  Directory const directory;
+  const auto output = directory.path / "run";
+  const auto out_text = output.string();
+  const std::vector<std::string_view> argv{
+      "--record", "--out",    out_text,         "--scenario",
+      "flat",     "--rider",  "lumped",         "--duration",
+      ".04",      "--policy", "missing:factory"};
+  const auto args = cli::parse_arguments("bike-research", argv);
+  std::string out, err;
+  const auto code = run_cli(args, &out, &err);
+  bt::require(code == 3,
+              "a policy factory load failure exits 3 after publishing: " + err);
+  // manifests = list(output.glob('*/manifest.json'))
+  std::vector<std::filesystem::path> manifests;
+  for (const auto &entry : std::filesystem::directory_iterator(output))
+    if (std::filesystem::is_regular_file(entry.path() / "manifest.json"))
+      manifests.push_back(entry.path() / "manifest.json");
+  bt::require(manifests.size() == 1, "exactly one manifest publishes");
+  rec::Recording const saved(manifests.front().parent_path());
+  const auto episode = saved.episode();
+  bt::require(
+      io::as_int64(rd::field(episode, "physical_rows"), "physical_rows") == 0 &&
+          io::as_int64(rd::field(episode, "complete_control_steps"),
+                       "complete_control_steps") == 0,
+      "the failed launch publishes zero-step evidence");
+  bt::require(
+      !io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
+      "policy-load failure evidence is not replay eligible");
+  bt::require(
+      row_count(saved, "SELECT count(*) AS n FROM commands_requested") == 0,
+      "no command was ever requested");
+  bt::require(row_count(saved, "SELECT count(*) AS n FROM observations") == 1,
+              "only the startup observation is retained");
 }
 
 // tests/reference/test_research_recording_lifecycle.py::
 //   test_out_without_record_never_publishes
 void test_out_without_record_never_publishes() {
-    Directory directory;
-    const auto output = directory.path / "run";
-    const auto out_text = output.string();
-    const std::vector<std::string_view> argv{
-        "--out", out_text, "--scenario", "flat", "--rider", "lumped",
-        "--duration", ".01"};
-    const auto args = cli::parse_arguments("bike-research", argv);
-    std::string out, err;
-    const auto code = run_cli(args, &out, &err);
-    bt::require(code == 0, "a clean headless run exits 0: " + err);
-    bt::require(!std::filesystem::exists(output),
-                "without --record the CLI writes no publication");
-    // The Python source asserts the retention legs on the env the patched
-    // make_environment returned; the native CLI owns its env internally, so
-    // the twin pins the same off-mode contract on a like-for-like env (the
-    // capture parity test covers it exhaustively).
-    auto env = environment({.duration_s = .01,
-                            .capture = runtime::ResearchCaptureMode::off});
-    (void)step(*env, motor_control(0.));
-    bt::require(env->commands_requested().empty() && env->commands_applied().empty() &&
-                env->observations().empty() && env->transitions().empty() &&
-                sw::integer(sw::required(env->status(), "recorded_rows")) == 0,
-                "off capture retains no history");
-    env->close();
+  Directory const directory;
+  const auto output = directory.path / "run";
+  const auto out_text = output.string();
+  const std::vector<std::string_view> argv{
+      "--out",   out_text, "--scenario", "flat",
+      "--rider", "lumped", "--duration", ".01"};
+  const auto args = cli::parse_arguments("bike-research", argv);
+  std::string out, err;
+  const auto code = run_cli(args, &out, &err);
+  bt::require(code == 0, "a clean headless run exits 0: " + err);
+  bt::require(!std::filesystem::exists(output),
+              "without --record the CLI writes no publication");
+  // The Python source asserts the retention legs on the env the patched
+  // make_environment returned; the native CLI owns its env internally, so
+  // the twin pins the same off-mode contract on a like-for-like env (the
+  // capture parity test covers it exhaustively).
+  auto env = environment(
+      {.duration_s = .01, .capture = runtime::ResearchCaptureMode::off});
+  (void)step(*env, motor_control(0.));
+  bt::require(
+      env->commands_requested().empty() && env->commands_applied().empty() &&
+          env->observations().empty() && env->transitions().empty() &&
+          sw::integer(sw::required(env->status(), "recorded_rows")) == 0,
+      "off capture retains no history");
+  env->close();
 }
 
 // tests/reference/test_research_recording_lifecycle.py::
 //   test_finish_second_ctrl_c_during_seal_journals_and_publishes — child mode.
 void test_finish_second_ctrl_c_during_seal_journals_and_publishes() {
-    Directory directory;
-    auto [env, publication] = recording_env(directory.path);
-    auto owner = std::make_unique<SealInterruptPolicy>();
-    auto *const policy = owner.get();
-    research::PolicySession session(std::move(env), std::move(owner));
-    research::ResearchRun launch(session, publication);
-    (void)step(session.environment(), motor_control(0.));
-    // The PolicySession constructor already captured its policy_metadata;
-    // arming now lands the second Ctrl-C inside the shielded seal.
-    policy->armed = true;
-    bool interrupted = false;
-    try {
-        (void)launch.finish();
-    } catch (const research::OperatorInterrupted &) {
-        interrupted = true;
-    }
+  Directory const directory;
+  auto [env, publication] = recording_env(directory.path);
+  auto owner = std::make_unique<SealInterruptPolicy>();
+  auto *const policy = owner.get();
+  research::PolicySession session(std::move(env), std::move(owner));
+  research::ResearchRun launch(session, publication);
+  (void)step(session.environment(), motor_control(0.));
+  // The PolicySession constructor already captured its policy_metadata;
+  // arming now lands the second Ctrl-C inside the shielded seal.
+  policy->armed = true;
+  bool interrupted = false;
+  try {
+    (void)launch.finish();
+  } catch (const research::OperatorInterrupted &) {
+    interrupted = true;
+  }
     bt::require(interrupted, "the deferred interrupt is honored after publication");
     const auto path = launch.finish(); // launch.path twin
     bt::require(path.has_value(), "the publication path is retained");
-    bt::require(std::filesystem::is_regular_file(*path / "manifest.json") &&
-                std::filesystem::is_regular_file(*path / "run.duckdb"),
+    bt::require(std::filesystem::is_regular_file((path).value() / "manifest.json") && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                std::filesystem::is_regular_file((path).value() / "run.duckdb"), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "manifest and database publish");
-    const auto kinds = event_kinds(*path);
+    const auto kinds = event_kinds((path).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(!kinds.empty() && kinds.front() == "episode_started",
                 "the first journaled event opens the episode");
     bt::require(std::ranges::find(kinds, "episode_ended") != kinds.end(),
@@ -234,19 +248,19 @@ void test_finish_second_ctrl_c_during_seal_journals_and_publishes() {
 // tests/reference/test_research_recording_lifecycle.py::
 //   test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes — child.
 void test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes() {
-    Directory directory;
-    auto [env, publication] = recording_env(directory.path);
-    research::ResearchRun launch(
-        *env, std::make_shared<InterruptingPublication>(publication));
-    (void)step(*env, motor_control(0.));
-    bool interrupted = false;
-    std::string message;
-    try {
-        (void)launch.finish();
-    } catch (const research::OperatorInterrupted &error) {
-        interrupted = true;
-        message = error.what();
-    }
+  Directory const directory;
+  auto [env, publication] = recording_env(directory.path);
+  research::ResearchRun launch(
+      *env, std::make_shared<InterruptingPublication>(publication));
+  (void)step(*env, motor_control(0.));
+  bool interrupted = false;
+  std::string message;
+  try {
+    (void)launch.finish();
+  } catch (const research::OperatorInterrupted &error) {
+    interrupted = true;
+    message = error.what();
+  }
     bt::require(interrupted &&
                     message.find("operator interrupt deferred") != std::string::npos,
                 "the deferred interrupt re-raises carrying the note");
@@ -254,7 +268,7 @@ void test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes() {
     bt::require(path.has_value() &&
                 std::filesystem::is_regular_file(*path / "manifest.json"),
                 "the publication lands before the interrupt is honored");
-    const auto kinds = event_kinds(*path);
+    const auto kinds = event_kinds((path).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(std::ranges::find(kinds, "operator_stop_deferred") == kinds.end(),
                 "a deferred interrupt inside finalize is not journaled");
     env->close();
@@ -283,7 +297,7 @@ void test_finish_off_main_thread_shield_degrades_but_records() {
     // finish() on a worker thread completes and publishes — the half of the
     // source test that has a native twin (see the header note for the
     // monkeypatched-shield leg that does not).
-    Directory directory;
+    Directory const directory;
     auto [env, publication] = recording_env(directory.path);
     research::ResearchRun launch(*env, publication);
     (void)step(*env, motor_control(0.));

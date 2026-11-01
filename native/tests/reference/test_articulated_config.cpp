@@ -107,7 +107,7 @@ void test_delivered_power_budgets_fall_back_to_capability_caps() {
         config.delivered_positive_power_budget_w = 750.;
         config.delivered_joint_power_budget_w = 375.;
         post_init(config);
-        bt::require(*config.delivered_positive_budget_w() == 750.,
+        bt::require(config.delivered_positive_budget_w().value() == 750., // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                     "the declared monitor budget wins");
         bt::require(config.delivered_joint_budget_w() == 375.,
                     "the declared joint monitor budget wins");

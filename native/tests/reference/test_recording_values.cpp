@@ -34,31 +34,31 @@ Wire energy(Wire residual) {
 }
 
 void test_optional_leaf_and_nullable_parent_have_separate_masks() {
-    bt::TemporaryDirectory dir("values-masks");
-    const double dt = 1. / 8;
-    // a: residual NaN      b: residual=None   c: energy without residual_j
-    // d: {energy: None}    e: {} (no energy key at all)
-    auto absent_leaf = energy_channels();
-    wire_erase(object_ref(absent_leaf, "energy"), "residual_j");
-    const std::array<WireObject, 5> cases{
-        WireObject{{"energy", energy(
-                       Wire{std::numeric_limits<double>::quiet_NaN()})}},
-        WireObject{{"energy", energy(Wire{})}},
-        std::move(absent_leaf),
-        WireObject{{"energy", Wire{}}},
-        WireObject{}};
-    std::vector<SamplePtr> rows;
-    for (std::int64_t i = 0; i < 5; ++i)
-        rows.push_back(sample_row(i, static_cast<double>(i) * dt, dt,
-                                  {}, {}, {}, {}, cases.at(static_cast<std::size_t>(i))));
-    auto capture = capture_rows(std::move(rows));
-    const auto reader = sealed(rec::finalize(*capture, dir.path()).directory);
-    const auto stored = reader->rows(
-        "SELECT residual_j,residual_j_present,__energy_present,__energy_valid "
-        "FROM channel_energy ORDER BY interval_id");
-    bt::require(stored.size() == 5, "five energy rows");
-    const auto expect = [&](std::size_t i, bool residual_present,
-                            bool energy_present, bool energy_valid) {
+  bt::TemporaryDirectory const dir("values-masks");
+  const double dt = 1. / 8;
+  // a: residual NaN      b: residual=None   c: energy without residual_j
+  // d: {energy: None}    e: {} (no energy key at all)
+  auto absent_leaf = energy_channels();
+  wire_erase(object_ref(absent_leaf, "energy"), "residual_j");
+  const std::array<WireObject, 5> cases{
+      WireObject{
+          {"energy", energy(Wire{std::numeric_limits<double>::quiet_NaN()})}},
+      WireObject{{"energy", energy(Wire{})}}, std::move(absent_leaf),
+      WireObject{{"energy", Wire{}}}, WireObject{}};
+  std::vector<SamplePtr> rows;
+  rows.reserve(5);
+  for (std::int64_t i = 0; i < 5; ++i)
+    rows.push_back(sample_row(i, static_cast<double>(i) * dt, dt, {}, {}, {},
+                              {}, cases.at(static_cast<std::size_t>(i))));
+  auto capture = capture_rows(std::move(rows));
+  const auto reader = sealed(rec::finalize(*capture, dir.path()).directory);
+  const auto stored = reader->rows(
+      "SELECT residual_j,residual_j_present,__energy_present,__energy_valid "
+      "FROM channel_energy ORDER BY interval_id");
+  bt::require(stored.size() == 5, "five energy rows");
+  const auto expect =
+      [&](std::size_t i, bool residual_present, bool energy_present,
+          bool energy_valid) {
         bt::require(io::as_bool(
                         detail::field(stored[i], "residual_j_present"), "p") ==
                         residual_present &&
@@ -68,44 +68,45 @@ void test_optional_leaf_and_nullable_parent_have_separate_masks() {
                         energy_valid,
                     "presence masks track the authored tree");
         if (!residual_present)
-            bt::require(io::is_null(detail::field(stored[i], "residual_j")),
-                        "absent leaves decode as NULL");
-    };
-    bt::require(std::isnan(io::tagged_double(
-                    detail::field(stored[0], "residual_j"), "r")) &&
-                io::as_bool(detail::field(stored[0], "residual_j_present"), "p") &&
-                io::as_bool(detail::field(stored[0], "__energy_present"), "p") &&
-                io::as_bool(detail::field(stored[0], "__energy_valid"), "v"),
-                "NaN stays a real typed value, not a NULL");
-    expect(1, true, true, true);  // explicit None: present leaf, NULL value
-    bt::require(io::is_null(detail::field(stored[1], "residual_j")),
-                "explicit null decodes as NULL with the present flag set");
-    expect(2, false, true, true); // leaf absent inside a live parent
-    expect(3, false, true, false); // null parent: present, not valid
-    expect(4, false, false, false); // absent parent: neither mask
-    const auto types = reader->rows(
-        "SELECT typeof(interval_id) AS id_type, typeof(qpos) AS qpos_type "
-        "FROM physics LIMIT 1");
-    bt::require(io::as_string(detail::field(types[0], "id_type"), "t") ==
-                    "BIGINT" &&
-                io::as_string(detail::field(types[0], "qpos_type"), "t") ==
-                    "DOUBLE[]",
-                "typed columns keep BIGINT/DOUBLE[] storage types");
+          bt::require(io::is_null(detail::field(stored[i], "residual_j")),
+                      "absent leaves decode as NULL");
+      };
+  bt::require(
+      std::isnan(
+          io::tagged_double(detail::field(stored[0], "residual_j"), "r")) &&
+          io::as_bool(detail::field(stored[0], "residual_j_present"), "p") &&
+          io::as_bool(detail::field(stored[0], "__energy_present"), "p") &&
+          io::as_bool(detail::field(stored[0], "__energy_valid"), "v"),
+      "NaN stays a real typed value, not a NULL");
+  expect(1, true, true, true); // explicit None: present leaf, NULL value
+  bt::require(io::is_null(detail::field(stored[1], "residual_j")),
+              "explicit null decodes as NULL with the present flag set");
+  expect(2, false, true, true);   // leaf absent inside a live parent
+  expect(3, false, true, false);  // null parent: present, not valid
+  expect(4, false, false, false); // absent parent: neither mask
+  const auto types = reader->rows(
+      "SELECT typeof(interval_id) AS id_type, typeof(qpos) AS qpos_type "
+      "FROM physics LIMIT 1");
+  bt::require(io::as_string(detail::field(types[0], "id_type"), "t") ==
+                      "BIGINT" &&
+                  io::as_string(detail::field(types[0], "qpos_type"), "t") ==
+                      "DOUBLE[]",
+              "typed columns keep BIGINT/DOUBLE[] storage types");
 }
 
 void test_synthetic_value_cases_cover_the_reviewed_optional_matrix() {
-    bt::TemporaryDirectory dir("values-matrix");
-    SyntheticCapture options;
-    options.value_cases = true;
-    auto capture = synthetic_capture({}, std::move(options));
-    const auto reader = sealed(rec::finalize(*capture, dir.path()).directory);
-    const auto stored = reader->rows(
-        "SELECT residual_j,residual_j_present,__energy_present,__energy_valid,"
-        "measured,source_interval_id,source_time_s "
-        "FROM channel_energy ORDER BY interval_id");
-    bt::require(stored.size() == 9, "the optional matrix has nine rows");
-    const auto expect_masks = [&](std::size_t i, bool leaf, bool present,
-                                  bool valid) {
+  bt::TemporaryDirectory const dir("values-matrix");
+  SyntheticCapture options;
+  options.value_cases = true;
+  auto capture = synthetic_capture({}, std::move(options));
+  const auto reader = sealed(rec::finalize(*capture, dir.path()).directory);
+  const auto stored = reader->rows(
+      "SELECT residual_j,residual_j_present,__energy_present,__energy_valid,"
+      "measured,source_interval_id,source_time_s "
+      "FROM channel_energy ORDER BY interval_id");
+  bt::require(stored.size() == 9, "the optional matrix has nine rows");
+  const auto expect_masks =
+      [&](std::size_t i, bool leaf, bool present, bool valid) {
         bt::require(io::as_bool(
                         detail::field(stored[i], "residual_j_present"), "p") ==
                         leaf &&
@@ -114,27 +115,27 @@ void test_synthetic_value_cases_cover_the_reviewed_optional_matrix() {
                     io::as_bool(detail::field(stored[i], "__energy_valid"), "v") ==
                         valid,
                     "matrix mask combination matches the oracle");
-    };
-    expect_masks(0, true, true, true);
-    bt::require(std::isnan(io::tagged_double(
-                    detail::field(stored[0], "residual_j"), "r")),
-                "NaN case");
-    expect_masks(1, true, true, true);
-    bt::require(io::is_null(detail::field(stored[1], "residual_j")),
-                "explicit-null case");
-    expect_masks(2, false, true, true); // absent leaf
-    expect_masks(3, false, true, false); // null parent
-    expect_masks(4, false, false, false); // absent parent
-    // IEEE-ordered value cases: +0., -0. (equal under ==), +inf, -inf.
-    const std::array<double, 4> expected{0., 0.,
-                                         std::numeric_limits<double>::infinity(),
-                                         -std::numeric_limits<double>::infinity()};
-    for (std::size_t i = 5; i < 9; ++i) {
-        expect_masks(i, true, true, true);
-        bt::require(io::tagged_double(detail::field(stored[i], "residual_j"),
-                                      "r") == expected.at(i - 5),
-                    "ordered value case round-trips");
-    }
+      };
+  expect_masks(0, true, true, true);
+  bt::require(std::isnan(io::tagged_double(
+                  detail::field(stored[0], "residual_j"), "r")),
+              "NaN case");
+  expect_masks(1, true, true, true);
+  bt::require(io::is_null(detail::field(stored[1], "residual_j")),
+              "explicit-null case");
+  expect_masks(2, false, true, true);   // absent leaf
+  expect_masks(3, false, true, false);  // null parent
+  expect_masks(4, false, false, false); // absent parent
+  // IEEE-ordered value cases: +0., -0. (equal under ==), +inf, -inf.
+  const std::array<double, 4> expected{
+      0., 0., std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity()};
+  for (std::size_t i = 5; i < 9; ++i) {
+    expect_masks(i, true, true, true);
+    bt::require(io::tagged_double(detail::field(stored[i], "residual_j"),
+                                  "r") == expected.at(i - 5),
+                "ordered value case round-trips");
+  }
     // Signed-zero fidelity is asserted on the AUTHORED row: DuckDB may or
     // may not preserve the sign bit through storage; IEEE equality does.
     const auto &authored = value_case_rows();
@@ -158,40 +159,39 @@ void test_synthetic_value_cases_cover_the_reviewed_optional_matrix() {
 }
 
 void test_resealed_presence_contradiction_is_rejected_before_readout() {
-    bt::TemporaryDirectory dir("values-tamper");
-    auto capture = capture_rows(
-        {sample_row(0, 0., .00125, {}, {}, {}, {}, energy_channels())});
-    const auto path = rec::finalize(*capture, dir.path()).directory;
-    mutate_database(path,
-                    "UPDATE channel_energy SET residual_j_present=false");
-    throws<std::invalid_argument>(
-        [&] { (void)Recording(path); }, "presence",
-        "a rehashed presence-flag contradiction is rejected on open");
+  bt::TemporaryDirectory const dir("values-tamper");
+  auto capture = capture_rows(
+      {sample_row(0, 0., .00125, {}, {}, {}, {}, energy_channels())});
+  const auto path = rec::finalize(*capture, dir.path()).directory;
+  mutate_database(path, "UPDATE channel_energy SET residual_j_present=false");
+  throws<std::invalid_argument>(
+      [&] { (void)Recording(path); }, "presence",
+      "a rehashed presence-flag contradiction is rejected on open");
 }
 
 void test_export_reads_each_native_batch_once_without_legacy_columns() {
     const double dt = 1. / 8;
-    auto episode = std::make_shared<runtime::OwnedNativeEpisode>();
+    auto const episode = std::make_shared<runtime::OwnedNativeEpisode>();
     episode->generation = 1;
     for (int i = 0; i < 5; ++i)
         episode->samples.push_back(sample_row(i, i * dt, dt));
     const auto source = make_source(episode);
     std::vector<std::pair<std::string, std::int64_t>> calls;
-    auto sink = [&](std::string_view table, runtime::EncodedTable &&piece) {
-        calls.emplace_back(std::string(table), piece.rows);
+    auto const sink = [&](std::string_view table,
+                          runtime::EncodedTable &&piece) { // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved) callback signature is fixed by the API; the argument is consumed-read
+      calls.emplace_back(std::string(table), piece.rows);
     };
     source->tables(2, sink);
     std::size_t physics_calls = 0;
     std::int64_t physics_rows = 0;
     for (const auto &[table, count] : calls) {
-        bt::require(table.rfind("legacy_", 0) != 0,
-                    "the spec projection emits no legacy_* table");
-        if (table == "physics") {
-            ++physics_calls;
-            physics_rows += count;
-            bt::require(count <= 2,
-                        "each batch honours the requested bound");
-        }
+      bt::require(!table.starts_with("legacy_"),
+                  "the spec projection emits no legacy_* table");
+      if (table == "physics") {
+        ++physics_calls;
+        physics_rows += count;
+        bt::require(count <= 2, "each batch honours the requested bound");
+      }
     }
     bt::require(physics_calls == 3 && physics_rows == 5,
                 "five rows are decomposed into bounded batches, each read once");
@@ -213,8 +213,9 @@ void test_ordinary_commands_tolerate_explicit_null_optional_drive() {
     };
     const auto first_applied = [](const auto &source) {
         std::optional<runtime::EncodedTable> applied;
-        auto sink = [&](std::string_view, runtime::EncodedTable &&piece) {
-            if (!applied) applied = std::move(piece);
+        auto const sink = [&](std::string_view, runtime::EncodedTable &&piece) {
+          if (!applied)
+            applied = std::move(piece);
         };
         source->tables(4, sink);
         return applied;
@@ -226,11 +227,11 @@ void test_ordinary_commands_tolerate_explicit_null_optional_drive() {
         const auto applied = first_applied(source);
         bt::require(applied && applied->rows == 1,
                     "commands_applied leads the first batch");
-        const auto demand = applied->columns.find("front_brake_demand");
+        const auto demand = applied.value().columns.find("front_brake_demand"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         const auto flag =
-            applied->columns.find("front_brake_demand_present");
-        bt::require(demand != applied->columns.end() &&
-                    flag != applied->columns.end(),
+            applied.value().columns.find("front_brake_demand_present"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+        bt::require(demand != applied.value().columns.end() && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    flag != applied.value().columns.end(), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                     "optional drive demand exports a presence pair");
         bt::require(demand->second.valid.size() == 1 &&
                     demand->second.valid[0] == 0 &&

@@ -64,7 +64,7 @@ inline constexpr std::array<std::int64_t, 2> kRays{64, 256};
 // bt::oracle::Node("tests/reference/<file>::<function>[<parameters>]") —
 // the exact pytest node id the capture recorded.
 [[nodiscard]] inline bt::oracle::Node node(std::string_view file,
-                                           std::string_view function,
+                                           std::string_view function, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                            std::string_view parameters = {}) {
     std::string name = "tests/reference/" + std::string(file) +
                        "::" + std::string(function);
@@ -130,7 +130,7 @@ using bike::io::repr_binary64;
 using bike::geometry::detail::np_linspace;
 
 // np.arange(n) * step — the corpus grid generator.
-[[nodiscard]] inline std::vector<double> arange_scaled(std::size_t n,
+[[nodiscard]] inline std::vector<double> arange_scaled(std::size_t n, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                                        double step) {
     std::vector<double> x(n);
     for (std::size_t i = 0; i < n; ++i) x[i] = static_cast<double>(i) * step;
@@ -157,7 +157,7 @@ inline constexpr std::array<std::string_view, 5> kSurfaceNames{
 
 // The unit-law surface the clip-boundary tests construct — friction
 // limit == mu == 1.0 at v_s == 0 with loads = 1.0.
-inline const nativecfg::SurfaceSpec kUnitSurface{
+inline const nativecfg::SurfaceSpec kUnitSurface{ // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
         .name = "unit",
         .mu_peak = 1.0,
         .mu_slide = 0.5,
@@ -182,12 +182,11 @@ void rejects(F &&action, std::string_view needle = {},
         std::forward<F>(action)();
     } catch (const Exception &failure) {
         thrown = true;
-        bt::require(needle.empty() ||
-                            std::string_view(failure.what())
-                                            .find(needle) !=
-                                    std::string_view::npos,
-                    (std::string("exception text lacks '") +=
-                     std::string(needle)) += "'");
+        bt::require(
+            needle.empty() || std::string_view(failure.what()).find(needle) !=
+                                  std::string_view::npos,
+            (std::string("exception text lacks '") += std::string(needle)) +=
+            '\'');
     }
     bt::require(thrown, (std::string("expected rejection at ") +=
                          loc.file_name()) += ":" +
@@ -333,10 +332,10 @@ inline void consume_patches(bt::oracle::Node &golden,
 // check_oracle_state(want, oracle_state, tag) callback.
 // ---------------------------------------------------------------------
 struct CarcassStep {
-    bool evaluate;
-    biketyre::RayHits hits;
-    double dt_s = 0.0, omega_radps = 0.0, speed_mps = 0.0;
-    double dtheta_rad = 0.0, relaxation_s = 0.0;
+  bool evaluate{};
+  biketyre::RayHits hits;
+  double dt_s = 0.0, omega_radps = 0.0, speed_mps = 0.0;
+  double dtheta_rad = 0.0, relaxation_s = 0.0;
 };
 
 [[nodiscard]] inline CarcassStep eval_step(biketyre::RayHits hits,

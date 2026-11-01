@@ -27,6 +27,7 @@
 #include <optional>
 #include <ranges>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -51,23 +52,29 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 bt::ModelFixture stand(std::string_view kind) {
-    std::string xml =
-        "<mujoco><option gravity=\"0 0 0\" timestep=\".0005\" tolerance=\"1e-12\"/>";
-    if (kind == "weld") {
-        xml += "<worldbody><body name=\"a\"><freejoint/><inertial mass=\"2\" pos=\".1 0 0\" diaginertia=\"1 1 1\"/></body>"
-               "<body name=\"b\"><freejoint/><inertial mass=\"1\" pos=\"0 0 .1\" diaginertia=\".5 .5 .5\"/></body></worldbody>"
-               "<equality><weld body1=\"a\" body2=\"b\" solref=\".005 1\"/></equality>";
-    } else {
-        xml += std::string("<worldbody><body><joint name=\"a\" type=\"slide\" axis=\"1 0 0\"") +
-               (kind == "friction" ? " frictionloss=\"2\"" : "") +
-               "/><inertial mass=\"1\" pos=\"0 0 0\" diaginertia=\"1 1 1\"/></body>"
-               "<body><joint name=\"b\" type=\"slide\" axis=\"1 0 0\"/>"
-               "<inertial mass=\"2\" pos=\"0 0 0\" diaginertia=\"1 1 1\"/></body></worldbody>";
-        if (kind == "tendon")
-            xml += "<tendon><fixed limited=\"true\" range=\"-10 0\">"
-                   "<joint joint=\"a\" coef=\"1\"/><joint joint=\"b\" coef=\"-1\"/>"
-                   "</fixed></tendon>";
-    }
+  std::string xml =
+      R"(<mujoco><option gravity="0 0 0" timestep=".0005" tolerance="1e-12"/>)";
+  if (kind == "weld") {
+    xml += "<worldbody><body name=\"a\"><freejoint/><inertial mass=\"2\" "
+           "pos=\".1 0 0\" diaginertia=\"1 1 1\"/></body>"
+           "<body name=\"b\"><freejoint/><inertial mass=\"1\" pos=\"0 0 .1\" "
+           "diaginertia=\".5 .5 .5\"/></body></worldbody>"
+           "<equality><weld body1=\"a\" body2=\"b\" solref=\".005 "
+           "1\"/></equality>";
+  } else {
+    xml +=
+        std::string(
+            R"(<worldbody><body><joint name="a" type="slide" axis="1 0 0")") +
+        (kind == "friction" ? " frictionloss=\"2\"" : "") +
+        "/><inertial mass=\"1\" pos=\"0 0 0\" diaginertia=\"1 1 1\"/></body>"
+        "<body><joint name=\"b\" type=\"slide\" axis=\"1 0 0\"/>"
+        "<inertial mass=\"2\" pos=\"0 0 0\" diaginertia=\"1 1 "
+        "1\"/></body></worldbody>";
+    if (kind == "tendon")
+      xml += "<tendon><fixed limited=\"true\" range=\"-10 0\">"
+             "<joint joint=\"a\" coef=\"1\"/><joint joint=\"b\" coef=\"-1\"/>"
+             "</fixed></tendon>";
+  }
     xml += "</mujoco>";
     bt::ModelFixture rig(xml);
     if (kind == "tendon")
@@ -78,19 +85,17 @@ bt::ModelFixture stand(std::string_view kind) {
 
 // The oracle's `model.eq_solimp[:,:2] = impedance` /
 // `model.tendon_solimp_lim[:,:2] = impedance` row writes (mjNIMP columns).
-void set_impedance(mjModel *model, double impedance) {
-    const auto solimp = model_access::mutable_buffer(
-        model->eq_solimp, model->neq * mjNIMP, "eq_solimp");
-    for (std::size_t i = 0; i < static_cast<std::size_t>(model->neq); ++i)
-        for (std::size_t j = 0; j < 2; ++j)
-            solimp[i * mjNIMP + j] = impedance;
-    const auto limp = model_access::mutable_buffer(
-        model->tendon_solimp_lim, model->ntendon * mjNIMP,
-        "tendon_solimp_lim");
-    for (std::size_t i = 0; i < static_cast<std::size_t>(model->ntendon);
-         ++i)
-        for (std::size_t j = 0; j < 2; ++j)
-            limp[i * mjNIMP + j] = impedance;
+void set_impedance(mjModel const *model, double impedance) {
+  const auto solimp = model_access::mutable_buffer(
+      model->eq_solimp, model->neq * mjNIMP, "eq_solimp");
+  for (std::size_t i = 0; std::cmp_less(i, model->neq); ++i)
+    for (std::size_t j = 0; j < 2; ++j)
+      solimp[i * mjNIMP + j] = impedance;
+  const auto limp = model_access::mutable_buffer(
+      model->tendon_solimp_lim, model->ntendon * mjNIMP, "tendon_solimp_lim");
+  for (std::size_t i = 0; std::cmp_less(i, model->ntendon); ++i)
+    for (std::size_t j = 0; j < 2; ++j)
+      limp[i * mjNIMP + j] = impedance;
 }
 
 [[gnu::noinline]] void test_model_response_predicts_current_acceleration_and_all_reactions() {
@@ -109,8 +114,8 @@ void set_impedance(mjModel *model, double impedance) {
                     applied[nv - 1] = .1;
                     engine::forward(rig.model.get(), rig.data.get());
                     const std::array<int, 1> dofs{0};
-                    rider::ConstraintDynamics kernel(*rig.model, *rig.data,
-                                                     dofs);
+                    rider::ConstraintDynamics const kernel(*rig.model,
+                                                           *rig.data, dofs);
                     const Vector wish{torque};
                     const auto response = kernel.linearize(wish);
                     const auto predicted_a =
@@ -155,7 +160,10 @@ void set_impedance(mjModel *model, double impedance) {
     const auto nv = static_cast<std::size_t>(rig.model->nv);
     const auto forces = model_access::mutable_buffer(
         rig.data->efc_force, rig.data->nefc, "efc_force");
-    for (std::size_t i = 0; i < forces.size(); ++i)
+    // A range-for over the span would bind a `double` copy and the write
+    // would not reach the buffer; indexed assignment through forces[] is
+    // the load-bearing idiom here.
+    for (std::size_t i = 0; i < forces.size(); ++i) // NOLINT(modernize-loop-convert) indexed write must reach the buffer
         forces[i] = std::numeric_limits<double>::quiet_NaN();
     const auto constraint = model_access::mutable_buffer(
         rig.data->qfrc_constraint, rig.model->nv, "qfrc_constraint");
@@ -180,7 +188,7 @@ void set_impedance(mjModel *model, double impedance) {
                                  "qpos")[0] = 1e-5;
     engine::forward(rig.model.get(), rig.data.get());
     const std::array<int, 1> dofs{0};
-    rider::ConstraintDynamics kernel(*rig.model, *rig.data, dofs);
+    rider::ConstraintDynamics const kernel(*rig.model, *rig.data, dofs);
     const auto engaged = kernel.linearize(Vector{20.});
     const auto free = kernel.linearize(Vector{-20.});
     bt::require(engaged.mode != free.mode,
@@ -206,7 +214,7 @@ void set_impedance(mjModel *model, double impedance) {
     auto rig = stand("friction");
     engine::forward(rig.model.get(), rig.data.get());
     const std::array<int, 1> dofs{0};
-    rider::ConstraintDynamics kernel(*rig.model, *rig.data, dofs);
+    rider::ConstraintDynamics const kernel(*rig.model, *rig.data, dofs);
     const Vector wish{20.};
     const auto solve = [&](const rider::ConstraintResponse &response) {
         // Declared support bound tau <= 1 conflicts with the wish's sliding
@@ -253,7 +261,7 @@ void set_impedance(mjModel *model, double impedance) {
     auto rig = stand("weld");
     engine::forward(rig.model.get(), rig.data.get());
     const std::array<int, 1> dofs{4};
-    rider::ConstraintDynamics kernel(*rig.model, *rig.data, dofs);
+    rider::ConstraintDynamics const kernel(*rig.model, *rig.data, dofs);
     const auto response = kernel.linearize(Vector{10.});
     const int body_a = mj_name2id(rig.model.get(), mjOBJ_BODY, "a");
     const int body_b = mj_name2id(rig.model.get(), mjOBJ_BODY, "b");
@@ -273,7 +281,7 @@ void set_impedance(mjModel *model, double impedance) {
     model_access::mutable_buffer(rig.data->qfrc_applied, rig.model->nv,
                                  "qfrc_applied")[4] = 10.;
     engine::forward(rig.model.get(), rig.data.get());
-    ::rider::EqualityReactions reactions(rig.model.get());
+    ::rider::EqualityReactions const reactions(rig.model.get());
     ::rider::LeastSquaresWorkspace workspace{16, 16, 1};
     std::vector<double> scratch(static_cast<std::size_t>(rig.model->nv), 0.);
     const std::array<double, 3> normal{0., 0., 1.};
@@ -328,7 +336,7 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
     bike::configuration::ArticulatedConfig config;
     config.active_positive_power_limit_w = 450.;
     rider::ResponseRequest request;
-    request.config = config;
+    request.config = std::move(config);
     request.actuator_dofs = {3};
     request.rider_dofs = {3, 4, 5};
     request.bike_dofs = {0, 1, 2};
@@ -430,35 +438,33 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
 [[gnu::noinline]] void test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps() {
     // tests/reference/test_rider_dynamics.py::test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps
     {
-        rider::ActivationLaw clamped({100., 100.}, {10., 10.}, {-40., -40.},
-                                     {40., 40.}, .005, .04, 450.);
-        const auto delivered = clamped.delivered(Vector{40., 40.});
-        allclose(delivered, Vector{22.5, 22.5}, 1e-7, 0.,
-                 "whole-body clamped delivery");
-        const auto latent = clamped.latent(Vector{40., 40.});
-        bt::require(std::ranges::all_of(
-                        latent, [](double v) { return v > 40.; }),
-                    "the latent excitation stays above the clamp");
+      rider::ActivationLaw const clamped({100., 100.}, {10., 10.}, {-40., -40.},
+                                         {40., 40.}, .005, .04, 450.);
+      const auto delivered = clamped.delivered(Vector{40., 40.});
+      allclose(delivered, Vector{22.5, 22.5}, 1e-7, 0.,
+               "whole-body clamped delivery");
+      const auto latent = clamped.latent(Vector{40., 40.});
+      bt::require(std::ranges::all_of(latent, [](double v) { return v > 40.; }),
+                  "the latent excitation stays above the clamp");
     }
     {
-        rider::ActivationLaw law({20., 20.}, {20., 10.}, {-50., -50.},
-                                 {50., 50.}, .005, .04, 450.);
-        const Vector excitation{10., 40.};
-        const double epsilon = 1e-4;
-        const auto analytic = law.derivative(excitation);
-        for (std::size_t i = 0; i < 2; ++i) {
-            auto plus = excitation, minus = excitation;
-            plus[i] += epsilon;
-            minus[i] -= epsilon;
-            const auto forward = law.delivered(plus);
-            const auto backward = law.delivered(minus);
-            for (std::size_t r = 0; r < forward.size(); ++r)
-                bt::require(
-                    approx(analytic.values[r * analytic.cols + i],
-                           (forward[r] - backward[r]) / (2. * epsilon),
-                           0., 1e-8),
-                    "the activation Jacobian matches central differences");
-        }
+      rider::ActivationLaw const law({20., 20.}, {20., 10.}, {-50., -50.},
+                                     {50., 50.}, .005, .04, 450.);
+      const Vector excitation{10., 40.};
+      const double epsilon = 1e-4;
+      const auto analytic = law.derivative(excitation);
+      for (std::size_t i = 0; i < 2; ++i) {
+        auto plus = excitation, minus = excitation;
+        plus[i] += epsilon;
+        minus[i] -= epsilon;
+        const auto forward = law.delivered(plus);
+        const auto backward = law.delivered(minus);
+        for (std::size_t r = 0; r < forward.size(); ++r)
+          bt::require(approx(analytic.values[r * analytic.cols + i],
+                             (forward[r] - backward[r]) / (2. * epsilon), 0.,
+                             1e-8),
+                      "the activation Jacobian matches central differences");
+      }
         const auto delivered = law.delivered(excitation);
         bt::require(approx(d::dot(delivered, Vector{20., 10.}), 450.,
                            1e-6, 1e-12),

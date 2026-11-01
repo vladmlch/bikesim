@@ -23,6 +23,7 @@
 #include <iterator>
 #include <sstream>
 #include <unistd.h>
+#include <utility>
 
 namespace {
 
@@ -393,9 +394,10 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
 // tests/reference/test_alpine_track.py::test_different_seeds_differ
 [[gnu::noinline]] void test_different_seeds_differ() {
     std::vector<std::string> dumps;
+    dumps.reserve(8);
     for (std::uint64_t seed = 0; seed < 8; ++seed)
-        dumps.push_back(terrain::dump_track(terrain::generate_alpine_track(
-                AlpineGenSpec{}, seed)));
+      dumps.push_back(terrain::dump_track(
+          terrain::generate_alpine_track(AlpineGenSpec{}, seed)));
     std::ranges::sort(dumps);
     bt::require(std::ranges::adjacent_find(dumps) == dumps.end() &&
                         dumps.size() == 8,
@@ -431,7 +433,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                         "sections inside the body");
         const std::array<double, 6> x{0., 5., 10., 105., 112., 120.};
         for (const double slope :
-             track.grade_profile->slope(std::span<const double>(x)))
+             track.grade_profile.value().slope(std::span<const double>(x))) // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
             bt::require(slope == 0., "grade flat outside the body");
 
         std::size_t scree = 0;
@@ -478,16 +480,13 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
             }
         }
         bt::require(1 <= gardens &&
-                            gardens <= static_cast<std::size_t>(
-                                    spec.n_rock_gardens[1]),
+                        std::cmp_less_equal(gardens, spec.n_rock_gardens[1]),
                     "rock-garden count inside its range");
         bt::require(1 <= boulders &&
-                            boulders <= static_cast<std::size_t>(
-                                    spec.n_boulders[1]),
+                        std::cmp_less_equal(boulders, spec.n_boulders[1]),
                     "boulder count inside its range");
         bt::require(1 <= bowls &&
-                            bowls <= static_cast<std::size_t>(
-                                    spec.n_water_bars[1]),
+                        std::cmp_less_equal(bowls, spec.n_water_bars[1]),
                     "water-bar count inside its range");
         bt::require(!square_edge, "no sharp edges by default");
         bt::require(terrain::build_field_data(track).size() ==
@@ -511,7 +510,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
 // roll_multi_support_count — the 5 mm raster ground truth through the
 // production ProfileQuery.
 [[nodiscard]] std::int64_t roll_multi_support_count(
-        const terrain::TrackSpec &track, double radius, double delta_m = .010,
+        const terrain::TrackSpec &track, double radius, double delta_m = .010, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
         double step_m = .005) {
     const cfg::TireBackendConfig config;
     const auto x = terrain::detail::arange(
@@ -716,7 +715,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     const auto custom = bike::research::resolve_research_track(
             std::nullopt, "alpine", spec_file, "3");
     const auto x = bike::geometry::detail::np_linspace(0., 120., 1201);
-    const auto custom_slope = custom.grade_profile->slope(x);
+    const auto custom_slope = custom.grade_profile.value().slope(x); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(*std::ranges::max_element(custom_slope) <= .24 + 1e-12,
                 "the custom genspec caps the wall grade");
     std::filesystem::remove(spec_file);

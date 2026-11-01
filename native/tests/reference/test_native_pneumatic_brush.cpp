@@ -765,9 +765,8 @@ void test_discretised_pow_overflow_mid_step_commit() {
 // raises (through the state dict intake for the native kernel, which
 // funnels into the same ctor).
 void test_discretised_construction_rejection() {
-    rejects<std::invalid_argument>(
-            [] { biketyre::DiscretisedBrush empty(0); },
-            "at least 1 element");
+  rejects<std::invalid_argument>(
+      [] { biketyre::DiscretisedBrush const empty(0); }, "at least 1 element");
 }
 
 // test_discretised_partial_inactive_patch_bitwise — a lopsided patch:
@@ -932,13 +931,12 @@ int main() {
                 {800.0, 0.005},
                 {5.0, 1e-9},
         }};
-        for (std::size_t t = 0; t < treads.size(); ++t)
-            for (std::size_t lh = 0; lh < load_half.size(); ++lh)
-                for (std::size_t s = 0; s < 5; ++s)
-                    test_tread_stiffness_bitwise(
-                            s, load_half_v[lh], treads[t].first,
-                            treads[t].second, load_half[lh][0],
-                            load_half[lh][1]);
+        for (const auto &tread : treads)
+          for (std::size_t lh = 0; lh < load_half.size(); ++lh)
+            for (std::size_t s = 0; s < 5; ++s)
+              test_tread_stiffness_bitwise(s, load_half_v[lh], tread.first,
+                                           tread.second, load_half[lh][0],
+                                           load_half[lh][1]);
         test_tread_stiffness_rejections();
         for (std::size_t s = 0; s < 5; ++s)
             test_surface_mu_bitwise(s);

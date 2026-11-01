@@ -26,8 +26,6 @@
 namespace {
 using runtime::AccountingConfig;
 using runtime::AccountingState;
-using runtime::AsyncCloseRunner;
-using runtime::AsyncPublicationError;
 using runtime::InvalidReferenceRun;
 using runtime::RawStep;
 using runtime::ReferenceFailure;

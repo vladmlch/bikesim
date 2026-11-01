@@ -50,7 +50,7 @@ void captured_tire_characterization(){
     auto bad=config;set(bad,"duration_s",value::real(.5001));bt::invalid([&]{(void)run_case("tire-characterization",bad);});
     bad=std::move(config);set(bad,"loads_n",Value{Array{}});bt::invalid([&]{(void)run_case("tire-characterization",bad);});
 }
-void verdict_fixture(std::string_view name,std::string_view case_id){
+void verdict_fixture(std::string_view name,std::string_view case_id){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     // RCP-16 freeze (tools/migration/capture_reference.py): one authored
     // config plus the oracle's verdict for the same pure-arithmetic inputs
     // the native run_case dispatch consumes — binary64-exact evidence, so a

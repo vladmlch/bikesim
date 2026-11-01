@@ -43,18 +43,19 @@ void test_pneumatic_ring_narrow_angle() {
 // monotonicity and coverage flags). Returns the branch enum and the
 // coverage flag the corpus expectation carries.
 // ---------------------------------------------------------------------
-enum class Branch { early_window, airborne, fast, brute };
+enum class Branch : std::uint8_t { early_window, airborne, fast, brute };
 
 struct BranchOutcome {
-    Branch branch;
+    Branch branch = Branch::early_window;
     bool coverage = false;
 };
 
 [[nodiscard]] BranchOutcome oracle_branch(const biketyre::RoadProfile &road,
-                                          double cx, double cz,
+                                          double cx, double cz, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                           double radius, double half) {
     const auto [lo, hi] = road.index_range(cx - radius, cx + radius);
-    if (hi - lo < 2) return {Branch::early_window, false};
+    if (hi - lo < 2)
+      return {.branch = Branch::early_window, .coverage = false};
     const auto zs = road.z_m();
     const auto count = static_cast<std::size_t>(hi - lo);
     std::vector<double> xs(count), pz(count), phi_scratch;
@@ -71,7 +72,7 @@ struct BranchOutcome {
     if (std::ranges::none_of(inside, [](const char flag) {
             return flag != 0;
         }))
-        return {Branch::airborne, false};
+      return {.branch = Branch::airborne, .coverage = false};
     std::size_t first = 0;
     while (!inside[first]) ++first;
     std::size_t last = count - 1;
@@ -94,9 +95,10 @@ struct BranchOutcome {
                 monotone = false;
                 break;
             }
-        if (monotone) return {Branch::fast, coverage};
+        if (monotone)
+          return {.branch = Branch::fast, .coverage = coverage};
     }
-    return {Branch::brute, coverage};
+    return {.branch = Branch::brute, .coverage = coverage};
 }
 
 // ---------------------------------------------------------------------
@@ -126,7 +128,7 @@ double z_edge_rear(double x) {
     return numeric::np_maximum(0.0, 0.235 - std::fabs(x - 4.70) * 6.0);
 }
 
-enum class Expect { none, early_window, airborne, fast, brute };
+enum class Expect : std::uint8_t { none, early_window, airborne, fast, brute };
 
 struct CorpusCase {
     std::string_view id;
@@ -138,62 +140,198 @@ struct CorpusCase {
     bool coverage;
 };
 
-const CorpusCase kCorpus[] = {
-        // monotone fast path, no coverage
-        {"flat-loaded", 0.0, 0.01, 1001, z_flat, 5.0, kRadius - 0.006,
-         kRadius, Expect::fast, false},
-        {"flat-grazing", 0.0, 0.01, 1001, z_flat, 5.0, kRadius - 1e-9,
-         kRadius, Expect::fast, false},
-        // fast path + coverage via pz >= cz
-        {"flat-sunk", 0.0, 0.01, 1001, z_flat, 5.0, 0.05, kRadius,
-         Expect::fast, true},
-        // airborne
-        {"flat-airborne", 0.0, 0.01, 1001, z_flat, 5.0, kRadius + 0.5,
-         kRadius, Expect::airborne, false},
-        // hi - lo < 2 early-out (both ends + zero radius)
-        {"off-left", 0.0, 0.01, 1001, z_flat, -50.0, kRadius - 0.01,
-         kRadius, Expect::early_window, false},
-        {"off-right", 0.0, 0.01, 1001, z_flat, 50.0, kRadius - 0.01,
-         kRadius, Expect::early_window, false},
-        {"zero-radius", 0.0, 0.01, 1001, z_flat, 5.0, 0.0, 0.0,
-         Expect::early_window, false},
-        // ramp (sloped road through the wheel)
-        {"ramp", 0.0, 0.01, 1001, z_ramp, 5.0, 0.19, kRadius,
-         Expect::fast, false},
-        // step down just ahead of the hub
-        {"step-down", 0.0, 0.01, 1001, z_step_down, 5.0, 0.30, kRadius,
-         Expect::fast, false},
-        // step-up cliff inside the disc: angle coverage
-        {"cliff", 0.0, 0.01, 1001, z_cliff, 5.0, 0.32, kRadius,
-         Expect::fast, true},
-        // non-monotone phi -> brute-force
-        {"notch-left", 0.0, 0.01, 1001, z_notch_left, 4.95, 0.30,
-         kRadius, Expect::brute, false},
-        // sharp spike whose apex rises above the hub
-        {"spike-above-hub", 0.0, 0.01, 1001, z_spike_above, 5.0, 0.30,
-         kRadius, Expect::brute, true},
-        // spike apex below the hub: non-monotone, no coverage
-        {"spike-below-hub", 0.0, 0.01, 1001, z_spike_below, 5.0, 0.31,
-         kRadius, Expect::brute, false},
-        // sunk hub on flat road: window wraps through +-pi -> brute
-        {"sunk-hub", 0.0, 0.01, 1001, z_flat, 5.0, -0.05, kRadius,
-         Expect::brute, true},
-        // steep ramp left of hub parallel to ray ~theta_19 (n=64)
-        {"parallel-ramp", 0.0, 0.005, 1601, z_parallel_ramp, 5.0, 0.30,
-         kRadius, Expect::brute, true},
-        // wedge bump just inside +half angle: patch reaches ray n-1
-        {"edge-front", 0.0, 0.01, 1001, z_edge_front, 5.0, 0.30,
-         kRadius, Expect::none, false},
-        // wedge bump just inside -half angle: patch starts at ray 0
-        {"edge-rear", 0.0, 0.01, 1001, z_edge_rear, 5.0, 0.30,
-         kRadius, Expect::none, false},
+const CorpusCase kCorpus[] = { // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) static fixture table built once at startup; a throw is a fatal defect; bounded label buffer for snprintf
+    // monotone fast path, no coverage
+    {.id = "flat-loaded",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 5.0,
+     .cz = kRadius - 0.006,
+     .radius = kRadius,
+     .expected = Expect::fast,
+     .coverage = false},
+    {.id = "flat-grazing",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 5.0,
+     .cz = kRadius - 1e-9,
+     .radius = kRadius,
+     .expected = Expect::fast,
+     .coverage = false},
+    // fast path + coverage via pz >= cz
+    {.id = "flat-sunk",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 5.0,
+     .cz = 0.05,
+     .radius = kRadius,
+     .expected = Expect::fast,
+     .coverage = true},
+    // airborne
+    {.id = "flat-airborne",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 5.0,
+     .cz = kRadius + 0.5,
+     .radius = kRadius,
+     .expected = Expect::airborne,
+     .coverage = false},
+    // hi - lo < 2 early-out (both ends + zero radius)
+    {.id = "off-left",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = -50.0,
+     .cz = kRadius - 0.01,
+     .radius = kRadius,
+     .expected = Expect::early_window,
+     .coverage = false},
+    {.id = "off-right",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 50.0,
+     .cz = kRadius - 0.01,
+     .radius = kRadius,
+     .expected = Expect::early_window,
+     .coverage = false},
+    {.id = "zero-radius",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 5.0,
+     .cz = 0.0,
+     .radius = 0.0,
+     .expected = Expect::early_window,
+     .coverage = false},
+    // ramp (sloped road through the wheel)
+    {.id = "ramp",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_ramp,
+     .cx = 5.0,
+     .cz = 0.19,
+     .radius = kRadius,
+     .expected = Expect::fast,
+     .coverage = false},
+    // step down just ahead of the hub
+    {.id = "step-down",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_step_down,
+     .cx = 5.0,
+     .cz = 0.30,
+     .radius = kRadius,
+     .expected = Expect::fast,
+     .coverage = false},
+    // step-up cliff inside the disc: angle coverage
+    {.id = "cliff",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_cliff,
+     .cx = 5.0,
+     .cz = 0.32,
+     .radius = kRadius,
+     .expected = Expect::fast,
+     .coverage = true},
+    // non-monotone phi -> brute-force
+    {.id = "notch-left",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_notch_left,
+     .cx = 4.95,
+     .cz = 0.30,
+     .radius = kRadius,
+     .expected = Expect::brute,
+     .coverage = false},
+    // sharp spike whose apex rises above the hub
+    {.id = "spike-above-hub",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_spike_above,
+     .cx = 5.0,
+     .cz = 0.30,
+     .radius = kRadius,
+     .expected = Expect::brute,
+     .coverage = true},
+    // spike apex below the hub: non-monotone, no coverage
+    {.id = "spike-below-hub",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_spike_below,
+     .cx = 5.0,
+     .cz = 0.31,
+     .radius = kRadius,
+     .expected = Expect::brute,
+     .coverage = false},
+    // sunk hub on flat road: window wraps through +-pi -> brute
+    {.id = "sunk-hub",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_flat,
+     .cx = 5.0,
+     .cz = -0.05,
+     .radius = kRadius,
+     .expected = Expect::brute,
+     .coverage = true},
+    // steep ramp left of hub parallel to ray ~theta_19 (n=64)
+    {.id = "parallel-ramp",
+     .x0 = 0.0,
+     .dx = 0.005,
+     .samples = 1601,
+     .z_at = z_parallel_ramp,
+     .cx = 5.0,
+     .cz = 0.30,
+     .radius = kRadius,
+     .expected = Expect::brute,
+     .coverage = true},
+    // wedge bump just inside +half angle: patch reaches ray n-1
+    {.id = "edge-front",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_edge_front,
+     .cx = 5.0,
+     .cz = 0.30,
+     .radius = kRadius,
+     .expected = Expect::none,
+     .coverage = false},
+    // wedge bump just inside -half angle: patch starts at ray 0
+    {.id = "edge-rear",
+     .x0 = 0.0,
+     .dx = 0.01,
+     .samples = 1001,
+     .z_at = z_edge_rear,
+     .cx = 5.0,
+     .cz = 0.30,
+     .radius = kRadius,
+     .expected = Expect::none,
+     .coverage = false},
 };
 
 [[nodiscard]] biketyre::RoadProfile corpus_road(const CorpusCase &row) {
     std::vector<double> z(row.samples);
     for (std::size_t i = 0; i < row.samples; ++i)
         z[i] = row.z_at(static_cast<double>(i) * row.dx);
-    return biketyre::RoadProfile(row.x0, row.dx, std::move(z));
+    return {row.x0, row.dx, std::move(z)};
 }
 
 void consume_intersect(bt::oracle::Node &golden,

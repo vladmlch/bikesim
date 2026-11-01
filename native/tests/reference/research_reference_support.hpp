@@ -125,7 +125,7 @@ step(runtime::NativeResearchRuntime &env, const runtime::RideControl &control,
         bt::require(guard + 1 < 4096, "unbounded native control completes a physical window");
     }
     env.acknowledge_control();
-    return *result;
+    return (result).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
 }
 
 // env.reset(seed=...): the reset_now() reseed path — rebuild the noise tape,
@@ -141,28 +141,29 @@ struct StagedReset {
     bike::io::Value metadata;
     runtime::ResearchAssets assets;
 };
-[[nodiscard]] inline StagedReset staged_reset(runtime::NativeResearchRuntime &env,
-                                              std::string_view seed) {
-    const auto config = env.configuration();
-    const auto chosen = research::validate_seed(seed);
-    bt::require(config.raw_initial.has_value(),
-                "reseed requires a captured raw startup row");
-    research::SensorConfig sensors;
-    sensors.delivery = config.sensors;
-    sensors.sample_period_s =
-        static_cast<double>(config.sensor_steps) * config.timestep_s;
-    sensors.noise = {.acceleration_std_mps2 = config.noise_std[0],
-                     .gyro_std_rad_s = config.noise_std[1],
-                     .encoder_std_rad_s = config.noise_std[2],
-                     .torque_std_nm = config.noise_std[3]};
-    StagedReset out{};
-    out.tape = research::make_sensor_tape(
-        sensors, chosen, 1 + config.max_steps / config.sensor_steps);
-    out.seed = std::string(chosen);
-    out.state = research::startup_sensor_state(sensors, out.tape, *config.raw_initial);
-    out.metadata = research::reseed_metadata(config.metadata, chosen);
-    out.assets = research::reseed_assets(config.assets, out.metadata);
-    return out;
+[[nodiscard]] inline StagedReset
+staged_reset(runtime::NativeResearchRuntime const &env, std::string_view seed) {
+  const auto config = env.configuration();
+  const auto chosen = research::validate_seed(seed);
+  bt::require(config.raw_initial.has_value(),
+              "reseed requires a captured raw startup row");
+  research::SensorConfig sensors;
+  sensors.delivery = config.sensors;
+  sensors.sample_period_s =
+      static_cast<double>(config.sensor_steps) * config.timestep_s;
+  sensors.noise = {.acceleration_std_mps2 = config.noise_std[0],
+                   .gyro_std_rad_s = config.noise_std[1],
+                   .encoder_std_rad_s = config.noise_std[2],
+                   .torque_std_nm = config.noise_std[3]};
+  StagedReset out{};
+  out.tape = research::make_sensor_tape(
+      sensors, chosen, 1 + config.max_steps / config.sensor_steps);
+  out.seed = std::string(chosen);
+  out.state =
+      research::startup_sensor_state(sensors, out.tape, (config.raw_initial).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+  out.metadata = research::reseed_metadata(config.metadata, chosen);
+  out.assets = research::reseed_assets(config.assets, out.metadata);
+  return out;
 }
 inline void reseed(runtime::NativeResearchRuntime &env, std::string_view seed) {
     auto staged = staged_reset(env, seed);
@@ -278,14 +279,14 @@ inline void flatten_state(const runtime::WireObject &state,
 // Structural equality over the plain-data wire tree — used for
 // "unchanged since" assertions where the Python source compares state_dict
 // snapshots.
-[[nodiscard]] inline bool wire_equal(const runtime::Wire &a,
+[[nodiscard]] inline bool wire_equal(const runtime::Wire &a, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                                      const runtime::Wire &b) {
     if (a.value.index() != b.value.index()) return false;
     if (const auto *x = std::get_if<runtime::WireArray>(&a.value)) {
         const auto &y = std::get<runtime::WireArray>(b.value);
         return x->size() == y.size() &&
                std::equal(x->begin(), x->end(), y.begin(),
-                          [](const runtime::Wire &p, const runtime::Wire &q) {
+                          [](const runtime::Wire &p, const runtime::Wire &q) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
                               return wire_equal(p, q); });
     }
     if (const auto *x = std::get_if<runtime::WireObject>(&a.value)) {
@@ -423,29 +424,30 @@ struct RecordingLaunch {
     auto publication = bike::recording::make_research_publication(
         bike::recording::make_run_metadata("native", "test", prepared->metadata),
         bike::cli::model_catalog(prepared->bootstrap.ride.model), root);
-    return {runtime::make_research(
-                std::make_unique<runtime::ResearchBootstrap>(std::move(prepared->bootstrap))),
-            std::move(publication)};
+    return {.env = runtime::make_research(
+                std::make_unique<runtime::ResearchBootstrap>(
+                    std::move(prepared->bootstrap))),
+            .publication = std::move(publication)};
 }
 
 // reader.rows('SELECT count(*) AS n FROM <table>')[0]['n'] — the row-count
 // probe the Python sources use on every stream table.
-[[nodiscard]] inline std::int64_t row_count(bike::recording::Recording &reader,
-                                            const char *sql) {
-    return bike::io::as_int64(
-        bike::recording::detail::field(reader.rows(sql).front(), "n"), "n");
+[[nodiscard]] inline std::int64_t
+row_count(bike::recording::Recording const &reader, const char *sql) {
+  return bike::io::as_int64(
+      bike::recording::detail::field(reader.rows(sql).front(), "n"), "n");
 }
 
 // _event_kinds(path): the ordered kind column the SIGINT lifecycle tests pin.
 [[nodiscard]] inline std::vector<std::string>
 event_kinds(const std::filesystem::path &path) {
-    bike::recording::Recording saved(path);
-    std::vector<std::string> kinds;
-    for (const auto &row : saved.rows(
-             "SELECT kind FROM events ORDER BY episode_id,event_id"))
-        kinds.push_back(bike::io::as_string(
-            bike::recording::detail::field(row, "kind"), "kind"));
-    return kinds;
+  bike::recording::Recording const saved(path);
+  std::vector<std::string> kinds;
+  for (const auto &row :
+       saved.rows("SELECT kind FROM events ORDER BY episode_id,event_id"))
+    kinds.push_back(bike::io::as_string(
+        bike::recording::detail::field(row, "kind"), "kind"));
+  return kinds;
 }
 
 // Temporary per-test directory (replay_reference_support's Directory twin).

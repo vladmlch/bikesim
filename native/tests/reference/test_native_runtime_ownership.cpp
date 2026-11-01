@@ -86,8 +86,9 @@ runtime::Wire &wire_mut(runtime::WireObject &object, std::string_view key) {
 [[nodiscard]] std::vector<std::int64_t>
 interval_ids(const runtime::RuntimeSampleBatch &batch) {
     std::vector<std::int64_t> ids;
+    ids.reserve(batch.samples.size());
     for (const runtime::SamplePtr &sample : batch.samples)
-        ids.push_back(sample->interval_id);
+      ids.push_back(sample->interval_id);
     return ids;
 }
 
@@ -252,7 +253,7 @@ void test_samples_columns_and_snapshots_survive_reset_and_close() {
     const runtime::SampleColumns columns = driver->recorded_columns();
     const std::vector<runtime::WireObject> expected = rows_of(batch);
     const std::vector<double> saved_state = frame->integration_state;
-    const runtime::SampleColumns saved_columns = columns;
+    const runtime::SampleColumns &saved_columns = columns;
     bt::require(frame->latest_sample != nullptr,
                 "the snapshot carries the latest published sample");
     // Held copies cannot reach the runtime: mutate the snapshot's own
@@ -451,7 +452,7 @@ void test_fatal_engine_error_preserves_completed_prefix_and_can_reset() {
     if (frame->first_failure.has_value())
         bt::require(runtime_reference::wire_bitwise(
                         frame->first_failure->as_wire(),
-                        expected_frame->first_failure->as_wire()),
+                        expected_frame->first_failure.value().as_wire()), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                     "first_failure matches the clean runtime");
     const runtime::WireObject state = driver->accounting_state();
     bt::require(wire_int(wire_obj(state, "history"), "last_id") == 2,

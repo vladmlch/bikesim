@@ -268,7 +268,10 @@ TerrainContacts TerrainContactQuery::query(const mjData& data,const TyreForceApp
         out.front_load_n=c.front_load_n;out.rear_load_n=c.rear_load_n;out.front_support_n=c.front_support_n;out.rear_support_n=c.rear_support_n;out.handlebar_load_n=c.handlebar_load_n;
         out.front_snapshot=std::move(result.snapshots[0]);out.rear_snapshot=std::move(result.snapshots[1]);out.front_controller_grounded=c.front_controller_grounded;out.rear_controller_grounded=c.rear_controller_grounded;return out;}
     const double interval=std::nearbyint(time.value_or(data.time)/model_.opt.timestep);
-    if(!std::isfinite(interval)||interval<-0x1p63||interval>=0x1p63)throw std::invalid_argument("legacy contact interval outside int64");
+    // Both endpoints are checked before conversion: double(INT64_MAX)
+    // rounds up to 2^63 and cannot itself be converted to int64_t, so the
+    // upper bound is queried through numeric_limits, not a 2^63 literal.
+    if(!std::isfinite(interval)||interval<static_cast<double>(std::numeric_limits<std::int64_t>::min())||interval>=static_cast<double>(std::numeric_limits<std::int64_t>::max()))throw std::invalid_argument("legacy contact interval outside int64");
     const auto& front=tyre->front_outputs();const auto& rear=tyre->rear_outputs();
     out.front_load_n=std::max(0.,front.normal_load_n);out.rear_load_n=std::max(0.,rear.normal_load_n);out.front_support_n=std::max(0.,front.support_n);out.rear_support_n=std::max(0.,rear.support_n);out.handlebar_load_n=handlebar_load(data);
     out.front_snapshot=legacy_tyre_snapshot(model_,data,query_.front_id,front,static_cast<std::int64_t>(interval));out.rear_snapshot=legacy_tyre_snapshot(model_,data,query_.rear_id,rear,static_cast<std::int64_t>(interval));return out;

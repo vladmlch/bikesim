@@ -118,8 +118,15 @@ void foreign_control(const mjModel *, mjData *) noexcept {}
 // Process-global callback slots must return to their prior values so a
 // rejection fixture cannot leak into the next contract.
 struct CallbackGuard {
-    const mjfTime previous_time = mjcb_time;
-    const mjfGeneric previous_control = mjcb_control;
+    // The snapshot fields stay const: the guard pins the prior callback
+    // values for the whole fixture scope.
+    const mjfTime previous_time = mjcb_time;       // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members) snapshot member is const by design
+    const mjfGeneric previous_control = mjcb_control; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members) snapshot member is const by design
+    CallbackGuard() = default;
+    CallbackGuard(const CallbackGuard &) = delete;
+    CallbackGuard &operator=(const CallbackGuard &) = delete;
+    CallbackGuard(CallbackGuard &&) = delete;
+    CallbackGuard &operator=(CallbackGuard &&) = delete;
     ~CallbackGuard() {
         mjcb_time = previous_time;
         mjcb_control = previous_control;
@@ -246,7 +253,7 @@ void expect_poisoned(const std::function<void()> &action) {
 void test_stock_binding_raises_fatal_error_and_survives() {
     bt::ModelFixture invalid(kFreeBodyXml);
     invalid.model->opt.solver = 99;
-    bt::ModelFixture valid(kMinimalXml);
+    bt::ModelFixture const valid(kMinimalXml);
     engine::ErrorBuffer error;
     bt::require(!engine::try_forward(invalid.model.get(), invalid.data.get(), error),
                 "the invalid solver reports a failed status, not an exit");
@@ -283,7 +290,7 @@ void test_native_fatal_constructor_preserves_process() {
     }
     // The same process still constructs and forwards on a valid model.
     const auto valid = scratch.path() / "valid.mjb";
-    bt::ModelFixture healthy(kMinimalXml);
+    bt::ModelFixture const healthy(kMinimalXml);
     save_mjb(*healthy.model, valid);
     Stepper recovered(valid.string());
     recovered.forward();
@@ -293,7 +300,7 @@ void test_native_fatal_constructor_preserves_process() {
 // ---- Source: test_valid_solver_still_constructs_and_forwards ------------
 void test_valid_solver_still_constructs_and_forwards() {
     const bt::TemporaryDirectory scratch("engine-errors-valid");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "valid.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -305,7 +312,7 @@ void test_valid_solver_still_constructs_and_forwards() {
 // ---- Source: test_runtime_fatal_poisons_stepper_until_reset ------------
 void test_runtime_fatal_poisons_stepper_until_reset() {
     const bt::TemporaryDirectory scratch("engine-errors-runtime");
-    bt::ModelFixture fixture(kFreeBodyXml);
+    bt::ModelFixture const fixture(kFreeBodyXml);
     const auto path = scratch.path() / "runtime-fatal.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -321,7 +328,7 @@ void test_runtime_fatal_poisons_stepper_until_reset() {
 // ---- Source: test_set_const_fatal_poisons_owner_and_preserves_process ---
 void test_set_const_fatal_poisons_owner_and_preserves_process() {
     const bt::TemporaryDirectory scratch("engine-errors-setconst");
-    bt::ModelFixture fixture(kFreeBodyXml);
+    bt::ModelFixture const fixture(kFreeBodyXml);
     const auto path = scratch.path() / "setconst-fatal.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -339,7 +346,7 @@ void test_set_const_fatal_poisons_owner_and_preserves_process() {
 // ---- Source: test_valid_set_state_can_recover_after_rejected_restore ----
 void test_valid_set_state_can_recover_after_rejected_restore() {
     const bt::TemporaryDirectory scratch("engine-errors-restore");
-    bt::ModelFixture fixture(kFreeBodyXml);
+    bt::ModelFixture const fixture(kFreeBodyXml);
     const auto path = scratch.path() / "restore-after-fatal.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -404,7 +411,7 @@ void test_configured_owner_recovery_clears_pending_drive_state() {
 void test_realtime_status_path_reports_fatal_without_throwing_inside_marked_region() {
     for (const bool step : {false, true}) {
         const bt::TemporaryDirectory scratch("engine-errors-status");
-        bt::ModelFixture fixture(kFreeBodyXml);
+        bt::ModelFixture const fixture(kFreeBodyXml);
         const auto path = scratch.path() / "realtime-status.mjb";
         save_mjb(*fixture.model, path);
         Stepper stepper(path.string());
@@ -421,7 +428,7 @@ void test_realtime_status_path_reports_fatal_without_throwing_inside_marked_regi
 // ---- Source: test_installed_python_callback_is_rejected_before_native_construction
 void test_installed_python_callback_is_rejected_before_native_construction() {
     const bt::TemporaryDirectory scratch("engine-errors-cbctor");
-    bt::ModelFixture fixture(kFreeBodyXml);
+    bt::ModelFixture const fixture(kFreeBodyXml);
     const auto path = scratch.path() / "callback.mjb";
     save_mjb(*fixture.model, path);
     {
@@ -439,7 +446,7 @@ void test_installed_python_callback_is_rejected_before_native_construction() {
 // ---- Source: test_installed_callback_rejects_runtime_call_without_poison
 void test_installed_callback_rejects_runtime_call_without_poison() {
     const bt::TemporaryDirectory scratch("engine-errors-cbrun");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "runtime-callback.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -459,7 +466,7 @@ void test_installed_callback_rejects_runtime_call_without_poison() {
 // rejection class the vendored trampolines produced.
 void test_python_time_callback_is_rejected_before_marked_runtime_step() {
     const bt::TemporaryDirectory scratch("engine-errors-timecb");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "runtime-time-callback.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -477,7 +484,7 @@ void test_python_time_callback_is_rejected_before_marked_runtime_step() {
 // ---- Source: test_ctypes_time_callback_is_rejected_before_native_construction
 void test_ctypes_time_callback_is_rejected_before_native_construction() {
     const bt::TemporaryDirectory scratch("engine-errors-ctorcb");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "ctypes-time-callback.mjb";
     save_mjb(*fixture.model, path);
     foreign_timer_calls = 0;
@@ -494,7 +501,7 @@ void test_ctypes_time_callback_is_rejected_before_native_construction() {
 // ---- Source: test_ctypes_time_callback_is_rejected_before_native_recovery
 void test_ctypes_time_callback_is_rejected_before_native_recovery() {
     const bt::TemporaryDirectory scratch("engine-errors-reccb");
-    bt::ModelFixture fixture(
+    bt::ModelFixture const fixture(
         R"XML(<mujoco><worldbody><body pos=".1 0 0"><geom type="sphere" size=".1"/></body></worldbody></mujoco>)XML");
     const auto path = scratch.path() / "ctypes-recovery-callback.mjb";
     save_mjb(*fixture.model, path);
@@ -533,7 +540,7 @@ void test_ctypes_time_callback_is_rejected_before_native_recovery() {
 // stays null without an interpreter, so every other address is foreign).
 void test_simulate_owned_time_callback_is_accepted_for_runtime_steps() {
     const bt::TemporaryDirectory scratch("engine-errors-simcb");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "simulate-timer-callback.mjb";
     save_mjb(*fixture.model, path);
     {
@@ -578,7 +585,7 @@ void test_unsupported_callback_rejected_before_drive_restore() {
 // realtime path re-classifies provenance on every step.
 void test_stock_timer_installed_after_native_construction_is_allowed() {
     const bt::TemporaryDirectory scratch("engine-errors-latecb");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "late-stock-timer.mjb";
     save_mjb(*fixture.model, path);
     Stepper stepper(path.string());
@@ -601,7 +608,7 @@ void test_plugin_model_is_rejected_before_native_engine_loading() {
     constexpr std::size_t kPluginFieldOffset =
         5 * sizeof(int) + 72 * sizeof(mjtSize);
     const bt::TemporaryDirectory scratch("engine-errors-plugin");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "plugin.mjb";
     save_mjb(*fixture.model, path);
     // Valid-input control: the unpatched image constructs fine.
@@ -659,7 +666,7 @@ void test_bad_model_file_raises_without_exiting() {
         bt::require(runtime, "a bad MJB is a plain load rejection, not an exit");
     }
     // Process survival: a valid owner still constructs after all three.
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto valid = scratch.path() / "valid.mjb";
     save_mjb(*fixture.model, valid);
     Stepper recovered(valid.string());
@@ -673,7 +680,7 @@ void test_bad_model_file_raises_without_exiting() {
 // fault injection that must not share this test's heap.
 void test_actual_engine_allocation_error_is_caught_in_c_contract() {
     const bt::TemporaryDirectory scratch("engine-errors-alloc");
-    bt::ModelFixture fixture(kMinimalXml);
+    bt::ModelFixture const fixture(kMinimalXml);
     const auto path = scratch.path() / "valid-for-allocation.mjb";
     save_mjb(*fixture.model, path);
     bike::platform::ProcessOptions options;
@@ -724,7 +731,7 @@ void test_configure_rejects_unsupported_installed_mujoco_version() {
          "-S", BIKE_ENGINE_ERRORS_REPO_ROOT,
          "-B", (scratch.path() / "build").string(),
          "-DBIKE_DEPENDENCY_ROOT=" + scratch.path().string(),
-         "-DBIKE_DEPENDENCY_LOCK=" BIKE_ENGINE_ERRORS_DEPENDENCY_LOCK,
+         "-DBIKE_DEPENDENCY_LOCK=" BIKE_ENGINE_ERRORS_DEPENDENCY_LOCK, // NOLINT(bugprone-suspicious-missing-comma) adjacent literals intentionally join the fragments
          "-DBIKE_BUILD_PYTHON_BINDINGS=OFF",
          "-DBIKE_BUILD_GUI=OFF"},
         BIKE_ENGINE_ERRORS_REPO_ROOT, options);

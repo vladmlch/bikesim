@@ -15,12 +15,12 @@
 #include "writers/distributed_tire.hpp"
 
 #include <cmath>
+#include <cstddef>
 #include <vector>
 
 namespace {
 
 using namespace tyre_reference;
-using bike::validation::flag;
 using bike::validation::get;
 using bike::validation::real;
 constexpr std::string_view kFile = "test_distributed_tire_reference.py";
@@ -44,7 +44,7 @@ namespace numerics = bike::numerics;
             632.674608364, 609.382103444, 613.516398494, 614.034816138,
             613.869405735, 613.817389269, 613.801320645, 613.703552998,
             613.341342092, 626.68744485};
-    const std::array<double, 10> before_vertical = before_normal;
+    const std::array<double, 10> &before_vertical = before_normal;
     const std::array<int, 10> before_patches{9, 8, 8, 8, 8, 8, 8, 8, 9, 9};
 
     const auto [rows_v, metrics] = validation::distributed_road_trace(
@@ -139,8 +139,8 @@ namespace numerics = bike::numerics;
     auto stand = validation::wheel_stand(.00125, 16, flat_vertices());
     const auto cfg = validation::distributed_config(1024);
     rejects<std::exception>([&] {
-        DistributedTireWriter tire(stand.stand->model.get(),
-                                   stand.stand->data.get(), cfg);
+      DistributedTireWriter const tire(stand.stand->model.get(),
+                                       stand.stand->data.get(), cfg);
     });
 }
 
@@ -149,7 +149,7 @@ namespace numerics = bike::numerics;
     auto stand = validation::wheel_stand(.00125, 32, flat_vertices());
     auto &tire = *stand.tire;
     const auto &names = tire.state_names();
-    bt::require(names.size() == 2 * 32 * 4,
+    bt::require(names.size() == static_cast<std::size_t>(2 * 32 * 4),
                 "state wire has 2*32*4 names");
     bt::require(names[0] == "front.s000.xi" &&
                         names[1] == "front.s000.tangent.0" &&
@@ -220,8 +220,8 @@ namespace numerics = bike::numerics;
     (void)force;
     const auto diag = tire.diagnostics()[0];
     bt::require(diag.has_value(), "front diagnostics published");
-    bt::require(diag->supports_multiple_contacts &&
-                        diag->station_count == 64,
+    bt::require(diag.value().supports_multiple_contacts && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                        diag.value().station_count == 64, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "distributed diagnostics declare the capability");
 }
 

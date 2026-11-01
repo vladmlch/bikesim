@@ -159,13 +159,12 @@ int jnt_posadr(const mjModel *m, int j) {
     return std::views::counted(m->jnt_qposadr,
         m->njnt)[static_cast<std::size_t>(j)];
 }
-void set_qfrc(const mjModel *m, mjData *d, int dof, mjtNum v) {
-    std::views::counted(d->qfrc_applied,
-        m->nv)[static_cast<std::size_t>(dof)] = v;
+void set_qfrc(const mjModel *m, mjData const *d, int dof, mjtNum v) {
+  std::views::counted(d->qfrc_applied, m->nv)[static_cast<std::size_t>(dof)] =
+      v;
 }
-void set_qpos(const mjModel *m, mjData *d, int idx, mjtNum v) {
-    std::views::counted(d->qpos,
-        m->nq)[static_cast<std::size_t>(idx)] = v;
+void set_qpos(const mjModel *m, mjData const *d, int idx, mjtNum v) {
+  std::views::counted(d->qpos, m->nq)[static_cast<std::size_t>(idx)] = v;
 }
 
 // --------------------------- model fixtures ------------------------------
@@ -297,9 +296,9 @@ std::unique_ptr<Stepper> mirror(const mjModel *m, const mjData *d) {
     return st;
 }
 
-void feed_inputs(const mjModel *m, mjData *d, Stepper &st) {
-    st.set_inputs(std::views::counted(d->ctrl, m->nu),
-                  std::views::counted(d->qfrc_applied, m->nv));
+void feed_inputs(const mjModel *m, mjData const *d, Stepper &st) {
+  st.set_inputs(std::views::counted(d->ctrl, m->nu),
+                std::views::counted(d->qfrc_applied, m->nv));
 }
 
 // _settle: replay the recorded steps; the trailing 'qpos/qvel trajectory
@@ -318,8 +317,8 @@ void settle(const mjModel *m, mjData *d, Stepper &st,
     }
 }
 
-const std::vector<double> kPoint{0., 0., 1.};
-const std::vector<double> kNormal{0., 0., 1.};
+const std::vector<double> kPoint{0., 0., 1.}; // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
+const std::vector<double> kNormal{0., 0., 1.}; // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
 
 // -------------------- _assert_geometry / _assert_raw ----------------------
 // Recorded field order mirrors the source helpers verbatim.
@@ -382,9 +381,9 @@ void equality_qfrc_case(const char *jacobian) {
     const std::string node = std::string(kFile) +
         "test_rider_equality_qfrc_oracle[" + jacobian + "]";
     bt::oracle::Node golden(node);
-    bt::ModelFixture fixture(
+    bt::ModelFixture const fixture(
         pair_xml(kAllEqualities, std::string("jacobian=\"") + jacobian + "\""));
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -393,14 +392,13 @@ void equality_qfrc_case(const char *jacobian) {
     bool saw_non_equality = false, saw_limit = false;
     const std::span<const int> efc_types =
         std::views::counted(sd->efc_type, sd->nefc);
-    for (std::size_t i = 0; i < efc_types.size(); ++i) {
-        saw_non_equality = saw_non_equality ||
-            efc_types[i] != mjCNSTR_EQUALITY;
-        saw_limit = saw_limit || efc_types[i] == mjCNSTR_LIMIT_JOINT;
+    for (int const efc_type : efc_types) {
+      saw_non_equality = saw_non_equality || efc_type != mjCNSTR_EQUALITY;
+      saw_limit = saw_limit || efc_type == mjCNSTR_LIMIT_JOINT;
     }
     bt::require(saw_non_equality, "unrelated rows really present");
     bt::require(saw_limit, "a violated joint limit row is present");
-    rw::EqualityReactions &reactions = st->rider_equalities();
+    rw::EqualityReactions const &reactions = st->rider_equalities();
     for (const char *name : {"w", "j", "c"}) {
         const int eq_id = equality(m, name);
         golden.f64(st->rider_equality_qfrc(eq_id),
@@ -431,8 +429,8 @@ void test_rider_equality_qfrc_oracle() {
 
 void test_rider_equality_rows_grouping() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kAllEqualities));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kAllEqualities));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -460,8 +458,8 @@ void equality_reaction_case(const char *eq_name) {
     const std::string node = std::string(kFile) +
         "test_rider_equality_reaction_oracle[" + eq_name + "]";
     bt::oracle::Node golden(node);
-    bt::ModelFixture fixture(pair_xml(kAllEqualities));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kAllEqualities));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -481,8 +479,8 @@ void test_rider_equality_reaction_oracle() {
 
 void test_rider_equality_reaction_missing_rows_zero() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -498,12 +496,12 @@ void test_rider_equality_reaction_missing_rows_zero() {
 
 void test_rider_equality_qfrc_empty_arena() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(R"(<mujoco><worldbody>
+    bt::ModelFixture const fixture(R"(<mujoco><worldbody>
   <body pos="0 0 1"><freejoint/>
     <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
     <geom type="sphere" size="0.01" contype="0" conaffinity="0"/></body>
 </worldbody></mujoco>)");
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     engine::forward(m, d);
     bt::require(d->nefc == 0, "empty constraint arena");
@@ -521,7 +519,7 @@ void test_rider_equality_qfrc_empty_arena() {
 
 void test_rider_pedal_torque_oracle() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(R"(
+    bt::ModelFixture const fixture(R"(
 <mujoco><option gravity="0 0 0" timestep="0.0005"/>
 <worldbody>
   <body name="bike" pos="0 0 1"><freejoint/>
@@ -543,7 +541,7 @@ void test_rider_pedal_torque_oracle() {
   <weld name="weld_foot_front" body1="foot_a" body2="crank"/>
   <weld name="weld_foot_rear" body1="foot_b" body2="bike"/>
 </equality></mujoco>)");
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     engine::forward(m, d);
     const int foot_a = body(m, "foot_a");
@@ -574,8 +572,8 @@ void test_rider_pedal_torque_oracle() {
 
 void test_stepper_qfrc_returns_owning_array() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -680,10 +678,10 @@ template <class Solver>
 void lstsq_emit(bt::oracle::Node &golden, const LstsqInput &in,
                 Solver &&solver) {
     if (golden.peek_label() == "error") {
-        expect_error(golden, [&] { static_cast<void>(solver(in)); });
+        expect_error(golden, [&] { static_cast<void>(std::forward<Solver>(solver)(in)); });
         return;
     }
-    const rw::LeastSquaresResult out = solver(in);
+    const rw::LeastSquaresResult out = std::forward<Solver>(solver)(in);
     int member = 0;
     for (;;) {
         const std::string_view label = golden.peek_label();
@@ -998,7 +996,9 @@ void test_recover_wrench_degenerate_and_shape_errors() {
     // binding-cast rejection with no typed-face counterpart (documented
     // drop); a qfrc width that disagrees with the jacobian's columns is
     // the same ValueError on this face.
-    const DenseMatrix eye3{3, 3, {1., 0., 0., 0., 1., 0., 0., 0., 1.}};
+    const DenseMatrix eye3{.rows = 3,
+                           .columns = 3,
+                           .values = {1., 0., 0., 0., 1., 0., 0., 0., 1.}};
     const std::vector<double> too_wide(4, 0.);
     bt::invalid([&] { static_cast<void>(recover(eye3, too_wide)); });
     golden.done();
@@ -1029,8 +1029,10 @@ void test_recover_wrench_owns_its_output() {
 
 void test_native_recover_wrench() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    const DenseMatrix jac{3, 4, {1., 0., 0., -1., 0., 1., 0., 0.,
-                                 0., 0., 1., 0.}};
+    const DenseMatrix jac{
+        .rows = 3,
+        .columns = 4,
+        .values = {1., 0., 0., -1., 0., 1., 0., 0., 0., 0., 1., 0.}};
     // force = jac.T @ [20, 100, -2] — ddot order per column, like the
     // oracle's matmul on the transpose view.
     std::vector<double> force(jac.columns, 0.);
@@ -1048,9 +1050,9 @@ void planar_jacobian_case(const char *jacobian) {
     const std::string node = std::string(kFile) +
         "test_relative_planar_jacobian_oracle[" + jacobian + "]";
     bt::oracle::Node golden(node);
-    bt::ModelFixture fixture(
+    bt::ModelFixture const fixture(
         pair_xml(kAllEqualities, std::string("jacobian=\"") + jacobian + "\""));
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1115,7 +1117,7 @@ void test_relative_planar_jacobian_oracle() {
 
 // test_prepare_attachment_geometry_oracle — every AttachmentGeometry
 // field bitwise, then the 'no degrees of freedom' body gate.
-void prepare_geometry_case(const char *id, const char *jacobian,
+void prepare_geometry_case(const char *id, const char *jacobian, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                            const char *eq_name, const char *body_a,
                            const char *body_b, const std::vector<double> &point,
                            bool rotational, const char *kind,
@@ -1123,11 +1125,11 @@ void prepare_geometry_case(const char *id, const char *jacobian,
     const std::string node = std::string(kFile) +
         "test_prepare_attachment_geometry_oracle[" + id + "]";
     bt::oracle::Node golden(node);
-    bt::ModelFixture fixture(
-        pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"
-                 R"(<connect name="c" body1="hand" body2="bike" anchor="0 .1 0"/>)",
-                 std::string("jacobian=\"") + jacobian + "\""));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(
+        R"(<weld name="w" body1="rider" body2="bike"/>)"
+        R"(<connect name="c" body1="hand" body2="bike" anchor="0 .1 0"/>)",
+        std::string("jacobian=\"") + jacobian + "\""));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1168,17 +1170,17 @@ void test_prepare_attachment_geometry_oracle() {
 
 // test_attachment_raw_oracle — attachment_raw bitwise on the shared
 // solved arena (contacts and a violated joint limit interleave).
-void attachment_raw_case(const char *id, const char *eq_name,
+void attachment_raw_case(const char *id, const char *eq_name, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                          const char *body_a, const char *body_b,
                          const std::vector<double> &point, bool rotational,
                          const char *kind) {
     const std::string node =
         std::string(kFile) + "test_attachment_raw_oracle[" + id + "]";
     bt::oracle::Node golden(node);
-    bt::ModelFixture fixture(
-        pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"
-                 R"(<connect name="c" body1="hand" body2="bike" anchor="0 .1 0"/>)"));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(
+        R"(<weld name="w" body1="rider" body2="bike"/>)"
+        R"(<connect name="c" body1="hand" body2="bike" anchor="0 .1 0"/>)"));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1188,9 +1190,8 @@ void attachment_raw_case(const char *id, const char *eq_name,
         const std::span<const int> efc_types =
             std::views::counted(st->data()->efc_type,
                                 st->data()->nefc);
-        for (std::size_t i = 0; i < efc_types.size(); ++i)
-            non_equality_rows = non_equality_rows ||
-                efc_types[i] != mjCNSTR_EQUALITY;
+        for (int const efc_type : efc_types)
+          non_equality_rows = non_equality_rows || efc_type != mjCNSTR_EQUALITY;
     }
     bt::require(non_equality_rows, "non-equality rows interleave");
     const rw::AttachmentRaw actual = rw::attachment_raw(st->model(), st->data(), st->rider_equalities(), scratch_of(st), 
@@ -1212,17 +1213,17 @@ void test_attachment_raw_oracle() {
 // test_attachment_raw_from_geometry_oracle — prepared == eager bitwise,
 // the dict round-trip is a binding adapter over the same typed struct,
 // and validate_wrench=False defers the spatial checks.
-void raw_from_geometry_case(const char *id, const char *eq_name,
+void raw_from_geometry_case(const char *id, const char *eq_name, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                             const char *body_a, const char *body_b,
                             const std::vector<double> &point, bool rotational,
                             const char *kind) {
     const std::string node = std::string(kFile) +
         "test_attachment_raw_from_geometry_oracle[" + id + "]";
     bt::oracle::Node golden(node);
-    bt::ModelFixture fixture(
-        pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"
-                 R"(<connect name="c" body1="hand" body2="bike" anchor="0 0 .1"/>)"));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(
+        R"(<weld name="w" body1="rider" body2="bike"/>)"
+        R"(<connect name="c" body1="hand" body2="bike" anchor="0 0 .1"/>)"));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     // Keep every load planar: validate_wrench=True runs the planarity
@@ -1264,10 +1265,10 @@ void test_attachment_raw_from_geometry_oracle() {
 
 void test_attachment_sample_oracle() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(
-        pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"
-                 R"(<connect name="c" body1="hand" body2="bike" anchor="0 0 0"/>)"));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(
+        R"(<weld name="w" body1="rider" body2="bike"/>)"
+        R"(<connect name="c" body1="hand" body2="bike" anchor="0 0 0"/>)"));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const int hand_dof = body_dof(m, body(m, "hand"));
@@ -1287,12 +1288,34 @@ void test_attachment_sample_oracle() {
         std::optional<std::vector<double>> pull;
     };
     const std::array<Case, 4> cases{{
-        {"w", rider, bike, &kPoint, true, "foot", std::nullopt},
-        {"w", rider, bike, &kPoint, true, "foot",
-         std::vector<double>{.1, 0., -.8}},
-        {"w", rider, bike, &kPoint, false, "saddle", std::nullopt},
-        {"c", hand, bike, &grip, false, "grip",
-         std::vector<double>{-.2, 0., -1.1}},
+        {.eq = "w",
+         .a = rider,
+         .b = bike,
+         .at = &kPoint,
+         .rotational = true,
+         .kind = "foot",
+         .pull = std::nullopt},
+        {.eq = "w",
+         .a = rider,
+         .b = bike,
+         .at = &kPoint,
+         .rotational = true,
+         .kind = "foot",
+         .pull = std::vector<double>{.1, 0., -.8}},
+        {.eq = "w",
+         .a = rider,
+         .b = bike,
+         .at = &kPoint,
+         .rotational = false,
+         .kind = "saddle",
+         .pull = std::nullopt},
+        {.eq = "c",
+         .a = hand,
+         .b = bike,
+         .at = &grip,
+         .rotational = false,
+         .kind = "grip",
+         .pull = std::vector<double>{-.2, 0., -1.1}},
     }};
     for (const Case &c : cases) {
         const std::string msg = std::string(c.eq) + " rot=" +
@@ -1369,8 +1392,8 @@ void test_decompose_wrench_oracle() {
 
 void test_attachment_missing_equality_is_no_measurement() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1404,8 +1427,8 @@ void test_attachment_missing_equality_is_no_measurement() {
 
 void test_attachment_shared_support_error() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1434,8 +1457,8 @@ void test_attachment_shared_support_error() {
 
 void test_attachment_out_of_plane_error() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     set_qfrc(m, d, body_dof(m, body(m, "rider")) + 1, 40.);
@@ -1465,7 +1488,7 @@ void test_attachment_out_of_plane_error() {
 
 void test_attachment_unobservable_and_validation_deferral() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(R"(
+    bt::ModelFixture const fixture(R"(
 <mujoco><option gravity="0 0 0" timestep="0.0005"/>
 <worldbody>
   <body name="bike" pos="0 0 1"><freejoint/>
@@ -1478,7 +1501,7 @@ void test_attachment_unobservable_and_validation_deferral() {
 </worldbody>
 <equality><weld name="w" body1="rider" body2="bike"/></equality>
 </mujoco>)");
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     engine::forward(m, d);
     set_qfrc(m, d, jnt_dof(m, joint(m, "ys")), -12.);
@@ -1516,9 +1539,9 @@ void test_attachment_unobservable_and_validation_deferral() {
 
 void test_attachment_newton_third_law_error() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(
+    bt::ModelFixture const fixture(
         pair_xml(R"(<joint name="j" joint1="ja" joint2="jb"/>)"));
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1543,8 +1566,8 @@ void test_attachment_newton_third_law_error() {
 
 void test_attachment_measurement_dicts_own_storage() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     drive(m, d);
     const auto st = mirror(m, d);
@@ -1577,8 +1600,8 @@ void test_attachment_measurement_dicts_own_storage() {
 
 void test_attachment_interval_start_geometry() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(kWeld));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(pair_xml(kWeld));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     engine::forward(m, d);
     const auto st = mirror(m, d);

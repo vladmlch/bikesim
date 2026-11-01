@@ -55,10 +55,11 @@ void error_bytes(bt::oracle::Node &golden, const std::exception &error) {
 
 // xfrc_applied row view for one body: six mjtNum slots starting at
 // 6*body_id.
-std::span<mjtNum> xfrc_row(const mjModel *m, mjData *d, int body) {
-    const std::span<mjtNum> all =
-        std::views::counted(d->xfrc_applied, 6 * m->nbody);
-    return all.subspan(static_cast<std::size_t>(6 * body), 6);
+std::span<mjtNum> xfrc_row(const mjModel *m, mjData const *d, int body) {
+  const std::span<mjtNum> all =
+      std::views::counted(d->xfrc_applied, 6 * m->nbody);
+  return all.subspan(static_cast<std::size_t>(6) *
+                         static_cast<std::size_t>(body), 6);
 }
 
 double dot(std::span<const double> a, std::span<const double> b) {
@@ -106,8 +107,10 @@ std::vector<double> recover(const DenseMatrix &jac,
 
 void test_wrench_preserves_virtual_work() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    const DenseMatrix jac{3, 4, {1., 0., 0., -1., 0., 1., 0., 0.,
-                                 0., 0., 1., 0.}};
+    const DenseMatrix jac{
+        .rows = 3,
+        .columns = 4,
+        .values = {1., 0., 0., -1., 0., 1., 0., 0., 0., 0., 1., 0.}};
     const std::vector<double> expected{20., 100., -2.};
     const std::vector<double> qforce = mat_t_vec(jac, expected);
     const std::vector<double> actual = recover(jac, qforce);
@@ -123,7 +126,8 @@ void test_wrench_preserves_virtual_work() {
 
 void test_rank_deficiency_is_not_silently_reported_as_zero_force() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    const DenseMatrix jac{2, 4, std::vector<double>(8, 0.)};
+    const DenseMatrix jac{
+        .rows = 2, .columns = 4, .values = std::vector<double>(8, 0.)};
     const std::vector<double> qfrc(4, 0.);
     try {
         static_cast<void>(recover(jac, qfrc));
@@ -137,7 +141,8 @@ void test_rank_deficiency_is_not_silently_reported_as_zero_force() {
 
 void test_unexplainable_generalized_force_is_not_a_wrench() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    const DenseMatrix jac{2, 4, {1., 0., 0., -1., 0., 1., 0., 0.}};
+    const DenseMatrix jac{
+        .rows = 2, .columns = 4, .values = {1., 0., 0., -1., 0., 1., 0., 0.}};
     const std::vector<double> qfrc{1., 0., 0., 1.};
     try {
         static_cast<void>(recover(jac, qfrc));
@@ -176,7 +181,7 @@ int body_id(const mjModel *m, const char *name) {
 struct Recovered {
     std::vector<double> wrench;
     DenseMatrix jac;
-    int eq_id;
+    int eq_id{};
     std::vector<double> qfrc_eq;
 };
 
@@ -184,68 +189,67 @@ struct Recovered {
 // efc_id==eq_id) — the FULL multiplier list, not the lam[:3] surface
 // force_on_rider returns.
 std::vector<double> full_lambda(const mjData *d,
-                                rw::EqualityReactions &reactions,
+                                rw::EqualityReactions const &reactions,
                                 int eq_id) {
-    const auto rows = reactions.rows_of(d, eq_id);
-    const std::span<const mjtNum> force =
-        std::views::counted(d->efc_force, d->nefc);
-    std::vector<double> out(rows.size());
-    for (std::size_t i = 0; i < rows.size(); ++i)
-        out[i] = force[static_cast<std::size_t>(rows[i])];
-    return out;
+  const auto rows = reactions.rows_of(d, eq_id);
+  const std::span<const mjtNum> force =
+      std::views::counted(d->efc_force, d->nefc);
+  std::vector<double> out(rows.size());
+  for (std::size_t i = 0; i < rows.size(); ++i)
+    out[i] = force[static_cast<std::size_t>(rows[i])];
+  return out;
 }
 
 Recovered recover_on(const mjModel *m, const mjData *d,
-                     rw::EqualityReactions &reactions, const char *eq_name,
-                     bool rotational) {
-    const int eq_id = mj_name2id(m, mjOBJ_EQUALITY, eq_name);
-    bt::require(eq_id >= 0, "equality id resolves");
-    const std::vector<double> anchor{0., 0., 1.};
-    Recovered out;
-    out.eq_id = eq_id;
-    out.jac = rw::relative_planar_jacobian(m, d, body_id(m, "rider"),
-                                         body_id(m, "bike"), anchor,
-                                         rotational);
-    out.qfrc_eq.assign(static_cast<std::size_t>(m->nv), 0.);
-    reactions.equality_qfrc_into(d, eq_id, out.qfrc_eq);
-    out.wrench = recover(out.jac, out.qfrc_eq);
-    return out;
+                     rw::EqualityReactions const &reactions,
+                     const char *eq_name, bool rotational) {
+  const int eq_id = mj_name2id(m, mjOBJ_EQUALITY, eq_name);
+  bt::require(eq_id >= 0, "equality id resolves");
+  const std::vector<double> anchor{0., 0., 1.};
+  Recovered out;
+  out.eq_id = eq_id;
+  out.jac = rw::relative_planar_jacobian(
+      m, d, body_id(m, "rider"), body_id(m, "bike"), anchor, rotational);
+  out.qfrc_eq.assign(static_cast<std::size_t>(m->nv), 0.);
+  reactions.equality_qfrc_into(d, eq_id, out.qfrc_eq);
+  out.wrench = recover(out.jac, out.qfrc_eq);
+  return out;
 }
 
 void weld_case(bt::oracle::Node &golden, const std::array<double, 2> &force) {
-    bt::ModelFixture fixture(pair_xml(
-        R"(<weld name="w" body1="rider" body2="bike"/>)"));
-    mjModel *m = fixture.model.get();
-    mjData *d = fixture.data.get();
-    const int rider = body_id(m, "rider");
-    engine::forward(m, d);
-    const std::array<double, 6> xfrc{force[0], 0., force[1], 0., 12.5, 0.};
-    const std::span<mjtNum> applied = xfrc_row(m, d, rider);
-    for (std::size_t i = 0; i < 6; ++i) applied[i] = xfrc[i];
-    for (int step = 0; step < 100; ++step) engine::step(m, d);
-    rw::EqualityReactions reactions(m);
-    const Recovered r = recover_on(m, d, reactions, "w", true);
-    const std::vector<double> lam = full_lambda(d, reactions, r.eq_id);
-    // Translational rows are unscaled: recovered force equals multipliers.
-    golden.f64_close(std::span<const double>{r.wrench}.first(2),
-                     "lam translational");
-    allclose(std::span<const double>{r.wrench}.first(2),
-             std::vector<double>{lam[0], lam[2]}, 1e-8, 1e-8, "lam");
-    // The weld's sin(t/2) residual halves the physical moment in lambda_m.
-    scalar(golden, r.wrench[2], "halved moment");
-    bt::require(isclose(r.wrench[2], .5 * lam[4], 1e-3, 1e-3),
-                "halved moment");
-    allclose(r.wrench, std::vector<double>{-force[0], -force[1], -12.5}, .05,
-             2., "settled wrench balances applied");
-    golden.f64_close(r.qfrc_eq, "qfrc_eq");
-    allclose(mat_t_vec(r.jac, r.wrench), r.qfrc_eq, 1e-8, 1e-8, "qfrc_eq");
-    const std::span<const double> qvel =
-        std::views::counted(d->qvel, m->nv);
-    scalar(golden, dot(r.wrench, mat_vec(r.jac, qvel)), "virtual work");
-    bt::require(isclose(dot(r.wrench, mat_vec(r.jac, qvel)),
-                        dot(r.qfrc_eq, qvel)),
-                "virtual work preserved");
-    golden.done();
+  bt::ModelFixture const fixture(
+      pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"));
+  mjModel const *m = fixture.model.get();
+  mjData *d = fixture.data.get();
+  const int rider = body_id(m, "rider");
+  engine::forward(m, d);
+  const std::array<double, 6> xfrc{force[0], 0., force[1], 0., 12.5, 0.};
+  const std::span<mjtNum> applied = xfrc_row(m, d, rider);
+  for (std::size_t i = 0; i < 6; ++i)
+    applied[i] = xfrc[i];
+  for (int step = 0; step < 100; ++step)
+    engine::step(m, d);
+  rw::EqualityReactions const reactions(m);
+  const Recovered r = recover_on(m, d, reactions, "w", true);
+  const std::vector<double> lam = full_lambda(d, reactions, r.eq_id);
+  // Translational rows are unscaled: recovered force equals multipliers.
+  golden.f64_close(std::span<const double>{r.wrench}.first(2),
+                   "lam translational");
+  allclose(std::span<const double>{r.wrench}.first(2),
+           std::vector<double>{lam[0], lam[2]}, 1e-8, 1e-8, "lam");
+  // The weld's sin(t/2) residual halves the physical moment in lambda_m.
+  scalar(golden, r.wrench[2], "halved moment");
+  bt::require(isclose(r.wrench[2], .5 * lam[4], 1e-3, 1e-3), "halved moment");
+  allclose(r.wrench, std::vector<double>{-force[0], -force[1], -12.5}, .05, 2.,
+           "settled wrench balances applied");
+  golden.f64_close(r.qfrc_eq, "qfrc_eq");
+  allclose(mat_t_vec(r.jac, r.wrench), r.qfrc_eq, 1e-8, 1e-8, "qfrc_eq");
+  const std::span<const double> qvel = std::views::counted(d->qvel, m->nv);
+  scalar(golden, dot(r.wrench, mat_vec(r.jac, qvel)), "virtual work");
+  bt::require(
+      isclose(dot(r.wrench, mat_vec(r.jac, qvel)), dot(r.qfrc_eq, qvel)),
+      "virtual work preserved");
+  golden.done();
 }
 
 void test_weld_recovers_solved_wrench_and_work() {
@@ -265,29 +269,29 @@ void test_weld_recovers_solved_wrench_and_work() {
 
 void connect_case(bt::oracle::Node &golden,
                   const std::array<double, 2> &force) {
-    bt::ModelFixture fixture(pair_xml(
-        R"(<connect name="c" body1="rider" body2="bike" anchor="0 0 0"/>)"));
-    mjModel *m = fixture.model.get();
-    mjData *d = fixture.data.get();
-    const int rider = body_id(m, "rider");
-    engine::forward(m, d);
-    const std::array<double, 6> xfrc{force[0], 0., force[1], 0., 30., 0.};
-    const std::span<mjtNum> applied = xfrc_row(m, d, rider);
-    for (std::size_t i = 0; i < 6; ++i) applied[i] = xfrc[i];
-    for (int step = 0; step < 100; ++step) engine::step(m, d);
-    rw::EqualityReactions reactions(m);
-    const Recovered r = recover_on(m, d, reactions, "c", false);
-    const std::vector<double> lam = full_lambda(d, reactions, r.eq_id);
-    golden.f64_close(r.wrench, "lam");
-    allclose(r.wrench, std::vector<double>{lam[0], lam[2]}, 1e-8, 1e-8,
-             "lam");
-    allclose(r.wrench, std::vector<double>{-force[0], -force[1]}, .05, 2.,
-             "pin force balances applied");
-    bt::require(r.wrench.size() == 2, "connect wrench is force-only");
-    const std::span<const double> qvel =
-        std::views::counted(d->qvel, m->nv);
-    bt::require(std::abs(qvel[10]) > 0., "rider pitch dof spun up");
-    golden.done();
+  bt::ModelFixture const fixture(pair_xml(
+      R"(<connect name="c" body1="rider" body2="bike" anchor="0 0 0"/>)"));
+  mjModel const *m = fixture.model.get();
+  mjData *d = fixture.data.get();
+  const int rider = body_id(m, "rider");
+  engine::forward(m, d);
+  const std::array<double, 6> xfrc{force[0], 0., force[1], 0., 30., 0.};
+  const std::span<mjtNum> applied = xfrc_row(m, d, rider);
+  for (std::size_t i = 0; i < 6; ++i)
+    applied[i] = xfrc[i];
+  for (int step = 0; step < 100; ++step)
+    engine::step(m, d);
+  rw::EqualityReactions const reactions(m);
+  const Recovered r = recover_on(m, d, reactions, "c", false);
+  const std::vector<double> lam = full_lambda(d, reactions, r.eq_id);
+  golden.f64_close(r.wrench, "lam");
+  allclose(r.wrench, std::vector<double>{lam[0], lam[2]}, 1e-8, 1e-8, "lam");
+  allclose(r.wrench, std::vector<double>{-force[0], -force[1]}, .05, 2.,
+           "pin force balances applied");
+  bt::require(r.wrench.size() == 2, "connect wrench is force-only");
+  const std::span<const double> qvel = std::views::counted(d->qvel, m->nv);
+  bt::require(std::abs(qvel[10]) > 0., "rider pitch dof spun up");
+  golden.done();
 }
 
 void test_connect_recovers_force_only() {
@@ -305,7 +309,7 @@ void test_connect_recovers_force_only() {
 
 void test_contact_rows_do_not_corrupt_equality_selection() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(R"(
+    bt::ModelFixture const fixture(R"(
 <mujoco><option gravity="0 0 0" timestep="0.0005"/>
 <worldbody>
   <geom name="floor" type="plane" size="5 5 1" pos="0 0 0"/>
@@ -320,7 +324,7 @@ void test_contact_rows_do_not_corrupt_equality_selection() {
     <geom type="sphere" size="0.1"/></body>
 </worldbody>
 <equality><weld name="w" body1="rider" body2="bike"/></equality></mujoco>)");
-    mjModel *m = fixture.model.get();
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     const int rider = body_id(m, "rider");
     engine::forward(m, d);
@@ -331,10 +335,11 @@ void test_contact_rows_do_not_corrupt_equality_selection() {
     bool non_equality_rows = false;
     const std::span<const int> efc_types =
         std::views::counted(d->efc_type, d->nefc);
-    for (std::size_t i = 0; i < efc_types.size(); ++i)
-        if (efc_types[i] != mjCNSTR_EQUALITY) non_equality_rows = true;
+    for (int const efc_type : efc_types)
+      if (efc_type != mjCNSTR_EQUALITY)
+        non_equality_rows = true;
     bt::require(non_equality_rows, "non-equality rows interleave");
-    rw::EqualityReactions reactions(m);
+    rw::EqualityReactions const reactions(m);
     const Recovered r = recover_on(m, d, reactions, "w", true);
     const std::vector<double> lam = full_lambda(d, reactions, r.eq_id);
     golden.f64_close(std::span<const double>{r.wrench}.first(2),
@@ -349,9 +354,9 @@ void test_contact_rows_do_not_corrupt_equality_selection() {
 
 void test_prepared_attachment_raw_matches_interval_state_recovery() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    bt::ModelFixture fixture(pair_xml(
-        R"(<weld name="w" body1="rider" body2="bike"/>)"));
-    mjModel *m = fixture.model.get();
+    bt::ModelFixture const fixture(
+        pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"));
+    mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
     const int rider = body_id(m, "rider");
     const int bike = body_id(m, "bike");
@@ -365,7 +370,7 @@ void test_prepared_attachment_raw_matches_interval_state_recovery() {
     const int eq_id = mj_name2id(m, mjOBJ_EQUALITY, "w");
     const std::vector<double> point{0., 0., 1.};
     const std::vector<double> normal{0., 0., 1.};
-    rw::EqualityReactions reactions(m);
+    rw::EqualityReactions const reactions(m);
     rw::LeastSquaresWorkspace workspace(
         static_cast<rw::lapack_int>(m->nv),
         std::max<rw::lapack_int>(m->nv, 6), 1);
@@ -509,35 +514,33 @@ rider::RiderContactsConfig contacts_config(double pad_spacing) {
 }
 
 void foot_cop_case(double pad_spacing) {
-    bt::ModelFixture fixture(kContactsXml);
-    mjModel *m = fixture.model.get();
-    mjData *d = fixture.data.get();
-    const std::span<const double> geom_size =
-        std::views::counted(m->geom_size, 3 * m->ngeom);
-    for (const char *foot : {"rider_foot_front", "rider_foot_rear"})
-        xfrc_row(m, d, body_id(m, foot))[2] = -100.;
-    engine::forward(m, d);
-    writers::RiderContactWriter writer(m, contacts_config(pad_spacing));
-    const writers::RiderAttachmentMeasurement measurement =
-        writer.attachment_samples(d, std::nullopt, /*raw=*/false);
-    bt::require(measurement.errors.empty(),
-                "attachment measurement collects no errors");
-    bt::require(measurement.samples.size() == 2,
-                "both linked pedals measured");
-    for (const auto &[out, sample] : measurement.samples) {
-        const char *geom_name =
-            out == "foot_front" ? "geom_pedal_front" : "geom_pedal_rear";
-        const int geom =
-            mj_name2id(m, mjOBJ_GEOM, geom_name);
-        bt::require(geom >= 0, "support geom resolves");
-        const double compiled = geom_size[3 * static_cast<std::size_t>(geom)];
-        // The COP budget follows the compiled platform half-length —
-        // pedal_patch_half_length_m (.01/.04) only sizes the sampling
-        // pads, never this field.
-        bt::require(sample.half_patch_m == .05 && compiled == .05,
-                    "foot cop budget comes from the compiled platform "
-                    "geom, not the sampling pads");
-    }
+  bt::ModelFixture const fixture(kContactsXml);
+  mjModel const *m = fixture.model.get();
+  mjData *d = fixture.data.get();
+  const std::span<const double> geom_size =
+      std::views::counted(m->geom_size, 3 * m->ngeom);
+  for (const char *foot : {"rider_foot_front", "rider_foot_rear"})
+    xfrc_row(m, d, body_id(m, foot))[2] = -100.;
+  engine::forward(m, d);
+  writers::RiderContactWriter writer(m, contacts_config(pad_spacing));
+  const writers::RiderAttachmentMeasurement measurement =
+      writer.attachment_samples(d, std::nullopt, /*raw=*/false);
+  bt::require(measurement.errors.empty(),
+              "attachment measurement collects no errors");
+  bt::require(measurement.samples.size() == 2, "both linked pedals measured");
+  for (const auto &[out, sample] : measurement.samples) {
+    const char *geom_name =
+        out == "foot_front" ? "geom_pedal_front" : "geom_pedal_rear";
+    const int geom = mj_name2id(m, mjOBJ_GEOM, geom_name);
+    bt::require(geom >= 0, "support geom resolves");
+    const double compiled = geom_size[3 * static_cast<std::size_t>(geom)];
+    // The COP budget follows the compiled platform half-length —
+    // pedal_patch_half_length_m (.01/.04) only sizes the sampling
+    // pads, never this field.
+    bt::require(sample.half_patch_m == .05 && compiled == .05,
+                "foot cop budget comes from the compiled platform "
+                "geom, not the sampling pads");
+  }
 }
 
 void test_foot_cop_budget_comes_from_compiled_platform_not_sampling_pads() {

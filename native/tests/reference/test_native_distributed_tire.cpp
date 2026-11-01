@@ -55,7 +55,7 @@ namespace rt = ::runtime;
     return *member_mut(*member_mut(object_mut(v), a), b);
 }
 
-void set_number(io::Value::Object &o, std::string_view key,
+void set_number(io::Value::Object &o, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                 std::string_view spelling) {
     for (auto &[k, val] : o)
         if (k == key) val = io::Value{io::Number{std::string(spelling)}};
@@ -67,7 +67,7 @@ void set_array(io::Value::Object &o, std::string_view key,
     for (const auto s : spellings)
         out.emplace_back(io::Value{io::Number{std::string(s)}});
     for (auto &[k, val] : o)
-        if (k == key) val = io::Value{std::move(out)};
+        if (k == key) val = io::Value{std::move(out)}; // NOLINT(bugprone-use-after-move) the moved-handle read is the contract under test
 }
 
 // ---------------------------------------------------------------------
@@ -160,7 +160,7 @@ void set_array(io::Value::Object &o, std::string_view key,
                         "calibration_status") == "experimental_unvalidated",
                 "calibration status is the unvalidated sentinel");
     const auto config = env_config();
-    Stepper st(mjb_path(), config);
+    Stepper const st(mjb_path(), config);
 }
 
 // tests/reference/test_native_distributed_tire.py::test_config_rejects_bad_distributed_sections
@@ -170,7 +170,7 @@ void set_array(io::Value::Object &o, std::string_view key,
         auto bad = base;
         edit(bad);
         rejects<std::exception>(
-                [&] { Stepper st(mjb_path(), nativecfg::decode(bad)); });
+            [&] { Stepper const st(mjb_path(), nativecfg::decode(bad)); });
     };
     mutate([](io::Value &v) {
         auto &tire = object_mut(v);
@@ -231,7 +231,7 @@ void set_array(io::Value::Object &o, std::string_view key,
                 std::span<const double>(row).first(row.size() - 1));
     }, "rear.s");
     auto bogus = names;
-    bogus.push_back("bogus");
+    bogus.emplace_back("bogus");
     auto bad_row = row;
     bad_row.push_back(0.);
     rejects<std::runtime_error>(
@@ -336,7 +336,7 @@ void set_array(io::Value::Object &o, std::string_view key,
 [[gnu::noinline]] void test_distributed_observations_declare_multi_contact() {
     const auto env = bike::research::make_environment(
             bundle("env_request") / "request.toml");
-    runtime::RideControl command;
+    runtime::RideControl const command;
     env->begin_control(command, 0., 0.);
     const auto result = env->advance_control(std::nullopt, std::nullopt);
     bt::require(result.has_value(), "first control window completes");

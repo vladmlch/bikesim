@@ -31,7 +31,6 @@ using namespace drivetrain_reference;
 using bike::io::canonical_json;
 using policy_reference::field;
 using policy_reference::member;
-using policy_reference::put;
 using policy_reference::set;
 
 constexpr std::string_view kGeometric = "geometric_ideal_mid_drive";
@@ -87,10 +86,11 @@ struct Frozen {
     std::array<std::uint64_t, 4> storage;
 };
 Frozen frozen(const Stepper& owner) {
-    return {canonical_json(state(owner)),
-            {owner.qpos().begin(), owner.qpos().end()},
-            {owner.qvel().begin(), owner.qvel().end()},
-            {owner.ctrl().begin(), owner.ctrl().end()}, storage_or_absent(owner)};
+  return {.state = canonical_json(state(owner)),
+          .qpos = {owner.qpos().begin(), owner.qpos().end()},
+          .qvel = {owner.qvel().begin(), owner.qvel().end()},
+          .ctrl = {owner.ctrl().begin(), owner.ctrl().end()},
+          .storage = storage_or_absent(owner)};
 }
 bool same_bits(std::span<const double> a, std::span<const double> b) {
     // Byte-exact: NaN payloads and -0.0 stay distinct, unlike operator==.
@@ -446,38 +446,43 @@ void test_rejected_settle_keeps_everything() {
     // A settle rejection publishes nothing — not even transmission solve
     // telemetry: pending validation runs ahead of every solve, so a refused
     // settle leaves battery, pending, diagnostics and hub state frozen.
-    for (auto kind : kinds) {
-        auto owner = pair(kind);
-        std::vector<double> control;
-        const auto armed = solved_fixture(*owner, control);
-        // A pending reservation below the solved effort violates the
-        // reserved ceiling — the rejection must land before publication.
-        auto corrupted = armed;
-        set(corrupted, "pending_actuation",
-            Value{Value::Object{{"requested", real(.001)}, {"omega", real(4.)},
-                                {"dt", real(.002)}, {"enabled", Value{true}}}});
-        restore(*owner, corrupted);
-        const auto before = frozen(*owner);
-        for (int i = 0; i < 2; ++i) {
-            (void)rejected<drivetrain::ArithmeticError>([&] { (void)owner->drive().settle(); },
-                                                      "reserved effort ceiling");
-            bt::require(frozen(*owner) == before, "refused settle publishes nothing");
-        }
-        // Retry from the honest armed state: bitwise-equal to a clean
-        // drivetrain settling from the same snapshot — the control steps
-        // from the same pre-step engine state so the recorded constraint
-        // forces match.
-        restore(*owner, armed);
-        const auto solved = owner->drive().settle();
-        const std::vector<double> out(solved.begin(), solved.end());
-        auto fresh = pair(kind);
-        restore(*fresh, armed);
-        fresh->set_inputs(control, std::vector<double>(fresh->qvel().size()));
-        fresh->step();
-        const auto expected = fresh->drive().settle();
-        bt::require(same_bits(out, expected), "honest settle is bitwise the clean drivetrain's");
-        bt::require(canonical_json(state(*owner)) == canonical_json(state(*fresh)),
-                    "honest settle lands the clean drivetrain's state");
+    for (auto const kind : kinds) {
+      auto owner = pair(kind);
+      std::vector<double> control;
+      const auto armed = solved_fixture(*owner, control);
+      // A pending reservation below the solved effort violates the
+      // reserved ceiling — the rejection must land before publication.
+      auto corrupted = armed;
+      set(corrupted, "pending_actuation",
+          Value{Value::Object{{"requested", real(.001)},
+                              {"omega", real(4.)},
+                              {"dt", real(.002)},
+                              {"enabled", Value{true}}}});
+      restore(*owner, corrupted);
+      const auto before = frozen(*owner);
+      for (int i = 0; i < 2; ++i) {
+        (void)rejected<drivetrain::ArithmeticError>(
+            [&] { (void)owner->drive().settle(); }, "reserved effort ceiling");
+        bt::require(frozen(*owner) == before,
+                    "refused settle publishes nothing");
+      }
+      // Retry from the honest armed state: bitwise-equal to a clean
+      // drivetrain settling from the same snapshot — the control steps
+      // from the same pre-step engine state so the recorded constraint
+      // forces match.
+      restore(*owner, armed);
+      const auto solved = owner->drive().settle();
+      const std::vector<double> out(solved.begin(), solved.end());
+      auto fresh = pair(kind);
+      restore(*fresh, armed);
+      fresh->set_inputs(control, std::vector<double>(fresh->qvel().size()));
+      fresh->step();
+      const auto expected = fresh->drive().settle();
+      bt::require(same_bits(out, expected),
+                  "honest settle is bitwise the clean drivetrain's");
+      bt::require(canonical_json(state(*owner)) ==
+                      canonical_json(state(*fresh)),
+                  "honest settle lands the clean drivetrain's state");
     }
 }
 

@@ -372,13 +372,13 @@ constexpr std::array kCruiseFields{
         std::initializer_list<std::pair<std::string, io::Value>> fields) {
     io::Value::Object root;
     for (auto &[name, value] : fields)
-        root.emplace_back(std::move(name), std::move(value));
+      root.emplace_back(name, value);
     return root;
 }
 
 [[nodiscard]] std::vector<std::byte> image(std::string_view xml = kXml) {
-    bt::ModelFixture fixture(xml);
-    return bike::initialization::capture_model_image(*fixture.model).mjb;
+  bt::ModelFixture const fixture(xml);
+  return bike::initialization::capture_model_image(*fixture.model).mjb;
 }
 
 [[gnu::noinline]] void every_api_requires_config(
@@ -402,35 +402,33 @@ constexpr std::array kCruiseFields{
 [[gnu::noinline]] void missing_config_key_names_it(std::string_view key) {
     const auto bytes = image();
     rejects<std::invalid_argument>(
-            [&] { Stepper st(bytes, wire(cruise_section(key))); }, key);
+        [&] { Stepper const st(bytes, wire(cruise_section(key))); }, key);
 }
 
 [[gnu::noinline]] void schema_and_section_validation(io::Value document) {
     const auto bytes = image();
     rejects<std::invalid_argument>(
-            [&] { Stepper st(bytes, nativecfg::decode(document)); });
+        [&] { Stepper const st(bytes, nativecfg::decode(document)); });
 }
 
 [[gnu::noinline]] void invalid_config_value(std::string_view key,
                                             double value) {
     const auto bytes = image();
     rejects<std::invalid_argument>(
-            [&] {
-                Stepper st(bytes,
-                           wire(cruise_section(
-                                   {}, std::pair<std::string_view, double>{
-                                               key, value})));
-            },
-            key);
+        [&] {
+          Stepper const st(
+              bytes, wire(cruise_section(
+                         {}, std::pair<std::string_view, double>{key, value})));
+        },
+        key);
 }
 
 [[gnu::noinline]] void config_target_band(double target) {
     const auto bytes = image();
     rejects<std::invalid_argument>([&] {
-        Stepper st(bytes,
-                   wire(cruise_section(
-                           {}, std::pair<std::string_view, double>{
-                                       "target_speed_kmh", target})));
+      Stepper const st(
+          bytes, wire(cruise_section({}, std::pair<std::string_view, double>{
+                                             "target_speed_kmh", target})));
     });
 }
 
@@ -446,7 +444,7 @@ constexpr std::array kCruiseFields{
     const auto bytes = image(xml);
     auto cfg = std::make_unique<nativecfg::WriterConfig>();
     cfg->cruise = kConfig;
-    rejects<std::invalid_argument>([&] { Stepper st(bytes, *cfg); },
+    rejects<std::invalid_argument>([&] { Stepper const st(bytes, *cfg); },
                                    "root_x");
 }
 
@@ -539,7 +537,7 @@ constexpr std::array kCruiseFields{
     cfg->cruise = nativecfg::CruiseConfig{
             .target_speed_kmh = 45., .kp_nm_per_mps = 180.,
             .ki_nm_per_mps_s = 150., .torque_ceiling_nm = 150.};
-    Stepper enabled(bytes, *cfg);
+    Stepper const enabled(bytes, *cfg);
     bt::require(enabled.cruise_state().integral_mps_s == 0. &&
                         enabled.cruise_state().target_speed_mps ==
                                 45. / 3.6,

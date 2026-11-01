@@ -88,7 +88,12 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 
 [[gnu::noinline]] void test_ik_derivative_unwraps_near_angle_branch_cut() {
     // tests/reference/test_leg_loop.py::test_ik_derivative_unwraps_near_angle_branch_cut
-    const spindle::LegLoopGeometry g{1., 1., 1., 0., 0., 1.};
+    const spindle::LegLoopGeometry g{.thigh_m = 1.,
+                                     .link_m = 1.,
+                                     .knee_sign = 1.,
+                                     .thigh_angle0_rad = 0.,
+                                     .link_angle0_rad = 0.,
+                                     .side_sign = 1.};
     const auto jac =
         spindle::leg_loop_jacobian(g, Vec2{0., 0.}, Vec2{0., 0.}, 1.,
                                    -std::numbers::pi / 2., 0.);
@@ -100,11 +105,11 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 [[gnu::noinline]] void
 test_native_spindle_and_leg_pose_including_bike_pitch() {
     // tests/reference/test_leg_loop.py::test_native_spindle_and_leg_pose_including_bike_pitch
-    auto plant = rr::pinned_model();
+    auto const plant = rr::pinned_model();
     mjModel *m = plant.model.get();
     mjData *d = plant.data.get();
     const auto S = [](int i) { return static_cast<std::size_t>(i); };
-    auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+    auto const qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
     const auto adrs =
         model_access::readonly_buffer(m->jnt_qposadr, m->njnt, "jnt_qposadr");
     const int crank = mj_name2id(m, mjOBJ_JOINT, "crank_spin");
@@ -167,7 +172,8 @@ test_native_spindle_and_leg_pose_including_bike_pitch() {
                                   ("connect_foot_" + side).c_str());
         const int foot = mj_name2id(m, mjOBJ_BODY,
                                     ("rider_foot_" + side).c_str());
-        const std::size_t eqo = static_cast<std::size_t>(eq * mjNEQDATA);
+        const std::size_t eqo =
+            static_cast<std::size_t>(eq) * static_cast<std::size_t>(mjNEQDATA);
         const std::size_t xf = 9 * S(foot);
         const Vec2 endpoint{
             xpos[3 * S(foot)] + xmat[xf] * eq_data[eqo] +
@@ -187,8 +193,8 @@ test_native_spindle_and_leg_pose_including_bike_pitch() {
 [[gnu::noinline]] void test_leg_ik_matches_settled_native_joints() {
     // tests/reference/test_leg_loop.py::test_leg_ik_matches_settled_native_joints
     auto rig = rr::pinned_rig();
-    mjModel *m = rig->stepper->model();
-    mjData *d = rig->stepper->data();
+    mjModel const *m = rig->stepper->model();
+    mjData const *d = rig->stepper->data();
     const auto xpos =
         model_access::readonly_buffer(d->xpos, m->nbody * 3, "xpos");
     const auto xmat =

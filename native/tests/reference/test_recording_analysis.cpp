@@ -28,31 +28,30 @@ using namespace recording_test;
 namespace detail = rec::detail;
 using Object = io::Value::Object;
 using Array = io::Value::Array;
-using rec::Recording;
 
 constexpr double kDt = 1. / 8;
 
-std::vector<SamplePtr> rows(std::size_t count = 3, double offset = 0.,
+std::vector<SamplePtr> rows(std::size_t count = 3, double offset = 0., // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                             bool nan = false) {
     std::vector<SamplePtr> out;
+    out.reserve(count);
     for (std::size_t i = 0; i < count; ++i)
-        out.push_back(sample_row(
-            static_cast<std::int64_t>(i), static_cast<double>(i) * kDt + offset,
-            kDt, {}, {}, {}, {},
-            energy_channels(WireObject{
-                {"residual_j",
-                 Wire{nan ? std::numeric_limits<double>::quiet_NaN()
-                          : static_cast<double>(i) * .1}}})));
+      out.push_back(sample_row(
+          static_cast<std::int64_t>(i), static_cast<double>(i) * kDt + offset,
+          kDt, {}, {}, {}, {},
+          energy_channels(WireObject{
+              {"residual_j", Wire{nan ? std::numeric_limits<double>::quiet_NaN()
+                                      : static_cast<double>(i) * .1}}})));
     return out;
 }
 
-std::filesystem::path seal(bt::TemporaryDirectory &dir,
+std::filesystem::path seal(bt::TemporaryDirectory const &dir,
                            std::vector<SamplePtr> samples,
                            std::string_view name = "run",
                            SyntheticCapture options = {}) {
-    options.episodes = {std::move(samples)};
-    auto capture = synthetic_capture({}, std::move(options));
-    return rec::finalize(*capture, dir.path() / name).directory;
+  options.episodes = {std::move(samples)};
+  auto capture = synthetic_capture({}, std::move(options));
+  return rec::finalize(*capture, dir.path() / name).directory;
 }
 
 const Value &member_at(const Value &object, std::string_view name) {
@@ -81,18 +80,19 @@ void test_recording_json_boundary_round_trips_typed_literals() {
     const std::string tag{io::kRecordingTag};
     Value payload{Object{
         {"nan", rec::value::real(std::numeric_limits<double>::quiet_NaN())},
-        {"positive",
-         rec::value::real(std::numeric_limits<double>::infinity())},
+        {"positive", rec::value::real(std::numeric_limits<double>::infinity())},
         {"negative",
          rec::value::real(-std::numeric_limits<double>::infinity())},
         {"zero", rec::value::real(-0.)},
         {"null", Value{}},
         {"exists", Value{false}},
-        {"literal", Value{Object{{tag, text("float64")},
-                                 {"value", text("nan")}}}},
-        {"decimal", Value{io::Tagged{"decimal", {{"value", "1.2300"}}}}},
+        {"literal",
+         Value{Object{{tag, text("float64")}, {"value", text("nan")}}}},
+        {"decimal",
+         Value{io::Tagged{.kind = "decimal", .fields = {{"value", "1.2300"}}}}},
         {"timestamp",
-         Value{io::Tagged{"datetime", {{"value", "2026-01-01T12:00:00+00:00"}}}}},
+         Value{io::Tagged{.kind = "datetime",
+                          .fields = {{"value", "2026-01-01T12:00:00+00:00"}}}}},
     }};
     const auto document = io::recording_json(payload);
     const auto result = io::parse_recording_json(document);
@@ -134,7 +134,7 @@ void test_recording_json_boundary_round_trips_typed_literals() {
 }
 
 void test_window_returns_interval_overlap_and_selected_fields() {
-    bt::TemporaryDirectory dir("analysis-window");
+    bt::TemporaryDirectory const dir("analysis-window");
     const auto reader = sealed(seal(dir, rows()));
     const auto window = rec::window(*reader, 0, .0625, .2,
                                     std::optional<std::string>(
@@ -161,7 +161,7 @@ void test_window_returns_interval_overlap_and_selected_fields() {
 }
 
 void test_bounded_query_and_export_report_truncation_and_row_totals() {
-    bt::TemporaryDirectory dir("analysis-bounded");
+    bt::TemporaryDirectory const dir("analysis-bounded");
     const auto path = seal(dir, rows(211));
     const auto reader = sealed(path);
     const auto bounded = reader->query(
@@ -200,7 +200,7 @@ void test_bounded_query_and_export_report_truncation_and_row_totals() {
 }
 
 void test_sql_cannot_mutate_through_the_reader() {
-    bt::TemporaryDirectory dir("analysis-sql");
+    bt::TemporaryDirectory const dir("analysis-sql");
     const auto reader = sealed(seal(dir, rows()));
     for (const char *sql : {
              "DELETE FROM physics",
@@ -217,7 +217,7 @@ void test_sql_cannot_mutate_through_the_reader() {
 }
 
 void test_exact_comparison_refuses_mismatched_clocks_before_values() {
-    bt::TemporaryDirectory dir("analysis-clock");
+    bt::TemporaryDirectory const dir("analysis-clock");
     const auto left = sealed(seal(dir, rows(), "a"));
     const auto right = sealed(seal(dir, rows(3, .125), "b"));
     const auto result = rec::compare(*left, *right, 0, 0);
@@ -235,7 +235,7 @@ void test_exact_comparison_refuses_mismatched_clocks_before_values() {
 }
 
 void test_matching_nonfinite_values_are_agreeing_invalid_evidence() {
-    bt::TemporaryDirectory dir("analysis-nonfinite");
+    bt::TemporaryDirectory const dir("analysis-nonfinite");
     const auto left = sealed(seal(dir, rows(3, 0., true), "a"));
     const auto right = sealed(seal(dir, rows(3, 0., true), "b"));
     const auto result = rec::compare(
@@ -249,7 +249,7 @@ void test_matching_nonfinite_values_are_agreeing_invalid_evidence() {
 }
 
 void test_report_excludes_forwarded_energy_extrema() {
-    bt::TemporaryDirectory dir("analysis-report");
+    bt::TemporaryDirectory const dir("analysis-report");
     std::vector<SamplePtr> samples;
     samples.push_back(sample_row(0, 0., kDt, {}, {}, {}, {},
                                  energy_channels(
@@ -272,7 +272,7 @@ void test_report_excludes_forwarded_energy_extrema() {
 }
 
 void test_exact_comparison_reports_first_mismatch_with_stable_keys() {
-    bt::TemporaryDirectory dir("analysis-mismatch");
+    bt::TemporaryDirectory const dir("analysis-mismatch");
     auto right_rows = rows();
     // right row 1: residual .1 + 1e-6 — beyond atol=rtol=1e-9.
     auto shifted = energy_channels(
@@ -301,7 +301,7 @@ void test_exact_comparison_reports_first_mismatch_with_stable_keys() {
 }
 
 void test_exact_comparison_reports_prefix_extent_mismatch() {
-    bt::TemporaryDirectory dir("analysis-extent");
+    bt::TemporaryDirectory const dir("analysis-extent");
     const auto left = sealed(seal(dir, rows(3), "a"));
     const auto right = sealed(seal(dir, rows(2), "b"));
     const auto result = rec::compare(*left, *right, 0, 0);
@@ -321,7 +321,7 @@ void test_exact_comparison_reports_prefix_extent_mismatch() {
 }
 
 void test_exact_comparison_rejects_incompatible_dof_coordinate_identity() {
-    bt::TemporaryDirectory dir("analysis-coords");
+    bt::TemporaryDirectory const dir("analysis-coords");
     auto renamed = synthetic_joints();
     renamed[0].name = "renamed_" + renamed[0].name;
     const auto other =
@@ -342,7 +342,7 @@ void test_exact_comparison_rejects_incompatible_dof_coordinate_identity() {
 }
 
 void test_exact_comparison_rejects_differing_measurement_provenance() {
-    bt::TemporaryDirectory dir("analysis-provenance");
+    bt::TemporaryDirectory const dir("analysis-provenance");
     auto right_rows = rows();
     right_rows[2] = sample_row(
         2, 2 * kDt, kDt, {}, {}, {}, {},
@@ -361,7 +361,7 @@ void test_exact_comparison_rejects_differing_measurement_provenance() {
 }
 
 void test_exact_comparison_numeric_tolerance_boundary() {
-    bt::TemporaryDirectory dir("analysis-tolerance");
+    bt::TemporaryDirectory const dir("analysis-tolerance");
     const std::array<double, 3> deltas{5e-10, 1e-9 / (1. - 1e-9), 1e-8};
     const std::array<bool, 3> expected{true, true, false};
     const auto left = sealed(seal(dir, rows(), "a"));
@@ -402,7 +402,7 @@ void test_exact_comparison_numeric_tolerance_boundary() {
 }
 
 void test_exact_comparison_distinguishes_null_from_missing() {
-    bt::TemporaryDirectory dir("analysis-presence");
+    bt::TemporaryDirectory const dir("analysis-presence");
     auto left_energy = energy_channels(
         WireObject{{"residual_j", Wire{nullptr}}});
     auto right_energy = energy_channels();
@@ -431,7 +431,7 @@ void test_exact_comparison_distinguishes_null_from_missing() {
 }
 
 void test_exact_comparison_reports_categorical_change() {
-    bt::TemporaryDirectory dir("analysis-category");
+    bt::TemporaryDirectory const dir("analysis-category");
     const auto with_status = [](std::string_view verdict) {
         return energy_channels(
             {}, WireObject{{"model_status",
@@ -468,7 +468,7 @@ void test_exact_comparison_reports_categorical_change() {
 }
 
 void test_summary_mode_reports_parameter_changes_without_alignment() {
-    bt::TemporaryDirectory dir("analysis-summary");
+    bt::TemporaryDirectory const dir("analysis-summary");
     const auto summary_for = [](std::int64_t stiffness, double scale) {
         Object frame{{"seat_stiffness_n_mm",
                       rec::value::integer(stiffness)}};

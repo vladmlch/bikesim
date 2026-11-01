@@ -72,7 +72,7 @@ inline Pinned pinned() {
     const auto decoded = nativecfg::decode(rr::member(config, "writer_config"));
     bt::require(decoded.rider_contacts.has_value(),
                 "the projected config carries rider_contacts");
-    out.contacts = *decoded.rider_contacts;
+    out.contacts = (decoded.rider_contacts).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     return out;
 }
 
@@ -85,7 +85,7 @@ inline int eq_id(const mjModel *m, const char *name) {
 // xpos[body] + xmat[body] @ eq_data[eq, offset:offset+3] — the python
 // row's body-frame anchor rotated to world.
 inline std::array<double, 3> world_anchor(const mjModel *m, const mjData *d,
-                                          int eq, int body, int offset) {
+                                          int eq, int body, int offset) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     std::array<double, 3> point{};
     const auto xmat =
         cbuf(d->xmat, 9 * m->nbody).subspan(9 * static_cast<std::size_t>(body), 9);
@@ -98,7 +98,8 @@ inline std::array<double, 3> world_anchor(const mjModel *m, const mjData *d,
     for (int r = 0; r < 3; ++r)
         for (int c = 0; c < 3; ++c)
             point[static_cast<std::size_t>(r)] +=
-                xmat[static_cast<std::size_t>(3 * r + c)] *
+                xmat[static_cast<std::size_t>(3) * static_cast<std::size_t>(r) +
+                     static_cast<std::size_t>(c)] *
                 anchor[static_cast<std::size_t>(c)];
     for (int r = 0; r < 3; ++r)
         point[static_cast<std::size_t>(r)] +=

@@ -14,6 +14,7 @@
 #include "diag.hpp"
 #include "pneumatic_reference_support.hpp"
 
+#include <algorithm>
 #include <map>
 #include <set>
 
@@ -67,7 +68,7 @@ namespace golden = bike::golden;
 
 [[nodiscard]] std::string fixture_text(const std::filesystem::path &path) {
     const auto bytes = fixture_bytes(path);
-    return {reinterpret_cast<const char *>(bytes.data()), bytes.size()};
+    return {reinterpret_cast<const char *>(bytes.data()), bytes.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
 }
 
 // rig_* configs are deterministic text and stay shared.
@@ -102,7 +103,7 @@ inline void text(bt::oracle::Node &golden, std::string_view actual,
 inline void count(bt::oracle::Node &golden, std::int64_t actual,
                   const std::string &label) {
     const auto bits = std::bit_cast<std::uint64_t>(actual);
-    std::array<std::byte, 8> bytes;
+    std::array<std::byte, 8> bytes{};
     for (unsigned shift = 0; shift < 64; shift += 8)
         bytes[shift / 8] = static_cast<std::byte>((bits >> shift) & 0xffu);
     golden.bytes(bytes, "<i8", {}, label);
@@ -127,29 +128,29 @@ void snapshots(bt::oracle::Node &golden, const Stepper &st,
         bt::require(snap.has_value(),
                     std::string(sides.at(static_cast<std::size_t>(side))) +
                             " snapshot present");
-        const auto &s = *snap;
+        const auto &s = (snap).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         const std::string base = std::string(
                 sides.at(static_cast<std::size_t>(side)));
-        count(golden, s.interval_id, base + ".interval_id " + tag);
-        text(golden, s.backend, base + ".backend " + tag);
+        count(golden, s.interval_id, base + ".interval_id " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+        text(golden, s.backend, base + ".backend " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         boolean(golden, s.geometric_contact,
-                base + ".geometric_contact " + tag);
-        scalar(golden, s.time_s, base + ".time_s " + tag);
+                base + ".geometric_contact " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+        scalar(golden, s.time_s, base + ".time_s " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         scalar(golden, s.effective_radius_m,
-               base + ".effective_radius_m " + tag);
+               base + ".effective_radius_m " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         count(golden, static_cast<std::int64_t>(s.patches.size()),
-              base + ".patches " + tag);
+              base + ".patches " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         for (std::size_t i = 0; i < s.patches.size(); ++i) {
             const auto &p = s.patches[i];
             const std::string pbase =
                     base + ".patches[" + std::to_string(i) + "]";
             boolean(golden, p.working_surface,
-                    pbase + ".working_surface " + tag);
+                    pbase + ".working_surface " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             scalar(golden, p.normal_load_n,
-                   pbase + ".normal_load_n " + tag);
+                   pbase + ".normal_load_n " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             scalar(golden, p.tangent_force_n,
-                   pbase + ".tangent_force_n " + tag);
-            scalar(golden, p.slip_mps, pbase + ".slip_mps " + tag);
+                   pbase + ".tangent_force_n " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+            scalar(golden, p.slip_mps, pbase + ".slip_mps " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         }
     }
 }
@@ -167,7 +168,7 @@ void diagnostics(bt::oracle::Node &golden, const Stepper &st,
         bt::require(slot.has_value(),
                     std::string(sides.at(static_cast<std::size_t>(side))) +
                             " diagnostics present");
-        const auto &d = *slot;
+        const auto &d = (slot).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         const auto at = [&](std::string_view key) {
             return std::string(
                            sides.at(static_cast<std::size_t>(side))) +
@@ -285,7 +286,7 @@ patch_bounds(std::span<const double> wire_row,
 // the evolved wire vs the committed applier dict and the next recorded
 // row, snapshots, diagnostics twice (manifest digest + live dict — the
 // same stream), then the three energy surfaces.
-void golden_parity(bt::oracle::Node &golden, std::string_view episode_name,
+void golden_parity(bt::oracle::Node &golden, std::string_view episode_name, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                    std::string_view env_name, std::size_t rows = 0) {
     auto ep = load_episode_bundle(episode_name);
     // The env model was a byte-identical copy of the episode model; the
@@ -363,7 +364,7 @@ void test_config_projection_carries_the_pneumatic_section() {
     const auto cfg = nativecfg::decode(wire);
     bt::require(cfg.tire.has_value() && cfg.tire->pneumatic.has_value(),
                 "pneumatic section decoded");
-    const auto &p = *cfg.tire->pneumatic;
+    const auto &p = (cfg.tire->pneumatic).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     // The resolved tier row as the golden gate — [n_rays, half_angle_deg,
     // discretised_brush, timestep_s].
     const std::array tier{static_cast<double>(p.n_rays), p.half_angle_deg,
@@ -375,9 +376,10 @@ void test_config_projection_carries_the_pneumatic_section() {
     bt::require(io::find_member(tire, "surface_map") != nullptr,
                 "the track surface map rode the wire");
     // Construction on the fixture image is the projected-config gate.
-    Stepper st(std::span<const std::byte>(
-                       fixture_bytes(platform_fixture("episodes") / "fast40" / "model.mjb")),
-               cfg);
+    Stepper const st(
+        std::span<const std::byte>(fixture_bytes(platform_fixture("episodes") /
+                                                 "fast40" / "model.mjb")),
+        cfg);
     golden.done();
 }
 
@@ -393,8 +395,8 @@ void test_config_rejects_bad_pneumatic_sections() {
                 fixture_text(platform_fixture("env_fast") / "wire.json"));
         mutate(bad);
         rejects<std::exception>([&] {
-            Stepper st(std::span<const std::byte>(mjb),
-                       nativecfg::decode(bad));
+          Stepper const st(std::span<const std::byte>(mjb),
+                           nativecfg::decode(bad));
         });
     };
     const auto object_of = [](io::Value &v) -> io::Value::Object & {
@@ -414,11 +416,11 @@ void test_config_rejects_bad_pneumatic_sections() {
     };
     const auto erase = [&](io::Value &v, std::string_view key) {
         auto &object = object_of(v);
-        object.erase(std::remove_if(object.begin(), object.end(),
-                                    [&](const auto &member) {
-                                        return member.first == key;
-                                    }),
-                     object.end());
+        object.erase(
+            std::ranges::remove_if(
+                object, [&](const auto &member) { return member.first == key; })
+                .begin(),
+            object.end());
     };
     const auto set = [&](io::Value &v, std::string_view key,
                          io::Value next) {
@@ -593,22 +595,20 @@ void test_pneumatic_golden_episode_event_rich() {
 
     auto field = [&](std::size_t k, std::string_view side,
                      std::string_view key) -> const io::Value & {
-        return *io::find_member(
-                io::as_object(
-                        *io::find_member(
-                                io::as_object(diag_list[k],
-                                              "tire_diagnostics[k]"),
-                                std::string(side)),
-                        "diag side"),
-                std::string(key));
+      return *io::find_member(
+          io::as_object(
+              *io::find_member(
+                  io::as_object(diag_list[k], "tire_diagnostics[k]"), side),
+              "diag side"),
+          key);
     };
-    auto boolv = [&](std::size_t k, std::string_view side,
-                     std::string_view key) {
-        return io::as_bool(field(k, side, key), "diag bool");
+    auto const boolv = [&](std::size_t k, std::string_view side,
+                           std::string_view key) {
+      return io::as_bool(field(k, side, key), "diag bool");
     };
-    auto i64v = [&](std::size_t k, std::string_view side,
-                    std::string_view key) {
-        return io::as_int64(field(k, side, key), "diag int");
+    auto const i64v = [&](std::size_t k, std::string_view side,
+                          std::string_view key) {
+      return io::as_int64(field(k, side, key), "diag int");
     };
 
     Seen front, rear;
@@ -658,11 +658,11 @@ void test_pneumatic_golden_episode_event_rich() {
     // evolves — every drift through the wire counts.
     std::size_t drift = 0;
     for (std::size_t k = 1; k < steps; ++k)
-        for (std::string_view side : {"front", "rear"})
-            drift += patch_bounds(row(ep.tire_state, k, ep.wire),
-                                  ep.artifact.tire_state_names, side) !=
-                     patch_bounds(row(ep.tire_state, k - 1, ep.wire),
-                                  ep.artifact.tire_state_names, side);
+      for (std::string_view const side : {"front", "rear"})
+        drift += patch_bounds(row(ep.tire_state, k, ep.wire),
+                              ep.artifact.tire_state_names, side) !=
+                 patch_bounds(row(ep.tire_state, k - 1, ep.wire),
+                              ep.artifact.tire_state_names, side);
     bt::require(drift >= 60, "patch bounds drifted");
     const auto rim_energy =
             channel(ep.artifact.tire_state_names, "front.rim.energy_j");
@@ -904,7 +904,7 @@ void test_pneumatic_rig_event_sweep_detailed_tier() {
         const auto diags = diags_of();
         for (int side = 0; side < 2; ++side) {
             auto &s = seen[side == 0 ? "front" : "rear"];
-            const auto &d = *diags[static_cast<std::size_t>(side)];
+            const auto &d = (diags[static_cast<std::size_t>(side)]).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
             s.multi.push_back(d.patch_count > 1);
             s.coverage.push_back(d.coverage_event);
             s.rim.push_back(d.rim_strike_active);

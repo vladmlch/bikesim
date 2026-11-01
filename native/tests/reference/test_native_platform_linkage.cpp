@@ -47,7 +47,7 @@ namespace {
 void scrub_link_environment() {
     for (const char* name : {"LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH",
                              "DYLD_FALLBACK_LIBRARY_PATH"})
-        ::unsetenv(name);
+        ::unsetenv(name); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
 }
 
 [[nodiscard]] std::filesystem::path build_root() {

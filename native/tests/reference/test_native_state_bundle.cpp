@@ -178,8 +178,8 @@ void throws_with(std::string_view needle, std::string_view context, F &&action) 
             i);
     std::string motors;
     for (int i = 0; i < (dofs != 0 ? actuators : 0); ++i)
-        motors += std::format(
-            "<motor name=\"motor{0}\" joint=\"joint{1}\"/>", i, i % dofs);
+      motors += std::format(R"(<motor name="motor{0}" joint="joint{1}"/>)", i,
+                            i % dofs);
     const std::string actuator_xml =
         motors.empty() ? std::string{} : "<actuator>" + motors + "</actuator>";
     return "<mujoco><worldbody>" + bodies + "</worldbody>" + actuator_xml +
@@ -524,16 +524,15 @@ void test_resolve_pointer_name_cannot_escape(const bt::TemporaryDirectory &dir) 
     write_bytes(root / "bundle" / "model.mjb", std::span{std::string_view{"x"}});
     for (const std::string_view hostile :
          {"../escape", "/abs", "a/b", "..", "."}) {
-        write_text(root / "current.json",
-                   std::format("{{\"format\": 1, \"bundle\": \"{}\"}}",
-                               hostile));
-        const BenchResult result =
-            run_bench({"bare", "--artifacts", root.string()});
-        expect_exit(result, 1,
-                    "hostile bundle name '" + std::string(hostile) + "'");
-        expect_stderr_any(result, {"bundle name"},
-                          "hostile bundle name '" + std::string(hostile) +
-                              "' diagnostic");
+      write_text(root / "current.json",
+                 std::format(R"({{"format": 1, "bundle": "{}"}})", hostile));
+      const BenchResult result =
+          run_bench({"bare", "--artifacts", root.string()});
+      expect_exit(result, 1,
+                  "hostile bundle name '" + std::string(hostile) + "'");
+      expect_stderr_any(result, {"bundle name"},
+                        "hostile bundle name '" + std::string(hostile) +
+                            "' diagnostic");
     }
 }
 
@@ -550,7 +549,7 @@ void test_resolve_missing_dir_is_rejected(const bt::TemporaryDirectory &dir) {
 
 template <typename Fn> void with_tmp_path(const char *label, Fn &&fn) {
     const bt::TemporaryDirectory dir(label);
-    fn(dir);
+    std::forward<Fn>(fn)(dir);
 }
 
 void check() {

@@ -37,9 +37,9 @@ namespace cfg = bike::configuration;
 namespace io = bike::io;
 namespace rcfg = ::runtime;
 
-const std::filesystem::path kStrengthPath =
+const std::filesystem::path kStrengthPath = // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     rr::repo_file("examples/research/rider_strength_reference.json");
-const std::filesystem::path kEnvelopePath = rr::repo_file(
+const std::filesystem::path kEnvelopePath = rr::repo_file( // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     "examples/research/rider_joint_envelope_anatomical.json");
 
 // JOINTS = reference_joint_names() — the 11-joint registry in the same
@@ -83,11 +83,11 @@ std::set<std::string> profile_names(const cfg::StrengthProfile &profile) {
 }
 
 std::string read_text(const std::filesystem::path &path) {
-    std::ifstream stream(path);
-    bt::require(stream.is_open(), "fixture opens: " + path.string());
-    std::ostringstream body;
-    body << stream.rdbuf();
-    return body.str();
+  std::ifstream const stream(path);
+  bt::require(stream.is_open(), "fixture opens: " + path.string());
+  std::ostringstream body;
+  body << stream.rdbuf();
+  return body.str();
 }
 
 io::Value &member(io::Value &value, std::string_view key) {
@@ -322,7 +322,7 @@ test_verified_gate_rejects_the_provisional_profile() {
                "directions"),
         "positive");
     member(positive, "verified").data = true;
-    bt::TemporaryDirectory dir("joint-strength-gate");
+    bt::TemporaryDirectory const dir("joint-strength-gate");
     const auto path = write_payload(payload, dir, "strength.json");
     rr::expect_invalid(
         [&] { (void)cfg::load_strength_profile(path, joints(), true); },
@@ -332,7 +332,7 @@ test_verified_gate_rejects_the_provisional_profile() {
 [[gnu::noinline]] void
 test_profile_rejects_incomplete_or_alien_coverage() {
     // tests/reference/test_joint_strength.py::test_profile_rejects_incomplete_or_alien_coverage
-    bt::TemporaryDirectory dir("joint-strength-coverage");
+    bt::TemporaryDirectory const dir("joint-strength-coverage");
     {
         io::Value payload = io::parse_json(read_text(kStrengthPath));
         auto &joint_map =
@@ -388,7 +388,7 @@ test_curve_knots_must_cover_the_used_anatomical_range() {
         io::Value::Array{io::Value{io::Number{"0.5"}},
                          io::Value{io::Number{"1.0"}},
                          io::Value{io::Number{"2.0"}}};
-    bt::TemporaryDirectory dir("joint-strength-rom");
+    bt::TemporaryDirectory const dir("joint-strength-rom");
     const auto path = write_payload(payload, dir, "rom.json");
     rr::expect_invalid(
         [&] { (void)cfg::load_strength_profile(path, joints(), false); },
@@ -469,8 +469,9 @@ test_actuators_are_pure_motors_with_dof_damping() {
                     j.name + ": the actuator is a direct joint motor");
         for (int p = 0; p < 10; ++p)
             bt::require(
-                rr::approx(biasprm[static_cast<std::size_t>(
-                                       10 * j.actuator_id + p)],
+                rr::approx(biasprm[static_cast<std::size_t>(10) *
+                                       static_cast<std::size_t>(j.actuator_id) +
+                                   static_cast<std::size_t>(p)],
                            0.),
                 j.name + ": no affine bias — actuator_force is purely "
                          "the commanded muscle torque");
@@ -591,14 +592,14 @@ test_leg_curves_span_a_120_rpm_pedalling_envelope() {
         for (const std::string joint : {"hip", "knee", "ankle"})
             for (const int direction : {1, -1}) {
                 const auto curve = curve_at(
-                    profile, "rider_" + joint + "_" + side, direction);
+                    profile, "rider_" + joint + "_" + side, direction); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
                 bt::require(curve.vmax_rad_s >= 20.,
-                            joint + " " + side + ": vmax spans 120 rpm");
+                            joint + " " + side + ": vmax spans 120 rpm"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
                 bt::require(curve.hill_c >= .3,
-                            joint + " " + side + ": hill_c is sane");
+                            joint + " " + side + ": hill_c is sane"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
                 bt::require(curve.source.find("unverified") !=
                                 std::string::npos,
-                            joint + " " + side + ": provenance is marked");
+                            joint + " " + side + ": provenance is marked"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             }
         const auto knee =
             curve_at(profile, "rider_knee_" + side, -1);

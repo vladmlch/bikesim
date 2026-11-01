@@ -39,11 +39,11 @@ namespace rd = bike::recording::detail;
 namespace sw = runtime::sample_wire;
 
 [[nodiscard]] std::string read_bytes(const std::filesystem::path &path) {
-    std::ifstream stream(path, std::ios::binary);
-    bt::require(stream.good(), "golden file is readable: " + path.string());
-    std::ostringstream contents;
-    contents << stream.rdbuf();
-    return contents.str();
+  std::ifstream const stream(path, std::ios::binary);
+  bt::require(stream.good(), "golden file is readable: " + path.string());
+  std::ostringstream contents;
+  contents << stream.rdbuf();
+  return contents.str();
 }
 
 // tests/reference/test_native_research_environment.py::
@@ -176,9 +176,9 @@ public:
 [[gnu::noinline]] void
 test_custom_rider_callback_runs_once_per_external_boundary() {
     auto policy = std::make_unique<CountingPolicy>();
-    auto *counted = policy.get();
+    auto const *counted = policy.get();
     auto behavior = std::make_unique<BoundaryRider>();
-    auto *rider = behavior.get();
+    auto const *rider = behavior.get();
     research::PolicySession session(environment(), std::move(policy),
                                     std::move(behavior));
     bt::require(rider->seeds == std::vector<std::string>{"19"} &&
@@ -315,12 +315,12 @@ void test_native_research_matches_every_external_transition() {
         node, sw::required(env->status(), "observation"),
         "startup.observation");
     std::int64_t boundary = 0;
-    char label[40];
+    char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     while (!done(*env)) {
-        std::snprintf(label, sizeof(label), "transition.%08lld",
+        std::snprintf(label, sizeof(label), "transition.%08lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(boundary));
         ft2_reference::consume_tree(
-            node, step(*env, runtime::RideControl{}).as_wire(), label);
+            node, step(*env, runtime::RideControl{}).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         ++boundary;
     }
     bt::require(sim_steps(*env) == env->configuration().max_steps,
@@ -352,12 +352,12 @@ void test_one_second_pair_with_one_e_minus_nine_gate() {
         node, sw::required(env->status(), "observation"),
         "startup.observation");
     std::int64_t boundary = 0;
-    char label[48];
+    char label[48]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     while (!done(*env)) {
-        std::snprintf(label, sizeof(label), "transition.%08lld",
+        std::snprintf(label, sizeof(label), "transition.%08lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(boundary));
         ft2_reference::consume_tree(
-            node, step(*env, motor_control(0.)).as_wire(), label);
+            node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         const std::vector<double> state =
             env->snapshot().integration_state;
         node.f64(state, "integration state at step " +
@@ -396,12 +396,12 @@ void test_one_second_pair_complete_episode_gate() {
         node, sw::required(env->status(), "observation"),
         "startup.observation");
     std::int64_t boundary = 0;
-    char label[48];
+    char label[48]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     while (!done(*env)) {
-        std::snprintf(label, sizeof(label), "transition.%08lld",
+        std::snprintf(label, sizeof(label), "transition.%08lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(boundary));
         ft2_reference::consume_tree(
-            node, step(*env, motor_control(0.)).as_wire(), label);
+            node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         const std::vector<double> state =
             env->snapshot().integration_state;
         node.f64(state, "integration state at step " +
@@ -468,19 +468,19 @@ void test_delay_full_commands_immediate_brakes_and_recording(
     bounded.rider_enabled = false;
     const std::array<runtime::RideControl, 4> commands{
         explicit_zero, immediate, bounded, runtime::RideControl{}};
-    char label[40];
+    char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t index = 0; index < commands.size(); ++index) {
         const double front = index == 1 ? .2 : 0.;
         const double rear = index == 2 ? .1 : 0.;
-        std::snprintf(label, sizeof(label), "transition.%08zu", index);
+        std::snprintf(label, sizeof(label), "transition.%08zu", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
         ft2_reference::consume_tree(
             node, step(*env, commands.at(index), front, rear).as_wire(),
-            label);
-        std::snprintf(label, sizeof(label), "commands_applied.%zu", index);
-        ft2_reference::consume_tree(node, env->commands_applied(), label);
-        std::snprintf(label, sizeof(label), "commands_requested.%zu",
+            label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), "commands_applied.%zu", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+        ft2_reference::consume_tree(node, env->commands_applied(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), "commands_requested.%zu", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       index);
-        ft2_reference::consume_tree(node, env->commands_requested(), label);
+        ft2_reference::consume_tree(node, env->commands_requested(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         if (done(*env)) break;
     }
     ft2_reference::consume_tree(node, columns_wire(*env),
@@ -498,7 +498,7 @@ void test_delay_full_commands_immediate_brakes_and_recording(
                         sw::object(requested.front()), "control")),
                     "motor_torque_nm")),
                 "the startup requested row keeps the None motor field");
-    const double first_sample[2] = {
+    const double first_sample[2] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         sw::number(sw::required(first_control, "motor_torque_nm")),
         sw::number(sw::required(first_control, "human_torque_nm"))};
     node.f64(first_sample, "first_sample.control");
@@ -537,16 +537,16 @@ void test_scripted_rider_and_demand_are_sampled_at_physics_rate() {
         std::nullopt, std::nullopt, std::nullopt, std::nullopt,
         std::nullopt, std::nullopt, std::nullopt, std::nullopt,
         std::move(programs));
-    char label[40];
+    char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t index = 0; index < 4; ++index) {
         const auto status = env->status();
         const auto demand = env->configuration().programs.demand_at(
             sw::number(sw::required(status, "time_s")));
         runtime::RideControl control;
         control.motor_torque_nm = demand;
-        std::snprintf(label, sizeof(label), "transition.%08zu", index);
+        std::snprintf(label, sizeof(label), "transition.%08zu", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
         ft2_reference::consume_tree(
-            node, step(*env, control).as_wire(), label);
+            node, step(*env, control).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         if (done(*env)) break;
     }
     ft2_reference::consume_tree(node, env->commands_applied(),
@@ -736,13 +736,13 @@ void test_strict_and_diagnostic_outcomes_remain_visible(bool strict) {
                      std::nullopt, std::nullopt, std::nullopt,
                      std::nullopt, 100.)
                : ft2_reference::research("research_flat");
-    char label[40];
+    char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t window = 0; window < 4; ++window) {
         try {
-            std::snprintf(label, sizeof(label), "transition.%08zu",
+            std::snprintf(label, sizeof(label), "transition.%08zu", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                           window);
             ft2_reference::consume_tree(
-                node, step(*env, motor_control(0.)).as_wire(), label);
+                node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         } catch (const runtime::InvalidReferenceRun &) {
             bt::require(strict, "a diagnostic run never raises the strict "
                                 "reference gate");
@@ -782,12 +782,12 @@ void test_differing_control_and_sensor_periods_match_python(
                     env->configuration().sensor_steps == sensor_steps,
                 "the period wiring seats the requested step counts");
     std::int64_t boundary = 0;
-    char label[48];
+    char label[48]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     while (!done(*env)) {
-        std::snprintf(label, sizeof(label), "transition.%08lld",
+        std::snprintf(label, sizeof(label), "transition.%08lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(boundary));
         ft2_reference::consume_tree(
-            node, step(*env, motor_control(0.)).as_wire(), label);
+            node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         const std::vector<double> state =
             env->snapshot().integration_state;
         node.f64(state, "integration state at step " +

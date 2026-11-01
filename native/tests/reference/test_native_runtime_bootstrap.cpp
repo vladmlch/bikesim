@@ -20,18 +20,17 @@
 
 namespace {
 
-using runtime_reference::ResolvedDocs;
 using runtime_reference::as_int;
 using runtime_reference::compose_runtime;
 using runtime_reference::erase_member;
 using runtime_reference::expect_error;
 using runtime_reference::expect_invalid;
 using runtime_reference::member;
-using runtime_reference::model_image;
 using runtime_reference::nan_value;
 using runtime_reference::num;
 using runtime_reference::require_bitwise;
 using runtime_reference::resolved_docs;
+using runtime_reference::ResolvedDocs;
 using runtime_reference::set_member;
 using runtime_reference::welded_dir;
 

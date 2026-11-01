@@ -38,7 +38,6 @@
 
 namespace {
 
-namespace rider = ::rider;
 namespace research = bike::research;
 namespace cfg = bike::configuration;
 namespace sw = runtime::sample_wire;
@@ -63,7 +62,7 @@ constexpr std::array<std::string_view, 5> kSupports = {
 // limits + initial-speed 0 + record-decimation 400. No captured initial
 // state — the graded poses differ from the flat fixture capture, so the
 // environment settles fresh like the oracle's make_environment.
-std::unique_ptr<runtime::NativeRideRuntime> weld_env(double grade,
+std::unique_ptr<runtime::NativeRideRuntime> weld_env(double grade, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                                    int decimation = 400) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
@@ -236,10 +235,10 @@ void test_contact_diagnostics_carry_the_solved_weight() {
     std::size_t count = 0;
     for (std::size_t i = first; i < rows.size(); ++i) {
         const auto &diag = rows[i];
-        double vertical = diag.supports[0].force_on_rider_n[2] +
-                          diag.supports[1].force_on_rider_n[2] +
-                          diag.supports[2].force_on_rider_n[2] +
-                          diag.grip.force_on_rider_n[2];
+        double const vertical = diag.supports[0].force_on_rider_n[2] +
+                                diag.supports[1].force_on_rider_n[2] +
+                                diag.supports[2].force_on_rider_n[2] +
+                                diag.grip.force_on_rider_n[2];
         vertical_sum += vertical;
         saddle_normal_sum += diag.supports[0].normal_load_n;
         ++count;

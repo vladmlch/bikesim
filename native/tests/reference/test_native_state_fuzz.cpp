@@ -136,7 +136,7 @@ struct Rng {
     }
 }
 
-[[nodiscard]] Value random_value(Rng &rng, unsigned depth) {
+[[nodiscard]] Value random_value(Rng &rng, unsigned depth) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     if (depth == 0 || rng.pick(3) == 0) return random_scalar(rng);
     if (rng.pick(2) == 0) {
         Array out;
@@ -168,7 +168,7 @@ struct Rng {
 // ---------------------------------------------------------------------------
 using Path = std::vector<std::string>;
 
-void dict_paths(const Value &value, Path &prefix, std::vector<Path> &out) {
+void dict_paths(const Value &value, Path &prefix, std::vector<Path> &out) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     const auto *object = std::get_if<Object>(&value.data);
     if (object == nullptr) return;
     for (const auto &[key, child] : *object) {
@@ -191,7 +191,8 @@ void dict_paths(const Value &value, Path &prefix, std::vector<Path> &out) {
     for (const auto &key : keys) {
         auto *object = std::get_if<Object>(&node->data);
         if (object == nullptr) return nullptr;
-        auto found = std::ranges::find(*object, key, &Object::value_type::first);
+        auto const found =
+            std::ranges::find(*object, key, &Object::value_type::first);
         if (found == object->end()) return nullptr;
         node = &found->second;
     }
@@ -204,8 +205,8 @@ void apply_set(Value &root, const Path &path, Value value) {
     auto *object =
         parent == nullptr ? nullptr : std::get_if<Object>(&parent->data);
     if (object == nullptr) return;
-    auto found = std::ranges::find(*object, path.back(),
-                                   &Object::value_type::first);
+    auto const found =
+        std::ranges::find(*object, path.back(), &Object::value_type::first);
     if (found == object->end())
         object->emplace_back(path.back(), std::move(value));
     else
@@ -318,10 +319,14 @@ struct LiveBuffers {
 }
 
 [[nodiscard]] LiveBuffers live_buffers(const Stepper &st) {
-    return {copy_of(st.qpos()),           copy_of(st.qvel()),
-            copy_of(st.qacc()),           copy_of(st.qfrc_constraint()),
-            copy_of(st.efc_force()),      copy_of(st.ctrl()),
-            copy_of(st.qfrc_applied()),   st.time()};
+  return {.qpos = copy_of(st.qpos()),
+          .qvel = copy_of(st.qvel()),
+          .qacc = copy_of(st.qacc()),
+          .qfrc_constraint = copy_of(st.qfrc_constraint()),
+          .efc_force = copy_of(st.efc_force()),
+          .ctrl = copy_of(st.ctrl()),
+          .qfrc_applied = copy_of(st.qfrc_applied()),
+          .time = st.time()};
 }
 
 [[nodiscard]] bool bitwise(std::span<const double> a,

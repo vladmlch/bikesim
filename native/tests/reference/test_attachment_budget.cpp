@@ -36,10 +36,10 @@ AttachmentBudget budget() {
             .saddle_max_normal_n = b.saddle_max_normal_n,
             .foot_shear_n = b.foot_shear_n, .saddle_shear_n = b.saddle_shear_n};
 }
-const AttachmentBudget kBudget = budget();
+const AttachmentBudget kBudget = budget(); // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
 
 bool has(const Violations &v, std::string_view name) {
-    return std::find(v.begin(), v.end(), name) != v.end();
+  return std::ranges::find(v, name) != v.end();
 }
 
 void test_violations_use_the_supplied_budget() {
@@ -121,15 +121,69 @@ void test_foot_boundaries() {
         Violations expected;
     };
     const std::array<Case, 9> cases{{
-        {19.99, 0., 0., 0., 0., 0., {"normal"}},
-        {20.0, 0., 0., 0.005001, 0., 0., {"gap"}},
-        {100., 90.01, 0., 0., 0., 0., {"friction"}},
-        {100., -90.01, 0., 0., 0., 0., {"friction"}},
-        {100., 89.99, 0., 0., 0., 0., {}},
-        {100., -89.99, 0., 0., 0., 0., {}},
-        {100., 0., 2.501, 0., 0., 0.025, {"cop"}},
-        {100., 0., -2.501, 0., 0., 0.025, {"cop"}},
-        {100., 0., 2.499, 0., 0., 0.025, {}},
+        {.normal = 19.99,
+         .tangent = 0.,
+         .moment = 0.,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.,
+         .expected = {"normal"}},
+        {.normal = 20.0,
+         .tangent = 0.,
+         .moment = 0.,
+         .gap = 0.005001,
+         .pull = 0.,
+         .patch = 0.,
+         .expected = {"gap"}},
+        {.normal = 100.,
+         .tangent = 90.01,
+         .moment = 0.,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.,
+         .expected = {"friction"}},
+        {.normal = 100.,
+         .tangent = -90.01,
+         .moment = 0.,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.,
+         .expected = {"friction"}},
+        {.normal = 100.,
+         .tangent = 89.99,
+         .moment = 0.,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.,
+         .expected = {}},
+        {.normal = 100.,
+         .tangent = -89.99,
+         .moment = 0.,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.,
+         .expected = {}},
+        {.normal = 100.,
+         .tangent = 0.,
+         .moment = 2.501,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.025,
+         .expected = {"cop"}},
+        {.normal = 100.,
+         .tangent = 0.,
+         .moment = -2.501,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.025,
+         .expected = {"cop"}},
+        {.normal = 100.,
+         .tangent = 0.,
+         .moment = 2.499,
+         .gap = 0.,
+         .pull = 0.,
+         .patch = 0.025,
+         .expected = {}},
     }};
     for (const Case &c : cases) {
         const AttachmentSample sample{

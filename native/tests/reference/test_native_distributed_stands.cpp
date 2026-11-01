@@ -12,7 +12,6 @@
 namespace {
 
 using namespace tyre_reference;
-using bike::validation::get;
 using bike::validation::real;
 
 // tests/reference/test_native_distributed_stands.py::test_distributed_flat_stand_native

@@ -316,16 +316,28 @@ void python_context_only_platform_numerics() {
 // test_field_type_and_null_rules — the same strictness the probe applies to
 // its own record.
 void field_type_and_null_rules() {
-    struct Case { bool native; const char* key; Value bad; };
-    const Case cases[] = {
-        {false, "runtime_schema", Value{true}},
-        {false, "runtime_schema", integer(2)},
-        {true, "python_source_sha256", text("not-a-digest")},
-        {false, "extension_sha256", text(std::string(64, '0'))},
-        {false, "native_source_sha256", text(std::string(64, '0'))},
-        {false, "mujoco_library_sha256", text(std::string(64, '0'))},
-        {true, "extension_sha256", Value{}},
-        {true, "mujoco_version", text("")},
+    struct Case {
+      bool native{};
+      const char *key{};
+      Value bad;
+    };
+    const Case cases[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+        {.native = false, .key = "runtime_schema", .bad = Value{true}},
+        {.native = false, .key = "runtime_schema", .bad = integer(2)},
+        {.native = true,
+         .key = "python_source_sha256",
+         .bad = text("not-a-digest")},
+        {.native = false,
+         .key = "extension_sha256",
+         .bad = text(std::string(64, '0'))},
+        {.native = false,
+         .key = "native_source_sha256",
+         .bad = text(std::string(64, '0'))},
+        {.native = false,
+         .key = "mujoco_library_sha256",
+         .bad = text(std::string(64, '0'))},
+        {.native = true, .key = "extension_sha256", .bad = Value{}},
+        {.native = true, .key = "mujoco_version", .bad = text("")},
     };
     for (const auto& entry : cases) {
         auto value = entry.native ? v2_native() : v2_python();

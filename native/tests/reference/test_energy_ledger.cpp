@@ -284,17 +284,18 @@ void test_actual_solver_rows_partition_without_missing_or_duplicate_forces(
 <body pos="0 0 .09"><joint type="slide" axis="0 0 1"/>
 <geom type="sphere" size=".1" mass="1"/></body></worldbody>)XML";
     } else {
-        xml =
-            std::string("<worldbody><body><joint name=\"a\" type=\"slide\" axis=\"1 0 0\" ") +
-            (kind == "joint" ? "limited=\"true\" range=\"-.1 .1\"" : "") +
-            R"XML(/><inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body>
+      xml =
+          std::string(
+              R"(<worldbody><body><joint name="a" type="slide" axis="1 0 0" )") +
+          (kind == "joint" ? R"(limited="true" range="-.1 .1")" : "") +
+          R"XML(/><inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body>
 <body><joint name="b" type="slide" axis="1 0 0"/>
 <inertial mass="1" pos="0 0 0" diaginertia="1 1 1"/></body></worldbody>)XML";
-        if (kind == "tendon")
-            xml += R"XML(<tendon><fixed limited="true" range="-100 0">
+      if (kind == "tendon")
+        xml += R"XML(<tendon><fixed limited="true" range="-100 0">
 <joint joint="a" coef="1"/><joint joint="b" coef="-1"/></fixed></tendon>)XML";
-        else if (kind == "equality")
-            xml += R"XML(<equality><joint joint1="a" joint2="b"/></equality>)XML";
+      else if (kind == "equality")
+        xml += R"XML(<equality><joint joint1="a" joint2="b"/></equality>)XML";
     }
     const auto model =
         load_xml("<mujoco><option gravity=\"0 0 0\"/>" + xml + "</mujoco>",
@@ -402,9 +403,11 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
                    R"XML(" type="slide" axis="1 0 0"/><geom size=".1" mass="1" contype="0" conaffinity="0"/></body>)XML";
         xml += R"XML(</worldbody><tendon>)XML";
         for (const auto &[a, b] : std::array{std::pair{'a', 'b'}, std::pair{'c', 'd'}})
-            xml += std::string("<fixed limited=\"true\" range=\"-10 0\" solreflimit=\"-100 0\">") +
-                   "<joint joint=\"" + a + "\" coef=\"1\"/>" + "<joint joint=\"" + b +
-                   "\" coef=\"-1\"/></fixed>";
+          xml +=
+              std::string(
+                  R"(<fixed limited="true" range="-10 0" solreflimit="-100 0">)") +
+              "<joint joint=\"" + a + R"(" coef="1"/>)" + "<joint joint=\"" +
+              b + R"(" coef="-1"/></fixed>)";
         xml += "</tendon></mujoco>";
     }
     const auto model = load_xml(xml, "opposite-work model");
@@ -491,9 +494,9 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
 
 [[nodiscard]] std::unique_ptr<mjModel, decltype(&mj_deleteModel)>
 free_body(std::string_view extra) {
-    return load_xml("<mujoco><option gravity=\"0 0 -9.81\" timestep=\"0.0005\"/>" +
-                        std::string(extra) + "</mujoco>",
-                    "free-body model");
+  return load_xml(R"(<mujoco><option gravity="0 0 -9.81" timestep="0.0005"/>)" +
+                      std::string(extra) + "</mujoco>",
+                  "free-body model");
 }
 
 // _energy(model, data): kinetic + gravitational potential.
@@ -507,7 +510,7 @@ free_body(std::string_view extra) {
     const auto positions = model_access::readonly_buffer(
         data->xipos, model_access::kXYZ * model->nbody);
     const auto gravity =
-        model_access::readonly_buffer(model->opt.gravity, model_access::kXYZ);
+        model_access::readonly_buffer(model->opt.gravity, model_access::kXYZ); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     double potential = 0.;
     for (int body = 0; body < model->nbody; ++body)
         for (std::size_t axis = 0; axis < 3; ++axis)
@@ -573,7 +576,7 @@ void test_closed_ideal_constraint_does_no_work() {
   <geom size=".05" contype="0" conaffinity="0"/></body></worldbody>
 <equality><weld body1="a" body2="b" solref="0.005 1"/></equality>)XML");
     for (double &axis :
-         model_access::mutable_buffer(model->opt.gravity, model_access::kXYZ))
+         model_access::mutable_buffer(model->opt.gravity, model_access::kXYZ)) // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         axis = 0.;
     const auto data = data_of(model.get());
     // data.qvel[:6] = data.qvel[6:12] = [.2, 0., .1, 0., .3, 0.]
@@ -609,7 +612,7 @@ void test_inelastic_impact_loss_is_physical_not_constraint_credit() {
   <geom size=".05" contype="0" conaffinity="0"/></body></worldbody>
 <equality><weld body1="a" body2="b" solref="0.005 1"/></equality>)XML");
     for (double &axis :
-         model_access::mutable_buffer(model->opt.gravity, model_access::kXYZ))
+         model_access::mutable_buffer(model->opt.gravity, model_access::kXYZ)) // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         axis = 0.;
     const auto data = data_of(model.get());
     const double dv = .8;

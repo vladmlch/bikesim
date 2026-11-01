@@ -18,6 +18,7 @@
 #include "runtime/setup_values.hpp"
 #include "writers/resistance.hpp"
 
+#include <algorithm>
 #include <limits>
 
 namespace {
@@ -38,7 +39,7 @@ constexpr std::array kDemandNames{"0.0", "0.3", "0.7", "1.0", "-0.2",
 }
 
 [[nodiscard]] const io::Value &member(const io::Value &object,
-                                      std::string_view key,
+                                      std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                       std::string_view context) {
     const auto &fields = io::as_object(object, context);
     for (const auto &[name, value] : fields)
@@ -54,7 +55,7 @@ constexpr std::array kDemandNames{"0.0", "0.3", "0.7", "1.0", "-0.2",
 struct Side {
     std::vector<double> loads;
     std::vector<bool> working_bits;
-    std::unique_ptr<bool[]> working;
+    std::unique_ptr<bool[]> working; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     double radius = 0.;
     [[nodiscard]] TireSideInput input() const {
         return TireSideInput{.patch_loads = loads,
@@ -70,15 +71,14 @@ struct Side {
                                 context);
     const auto &patches =
             io::as_array(member(snap, "patches", context), context);
-    side.working = std::make_unique<bool[]>(patches.size());
+    side.working = std::make_unique<bool[]>(patches.size()); // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (const auto &patch : patches) {
         side.loads.push_back(io::as_double(
                 member(patch, "normal_load_n", context), context));
         side.working_bits.push_back(io::as_bool(
                 member(patch, "working_surface", context), context));
     }
-    std::copy(side.working_bits.begin(), side.working_bits.end(),
-              side.working.get());
+    std::ranges::copy(side.working_bits, side.working.get());
     return side;
 }
 
@@ -170,9 +170,9 @@ struct Side {
 
 [[gnu::noinline]] void test_brake_resistance_require_config() {
     const std::vector<double> no_loads;
-    const bool no_working[1] = {false};
+    const bool no_working[1] = {false}; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     const TireSideInput empty{.patch_loads = no_loads,
-                              .patch_working = {no_working, 0},
+                              .patch_working = {no_working, 0}, // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
                               .effective_radius_m = .3};
     Stepper plain(mjb());
     Stepper empty_cfg(mjb(), nativecfg::WriterConfig{});
@@ -195,8 +195,8 @@ struct Side {
                 io::Value::Object root;
                 root.emplace_back("schema", setupvalue::integer(1));
                 root.emplace_back("brake", io::Value{io::Value::Object{}});
-                Stepper st(mjb(),
-                           nativecfg::decode(io::Value{std::move(root)}));
+                Stepper const st(mjb(),
+                                 nativecfg::decode(io::Value{std::move(root)}));
             },
             "torque_ceiling_nm");
     rejects<std::invalid_argument>(
@@ -205,8 +205,8 @@ struct Side {
                 root.emplace_back("schema", setupvalue::integer(1));
                 root.emplace_back("resistance",
                                   io::Value{io::Value::Object{}});
-                Stepper st(mjb(),
-                           nativecfg::decode(io::Value{std::move(root)}));
+                Stepper const st(mjb(),
+                                 nativecfg::decode(io::Value{std::move(root)}));
             },
             "crr");
 }

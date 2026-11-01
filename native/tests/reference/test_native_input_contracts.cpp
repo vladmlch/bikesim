@@ -36,7 +36,7 @@ using policy_reference::set;
 
 // Recursive `dictionaries` twin: yields every object-valued location in
 // insertion order (dict-valued paths only — lists recurse without yielding).
-void dictionaries(const Value& value, std::vector<std::string>& path,
+void dictionaries(const Value& value, std::vector<std::string>& path, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                   std::vector<std::vector<std::string>>& out) {
     if (const auto* object = std::get_if<Value::Object>(&value.data)) {
         out.push_back(path);
@@ -154,7 +154,7 @@ std::unique_ptr<Stepper> resolved_stepper(const Value& wire) {
 }
 
 // ---- golden plumbing --------------------------------------------------------
-bt::oracle::Node node(std::string_view function, std::string_view id = {}) {
+bt::oracle::Node node(std::string_view function, std::string_view id = {}) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     auto name = "tests/reference/test_native_input_contracts.py::" +
                 std::string(function);
     if (!id.empty()) name += "[" + std::string(id) + "]";
@@ -327,52 +327,76 @@ void scalar(bt::oracle::Node& golden, double value) {
     const int fork_adr = pinned_adr("fork_travel");
     const int fork_dof = pinned_dof("fork_travel");
     struct Case { const char* id; int schema; double travel; bool legacy; };
-    for (const Case item : std::array{
-             Case{"1-150.0-True", 1, 150., true},
-             Case{"1-180.0-False", 1, 180., false},
-             Case{"1-150.0-False", 1, 150., false},
-             Case{"2-150.0-True", 2, 150., true},
-             Case{"2-180.0-False", 2, 180., false},
-             Case{"2-150.0-False", 2, 150., false}}) {
-        auto golden =
-            node("test_schema_migration_preserves_resolved_fork_force", item.id);
-        // Charger3Damper(total_travel_mm=travel, legacy_behavior=legacy):
-        // _damper_core fields plus the fork extras; schema 2 also persists
-        // the resolved flag (schema 1 derives it from hbo_start_mm == 160).
-        Value::Object fork{
-            {"max_hsc", integer(4)}, {"max_lsc", integer(14)},
-            {"max_reb", integer(17)}, {"hsc_clicks", integer(2)},
-            {"lsc_clicks", integer(7)}, {"rebound_clicks", integer(9)},
-            {"c_lsc_min", real(260.)}, {"c_lsc_max", real(1150.)},
-            {"c_hsc_min", real(180.)}, {"c_hsc_max", real(520.)},
-            {"c_reb_min", real(350.)}, {"c_reb_max", real(1550.)},
-            {"v_knee_comp", real(.18)}, {"v_knee_reb", real(.22)},
-            {"total_travel_mm", real(item.travel)},
-            {"hbo_start_mm", real(item.legacy ? 160. : item.travel - 20.)},
-            {"c_hbo_base", real(3500.)}};
-        if (item.schema == 2)
-            fork.emplace_back("legacy_behavior", Value{item.legacy});
-        Value wire = resolved_wire();
-        set(wire, "schema", integer(item.schema));
-        set(member(wire, "suspension"), "fork_damper",
-            Value{std::move(fork)});
-        auto stepper = resolved_stepper(wire);
-        for (const double compression : {item.travel - 1., item.travel + 15.}) {
-            auto qpos = pinned_qpos();
-            std::vector<double> qvel(qpos.size(), 0.);
-            qpos[static_cast<std::size_t>(fork_adr)] = compression / 1000.;
-            qvel[static_cast<std::size_t>(fork_dof)] = .7;
-            stepper->set_state(qpos, qvel, {},
-                               std::vector<double>(qpos.size(), 0.), 0.);
-            const auto components = stepper->suspension_components();
-            const auto found = std::ranges::find_if(components,
-                [](const auto& row) { return row.first == "fork_damper"; });
-            bt::require(found != components.end(),
-                        "suspension components carry fork_damper");
-            scalar(golden,
-                   found->second[static_cast<std::size_t>(fork_dof)]);
-        }
-        golden.done();
+    for (const Case &item : std::array{Case{.id = "1-150.0-True",
+                                            .schema = 1,
+                                            .travel = 150.,
+                                            .legacy = true},
+                                       Case{.id = "1-180.0-False",
+                                            .schema = 1,
+                                            .travel = 180.,
+                                            .legacy = false},
+                                       Case{.id = "1-150.0-False",
+                                            .schema = 1,
+                                            .travel = 150.,
+                                            .legacy = false},
+                                       Case{.id = "2-150.0-True",
+                                            .schema = 2,
+                                            .travel = 150.,
+                                            .legacy = true},
+                                       Case{.id = "2-180.0-False",
+                                            .schema = 2,
+                                            .travel = 180.,
+                                            .legacy = false},
+                                       Case{.id = "2-150.0-False",
+                                            .schema = 2,
+                                            .travel = 150.,
+                                            .legacy = false}}) {
+      auto golden =
+          node("test_schema_migration_preserves_resolved_fork_force", item.id);
+      // Charger3Damper(total_travel_mm=travel, legacy_behavior=legacy):
+      // _damper_core fields plus the fork extras; schema 2 also persists
+      // the resolved flag (schema 1 derives it from hbo_start_mm == 160).
+      Value::Object fork{
+          {"max_hsc", integer(4)},
+          {"max_lsc", integer(14)},
+          {"max_reb", integer(17)},
+          {"hsc_clicks", integer(2)},
+          {"lsc_clicks", integer(7)},
+          {"rebound_clicks", integer(9)},
+          {"c_lsc_min", real(260.)},
+          {"c_lsc_max", real(1150.)},
+          {"c_hsc_min", real(180.)},
+          {"c_hsc_max", real(520.)},
+          {"c_reb_min", real(350.)},
+          {"c_reb_max", real(1550.)},
+          {"v_knee_comp", real(.18)},
+          {"v_knee_reb", real(.22)},
+          {"total_travel_mm", real(item.travel)},
+          {"hbo_start_mm", real(item.legacy ? 160. : item.travel - 20.)},
+          {"c_hbo_base", real(3500.)}};
+      if (item.schema == 2)
+        fork.emplace_back("legacy_behavior", Value{item.legacy});
+      Value wire = resolved_wire();
+      set(wire, "schema", integer(item.schema));
+      set(member(wire, "suspension"), "fork_damper", Value{std::move(fork)});
+      auto stepper = resolved_stepper(wire);
+      for (const double compression : {item.travel - 1., item.travel + 15.}) {
+        auto qpos = pinned_qpos();
+        std::vector<double> qvel(qpos.size(), 0.);
+        qpos[static_cast<std::size_t>(fork_adr)] = compression / 1000.;
+        qvel[static_cast<std::size_t>(fork_dof)] = .7;
+        stepper->set_state(qpos, qvel, {}, std::vector<double>(qpos.size(), 0.),
+                           0.);
+        const auto components = stepper->suspension_components();
+        const auto found =
+            std::ranges::find_if(components, [](const auto &row) {
+              return row.first == "fork_damper";
+            });
+        bt::require(found != components.end(),
+                    "suspension components carry fork_damper");
+        scalar(golden, found->second[static_cast<std::size_t>(fork_dof)]);
+      }
+      golden.done();
     }
 }
 
@@ -495,7 +519,9 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         // 'road_rolling' + 'aerodynamic' — the valid control's last leg.
         const std::array loads{100.};
         const std::array working{true};
-        const TireSideInput input{loads, working, .3};
+        const TireSideInput input{.patch_loads = loads,
+                                  .patch_working = working,
+                                  .effective_radius_m = .3};
         bt::require(stepper->resistance_components(input, input).size() == 2,
                     "resistance components are road_rolling + aerodynamic");
     }
@@ -597,21 +623,25 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     // RideControl reader (drive_binding.cpp:182, `RideControl control(
     // nb::handle)`) — that check lives at the nanobind boundary and has no
     // Value-level decoder, so it stays with the parity suite until T63.
-    for (auto kind : kinds) {
-        auto owner = pair(kind);
-        (void)components(*owner, .001, 0.);
-        const auto original = state(*owner);
-        const auto frozen_state = bike::io::canonical_json(original);
-        std::vector<std::vector<std::string>> locations;
-        { std::vector<std::string> path; dictionaries(original, path, locations); }
-        bt::require(!locations.empty(), "snapshot exposes object locations");
-        for (const auto& location : locations) {
-            auto candidate = original;
-            set(at(candidate, location), "misspelled", real(1.));
-            error<std::invalid_argument>([&] { restore(*owner, candidate); }, "state");
-            bt::require(bike::io::canonical_json(state(*owner)) == frozen_state,
-                        "rejected state mutation publishes nothing");
-        }
+    for (auto const kind : kinds) {
+      auto owner = pair(kind);
+      (void)components(*owner, .001, 0.);
+      const auto original = state(*owner);
+      const auto frozen_state = bike::io::canonical_json(original);
+      std::vector<std::vector<std::string>> locations;
+      {
+        std::vector<std::string> path;
+        dictionaries(original, path, locations);
+      }
+      bt::require(!locations.empty(), "snapshot exposes object locations");
+      for (const auto &location : locations) {
+        auto candidate = original;
+        set(at(candidate, location), "misspelled", real(1.));
+        error<std::invalid_argument>([&] { restore(*owner, candidate); },
+                                     "state");
+        bt::require(bike::io::canonical_json(state(*owner)) == frozen_state,
+                    "rejected state mutation publishes nothing");
+      }
     }
 }
 
@@ -669,9 +699,11 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         auto wire = writer_config(source());
         auto& drive = member(wire, "drive");
         const auto dot = item.first.find('.');
-        if (dot == std::string_view::npos) set(drive, std::string(item.first), text(item.second));
-        else set(member(drive, item.first.substr(0, dot)), std::string(item.first.substr(dot + 1)),
-                 text(item.second));
+        if (dot == std::string_view::npos)
+          set(drive, item.first, text(item.second));
+        else
+          set(member(drive, item.first.substr(0, dot)),
+              item.first.substr(dot + 1), text(item.second));
         error<std::invalid_argument>(
             [&] { bike::configuration::wire::validate_config(wire); }, drive_path(item.first));
     }
@@ -725,7 +757,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     for (const std::string& mode : {std::string("custom"), std::string("自定义")}) {
         auto config = policy_reference::config(policy_reference::source());
         set(member(config, "assist"), "mode", text(mode));
-        auto decoded = nativecfg::decode_policy_config(config);
+        auto const decoded = nativecfg::decode_policy_config(config);
         bt::require(decoded.assist.mode == mode,
                     "wire preserves a valid free-form assist mode");
     }

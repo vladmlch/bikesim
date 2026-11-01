@@ -29,30 +29,27 @@ std::map<std::string, std::string> snapshot(const std::filesystem::path &dir) {
 }
 
 void test_report_regeneration_is_read_only_and_idempotent() {
-    bt::TemporaryDirectory dir("report-idempotent");
-    auto capture = capture_rows(
-        {sample_row(0, 0., .001, {}, {}, {}, {}, energy_channels())},
-        "viewer",
-        Value{Object{
-            {"outcome",
-             Value{Object{{"reason", text("synthetic")}}}},
-            {"first_failure", Value{}}}});
-    const auto path = rec::finalize(*capture, dir.path()).directory;
-    const auto before = snapshot(path);
-    const auto reader = sealed(path);
-    const auto regenerated = rec::render_summary(*reader);
-    bt::require(regenerated == bt::text(path / "summary.md"),
-                "the regenerated report is the shipped summary, byte-exact");
-    bt::require(rec::render_summary(*reader) == regenerated,
-                "a second render is identical");
-    bt::require(snapshot(path) == before,
-                "rendering never writes into the sealed container");
-    for (const std::string_view marker :
-         {"not a claim that the model is calibrated", "Episode 0",
-          "first failure", "SELECT", "channel_energy`.residual_j"})
-        bt::require(regenerated.find(marker) != std::string::npos,
-                    "report keeps the reviewed evidence language: " +
-                        std::string(marker));
+  bt::TemporaryDirectory const dir("report-idempotent");
+  auto capture = capture_rows(
+      {sample_row(0, 0., .001, {}, {}, {}, {}, energy_channels())}, "viewer",
+      Value{Object{{"outcome", Value{Object{{"reason", text("synthetic")}}}},
+                   {"first_failure", Value{}}}});
+  const auto path = rec::finalize(*capture, dir.path()).directory;
+  const auto before = snapshot(path);
+  const auto reader = sealed(path);
+  const auto regenerated = rec::render_summary(*reader);
+  bt::require(regenerated == bt::text(path / "summary.md"),
+              "the regenerated report is the shipped summary, byte-exact");
+  bt::require(rec::render_summary(*reader) == regenerated,
+              "a second render is identical");
+  bt::require(snapshot(path) == before,
+              "rendering never writes into the sealed container");
+  for (const std::string_view marker :
+       {"not a claim that the model is calibrated", "Episode 0",
+        "first failure", "SELECT", "channel_energy`.residual_j"})
+    bt::require(regenerated.find(marker) != std::string::npos,
+                "report keeps the reviewed evidence language: " +
+                    std::string(marker));
 }
 
 } // namespace

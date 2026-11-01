@@ -98,14 +98,13 @@ void test_box_random_and_medial_ties() {
 // test_upper_face_oracle[angle] — the (point, normal, tangent) triple.
 // ---------------------------------------------------------------------
 void test_upper_face_oracle(double angle, std::string_view angle_repr) {
-    auto golden = node(kFile, "test_upper_face_oracle",
-                       std::string(angle_repr));
-    const auto face = rider::upper_box_face({.3, .2, -.4}, rotation(angle),
-                                            {.1, .04, .02});
-    vec3(golden, face.point_m, "");
-    vec3(golden, face.normal, "");
-    vec3(golden, face.tangent, "");
-    golden.done();
+  auto golden = node(kFile, "test_upper_face_oracle", angle_repr);
+  const auto face =
+      rider::upper_box_face({.3, .2, -.4}, rotation(angle), {.1, .04, .02});
+  vec3(golden, face.point_m, "");
+  vec3(golden, face.normal, "");
+  vec3(golden, face.tangent, "");
+  golden.done();
 }
 
 // ---------------------------------------------------------------------
@@ -179,29 +178,27 @@ void test_project_goal_oracle(double compression, double shear,
 // ---------------------------------------------------------------------
 void test_grip_energy_oracle(double k, double c, double dt,
                              std::string_view params) {
-    auto golden = node(kFile, "test_grip_energy_oracle",
-                       std::string(params));
-    const std::array literals{
-            std::pair{rider::Vec3{.003, -.002, .001},
-                      rider::Vec3{.1, 0., -.2}},
-            std::pair{rider::Vec3{-0., 0., -0.}, rider::Vec3{0., 0., 0.}}};
-    const int total = 2 + 150;
-    for (int i = 0; i < total; ++i) {
-        rider::Vec3 xi{}, velocity{};
-        if (i < 2) {
-            xi = literals[static_cast<std::size_t>(i)].first;
-            velocity = literals[static_cast<std::size_t>(i)].second;
-        } else {
-            const auto pair = input_vector(golden, "input.pair");
-            std::copy_n(pair.begin(), 3, xi.begin());
-            std::copy_n(pair.begin() + 3, 3, velocity.begin());
-        }
-        const auto actual = rider::grip_step(xi, velocity, k, c, dt);
-        vec3(golden, actual.xi, "");
-        vec3(golden, actual.force, "");
-        scalar(golden, actual.energy_j, "");
-        scalar(golden, actual.loss_j, "");
+  auto golden = node(kFile, "test_grip_energy_oracle", params);
+  const std::array literals{
+      std::pair{rider::Vec3{.003, -.002, .001}, rider::Vec3{.1, 0., -.2}},
+      std::pair{rider::Vec3{-0., 0., -0.}, rider::Vec3{0., 0., 0.}}};
+  const int total = 2 + 150;
+  for (int i = 0; i < total; ++i) {
+    rider::Vec3 xi{}, velocity{};
+    if (i < 2) {
+      xi = literals[static_cast<std::size_t>(i)].first;
+      velocity = literals[static_cast<std::size_t>(i)].second;
+    } else {
+      const auto pair = input_vector(golden, "input.pair");
+      std::copy_n(pair.begin(), 3, xi.begin());
+      std::copy_n(pair.begin() + 3, 3, velocity.begin());
     }
+    const auto actual = rider::grip_step(xi, velocity, k, c, dt);
+    vec3(golden, actual.xi, "");
+    vec3(golden, actual.force, "");
+    scalar(golden, actual.energy_j, "");
+    scalar(golden, actual.loss_j, "");
+  }
     golden.done();
 }
 
@@ -209,7 +206,7 @@ void test_grip_energy_oracle(double k, double c, double dt,
 // test_grip_release_oracle[limit-force{i}] — (force, loss_j, overloaded).
 // ---------------------------------------------------------------------
 void test_grip_release_oracle(const rider::Vec3 &force,
-                              std::size_t force_index, double limit,
+                              std::size_t force_index, double limit, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                               std::string_view limit_repr) {
     auto golden = node(kFile, "test_grip_release_oracle",
                        std::string(limit_repr) + "-force" +
@@ -375,40 +372,38 @@ struct PlanarCase {
 
 void test_planar_model_validation_oracle(const bt::TemporaryDirectory &dir,
                                          const PlanarCase &test_case) {
-    const std::string xml =
-            "<mujoco><worldbody><body>" + std::string(test_case.joint) +
-            "<geom name=\"support\" type=\"" + std::string(test_case.geom) +
-            "\" size=\".1 .04 .02\" quat=\"" + std::string(test_case.quat) +
-            "\" mass=\"1\"/></body><body pos=\"1 0 1\"><freejoint/>"
-            "<geom type=\"sphere\" size=\".1\" mass=\"1\"/></body>"
-            "</worldbody></mujoco>";
-    auto model = bike::model::compile_mjcf(xml);
-    const auto mjb =
-            (dir.path() / "support.mjb").string();
-    mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
-    Stepper stepper(mjb);
-    stepper.forward();
-    const int geom_id = mj_name2id(model.get(), mjOBJ_GEOM, "support");
-    model_access::require_id(geom_id, model->ngeom, "support");
-    const std::array ids{geom_id};
-    const std::string params = std::string(test_case.joint) + "-" +
-                               std::string(test_case.geom) + "-" +
-                               std::string(test_case.quat);
-    try {
-        rider::validate_planar_support_model(stepper.model(),
-                                             stepper.data(), ids);
-        bt::require(!test_case.rejects,
-                    "planar support validation accepted a recorded "
-                    "rejection case: " + params);
-    } catch (const std::invalid_argument &failure) {
-        bt::require(test_case.rejects,
-                    "planar support validation rejected an accepted case: " +
-                            params);
-        auto golden = node(kFile, "test_planar_model_validation_oracle",
-                           params);
-        text_leaf(golden, failure.what(), "outcome.message");
-        golden.done();
-    }
+  const std::string xml =
+      "<mujoco><worldbody><body>" + std::string(test_case.joint) +
+      R"(<geom name="support" type=")" + std::string(test_case.geom) +
+      R"(" size=".1 .04 .02" quat=")" + std::string(test_case.quat) +
+      "\" mass=\"1\"/></body><body pos=\"1 0 1\"><freejoint/>"
+      "<geom type=\"sphere\" size=\".1\" mass=\"1\"/></body>"
+      "</worldbody></mujoco>";
+  auto model = bike::model::compile_mjcf(xml);
+  const auto mjb = (dir.path() / "support.mjb").string();
+  mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
+  Stepper stepper(mjb);
+  stepper.forward();
+  const int geom_id = mj_name2id(model.get(), mjOBJ_GEOM, "support");
+  model_access::require_id(geom_id, model->ngeom, "support");
+  const std::array ids{geom_id};
+  const std::string params = std::string(test_case.joint) + "-" +
+                             std::string(test_case.geom) + "-" +
+                             std::string(test_case.quat);
+  try {
+    rider::validate_planar_support_model(stepper.model(), stepper.data(), ids);
+    bt::require(!test_case.rejects,
+                "planar support validation accepted a recorded "
+                "rejection case: " +
+                    params);
+  } catch (const std::invalid_argument &failure) {
+    bt::require(test_case.rejects,
+                "planar support validation rejected an accepted case: " +
+                    params);
+    auto golden = node(kFile, "test_planar_model_validation_oracle", params);
+    text_leaf(golden, failure.what(), "outcome.message");
+    golden.done();
+  }
     const std::array bad_low{-1};
     const std::array bad_high{static_cast<int>(model->ngeom)};
     error<std::invalid_argument>(
@@ -440,15 +435,14 @@ void test_grip_scalar_validation_oracle() {
 // ---------------------------------------------------------------------
 void test_release_preserves_reference_numeric_bool_inputs(
         double energy, double limit, std::string_view params) {
-    auto golden = node(kFile,
-                       "test_release_preserves_reference_numeric_bool_inputs",
-                       std::string(params));
-    const auto actual =
-            rider::release_if_overloaded({1., 0., -0.}, energy, limit);
-    vec3(golden, actual.force, "");
-    scalar(golden, actual.loss_j, "");
-    boolean(golden, actual.overloaded, "overloaded");
-    golden.done();
+  auto golden = node(
+      kFile, "test_release_preserves_reference_numeric_bool_inputs", params);
+  const auto actual =
+      rider::release_if_overloaded({1., 0., -0.}, energy, limit);
+  vec3(golden, actual.force, "");
+  scalar(golden, actual.loss_j, "");
+  boolean(golden, actual.overloaded, "overloaded");
+  golden.done();
 }
 
 } // namespace
@@ -560,23 +554,42 @@ int main() {
         {
             const bt::TemporaryDirectory dir("rider_math_planar");
             const std::array cases{
-                    PlanarCase{R"(<joint type="hinge" axis="0 1 0"/>)", "box",
-                               "1 0 0 0", false},
-                    PlanarCase{R"(<joint type="hinge" axis="0 -1 0"/>)", "box",
-                               "1 0 0 0", false},
-                    PlanarCase{R"(<joint type="slide" axis="1 0 1"/>)", "box",
-                               "1 0 0 0", false},
-                    PlanarCase{R"(<joint type="hinge" axis="1 0 0"/>)", "box",
-                               "1 0 0 0", true},
-                    PlanarCase{R"(<joint type="slide" axis="0 1 0"/>)", "box",
-                               "1 0 0 0", true},
-                    PlanarCase{R"(<freejoint/>)", "box", "1 0 0 0", true},
-                    PlanarCase{R"(<joint type="ball"/>)", "box", "1 0 0 0",
-                               true},
-                    PlanarCase{R"(<joint type="hinge" axis="0 1 0"/>)",
-                               "sphere", "1 0 0 0", true},
-                    PlanarCase{R"(<joint type="hinge" axis="0 1 0"/>)", "box",
-                               ".9238795 .3826834 0 0", true}};
+                PlanarCase{.joint = R"(<joint type="hinge" axis="0 1 0"/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = false},
+                PlanarCase{.joint = R"(<joint type="hinge" axis="0 -1 0"/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = false},
+                PlanarCase{.joint = R"(<joint type="slide" axis="1 0 1"/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = false},
+                PlanarCase{.joint = R"(<joint type="hinge" axis="1 0 0"/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = true},
+                PlanarCase{.joint = R"(<joint type="slide" axis="0 1 0"/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = true},
+                PlanarCase{.joint = R"(<freejoint/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = true},
+                PlanarCase{.joint = R"(<joint type="ball"/>)",
+                           .geom = "box",
+                           .quat = "1 0 0 0",
+                           .rejects = true},
+                PlanarCase{.joint = R"(<joint type="hinge" axis="0 1 0"/>)",
+                           .geom = "sphere",
+                           .quat = "1 0 0 0",
+                           .rejects = true},
+                PlanarCase{.joint = R"(<joint type="hinge" axis="0 1 0"/>)",
+                           .geom = "box",
+                           .quat = ".9238795 .3826834 0 0",
+                           .rejects = true}};
             for (const auto &test_case : cases)
                 test_planar_model_validation_oracle(dir, test_case);
         }

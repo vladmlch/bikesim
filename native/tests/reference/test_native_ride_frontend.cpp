@@ -91,7 +91,7 @@ void test_native_physical_driver_finishes_exports_and_retains_owned_snapshot() {
                 "the summary names the native backend");
     bt::require(integer(member(member(summary, "outcome"), "steps")) == 4,
                 "the outcome carries the committed step count");
-    bt::TemporaryDirectory root("native-ride-frontend");
+    bt::TemporaryDirectory const root("native-ride-frontend");
     const auto directory = root.path() / "physical";
     driver->export_run(directory, "duration_reached");
     for (const char *name : {"summary.json", "telemetry.csv",
@@ -124,7 +124,7 @@ void test_native_physical_driver_finishes_exports_and_retains_owned_snapshot() {
 void test_native_driver_seals_episodes_that_survive_reset_and_close() {
     auto rig = rt::welded_runtime("full");
     rt::advance(*rig->runtime, rig->period);
-    auto first = std::make_shared<runtime::OwnedNativeEpisode>(
+    auto const first = std::make_shared<runtime::OwnedNativeEpisode>(
         rig->runtime->seal_episode());
     bt::require(first->generation == 1 && !first->samples.empty(),
                 "the first generation seals with retained rows");
@@ -145,7 +145,7 @@ void test_native_driver_seals_episodes_that_survive_reset_and_close() {
     bt::invalid([&] { capture.add_episode(rt::make_evidence(0, 2, {})); });
     bt::invalid([&] { capture.add_episode(rt::make_evidence(4, 2, {})); });
     rig->runtime->reset();
-    auto second = std::make_shared<runtime::OwnedNativeEpisode>(
+    auto const second = std::make_shared<runtime::OwnedNativeEpisode>(
         rig->runtime->seal_episode());
     bt::require(second->generation == 2,
                 "the second generation seals under the next generation");
@@ -161,9 +161,8 @@ void test_native_driver_seals_episodes_that_survive_reset_and_close() {
             "--duration", "0.005"});
     auto resolved = bike::cli::resolve_ride(args);
     const auto request = resolved->setup;
-    auto prepared =
-        bike::app::prepare(std::make_unique<bike::initialization::SetupRequest>(
-            request));
+    auto const prepared = bike::app::prepare(
+        std::make_unique<bike::initialization::SetupRequest>(request));
     const auto metadata =
         bike::cli::launch_metadata(request, *prepared, std::nullopt);
     const auto assets =

@@ -44,7 +44,7 @@ namespace io = bike::io;
 namespace sw = ::runtime::sample_wire;
 namespace init = bike::initialization;
 
-const std::filesystem::path kEnvelopePath = rr::repo_file(
+const std::filesystem::path kEnvelopePath = rr::repo_file( // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     "examples/research/rider_joint_envelope_anatomical.json");
 
 // _environment's flat probe track (test_planar_arms.py:130-133).
@@ -74,11 +74,11 @@ double total_mass(const mdl::SegmentMasses &masses) {
 }
 
 std::string read_text(const std::filesystem::path &path) {
-    std::ifstream stream(path);
-    bt::require(stream.is_open(), "fixture opens: " + path.string());
-    std::ostringstream body;
-    body << stream.rdbuf();
-    return body.str();
+  std::ifstream const stream(path);
+  bt::require(stream.is_open(), "fixture opens: " + path.string());
+  std::ostringstream body;
+  body << stream.rdbuf();
+  return body.str();
 }
 
 io::Value &member(io::Value &value, std::string_view key) {
@@ -131,9 +131,9 @@ std::filesystem::path write_payload(const io::Value &payload,
     for (const std::string part : {"upper_arm", "forearm"})
         for (const std::string side : {"left", "right"})
             bt::require(
-                rr::approx(mass_at(split, part + "_" + side),
+                rr::approx(mass_at(split, part + "_" + side), // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
                            mass_at(paired, part + "_pair") / 2.),
-                part + " " + side + ": exactly half the paired segment");
+                part + " " + side + ": exactly half the paired segment"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
 }
 
 [[gnu::noinline]] void test_arm_split_does_not_add_mass_or_strength() {
@@ -247,7 +247,7 @@ test_envelope_schema_two_requires_the_two_arm_topology() {
     for (const std::string side : {"left", "right"})
         for (const std::string joint : {"shoulder", "elbow"}) {
             const std::string name =
-                "rider_" + joint + "_" + side;
+                "rider_" + joint + "_" + side; // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             const auto *envelope = static_cast<const cfg::JointEnvelope *>(
                 nullptr);
             for (const auto &[n, e] : envelopes)
@@ -264,7 +264,7 @@ test_envelope_schema_two_requires_the_two_arm_topology() {
     io::Value payload = io::parse_json(read_text(kEnvelopePath));
     member(payload, "topology") =
         io::Value{std::string("articulated_planar")};
-    bt::TemporaryDirectory dir("planar-arms-topology");
+    bt::TemporaryDirectory const dir("planar-arms-topology");
     const auto path = write_payload(payload, dir, "bad_topology.json");
     rr::expect_invalid(
         [&] { (void)cfg::load_joint_envelopes(path); },
@@ -279,7 +279,7 @@ test_envelope_schema_two_requires_the_two_arm_topology() {
     std::erase_if(joints, [](const auto &entry) {
         return entry.first == "rider_shoulder_left";
     });
-    bt::TemporaryDirectory dir("planar-arms-missing");
+    bt::TemporaryDirectory const dir("planar-arms-missing");
     const auto path = write_payload(payload, dir, "missing_arm.json");
     rr::expect_invalid(
         [&] { (void)cfg::load_joint_envelopes(path); },
@@ -363,7 +363,8 @@ test_compiled_topology_has_two_arms_and_two_grip_sites() {
         m->actuator_trnid, 2 * m->nu, "actuator_trnid");
     for (int a = 0; a < m->nu; ++a)
         bt::require(!root_joints.contains(
-                        trnid[static_cast<std::size_t>(2 * a)]),
+                        trnid[static_cast<std::size_t>(2) *
+                              static_cast<std::size_t>(a)]),
                     "no actuator drives a root coordinate");
 }
 
@@ -371,7 +372,7 @@ test_compiled_topology_has_two_arms_and_two_grip_sites() {
     // tests/reference/test_planar_arms.py::test_each_hand_jacobian_loads_only_its_own_arm
     auto rig = rr::pinned_rig({}, probe_track_30());
     mjModel *m = rig->stepper->model();
-    mjData *d = rig->stepper->data();
+    mjData const *d = rig->stepper->data();
     const auto cross_y = [](const std::array<double, 3> &r,
                             const std::array<double, 3> &f) {
         return r[2] * f[0] - r[0] * f[2];
@@ -528,7 +529,7 @@ test_welded_hands_report_finite_per_hand_reactions() {
 test_initial_state_round_trip_restores_per_hand_anchors() {
     // tests/reference/test_planar_arms.py::test_initial_state_round_trip_restores_per_hand_anchors
     auto rig = rr::pinned_rig({}, probe_track_30());
-    auto &context = *rig->context;
+    auto &context = (rig->context).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     // PhysicalInitialState.capture(env.sim) — only at t=0, like the
     // oracle's _guard.
     const auto state = init::PhysicalInitialState::capture(context);
@@ -565,7 +566,7 @@ test_initial_state_round_trip_restores_per_hand_anchors() {
                         ": the anchor is restored");
         for (std::size_t axis = 0; axis < 3; ++axis)
             bt::require(
-                rr::approx((*restored[side])[axis],
+                rr::approx(((restored[side]).value())[axis], // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                            expected[side][axis], 1e-7, 1e-12),
                 "the per-hand anchor round-trips verbatim");
     }

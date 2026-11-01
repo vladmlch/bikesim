@@ -88,7 +88,7 @@ void remove_key(Value &value, std::string_view key) {
                                          members) {
     Value::Object object;
     for (auto &member : members)
-        object.emplace_back(member.first, std::move(member.second));
+      object.emplace_back(member.first, member.second);
     return Value{std::move(object)};
 }
 
@@ -136,7 +136,7 @@ void test_projection_copies_the_appliers_resolved_setup() {
     const auto config = decode_doc(document_with(section_tree()));
     bt::require(config.rider_contacts.has_value(),
                 "decoded config carries the rider_contacts section");
-    const auto &c = *config.rider_contacts;
+    const auto &c = (config.rider_contacts).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(c.arm_reach_m == 0.447213595499958,
                 "arm_reach_m is the pose-resolved reach");
     bt::require(c.saddle_patch_half_length_m == 0.045 &&
@@ -165,12 +165,12 @@ void test_projection_copies_the_appliers_resolved_setup() {
 // absent → unset, a real → decoded.
 void test_projection_emits_an_explicit_pair_limit() {
     const auto without = decode_doc(document_with(section_tree()));
-    bt::require(!without.rider_contacts->grip_pair_force_limit_n,
+    bt::require(!without.rider_contacts.value().grip_pair_force_limit_n, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "no limit projects as an absent optional");
     const auto with = decode_doc(document_with(
             section_tree(Pedal::flat, Saddle::flat, Grip::spring, true,
                          300.)));
-    bt::require(with.rider_contacts->grip_pair_force_limit_n ==
+    bt::require(with.rider_contacts.value().grip_pair_force_limit_n == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                         std::optional{300.},
                 "an explicit pair limit decodes");
 }
@@ -184,8 +184,8 @@ void test_project_gates_the_section_on_the_applier() {
     const auto config = decode_doc(Value{std::move(bare)});
     bt::require(!config.rider_contacts.has_value(),
                 "an absent rider_contacts key installs no writer");
-    auto model = bike::model::compile_mjcf(
-            contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false));
+    auto const model = bike::model::compile_mjcf(
+        contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false));
     const auto mjb = (dir.path() / "gate.mjb").string();
     mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
     const Stepper stepper(mjb);
@@ -237,48 +237,46 @@ void test_schema_rejects_bad_section_keys(std::string_view mutation) {
 // by constructing the Stepper with the decoded document.
 void test_schema_rejects_bad_section_values(
         const bt::TemporaryDirectory &dir) {
-    auto model = bike::model::compile_mjcf(
-            contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false));
-    const auto mjb = (dir.path() / "schema_bad.mjb").string();
-    mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
-    const auto inf = std::numeric_limits<double>::infinity();
-    const auto nan = std::numeric_limits<double>::quiet_NaN();
-    const std::pair<std::string_view, Value> rows[] = {
-            {"pedal_attachment", setupvalue::text("pin")},
-            {"saddle_attachment", setupvalue::text("spindle")},
-            {"grip_attachment", setupvalue::text("weld")},
-            {"pedal_attachment", setupvalue::integer(7)},
-            {"arm_reach_m", setupvalue::real(0.)},
-            {"arm_reach_m", setupvalue::real(inf)},
-            {"saddle_patch_half_length_m", setupvalue::real(-1e-3)},
-            {"support_pad_radius_m", setupvalue::real(0.)},
-            {"support_k_n_m", setupvalue::real(-1.)},
-            {"support_k_n_m", setupvalue::real(nan)},
-            {"support_c_ns_m", setupvalue::real(-1.)},
-            {"pedal_c_ns_m", setupvalue::real(-1.)},
-            {"support_tangent_k_n_m", setupvalue::real(0.)},
-            {"support_mu", setupvalue::real(-1.)},
-            {"support_length_m", setupvalue::real(0.)},
-            {"grip_k_n_m", setupvalue::real(0.)},
-            {"grip_c_ns_m", setupvalue::real(-1.)},
-            {"grip_release_distance_m", setupvalue::real(0.)},
-            {"grip_capture_distance_m", setupvalue::real(-1.)},
-            {"grip_capture_speed_mps", setupvalue::real(-1.)},
-            {"grip_pair_force_limit_n", setupvalue::real(-3.)},
-            {"grip_pair_force_limit_n", setupvalue::text("unlimited")},
-    };
-    for (const auto &[field, bad] : rows) {
-        auto section = section_tree();
-        set_key(section, field, bad);
-        error<std::invalid_argument>(
-                [&] {
-                    Stepper rejected(
-                            mjb,
-                            decode_doc(document_with(
-                                    std::move(section))));
-                },
-                "rider_contacts." + std::string(field));
-    }
+  auto const model = bike::model::compile_mjcf(
+      contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false));
+  const auto mjb = (dir.path() / "schema_bad.mjb").string();
+  mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
+  const auto inf = std::numeric_limits<double>::infinity();
+  const auto nan = std::numeric_limits<double>::quiet_NaN();
+  const std::pair<std::string_view, Value> rows[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+      {"pedal_attachment", setupvalue::text("pin")},
+      {"saddle_attachment", setupvalue::text("spindle")},
+      {"grip_attachment", setupvalue::text("weld")},
+      {"pedal_attachment", setupvalue::integer(7)},
+      {"arm_reach_m", setupvalue::real(0.)},
+      {"arm_reach_m", setupvalue::real(inf)},
+      {"saddle_patch_half_length_m", setupvalue::real(-1e-3)},
+      {"support_pad_radius_m", setupvalue::real(0.)},
+      {"support_k_n_m", setupvalue::real(-1.)},
+      {"support_k_n_m", setupvalue::real(nan)},
+      {"support_c_ns_m", setupvalue::real(-1.)},
+      {"pedal_c_ns_m", setupvalue::real(-1.)},
+      {"support_tangent_k_n_m", setupvalue::real(0.)},
+      {"support_mu", setupvalue::real(-1.)},
+      {"support_length_m", setupvalue::real(0.)},
+      {"grip_k_n_m", setupvalue::real(0.)},
+      {"grip_c_ns_m", setupvalue::real(-1.)},
+      {"grip_release_distance_m", setupvalue::real(0.)},
+      {"grip_capture_distance_m", setupvalue::real(-1.)},
+      {"grip_capture_speed_mps", setupvalue::real(-1.)},
+      {"grip_pair_force_limit_n", setupvalue::real(-3.)},
+      {"grip_pair_force_limit_n", setupvalue::text("unlimited")},
+  };
+  for (const auto &[field, bad] : rows) {
+    auto section = section_tree();
+    set_key(section, field, bad);
+    error<std::invalid_argument>(
+        [&] {
+          Stepper const rejected(mjb,
+                                 decode_doc(document_with(std::move(section))));
+        },
+        "rider_contacts." + std::string(field));
+  }
 }
 
 // test_schema_accepts_every_declared_attachment — every enum label
@@ -418,9 +416,9 @@ void test_nonadvancing_probe_publishes_only_probe_fields(
     const auto &writer = stepper.rider_contacts();
     bt::require(writer.probe().has_value(),
                 "the non-advancing evaluation published a probe");
-    diagnostics(golden, writer.probe()->diagnostics, "root");
-    enabled_map(golden, writer.probe()->enabled, "root");
-    scalar(golden, writer.probe()->delivered_crank_torque_nm,
+    diagnostics(golden, writer.probe().value().diagnostics, "root"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+    enabled_map(golden, writer.probe().value().enabled, "root"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+    scalar(golden, writer.probe().value().delivered_crank_torque_nm, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
            "probe_delivered_crank_torque_nm");
     state(golden, writer.state(), writer.probe(), "root");
     // assert_tree(post[key], live[key], f'live.{key}') for every
@@ -849,43 +847,38 @@ void test_set_state_rejects_invalid_candidates_atomically(
 // is absent.
 void test_no_writer_answers_missing_config_errors(
         const bt::TemporaryDirectory &dir) {
-    auto model = bike::model::compile_mjcf(
-            contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false));
-    const auto mjb = (dir.path() / "bare.mjb").string();
-    mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
-    Stepper stepper(mjb);
-    for (const auto &call : std::initializer_list<std::function<void()>>{
-                 [&] { stepper.rider_contacts_reset(); },
-                 [&] { stepper.rider_contacts_restart_clock(); },
-                 [&] { stepper.rider_contacts_initialize_settled_state(); },
-                 [&] { stepper.rider_contacts_release_all(); },
-                 [&] { (void)stepper.rider_contacts_stored_energy(); },
-                 [&] { (void)stepper.rider_contacts(); },
-                 [&] {
-                     (void)stepper.rider_contacts_prepare_attachment_raw();
-                 },
-                 [&] {
-                     (void)stepper.rider_contacts_settle(std::nullopt,
-                                                         false, nullptr);
-                 },
-                 [&] {
-                     (void)stepper.rider_contacts_attachment_samples(
-                             std::nullopt, false);
-                 }})
-        error<std::logic_error>(call, "rider_contacts");
-    error<std::logic_error>(
-            [&] {
-                (void)stepper.rider_contacts_set_enabled("grip", false);
-            },
-            "rider_contacts");
-    error<std::logic_error>(
-            [&] { (void)qfrc(stepper, 0.0005); }, "rider_contacts");
-    error<std::logic_error>(
-            [&] {
-                (void)rider::decode_rider_contacts_state(
-                        Value{}, stepper.rider_contacts());
-            },
-            "rider_contacts");
+  auto const model = bike::model::compile_mjcf(
+      contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false));
+  const auto mjb = (dir.path() / "bare.mjb").string();
+  mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
+  Stepper stepper(mjb);
+  for (const auto &call : std::initializer_list<std::function<void()>>{
+           [&] { stepper.rider_contacts_reset(); },
+           [&] { stepper.rider_contacts_restart_clock(); },
+           [&] { stepper.rider_contacts_initialize_settled_state(); },
+           [&] { stepper.rider_contacts_release_all(); },
+           [&] { (void)stepper.rider_contacts_stored_energy(); },
+           [&] { (void)stepper.rider_contacts(); },
+           [&] { (void)stepper.rider_contacts_prepare_attachment_raw(); },
+           [&] {
+             (void)stepper.rider_contacts_settle(std::nullopt, false, nullptr);
+           },
+           [&] {
+             (void)stepper.rider_contacts_attachment_samples(std::nullopt,
+                                                             false);
+           }})
+    error<std::logic_error>(call, "rider_contacts");
+  error<std::logic_error>(
+      [&] { (void)stepper.rider_contacts_set_enabled("grip", false); },
+      "rider_contacts");
+  error<std::logic_error>([&] { (void)qfrc(stepper, 0.0005); },
+                          "rider_contacts");
+  error<std::logic_error>(
+      [&] {
+        (void)rider::decode_rider_contacts_state(Value{},
+                                                 stepper.rider_contacts());
+      },
+      "rider_contacts");
 }
 
 // ==========================================================================
@@ -976,10 +969,10 @@ void test_settled_latch_feeds_next_qfrc(const bt::TemporaryDirectory &dir) {
     state(golden, writer.state(), writer.probe(), "root");
     bt::require(writer.state().settled_welds.has_value(),
                 "the settle call latched _settled_welds");
-    scalar(golden, writer.state().settled_welds->crank_torque_nm,
+    scalar(golden, writer.state().settled_welds.value().crank_torque_nm, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
            "delivered_crank_torque_nm");
     bt::require(writer.state().delivered_crank_torque_nm ==
-                            writer.state().settled_welds->crank_torque_nm &&
+                            writer.state().settled_welds.value().crank_torque_nm && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                         writer.state().delivered_crank_torque_nm != 0.,
                 "delivered_crank_torque_nm is the latched scalar");
     golden.done();
@@ -1286,7 +1279,7 @@ void test_settled_snapshot_round_trip(const bt::TemporaryDirectory &dir) {
     bt::require(writer.state().settled_welds.has_value(),
                 "the latch is still live after snapshot mutation");
     const auto &fresh = writer.state();
-    for (const auto &[name, entry] : fresh.settled_welds->entries)
+    for (const auto &[name, entry] : fresh.settled_welds.value().entries) // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         if (name == "saddle")
             bt::require(entry.normal_n != -1.,
                         "mutating the snapshot leaves the latch "
@@ -1452,25 +1445,20 @@ void test_stored_energy_matches_the_ledger(
 // fails writer resolution at construction.
 void test_missing_model_names_reject_construction(
         const bt::TemporaryDirectory &dir) {
-    auto model = bike::model::compile_mjcf(
-            [&] {
-                auto xml = contact_xml(Pedal::flat, Saddle::flat,
-                                       Grip::spring, false);
-                const auto at = xml.find("name=\"geom_saddle\"");
-                bt::require(at != std::string::npos,
-                            "the plant XML carries geom_saddle");
-                xml.replace(at, 18, "name=\"geom_saddle_off\"");
-                return xml;
-            }());
-    const auto mjb = (dir.path() / "renamed.mjb").string();
-    mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
-    const auto config = decode_doc(document_with(
-            section_tree(Pedal::flat, Saddle::flat, Grip::spring, false,
-                         0., 0.4)));
-    error<std::invalid_argument>(
-            [&] { Stepper renamed(mjb, config); },
-            "model has no 'geom_saddle'");
-    (void)dir;
+  auto const model = bike::model::compile_mjcf([&] {
+    auto xml = contact_xml(Pedal::flat, Saddle::flat, Grip::spring, false);
+    const auto at = xml.find("name=\"geom_saddle\"");
+    bt::require(at != std::string::npos, "the plant XML carries geom_saddle");
+    xml.replace(at, 18, "name=\"geom_saddle_off\"");
+    return xml;
+  }());
+  const auto mjb = (dir.path() / "renamed.mjb").string();
+  mj_saveModel(model.get(), mjb.c_str(), nullptr, 0);
+  const auto config = decode_doc(document_with(
+      section_tree(Pedal::flat, Saddle::flat, Grip::spring, false, 0., 0.4)));
+  error<std::invalid_argument>([&] { Stepper const renamed(mjb, config); },
+                               "model has no 'geom_saddle'");
+  (void)dir;
 }
 
 } // namespace

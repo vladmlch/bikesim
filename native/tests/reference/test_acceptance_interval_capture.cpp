@@ -13,7 +13,7 @@
 
 namespace {
 
-runtime::SamplePtr sample(std::int64_t interval_id, double time_s,
+runtime::SamplePtr sample(std::int64_t interval_id, double time_s, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                           std::vector<std::string> violations) {
     auto row = std::make_shared<runtime::PhysicalSampleData>();
     row->interval_id = interval_id;

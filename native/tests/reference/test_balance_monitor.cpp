@@ -30,7 +30,6 @@
 #include <vector>
 
 namespace io = bike::io;
-namespace sw = runtime::sample_wire;
 using runtime::Wire;
 using runtime::WireObject;
 
@@ -74,9 +73,9 @@ void test_sustained_low_speed_latches() {
     speeds.insert(speeds.end(), 6, 3. * KMH);
     const auto monitor = run(speeds);
     bt::require(monitor.event.has_value(), "the sustained dip latches an event");
-    bt::require(std::abs(monitor.event->time_s - 3.6) < 1e-9,
+    bt::require(std::abs(monitor.event.value().time_s - 3.6) < 1e-9, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the event latches at the .5 s dwell boundary");
-    bt::require(std::abs(monitor.event->position_m - 3.) < 1e-9,
+    bt::require(std::abs(monitor.event.value().position_m - 3.) < 1e-9, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the event keeps the latching sample's position");
     bt::require(same_event(monitor.event, monitor.current_event),
                 "the latched event is the active event");
@@ -101,7 +100,7 @@ void test_recovered_speed_clears_active_event() {
     bt::require(active.has_value() && same_event(active, monitor.current_event),
                 "the second latch returns the active event");
     bt::require(!same_event(monitor.current_event, event) &&
-                    monitor.current_event->position_m == 61.,
+                    monitor.current_event.value().position_m == 61., // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the active event is the later episode");
     bt::require(same_event(monitor.event, event),
                 "the first record is never replaced");
@@ -155,7 +154,7 @@ void test_braking_pauses_dwell_without_restarting_grace() {
     bt::require(latched.has_value() &&
                     same_event(latched, monitor.event),
                 "the restarted dwell latches at .5 s");
-    bt::require(std::abs(monitor.event->time_s - 8.6) < 1e-9,
+    bt::require(std::abs(monitor.event.value().time_s - 8.6) < 1e-9, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the event time is the latching sample's time");
 }
 
@@ -263,7 +262,7 @@ void test_summary_and_metrics_keep_latched_event_position_summary() {
     const auto frame = runtime.render_frame();
     bt::require(frame.presentation.balance_lost_at_m.has_value(),
                 "the welded standstill latches a balance event");
-    const double latched = *frame.presentation.balance_lost_at_m;
+    const double latched = (frame.presentation.balance_lost_at_m).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     const auto summary =
         bike::cli::physical_summary(runtime, io::Value{io::Value::Object{}},
                                     "duration_reached");

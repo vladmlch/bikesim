@@ -15,13 +15,13 @@
 // contract (legacy retention still produces the decimated projection) is
 // covered by test_default_retention_is_the_legacy_projection; the
 // artifact emission is cli/ride.cpp's legacy headless path.
-#include "recording_test_support.hpp"
-#include "support/temporary_directory.hpp"
-#include "diag.hpp"
 #include "cli/physical_capture.hpp"
+#include "diag.hpp"
 #include "recording/publish.hpp"
+#include "recording_test_support.hpp"
 #include "research/evidence.hpp"
 #include "runtime/status.hpp"
+#include "support/temporary_directory.hpp"
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -30,11 +30,11 @@
 #include <optional>
 #include <set>
 #include <span>
+#include <utility>
 
 namespace {
 
 using namespace recording_test;
-namespace value = rec::value;
 namespace cli = bike::cli;
 namespace research = bike::research;
 
@@ -44,7 +44,9 @@ namespace research = bike::research;
 // in state.json resolve.
 std::vector<std::int64_t> interval_ids(const runtime::RuntimeSampleBatch &batch) {
     std::vector<std::int64_t> ids;
-    for (const auto &sample : batch.samples) ids.push_back(sample->interval_id);
+    ids.reserve(batch.samples.size());
+    for (const auto &sample : batch.samples)
+      ids.push_back(sample->interval_id);
     return ids;
 }
 
@@ -60,9 +62,9 @@ const WireObject &energy(const runtime::PhysicalSampleData &sample) {
 
 // The production model-joint catalog for the welded runtime — the same
 // model_catalog() the CLI binds before sealing episodes.
-const rec::Catalog &welded_catalog(runtime::NativeRideRuntime &runtime) {
-    static const rec::Catalog catalog = cli::model_catalog(runtime.model_image());
-    return catalog;
+const rec::Catalog &welded_catalog(runtime::NativeRideRuntime const &runtime) {
+  static const rec::Catalog catalog = cli::model_catalog(runtime.model_image());
+  return catalog;
 }
 
 void test_full_retention_keeps_every_interval_under_measurement_decimation() {
@@ -73,7 +75,9 @@ void test_full_retention_keeps_every_interval_under_measurement_decimation() {
     bt::require(episode.generation == full->runtime->snapshot().generation &&
                 episode.samples.size() == 81 &&
                 interval_ids(episode.samples) ==
-                    [] { std::vector<std::int64_t> ids(81); std::iota(ids.begin(), ids.end(), 0); return ids; }(),
+                    [] { std::vector<std::int64_t> ids(81);
+    std::ranges::iota(ids, 0);
+    return ids; }(),
                 "full retention keeps every interval under a decimated cadence");
     const auto batch = episode.batch(0, 81);
     bt::require(batch.samples.size() == 81 && interval_ids(batch) == interval_ids(episode.samples),
@@ -113,7 +117,9 @@ void test_off_retention_keeps_pending_evidence_without_history() {
     const auto batch = rig->runtime->prepare_samples();
     rig->runtime->acknowledge_samples(batch);
     bt::require(interval_ids(batch.samples) ==
-                    [] { std::vector<std::int64_t> ids(13); std::iota(ids.begin(), ids.end(), 0); return ids; }(),
+                    [] { std::vector<std::int64_t> ids(13);
+    std::ranges::iota(ids, 0);
+    return ids; }(),
                 "pending consumer delivery still drains every committed interval");
     bt::require(rig->runtime->seal_episode().samples.empty(),
                 "off retention seals to an empty episode");
@@ -133,7 +139,7 @@ void test_seal_flushes_partial_period_and_empty_run() {
     advance(*rig->runtime, rig->period - 1);
     const auto episode = rig->runtime->seal_episode();
     auto expected = std::vector<std::int64_t>(static_cast<std::size_t>(rig->period - 1));
-    std::iota(expected.begin(), expected.end(), 0);
+    std::ranges::iota(expected, 0);
     bt::require(episode.samples.size() == static_cast<std::size_t>(rig->period - 1) &&
                 interval_ids(episode.batch(0, rig->period - 1)) == expected,
                 "seal closes the trailing partial period");
@@ -167,7 +173,7 @@ void test_episode_samples_expose_typed_fields_and_provenance() {
     const auto batch = episode.batch(0, 25);
     for (std::size_t index = 0; index < batch.samples.size(); ++index) {
         const auto &sample = *batch.samples[index];
-        bt::require(sample.interval_id == static_cast<std::int64_t>(index),
+        bt::require(std::cmp_equal(sample.interval_id, index),
                     "typed interval identity");
         const auto &e = energy(sample);
         const bool measured = sw::boolean(sw::required(e, "measured"));
@@ -180,7 +186,7 @@ void test_episode_samples_expose_typed_fields_and_provenance() {
                         "measured rows cite their own end time");
         } else {
             const auto p = static_cast<std::size_t>(rig->period);
-            auto closing = (index / p + 1) * p - 1;
+            auto const closing = (index / p + 1) * p - 1;
             const auto source = static_cast<std::int64_t>(
                 closing < episode.samples.size() ? closing : (index / p) * p - 1);
             bt::require(sw::integer(sw::required(e, "source_interval_id")) == source &&
@@ -265,7 +271,7 @@ void test_failed_sealing_leaves_active_evidence_available() {
                 "sealing the surviving prefix returns the intact retained index");
     const auto batch = rig->runtime->prepare_samples();
     auto expected = std::vector<std::int64_t>(9);
-    std::iota(expected.begin(), expected.end(), 0);
+    std::ranges::iota(expected, 0);
     bt::require(interval_ids(batch.samples) == expected,
                 "the failure did not consume pending delivery");
     rig->runtime->acknowledge_samples(batch);
@@ -290,8 +296,8 @@ void test_strict_flush_rejection_preserves_retained_evidence() {
     const auto batch = episode.batch(0, static_cast<std::int64_t>(episode.samples.size()));
     const auto ids = interval_ids(batch);
     for (std::size_t i = 0; i < ids.size(); ++i)
-        bt::require(ids[i] == static_cast<std::int64_t>(i),
-                    "sealing still returns every committed interval");
+      bt::require(std::cmp_equal(ids[i], i),
+                  "sealing still returns every committed interval");
 }
 
 // Collect the PhysicalSource's emitted tables with per-table row counts.
@@ -340,7 +346,7 @@ void test_native_source_emits_catalog_tables_with_provenance() {
     bt::require(physics == 41 && ids.size() == 41,
                 "physics table carries every retained row");
     for (std::size_t i = 0; i < ids.size(); ++i)
-        bt::require(ids[i] == static_cast<std::int64_t>(i), "interval ids stay contiguous");
+      bt::require(std::cmp_equal(ids[i], i), "interval ids stay contiguous");
     // channel_energy decodes the measurement provenance columns.
     const auto &energy_table = tables.batches.at("channel_energy").front();
     const auto *measured = energy_table.columns.count("measured")
@@ -476,7 +482,7 @@ void test_retained_index_is_independent_of_pending_acknowledgement() {
     // Acknowledgement drains only pending delivery; retained rows stay.
     const auto batch = rig->runtime->prepare_samples();
     auto expected = std::vector<std::int64_t>(9);
-    std::iota(expected.begin(), expected.end(), 0);
+    std::ranges::iota(expected, 0);
     bt::require(interval_ids(batch.samples) == expected,
                 "pending delivery reports the committed prefix");
     rig->runtime->acknowledge_samples(batch);

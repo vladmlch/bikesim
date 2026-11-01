@@ -40,6 +40,7 @@
 #include <limits>
 #include <map>
 #include <optional>
+#include <print>
 #include <span>
 #include <string>
 #include <string_view>
@@ -182,7 +183,7 @@ void typed_wire_config(const nativecfg::WriterConfig& config) {
 
 // ---- golden plumbing --------------------------------------------------------
 
-bt::oracle::Node node(std::string_view function, std::string_view id = {}) {
+bt::oracle::Node node(std::string_view function, std::string_view id = {}) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     auto name = "tests/reference/test_native_numeric_completion.py::" +
                 std::string(function);
     if (!id.empty()) name += "[" + std::string(id) + "]";
@@ -202,7 +203,7 @@ void close_scalar(bt::oracle::Node& golden, double value, const std::string& pat
     const std::array values{value};
     golden.f64_close(values, std::span<const std::size_t>{}, path);
 }
-void wire_close(bt::oracle::Node& golden, const runtime::Wire& wire,
+void wire_close(bt::oracle::Node& golden, const runtime::Wire& wire, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                 const std::string& path) {
     if (const auto* object = std::get_if<runtime::WireObject>(&wire.value)) {
         std::vector<std::string> names;
@@ -213,7 +214,7 @@ void wire_close(bt::oracle::Node& golden, const runtime::Wire& wire,
         policy_reference::json_bytes(golden, Value{std::move(keys)}, path + "#keys");
         for (const auto& name : names)
             for (const auto& [key, child] : *object)
-                if (key == name) wire_close(golden, child, path + "." + name);
+                if (key == name) wire_close(golden, child, path + "." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     } else if (const auto* items = std::get_if<runtime::WireArray>(&wire.value)) {
         policy_reference::json_bytes(golden,
             Value{bike::io::Number{std::to_string(items->size())}}, path + "#length");
@@ -242,11 +243,11 @@ const runtime::Wire& wire_member(const runtime::WireObject& object,
 
 // test_air_specs_mutated_geometry_rejected[key]
 void test_air_specs_mutated_geometry_rejected() {
-    std::fprintf(stderr, ">> test_air_specs_mutated_geometry_rejected\n");
+    std::println(stderr, ">> test_air_specs_mutated_geometry_rejected");
     for (const auto key : {"piston_area_m2", "token_volume_m3",
                            "base_pos_volume_m3", "base_neg_volume_m3"}) {
         const bike::model::AirSpringSpecs specs{};
-        double derived_value;
+        double derived_value = 0.;
         if (std::string_view(key) == "piston_area_m2") derived_value = specs.piston_area_m2();
         else if (std::string_view(key) == "token_volume_m3") derived_value = specs.token_volume_m3();
         else if (std::string_view(key) == "base_pos_volume_m3") derived_value = specs.base_pos_volume_m3();
@@ -255,15 +256,15 @@ void test_air_specs_mutated_geometry_rejected() {
         auto mutated = specs;
         mutated.neg_chamber_length_mm = -1.;
         bt::invalid([&] { bike::model::validate_air_spring_specs(mutated); });
-        bt::invalid([&] { bike::model::AirSpringSpecs rejected{.neg_chamber_length_mm = -1.};
+        bt::invalid([&] { bike::model::AirSpringSpecs const rejected{.neg_chamber_length_mm = -1.};
                           bike::model::validate_air_spring_specs(rejected); });
-        bt::invalid([&] { bike::model::ForkAirSpring rejected(mutated); });
+        bt::invalid([&] { bike::model::ForkAirSpring const rejected(mutated); });
     }
 }
 
 // test_air_pressure_properties_revalidate[key]
 void test_air_pressure_properties_revalidate() {
-    std::fprintf(stderr, ">> test_air_pressure_properties_revalidate\n");
+    std::println(stderr, ">> test_air_pressure_properties_revalidate");
     for (const auto key : {"abs_pressure_pa", "gauge_pressure_bar"}) {
         bike::model::ForkAirSpring spring;
         // The oracle stores a non-finite gauge pressure (the strict-type
@@ -278,20 +279,20 @@ void test_air_pressure_properties_revalidate() {
 
 // test_air_specs_mutated_token_limit_rejected
 void test_air_specs_mutated_token_limit_rejected() {
-    std::fprintf(stderr, ">> test_air_specs_mutated_token_limit_rejected\n");
+    std::println(stderr, ">> test_air_specs_mutated_token_limit_rejected");
     bike::model::AirSpringSpecs specs;
     specs.max_tokens = -1;
     for (const auto& construct : std::array<std::function<void()>, 3>{
         [&] { bike::model::validate_air_spring_specs(specs); },
-        [&] { bike::model::ForkAirSpring rejected(specs); },
-        [&] { bike::model::AirSpringSpecs rejected{.max_tokens = -1};
+        [&] { bike::model::ForkAirSpring const rejected(specs); },
+        [&] { bike::model::AirSpringSpecs const rejected{.max_tokens = -1};
               bike::model::validate_air_spring_specs(rejected); }})
         bt::invalid(construct);
 }
 
 // test_invalid_tire_material_rejected[key-value]
 void test_invalid_tire_material_rejected() {
-    std::fprintf(stderr, ">> test_invalid_tire_material_rejected\n");
+    std::println(stderr, ">> test_invalid_tire_material_rejected");
     const nativecfg::TireMaterial base{.radial_k_n_m = 1e5, .radial_c_ns_m = 100.,
         .pressure_pa_gauge = 1e5, .provenance = "synthetic",
         .valid_load_range_n = {0., 2000.}, .table = std::nullopt};
@@ -316,22 +317,22 @@ void test_invalid_tire_material_rejected() {
 
 // test_mutated_surface_map_rejected[mutation]
 void test_mutated_surface_map_rejected() {
-    std::fprintf(stderr, ">> test_mutated_surface_map_rejected\n");
+    std::println(stderr, ">> test_mutated_surface_map_rejected");
     const auto config = nativecfg::decode(resolved_wire());
     bt::require(config.tire.has_value() && config.tire->surface_map.has_value(),
                 "resolved wire carries a track surface map");
     for (const auto mutation : {"surface", "section", "overlap"}) {
-        auto tire = *config.tire;
+        auto tire = (config.tire).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         if (std::string_view(mutation) == "surface") {
-            tire.surface_map->surface.mu_slide = 2.;
-            bt::invalid([&] { nativecfg::validate(tire.surface_map->surface); });
+            tire.surface_map.value().surface.mu_slide = 2.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+            bt::invalid([&] { nativecfg::validate(tire.surface_map.value().surface); }); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         } else if (std::string_view(mutation) == "section") {
-            tire.surface_map->sections[0].start_m = -1.;
+            tire.surface_map.value().sections[0].start_m = -1.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
             bt::invalid([&] { nativecfg::validate(tire); });
         } else {
-            const auto surface = tire.surface_map->surface;
-            tire.surface_map->sections = {nativecfg::SurfaceSection{0., 2., surface},
-                                          nativecfg::SurfaceSection{1., 3., surface}};
+            const auto surface = tire.surface_map.value().surface; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+            tire.surface_map.value().sections = {nativecfg::SurfaceSection{.start_m=0., .end_m=2., .surface=surface}, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                                          nativecfg::SurfaceSection{.start_m=1., .end_m=3., .surface=surface}};
             bt::invalid([&] { nativecfg::validate(tire); });
         }
     }
@@ -339,13 +340,13 @@ void test_mutated_surface_map_rejected() {
 
 // test_mutated_drive_config_rejected_before_model_writes[key-value]
 void test_mutated_drive_config_rejected_before_model_writes() {
-    std::fprintf(stderr, ">> test_mutated_drive_config_rejected_before_model_writes\n");
+    std::println(stderr, ">> test_mutated_drive_config_rejected_before_model_writes");
     struct Case { std::string_view id, key; double numeric; bool wire_text; };
     const std::array cases{
-        Case{"chain_k_n_m-0.0", "chain_k_n_m", 0., false},
-        Case{"bearing_c_nms_rad--1.0", "bearing_c_nms_rad", -1., false},
-        Case{"motor_clutch-no", "motor_clutch", 0., true},
-        Case{"torque_ripple-1.0", "torque_ripple", 1., false}};
+        Case{.id="chain_k_n_m-0.0", .key="chain_k_n_m", .numeric=0., .wire_text=false},
+        Case{.id="bearing_c_nms_rad--1.0", .key="bearing_c_nms_rad", .numeric=-1., .wire_text=false},
+        Case{.id="motor_clutch-no", .key="motor_clutch", .numeric=0., .wire_text=true},
+        Case{.id="torque_ripple-1.0", .key="torque_ripple", .numeric=1., .wire_text=false}};
     for (const auto& item : cases) {
         auto golden = node("test_mutated_drive_config_rejected_before_model_writes", item.id);
         bt::ModelFixture fixture(drivetrain_reference::model_xml("ideal_mid_drive"));
@@ -356,17 +357,17 @@ void test_mutated_drive_config_rejected_before_model_writes() {
             // strict-type rejection at decode.
             put(wire, "drive", "motor_clutch", text("no"));
             bt::invalid([&] { (void)nativecfg::decode(wire); });
-            bt::invalid([&] { Stepper rejected(image.mjb, nativecfg::decode(wire)); });
+            bt::invalid([&] { Stepper const rejected(image.mjb, nativecfg::decode(wire)); });
         } else {
             auto typed = nativecfg::decode(wire);
-            auto drive = *typed.drive;
+            auto drive = (typed.drive).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
             if (std::string_view(item.key) == "chain_k_n_m") drive.chain_k_n_m = item.numeric;
             else if (std::string_view(item.key) == "bearing_c_nms_rad") drive.bearing_c_nms_rad = item.numeric;
             else drive.torque_ripple = item.numeric;
             bt::invalid([&] { drivetrain::validate(drive); });
             auto mutated = typed;
             mutated.drive = drive;
-            bt::invalid([&] { Stepper rejected(image.mjb, mutated); });
+            bt::invalid([&] { Stepper const rejected(image.mjb, mutated); });
         }
         const std::array shape{static_cast<std::size_t>(fixture.model->nwrap)};
         golden.f64(model_access::readonly_buffer(
@@ -378,46 +379,46 @@ void test_mutated_drive_config_rejected_before_model_writes() {
 
 // test_drivetrain_wheel_topology_shared[axis-kind]
 void test_drivetrain_wheel_topology_shared() {
-    std::fprintf(stderr, ">> test_drivetrain_wheel_topology_shared\n");
+    std::println(stderr, ">> test_drivetrain_wheel_topology_shared");
     for (const auto& [axis, kind] : std::array<std::pair<const char*, const char*>, 2>{
         std::pair{"0 0 1", "hinge"}, std::pair{"0 1 0", "slide"}}) {
         auto text_xml = drivetrain_reference::model_xml("elastic_chain");
-        const std::string needle = "<joint name=\"front_wheel_spin\" axis=\"0 1 0\"/>";
+        const std::string needle = R"(<joint name="front_wheel_spin" axis="0 1 0"/>)";
         const auto position = text_xml.find(needle);
         bt::require(position != std::string::npos, "drivetrain xml carries the front-wheel joint");
         text_xml.replace(position, needle.size(),
-            "<joint name=\"front_wheel_spin\" type=\"" + std::string(kind) +
+            R"(<joint name="front_wheel_spin" type=")" + std::string(kind) +
                 "\" axis=\"" + axis + "\"/>");
-        bt::ModelFixture fixture(text_xml);
+        bt::ModelFixture const fixture(text_xml);
         const auto image = bike::initialization::capture_model_image(*fixture.model);
         auto wire = drivetrain_reference::writer_config(drivetrain_reference::source("elastic_chain"));
         put(wire, "drive", "transmission_model", text("elastic_chain"));
         drivetrain_reference::error<std::invalid_argument>(
-            [&] { Stepper rejected(image.mjb, nativecfg::decode(wire)); }, "front_wheel_spin");
+            [&] { Stepper const rejected(image.mjb, nativecfg::decode(wire)); }, "front_wheel_spin");
     }
 }
 
 // test_drivetrain_actuator_target_shared[actuator]
 void test_drivetrain_actuator_target_shared() {
-    std::fprintf(stderr, ">> test_drivetrain_actuator_target_shared\n");
+    std::println(stderr, ">> test_drivetrain_actuator_target_shared");
     for (const auto actuator : {"human_crank", "mid_drive"}) {
         auto text_xml = drivetrain_reference::model_xml("ideal_mid_drive");
-        const std::string needle = "<motor name=\"" + std::string(actuator) + "\" joint=\"crank_spin\"/>";
+        const std::string needle = "<motor name=\"" + std::string(actuator) + R"(" joint="crank_spin"/>)";
         const auto position = text_xml.find(needle);
         bt::require(position != std::string::npos, "drivetrain xml carries the actuator");
         text_xml.replace(position, needle.size(),
-            "<motor name=\"" + std::string(actuator) + "\" joint=\"front_wheel_spin\"/>");
-        bt::ModelFixture fixture(text_xml);
+            "<motor name=\"" + std::string(actuator) + R"(" joint="front_wheel_spin"/>)");
+        bt::ModelFixture const fixture(text_xml);
         const auto image = bike::initialization::capture_model_image(*fixture.model);
         const auto wire = drivetrain_reference::writer_config(drivetrain_reference::source());
         drivetrain_reference::error<std::invalid_argument>(
-            [&] { Stepper rejected(image.mjb, nativecfg::decode(wire)); }, actuator);
+            [&] { Stepper const rejected(image.mjb, nativecfg::decode(wire)); }, actuator);
     }
 }
 
 // test_shock_component_overflow_shared[legacy]
 void test_shock_component_overflow_shared() {
-    std::fprintf(stderr, ">> test_shock_component_overflow_shared\n");
+    std::println(stderr, ">> test_shock_component_overflow_shared");
     const auto shock_dof = pinned_dof("shock_stroke");
     for (const bool legacy : {false, true}) {
         auto wire = resolved_wire();
@@ -439,7 +440,7 @@ void test_shock_component_overflow_shared() {
 
 // test_chain_computation_overflow_shared[name]
 void test_chain_computation_overflow_shared() {
-    std::fprintf(stderr, ">> test_chain_computation_overflow_shared\n");
+    std::println(stderr, ">> test_chain_computation_overflow_shared");
     for (const auto name : {"chain_tension", "chain_geometry"}) {
         if (std::string_view(name) == "chain_tension") {
             auto source = drivetrain_reference::source("elastic_chain");
@@ -461,7 +462,7 @@ void test_chain_computation_overflow_shared() {
 
 // test_policy_intermediate_overflow_shared[policy]
 void test_policy_intermediate_overflow_shared() {
-    std::fprintf(stderr, ">> test_policy_intermediate_overflow_shared\n");
+    std::println(stderr, ">> test_policy_intermediate_overflow_shared");
     for (const auto policy : {"assist", "pedaling", "shifting"}) {
         auto wire = policy_reference::config(policy_reference::source());
         if (std::string_view(policy) == "assist") {
@@ -484,7 +485,7 @@ void test_policy_intermediate_overflow_shared() {
 
 // test_cruise_overflow_preserves_finite_telemetry
 void test_cruise_overflow_preserves_finite_telemetry() {
-    std::fprintf(stderr, ">> test_cruise_overflow_preserves_finite_telemetry\n");
+    std::println(stderr, ">> test_cruise_overflow_preserves_finite_telemetry");
     bt::ModelFixture fixture(R"(<mujoco><option timestep="1e308"/><worldbody><body><joint name="root_x" type="slide" axis="1 0 0"/><geom size=".1" mass="1"/></body></worldbody></mujoco>)");
     const auto image = bike::initialization::capture_model_image(*fixture.model);
     const auto wire = io::parse_json(
@@ -493,7 +494,7 @@ void test_cruise_overflow_preserves_finite_telemetry() {
     Stepper stepper(image.mjb, config);
     const CruiseState before = stepper.cruise_state();
     overflow([&] { (void)stepper.cruise_compute(true, false, std::nullopt); });
-    CruiseWriter writer(fixture.model.get(), *config.cruise);
+    CruiseWriter writer(fixture.model.get(), (config.cruise).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     overflow([&] { (void)writer.compute(fixture.data.get(), true, false, std::nullopt); });
     const CruiseState after = stepper.cruise_state();
     bt::require(std::bit_cast<std::uint64_t>(before.target_speed_mps) ==
@@ -510,7 +511,7 @@ void test_cruise_overflow_preserves_finite_telemetry() {
 
 // test_native_damper_errors_name_full_field_path[section-key]
 void test_native_damper_errors_name_full_field_path() {
-    std::fprintf(stderr, ">> test_native_damper_errors_name_full_field_path\n");
+    std::println(stderr, ">> test_native_damper_errors_name_full_field_path");
     for (const auto& [section, key] : std::array<std::pair<const char*, const char*>, 2>{
         std::pair{"fork_damper", "v_knee_comp"}, std::pair{"shock_damper", "max_lsc"}}) {
         auto wire = resolved_wire();
@@ -523,13 +524,13 @@ void test_native_damper_errors_name_full_field_path() {
 
 // test_nested_numeric_errors_name_full_field_path[case]
 void test_nested_numeric_errors_name_full_field_path() {
-    std::fprintf(stderr, ">> test_nested_numeric_errors_name_full_field_path\n");
+    std::println(stderr, ">> test_nested_numeric_errors_name_full_field_path");
     struct Case { std::vector<std::string_view> path; double bad; std::string_view expected; };
     const std::array cases{
-        Case{{"tire", "front", "material", "radial_c_ns_m"}, -1., "config.tire.front.material.radial_c_ns_m"},
-        Case{{"tire", "rear", "relaxation_length_m"}, 0., "config.tire.rear.relaxation_length_m"},
-        Case{{"drive", "assist", "profile", "mode_gains", "eco"}, -1., "config.drive.assist.profile.mode_gains.eco"},
-        Case{{"rider_forces", "paths", "0", "stiffness_n_m"}, -1., "config.rider_forces.paths.0.stiffness_n_m"}};
+        Case{.path={"tire", "front", "material", "radial_c_ns_m"}, .bad=-1., .expected="config.tire.front.material.radial_c_ns_m"},
+        Case{.path={"tire", "rear", "relaxation_length_m"}, .bad=0., .expected="config.tire.rear.relaxation_length_m"},
+        Case{.path={"drive", "assist", "profile", "mode_gains", "eco"}, .bad=-1., .expected="config.drive.assist.profile.mode_gains.eco"},
+        Case{.path={"rider_forces", "paths", "0", "stiffness_n_m"}, .bad=-1., .expected="config.rider_forces.paths.0.stiffness_n_m"}};
     for (const auto& item : cases) {
         auto wire = resolved_wire();
         at(wire, item.path) = real(item.bad);
@@ -544,7 +545,7 @@ void test_nested_numeric_errors_name_full_field_path() {
 // is the strict-type ValueError, a 1e308 stiffness with a deep deflection is
 // the same k*low_depth overflow the direct call reaches.
 void test_end_stop_strict_types_and_computation_overflow() {
-    std::fprintf(stderr, ">> test_end_stop_strict_types_and_computation_overflow\n");
+    std::println(stderr, ">> test_end_stop_strict_types_and_computation_overflow");
     auto wire = resolved_wire();
     auto& stops = member(member(wire, "suspension"), "end_stops");
     set(stops, "stiffness_n_m", Value{true});
@@ -560,7 +561,7 @@ void test_end_stop_strict_types_and_computation_overflow() {
 }
 
 struct FieldCase { std::vector<std::string_view> path; };
-const std::initializer_list<FieldCase> kPositiveFields = {
+const std::initializer_list<FieldCase> kPositiveFields = { // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     {{"suspension", "fork_damper", "total_travel_mm"}},
     {{"suspension", "shock_damper", "total_stroke_mm"}},
     {{"suspension", "shock_damper", "max_hbo"}},
@@ -587,7 +588,7 @@ const std::initializer_list<FieldCase> kPositiveFields = {
     {{"drive", "assist", "slew"}},
     {{"drive", "assist", "taper_width_mps"}},
 };
-const std::initializer_list<FieldCase> kNonnegativeFields = {
+const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     {{"suspension", "fork_damper", "hbo_start_mm"}},
     {{"suspension", "fork_damper", "c_hbo_base"}},
     {{"suspension", "shock_damper", "hbo_start_mm"}},
@@ -631,7 +632,7 @@ Value without_profile() {
 }
 // test_remaining_s4_scalar_field_matrix[location-bad]
 void test_remaining_s4_scalar_field_matrix() {
-    std::fprintf(stderr, ">> test_remaining_s4_scalar_field_matrix\n");
+    std::println(stderr, ">> test_remaining_s4_scalar_field_matrix");
     const std::array bad_values{real(-1.), Value{bike::io::Number{"nan"}},
         Value{bike::io::Number{"inf"}}, Value{bike::io::Number{"-inf"}}, Value{true}};
     for (const auto* list : {&kPositiveFields, &kNonnegativeFields})
@@ -644,7 +645,7 @@ void test_remaining_s4_scalar_field_matrix() {
 }
 // test_remaining_s4_positive_field_zero[location]
 void test_remaining_s4_positive_field_zero() {
-    std::fprintf(stderr, ">> test_remaining_s4_positive_field_zero\n");
+    std::println(stderr, ">> test_remaining_s4_positive_field_zero");
     for (const auto& item : kPositiveFields) {
         auto wire = without_profile();
         at(wire, item.path) = integer(0);
@@ -654,7 +655,7 @@ void test_remaining_s4_positive_field_zero() {
 }
 // test_s4_matrix_valid_configuration
 void test_s4_matrix_valid_configuration() {
-    std::fprintf(stderr, ">> test_s4_matrix_valid_configuration\n");
+    std::println(stderr, ">> test_s4_matrix_valid_configuration");
     const auto config = nativecfg::decode(without_profile());
     typed_wire_config(config);
     (void)resolved_stepper(without_profile());
@@ -662,23 +663,23 @@ void test_s4_matrix_valid_configuration() {
 
 // test_s4_relationship_matrix[location-value]
 void test_s4_relationship_matrix() {
-    std::fprintf(stderr, ">> test_s4_relationship_matrix\n");
+    std::println(stderr, ">> test_s4_relationship_matrix");
     struct Case { std::vector<std::string_view> path; const char* value; };
     const std::array cases{
-        Case{{"drive", "assist", "taper_width_mps"}, "100.0"},
-        Case{{"drive", "assist", "torque_curve"}, "[[0.0,1.0],[0.0,2.0]]"},
-        Case{{"drive", "shifting", "cassette"}, "[24,24]"},
-        Case{{"drive", "shifting", "target_cadence_min_rpm"}, "200.0"},
-        Case{{"drive", "shifting", "shift_cut_duration_s"}, "100.0"},
-        Case{{"drive", "shifting", "torque_factor"}, "1.1"},
-        Case{{"drive", "pedaling", "resume_below_rpm"}, "200.0"},
-        Case{{"tire", "significance_fraction"}, "1.1"},
-        Case{{"tire", "distinct_normal_deg"}, "180.0"},
-        Case{{"tire", "front", "material", "valid_load_range_n"}, "[2000.0,1000.0]"},
-        Case{{"tire", "surface_map", "surface", "mu_slide"}, "20.0"},
-        Case{{"suspension", "fork_damper", "c_lsc_min"}, "1e6"},
-        Case{{"suspension", "shock_damper", "c_hbo_min"}, "1e6"},
-        Case{{"suspension", "coil", "bumper_length_mm"}, "100.0"}};
+        Case{.path={"drive", "assist", "taper_width_mps"}, .value="100.0"},
+        Case{.path={"drive", "assist", "torque_curve"}, .value="[[0.0,1.0],[0.0,2.0]]"},
+        Case{.path={"drive", "shifting", "cassette"}, .value="[24,24]"},
+        Case{.path={"drive", "shifting", "target_cadence_min_rpm"}, .value="200.0"},
+        Case{.path={"drive", "shifting", "shift_cut_duration_s"}, .value="100.0"},
+        Case{.path={"drive", "shifting", "torque_factor"}, .value="1.1"},
+        Case{.path={"drive", "pedaling", "resume_below_rpm"}, .value="200.0"},
+        Case{.path={"tire", "significance_fraction"}, .value="1.1"},
+        Case{.path={"tire", "distinct_normal_deg"}, .value="180.0"},
+        Case{.path={"tire", "front", "material", "valid_load_range_n"}, .value="[2000.0,1000.0]"},
+        Case{.path={"tire", "surface_map", "surface", "mu_slide"}, .value="20.0"},
+        Case{.path={"suspension", "fork_damper", "c_lsc_min"}, .value="1e6"},
+        Case{.path={"suspension", "shock_damper", "c_hbo_min"}, .value="1e6"},
+        Case{.path={"suspension", "coil", "bumper_length_mm"}, .value="100.0"}};
     for (const auto& item : cases) {
         auto wire = without_profile();
         at(wire, item.path) = io::parse_json(item.value);
@@ -689,7 +690,7 @@ void test_s4_relationship_matrix() {
 
 // test_unicode_blank_tire_provenance_shared[side]
 void test_unicode_blank_tire_provenance_shared() {
-    std::fprintf(stderr, ">> test_unicode_blank_tire_provenance_shared\n");
+    std::println(stderr, ">> test_unicode_blank_tire_provenance_shared");
     for (const auto side : {"front", "rear"}) {
         auto wire = resolved_wire();
         set(at(wire, {"tire", side, "material"}), "provenance", text("\u2003"));
@@ -701,7 +702,7 @@ void test_unicode_blank_tire_provenance_shared() {
 
 // test_resistance_requires_physical_bodies[side]
 void test_resistance_requires_physical_bodies() {
-    std::fprintf(stderr, ">> test_resistance_requires_physical_bodies\n");
+    std::println(stderr, ">> test_resistance_requires_physical_bodies");
     for (const auto side : {"frame", "front_wheel", "rear_wheel"}) {
         auto wire = resolved_wire();
         set(at(wire, {"resistance", "bodies"}), side, text("world"));
@@ -711,17 +712,17 @@ void test_resistance_requires_physical_bodies() {
 
 // test_cassette_ordered_integer_contract[field-value]
 void test_cassette_ordered_integer_contract() {
-    std::fprintf(stderr, ">> test_cassette_ordered_integer_contract\n");
-    struct Case { Value value; bool valid; };
+    std::println(stderr, ">> test_cassette_ordered_integer_contract");
+    struct Case { Value value; bool valid{}; };
     // {12, 24} is a set (non-sequence → an object wire), (24, True) and
     // (24, 24) are the bool/non-ordered rejections; the np.int64 tuple and
     // the plain list are the accepted controls.
     const std::array cases{
-        Case{io::parse_json(R"({"12":null,"24":null})"), false},
-        Case{io::parse_json("[24,true]"), false},
-        Case{io::parse_json("[24,24]"), false},
-        Case{io::parse_json("[24,32]"), true},
-        Case{io::parse_json("[12,24]"), true}};
+        Case{.value=io::parse_json(R"({"12":null,"24":null})"), .valid=false},
+        Case{.value=io::parse_json("[24,true]"), .valid=false},
+        Case{.value=io::parse_json("[24,24]"), .valid=false},
+        Case{.value=io::parse_json("[24,32]"), .valid=true},
+        Case{.value=io::parse_json("[12,24]"), .valid=true}};
     for (const auto& item : cases) {
         auto wire = policy_reference::config(policy_reference::source());
         put(wire, "shifting", "cassette", item.value);
@@ -732,11 +733,11 @@ void test_cassette_ordered_integer_contract() {
 
 // test_mutated_tire_parameters_rejected[name-key]
 void test_mutated_tire_parameters_rejected() {
-    std::fprintf(stderr, ">> test_mutated_tire_parameters_rejected\n");
+    std::println(stderr, ">> test_mutated_tire_parameters_rejected");
     const auto config = nativecfg::decode(resolved_wire());
     for (const auto& [side, key] : std::array<std::pair<const char*, const char*>, 2>{
         std::pair{"front", "mu"}, std::pair{"rear", "tangent_k_n_m"}}) {
-        auto parameters = std::string_view(side) == "front" ? config.tire->front : config.tire->rear;
+        auto parameters = std::string_view(side) == "front" ? (config.tire).value().front : (config.tire).value().rear; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         if (std::string_view(key) == "mu") parameters.mu = -1.;
         else parameters.tangent_k_n_m = -1.;
         bt::invalid([&] { nativecfg::validate(parameters); });
@@ -745,7 +746,7 @@ void test_mutated_tire_parameters_rejected() {
 
 // test_damper_mutated_denominator_rejected_by_setter
 void test_damper_mutated_denominator_rejected_by_setter() {
-    std::fprintf(stderr, ">> test_damper_mutated_denominator_rejected_by_setter\n");
+    std::println(stderr, ">> test_damper_mutated_denominator_rejected_by_setter");
     bike::model::Charger3Damper damper;
     damper.max_hsc = 0;
     bt::invalid([&] { damper.set_clicks(1, std::nullopt, std::nullopt); });
@@ -753,7 +754,7 @@ void test_damper_mutated_denominator_rejected_by_setter() {
 
 // test_rider_path_scalar_matrix_shared[key-bad]
 void test_rider_path_scalar_matrix_shared() {
-    std::fprintf(stderr, ">> test_rider_path_scalar_matrix_shared\n");
+    std::println(stderr, ">> test_rider_path_scalar_matrix_shared");
     const double nan = std::numeric_limits<double>::quiet_NaN();
     const std::array bad_values{
         Value{bike::io::Number{"nan"}}, Value{bike::io::Number{"inf"}},
@@ -763,7 +764,7 @@ void test_rider_path_scalar_matrix_shared() {
             auto wire = resolved_wire();
             set(at(wire, {"rider_forces", "paths", "0"}), key, bad);
             bt::invalid([&] { (void)resolved_stepper(wire); });
-            auto typed = *nativecfg::decode(resolved_wire()).rider_forces;
+            auto typed = nativecfg::decode(resolved_wire()).rider_forces.value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
             auto& row = typed.paths[0];
             if (std::string_view(key) == "stiffness_n_m") row.stiffness_n_m = nan;
             else if (std::string_view(key) == "damping_ns_m") row.damping_ns_m = nan;
@@ -775,7 +776,7 @@ void test_rider_path_scalar_matrix_shared() {
 
 // test_invalid_motor_profile_relationships_rejected[attribute-value]
 void test_invalid_motor_profile_relationships_rejected() {
-    std::fprintf(stderr, ">> test_invalid_motor_profile_relationships_rejected\n");
+    std::println(stderr, ">> test_invalid_motor_profile_relationships_rejected");
     for (const auto& [attribute, value] : std::array<std::pair<const char*, double>, 2>{
         std::pair{"rated_power_w", 1e6}, std::pair{"taper_width_mps", 100.}}) {
         auto profile = cfg::kBoschCxGen4;
@@ -787,7 +788,7 @@ void test_invalid_motor_profile_relationships_rejected() {
 
 // test_bearing_force_overflow_before_return_and_telemetry
 void test_bearing_force_overflow_before_return_and_telemetry() {
-    std::fprintf(stderr, ">> test_bearing_force_overflow_before_return_and_telemetry\n");
+    std::println(stderr, ">> test_bearing_force_overflow_before_return_and_telemetry");
     auto source = drivetrain_reference::source();
     source.bearing_c_nms_rad = 1e308;
     auto owner = drivetrain_reference::pair(source);
@@ -798,7 +799,7 @@ void test_bearing_force_overflow_before_return_and_telemetry() {
 
 // test_chain_dissipation_overflow_before_telemetry
 void test_chain_dissipation_overflow_before_telemetry() {
-    std::fprintf(stderr, ">> test_chain_dissipation_overflow_before_telemetry\n");
+    std::println(stderr, ">> test_chain_dissipation_overflow_before_telemetry");
     auto source = drivetrain_reference::source("elastic_chain");
     source.chain_k_n_m = 1e308; source.chain_c_ns_m = 1e108;
     source.battery.enabled = false;
@@ -814,7 +815,7 @@ void test_chain_dissipation_overflow_before_telemetry() {
 
 // test_suspension_total_overflow_before_telemetry
 void test_suspension_total_overflow_before_telemetry() {
-    std::fprintf(stderr, ">> test_suspension_total_overflow_before_telemetry\n");
+    std::println(stderr, ">> test_suspension_total_overflow_before_telemetry");
     auto wire = resolved_wire();
     auto& air = member(member(wire, "suspension"), "air_spring");
     set(air, "stanchion_inner_diam_mm", real(1100.));
@@ -834,10 +835,10 @@ void test_suspension_total_overflow_before_telemetry() {
 
 // test_end_stop_mutated_config_rejected
 void test_end_stop_mutated_config_rejected() {
-    std::fprintf(stderr, ">> test_end_stop_mutated_config_rejected\n");
+    std::println(stderr, ">> test_end_stop_mutated_config_rejected");
     // replace(EndStopConfig(), reference_deflection_m=-1.) reaches post_init.
     bt::invalid([&] {
-        cfg::EndStopConfig rejected{.reference_deflection_m = -1.};
+        cfg::EndStopConfig const rejected{.reference_deflection_m = -1.};
         cfg::detail::post_init(rejected); });
     auto config = cfg::EndStopConfig{};
     config.reference_deflection_m = -1.;
@@ -848,7 +849,7 @@ void test_end_stop_mutated_config_rejected() {
 
 // test_tire_two_wheel_loss_overflow_before_publication
 void test_tire_two_wheel_loss_overflow_before_publication() {
-    std::fprintf(stderr, ">> test_tire_two_wheel_loss_overflow_before_publication\n");
+    std::println(stderr, ">> test_tire_two_wheel_loss_overflow_before_publication");
     auto stepper = resolved_stepper(resolved_wire());
     auto position = pinned_qpos();
     position[static_cast<std::size_t>(pinned_adr("root_z"))] += 10.;
@@ -863,7 +864,7 @@ void test_tire_two_wheel_loss_overflow_before_publication() {
 
 // test_integer_normalization_and_legacy_hbo_bitwise_controls[tokens-clicks]
 void test_integer_normalization_and_legacy_hbo_bitwise_controls() {
-    std::fprintf(stderr, ">> test_integer_normalization_and_legacy_hbo_bitwise_controls\n");
+    std::println(stderr, ">> test_integer_normalization_and_legacy_hbo_bitwise_controls");
     const auto fork_adr = pinned_adr("fork_travel");
     const auto fork_dof = pinned_dof("fork_travel");
     for (const auto& [id, tokens, clicks] : std::array<std::tuple<const char*, int, int>, 2>{
@@ -897,17 +898,17 @@ void test_integer_normalization_and_legacy_hbo_bitwise_controls() {
 
 // test_air_unreachable_declared_travel_remains_usable
 void test_air_unreachable_declared_travel_remains_usable() {
-    std::fprintf(stderr, ">> test_air_unreachable_declared_travel_remains_usable\n");
+    std::println(stderr, ">> test_air_unreachable_declared_travel_remains_usable");
     bike::model::AirSpringSpecs specs;
     specs.total_travel_mm = 1000.;
-    bike::model::ForkAirSpring spring(specs, 0);
+    bike::model::ForkAirSpring const spring(specs, 0);
     bt::require(std::isfinite(spring.compute_axial_force(50.)),
                 "unreachable declared travel remains a usable spring");
 }
 
 // test_air_calibration_denominator_overflow_before_pressure_commit
 void test_air_calibration_denominator_overflow_before_pressure_commit() {
-    std::fprintf(stderr, ">> test_air_calibration_denominator_overflow_before_pressure_commit\n");
+    std::println(stderr, ">> test_air_calibration_denominator_overflow_before_pressure_commit");
     bike::model::AirSpringSpecs specs;
     specs.stanchion_inner_diam_mm = 2e103; specs.total_travel_mm = 1e-100;
     specs.pos_chamber_length_mm = 2e-100; specs.neg_chamber_length_mm = 1e-100;
@@ -921,7 +922,7 @@ void test_air_calibration_denominator_overflow_before_pressure_commit() {
 
 // test_air_force_curve_energy_overflow_before_publication
 void test_air_force_curve_energy_overflow_before_publication() {
-    std::fprintf(stderr, ">> test_air_force_curve_energy_overflow_before_publication\n");
+    std::println(stderr, ">> test_air_force_curve_energy_overflow_before_publication");
     bike::model::AirSpringSpecs specs;
     specs.stanchion_inner_diam_mm = 2500.;
     bike::model::ForkAirSpring spring(specs, 0, 1e303);
@@ -932,7 +933,7 @@ void test_air_force_curve_energy_overflow_before_publication() {
 
 // test_air_calibration_and_curve_valid_controls
 void test_air_calibration_and_curve_valid_controls() {
-    std::fprintf(stderr, ">> test_air_calibration_and_curve_valid_controls\n");
+    std::println(stderr, ">> test_air_calibration_and_curve_valid_controls");
     bike::model::ForkAirSpring spring;
     const double pressure = spring.calibrate_psi_for_sag(54., 322.2);
     bt::require(std::isfinite(pressure), "valid calibration returns a finite pressure");
@@ -949,7 +950,7 @@ void test_air_calibration_and_curve_valid_controls() {
 
 // test_battery_cap_numerator_overflow_before_saturation[native]
 void test_battery_cap_numerator_overflow_before_saturation() {
-    std::fprintf(stderr, ">> test_battery_cap_numerator_overflow_before_saturation\n");
+    std::println(stderr, ">> test_battery_cap_numerator_overflow_before_saturation");
     auto wire = policy_reference::config(policy_reference::source());
     put(wire, "battery", "copper_w_per_nm2", real(1e-306));
     put(wire, "battery", "speed_w_per_rad_s2", real(0.));
@@ -960,7 +961,7 @@ void test_battery_cap_numerator_overflow_before_saturation() {
 
 // test_mutated_zero_dimensional_cassette_is_value_error[native]
 void test_mutated_zero_dimensional_cassette_is_value_error() {
-    std::fprintf(stderr, ">> test_mutated_zero_dimensional_cassette_is_value_error\n");
+    std::println(stderr, ">> test_mutated_zero_dimensional_cassette_is_value_error");
     auto wire = policy_reference::config(policy_reference::source());
     put(wire, "shifting", "cassette", integer(24));
     drivetrain_reference::error<std::invalid_argument>(
@@ -969,7 +970,7 @@ void test_mutated_zero_dimensional_cassette_is_value_error() {
 
 // test_brake_and_cruise_numpy_numeric_controls
 void test_brake_and_cruise_numpy_numeric_controls() {
-    std::fprintf(stderr, ">> test_brake_and_cruise_numpy_numeric_controls\n");
+    std::println(stderr, ">> test_brake_and_cruise_numpy_numeric_controls");
     auto golden = node("test_brake_and_cruise_numpy_numeric_controls");
     const auto qpos = golden.f64_input("input.qpos");
     const auto qvel = golden.f64_input("input.qvel");
@@ -988,7 +989,7 @@ void test_brake_and_cruise_numpy_numeric_controls() {
 
 // test_end_stop_unloading_overflow_before_clamp[branch-native]
 void test_end_stop_unloading_overflow_before_clamp() {
-    std::fprintf(stderr, ">> test_end_stop_unloading_overflow_before_clamp\n");
+    std::println(stderr, ">> test_end_stop_unloading_overflow_before_clamp");
     const auto shock_adr = pinned_adr("shock_stroke");
     const auto shock_dof = pinned_dof("shock_stroke");
     const auto resolved = resolved_wire();
@@ -1014,7 +1015,7 @@ void test_end_stop_unloading_overflow_before_clamp() {
 
 // test_damper_constructor_original_type_class[section-field-bad-native]
 void test_damper_constructor_original_type_class() {
-    std::fprintf(stderr, ">> test_damper_constructor_original_type_class\n");
+    std::println(stderr, ">> test_damper_constructor_original_type_class");
     for (const auto& [section, key] : std::array<std::pair<const char*, const char*>, 2>{
         std::pair{"fork_damper", "total_travel_mm"},
         std::pair{"shock_damper", "total_stroke_mm"}})
@@ -1031,22 +1032,22 @@ void test_damper_constructor_original_type_class() {
 // mode_gains=None is the absent-profile / invalid-gains boundary; the
 // controller constructor revalidates its own profile block.
 void test_assist_constructor_revalidates_mutated_profile() {
-    std::fprintf(stderr, ">> test_assist_constructor_revalidates_mutated_profile\n");
+    std::println(stderr, ">> test_assist_constructor_revalidates_mutated_profile");
     auto wire = policy_reference::config(policy_reference::source());
     put(wire, "assist", "profile", io::parse_json(
         R"({"mode_gains":{"eco":1.0,"tour":2.0,"emtb":[1.0,3.0],"turbo":3.0},"emtb_full_gain_at_nm":20.0})"));
-    auto decoded = nativecfg::decode_policy_config(wire);
+    auto const decoded = nativecfg::decode_policy_config(wire);
     auto mutated = decoded;
-    mutated.assist.profile->emtb_high = mutated.assist.profile->emtb_low - 1.;
+    mutated.assist.profile.value().emtb_high = mutated.assist.profile.value().emtb_low - 1.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::invalid([&] { drivetrain::validate(mutated.assist); });
-    bt::invalid([&] { drivetrain::AssistController rejected(mutated.assist); });
+    bt::invalid([&] { drivetrain::AssistController const rejected(mutated.assist); });
 }
 
 // test_assist_constructor_profile_slew_overflow_before_publication — the
 // constructor's profile slew is peak_torque_nm / torque_tau_s; the mutated
 // profile overflows that derived division before any state is published.
 void test_assist_constructor_profile_slew_overflow_before_publication() {
-    std::fprintf(stderr, ">> test_assist_constructor_profile_slew_overflow_before_publication\n");
+    std::println(stderr, ">> test_assist_constructor_profile_slew_overflow_before_publication");
     const auto profile = [] {
         auto value = cfg::kBoschCxGen4;
         value.peak_torque_nm = 1e308; value.torque_tau_s = 1e-308;
@@ -1059,7 +1060,7 @@ void test_assist_constructor_profile_slew_overflow_before_publication() {
 
 // test_zero_disable_policy_fields_remain_bitwise_valid
 void test_zero_disable_policy_fields_remain_bitwise_valid() {
-    std::fprintf(stderr, ">> test_zero_disable_policy_fields_remain_bitwise_valid\n");
+    std::println(stderr, ">> test_zero_disable_policy_fields_remain_bitwise_valid");
     auto golden = node("test_zero_disable_policy_fields_remain_bitwise_valid");
     auto source = drivetrain_reference::source();
     source.pedaling.enabled = true;
@@ -1073,7 +1074,7 @@ void test_zero_disable_policy_fields_remain_bitwise_valid() {
     source.assist.gain = 0.; source.assist.max_torque = 0.; source.assist.max_power = 0.;
     source.assist.engage_torque_nm = 0.; source.assist.gate_min_crank_rad_s = 0.;
     source.bearing_c_nms_rad = 0.; source.freehub_c_nms_rad = 0.; source.chain_c_ns_m = 0.;
-    auto stepper = drivetrain_reference::pair(source);
+    auto const stepper = drivetrain_reference::pair(source);
     drivetrain_reference::components(golden,
         drivetrain_reference::components(*stepper, .001, 0.));
     golden.done();
@@ -1093,16 +1094,16 @@ void test_zero_disable_policy_fields_remain_bitwise_valid() {
 // replays the same platform-faithful start.
 std::string input_bytes(std::span<const double> payload) {
     const auto view = std::as_bytes(payload);
-    return {reinterpret_cast<const char*>(view.data()), view.size()};
+    return {reinterpret_cast<const char*>(view.data()), view.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
 }
 void test_tire_channel_parity_across_backends() {
-    std::fprintf(stderr, ">> test_tire_channel_parity_across_backends\n");
+    std::println(stderr, ">> test_tire_channel_parity_across_backends");
     auto golden = node("test_tire_channel_parity_across_backends");
     for (const auto& [side, fixture_name] : std::array<std::pair<const char*, const char*>, 2>{
         std::pair{"compliant", "bootstrap/welded"},
         std::pair{"distributed", "bootstrap/distributed_rocky"}}) {
         const auto fixed_dir = bt::fixture(fixture_name);
-        bt::TemporaryDirectory stage("nc-tires");
+        bt::TemporaryDirectory const stage("nc-tires");
         std::filesystem::copy_file(fixed_dir / "model.mjb",
                                    stage.path() / "model.mjb");
         std::string manifest_text =
@@ -1123,7 +1124,7 @@ void test_tire_channel_parity_across_backends() {
             const std::filesystem::path path = stage.path() / name;
             std::filesystem::create_directories(path.parent_path());
             std::ofstream out(path, std::ios::binary);
-            out.write(reinterpret_cast<const char*>(payload.data()),
+            out.write(reinterpret_cast<const char*>(payload.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
                       static_cast<std::streamsize>(nbytes));
             bt::require(out.good(), "recorded file materialization failed");
         }
@@ -1142,7 +1143,7 @@ void test_tire_channel_parity_across_backends() {
 // test_python_free_typed_numeric_validators — the source compiles and runs
 // this exact validator battery; the port keeps it inline.
 void test_python_free_typed_numeric_validators() {
-    std::fprintf(stderr, ">> test_python_free_typed_numeric_validators\n");
+    std::println(stderr, ">> test_python_free_typed_numeric_validators");
     const auto invalid_config = [](const auto& config) {
         try { validate(config); }  // unqualified: ADL picks nativecfg/drivetrain
         catch (const std::invalid_argument&) { return; }

@@ -520,10 +520,27 @@ const std::regex &located_pattern() {
     return pattern;
 }
 
+// Clang-family text diagnostics echo the flagged source beneath each located
+// diagnostic in "   NN | <source>" gutter form. The echoed source can itself
+// contain "warning:"/"error:" inside a literal (e.g. `std::cerr << command
+// << ": error: "`) — that is program text, not a diagnostic. Every real
+// diagnostic either carries a path:line(:column) origin or is a bare
+// driver/fatal message; neither opens with a numeric gutter, so gutter lines
+// are excluded from collection.
+bool is_snippet_gutter(std::string_view line) {
+    const auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
+    std::size_t pos = line.find_first_not_of(" \t");
+    if (pos == std::string_view::npos || !is_digit(line[pos])) return false;
+    while (pos < line.size() && is_digit(line[pos])) ++pos;
+    while (pos < line.size() && (line[pos] == ' ' || line[pos] == '\t')) ++pos;
+    return pos < line.size() && line[pos] == '|';
+}
+
 } // namespace
 
 bool is_diagnostic_line(std::string_view line) {
-    return std::regex_search(line.begin(), line.end(), diagnostic_pattern());
+    return !is_snippet_gutter(line) &&
+           std::regex_search(line.begin(), line.end(), diagnostic_pattern());
 }
 
 std::optional<LocatedDiagnostic> parse_located_diagnostic(
@@ -894,11 +911,11 @@ Value version_record(const fs::path &tool, const fs::path &log_directory) {
 namespace {
 
 // str.strip() over ASCII whitespace for inspection banner text.
-std::string strip_ascii(std::string text) {
-    const auto first = text.find_first_not_of(" \t\n\v\f\r");
-    const auto last = text.find_last_not_of(" \t\n\v\f\r");
-    return first == std::string::npos ? std::string()
-                                      : text.substr(first, last - first + 1);
+std::string strip_ascii(const std::string &text) {
+  const auto first = text.find_first_not_of(" \t\n\v\f\r");
+  const auto last = text.find_last_not_of(" \t\n\v\f\r");
+  return first == std::string::npos ? std::string()
+                                    : text.substr(first, last - first + 1);
 }
 
 // repr() of a Python str: single-quoted with the escapes repr() emits for
@@ -1039,9 +1056,13 @@ Value inspect_tool(const fs::path &path) {
             const std::vector<std::string> *spellings;
             std::string_view field;
         };
-        const ProbeSet probe_sets[2] = {
-            {"target", &target_spellings, "target"},
-            {"resource", &resource_spellings, "resource_dir"},
+        const ProbeSet probe_sets[2] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+            {.label = "target",
+             .spellings = &target_spellings,
+             .field = "target"},
+            {.label = "resource",
+             .spellings = &resource_spellings,
+             .field = "resource_dir"},
         };
         for (const ProbeSet &probe: probe_sets) {
             for (const std::string &spelling: *probe.spellings) {

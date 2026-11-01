@@ -92,7 +92,7 @@ const bio::Value &member(const bio::Value &value, const char *key) {
 // The _damped_config() fixture twin: rewrite activation_tau_s /
 // joint_passive_damping_nms_rad lexemes inside the decoded
 // rider_controller document (the TOML's 0.025/0.0 -> 0.05/2.5).
-void set_lexeme(bio::Value &value, std::string_view key,
+void set_lexeme(bio::Value &value, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                 std::string_view lexeme) {
     auto &object = std::get<bio::Value::Object>(value.data);
     for (auto &[name, entry] : object)
@@ -104,7 +104,7 @@ void set_lexeme(bio::Value &value, std::string_view key,
                              std::string(key));
 }
 
-void set_string(bio::Value &value, std::string_view key,
+void set_string(bio::Value &value, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                 std::string_view text) {
     auto &object = std::get<bio::Value::Object>(value.data);
     for (auto &[name, entry] : object)
@@ -123,8 +123,8 @@ Plant make_plant(bool damped = false) {
     bt::require(plant.model != nullptr, "spindle/pinned/model.mjb loads");
     plant.data = mj_makeData(plant.model);
     bt::require(plant.data != nullptr, "mj_makeData");
-    bio::Value doc = bio::parse_json(
-        bt::text(bt::fixture("spindle/pinned/config.json")));
+    bio::Value const doc =
+        bio::parse_json(bt::text(bt::fixture("spindle/pinned/config.json")));
     bio::Value rider_doc = member(doc, "rider_controller");
     if (damped) {
         set_lexeme(rider_doc, "activation_tau_s", "0.05");
@@ -169,23 +169,20 @@ std::size_t nu(const mjModel *m) {
 
 // _staged(): qpos/qvel writes then a full forward — the identical mjData
 // the oracle controller reads.
-void stage(Plant &plant, double crank_q, double crank_rate,
+void stage(Plant const &plant, double crank_q, double crank_rate, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
            double root_pitch = 0.,
            std::span<const std::pair<const char *, double>> rates = {}) {
-    mj_resetData(plant.model, plant.data);
-    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(plant.model,
-                                                         "crank_spin")] =
-        crank_q;
-    wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(plant.model,
-                                                         "root_pitch")] =
-        root_pitch;
-    wbuf(plant.data->qvel, nv(plant.model))[joint_dofadr(plant.model,
-                                                        "crank_spin")] =
-        crank_rate;
-    for (const auto &[name, rate] : rates)
-        wbuf(plant.data->qvel,
-             nv(plant.model))[joint_dofadr(plant.model, name)] = rate;
-    mj_forward(plant.model, plant.data);
+  mj_resetData(plant.model, plant.data);
+  wbuf(plant.data->qpos,
+       nq(plant.model))[joint_qposadr(plant.model, "crank_spin")] = crank_q;
+  wbuf(plant.data->qpos,
+       nq(plant.model))[joint_qposadr(plant.model, "root_pitch")] = root_pitch;
+  wbuf(plant.data->qvel,
+       nv(plant.model))[joint_dofadr(plant.model, "crank_spin")] = crank_rate;
+  for (const auto &[name, rate] : rates)
+    wbuf(plant.data->qvel, nv(plant.model))[joint_dofadr(plant.model, name)] =
+        rate;
+  mj_forward(plant.model, plant.data);
 }
 
 std::vector<double> torque_vector(const rider::NamedEntries<double> &torques,
@@ -206,7 +203,7 @@ std::vector<double> torque_vector(const rider::NamedEntries<double> &torques,
 
 std::span<const std::byte> byte_span(const std::string &text) {
     return std::views::counted(
-        reinterpret_cast<const std::byte *>(text.data()),
+        reinterpret_cast<const std::byte *>(text.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
         static_cast<std::ptrdiff_t>(text.size()));
 }
 
@@ -235,7 +232,7 @@ std::string state_document(const rider::SpindleController &ctrl) {
 // numeric leaves obey rtol=1e-7/atol=1e-8.
 constexpr double kPlatformRtol = 1e-7, kPlatformAtol = 1e-8;
 
-bool json_close(const bio::Value &actual, const bio::Value &expected,
+bool json_close(const bio::Value &actual, const bio::Value &expected, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                 std::string &path) {
     const auto *a_num = std::get_if<bio::Number>(&actual.data);
     const auto *e_num = std::get_if<bio::Number>(&expected.data);
@@ -296,16 +293,15 @@ bool json_close(const bio::Value &actual, const bio::Value &expected,
 
 void expect_state_close(bt::oracle::Node &node, const std::string &document,
                         std::string_view label) {
-    const auto expected_bytes = node.bytes_input(std::string(label));
-    const std::string_view source(
-        reinterpret_cast<const char *>(expected_bytes.data()),
-        expected_bytes.size());
-    std::string path;
-    bt::require(
-        json_close(bio::parse_json(document), bio::parse_json(source),
-                   path),
-        std::string(label) +
-            ": state diverges beyond platform tolerance at" + path);
+  const auto expected_bytes = node.bytes_input(label);
+  const std::string_view source(
+      reinterpret_cast<const char *>(expected_bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
+      expected_bytes.size());
+  std::string path;
+  bt::require(
+      json_close(bio::parse_json(document), bio::parse_json(source), path),
+      std::string(label) + ": state diverges beyond platform tolerance at" +
+          path);
 }
 
 // The recorded pair every compute-family node captures: the joint-ordered
@@ -323,7 +319,7 @@ void compare_compute(bt::oracle::Node &node,
 // ---- A2.3 pure kernels ----------------------------------------------------
 
 void test_spindle_waveform_matches_python() {
-    const std::pair<double, const char *> cases[] = {
+    const std::pair<double, const char *> cases[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {0., "0.0"},
         {std::numbers::pi / 2., "1.5707963267948966"},
         {std::numbers::pi, "3.141592653589793"},
@@ -341,7 +337,7 @@ void test_spindle_waveform_matches_python() {
 }
 
 void test_effort_ceiling_matches_python() {
-    const std::pair<double, const char *> cases[] = {
+    const std::pair<double, const char *> cases[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {-3., "-3.0"}, {0., "0.0"}, {8., "8.0"}, {20., "20.0"},
     };
     for (const auto &[rate, id] : cases) {
@@ -405,33 +401,35 @@ void compute_case(const ComputeCase &c) {
 }
 
 void test_spindle_compute_matches_python() {
-    const std::pair<double, const char *> phases[] = {
+    const std::pair<double, const char *> phases[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {0., "0.0"}, {.7, "0.7"},
         {std::numbers::pi / 2., "1.5707963267948966"}, {2.4, "2.4"},
     };
-    const std::pair<double, const char *> efforts[] = {
+    const std::pair<double, const char *> efforts[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {0., "0.0"}, {40., "40.0"}, {120., "120.0"},
     };
     for (const auto &[effort, eid] : efforts)
         for (const auto &[crank_q, qid] : phases)
-            compute_case({crank_q, 6., effort,
-                          node_id(std::format(
-                              "test_spindle_compute_matches_python[{}-{}]",
-                              eid, qid))});
+          compute_case(
+              {.crank_q = crank_q,
+               .crank_rate = 6.,
+               .effort = effort,
+               .node = node_id(std::format(
+                   "test_spindle_compute_matches_python[{}-{}]", eid, qid))});
 }
 
 // F5: rear-leg-chain effort through the rear-driving crank half. The rear
 // chain owns the stroke when cos(phase) < 0 (crank_split.leg_shares), and
 // the hip/knee torques must be nonzero there — never collapse to ~0.
 void test_spindle_rear_chain_effort_matches_python() {
-    const std::pair<double, const char *> cases[] = {
+    const std::pair<double, const char *> cases[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {0., "0.0"},
         {std::numbers::pi / 2., "1.5707963267948966"},
         {std::numbers::pi, "3.141592653589793"},
         {3.67, "3.67"},
         {4.19, "4.19"},
     };
-    for (const auto &[crank_q, id] : cases) {
+    for (const auto &[crank_q, id] : cases) { // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         Plant plant = make_plant();
         stage(plant, crank_q, 6.);
         rider::RiderCommand command;
@@ -519,11 +517,11 @@ void test_spindle_compute_posture_matches_python() {
     rider::RiderPosture stand;
     stand.pelvis_pitch_rad = -.4;
     stand.use_saddle = false;
-    const std::pair<rider::RiderPosture, const char *> cases[] = {
-        {rider::RiderPosture{}, "posture0"},
-        {lean, "posture1"},
-        {offset, "posture2"},
-        {stand, "posture3"},
+    const std::array cases{
+        std::pair{rider::RiderPosture{}, "posture0"},
+        std::pair{lean, "posture1"},
+        std::pair{offset, "posture2"},
+        std::pair{stand, "posture3"},
     };
     for (const auto &[posture, id] : cases) {
         Plant plant = make_plant();
@@ -660,7 +658,7 @@ void test_spindle_state_round_trip() {
     // byte-for-byte (the wire is a lossless round-trip).
     const auto document = node.bytes_input("restored_state");
     const std::string_view source(
-        reinterpret_cast<const char *>(document.data()), document.size());
+        reinterpret_cast<const char *>(document.data()), document.size()); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
     plant.controller->restore(rider::decode_spindle_state(
         bio::parse_json(source), "restored_state"));
     const std::string reencoded = state_document(*plant.controller);
@@ -708,7 +706,7 @@ void test_spindle_solved_effort_matches_python() {
     const auto delivered =
         torque_vector(diagnostics.active_delivered_nm, *plant.controller);
     node.f64_close(delivered, "solved.delivered");
-    const double powers[] = {
+    const double powers[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         diagnostics.positive_power_w,
         diagnostics.passive_power_w,
         diagnostics.positive_work_step_j.value_or(0.),
@@ -859,52 +857,52 @@ void test_spindle_lookups_reject_unknown_joints() {
 }
 
 void test_spindle_probe_rejects_bad_input() {
-    Plant plant = make_plant();
-    bt::require(throws_std([&] {
-                    (void)rider::decode_rider_command(
-                        bio::Value{bio::Value::Object{}}, "command");
-                }),
-                "empty command document rejects");
-    bt::require(throws_std([&] {
+  Plant const plant = make_plant();
+  bt::require(throws_std([&] {
+                (void)rider::decode_rider_command(
+                    bio::Value{bio::Value::Object{}}, "command");
+              }),
+              "empty command document rejects");
+  bt::require(throws_std(
+                  [&] {
                     bio::Value::Object command;
                     command.emplace_back(
                         "mean_crank_torque_nm",
                         bio::Value{bio::Number{"-1."}});
                     (void)rider::decode_rider_command(
                         bio::Value{std::move(command)}, "command");
-                }),
-                "negative mean crank torque rejects");
-    bt::require(throws_std([&] {
-                    bio::Value::Object state;
-                    state.emplace_back("enabled", bio::Value{true});
-                    (void)rider::decode_spindle_state(
-                        bio::Value{std::move(state)}, "state");
-                }),
-                "partial state document rejects");
-    // A schema-valid non-spindle attachment routes to the ported legacy
-    // controller rather than rejecting at decode — the wire decode marks
-    // config.legacy for the runtime's controller dispatch (the python
-    // node's adapter-level construction is exercised through the runtime
-    // ports, not this wire contract).
-    bio::Value doc = bio::parse_json(
-        bt::text(bt::fixture("spindle/pinned/config.json")));
-    bio::Value rider_doc = member(doc, "rider_controller");
-    set_string(rider_doc, "pedal_attachment", "flat");
-    const auto flat_config = rider::decode_spindle_config(rider_doc);
-    bt::require(flat_config.legacy.has_value() &&
-                    flat_config.legacy->pedal_attachment == "flat",
-                "flat attachment decodes into the legacy route");
-    // A mode outside the schema set is still rejected at decode.
-    set_string(rider_doc, "pedal_attachment", "pin");
-    bt::require(throws_std([&] {
-                    (void)rider::decode_spindle_config(rider_doc);
-                }),
-                "pedal_attachment=pin rejects");
-    bt::require(throws_std([&] {
-                    (void)rider::decode_spindle_config(
-                        bio::Value{bio::Value::Object{}});
-                }),
-                "missing config members reject");
+                  }),
+              "negative mean crank torque rejects");
+  bt::require(throws_std([&] {
+                bio::Value::Object state;
+                state.emplace_back("enabled", bio::Value{true});
+                (void)rider::decode_spindle_state(bio::Value{std::move(state)},
+                                                  "state");
+              }),
+              "partial state document rejects");
+  // A schema-valid non-spindle attachment routes to the ported legacy
+  // controller rather than rejecting at decode — the wire decode marks
+  // config.legacy for the runtime's controller dispatch (the python
+  // node's adapter-level construction is exercised through the runtime
+  // ports, not this wire contract).
+  bio::Value const doc =
+      bio::parse_json(bt::text(bt::fixture("spindle/pinned/config.json")));
+  bio::Value rider_doc = member(doc, "rider_controller");
+  set_string(rider_doc, "pedal_attachment", "flat");
+  const auto flat_config = rider::decode_spindle_config(rider_doc);
+  bt::require(flat_config.legacy.has_value() &&
+                  flat_config.legacy->pedal_attachment == "flat",
+              "flat attachment decodes into the legacy route");
+  // A mode outside the schema set is still rejected at decode.
+  set_string(rider_doc, "pedal_attachment", "pin");
+  bt::require(
+      throws_std([&] { (void)rider::decode_spindle_config(rider_doc); }),
+      "pedal_attachment=pin rejects");
+  bt::require(throws_std([&] {
+                (void)rider::decode_spindle_config(
+                    bio::Value{bio::Value::Object{}});
+              }),
+              "missing config members reject");
 }
 } // namespace
 

@@ -37,48 +37,51 @@ namespace sw = runtime::sample_wire;
 
 // test_spindle_force_sign_and_torque_match_native_body_jacobians[gap_m]
 void spindle_case(double gap_m) {
-    auto plant = pt::pinned();
-    mjModel *m = plant.model.get();
-    mjData *d = plant.data.get();
-    const int root_x = mj_name2id(m, mjOBJ_JOINT, "rider_root_x");
-    bt::require(root_x >= 0, "rider_root_x resolves");
-    pt::mbuf(d->qpos, m->nq)[static_cast<std::size_t>(pt::int_at(m->jnt_qposadr, m->njnt, root_x))] += gap_m;
-    engine::forward(m, d);
-    rider::EqualityReactions reactions(m);
-    const auto rows = reactions.equality_rows(d);
-    // data.efc_force[:] = 0. — only the injected connect rows carry force.
-    std::ranges::fill(pt::mbuf(d->efc_force, d->nefc), 0.);
-    const auto rows_of = [&](int eq) {
-        for (const auto &[id, list] : rows)
-            if (id == eq) return list;
-        return rider::RowList{};
-    };
-    std::vector<mjtNum> expected(static_cast<std::size_t>(m->nv), 0.);
-    const std::array foot{"front", "rear"};
-    std::vector<int> pedal_eqs;
-    for (std::size_t i = 0; i < 2; ++i) {
-        const int eq = pt::eq_id(
-            m, ("connect_foot_" + std::string(foot[i])).c_str());
-        pedal_eqs.push_back(eq);
-        const int body = pt::int_at(m->eq_obj1id, m->neq, eq);
-        const int bike = pt::int_at(m->eq_obj2id, m->neq, eq);
-        const auto point = pt::world_anchor(m, d, eq, body, 0);
-        const auto bike_point = pt::world_anchor(m, d, eq, bike, 3);
-        const std::array<mjtNum, 3> force{20., 0., i == 0 ? 100. : 70.};
-        const auto list = rows_of(eq);
-        bt::require(list.size() == 3, "the connect row set is three rows");
-        for (std::size_t r = 0; r < 3; ++r)
-            pt::mbuf(d->efc_force, d->nefc)[static_cast<std::size_t>(list[r])] = force[r];
-        const std::array<mjtNum, 3> zero{};
-        mj_applyFT(m, d, force.data(), zero.data(), point.data(), body,
-                   expected.data());
-        const std::array<mjtNum, 3> neg{-force[0], -force[1], -force[2]};
-        mj_applyFT(m, d, neg.data(), zero.data(), bike_point.data(), bike,
-                   expected.data());
-        const auto measured = reactions.force_on_rider(d, eq);
-        bt::require(pt::close(measured, force, 1e-10),
-                    "force_on_rider reads the injected connect force");
-    }
+  auto const plant = pt::pinned();
+  mjModel const *m = plant.model.get();
+  mjData *d = plant.data.get();
+  const int root_x = mj_name2id(m, mjOBJ_JOINT, "rider_root_x");
+  bt::require(root_x >= 0, "rider_root_x resolves");
+  pt::mbuf(d->qpos, m->nq)[static_cast<std::size_t>(
+      pt::int_at(m->jnt_qposadr, m->njnt, root_x))] += gap_m;
+  engine::forward(m, d);
+  rider::EqualityReactions const reactions(m);
+  const auto rows = reactions.equality_rows(d);
+  // data.efc_force[:] = 0. — only the injected connect rows carry force.
+  std::ranges::fill(pt::mbuf(d->efc_force, d->nefc), 0.);
+  const auto rows_of = [&](int eq) {
+    for (const auto &[id, list] : rows)
+      if (id == eq)
+        return list;
+    return rider::RowList{};
+  };
+  std::vector<mjtNum> expected(static_cast<std::size_t>(m->nv), 0.);
+  const std::array foot{"front", "rear"};
+  std::vector<int> pedal_eqs;
+  for (std::size_t i = 0; i < 2; ++i) {
+    const int eq =
+        pt::eq_id(m, ("connect_foot_" + std::string(foot[i])).c_str());
+    pedal_eqs.push_back(eq);
+    const int body = pt::int_at(m->eq_obj1id, m->neq, eq);
+    const int bike = pt::int_at(m->eq_obj2id, m->neq, eq);
+    const auto point = pt::world_anchor(m, d, eq, body, 0);
+    const auto bike_point = pt::world_anchor(m, d, eq, bike, 3);
+    const std::array<mjtNum, 3> force{20., 0., i == 0 ? 100. : 70.};
+    const auto list = rows_of(eq);
+    bt::require(list.size() == 3, "the connect row set is three rows");
+    for (std::size_t r = 0; r < 3; ++r)
+      pt::mbuf(d->efc_force, d->nefc)[static_cast<std::size_t>(list[r])] =
+          force[r];
+    const std::array<mjtNum, 3> zero{};
+    mj_applyFT(m, d, force.data(), zero.data(), point.data(), body,
+               expected.data());
+    const std::array<mjtNum, 3> neg{-force[0], -force[1], -force[2]};
+    mj_applyFT(m, d, neg.data(), zero.data(), bike_point.data(), bike,
+               expected.data());
+    const auto measured = reactions.force_on_rider(d, eq);
+    bt::require(pt::close(measured, force, 1e-10),
+                "force_on_rider reads the injected connect force");
+  }
     std::vector<mjtNum> multipliers(static_cast<std::size_t>(d->nefc), 0.);
     for (const int eq : pedal_eqs)
         for (const auto row : rows_of(eq))
@@ -145,18 +148,18 @@ void test_spindle_force_sign_and_torque_match_native_body_jacobians() {
 // non-attachment connect row (the linkage closure set) and drops
 // connect_saddle/connect_grip_*/connect_foot_*.
 void test_linkage_closure_rows_exclude_rider_connects() {
-    auto plant = pt::pinned();
-    mjModel *m = plant.model.get();
-    mjData *d = plant.data.get();
-    engine::forward(m, d);
-    const auto mask = runtime::connect_equality_rows(m, d);
-    bt::require(!mask.empty(), "the pinned plant carries connect rows");
-    std::set<std::string> names;
-    for (const int row : mask) {
-        const int eq = pt::int_at(d->efc_id, d->nefc, row);
-        if (const char *name = mj_id2name(m, mjOBJ_EQUALITY, eq))
-            names.insert(name);
-    }
+  auto const plant = pt::pinned();
+  mjModel const *m = plant.model.get();
+  mjData *d = plant.data.get();
+  engine::forward(m, d);
+  const auto mask = runtime::connect_equality_rows(m, d);
+  bt::require(!mask.empty(), "the pinned plant carries connect rows");
+  std::set<std::string> names;
+  for (const int row : mask) {
+    const int eq = pt::int_at(d->efc_id, d->nefc, row);
+    if (const char *name = mj_id2name(m, mjOBJ_EQUALITY, eq))
+      names.insert(name);
+  }
     bt::require(!names.empty(), "masked rows resolve equality names");
     for (const auto &name : names)
         bt::require(!(name.starts_with("connect_saddle") ||

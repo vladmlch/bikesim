@@ -19,7 +19,6 @@
 namespace {
 
 using namespace recording_test;
-namespace value = rec::value;
 
 // The oracle's ['insert', 'COMMIT', 'CHECKPOINT', 'close'] phases map to
 // the write_database stage names the before_stage hook receives.
@@ -80,7 +79,8 @@ void test_payload_failure_does_not_seal_or_replace_existing_files() {
     throws<std::runtime_error>([&] { (void)rec::finalize(*capture, root.path(), options); },
                                "payload publication", "payload link failure propagates");
     std::ifstream in(unrelated);
-    std::string contents((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    std::string const contents((std::istreambuf_iterator<char>(in)),
+                               std::istreambuf_iterator<char>());
     bt::require(contents == "belongs to the user",
                 "unrelated files are never replaced");
     bool sealed = false;

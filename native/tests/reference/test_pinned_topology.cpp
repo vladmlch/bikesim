@@ -136,9 +136,8 @@ void test_pinned_plant_topology() {
                         "rider actuators are not force-limited");
     // ArticulatedRiderController(model, pose, cfg.articulated, crank/1000.)
     const geo::BikeSpecs specs;
-    rider::SpindleController controller(&m, plant.pose,
-                                        std::move(plant.config),
-                                        specs.crank_length / 1000.);
+    rider::SpindleController const controller(
+        &m, plant.pose, std::move(plant.config), specs.crank_length / 1000.);
     std::set<std::string> joints;
     for (const auto &entry : controller.joints())
         joints.insert(entry.name);
@@ -203,10 +202,12 @@ void test_joint_profiles_select_present_joints_and_require_them() {
         bt::require(joints != root.end(),
                     "the profile carries a joints map");
         auto &map = std::get<bio::Value::Object>(joints->second.data);
-        map.erase(std::remove_if(map.begin(), map.end(),
-                                 [](const auto &entry) {
-                                     return entry.first == "rider_knee_front";
-                                 }),
+        map.erase(std::ranges::remove_if(map,
+                                         [](const auto &entry) {
+                                           return entry.first ==
+                                                  "rider_knee_front";
+                                         })
+                      .begin(),
                   map.end());
         const auto path = scratch / file.filename();
         std::ofstream(path) << bio::recording_json(payload);

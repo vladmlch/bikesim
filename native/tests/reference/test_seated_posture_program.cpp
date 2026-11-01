@@ -78,19 +78,20 @@ void test_posture_program_reads_no_inertial_signal() {
     std::array<rider::RiderIntent, 2> resolvers{
         rider::RiderIntent(enabled(), .0005),
         rider::RiderIntent(enabled(), .0005)};
-    rider::IntentSignals calm, perturbed;
+    const rider::IntentSignals calm;
+    rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;
     perturbed.specific_force_body_mps2 = {5., 0., 8.};
     const auto a = resolvers[0].resolve({}, calm, 0, .18);
     const auto b = resolvers[1].resolve({}, perturbed, 0, .18);
     bt::require(a.posture.has_value() && b.posture.has_value(),
                 "both resolves emit a posture");
-    bt::require(a.posture->torso_lean_rad == b.posture->torso_lean_rad &&
-                    a.posture->pelvis_pitch_rad ==
-                        b.posture->pelvis_pitch_rad &&
-                    a.posture->pelvis_offset_m ==
-                        b.posture->pelvis_offset_m &&
-                    a.posture->use_saddle == b.posture->use_saddle,
+    bt::require(a.posture->torso_lean_rad == b.posture.value().torso_lean_rad && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    a.posture.value().pelvis_pitch_rad == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                        b.posture.value().pelvis_pitch_rad && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    a.posture.value().pelvis_offset_m == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                        b.posture.value().pelvis_offset_m && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    a.posture->use_saddle == b.posture.value().use_saddle, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the posture intent is invariant to inertial inputs");
 }
 
@@ -126,7 +127,8 @@ void test_resolver_road_grade_survives_probe_and_ignores_imu() {
     std::array<rider::RiderIntent, 2> resolvers{
         rider::RiderIntent(enabled(), .0005),
         rider::RiderIntent(enabled(), .0005)};
-    rider::IntentSignals base, perturbed;
+    const rider::IntentSignals base;
+    rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;
     perturbed.specific_force_body_mps2 = {5., 0., 8.};
     rider::IntentControl first;
@@ -136,18 +138,18 @@ void test_resolver_road_grade_survives_probe_and_ignores_imu() {
             resolvers[1].resolve({}, perturbed, step, .18);
         bt::require(calm.posture.has_value() && noisy.posture.has_value(),
                     "every tick emits a posture");
-        bt::require(calm.posture->torso_lean_rad ==
-                            noisy.posture->torso_lean_rad &&
-                        calm.posture->pelvis_pitch_rad ==
-                            noisy.posture->pelvis_pitch_rad &&
-                        calm.posture->pelvis_offset_m ==
-                            noisy.posture->pelvis_offset_m &&
-                        calm.posture->use_saddle ==
-                            noisy.posture->use_saddle,
+        bt::require(calm.posture.value().torso_lean_rad == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                            noisy.posture.value().torso_lean_rad && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                        calm.posture.value().pelvis_pitch_rad == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                            noisy.posture.value().pelvis_pitch_rad && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                        calm.posture.value().pelvis_offset_m == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                            noisy.posture.value().pelvis_offset_m && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                        calm.posture.value().use_saddle == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                            noisy.posture.value().use_saddle, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                     "the IMU perturbation cannot reach the posture");
         first = calm;
     }
-    bt::require(approx(first.posture->torso_lean_rad, std::atan(.18)),
+    bt::require(approx(first.posture.value().torso_lean_rad, std::atan(.18)), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the converged lean is atan(.18)");
     auto &resolver = resolvers[0];
     const double before = resolver.policy().state().time_s;
@@ -158,7 +160,7 @@ void test_resolver_road_grade_survives_probe_and_ignores_imu() {
                 "a probe resolve does not advance the policy clock");
     bt::require(probe.posture.has_value() &&
                     probe.posture->torso_lean_rad ==
-                        first.posture->torso_lean_rad,
+                        first.posture.value().torso_lean_rad, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the probe reproduces the committed posture");
 }
 
@@ -318,7 +320,7 @@ GradedEnv graded_env(bool diagnostic) {
     const auto budget = articulated.delivered_positive_budget_w();
     bt::require(budget.has_value(),
                 "the welded config declares a delivered-power budget");
-    env.delivered_positive_budget_w = *budget;
+    env.delivered_positive_budget_w = (budget).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     env.runtime =
         std::make_unique<runtime::NativeRideRuntime>(std::move(*bootstrap));
     return env;

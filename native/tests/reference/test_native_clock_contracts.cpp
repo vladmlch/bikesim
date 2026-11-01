@@ -271,7 +271,7 @@ struct TireRig {
     // one advancing tire_qfrc(dt); both snapshot ids land at the
     // returned pair (front, rear).
     [[nodiscard]] std::pair<std::int64_t, std::int64_t>
-    ids_at(double time, double dt) {
+    ids_at(double time, double dt) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
         st.set_state(qpos, qvel, act, warm, time);
         st.forward();
         const auto names = tire_state_names();
@@ -281,21 +281,27 @@ struct TireRig {
         const auto snaps = st.tire_writer().snapshots();
         bt::require(snaps[0].has_value() && snaps[1].has_value(),
                     "both tire snapshots published");
-        return {snaps[0]->interval_id, snaps[1]->interval_id};
+        return {snaps[0].value().interval_id, snaps[1].value().interval_id}; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     }
 };
 void test_snapshot_ids_match_python_and_helper() {
     struct Row { double time, dt; std::int64_t expected; };
-    for (const auto &c : std::array{
-            Row{0., .00125, 0}, Row{-0., .00125, 0}, Row{1., .00125, 800},
-            Row{.25, .5, 0}, Row{.75, .5, 2}, Row{1.25, .5, 2},
-            Row{1.75, .5, 4}, Row{.3, .1, 3}, Row{1., 3., 0},
-            Row{largest, 1., largest_id}}) {
-        TireRig rig;
-        const auto [front, rear] = rig.ids_at(c.time, c.dt);
-        bt::require(front == c.expected && rear == c.expected &&
-                        c.expected == interval_id(c.time, c.dt),
-                    "native snapshot ids equal the helper and Python ids");
+    for (const auto &c :
+         std::array{Row{.time = 0., .dt = .00125, .expected = 0},
+                    Row{.time = -0., .dt = .00125, .expected = 0},
+                    Row{.time = 1., .dt = .00125, .expected = 800},
+                    Row{.time = .25, .dt = .5, .expected = 0},
+                    Row{.time = .75, .dt = .5, .expected = 2},
+                    Row{.time = 1.25, .dt = .5, .expected = 2},
+                    Row{.time = 1.75, .dt = .5, .expected = 4},
+                    Row{.time = .3, .dt = .1, .expected = 3},
+                    Row{.time = 1., .dt = 3., .expected = 0},
+                    Row{.time = largest, .dt = 1., .expected = largest_id}}) {
+      TireRig rig;
+      const auto [front, rear] = rig.ids_at(c.time, c.dt);
+      bt::require(front == c.expected && rear == c.expected &&
+                      c.expected == interval_id(c.time, c.dt),
+                  "native snapshot ids equal the helper and Python ids");
     }
 }
 void test_snapshot_overflow_is_overflowerror_and_atomic() {
@@ -316,23 +322,23 @@ void test_snapshot_overflow_is_overflowerror_and_atomic() {
     // Halving the quotient re-enters the domain: the retry advances.
     (void)rig.st.tire_qfrc(2.);
     const auto snaps = rig.st.tire_writer().snapshots();
-    bt::require(snaps[0]->interval_id == (std::int64_t{1} << 62),
+    bt::require(snaps[0].value().interval_id == (std::int64_t{1} << 62), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly // NOLINT(bugprone-signed-bitwise) fixed-width literal shift is the fixture contract
                 "halved-dt retry lands on interval 2**62");
 }
 void test_snapshot_ids_under_foreign_rounding_modes() {
-    RoundingGuard guard;
-    prove_rounding_controls();
-    TireRig rig;
-    for (int const mode : std::array{FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO}) {
-        bt::require(std::fesetround(mode) == 0, "fesetround accepted");
-        for (const auto &[time, dt] : std::array{
-                     std::pair{1. / 3., .25}, std::pair{2. / 7., 1.},
-                     std::pair{.7, .3}}) {
-            const auto [front, rear] = rig.ids_at(time, dt);
-            bt::require(front == interval_id(time, dt) &&
-                            rear == interval_id(time, dt),
-                        "snapshot ids match under the foreign mode");
-        }
+  RoundingGuard const guard;
+  prove_rounding_controls();
+  TireRig rig;
+  for (int const mode : std::array{FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO}) {
+    bt::require(std::fesetround(mode) == 0, "fesetround accepted");
+    for (const auto &[time, dt] :
+         std::array{std::pair{1. / 3., .25}, std::pair{2. / 7., 1.},
+                    std::pair{.7, .3}}) {
+      const auto [front, rear] = rig.ids_at(time, dt);
+      bt::require(front == interval_id(time, dt) &&
+                      rear == interval_id(time, dt),
+                  "snapshot ids match under the foreign mode");
+    }
     }
 }
 } // namespace

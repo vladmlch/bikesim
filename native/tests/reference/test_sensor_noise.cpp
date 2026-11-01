@@ -97,24 +97,24 @@ void test_zero_scales_and_imu_switch_do_not_shift_other_channels() {
 
 // test_sensor_noise.py::test_draws_own_configuration_and_tape_owns_buffers
 void test_draws_own_configuration_and_tape_owns_buffers() {
-    brand::SensorNoiseConfig config{};
-    brand::SensorNoiseSource source(config, 0);
-    bt::require(&source.config() != &config,
-                "the noise source owns its configuration");
-    std::array<std::array<double, 9>, 2> noise;
-    noise.fill({1., 1., 1., 1., 1., 1., 1., 1., 1.});
-    std::array<double, 2> dropout{.25, .25};
-    std::vector<std::array<double, 9>> noise_rows(noise.begin(), noise.end());
-    std::vector<double> dropout_rows(dropout.begin(), dropout.end());
-    const brand::NoiseTape tape{.noise = noise_rows,
-                                 .dropout_uniform = dropout_rows};
-    noise_rows.assign(2, {99., 99., 99., 99., 99., 99., 99., 99., 99.});
-    dropout_rows.assign(2, .99);
-    for (const auto &row : tape.noise)
-        for (const double value : row)
-            bt::require(value == 1., "the tape owns a copy of its noise rows");
-    for (const double value : tape.dropout_uniform)
-        bt::require(value == .25, "the tape owns a copy of its uniforms");
+  brand::SensorNoiseConfig const config{};
+  brand::SensorNoiseSource const source(config, 0);
+  bt::require(&source.config() != &config,
+              "the noise source owns its configuration");
+  std::array<std::array<double, 9>, 2> noise{};
+  noise.fill({1., 1., 1., 1., 1., 1., 1., 1., 1.});
+  std::array<double, 2> dropout{.25, .25};
+  std::vector<std::array<double, 9>> noise_rows(noise.begin(), noise.end());
+  std::vector<double> dropout_rows(dropout.begin(), dropout.end());
+  const brand::NoiseTape tape{.noise = noise_rows,
+                              .dropout_uniform = dropout_rows};
+  noise_rows.assign(2, {99., 99., 99., 99., 99., 99., 99., 99., 99.});
+  dropout_rows.assign(2, .99);
+  for (const auto &row : tape.noise)
+    for (const double value : row)
+      bt::require(value == 1., "the tape owns a copy of its noise rows");
+  for (const double value : tape.dropout_uniform)
+    bt::require(value == .25, "the tape owns a copy of its uniforms");
 }
 
 // test_sensor_noise.py::test_invalid_tape_domain — the C++ tape's fixed
@@ -214,7 +214,7 @@ void test_pipeline_matches_frozen_pre_refactor_sensor_trace() {
         "tests/reference/test_sensor_noise.py::"
         "test_pipeline_matches_frozen_pre_refactor_sensor_trace");
     std::vector<double> rows;
-    rows.reserve(60 * 12);
+    rows.reserve(static_cast<std::size_t>(60 * 12));
     for (std::size_t index = 0; index < 20; ++index) {
         const double time_s = static_cast<double>(index) * .005;
         if (index != 0) pipeline_under_test.push(raw_sensor(time_s));

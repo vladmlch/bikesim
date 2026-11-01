@@ -36,12 +36,17 @@ struct Stand {
 // The wheel-stand plant + its minimal tire-only config — the exported
 // halves of contact_manifold_rigs.wheel_stand so reference ports can
 // exercise the writer's own state/probe/diagnostics surfaces directly.
-[[nodiscard]] nativecfg::TireConfig distributed_config(int stations,double mu=.8);
+// mu/density mirror the oracle's keyword overrides (defaults = the
+// synthetic declared density and mu=.8).
+[[nodiscard]] nativecfg::TireConfig distributed_config(int stations,double mu=.8,
+    const nativecfg::HingeDensity* density=nullptr);
 struct WheelStand {std::unique_ptr<Stand> stand;std::unique_ptr<DistributedTireWriter> tire;};
 [[nodiscard]] WheelStand wheel_stand(double dt,int stations,
-    const std::vector<std::array<double,2>>& vertices);
+    const std::vector<std::array<double,2>>& vertices,double mu=.8,
+    const nativecfg::HingeDensity* density=nullptr);
 // contact_manifold_rigs' brentq initial compression on the analytic flat_load.
-[[nodiscard]] double flat_depth(double load,int stations,double tolerance=2e-12);
+[[nodiscard]] double flat_depth(double load,int stations,double tolerance=2e-12,
+    const nativecfg::HingeDensity* density=nullptr);
 [[nodiscard]] RigResult distributed_incline_rig(double dt,int stations=128,double angle_deg=15.);
 [[nodiscard]] std::vector<std::array<double,2>> contact_case_vertices(std::string_view name,double dx);
 [[nodiscard]] std::pair<Value,Value> distributed_road_trace(double dt,int stations,double dx,

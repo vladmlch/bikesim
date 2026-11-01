@@ -1,0 +1,12 @@
+{
+  "report": {
+    "contact_passed": true,
+    "convergence_passed": true,
+    "mass_momentum_passed": true,
+    "model_valid": true,
+    "numerically_valid": true,
+    "rider_budget_passed": true,
+    "sensor_split_passed": true,
+    "transmission_parity_passed": true
+  }
+}

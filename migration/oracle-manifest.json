@@ -1,6 +1,6 @@
 {
   "blockers": [],
-  "created_utc": "2026-10-14T23:24:57.615571+00:00",
+  "created_utc": "2026-10-31T17:54:40.721462+00:00",
   "environment": {
     "executable": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/reference-oracle/.venv/bin/python3",
     "machine": "arm64",
@@ -21627,6 +21627,390 @@
       "notes": "declared analytic rasterization, arithmetic-only case",
       "produced_by": "contact_case_vertices('incline', .01)",
       "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 180,
+          "path": "validation/holdout_metrics_multidim/config.json",
+          "sha256": "97d97cd8119c3f4ca5c07ad15b00bcdf42e844caad0934f4485a0f5655faa898"
+        },
+        {
+          "bytes": 68,
+          "path": "validation/holdout_metrics_multidim/verdict.json",
+          "sha256": "53dca596a28a8cfbf876752ad07f90ad6c7a3d5ee3a76766f95f17467aee4fa3"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/holdout_metrics_multidim",
+      "notes": "multidimensional sample spans reduce identically",
+      "produced_by": "holdout_metrics on same-shaped 2-D np.asarray inputs; native flattens in C order before the same reductions",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 448,
+          "path": "validation/contact_bounds/config.json",
+          "sha256": "a547646265d251c25c79c3a7cf246d36073ecb19494760053fcfeeea0fa582cf"
+        },
+        {
+          "bytes": 115,
+          "path": "validation/contact_bounds/verdict.json",
+          "sha256": "1cc862e6a7d58f09a67e54f13799610eb5d45d39b4be397276684ad061a26ac7"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/contact_bounds",
+      "notes": "strings/bools coerce; non-finite, unparseable and non-scalar metrics fail closed",
+      "produced_by": "check_bounds(metrics, bounds) under Python float() leaf coercion",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 157,
+          "path": "validation/experiment_acceptance/config.json",
+          "sha256": "6655739ab47521e6b845004cfae6c27515a667e1f5d4a6ea59cb86c05de9e9aa"
+        },
+        {
+          "bytes": 89,
+          "path": "validation/experiment_acceptance/verdict.json",
+          "sha256": "808fc374d16768e89179964afda840fac4904e79595be57d59afa1d238e4faa5"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/experiment_acceptance",
+      "notes": "measured gates reach validated_within_declared_scope",
+      "produced_by": "validate_split + accepted_calibration_status; the native wrapper adds the constant measurement_authentication flag (never asserted by the gate)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1267,
+          "path": "validation/paired_summary/config.json",
+          "sha256": "7b108ff5043e0850789650aa72c1f0ebfd3d3d51af1ee3c65acdcb1496f4ea00"
+        },
+        {
+          "bytes": 3003,
+          "path": "validation/paired_summary/verdict.json",
+          "sha256": "ed45d2793ea418c5da3d9686b9cb368ac74fda51830f9c3c9e1601e5aba649ac"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/paired_summary",
+      "notes": "a truthy container excludes the pair; zero/empty do not",
+      "produced_by": "paired_summary(records) with non-boolean operator_intervention truthiness",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 240,
+          "path": "validation/assess_run/config.json",
+          "sha256": "c795ac4098a670b5794f1656b7ce18cca6bb3dba5cb3403525e6c85f69035ac5"
+        },
+        {
+          "bytes": 69,
+          "path": "validation/assess_run/verdict.json",
+          "sha256": "cedf5d8838bb90e2aa43f00b46f0ebe8001acdc8f7467a7ceebb4d4f7f6bd9b9"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/assess_run",
+      "notes": "horizon tolerance 1e-9 and the reason inventory",
+      "produced_by": "assess_run(summary, required_duration_s=5, minimum_progress_m=1)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 151,
+          "path": "validation/rider_work/config.json",
+          "sha256": "3dbddb18119dfae9f612e6ac003360b6547813c652091ded3bf6299a8c7a45eb"
+        },
+        {
+          "bytes": 126,
+          "path": "validation/rider_work/verdict.json",
+          "sha256": "e9dc4f4f074d76c3db881025e605e009e9bc77309f3565032da0bb4f5b9b2240"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/rider_work",
+      "notes": "active/passive rider and motor channels stay separate",
+      "produced_by": "rider_work_ledger(work_j)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 93,
+          "path": "validation/trace_integral/config.json",
+          "sha256": "3b12d72fd099f43e664f3bfd4344adec1b02c63a0daf1bc752f8c522b44152a2"
+        },
+        {
+          "bytes": 4,
+          "path": "validation/trace_integral/verdict.json",
+          "sha256": "66e4c000f2000eb1cca164f97c441e14d438ca2599c8e79f4de6ecade0de8b32"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/trace_integral",
+      "notes": "sample trapezoid integral",
+      "produced_by": "trace_integral(time_s, values)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 201,
+          "path": "validation/interval_integral/config.json",
+          "sha256": "754fb6cf9172271f7efd55359f1a9e55963f2c81b420396650cbed89a493b4a0"
+        },
+        {
+          "bytes": 4,
+          "path": "validation/interval_integral/verdict.json",
+          "sha256": "e09be1d5329b21e0d48ccf64d5617f1dd0a511da244b9cb28b5b469a8cb52bec"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/interval_integral",
+      "notes": "contiguous intervals use their actual durations",
+      "produced_by": "interval_integral(rows, 'force_n')",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 90,
+          "path": "validation/timing_metrics/config.json",
+          "sha256": "bb98622fdcebefaf5cf6cdd5bae8b0a383737cae2715c6b3da4569e7d6fd9043"
+        },
+        {
+          "bytes": 171,
+          "path": "validation/timing_metrics/verdict.json",
+          "sha256": "6549093f181b0128f53bff6911c80dca36c9aa8adad6740da07fbbf1a481a868"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/timing_metrics",
+      "notes": "np.percentile reductions and real-time factor",
+      "produced_by": "timing_metrics(step_ns, .01)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 1076,
+          "path": "validation/support_evidence/config.json",
+          "sha256": "815eb7e2abfa273bb7814ef81c0255de0bb9dc9fea888899cf19850e9975d021"
+        },
+        {
+          "bytes": 518,
+          "path": "validation/support_evidence/verdict.json",
+          "sha256": "9d97768dfbb40f9828af525cc5c38441cbf480d51ee01eac3454e3f8c4c1a2a5"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/support_evidence",
+      "notes": "both-unloaded gaps, prefixes and the no-promotion verdict fields",
+      "produced_by": "support_evidence(rows, required_duration_s=.05)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 203,
+          "path": "validation/resolution_variants/config.json",
+          "sha256": "8c27cf427147164d0684a21dc26c93f91f7894b679da6f398fdd70bf0c5124f7"
+        },
+        {
+          "bytes": 681,
+          "path": "validation/resolution_variants/verdict.json",
+          "sha256": "dfb59908391d48e7aabf5ec7550ee49ae1f01e0ffe5fb12187a5782651588902"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/resolution_variants",
+      "notes": "all three axes retain all declared levels",
+      "produced_by": "resolution_variants(time, road, stations, include_stations=True); the native wrapper names the anchor/variant fields identically",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 277,
+          "path": "validation/release_gates/config.json",
+          "sha256": "29d7a78dbe33441073e209d2e03030c2d11a4b47f75c015180d40ff767ce4919"
+        },
+        {
+          "bytes": 213,
+          "path": "validation/release_gates/verdict.json",
+          "sha256": "57e3c26db58ffd6d87b20a3868c47105a732dd9e730cd34fb08830cf116e9080"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/release_gates",
+      "notes": "all numerical gates present and true",
+      "produced_by": "release_gates(report) + release_level; the native wrapper composes the same object",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 488,
+          "path": "validation/select_verified_resolution/config.json",
+          "sha256": "c2ccc680888f0f2906077b306b3a8f1ae754ee583472090d0eb6ac74f48d8dd1"
+        },
+        {
+          "bytes": 182,
+          "path": "validation/select_verified_resolution/verdict.json",
+          "sha256": "7bfd4cd23948749216f78ed8f3bba3d35d24ba98ee44d4fcaba5ccfc319c9dc7"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/select_verified_resolution",
+      "notes": "only exact measured candidates may be selected",
+      "produced_by": "select_verified_resolution(comparisons); selects fastest tested dt, fewest stations, coarsest road",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 738,
+          "path": "validation/valid_prefix/config.json",
+          "sha256": "b49294acea32efe7a68774bb1ed48afcdc18ceee88c1a0f540c8869f7878b5fa"
+        },
+        {
+          "bytes": 239,
+          "path": "validation/valid_prefix/verdict.json",
+          "sha256": "3c728ff63d98ec1f1fa948d67625fcb98178a5935a7c01215f1081de324f3f1e"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/valid_prefix",
+      "notes": "an invalid interval ends the prefix and records its diagnostic origin",
+      "produced_by": "ValidPrefix.observe per PhysicalSampleData row",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 740,
+          "path": "validation/classify_outcome/config.json",
+          "sha256": "4e5dabda12c4e4c373ccdd8efacd948270e9b2e67ba6685db94b1fa8288ae505"
+        },
+        {
+          "bytes": 149,
+          "path": "validation/classify_outcome/verdict.json",
+          "sha256": "86066732a6950cc9ba338fa653b19c574924809332c9ff8512d150338973d8f1"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/classify_outcome",
+      "notes": "first observable cause; no fabricated completion",
+      "produced_by": "classify_outcome(rows, goal_x_m=5)",
+      "recipe": "RCP-16"
+    },
+    {
+      "comparison": "B",
+      "expected": {
+        "kind": "accepted"
+      },
+      "files": [
+        {
+          "bytes": 331,
+          "path": "validation/plant_release/config.json",
+          "sha256": "f100fcbfcf401fa10673a336310cbe700e73ed71db8daf4c3ef21f8097ca14b2"
+        },
+        {
+          "bytes": 395,
+          "path": "validation/plant_release/verdict.json",
+          "sha256": "a3d8b2a701b46da9b176728d80ca90045709d678e5e46df43bda850e6a47d5dd"
+        }
+      ],
+      "group": "validation",
+      "inputs": [],
+      "name": "validation/plant_release",
+      "notes": "every declared gate true yields sil_ready; the status fields are deliberately pinned unvalidated",
+      "produced_by": "release_decision(evidence, require_completion=True)",
+      "recipe": "RCP-16"
     }
   ],
   "negative_controls": [
@@ -21672,17 +22056,17 @@
   "schema": "migration-oracle-manifest/v1",
   "tool": {
     "argv": [
-      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tools/migration/capture_reference.py",
+      "tools/migration/capture_reference.py",
       "--output",
-      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration",
+      "tests/fixtures/migration",
       "--manifest",
-      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/migration/oracle-manifest.json",
-      "--cli-contracts",
-      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/migration/cli-contracts.json",
-      "--config-contracts",
-      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/migration/config-contracts.json"
+      "migration/oracle-manifest.json",
+      "--groups",
+      "validation_t54",
+      "--oracle-root",
+      "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/reference-oracle"
     ],
     "path": "tools/migration/capture_reference.py",
-    "sha256": "3cfea2f1a8559a105f250094ff3d2506cf86dbd7793c3f005bb847ee1e5e5b7c"
+    "sha256": "61aaa6cb33307f0fbbd5376c54a23a40e3efd5305f3969544d0c6f1b091f7503"
   }
 }

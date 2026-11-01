@@ -1,0 +1,53 @@
+{
+  "required_duration_s": 0.05,
+  "rows": [
+    {
+      "end_time_s": 0.05,
+      "energy": {
+        "energy_scale_j": 1.0,
+        "residual_j": 0.001
+      },
+      "model_status": {
+        "model_valid": true,
+        "numerically_valid": true
+      },
+      "rider": {
+        "front_pedal": {
+          "gap_m": 0.0,
+          "in_platform": true,
+          "normal_load_n": 400.0
+        },
+        "rear_pedal": {
+          "gap_m": 0.0,
+          "in_platform": true,
+          "normal_load_n": 600.0
+        }
+      },
+      "time_s": 0.0
+    },
+    {
+      "end_time_s": 0.1,
+      "energy": {
+        "energy_scale_j": 1.0,
+        "residual_j": 0.002
+      },
+      "model_status": {
+        "model_valid": true,
+        "numerically_valid": true
+      },
+      "rider": {
+        "front_pedal": {
+          "gap_m": 0.01,
+          "in_platform": false,
+          "normal_load_n": 0.0
+        },
+        "rear_pedal": {
+          "gap_m": 0.02,
+          "in_platform": false,
+          "normal_load_n": 0.0
+        }
+      },
+      "time_s": 0.05
+    }
+  ]
+}

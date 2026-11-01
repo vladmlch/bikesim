@@ -12337,7 +12337,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "4582ccb6bfdbc2555e226e2ddfda19fc0866320785c55d20adff1d6202178c14",
     "snapshot_line_count": 1,
     "tracked": true,
@@ -12347,9 +12347,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Package organization becomes an explicit native library and registry; no Python module discovery.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green; the file carries only the package docstring, and the native registry inventory contract proves every public validation id resolves to a concrete operation."
     }
   },
   {
@@ -12377,9 +12378,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Version/profile identity, evidence matching, bounded results, 14 load/shaft stands and five-operation mechanics pipeline are implemented. Native provenance replaces Python package versions; subordinate partial rigs/benchmarks prevent a complete source-equivalence claim.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): mechanics pipeline invoked through `bike-validate antiwheelie-bench` (long-running sim); subordinate partial rigs/benchmarks still prevent a complete source-equivalence claim. Stays planned."
     }
   },
   {
@@ -12407,9 +12409,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "`assess_run`, tuple grouping, numeric integer-seed ordering, candidate/baseline exclusions and horizon checks. Mixed unusual seed types and Python truthiness of non-boolean intervention values are narrower at the native typed boundary.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): bitwise `paired_summary`/`assess_run` oracle verdicts landed (RCP-16); python_truthy() now mirrors `or`-truthiness for non-boolean operator_intervention. Bool/numeric cross-type seed grouping still diverges (native rejects non-string/non-number seeds). Stays planned."
     }
   },
   {
@@ -12438,9 +12441,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "All 41 registry entries, original bounds, convergence keys/floors, mandatory-vs-diagnostic selection, complete-suite and exact-dt gates. `jobs=1` executes sequentially; source isolated worker execution for jobs 2\u201332 is explicitly rejected. Native versions are declared as native versions.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): full suite run via `bike-validate run benchmarks`; jobs 2-32 remain explicitly rejected as an unsafe shared-engine parallel claim. Stays planned."
     }
   },
   {
@@ -12469,9 +12473,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Accounted physical steps and real research `PolicySession` ticks, setup/warmup/latency, output-directory exclusivity, validity, hashes and recording publication. Native research capture uses the existing native recording contract; equivalence of setup/retention costs and sampled diagnostics requires captures. Source `preview_mode()` is already removed and raises `preview path removed`; the port preserves that rejection.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): bitwise `timing_metrics` oracle verdict landed (RCP-16: p50/p95/p99 latencies + RTF); the benchmark pipeline (PolicySession ticks, publication) remains partial. Stays planned."
     }
   },
   {
@@ -12489,7 +12494,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "b9b5443a833a952ba5527678b1e8e399ca81de597c287995b99f2b710de1e197",
     "snapshot_line_count": 111,
     "tracked": true,
@@ -12499,9 +12504,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Ordered/contiguous support intervals, observed-vs-unknown support, model/energy invalidity, first bad/unknown time, reason counts, valid prefix and separate completeness. Unknown observations are never invented as zero-valued evidence.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bitwise `support_evidence` oracle verdict (RCP-16); support_evidence is the file's only function."
     }
   },
   {
@@ -12520,7 +12526,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "f9fa84151567d4b397c1c3207871dfa7dc90a1dd2fc2d049ba09ba9c25162da2",
     "snapshot_line_count": 82,
     "tracked": true,
@@ -12530,9 +12536,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Bounds and flat/step/incline matrix over actual distributed stands. Native metric decoding currently expects numeric JSON values, while Python `float()` also accepts some strings/bools. Stand station limits and custom-material surface remain narrower; empty CLI bounds do not constitute accepted evidence.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bitwise `contact_bounds` oracle verdict under Python float() coercion and the bounded `contact_matrix` cell contract."
     }
   },
   {
@@ -12560,9 +12567,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Two-body wheel stand, kinetic/material ledger, flat/step/incline rigs, six road profiles and retained trajectories. The private native stand currently uses the declared default density/mu; the Python helper's arbitrary optional density/mu inputs are not exposed. Some NumPy scalar ufunc/matrix lowering still needs a dedicated bitwise comparison.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): custom density/mu inputs now reach the distributed stands and flat_depth (migration_T54 density contract); NumPy-vs-libm scalar/matrix lowering still lacks a dedicated bitwise comparison. Stays planned."
     }
   },
   {
@@ -12591,9 +12599,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Both source NNLS density fits, 12 flat and three incline stands, all six roads, time/road/station axes, persistent events and finest-pair acceptance. Numerical qualification depends on the partial contact stand producer; report/provenance serialization is native.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): both native and the oracle fail identically at flat_load(...,1024) under the shared 512-station cap (parity of failure); NNLS fits and full stand/series qualification still depend on the partial contact stand producer. Stays planned."
     }
   },
   {
@@ -12621,9 +12630,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Seven unit schemas, whole-experiment splits, measured conditions, sensor/estimate provenance, per-experiment errors, declared parameter/error budgets and canonical ASCII hashing. The public C++ holdout API is a one-dimensional span; Python accepts same-shaped multidimensional NumPy inputs. Existing native JSON byte/number limits also bound metadata.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): multidimensional same-shaped JSON holdout inputs now reduce flat in C order (bitwise `holdout_metrics_multidim` verdict); the public C++ holdout_metrics(std::span) API remains one-dimensional. Stays planned."
     }
   },
   {
@@ -12641,7 +12651,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "393974fee5bc6535c7e493917440ecf5e2d54fde752a0f8a3071adb3203b1830",
     "snapshot_line_count": 163,
     "tracked": true,
@@ -12651,9 +12661,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Actual compiled suspension fixture, four-joint bounded closure continuation, 784.8 N frame load, viscous rollers, three transmissions, all stroke/torque/dt combinations and original force gates. `shock_total` is presently reconstructed from split damper/HBO components: subtracting then adding HBO can change the last bits. The discarded source scalar must be exposed or recomputed exactly before bitwise qualification.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bounded three-transmission x 0/20/40 Nm sweep and `drive_suspension`/`drive_suspension_rig` runs; shock_total_n is now retained exactly from the suspension write instead of reconstructed from split damper/HBO components."
     }
   },
   {
@@ -12681,9 +12692,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Ordered length-delimited source hashing and actual native build lock/MuJoCo/provider identity. This intentionally reports a native identity; Python/PEP 440 marker evaluation and every direct package version are not reproduced. Current lock verification covers the build-lock digest and loaded MuJoCo, not every transitive image.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): native identity contract unchanged (build lock + loaded MuJoCo image); PEP-440/marker evaluation and per-package versions remain intentionally unported. Stays planned."
     }
   },
   {
@@ -12702,7 +12714,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "1fbf9e084d9c20fec95730e39ab25d7e2ff8b910ed83b8b1791b1ec4356fc0bb",
     "snapshot_line_count": 44,
     "tracked": true,
@@ -12712,9 +12724,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Split rejection, synthetic declaration and explicit boolean calibration gates. Source `is_synthetic` applies Python `str()` to an arbitrary `source` object; the C++ record boundary requires a string. The discrepancy-budget constants remain in the Python authority and are not automatically applied or invented as new thresholds.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bitwise `experiment_acceptance` oracle verdict and the is_synthetic str()/boolean-gate contract; MODEL_DISCREPANCY_BUDGET is an unconsumed declaration (no behavior to port)."
     }
   },
   {
@@ -12744,9 +12757,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Resolution validation, interval integration, all comparison criteria, seven cases, physical seeds, periodic station projection, rows/events/metrics and finest-pair summaries. Jobs 2\u201316 are explicitly unavailable. Runtime rows consume each immutable finalized interval once; this differs from the source's repeated `sim.physical.sample` read after each physics step. Initial state files preserve the exact payload bytes used for their hashes.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): bitwise `interval_integral`, `resolution_variants` and `select_verified_resolution` oracle verdicts landed (RCP-16); jobs>1 remain unavailable and the finalized-interval row cadence still differs from per-step sampling. Stays planned."
     }
   },
   {
@@ -12806,9 +12820,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Quasistatic load formula and full free-pitch rigid stand with normal/tangent reaction and moment checks. Source NumPy scalar trig lowering and small matrix products need confirmation against platform captures.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): `rigid_load_transfer` bounded stand contract green in migration_T54; NumPy scalar trig lowering and small matrix products still unconfirmed bitwise. Stays planned."
     }
   },
   {
@@ -12827,7 +12842,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "527fe1bfeed23e9017fe831442c20bc63803b7ef76f2d8d0ab831eec3bc10dda",
     "snapshot_line_count": 43,
     "tracked": true,
@@ -12837,9 +12852,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "`ValidPrefix::observe`: seen/accepted counters, first invalid record, strict evidence booleans, positive interval, loads and impulse prefix. A later valid row cannot resume acceptance.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bitwise `valid_prefix` oracle verdict (RCP-16: seen/accepted counters, first-bad diagnostic record, impulse prefix)."
     }
   },
   {
@@ -12858,7 +12874,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "0cb3d1ae9c59c86a5ca75573434acd610e7464e185a872c39309fdf325f36755",
     "snapshot_line_count": 28,
     "tracked": true,
@@ -12868,9 +12884,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "All eight independent SIL gates, optional completion, no calibration/safety promotion and ordered trapezoidal trace integral.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bitwise `plant_release` and `trace_integral` oracle verdicts (RCP-16)."
     }
   },
   {
@@ -12888,7 +12905,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "0a16cca53e7f408af10a89e0d9c208a9a21f62bdfc23b2496a9e61b4d83b7267",
     "snapshot_line_count": 40,
     "tracked": true,
@@ -12898,9 +12915,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Actual tendon-based shaft/freehub stand, arbitrary positive ratio, overrun, constraint reaction, angular acceleration and shaft-power identity. Uses actual MuJoCo actuation/constraint results.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bounded `shaft_ratio`, `actual_shaft_ratio` and `actual_freehub_overrun` tendon/freehub stand contracts and the `bike-validate run shaft_ratio` acceptance."
     }
   },
   {
@@ -12929,9 +12947,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Required release gates, candidate choice, hashed evidence manifests, measured-holdout authentication, outcome ordering and all 18 scenarios. Matrix execution inherits the immutable-interval and native-seed differences; no reference release was created.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): bitwise `release_gates`, `select_verified_resolution` and `classify_outcome` oracle verdicts landed (RCP-16); hashed-evidence manifests, measured-holdout authentication and the 18-scenario matrix remain partial. Stays planned."
     }
   },
   {
@@ -12960,9 +12979,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Flat/native static, exact requested-sag fitting bounds, brake hold, low mu, airborne passive/released rider, road runs and terrain refinement. All source horizons/thresholds remain. Live published interval observation replaces the source's per-physics-step sample access; source-vs-native instantaneous observer timing and integral weighting must be qualified.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): flat_static, requested_sag, terrain_resolution and drive_low_mu runs green; brake_hold fails identically in the Python oracle (equilibrium divergence on rear_wheel_spin \u2014 parity of failure); per-step vs finalized-interval observation still unqualified. Stays planned."
     }
   },
   {
@@ -12980,7 +13000,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "5fd0baf5a2cbb01caeffb1756ad6cacbd497c25b9d047435129cfbd095652ddf",
     "snapshot_line_count": 54,
     "tracked": true,
@@ -12990,9 +13010,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Compiled airborne articulated tree, actual rider/internal forces, ballistic/momentum/work invariants and original two-second horizon.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bounded `airborne_internal_actuation` articulated-flight stand contract."
     }
   },
   {
@@ -13020,9 +13041,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Nine original factors, ten-second horizon, baseline-resumed and causal-replay-resolved gates. Inherits replay observation differences; unsupported motor-only replay is retained as an explicit failed experiment.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): the module's declared rider_resume_*.toml tracks do not exist in either tree \u2014 the oracle errors identically on the missing file (parity of failure); replay observation cadence still differs. Stays planned."
     }
   },
   {
@@ -13051,9 +13073,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Schedules, profile loading, diagnostic rows, replay, coast/resume diagnosis and JSON/gzip reports. All seven modes remain; motor-only open loop rejects. Native report writing uses actual gzip stored blocks and atomic native publication. Row cadence is the distinct finalized interval stream rather than repeated/stale `sample` access.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): same missing-track parity of failure as the factor matrix; finalized-interval observation cadence still differs from repeated sim.physical.sample reads. Stays planned."
     }
   },
   {
@@ -13071,7 +13094,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "46626f65351b0215df5a6f36d66faad4cadb39fc53ef49f9024d2aa8fa7da471",
     "snapshot_line_count": 10,
     "tracked": true,
@@ -13081,9 +13104,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Exact component-name selection, CPython-style active-work sum, separate passive, net and motor work.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bitwise `rider_work` oracle verdict (RCP-16: active/passive/motor channel separation)."
     }
   },
   {
@@ -13112,9 +13136,10 @@
       "status": "partial_source_implementation",
       "scope_and_limits": "Every public stand and compiled chain derivative is implemented against actual compiled models/production laws. Small-matrix and NumPy-vs-libm scalar lowering still needs direct comparison; a manually reconstructed small rotation is not asserted bitwise equal.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "2026-10-31 partial qualification (darwin-arm64): every declared stand is bounded-green in migration_T54 (radial/wheel-inertia/contact-event/incline/chain-locked/suspension-cycle); NumPy-vs-libm scalar and small-matrix lowering still lacks a dedicated bitwise comparison. Stays planned."
     }
   },
   {
@@ -13132,7 +13157,7 @@
       "release_capability_matrix"
     ],
     "deletion_gate": "T63 after T61/T62 and row-specific evidence",
-    "status": "planned",
+    "status": "replacement_landed",
     "snapshot_sha256": "279c6c36ec9c55149445e2a7529d048bad8ee4fc307a2b2258e1f40383950eab",
     "snapshot_line_count": 128,
     "tracked": true,
@@ -13142,9 +13167,10 @@
       "status": "source_implemented_pending_qualification",
       "scope_and_limits": "Independent body inertial Jacobians, world inertia, CoM/linear/angular momentum, actual complete airborne tree, passive/active/motor-only cases, gravity impulse, free-pitch conservation and separate roll/yaw constraint evidence. Task 3.19 reference tests reuse this API.",
       "evidence": [
-        "migration/cpp-linux-phase3-validation-review.md"
+        "migration/cpp-linux-phase3-validation-review.md",
+        ".superpowers/sdd/2026-10-20-cpp-linux-completion/task-C339340-report.md"
       ],
-      "verification": "No compilation, capture or project execution in this session; no replacement_landed claim"
+      "verification": "Qualified 2026-10-31 (darwin-arm64; linux-aarch64 deferred to the Linux lane): migration_T54 green, including the bounded `momentum` case plus `whole_system_passive`, `whole_system_active` and `motor_only_airborne` stand contracts on the compiled airborne tree."
     }
   },
   {

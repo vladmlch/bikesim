@@ -1,0 +1,9 @@
+{
+  "work_j": {
+    "act_rider_hip": -2.0,
+    "act_rider_knee": 5.0,
+    "mid_drive": 7.0,
+    "other": 99.0,
+    "rider_passive_damping": -1.0
+  }
+}

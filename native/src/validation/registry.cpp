@@ -105,7 +105,7 @@ Value tire_characterization(const Value& config,const std::filesystem::path& bas
 // One handler per registered id keeps run_case's stack frame under the
 // project limit at -O0; bodies are verbatim from the previous if-chain.
 double case_dt(const Value& c){return real(c,"dt_s",.000625);}
-int case_stations(const Value& c){const auto n=io::as_int64(optional(c,"station_count",value::integer(128)),"station_count");if(n<16||n>std::numeric_limits<int>::max())throw std::invalid_argument("station count outside native domain");return static_cast<int>(n);}
+int case_stations(const Value& c){const auto n=io::as_int64(optional(c,"station_count",value::integer(128)),"station_count");if(n<16||n>512)throw std::invalid_argument("station count outside native domain");return static_cast<int>(n);}
 Verdict case_tire_characterization(const Value& c,const std::filesystem::path& base){auto report=tire_characterization(c,base);return {.accepted=true,.evidence=std::move(report)};}
 Verdict case_tire_calibration(const Value& c,const std::filesystem::path&){const auto& record=get(c,"record");const auto r=calibration_from_record(record);return {.accepted=true,.evidence=Value{Object{{"record",record},{"source_kind",value::text(r.source_kind)},{"calibration_status",value::text("parameterized_unvalidated")}}}};}
 Verdict case_tire_curve(const Value& c,const std::filesystem::path&){const nativecfg::TireTable table{.deflection_m=numbers(get(c,"deflection_m"),"deflection"),.force_n=numbers(get(c,"force_n"),"force")};const contactlaw::TabulatedRadial curve(table);const double damping=nonnegative(real(c,"radial_c_ns_m",0.),"radial damping");Array rows;
@@ -115,7 +115,35 @@ Verdict case_tire_curve(const Value& c,const std::filesystem::path&){const nativ
 Verdict case_datasets(const Value& c,const std::filesystem::path&){auto payload=validate_dataset(get(c,"dataset"),boolean(c,"allow_synthetic"));return {.accepted=true,.evidence=std::move(payload)};}
 Verdict case_dataset_hash(const Value& c,const std::filesystem::path&){return {.accepted=true,.evidence=value::text(dataset_hash(get(c,"dataset")))};}
 Verdict case_calibration_report(const Value& c,const std::filesystem::path&){return report_result(calibration_report(get(c,"dataset"),get(c,"predictions"),text(c,"quantity"),get(c,"parameters"),get(c,"bounds"),get(c,"error_budget"),boolean(c,"allow_synthetic")),"holdout_passed");}
-Verdict case_holdout_metrics(const Value& c,const std::filesystem::path&){return diagnostic(holdout_metrics(numbers(get(c,"measured"),"measured"),numbers(get(c,"predicted"),"predicted")));}
+// np.asarray(..., dtype=float) flattening for holdout vectors: JSON
+// arrays may nest arbitrarily; NumPy accepts same-shaped
+// multidimensional inputs and reduces them flat in C order. Ragged or
+// non-numeric leaves reject like np.asarray.
+std::pair<std::vector<std::size_t>,std::vector<double>> asarray_shape(const Value& v,std::string_view name) {
+    std::vector<std::size_t> shape;std::vector<double> flat;std::size_t leaf_depth=std::numeric_limits<std::size_t>::max();
+    // NOLINTNEXTLINE(misc-no-recursion) recursive JSON array walk mirrors np.asarray
+    const auto walk=[&](const auto& self,const Value& item,std::size_t depth)->void{
+        if(const auto* a=std::get_if<Array>(&item.data)){
+            if(depth==shape.size())shape.push_back(a->size());
+            else if(a->size()!=shape[depth])throw std::invalid_argument(std::string(name)+": inhomogeneous holdout array");
+            for(const auto& x:*a)self(self,x,depth+1);return;}
+        if(leaf_depth==std::numeric_limits<std::size_t>::max())leaf_depth=depth;
+        else if(depth!=leaf_depth)throw std::invalid_argument(std::string(name)+": inhomogeneous holdout array");
+        // np.asarray(dtype=float) leaf coercion: numbers, bools and
+        // float-parseable strings convert; np.asarray turns None into
+        // nan, which the finite gate in holdout_metrics rejects as the
+        // oracle does.
+        if(io::is_null(item))flat.push_back(std::numeric_limits<double>::quiet_NaN());
+        else if(const auto x=python_float(item))flat.push_back(*x);
+        else throw std::invalid_argument(std::string(name)+": non-numeric holdout leaf");};
+    walk(walk,v,0);return {std::move(shape),std::move(flat)};
+}
+Verdict case_holdout_metrics(const Value& c,const std::filesystem::path&){
+    const auto [ms,m]=asarray_shape(get(c,"measured"),"measured");
+    const auto [ps,p]=asarray_shape(get(c,"predicted"),"predicted");
+    if(ms!=ps)throw std::invalid_argument("invalid holdout vectors");
+    return diagnostic(holdout_metrics(m,p));
+}
 Verdict case_experiment_acceptance(const Value& c,const std::filesystem::path&){validate_split(get(c,"fit"),get(c,"holdout"));const auto status=accepted_calibration_status(io::as_bool(get(c,"synthetic"),"synthetic"),io::as_bool(get(c,"holdout_passed"),"holdout_passed"),io::as_bool(get(c,"converged"),"converged"),io::as_bool(get(c,"within_scope"),"within_scope"));
     return {.accepted=status=="validated_within_declared_scope",.evidence=Value{Object{{"status",value::text(status)},{"measurement_authentication",Value{false}}}}};}
 Verdict case_contact_bounds(const Value& c,const std::filesystem::path&){auto checks=check_bounds(get(c,"metrics"),get(c,"bounds"));const bool accepted=!io::as_object(checks,"checks").empty()&&checks_passed(checks);return {.accepted=accepted,.evidence=std::move(checks)};}

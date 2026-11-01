@@ -2917,6 +2917,350 @@ def _rcp16_validation_rigs(ctx: Context):
             rec.blocker(f"validation/contact_case_{case}", "RCP-16",
                         "".join(traceback.format_exception(exc))[-1200:])
 
+    # -- validation/datasets.py: same-shaped multidimensional holdout -------
+    try:
+        from bike_sim.validation.datasets import holdout_metrics
+        measured, predicted = [[1., 2.], [3., 4.]], [[1.5, 2.], [2.5, 4.5]]
+        add_verdict("validation/holdout_metrics_multidim", "config.json",
+                    json.dumps({"measured": measured, "predicted": predicted},
+                               indent=2, sort_keys=True) + "\n",
+                    holdout_metrics(measured, predicted),
+                    "holdout_metrics on same-shaped 2-D np.asarray inputs; "
+                    "native flattens in C order before the same reductions",
+                    "multidimensional sample spans reduce identically")
+    except Exception as exc:
+        rec.blocker("validation/holdout_metrics_multidim", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/contact_acceptance.py: float() bound coercion -----------
+    try:
+        from bike_sim.validation.contact_acceptance import check_bounds
+        metrics = {"text": "1.5", "truth": True, "not_a_number": "nan",
+                   "junk": "x", "vector": [1], "padded": " 1_000.5 "}
+        bounds = {"text": (0., 2.), "truth": (.5, 2.),
+                  "not_a_number": (0., 2.), "junk": (0., 2.),
+                  "vector": (0., 2.), "padded": (0., 2000.)}
+        add_verdict("validation/contact_bounds", "config.json",
+                    json.dumps({"metrics": metrics,
+                                "bounds": {k: list(v) for k, v in bounds.items()}},
+                               indent=2, sort_keys=True) + "\n",
+                    check_bounds(metrics, bounds),
+                    "check_bounds(metrics, bounds) under Python float() "
+                    "leaf coercion",
+                    "strings/bools coerce; non-finite, unparseable and "
+                    "non-scalar metrics fail closed")
+    except Exception as exc:
+        rec.blocker("validation/contact_bounds", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/experiment_acceptance.py: split + boolean gates ---------
+    try:
+        from bike_sim.validation.experiment_acceptance import (
+            accepted_calibration_status, validate_split)
+        validate_split(["fit-a"], ["hold-b"])
+        status = accepted_calibration_status(
+            synthetic=False, holdout_passed=True, converged=True,
+            within_scope=True)
+        add_verdict("validation/experiment_acceptance", "config.json",
+                    json.dumps({"fit": ["fit-a"], "holdout": ["hold-b"],
+                                "synthetic": False, "holdout_passed": True,
+                                "converged": True, "within_scope": True},
+                               indent=2, sort_keys=True) + "\n",
+                    {"status": status, "measurement_authentication": False},
+                    "validate_split + accepted_calibration_status; the native "
+                    "wrapper adds the constant measurement_authentication "
+                    "flag (never asserted by the gate)",
+                    "measured gates reach validated_within_declared_scope")
+    except Exception as exc:
+        rec.blocker("validation/experiment_acceptance", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/antiwheelie_reports.py: pair inventory + run verdict ----
+    try:
+        from bike_sim.validation.antiwheelie_reports import (
+            assess_run, paired_summary)
+        records = [
+            {"scenario_id": "s", "seed": 1, "plant_and_inputs_sha256": "p",
+             "policy_id": "passthrough", "operator_intervention": [0],
+             "metrics": {"duration_s": 1,
+                         "model_status": {"model_valid": True},
+                         "numerically_valid": True}},
+            {"scenario_id": "s", "seed": 1, "plant_and_inputs_sha256": "p",
+             "policy_id": "candidate",
+             "metrics": {"duration_s": 1,
+                         "model_status": {"model_valid": True},
+                         "numerically_valid": True,
+                         "operator_intervention": 0}},
+            {"scenario_id": "s", "seed": 2, "plant_and_inputs_sha256": "p",
+             "policy_id": "passthrough",
+             "metrics": {"duration_s": 1,
+                         "model_status": {"model_valid": True},
+                         "numerically_valid": True,
+                         "operator_intervention": ""}},
+            {"scenario_id": "s", "seed": 2, "plant_and_inputs_sha256": "p",
+             "policy_id": "candidate",
+             "metrics": {"duration_s": 1,
+                         "model_status": {"model_valid": True},
+                         "numerically_valid": True}}]
+        add_verdict("validation/paired_summary", "config.json",
+                    json.dumps({"records": records}, indent=2,
+                               sort_keys=True) + "\n",
+                    paired_summary(records),
+                    "paired_summary(records) with non-boolean "
+                    "operator_intervention truthiness",
+                    "a truthy container excludes the pair; zero/empty do not")
+        add_verdict("validation/assess_run", "config.json",
+                    json.dumps({"summary": {"duration_s": 4.5, "progress_m": 3.,
+                                            "numerically_valid": True,
+                                            "model_status": {"model_valid": True},
+                                            "outcome": "duration"},
+                                "required_duration_s": 5.,
+                                "minimum_progress_m": 1.},
+                               indent=2, sort_keys=True) + "\n",
+                    assess_run({"duration_s": 4.5, "progress_m": 3.,
+                                "numerically_valid": True,
+                                "model_status": {"model_valid": True},
+                                "outcome": "duration"},
+                               required_duration_s=5., minimum_progress_m=1.),
+                    "assess_run(summary, required_duration_s=5, "
+                    "minimum_progress_m=1)",
+                    "horizon tolerance 1e-9 and the reason inventory")
+    except Exception as exc:
+        for name in ("validation/paired_summary", "validation/assess_run"):
+            rec.blocker(name, "RCP-16",
+                        "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/rider_work.py: joint/motor work channels ----------------
+    try:
+        from bike_sim.validation.rider_work import rider_work_ledger
+        work = {"act_rider_knee": 5., "act_rider_hip": -2.,
+                "rider_passive_damping": -1., "mid_drive": 7., "other": 99.}
+        add_verdict("validation/rider_work", "config.json",
+                    json.dumps({"work_j": work}, indent=2,
+                               sort_keys=True) + "\n",
+                    rider_work_ledger(work),
+                    "rider_work_ledger(work_j)",
+                    "active/passive rider and motor channels stay separate")
+    except Exception as exc:
+        rec.blocker("validation/rider_work", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/plant_release.py: release gate decision -----------------
+    try:
+        from bike_sim.validation.plant_release import release_decision
+        evidence = {"model_valid": True, "numerically_valid": True,
+                    "contact_passed": True, "convergence_passed": True,
+                    "rider_budget_passed": True, "mass_momentum_passed": True,
+                    "transmission_parity_passed": True,
+                    "sensor_split_passed": True, "finished": True}
+        add_verdict("validation/plant_release", "config.json",
+                    json.dumps({"evidence": evidence,
+                                "require_completion": True},
+                               indent=2, sort_keys=True) + "\n",
+                    release_decision(evidence, require_completion=True),
+                    "release_decision(evidence, require_completion=True)",
+                    "every declared gate true yields sil_ready; the status "
+                    "fields are deliberately pinned unvalidated")
+    except Exception as exc:
+        rec.blocker("validation/plant_release", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/plant_release.py: trapezoid/interval reductions ---------
+    try:
+        from bike_sim.validation.plant_release import trace_integral
+        from bike_sim.validation.fidelity_sweep import interval_integral
+        rows = [{"time_s": 0., "end_time_s": .1, "force_n": 10.},
+                {"time_s": .1, "end_time_s": .3, "force_n": 20.}]
+        add_verdict("validation/trace_integral", "config.json",
+                    json.dumps({"time_s": [0., 1., 2.],
+                                "values": [0., 2., 2.]},
+                               indent=2, sort_keys=True) + "\n",
+                    trace_integral([0., 1., 2.], [0., 2., 2.]),
+                    "trace_integral(time_s, values)",
+                    "sample trapezoid integral")
+        add_verdict("validation/interval_integral", "config.json",
+                    json.dumps({"rows": rows, "key": "force_n"},
+                               indent=2, sort_keys=True) + "\n",
+                    interval_integral(rows, "force_n"),
+                    "interval_integral(rows, 'force_n')",
+                    "contiguous intervals use their actual durations")
+    except Exception as exc:
+        for name in ("validation/trace_integral",
+                     "validation/interval_integral"):
+            rec.blocker(name, "RCP-16",
+                        "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/climbing_benchmark.py: latency percentiles + RTF --------
+    try:
+        from bike_sim.validation.climbing_benchmark import timing_metrics
+        add_verdict("validation/timing_metrics", "config.json",
+                    json.dumps({"step_ns": [1000000, 2000000, 3000000, 4000000],
+                                "dt_s": .01}, indent=2, sort_keys=True) + "\n",
+                    timing_metrics([1000000, 2000000, 3000000, 4000000], .01),
+                    "timing_metrics(step_ns, .01)",
+                    "np.percentile reductions and real-time factor")
+    except Exception as exc:
+        rec.blocker("validation/timing_metrics", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/climbing_evidence.py: support evidence aggregation ------
+    try:
+        from bike_sim.validation.climbing_evidence import support_evidence
+        rows = [
+            {"time_s": 0., "end_time_s": .05,
+             "model_status": {"model_valid": True, "numerically_valid": True},
+             "energy": {"residual_j": .001, "energy_scale_j": 1.},
+             "rider": {
+                 "front_pedal": {"gap_m": 0., "normal_load_n": 400.,
+                                 "in_platform": True},
+                 "rear_pedal": {"gap_m": 0., "normal_load_n": 600.,
+                                "in_platform": True}}},
+            {"time_s": .05, "end_time_s": .1,
+             "model_status": {"model_valid": True, "numerically_valid": True},
+             "energy": {"residual_j": .002, "energy_scale_j": 1.},
+             "rider": {
+                 "front_pedal": {"gap_m": .01, "normal_load_n": 0.,
+                                 "in_platform": False},
+                 "rear_pedal": {"gap_m": .02, "normal_load_n": 0.,
+                                "in_platform": False}}}]
+        add_verdict("validation/support_evidence", "config.json",
+                    json.dumps({"rows": rows, "required_duration_s": .05},
+                               indent=2, sort_keys=True) + "\n",
+                    support_evidence(rows, required_duration_s=.05),
+                    "support_evidence(rows, required_duration_s=.05)",
+                    "both-unloaded gaps, prefixes and the no-promotion "
+                    "verdict fields")
+    except Exception as exc:
+        rec.blocker("validation/support_evidence", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/fidelity_sweep.py: variants, rows, comparison -----------
+    try:
+        from bike_sim.validation.fidelity_sweep import (
+            metrics_from_rows, resolution_variants)
+        anchor, variants = resolution_variants(
+            [.00125, .000625, .0003125], [.01, .005, .0025], [128, 256, 512])
+        add_verdict("validation/resolution_variants", "config.json",
+                    json.dumps({"time_steps": [.00125, .000625, .0003125],
+                                "road_steps": [.01, .005, .0025],
+                                "station_counts": [128, 256, 512],
+                                "include_stations": True},
+                               indent=2, sort_keys=True) + "\n",
+                    {"anchor": list(anchor),
+                     "variants": [list(v) for v in variants]},
+                    "resolution_variants(time, road, stations, "
+                    "include_stations=True); the native wrapper names the "
+                    "anchor/variant fields identically",
+                    "all three axes retain all declared levels")
+    except Exception as exc:
+        rec.blocker("validation/resolution_variants", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/reference_release.py: gates + verified selection --------
+    try:
+        from bike_sim.validation.reference_release import (
+            release_gates, release_level, select_verified_resolution)
+        report = {"model_valid": True, "numerically_valid": True,
+                  "contact_passed": True, "convergence_passed": True,
+                  "rider_budget_passed": True, "mass_momentum_passed": True,
+                  "transmission_parity_passed": True,
+                  "sensor_split_passed": True}
+        passed, missing = release_gates(report)
+        add_verdict("validation/release_gates", "config.json",
+                    json.dumps({"report": report}, indent=2,
+                               sort_keys=True) + "\n",
+                    {"passed": passed, "missing": list(missing),
+                     "status": release_level(report)},
+                    "release_gates(report) + release_level; the native "
+                    "wrapper composes the same object",
+                    "all numerical gates present and true")
+        comparisons = [
+            {"passed": True,
+             "axes_passed": {"time": True, "road": True, "stations": True},
+             "dt_s": .0003125, "dx_m": .005, "station_count": 256,
+             "case": "step"},
+            {"passed": True,
+             "axes_passed": {"time": True, "road": True, "stations": True},
+             "dt_s": .000625, "dx_m": .0025, "station_count": 128,
+             "case": "step"}]
+        add_verdict("validation/select_verified_resolution", "config.json",
+                    json.dumps({"comparisons": comparisons}, indent=2,
+                               sort_keys=True) + "\n",
+                    select_verified_resolution(comparisons),
+                    "select_verified_resolution(comparisons); selects fastest "
+                    "tested dt, fewest stations, coarsest road",
+                    "only exact measured candidates may be selected")
+    except Exception as exc:
+        for name in ("validation/release_gates",
+                     "validation/select_verified_resolution"):
+            rec.blocker(name, "RCP-16",
+                        "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/plant_prefix.py: prefix audit over sample rows ----------
+    try:
+        from bike_sim.validation.plant_prefix import ValidPrefix
+        prefix = ValidPrefix()
+        rows = [
+            {"time_s": 0., "end_time_s": .01, "channels": {
+                "model_status": {"model_valid": True,
+                                 "numerically_valid": True},
+                "tires": {"front": {"normal_load_n": 100.},
+                          "rear": {"normal_load_n": 200.}}}},
+            {"time_s": .01, "end_time_s": .02, "channels": {
+                "model_status": {"model_valid": False,
+                                 "numerically_valid": True},
+                "tires": {"front": {"normal_load_n": 100.},
+                          "rear": {"normal_load_n": 200.}}}}]
+        import types
+        for row in rows:
+            prefix.observe(types.SimpleNamespace(
+                time_s=row["time_s"], end_time_s=row["end_time_s"],
+                channels=row["channels"]))
+        add_verdict("validation/valid_prefix", "config.json",
+                    json.dumps({"samples": rows}, indent=2,
+                               sort_keys=True) + "\n",
+                    {"seen": prefix.seen, "accepted": prefix.accepted,
+                     "valid_until_s": prefix.valid_until_s,
+                     "first_bad": prefix.first_bad,
+                     "front_normal_impulse_ns":
+                         prefix.front_normal_impulse_ns,
+                     "rear_normal_impulse_ns":
+                         prefix.rear_normal_impulse_ns},
+                    "ValidPrefix.observe per PhysicalSampleData row",
+                    "an invalid interval ends the prefix and records its "
+                    "diagnostic origin")
+    except Exception as exc:
+        rec.blocker("validation/valid_prefix", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
+    # -- validation/reference_release.py: outcome classification ------------
+    try:
+        from bike_sim.validation.reference_release import classify_outcome
+        rows = [
+            {"time_s": 0., "end_time_s": 1., "position_m": 2.,
+             "front_load_n": 350., "rear_load_n": 450., "speed_mps": 3.,
+             "model_status": {"model_valid": True,
+                              "numerically_valid": True},
+             "control": {"torque_nm": 0.}},
+            {"time_s": 1., "end_time_s": 2., "position_m": 5.5,
+             "front_load_n": 350., "rear_load_n": 450., "speed_mps": 3.,
+             "model_status": {"model_valid": True,
+                              "numerically_valid": True},
+             "control": {"torque_nm": 0.}}]
+        add_verdict("validation/classify_outcome", "config.json",
+                    json.dumps({"rows": rows, "goal_x_m": 5.,
+                                "crashed": False, "numerical_error": None,
+                                "duration_reached": False},
+                               indent=2, sort_keys=True) + "\n",
+                    classify_outcome(rows, goal_x_m=5., crashed=False,
+                                     numerical_error=None,
+                                     duration_reached=False),
+                    "classify_outcome(rows, goal_x_m=5)",
+                    "first observable cause; no fabricated completion")
+    except Exception as exc:
+        rec.blocker("validation/classify_outcome", "RCP-16",
+                    "".join(traceback.format_exception(exc))[-1200:])
+
 
 # ---------------------------------------------------------------------------
 # Mandatory negative controls

@@ -1,0 +1,38 @@
+{
+  "crashed": false,
+  "duration_reached": false,
+  "goal_x_m": 5.0,
+  "numerical_error": null,
+  "rows": [
+    {
+      "control": {
+        "torque_nm": 0.0
+      },
+      "end_time_s": 1.0,
+      "front_load_n": 350.0,
+      "model_status": {
+        "model_valid": true,
+        "numerically_valid": true
+      },
+      "position_m": 2.0,
+      "rear_load_n": 450.0,
+      "speed_mps": 3.0,
+      "time_s": 0.0
+    },
+    {
+      "control": {
+        "torque_nm": 0.0
+      },
+      "end_time_s": 2.0,
+      "front_load_n": 350.0,
+      "model_status": {
+        "model_valid": true,
+        "numerically_valid": true
+      },
+      "position_m": 5.5,
+      "rear_load_n": 450.0,
+      "speed_mps": 3.0,
+      "time_s": 1.0
+    }
+  ]
+}

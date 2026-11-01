@@ -591,9 +591,12 @@ void SuspensionWriter::compute_validated(const mjData *d) const {
     // SuspensionForceApplier's self.*_n scalars and potential_energy_j
     // (forces.py:207-221) are still computed and validated here — the
     // derived() gate keeps rejecting non-finite telemetry exactly as
-    // before — but the stored snapshot was write-only state, so it is gone.
+    // before. shock_total_n_ is retained because the oracle's
+    // validation/drive_suspension_rig.py reads the attribute post-hoc;
+    // the remaining scalars stayed write-only and are not retained.
     for (const double value: {fork_total, shock_total, top_out_force, top_out_energy, upper_force, upper_energy, bumper_energy, coil_energy})
         validation::derived(value, "SuspensionWriter.force_or_energy");
+    shock_total_n_ = shock_total;
 
     // vector(dofadr, force) — compression-positive coordinates take the
     // negated force (forces.py:189-192). The member buffer takes the same

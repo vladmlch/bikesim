@@ -1,0 +1,139 @@
+{
+  "comparable_pair_count": 1,
+  "exclusions": [
+    {
+      "comparable": false,
+      "plant_and_inputs_sha256": "p",
+      "policies": {
+        "candidate": {
+          "duration_s": 1,
+          "model_status": {
+            "model_valid": true
+          },
+          "numerically_valid": true,
+          "operator_intervention": 0
+        },
+        "passthrough": {
+          "duration_s": 1,
+          "model_status": {
+            "model_valid": true
+          },
+          "numerically_valid": true
+        }
+      },
+      "reasons": [
+        "operator_intervention"
+      ],
+      "scenario_id": "s",
+      "seed": 1
+    }
+  ],
+  "pairs": [
+    {
+      "comparable": false,
+      "plant_and_inputs_sha256": "p",
+      "policies": {
+        "candidate": {
+          "duration_s": 1,
+          "model_status": {
+            "model_valid": true
+          },
+          "numerically_valid": true,
+          "operator_intervention": 0
+        },
+        "passthrough": {
+          "duration_s": 1,
+          "model_status": {
+            "model_valid": true
+          },
+          "numerically_valid": true
+        }
+      },
+      "scenario_id": "s",
+      "seed": 1
+    },
+    {
+      "comparable": true,
+      "plant_and_inputs_sha256": "p",
+      "policies": {
+        "candidate": {
+          "duration_s": 1,
+          "model_status": {
+            "model_valid": true
+          },
+          "numerically_valid": true
+        },
+        "passthrough": {
+          "duration_s": 1,
+          "model_status": {
+            "model_valid": true
+          },
+          "numerically_valid": true,
+          "operator_intervention": ""
+        }
+      },
+      "scenario_id": "s",
+      "seed": 2
+    }
+  ],
+  "records": [
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true
+      },
+      "operator_intervention": [
+        0
+      ],
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "passthrough",
+      "scenario_id": "s",
+      "seed": 1
+    },
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true,
+        "operator_intervention": 0
+      },
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "candidate",
+      "scenario_id": "s",
+      "seed": 1
+    },
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true,
+        "operator_intervention": ""
+      },
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "passthrough",
+      "scenario_id": "s",
+      "seed": 2
+    },
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true
+      },
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "candidate",
+      "scenario_id": "s",
+      "seed": 2
+    }
+  ],
+  "schema_version": 1
+}

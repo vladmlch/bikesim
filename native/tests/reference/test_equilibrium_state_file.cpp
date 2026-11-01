@@ -56,6 +56,7 @@ NATIVE_DIAG_PUSH
 // The settle-and-serve tests keep whole decoded StateFile fixtures (model
 // arrays plus state arrays) in automatic storage; like the T22-T26 runtime
 // ports the frame budget is suppressed instead of heap-routing the fixture.
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 namespace init = bike::initialization;

@@ -280,55 +280,62 @@ void rejection_suites() {
     const std::vector<double> two{1., 1.}, three{1., 1., 1.},
         four{1., 1., 1., 1.};
     bt::invalid([&] {
-        static_cast<void>(platform_blas(Operand{two, {2}, Layout::c},
-                                      Operand{two, {2}, Layout::c}, "ger"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c},
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c}, "ger"));
     });
     // shape mismatch: unequal dot lengths and unmatched inner dims.
     bt::invalid([&] {
-        static_cast<void>(platform_blas(Operand{three, {3}, Layout::c},
-                                      Operand{four, {4}, Layout::c}, "dot"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = three, .shape = {3}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {4}, .layout = Layout::c}, "dot"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 3}, Layout::c}, Operand{four, {4}, Layout::c},
-            "matvec"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 3}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {4}, .layout = Layout::c},
+          "matvec"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 3}, Layout::c}, Operand{four, {4, 2}, Layout::c},
-            "matmul"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 3}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {4, 2}, .layout = Layout::c},
+          "matmul"));
     });
     // non-contiguous storage rejected, never strided through.
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {4}, Layout::strided},
-            Operand{four, {4}, Layout::c}, "dot"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {4}, .layout = Layout::strided},
+          Operand{.stored = four, .shape = {4}, .layout = Layout::c}, "dot"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 2}, Layout::strided},
-            Operand{two, {2}, Layout::c}, "matvec"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::strided},
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c}, "matvec"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 2}, Layout::strided},
-            Operand{four, {2, 2}, Layout::c}, "matmul"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::strided},
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::c},
+          "matmul"));
     });
     // wrong rank and wrong dtype.
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 2, 2}, Layout::c},
-            Operand{four, {2, 2}, Layout::c}, "matmul"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 2, 2}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::c},
+          "matmul"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{two, {2}, Layout::wrong_dtype},
-            Operand{two, {2}, Layout::c}, "dot"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = two, .shape = {2}, .layout = Layout::wrong_dtype},
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c}, "dot"));
     });
 }
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         dot_nodes();
         matvec_nodes();

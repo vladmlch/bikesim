@@ -158,6 +158,7 @@ std::string np_f64(double v) {
 // BuildRequest embeds the full rider/track spec — ~9 KiB of automatic
 // storage, over the Linux -Wframe-larger-than=8192 gate (main carries the
 // same exemption below).
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void rider_forces_sweep(bt::oracle::Node &golden) {
     const std::vector<double> qpos0 = golden.f64_input("input.qpos0");

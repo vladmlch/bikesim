@@ -262,6 +262,7 @@ void test_sql_json_marks_the_truncation_boundary() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_empty_result_sets_are_stable_json_envelopes();
         test_failures_surface_recording_error_without_a_traceback();

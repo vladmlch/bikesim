@@ -561,21 +561,26 @@ void test_tree_source_rejects_batch_arguments_and_bad_intervals() {
 }
 
 void test_catalog_rejects_malformed_joint_descriptors() {
-    const std::vector<rec::JointCoords> nameless{{"", "slide", 0, 0}};
-    throws<std::invalid_argument>([&] { (void)rec::build_catalog(nameless); },
-                                  "joint coordinates",
-                                  "empty joint identity is rejected");
-    const std::vector<rec::JointCoords> weird{{"a", "weird", 0, 0}};
-    throws<std::invalid_argument>([&] { (void)rec::build_catalog(weird); },
-                                  "joint type", "unsupported joint type is rejected");
-    const std::vector<rec::JointCoords> sparse{{"a", "slide", 2, 2}};
-    throws<std::invalid_argument>([&] { (void)rec::build_catalog(sparse); },
-                                  "dense", "non-dense addresses are rejected");
+  const std::vector<rec::JointCoords> nameless{
+      {.name = "", .joint_type = "slide", .qposadr = 0, .dofadr = 0}};
+  throws<std::invalid_argument>([&] { (void)rec::build_catalog(nameless); },
+                                "joint coordinates",
+                                "empty joint identity is rejected");
+  const std::vector<rec::JointCoords> weird{
+      {.name = "a", .joint_type = "weird", .qposadr = 0, .dofadr = 0}};
+  throws<std::invalid_argument>([&] { (void)rec::build_catalog(weird); },
+                                "joint type",
+                                "unsupported joint type is rejected");
+  const std::vector<rec::JointCoords> sparse{
+      {.name = "a", .joint_type = "slide", .qposadr = 2, .dofadr = 2}};
+  throws<std::invalid_argument>([&] { (void)rec::build_catalog(sparse); },
+                                "dense", "non-dense addresses are rejected");
 }
 
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_catalog_tables_are_finite_and_fully_described();
         test_coordinate_catalog_maps_qpos_and_dof_addresses();

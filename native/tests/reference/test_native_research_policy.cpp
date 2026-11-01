@@ -251,6 +251,7 @@ void test_policy_cannot_smuggle_rider_inputs() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_one_act_per_window_and_queued_pause_brakes();
         test_one_act_per_window_across_budget_yields();

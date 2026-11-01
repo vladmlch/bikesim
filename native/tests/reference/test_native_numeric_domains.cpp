@@ -179,6 +179,7 @@ void test_rolling_and_drag_computed_overflow() {
     overflow([&] { (void)drag.components(fixture.data.get(), {.patch_loads=none, .patch_working=working, .effective_radius_m=.3}, {.patch_loads=none, .patch_working=working, .effective_radius_m=.3}); });
 }
 } // namespace
+// cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
 int main() { return bt::run([] {
     test_suspension_domain_is_shared(); test_damper_invalid_parameters_rejected();
     test_air_pressure_intermediate_overflow_is_shared(); test_activated_zero_hbo_denominator_rejected();

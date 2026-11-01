@@ -284,6 +284,7 @@ void test_native_owns_noise_and_validates_empty_shape() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         for (const auto &[suffix, imu, dropout, latency] : {
             std::tuple{"[False-0.0-0.0]", false, 0., 0.},

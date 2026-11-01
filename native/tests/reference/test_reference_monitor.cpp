@@ -104,6 +104,7 @@ void test_strict_raises_even_after_a_stored_failure() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_research_stops_before_decimation_can_hide_bad_step();
         test_viewer_warns_but_never_restores_valid_status();

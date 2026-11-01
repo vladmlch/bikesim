@@ -345,33 +345,35 @@ void assert_published(const std::filesystem::path& dir) {
 // eligible (contract v3, research tables); a failed launch publishes
 // its evidence and is never eligible.
 [[gnu::noinline]] void research_run_sealed_and_failed() {
-    bt::TemporaryDirectory root("platform-recording-research");
-    const auto publication = rr::record_container(root.path());
-    assert_published(publication.directory);
-    const auto saved = rec::open_recording(publication.directory);
-    const auto episode_row = saved->episode();
-    const auto& episode = rt::as_object(episode_row);
-    bt::require(rt::as_integer(req(episode, "replay_contract_version")) == 3 &&
-        rt::as_bool(req(episode, "replay_eligible")) &&
-        rt::as_integer(req(episode, "physical_rows")) > 0,
-        "the completed research episode is checked-replay eligible");
-    for (const char* table : {"commands_requested", "commands_applied",
-             "observations", "transitions"})
-        bt::require(rt::as_integer(req(
-                saved->rows(std::string("SELECT count(*) n FROM ") + table)
-                    .at(0), "n")) > 0,
-            std::string(table) + " carries research evidence");
-    saved->close();
-    const auto failed = rr::record_failed(root.path());
-    const auto rejected = rec::open_recording(failed.directory);
-    const auto failed_row = rejected->episode();
-    const auto& failed_episode = rt::as_object(failed_row);
-    bt::require(!rt::as_bool(req(failed_episode, "replay_eligible")),
-        "the failed launch is published, never replay eligible");
+  bt::TemporaryDirectory const root("platform-recording-research");
+  const auto publication = rr::record_container(root.path());
+  assert_published(publication.directory);
+  const auto saved = rec::open_recording(publication.directory);
+  const auto episode_row = saved->episode();
+  const auto &episode = rt::as_object(episode_row);
+  bt::require(rt::as_integer(req(episode, "replay_contract_version")) == 3 &&
+                  rt::as_bool(req(episode, "replay_eligible")) &&
+                  rt::as_integer(req(episode, "physical_rows")) > 0,
+              "the completed research episode is checked-replay eligible");
+  for (const char *table : {"commands_requested", "commands_applied",
+                            "observations", "transitions"})
+    bt::require(
+        rt::as_integer(req(
+            saved->rows(std::string("SELECT count(*) n FROM ") + table).at(0),
+            "n")) > 0,
+        std::string(table) + " carries research evidence");
+  saved->close();
+  const auto failed = rr::record_failed(root.path());
+  const auto rejected = rec::open_recording(failed.directory);
+  const auto failed_row = rejected->episode();
+  const auto &failed_episode = rt::as_object(failed_row);
+  bt::require(!rt::as_bool(req(failed_episode, "replay_eligible")),
+              "the failed launch is published, never replay eligible");
 }
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         exclusive_names_collide();
         crash_leaves_no_readable_run();

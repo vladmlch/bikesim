@@ -60,6 +60,7 @@ void test_engine_failure_preserves_prefix_and_reset_recovers() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_engine_failure_preserves_prefix_and_reset_recovers();
     });

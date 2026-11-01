@@ -583,6 +583,9 @@ void test_stepper_qfrc_returns_owning_array() {
     const int eq_id = equality(m, "w");
     std::vector<double> first = st->rider_equality_qfrc(eq_id);
     const std::vector<double> second = st->rider_equality_qfrc(eq_id);
+    // Comparing .data() pointers across distinct vectors IS the assertion:
+    // each call must own fresh, unshared storage.
+    // cppcheck-suppress mismatchingContainers
     bt::require(first.data() != second.data(),
                 "each call owns a fresh buffer");
     std::ranges::fill(first, 999.);
@@ -1013,6 +1016,9 @@ void test_recover_wrench_owns_its_output() {
                           .values = flat};
     std::vector<double> first = recover(jac, qfrc);
     const std::vector<double> second = recover(jac, qfrc);
+    // Comparing .data() pointers across distinct containers IS the assertion:
+    // the output must be fresh, unshared, owning storage.
+    // cppcheck-suppress mismatchingContainers
     bt::require(first.data() != second.data() &&
                     first.data() != jac.values.data(),
                 "fresh, unshared, owning output storage");
@@ -1606,6 +1612,7 @@ void test_attachment_interval_start_geometry() {
 // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
 // cppcheck-suppress throwInEntryPoint
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_rider_equality_qfrc_oracle();
         test_rider_equality_rows_grouping();

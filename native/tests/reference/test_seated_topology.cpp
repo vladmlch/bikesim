@@ -388,6 +388,7 @@ void test_built_pose_anatomical_angles_inside_envelope() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_saddle_connection_does_not_constrain_orientation();
         test_saddle_pin_replaces_a_legacy_weld_and_validates();

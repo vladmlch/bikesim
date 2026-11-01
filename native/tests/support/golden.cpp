@@ -27,6 +27,8 @@ const Value &required(const Value::Object &value, std::string_view name,
                       std::string_view context) {
     const auto *entry = bike::io::find_member(value, name);
     if (entry == nullptr) bad(context, "missing field " + std::string(name));
+    // bad() is [[noreturn]] — the dereference is unreachable on the null path.
+    // cppcheck-suppress nullPointerRedundantCheck
     return *entry;
 }
 std::size_t natural(const Value &value, std::string_view context) {

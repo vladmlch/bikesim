@@ -819,6 +819,7 @@ NATIVE_DIAG_POP
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_native_research_matches_every_external_transition();
         test_one_second_pair_with_one_e_minus_nine_gate();

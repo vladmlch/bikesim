@@ -315,6 +315,7 @@ void close_period(runtime::PeriodAccounting& accounting, std::int64_t first,
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         replay_retains_every_period_and_prefix();
         replay_drops_old_publication_window();

@@ -552,6 +552,9 @@ void patch_u32(std::string &raw, std::size_t offset, std::uint32_t value) {
     const Value *found = bike::io::find_member(object, key);
     if (found == nullptr)
         report_missing(std::string(path) + "." + std::string(key));
+    // report_missing is [[noreturn]] — the dereference is unreachable on the
+    // null path.
+    // cppcheck-suppress nullPointerRedundantCheck
     return *found;
 }
 

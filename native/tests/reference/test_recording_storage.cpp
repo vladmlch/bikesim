@@ -404,6 +404,7 @@ void test_forces_round_trip_records_components_and_checks_qfrc_width() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_roundtrip_typed_nonfinite_presence_and_owned_asset();
         test_default_publisher_handles_empty_run_and_zero_step_episode();

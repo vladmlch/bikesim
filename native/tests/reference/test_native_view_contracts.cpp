@@ -206,6 +206,7 @@ void drive_core_writer() {
 }
 } // namespace
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         views_are_const_windows();
         live_windows();

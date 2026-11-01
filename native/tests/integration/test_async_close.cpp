@@ -523,10 +523,13 @@ std::unique_ptr<res::PreparedEnvironment> research_seed(bool async_telemetry) {
             != std::string::npos;
     }
     bt::require(primary, "the constructor failure propagates");
-    // NOLINTNEXTLINE(bugprone-use-after-move) asserting restored ownership is the test's purpose
+    // Reading the moved-from unique_ptr IS the contract under test: PolicySession
+    // restores caller ownership when its constructor throws.
+    // cppcheck-suppress accessMoved
     bt::require(environment != nullptr,
         "caller environment ownership is restored on constructor failure");
-    environment->close();
+    // cppcheck-suppress accessMoved
+    environment->close(); // NOLINT(bugprone-use-after-move) the moved-handle read is the contract under test
     bt::require(environment->closed(),
         "the restored environment releases its async worker on close");
 }
@@ -568,6 +571,7 @@ std::unique_ptr<res::PreparedEnvironment> research_seed(bool async_telemetry) {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         worker_roundtrip_publishes_period();
         worker_reports_publication_error();

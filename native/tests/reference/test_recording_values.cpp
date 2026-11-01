@@ -244,32 +244,33 @@ void test_ordinary_commands_tolerate_explicit_null_optional_drive() {
         const auto episode = make_episode(Wire{drive_channels(.5)});
         const auto source = make_source(episode, synthetic_catalog(), true);
         const auto applied = first_applied(source);
-        const auto &demand = applied->columns.at("front_brake_demand");
+        const auto &demand = applied.value().columns.at("front_brake_demand"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         bt::require(demand.d.size() == 1 && demand.d[0] == .5 &&
                     demand.valid.size() == 1 && demand.valid[0] == 1 &&
-                    applied->columns.at("front_brake_demand_present").b[0] == 1,
+                    applied.value().columns.at("front_brake_demand_present").b[0] == 1, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                     "authored drive demand keeps value + flag");
     }
     {   // missing control is a hard failure at table walk
-        auto episode = std::make_shared<runtime::OwnedNativeEpisode>();
-        episode->generation = 1;
-        episode->samples.push_back(sample_row(
-            0, 0., .001, {}, {}, {}, {},
-            WireObject{{"drive", Wire{WireObject{}}}}));
-        const auto source = make_source(episode, synthetic_catalog(), true);
-        throws<std::invalid_argument>(
-            [&] {
-                source->tables(4, [](std::string_view,
-                                     const runtime::EncodedTable &) {});
-            },
-            "ordinary applied control",
-            "ordinary projection requires applied control");
+      auto const episode = std::make_shared<runtime::OwnedNativeEpisode>();
+      episode->generation = 1;
+      episode->samples.push_back(
+          sample_row(0, 0., .001, {}, {}, {}, {},
+                     WireObject{{"drive", Wire{WireObject{}}}}));
+      const auto source = make_source(episode, synthetic_catalog(), true);
+      throws<std::invalid_argument>(
+          [&] {
+            source->tables(
+                4, [](std::string_view, const runtime::EncodedTable &) {});
+          },
+          "ordinary applied control",
+          "ordinary projection requires applied control");
     }
 }
 
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_optional_leaf_and_nullable_parent_have_separate_masks();
         test_synthetic_value_cases_cover_the_reviewed_optional_matrix();

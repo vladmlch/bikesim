@@ -2613,6 +2613,7 @@ void test_derived_events_real_episode_bitwise() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_make_episode_builds_retained_samples();
         test_make_episode_preserves_authored_value_tree();

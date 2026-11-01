@@ -507,6 +507,7 @@ void test_summary_mode_reports_parameter_changes_without_alignment() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_recording_json_boundary_round_trips_typed_literals();
         test_window_returns_interval_overlap_and_selected_fields();

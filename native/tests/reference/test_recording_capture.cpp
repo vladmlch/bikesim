@@ -412,6 +412,7 @@ void test_interrupt_shield_is_a_flag_holder_off_main_thread() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_disabled_capture_has_no_persistent_side_effect();
         test_disabled_capture_still_validates_but_retains_nothing();

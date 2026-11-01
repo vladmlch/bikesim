@@ -987,6 +987,7 @@ void test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes() {
 
 // The dispatch lambda's frame aggregates the inlined test locals across the
 // 26 ports; tests are the leaf of the call graph so the bound is advisory.
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {

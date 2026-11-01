@@ -127,9 +127,11 @@ void test_realtime_factor_for_full_twenty_seconds(const std::filesystem::path& a
 }
 } // namespace
 int main(int argc, char** argv) {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([&] {
         bt::require(argc == 4, "artifact path, track file and physics config are supplied by CTest");
         const auto owned = bike::platform::main_arguments(argc, argv);
+        // cppcheck-suppress containerOutOfBounds // the argc == 4 require above guarantees owned has 4 elements; cppcheck does not model the span extent
         test_realtime_factor_for_full_twenty_seconds(owned[1], owned[2], owned[3]);
     });
 }

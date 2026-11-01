@@ -306,40 +306,44 @@ void test_finish_off_main_thread_shield_degrades_but_records() {
 // tests/reference/test_research_recording_lifecycle.py::
 //   test_frontend_failure_between_windows_is_not_replay_eligible
 void test_frontend_failure_between_windows_is_not_replay_eligible() {
-    Directory directory;
-    auto [env, publication] = recording_env(directory.path);
-    research::ResearchRun launch(*env, publication);
-    (void)step(*env, motor_control(0.));
-    throws_runtime([&] {
+  Directory const directory;
+  auto [env, publication] = recording_env(directory.path);
+  research::ResearchRun launch(*env, publication);
+  (void)step(*env, motor_control(0.));
+  throws_runtime(
+      [&] {
         (void)launch.finish(std::make_exception_ptr(
-                                std::runtime_error("frontend callback injection")), true); },
-        "frontend callback injection");
-    const auto path = launch.finish(); // launch.path twin
-    env->close();
-    bt::require(path.has_value(), "the failure seal still publishes");
-    rec::Recording saved(*path);
-    const auto episode = saved.episode();
-    bt::require(io::as_int64(rd::field(episode, "complete_control_steps"),
-                             "complete_control_steps") == 1,
-                "the completed window is retained");
-    bt::require(!io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
-                "a frontend failure seal is not replay eligible");
-    const auto summary =
-        io::parse_recording_json(rd::string(rd::field(episode, "summary_json")));
-    const auto &research_node = rd::field(summary, "research");
-    bt::require(!io::as_bool(rd::field(research_node, "valid_for_learning"),
-                             "valid_for_learning"),
-                "a launch failure poisons valid_for_learning");
-    const auto &launch_failure =
-        rd::field(rd::field(research_node, "run_metadata"), "launch_failure");
-    bt::require(io::as_string(rd::field(launch_failure, "error"), "error") ==
-                    "frontend callback injection",
-                "the launch failure records the primary exception");
+                                std::runtime_error("frontend callback injection")), true);
+      },
+      "frontend callback injection");
+  const auto path = launch.finish(); // launch.path twin
+  env->close();
+  bt::require(path.has_value(), "the failure seal still publishes");
+  rec::Recording const saved((path).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+  const auto episode = saved.episode();
+  bt::require(io::as_int64(rd::field(episode, "complete_control_steps"),
+                           "complete_control_steps") == 1,
+              "the completed window is retained");
+  bt::require(
+      !io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
+      "a frontend failure seal is not replay eligible");
+  const auto summary =
+      io::parse_recording_json(rd::string(rd::field(episode, "summary_json")));
+  const auto &research_node = rd::field(summary, "research");
+  bt::require(!io::as_bool(rd::field(research_node, "valid_for_learning"),
+                           "valid_for_learning"),
+              "a launch failure poisons valid_for_learning");
+  const auto &launch_failure =
+      rd::field(rd::field(research_node, "run_metadata"), "launch_failure");
+  bt::require(io::as_string(rd::field(launch_failure, "error"), "error") ==
+                  "frontend callback injection",
+              "the launch failure records the primary exception");
 }
 
 } // namespace
 
 int main(int argc, char **argv) {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([&] {
         const auto arguments = std::views::counted(argv, argc);
         if (argc == 2 && std::string_view(arguments[1]) == "--seal-child") {

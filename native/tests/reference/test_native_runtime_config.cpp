@@ -50,12 +50,12 @@
 
 namespace {
 NATIVE_DIAG_PUSH
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 namespace cfg = bike::configuration;
 using runtime_reference::expect_invalid;
 using runtime_reference::welded_dir;
-namespace bio = bike::io;
 
 [[nodiscard]] cfg::SimulationPhysicsConfig welded() {
     return cfg::load_physics(

@@ -31,10 +31,12 @@ macOS.
 
 ## Prerequisites
 
-- The root graph requires no Python. The transition oracle pins **CPython 3.13**
-  (`requires-python = ">=3.13,<3.14"`); the 3.14 interpreter in the historical
-  baseline above does not satisfy the current oracle contract.
-- uv for the project environment; Git; Xcode with the macOS SDK (Xcode
+- The root graph requires no interpreter. The transition oracle's
+  **CPython 3.13** pin, the `bike_native` extension, the uv `--group native`
+  dependency group and the tools/dev.py bootstrap were all removed at T63;
+  the 3.14 interpreter in the historical baseline above is a recorded
+  measurement, not a requirement.
+- Git; Xcode with the macOS SDK (Xcode
   26.6 measured) or the Command Line Tools; CMake 3.27+ (4.4.3 measured).
 - **The OS-default compiler is a candidate, not a promise.** Configure
   probes strict ISO C++23, libc++ hardening (EXTENSIVE by default), the
@@ -47,23 +49,26 @@ macOS.
   `brew --prefix llvm` — `/opt/homebrew/opt/llvm` on Apple Silicon,
   `/usr/local/opt/llvm` on Intel — never a single hard-coded prefix.
 
-## Transition oracle environment
+## Dependency acquisition
+
+The standalone graph consumes the pinned lock at
+`native/dependencies.lock.json`. Populate `.deps` with the checked-in
+acquisition helper, which verifies every archive and member hash before
+placing files:
 
 ```sh
-uv sync --frozen --group native
+bash tools/linux/acquire_deps.sh native/dependencies.lock.json .deps darwin-arm64
 ```
 
-This creates/uses the checkout's `.venv` with the locked dependency set.
-An installer or developer may select another environment by exporting an
-absolute **`UV_PROJECT_ENVIRONMENT`** before the first uv command and
-keeping it for every step; a relative value is rejected.
-`tools/dev.py bootstrap` is the explicit equivalent for
-`uv sync --locked --group native --group dev` and accepts `--python`; it
-never relocks or upgrades dependencies. The native group pins
-`mujoco==3.12.0` and `numpy==2.5.2`; the loaded MuJoCo image must expose
-the project's private ABI symbols and the numerical backend is the system
+Configure points at the result with `-DBIKE_DEPENDENCY_ROOT=<checkout>/.deps`
+(the root presets already default there). The loaded MuJoCo image must
+expose the project's private ABI symbols and the numerical backend is the
+system
 Accelerate provider ([numerical-profiles.md](numerical-profiles.md),
-[dependency-matrix.md](dependency-matrix.md)).
+[dependency-matrix.md](dependency-matrix.md)). The transition oracle's
+`uv sync --frozen --group native` environment, `UV_PROJECT_ENVIRONMENT`
+override and `tools/dev.py bootstrap` helper were removed at T63; there
+is nothing to sync.
 
 ## Configure and build with root presets
 
@@ -91,68 +96,65 @@ and selected-file hashes, MuJoCo private ABI, compiler/stdlib support,
 numerics record and instrumentation controls. Inspect
 `build/<preset>/native_check_context.json` and `bike_policy_report.json`
 (`build/native-release` for release). A successful configure is not a CTest,
-performance, package or GUI acceptance result. The interpreter-specific
-checks below apply only to the transition binding graph, which remains
-until the Phase 4 deletion gate.
+performance, package or GUI acceptance result.
 
-## Transition Python entry points
+## Running the native executables
 
-The application selects `native/build/release` by default, or the absolute
-directory in **`BIKE_NATIVE_BUILD_PATH`**:
+Build products land in `build/<preset>/bin` (`build/native-release/bin`
+for the release preset). The CLI family — `bike-ride`, `bike-sim`,
+`bike-replay`, `bike-research`, `bike-batch`, `bike-settle`, `bike-export`,
+`bike-playground`, `bike-recording` — plus the lane executables
+`bike-native-ride`, `bike-native-checks`, `bike-validate` and
+`bike-measure-realtime` run directly; there is no interpreter, extension
+artifact or environment to select. The retired `BIKE_NATIVE_BUILD_PATH`
+selector and the `--backend` switch survive only as fail-closed CLI
+surface (`--backend` accepts `native` and rejects anything else); the
+interpreter backend was removed at T63.
 
 ```sh
-export BIKE_NATIVE_BUILD_PATH="$(pwd)/native/build/release"
-uv run --frozen --group native bike-ride --backend python --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --headless --duration 1 --no-plots
-uv run --frozen --group native bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --headless --duration 1 --no-plots
+build/native-release/bin/bike-ride --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --headless --duration 1 --no-plots
 ```
 
-`--backend python` is the reference path; `--backend native` requires the
-selected artifact and never falls back to Python. Headless runs need no
+Headless runs need no
 window and initialize no GLFW context. Strict headless physical runs
 terminate at the documented `energy.constraint_work` baseline violation —
 a retained diagnostic prefix, not a crash ([RIDE.md](../RIDE.md)).
 
-**Interactive viewers require `mjpython`** from the same environment as
-MuJoCo — Cocoa's `NSApplication` event loop must run on the main OS thread.
-Every viewer path calls `ensure_macos_mjpython()`
-(`src/bike_sim/sim/playground.py`), which re-execs the original argv under
-the resolved `mjpython` once, marks the process with `MUJOCO_MJPYTHON=1`,
-and restores the environment when the lookup or exec fails. For
-**uv-managed interpreters the re-exec needs
-`DYLD_FALLBACK_LIBRARY_PATH=<python base_prefix>/lib`**: `mjpython` dlopens
-the interpreter by `@rpath`, and a venv keeps `libpython3.x.dylib` in
-`base_prefix/lib`, outside dyld's default fallback path — the helper
-prepends it automatically only when that dylib exists. Without it the
-re-exec dies with `Library not loaded`.
+**Interactive viewers run on the main OS thread** — Cocoa's
+`NSApplication` event loop requirement is a native constraint, not an
+interpreter one. The `mjpython` re-exec machinery and its
+`DYLD_FALLBACK_LIBRARY_PATH` workaround died with the interpreter at T63;
+the native viewer binary simply must launch from the process's main
+thread, which the produced executables already do.
 
 ## Tests and analysis
 
 ```sh
 bash tools/run_tests.sh quick
-NATIVE_TEST_BUILD_PATH="$(pwd)/native/build/release" bash tools/run_tests.sh native
+bash tools/run_tests.sh native
 ```
 
-Profiles: `quick` (Python tests minus `slow` minus direct native files;
-keeps `test_native_check_tools.py`), `native` (configure/build the selected
-directory, all sweeps and controls, CTest, then native+golden pytest —
-~3,200 items) and `full` (adds slow physical/realtime episodes; the
-documented 24-failure baseline set still applies —
-[TESTING.md](../TESTING.md)). `NATIVE_TEST_BUILD_PATH` selects the absolute
-build directory; set `BIKE_NATIVE_BUILD_PATH` to the same directory for the
-full suite — the conftest fails when the two selectors disagree, and child
-`uv run` processes inherit the environment. The legacy
-`NATIVE_TEST_BUILD_DIR` values `''`, `asan`, `rtsan`, `coverage` remain
-accepted.
+Profiles: `quick` (one `cmake --workflow --preset <preset>` run whose test
+step excludes the `slow|audit|package` labels), `native` (configure +
+build, every produced static-analysis sweep and the structural contracts
+check via `tools/run_native_checks.sh`, then CTest without
+`slow|audit|package`) and `full` (`native` plus the explicit `slow`,
+`audit` and `package` label gates). `bash tools/run_tests.sh native asan`
+runs the same stages on `build/asan`. `NATIVE_TEST_BUILD_PATH` selects the
+absolute build directory for the produced checks; the retired
+`BIKE_NATIVE_BUILD_PATH` selector was removed at T63.
 
-The `native`/`full` preflight runs the sweeps — also standalone CMake
-targets: `check_frontends` (second-frontend syntax+analyzer), `check_tidy`
+The `native`/`full` sweep stage runs the produced checks — also standalone
+CMake targets where defined: `check_frontends` (second-frontend
+syntax+analyzer), `check_tidy`
 (clang-tidy), `check_analyzer` (clang `--analyze`; alpha findings print but
 never block), `check_cppcheck`, `check_odr`, `check_scripts` (shellcheck),
-plus `headers`, `diagnostic-controls`, `context` and
-`check_native_contracts`. Each failed sweep names its CMake target, e.g.
-`cmake --build <selected-build> --target check_tidy`. **A missing required
-analysis tool is an error, not a skip.** Tools resolve through
-`tools/native_toolchain.py` — explicit `CLANG_TIDY`, `ANALYZER_CLANG`,
+plus `headers`, `diagnostic-controls`, `context` and the contracts sweep.
+Each failed sweep names its kind; rerun it standalone with
+`build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`.
+**A missing required
+analysis tool is an error, not a skip.** Tools resolve through the
+configure-recorded check context — explicit `CLANG_TIDY`, `ANALYZER_CLANG`,
 `CPPCHECK`, `GXX`, `LLVM_PROFDATA`, `LLVM_COV` overrides first, then the
 configured compiler's toolchain siblings, qualified PATH candidates, and —
 on macOS only — `xcrun --find` inside the selected Xcode toolchain. The
@@ -166,93 +168,79 @@ host.
 ASan/UBSan lane:
 
 ```sh
-uv run --frozen --group native --no-sync cmake -S native -B native/build/asan -DNATIVE_SANITIZE=ON
-uv run --frozen --group native cmake --build native/build/asan
-NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native
+cmake --workflow --preset asan
+bash tools/run_tests.sh native asan
 ```
 
 The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
-with `-fno-sanitize-recover=all`. Every instrumented consumer runs through
-`tools/native_runtime.py run --build <build> -- <argv>`, which prepends the
-recorded compiler-matched runtime to `DYLD_INSERT_LIBRARIES` at exec time —
-setting it in the caller's shell does not survive the `uv run` chain. A
-stale or unresolvable runtime fails closed; the import then verifies the
-runtime is actually mapped in the process's dyld image list.
+with `-fno-sanitize-recover=all`. Instrumented executables link their own
+compiler-matched runtime — the preset's sanitizer link flags replaced the
+interpreter preload launcher; an unresolvable runtime fails closed at
+configure.
 
 RTSan (`-fsanitize=realtime`) verifies the marked warm core never
-allocates or locks. AppleClang rejects the flag — configure a separately
+allocates or locks. AppleClang rejects the flag — the `rtsan` preset
+explicitly selects `/opt/homebrew/opt/llvm/bin/clang++`, a separately
 qualified LLVM toolchain (the measured lane used Homebrew LLVM 23.1.2;
 LLVM >= 20 is the floor):
 
 ```sh
-LLVM_PREFIX="$(brew --prefix llvm)"
-uv run --frozen --group native --no-sync cmake -S native -B native/build/rtsan \
-  -DCMAKE_CXX_COMPILER="$LLVM_PREFIX/bin/clang++" -DNATIVE_RTSAN=ON
-uv run --frozen --group native cmake --build native/build/rtsan
-NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
+cmake --workflow --preset rtsan
+bash tools/run_tests.sh native rtsan
 ```
 
-Coverage (`NATIVE_COVERAGE=ON`) requires an LLVM clang-family compiler and
+Coverage requires an LLVM clang-family compiler and
 a `llvm-profdata`/`llvm-cov` pair qualified against it by a real
 instrumented control — `LLVM_PROFDATA`/`LLVM_COV` overrides, the configured
 compiler's siblings, PATH, then the macOS-only `xcrun --find` fallback:
 
 ```sh
-tools/native_coverage.sh native/build/coverage
+cmake --workflow --preset coverage-report
 ```
 
-Artifacts land in `<build>/native_coverage_runs/run.*` with a
-`coverage_provenance.json`; mismatched tools fail with the tool's own
+The coverage preset builds the instrumented tree, runs the native tests,
+merges only fresh profiles and writes `build/coverage/coverage.lcov` plus
+`coverage-summary.txt`; mismatched tools fail with the tool's own
 diagnostics. See [TESTING.md](../TESTING.md) for sweep internals and dated
 measurement snapshots.
 
 ## Editor setup
 
-`native/.clangd` points clangd at `native/build`'s
+`native/.clangd` points clangd at the default build tree's
 `compile_commands.json` — CMake writes one per configured build directory
 (`CMAKE_EXPORT_COMPILE_COMMANDS=ON`). Select a different build per editor
 session with `--compile-commands-dir=<build dir>` (for example
-`native/build/asan` or `native/build/release`), and let clangd resolve the
+`build/native-release` or `build/asan`), and let clangd resolve the
 recorded compiler's headers with `--query-driver=<the configured compiler
 in that build>` — e.g. `/usr/bin/c++` or the Homebrew LLVM `clang++`, never
 a fixed absolute path shared across machines.
 
-## Offline installation
+## Offline rehearsal and packages
 
-Native-capable offline delivery uses a **schema-1 source bundle**: the
-extracted root carries `manifest.json`, `project/` (the source tree),
-`wheelhouse/`, `requirements.txt`, `offline-tools.json`,
-`dependency-closure.json` and `assembly-report.json`. `tools/offline_bundle.py`
-assembles platform-matched bundles online; installation runs entirely from
-validated local payloads — no network, no warm-cache dependency.
+Native delivery is the CPack source/binary TGZ pair produced by the
+`package` lane (`bash tools/ci_presets.sh release package`); the package
+audit and `package_smoke` checks verify the archives contain no
+interpreter or binding surface. The `offline` rehearsal mode is the
+Linux lane's job: it unpacks the source package in a fresh container with
+`--network none`, extracts dependencies with `tools/linux/extract_deps.sh`,
+then runs `cmake --workflow --preset release`.
 
-Entry points: `packaging/install_full.sh` and `packaging/install_slim.sh`
-inside an extracted bundle (both delegate to `tools/install_offline.py`).
-Their flags are still being qualified by the offline-install task — run
-`python3 tools/install_offline.py --help` inside the bundle for the
-authoritative surface rather than trusting a copied command line. A native
-install creates the source project's environment with
-`UV_PROJECT_ENVIRONMENT` pinned to the new venv, syncs the frozen native+dev
-closure offline, then configures/builds/doctors locally. Slim bundles
-verify every declared external provider at the exact pinned version on the
-selected interpreter before and after environment creation; an unqualified
-external stack fails with the full bundle as remediation. GUI capability in
-an offline install still requires the macOS desktop session and `mjpython`;
-headless native installation never needs a window.
-
-Legacy manifest-less bundles remain Python-only and are labeled as such —
-a filename never grants native capability. See
-[install-modes.md](install-modes.md) for the three installation modes.
+The interpreter-era schema-1 bundles (wheelhouse, `requirements.txt`,
+the offline_bundle assembler and the packaging install_full/install_slim
+entry points delegating to tools/install_offline.py) were removed at
+T63 — a filename never grants capability. See
+[install-modes.md](install-modes.md) for the delivery modes.
 
 ## Failure diagnosis
 
-`doctor --build <dir> --numerics` is the first evidence command for any
+Configure diagnostics and the selected build's
+`native_check_context.json` are the first evidence for any
 environment or artifact failure; the symptom → evidence → bounded
 remediation table (SDK selection, missing MuJoCo private symbol, provider
-mismatch, missing artifact, wrong SOABI, stale source stamp, unresolved
-dyld image, `mjpython`/`DYLD_FALLBACK_LIBRARY_PATH`, sanitizer and coverage
-tool lanes, strict invalid-controller stop, replay identity, slim
-externals) lives in [troubleshooting.md](troubleshooting.md).
+mismatch, missing artifact, unresolved
+dyld image, sanitizer and coverage
+tool lanes, strict invalid-controller stop, replay identity) lives in
+[troubleshooting.md](troubleshooting.md).
 ## Phase 3 instrumentation and packaging
 
 ```sh

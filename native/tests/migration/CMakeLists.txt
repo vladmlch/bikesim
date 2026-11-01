@@ -1,14 +1,12 @@
 # Migration contract-test harness and per-task regression executables (T02).
 # One executable and one CTest name per task: migration_TNN <- test_tNN.cpp.
-# Registered inside the legacy native build until T03's standalone root
-# build; targets inherit this directory scope's warning/hardening/sanitizer
-# context through the _native_contract_* variables captured by
-# native/CMakeLists.txt.
+# Registered only in the repository-root build since T63 removed the
+# transition native/ graph; targets get warning/hardening/sanitizer policy
+# from bike_apply_native_policy directly.
 
 # The fixture root is computed from this directory up to the repository root
 # (native/tests/migration/../../..) — never from the process working
-# directory or a nested PROJECT_SOURCE_DIR (which is native/ inside this
-# legacy build).
+# directory or a nested PROJECT_SOURCE_DIR.
 get_filename_component(_migration_repo_root
   "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 set(_migration_fixture_root "${_migration_repo_root}/tests/fixtures/migration")
@@ -53,12 +51,6 @@ set_target_properties(bike_migration_test PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_migration_test PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_migration_test PRIVATE ${_native_contract_compile_definitions})
-endif()
 # The fixture root and oracle manifest reach the support TU as a generated
 # header, not quoted compile definitions: the check-context writer embeds target
 # properties verbatim, and a quote inside one would make native_check_context.json
@@ -74,16 +66,12 @@ target_include_directories(bike_migration_test PUBLIC
 target_include_directories(bike_migration_test SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
 target_link_libraries(bike_migration_test PUBLIC bike_io)
-# In the standalone root build the _native_contract_* context belongs to the
-# legacy binding scope and is unset here — apply the shared policy directly.
-if(BIKE_ROOT_BUILD)
-  bike_apply_native_policy(bike_migration_test)
-endif()
+bike_apply_native_policy(bike_migration_test)
 
 # allocation_faults.cpp is the throwing-allocation override TU: it defines
 # replacement operator new/delete plus the counting seam, so it must land
 # in test binaries directly, never in a shipped library. Two consumers
-# share it — native_contract_tests (legacy graph) and migration_T07 —
+# share it — native_contract_tests and migration_T07 —
 # and the ODR sweep compiles every compile-database entry once before a
 # combined relocatable link, so per-target duplicate compiles would
 # collide. One OBJECT library = one compile entry; each executable gets
@@ -94,34 +82,15 @@ set_target_properties(bike_test_allocation_faults PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(bike_test_allocation_faults PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(bike_test_allocation_faults PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(bike_test_allocation_faults)
-endif()
 
 add_executable(migration_T02 test_t02.cpp)
 set_target_properties(migration_T02 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T02 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T02 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T02 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T02 PRIVATE bike_migration_test)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T02)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T02 COMMAND migration_T02)
@@ -134,38 +103,20 @@ if(BUILD_TESTING)
 endif()
 
 # T04 engine-boundary regression: links the shared pinned-interceptor
-# library — bike_engine in the standalone root build, bike_native_engine in
-# the legacy binding build — so both graphs exercise the identical
-# engine_call.cpp TU. The src/MuJoCo include edges mirror the consuming
-# targets' SYSTEM treatment in each graph.
+# library bike_engine so this graph exercises the engine_call.cpp TU. The
+# src/MuJoCo include edges mirror the consuming targets' SYSTEM treatment.
 add_executable(migration_T04 test_t04.cpp)
 set_target_properties(migration_T04 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T04 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T04 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T04 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T04 PRIVATE bike_migration_test)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T04)
   target_include_directories(migration_T04 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(migration_T04 PRIVATE bike_engine)
   bike_rewrite_mujoco_load_name(migration_T04
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T04 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T04 PRIVATE bike_native_engine)
-  bike_fix_mujoco_install_name(migration_T04)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T04 COMMAND migration_T04)
@@ -182,21 +133,10 @@ set_target_properties(migration_T05 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T05 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T05 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T05 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T05 PRIVATE bike_migration_test)
 target_include_directories(migration_T05 SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T05)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T05 COMMAND migration_T05)
@@ -213,39 +153,21 @@ set_target_properties(migration_T06 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T06 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T06 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T06 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T06 PRIVATE bike_migration_test bike_platform)
 target_include_directories(migration_T06 SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
-# The packaging-axis expectation mirrors the bike_platform identity constants
-# in this graph: the standalone root graph records its own BIKE_BUILD_*
-# options; the standalone legacy graph always builds the transition
-# extension (bindings=true, GUI off unless configured).
-set(_t06_expect_bindings 1)
+# The packaging-axis expectation mirrors the bike_platform identity
+# constants: bindings are permanently absent (T63); the GUI bit reflects
+# BIKE_BUILD_GUI.
+set(_t06_expect_bindings 0)
 set(_t06_expect_gui 0)
-if(BIKE_ROOT_BUILD)
-  set(_t06_expect_bindings 0)
-  if(BIKE_BUILD_PYTHON_BINDINGS)
-    set(_t06_expect_bindings 1)
-  endif()
-endif()
 if(BIKE_BUILD_GUI)
   set(_t06_expect_gui 1)
 endif()
 target_compile_definitions(migration_T06 PRIVATE
   "BIKE_T06_EXPECT_BINDINGS=${_t06_expect_bindings}"
   "BIKE_T06_EXPECT_GUI=${_t06_expect_gui}")
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T06)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T06 COMMAND migration_T06)
@@ -255,11 +177,10 @@ endif()
 
 # T07 writer-config boundary regression: the typed WriterConfig decode
 # (writer_config.cpp) plus the Python-free Stepper construction path —
-# the shared core object set (bike_core / bike_native_contract_core) and
-# the pinned engine interceptor, the identical TUs the transition
-# extension links. No Python/nanobind include enters this target in
-# either graph: compiling test_t07.cpp against stepper.hpp +
-# writer_config.hpp is the include-closure contract itself.
+# the shared core object set (bike_core) and the pinned engine
+# interceptor. No Python/nanobind include enters this target: compiling
+# test_t07.cpp against stepper.hpp + writer_config.hpp is the
+# include-closure contract itself.
 # The allocation-override object lands via $<TARGET_OBJECTS:...> — see the
 # bike_test_allocation_faults comment above for why the TU compiles once.
 add_executable(migration_T07 test_t07.cpp
@@ -268,18 +189,8 @@ set_target_properties(migration_T07 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T07 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T07 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T07 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T07 PRIVATE bike_migration_test)
 bike_migration_link_numerics(migration_T07)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T07)
   target_include_directories(migration_T07 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
@@ -287,13 +198,6 @@ if(BIKE_ROOT_BUILD)
     bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T07
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T07 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T07 PRIVATE
-    bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_fix_mujoco_install_name(migration_T07)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T07 COMMAND migration_T07)
@@ -303,8 +207,8 @@ endif()
 
 # T08 state-wire codec regression: the owned bike::io::Value codecs for
 # the rider and drivetrain state documents (drivetrain/state_codec.cpp,
-# rider/state_codec.cpp) — the shared core object set (bike_core /
-# bike_native_contract_core) plus the pinned engine interceptor for the
+# rider/state_codec.cpp) — the shared core object set (bike_core)
+# plus the pinned engine interceptor for the
 # welded_pinned Stepper that supplies the contacts topology gate, plus
 # bike_rider_math: the OBJECT core now carries rider/state_codec.o whose
 # spindle:: validator refs need the single-compile library at final link. No
@@ -316,18 +220,8 @@ set_target_properties(migration_T08 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T08 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T08 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T08 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T08 PRIVATE bike_migration_test)
 bike_migration_link_numerics(migration_T08)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T08)
   target_include_directories(migration_T08 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
@@ -335,13 +229,6 @@ if(BIKE_ROOT_BUILD)
     bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T08
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T08 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T08 PRIVATE
-    bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_fix_mujoco_install_name(migration_T08)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T08 COMMAND migration_T08)
@@ -354,22 +241,11 @@ set_target_properties(migration_T12 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T12 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T12 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T12 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T12 PRIVATE bike_migration_test
   bike_configuration)
 target_include_directories(migration_T12 SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T12)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T12 COMMAND migration_T12)
@@ -379,27 +255,17 @@ endif()
 
 # T09 owned-runtime boundary regression: read_bootstrap/compose_bootstrap
 # (bootstrap_io.cpp + bootstrap.cpp) and NativeRideRuntime (runtime.cpp)
-# — the shared core object set (bike_core / bike_native_contract_core)
+# — the shared core object set (bike_core)
 # plus the pinned engine interceptor. No Python/nanobind include enters
-# this target in either graph: compiling test_t09.cpp against
+# this target: compiling test_t09.cpp against
 # runtime/runtime.hpp is the include-closure contract itself.
 add_executable(migration_T09 test_t09.cpp)
 set_target_properties(migration_T09 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T09 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T09 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T09 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T09 PRIVATE bike_migration_test)
 bike_migration_link_numerics(migration_T09)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T09)
   target_include_directories(migration_T09 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
@@ -407,13 +273,6 @@ if(BIKE_ROOT_BUILD)
     bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T09
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T09 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T09 PRIVATE
-    bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_fix_mujoco_install_name(migration_T09)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T09 COMMAND migration_T09)
@@ -430,22 +289,11 @@ set_target_properties(migration_T13 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T13 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T13 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T13 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T13 PRIVATE bike_migration_test
   bike_configuration bike_platform)
 target_include_directories(migration_T13 SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T13)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T13 COMMAND migration_T13)
@@ -466,22 +314,11 @@ set_target_properties(migration_T14 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T14 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T14 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T14 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T14 PRIVATE bike_migration_test
   bike_kinematics) # bike_geometry comes transitively (PUBLIC edge).
 target_include_directories(migration_T14 SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T14)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T14 COMMAND migration_T14)
@@ -491,7 +328,7 @@ endif()
 
 # T10 owned-research boundary regression: read_research_bootstrap /
 # decode_* (research_io.cpp) and NativeResearchRuntime (research.cpp) —
-# the shared core object set (bike_core / bike_native_contract_core)
+# the shared core object set (bike_core)
 # plus the pinned engine interceptor and bike_rider_math: the core's
 # rider/state_codec.o spindle:: validator refs need the single-compile
 # library at final link. No Python/nanobind include enters this target
@@ -502,18 +339,8 @@ set_target_properties(migration_T10 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T10 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T10 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T10 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T10 PRIVATE bike_migration_test)
 bike_migration_link_numerics(migration_T10)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T10)
   target_include_directories(migration_T10 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
@@ -521,13 +348,6 @@ if(BIKE_ROOT_BUILD)
     bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T10
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T10 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T10 PRIVATE
-    bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_fix_mujoco_install_name(migration_T10)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T10 COMMAND migration_T10)
@@ -550,18 +370,8 @@ set_target_properties(migration_T11 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T11 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T11 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T11 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T11 PRIVATE bike_migration_test)
 bike_migration_link_numerics(migration_T11)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T11)
   target_include_directories(migration_T11 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
@@ -569,13 +379,6 @@ if(BIKE_ROOT_BUILD)
     bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T11
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T11 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T11 PRIVATE
-    bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_fix_mujoco_install_name(migration_T11)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T11 COMMAND migration_T11)
@@ -595,22 +398,11 @@ set_target_properties(migration_T19 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T19 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T19 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T19 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T19 PRIVATE bike_migration_test
   bike_random)
 target_include_directories(migration_T19 SYSTEM PRIVATE
   "${_migration_repo_root}/native/src")
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T19)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T19 COMMAND migration_T19)
@@ -634,18 +426,8 @@ set_target_properties(migration_T15 PROPERTIES
   CXX_STANDARD 23
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
-if(_native_contract_compile_options)
-  target_compile_options(migration_T15 PRIVATE ${_native_contract_compile_options})
-endif()
-if(_native_contract_compile_definitions)
-  target_compile_definitions(migration_T15 PRIVATE ${_native_contract_compile_definitions})
-endif()
-if(_native_contract_link_options)
-  target_link_options(migration_T15 PRIVATE ${_native_contract_link_options})
-endif()
 target_link_libraries(migration_T15 PRIVATE bike_migration_test bike_model)
 bike_migration_link_numerics(migration_T15)
-if(BIKE_ROOT_BUILD)
   bike_apply_native_policy(migration_T15)
   target_include_directories(migration_T15 SYSTEM PRIVATE
     "${_migration_repo_root}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
@@ -653,13 +435,6 @@ if(BIKE_ROOT_BUILD)
     bike_rider_math)
   bike_rewrite_mujoco_load_name(migration_T15
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  target_include_directories(migration_T15 SYSTEM PRIVATE
-    "${_migration_repo_root}/native/src" "${MJ_DIR}/include")
-  target_link_libraries(migration_T15 PRIVATE
-    bike_native_contract_core bike_native_engine bike_rider_math)
-  bike_fix_mujoco_install_name(migration_T15)
-endif()
 
 if(BUILD_TESTING)
   add_test(NAME migration_T15 COMMAND migration_T15)
@@ -674,12 +449,8 @@ foreach(_startup_task IN ITEMS 16 17 18 20 21 22 23 24 25)
   add_executable(${_startup_test} "test_t${_startup_task}.cpp")
   bike_startup_target_policy(${_startup_test} "${_migration_repo_root}/native")
   target_link_libraries(${_startup_test} PRIVATE bike_migration_test bike_app)
-  if(BIKE_ROOT_BUILD)
     bike_rewrite_mujoco_load_name(${_startup_test}
       "${BIKE_DEP_mujoco_LIBRARY}")
-  else()
-    bike_fix_mujoco_install_name(${_startup_test})
-  endif()
   if(BUILD_TESTING)
     add_test(NAME ${_startup_test} COMMAND ${_startup_test})
     set_tests_properties(${_startup_test} PROPERTIES
@@ -703,12 +474,8 @@ foreach(_physics_task RANGE 26 37)
   elseif(_physics_task EQUAL 33)
     target_link_libraries(${_physics_test} PRIVATE bike_playground)
   endif()
-  if(BIKE_ROOT_BUILD)
     bike_rewrite_mujoco_load_name(${_physics_test}
       "${BIKE_DEP_mujoco_LIBRARY}")
-  else()
-    bike_fix_mujoco_install_name(${_physics_test})
-  endif()
   if(BUILD_TESTING)
     if(_physics_task EQUAL 35)
       add_test(NAME ${_physics_test} COMMAND ${_physics_test}
@@ -736,12 +503,8 @@ add_dependencies(migration_T35 migration_policy_fixture migration_policy_missing
 add_executable(migration_T30_native_contacts test_native_contacts.cpp)
 bike_startup_target_policy(migration_T30_native_contacts "${_migration_repo_root}/native")
 target_link_libraries(migration_T30_native_contacts PRIVATE bike_migration_test bike_app)
-if(BIKE_ROOT_BUILD)
   bike_rewrite_mujoco_load_name(migration_T30_native_contacts
     "${BIKE_DEP_mujoco_LIBRARY}")
-else()
-  bike_fix_mujoco_install_name(migration_T30_native_contacts)
-endif()
 if(BUILD_TESTING)
   add_test(NAME migration_T30_native_contacts COMMAND migration_T30_native_contacts)
   set_tests_properties(migration_T30_native_contacts PROPERTIES
@@ -783,12 +546,8 @@ foreach(_recording_task RANGE 38 51)
     endif()
   endif()
   if(NOT _recording_task EQUAL 38)
-    if(BIKE_ROOT_BUILD)
       bike_rewrite_mujoco_load_name(${_recording_test}
         "${BIKE_DEP_mujoco_LIBRARY}")
-    else()
-      bike_fix_mujoco_install_name(${_recording_test})
-    endif()
   endif()
   if(BUILD_TESTING)
     if(_recording_task EQUAL 46)
@@ -811,7 +570,7 @@ endforeach()
 # T03 build-contract regression: a CTest script test running the produced
 # configure/build/ctest command contract plus a real custom build target —
 # not a fake empty C++ executable. The dependency module anchors its
-# BIKE_DEPENDENCY_ROOT/LOCK defaults at the repository root, so both this
-# build and the legacy binding build hand the script the same .deps tree.
+# BIKE_DEPENDENCY_ROOT/LOCK defaults at the repository root, so the build
+# hands the script the same .deps tree it consumed at configure time.
 bike_register_migration_t03(
   "${_migration_repo_root}" "${BIKE_DEPENDENCY_ROOT}" "${BIKE_DEPENDENCY_LOCK}")

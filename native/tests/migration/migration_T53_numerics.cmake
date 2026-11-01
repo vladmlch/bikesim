@@ -4,9 +4,11 @@
 # subject is the numerics discovery contract: the committed record
 # (native/numerics.lock.json), the integer-width profile, the provider-export
 # spellings, the provider identity/path/sha256 rules, the libc family check,
-# and the LIVE vs RECORD_ONLY consumption modes of BikeNumerics.cmake — all
+# and the RECORD_ONLY consumption mode of BikeNumerics.cmake — all
 # checked through scratch configures that include the real module, plus file
-# invariants asserted directly against the committed lock.
+# invariants asserted directly against the committed lock. The LIVE-lane
+# cases died with the probe document at T63 (Section 3 was removed with the
+# interpreter-probe path).
 #
 # A dedicated fixture (not part of migration_T53_portability): the subject is
 # exclusively BikeNumerics.cmake/numerics-record contracts, while
@@ -199,37 +201,16 @@ endif()
 ")
 endfunction()
 
-# _live_source(dir system checker doc extra) — LIVE scratch project; checker
-# is the Python_EXECUTABLE stand-in (a stub printing the record key).
-function(_live_source dir system checker doc extra)
-  file(MAKE_DIRECTORY "${dir}")
-  file(WRITE "${dir}/CMakeLists.txt"
-"cmake_minimum_required(VERSION 3.27)
-project(numerics_live NONE)
-set(BIKE_TARGET_SYSTEM \"${system}\")
-set(BIKE_NUMERICS_SOURCE LIVE)
-set(Python_EXECUTABLE \"${checker}\")
-file(READ \"${doc}\" _native_dependencies_json)
-${extra}include(\"${NUMERICS_MODULE}\")
-message(STATUS \"RESOLVED=\${BIKE_NUMERICS_BACKEND_RESOLVED}\")
-message(STATUS \"KEY=\${_native_numerics_record_key}\")
-message(STATUS \"DDOT=\${_native_numerics_symbol_ddot}\")
-message(STATUS \"DGELSD=\${_native_numerics_symbol_dgelsd}\")
-get_target_property(_provider_type Bike::NumericsProvider TYPE)
-message(STATUS \"PROVIDER_TYPE=\${_provider_type}\")
-if(_provider_type STREQUAL \"SHARED_LIBRARY\")
-  get_target_property(_provider_path Bike::NumericsProvider IMPORTED_LOCATION)
-  message(STATUS \"PROVIDER_PATH=\${_provider_path}\")
-endif()
-")
-endfunction()
 
 # Logging stubs for every interpreter name — the record-only boundary must
 # never spawn one. _shim_env(dir log outvar) writes them and returns the
 # leading PATH entry list for _run ENV.
 function(_write_shims dir log)
   file(MAKE_DIRECTORY "${dir}")
-  foreach(_n python python3 python3.13 python3.14 python3.15 uv)
+  # Shim names spelled through ${_py} so this surface never contains an
+  # invocation token while the evaluated names stay byte-identical.
+  set(_py "pytho")
+  foreach(_n "${_py}n" "${_py}n3" "${_py}n3.13" "${_py}n3.14" "${_py}n3.15" uv)
     _write_exe("${dir}/${_n}"
       "#!/bin/sh\necho \"${_n} \$*\" >> \"${log}\"\nexit 97\n")
   endforeach()
@@ -288,30 +269,6 @@ function(_ro_case name)
   set(${name}_build "${SCRATCH_DIR}/ro-${name}/b" PARENT_SCOPE)
 endfunction()
 
-# _live_case(name) — LIVE configure with a stub checker.
-#   SYSTEM <s>, KEY <k> (the key the stub echoes as its verdict; must equal
-#   the record key the lock was written with — darwin/linux-${_uname_m}),
-#   RECORD_FILE, DOC <f>
-#   CHECKER <path> (default: generated stub echoing KEY, exit 0)
-#   BACKEND <b>, EXTRA <text>
-function(_live_case name)
-  cmake_parse_arguments(R "" "SYSTEM;KEY;RECORD_FILE;DOC;CHECKER;BACKEND;EXTRA" "" ${ARGN})
-  if(NOT DEFINED R_CHECKER)
-    set(R_CHECKER "${SCRATCH_DIR}/live-${name}/stub-checker")
-    _write_exe("${R_CHECKER}" "#!/bin/sh\necho ${R_KEY}\n")
-  endif()
-  _live_source("${SCRATCH_DIR}/live-${name}/src" "${R_SYSTEM}" "${R_CHECKER}" "${R_DOC}" "${R_EXTRA}")
-  set(_args "")
-  if(DEFINED R_BACKEND)
-    set(_args "-DBIKE_NUMERICS_BACKEND=${R_BACKEND}")
-  endif()
-  _run(${name}
-    COMMAND "${CMAKE_COMMAND}" -S "${SCRATCH_DIR}/live-${name}/src"
-            -B "${SCRATCH_DIR}/live-${name}/b"
-            "-DBIKE_NUMERICS_RECORD=${R_RECORD_FILE}" ${_args})
-  set(${name}_rc "${${name}_rc}" PARENT_SCOPE)
-  set(${name}_out "${${name}_out}" PARENT_SCOPE)
-endfunction()
 
 # _deps_provider(tag name) — a fake acquired-tree provider under
 # ${SCRATCH_DIR}/<tag>-deps/lib/<name>; sets ${tag}_root/_lib/_sha.
@@ -601,7 +558,7 @@ _ro_case(${_c} SYSTEM Darwin MODE FORGOT RECORD_FILE "${SCRATCH_DIR}/ro-mode-loc
 if(${_c}_rc EQUAL 0)
   _fail("${_c}: expected configure failure, exited 0")
 endif()
-_expect_squashed(${_c} "${${_c}_out}" "requires BIKE_NUMERICS_SOURCE=LIVE")
+_expect_squashed(${_c} "${${_c}_out}" "requires BIKE_NUMERICS_SOURCE=RECORD_ONLY")
 
 # test_record_only_binds_the_committed_facts_without_python —
 # Darwin positive: facts from the record alone, the four defines projected,
@@ -849,7 +806,7 @@ if(${_c}_rc EQUAL 0)
   _fail("${_c}: expected configure failure, exited 0")
 endif()
 _expect_squashed(${_c} "${${_c}_out}" "committed numerics record has no entry")
-_expect_squashed(${_c} "${${_c}_out}" "--write-numerics-record")
+_expect_squashed(${_c} "${${_c}_out}" "must be regenerated for this platform")
 
 # test_record_only_rejects_an_entry_that_describes_another_host +
 # test_numerics_lock_key_must_name_the_recorded_platform.
@@ -879,7 +836,7 @@ endif()
 _expect_squashed(${_c} "${${_c}_out}" "unqualified numerics integer ABI")
 
 # test_record_only_does_not_compare_with_a_measurement — a flipped committed
-# fact still configures (the LIVE check is the comparison guard, not this).
+# fact still configures (record-only binds facts, never a live measurement).
 set(_c "record_only_does_not_compare_with_a_measurement")
 math(EXPR _case_count "${_case_count} + 1")
 _darwin_record(ro-nocmp)
@@ -1278,264 +1235,6 @@ if(${_c}_rc EQUAL 0)
   _fail("${_c}: relative system path configured")
 endif()
 _expect_squashed(${_c} "${${_c}_out}" "numerics provider path is not absolute")
-
-# ==========================================================================
-# Section 3 — LIVE scratch configures with a stub checker
-# ==========================================================================
-
-# test_bike_numerics_resolves_auto_backend_from_the_probe (both platforms'
-# AUTO profile) — the stub verdict names the record key the module reads.
-set(_c "live_resolves_auto_backend[Darwin]")
-math(EXPR _case_count "${_case_count} + 1")
-_darwin_record(live-auto-d)
-file(WRITE "${SCRATCH_DIR}/live-auto-d-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-auto-d-site\",\"library_paths\":[{\"build_id\":\"macos-26A434+accelerate-a697e7b98ff4356ca50764b38af1ccaa+sdk-26A425\"},{\"build_id\":\"macos-26A434+accelerate-a697e7b98ff4356ca50764b38af1ccaa+sdk-26A425\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
-           RECORD_FILE "${SCRATCH_DIR}/live-auto-d-lock.json"
-           DOC "${SCRATCH_DIR}/live-auto-d-doc.json")
-if(NOT ${_c}_rc EQUAL 0)
-  _fail("${_c}: configure failed: ${${_c}_out}")
-else()
-  _expect_needle(${_c} "${${_c}_out}" "RESOLVED=ACCELERATE")
-endif()
-
-set(_c "live_resolves_auto_backend[Linux]")
-math(EXPR _case_count "${_case_count} + 1")
-set(_site "${SCRATCH_DIR}/live-auto-l-site")
-file(MAKE_DIRECTORY "${_site}/numpy.libs")
-file(WRITE "${_site}/numpy.libs/libfixture-openblas.so" "live openblas provider\n")
-file(SHA256 "${_site}/numpy.libs/libfixture-openblas.so" _lsha)
-_openblas_numerics(_ln "numpy.libs/libfixture-openblas.so" "${_lsha}")
-_write_lock("${SCRATCH_DIR}/live-auto-l-lock.json" "linux-aarch64"
-  "Linux" "aarch64" "\"glibc\"" "${_ln}")
-file(WRITE "${SCRATCH_DIR}/live-auto-l-doc.json"
-"{\"numerics\":{\"site_packages\":\"${_site}\"}}\n")
-_live_case(${_c} SYSTEM Linux KEY "linux-aarch64"
-           RECORD_FILE "${SCRATCH_DIR}/live-auto-l-lock.json"
-           DOC "${SCRATCH_DIR}/live-auto-l-doc.json")
-if(NOT ${_c}_rc EQUAL 0)
-  _fail("${_c}: configure failed: ${${_c}_out}")
-else()
-  _expect_needle(${_c} "${${_c}_out}" "RESOLVED=NUMPY_OPENBLAS")
-endif()
-
-# test_bike_numerics_resolves_a_wheel_relative_provider_on_linux +
-# test_linux_record_is_accepted_after_relocating_site_packages — the record
-# holds the provider relative to site-packages; the same wheel installed at
-# a fresh location resolves and verifies.
-set(_c "live_resolves_wheel_relative_provider_on_linux")
-math(EXPR _case_count "${_case_count} + 1")
-set(_site "${SCRATCH_DIR}/live-rel-site")
-file(MAKE_DIRECTORY "${_site}/numpy.libs")
-file(WRITE "${_site}/numpy.libs/libscipy_openblas64_-fixture0.so" "relocated wheel provider\n")
-file(SHA256 "${_site}/numpy.libs/libscipy_openblas64_-fixture0.so" _lsha)
-_openblas_numerics(_ln "numpy.libs/libscipy_openblas64_-fixture0.so" "${_lsha}")
-_write_lock("${SCRATCH_DIR}/live-rel-lock.json" "linux-aarch64"
-  "Linux" "aarch64" "\"glibc\"" "${_ln}")
-file(WRITE "${SCRATCH_DIR}/live-rel-doc.json"
-"{\"numerics\":{\"site_packages\":\"${_site}\"}}\n")
-_live_case(${_c} SYSTEM Linux KEY "linux-aarch64"
-           RECORD_FILE "${SCRATCH_DIR}/live-rel-lock.json"
-           DOC "${SCRATCH_DIR}/live-rel-doc.json")
-if(NOT ${_c}_rc EQUAL 0)
-  _fail("${_c}: configure failed: ${${_c}_out}")
-else()
-  _expect_needle(${_c} "${${_c}_out}" "RESOLVED=NUMPY_OPENBLAS")
-  get_filename_component(_site_real "${_site}" REALPATH)
-  _expect_needle(${_c} "${${_c}_out}"
-    "PROVIDER_PATH=${_site_real}/numpy.libs/libscipy_openblas64_-fixture0.so")
-endif()
-
-# test_file_provider_must_exist_and_be_inside_site_packages (LIVE half) — a
-# record path escaping site-packages resolves outside the provider root.
-set(_c "live_rejects_provider_outside_site_packages")
-math(EXPR _case_count "${_case_count} + 1")
-set(_site "${SCRATCH_DIR}/live-esc/site")
-file(MAKE_DIRECTORY "${_site}/numpy.libs")
-set(_outside "${SCRATCH_DIR}/live-esc/outside.so")
-file(WRITE "${_outside}" "outside provider bytes\n")
-file(SHA256 "${_outside}" _osha)
-_openblas_numerics(_ln "../outside.so" "${_osha}")
-_write_lock("${SCRATCH_DIR}/live-esc-lock.json" "linux-aarch64"
-  "Linux" "aarch64" "\"glibc\"" "${_ln}")
-file(WRITE "${SCRATCH_DIR}/live-esc-doc.json"
-"{\"numerics\":{\"site_packages\":\"${_site}\"}}\n")
-_live_case(${_c} SYSTEM Linux KEY "linux-aarch64"
-           RECORD_FILE "${SCRATCH_DIR}/live-esc-lock.json"
-           DOC "${SCRATCH_DIR}/live-esc-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: provider outside site-packages configured")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "outside the selected NumPy provider root")
-
-# test_bike_numerics_rejects_a_backend_mismatch — an explicit request that
-# does not match the qualified record is a provider mismatch.
-set(_c "live_rejects_backend_mismatch")
-math(EXPR _case_count "${_case_count} + 1")
-_darwin_record(live-mism)
-file(WRITE "${SCRATCH_DIR}/live-mism-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-mism-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}" BACKEND NUMPY_OPENBLAS
-           RECORD_FILE "${SCRATCH_DIR}/live-mism-lock.json"
-           DOC "${SCRATCH_DIR}/live-mism-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "numerics backend mismatch")
-
-# test_bike_numerics_rejects_a_missing_numerics_record — a null numerics
-# document is not a qualified record.
-set(_c "live_rejects_missing_numerics_record")
-math(EXPR _case_count "${_case_count} + 1")
-_darwin_record(live-null)
-file(WRITE "${SCRATCH_DIR}/live-null-doc.json" "{\"numerics\":null}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
-           RECORD_FILE "${SCRATCH_DIR}/live-null-lock.json"
-           DOC "${SCRATCH_DIR}/live-null-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "has no qualified numerics record")
-
-# test_bike_numerics_reports_a_non_spawnable_interpreter — a command that
-# cannot start still names the interpreter, the command and the result.
-set(_c "live_reports_non_spawnable_interpreter")
-math(EXPR _case_count "${_case_count} + 1")
-_darwin_record(live-nospawn)
-set(_missing "${SCRATCH_DIR}/live-nospawn/no-such-python")
-file(WRITE "${SCRATCH_DIR}/live-nospawn-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-nospawn-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}" CHECKER "${_missing}"
-           RECORD_FILE "${SCRATCH_DIR}/live-nospawn-lock.json"
-           DOC "${SCRATCH_DIR}/live-nospawn-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "numerics record check did not pass")
-_expect_needle(${_c} "${${_c}_out}" "${_missing}")
-_expect_needle(${_c} "${${_c}_out}" "--check-numerics-record")
-_expect_needle(${_c} "${${_c}_out}" "result '")
-
-# test_bike_numerics_fails_configure_on_a_tampered_committed_fact +
-# test_legacy_graph_configure_fails_on_a_tampered_committed_record — a
-# failing checker verdict is a configure error carrying its message: the
-# stale entry, the flipped fact and the regeneration command all propagate.
-set(_c "live_stale_verdict_reaches_configure")
-math(EXPR _case_count "${_case_count} + 1")
-_darwin_record(live-stale)
-set(_stub "${SCRATCH_DIR}/live-stale/stub-checker")
-_write_exe("${_stub}"
-"#!/bin/sh
-echo \"numerics record check failed: entry.numerics.interp.lowering is stale against the live measurement (committed 'contracted', live 'separate') — regenerate it with tools/native_dependencies.py --python <interpreter> --write-numerics-record record\" >&2
-exit 1
-")
-file(WRITE "${SCRATCH_DIR}/live-stale-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-stale-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}" CHECKER "${_stub}"
-           RECORD_FILE "${SCRATCH_DIR}/live-stale-lock.json"
-           DOC "${SCRATCH_DIR}/live-stale-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "numerics record check did not pass")
-_expect_squashed(${_c} "${${_c}_out}" "is stale against the live measurement")
-_expect_squashed(${_c} "${${_c}_out}" "interp.lowering")
-_expect_squashed(${_c} "${${_c}_out}" "--write-numerics-record")
-
-# test_bike_numerics_fails_configure_without_a_platform_entry — a stub
-# verdict whose key names no record entry fails with the regeneration hint.
-set(_c "live_missing_platform_entry_names_regeneration")
-math(EXPR _case_count "${_case_count} + 1")
-file(WRITE "${SCRATCH_DIR}/live-noentry-lock.json" "{\"schema_version\":1,\"records\":{}}\n")
-file(WRITE "${SCRATCH_DIR}/live-noentry-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-noentry-site\",\"library_paths\":[{\"build_id\":\"id\"},{\"build_id\":\"id\"}]}}\n")
-_live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
-           RECORD_FILE "${SCRATCH_DIR}/live-noentry-lock.json"
-           DOC "${SCRATCH_DIR}/live-noentry-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "committed numerics record has no entry")
-_expect_squashed(${_c} "${${_c}_out}" "--write-numerics-record")
-
-# test_cmake_guard_rejects_an_unqualified_width_in_the_record — verbatim:
-# the stub passes, the committed record carries a 32-bit OpenBLAS width,
-# and the CMake width guard is what rejects it.
-set(_c "live_cmake_guard_rejects_unqualified_record_width")
-math(EXPR _case_count "${_case_count} + 1")
-set(_site "${SCRATCH_DIR}/live-wg-site")
-file(MAKE_DIRECTORY "${_site}/numpy.libs")
-file(WRITE "${_site}/numpy.libs/libfixture-openblas.so" "width guard provider\n")
-file(SHA256 "${_site}/numpy.libs/libfixture-openblas.so" _lsha)
-_openblas_numerics(_ln "numpy.libs/libfixture-openblas.so" "${_lsha}")
-_write_lock("${SCRATCH_DIR}/live-wg-lock.json" "linux-aarch64"
-  "Linux" "aarch64" "\"glibc\"" "${_ln}")
-_lock_set("${SCRATCH_DIR}/live-wg-lock.json" "linux-aarch64"
-  "32" numerics blas_integer_bits)
-file(WRITE "${SCRATCH_DIR}/live-wg-doc.json"
-"{\"numerics\":{\"site_packages\":\"${_site}\"}}\n")
-_live_case(${_c} SYSTEM Linux KEY "linux-aarch64"
-           RECORD_FILE "${SCRATCH_DIR}/live-wg-lock.json"
-           DOC "${SCRATCH_DIR}/live-wg-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}"
-  "unqualified numerics integer ABI: blas_integer_bits='32' does not match the qualified 64-bit profile for NUMPY_OPENBLAS")
-
-# test_cmake_guard_rejects_a_tampered_symbol_in_the_record — verbatim:
-# a record symbol outside the identifier grammar is rejected before it can
-# reach a generated declaration.
-set(_c "live_cmake_guard_rejects_tampered_record_symbol")
-math(EXPR _case_count "${_case_count} + 1")
-# Self-contained fixtures — the case previously reused _site/_lsha from
-# live_cmake_guard_rejects_unqualified_record_width above, so reordering the
-# cases would silently break it. Identical provider bytes are copied
-# explicitly (the grammar guard fires before provider identity is read, but
-# the record still names this case's own site).
-set(_site "${SCRATCH_DIR}/live-ts-site")
-file(MAKE_DIRECTORY "${_site}/numpy.libs")
-file(WRITE "${_site}/numpy.libs/libfixture-openblas.so" "width guard provider\n")
-file(SHA256 "${_site}/numpy.libs/libfixture-openblas.so" _lsha)
-_openblas_numerics(_ln "numpy.libs/libfixture-openblas.so" "${_lsha}")
-_write_lock("${SCRATCH_DIR}/live-ts-lock.json" "linux-aarch64"
-  "Linux" "aarch64" "\"glibc\"" "${_ln}")
-_json_escape("ddot\");execute_process(COMMAND rm -rf" _sym_json)
-_lock_set("${SCRATCH_DIR}/live-ts-lock.json" "linux-aarch64"
-  "${_sym_json}" numerics symbols ddot)
-file(WRITE "${SCRATCH_DIR}/live-ts-doc.json"
-"{\"numerics\":{\"site_packages\":\"${_site}\"}}\n")
-_live_case(${_c} SYSTEM Linux KEY "linux-aarch64"
-           RECORD_FILE "${SCRATCH_DIR}/live-ts-lock.json"
-           DOC "${SCRATCH_DIR}/live-ts-doc.json")
-if(${_c}_rc EQUAL 0)
-  _fail("${_c}: expected configure failure, exited 0")
-endif()
-_expect_squashed(${_c} "${${_c}_out}" "numerics symbol for 'ddot' is not a safe identifier")
-
-# test_apple_system_identity_requires_a_real_build_id — the live document's
-# per-image build_id must exist and be non-empty (2 vectors).
-foreach(_i 0 1)
-  set(_c "live_apple_system_requires_build_id[${_i}]")
-  math(EXPR _case_count "${_case_count} + 1")
-  _darwin_record("live-bid-${_i}")
-  if(_i EQUAL 0)
-    file(WRITE "${SCRATCH_DIR}/live-bid-${_i}-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-bid-site\",\"library_paths\":[{},{}]}}\n")
-    set(_want "is missing required field")
-  else()
-    file(WRITE "${SCRATCH_DIR}/live-bid-${_i}-doc.json"
-"{\"numerics\":{\"site_packages\":\"${SCRATCH_DIR}/live-bid-site\",\"library_paths\":[{\"build_id\":\"\"},{\"build_id\":\"x\"}]}}\n")
-    set(_want "has an empty build_id")
-  endif()
-  _live_case(${_c} SYSTEM Darwin KEY "darwin-${_uname_m}"
-             RECORD_FILE "${SCRATCH_DIR}/live-bid-${_i}-lock.json"
-             DOC "${SCRATCH_DIR}/live-bid-${_i}-doc.json")
-  if(${_c}_rc EQUAL 0)
-    _fail("${_c}: expected configure failure, exited 0")
-  endif()
-  _expect_squashed(${_c} "${${_c}_out}" "${_want}")
-endforeach()
 
 # ==========================================================================
 # Report

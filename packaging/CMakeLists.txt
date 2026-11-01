@@ -1,9 +1,6 @@
 # Completion plan 3.44: native install tree and platform-specific offline source.
 # Acquisition is always explicit; configuration only verifies/copies bytes.
 include_guard(GLOBAL)
-if(NOT BIKE_ROOT_BUILD)
-  message(FATAL_ERROR "CPack distributions belong to the Python-free root graph")
-endif()
 if(PROJECT_VERSION STREQUAL "")
   message(FATAL_ERROR "The root project must declare VERSION (initial migration version: 0.0.0)")
 endif()

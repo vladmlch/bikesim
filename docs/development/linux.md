@@ -33,15 +33,17 @@ list. macOS arm64 is a separately qualified lane, not evidence for Linux.
 
 ## Prerequisites
 
-- **CPython 3.13 is required** (`requires-python = ">=3.13,<3.14"`), and
-  the qualified Linux interpreter is CPython **3.13** specifically —
-  CPython 3.13.16 measured. Ubuntu 24.04's unqualified `python3` is not the
-  requirement; provision an exact interpreter with `uv python install 3.13`
-  or select an already installed one via `tools/dev.py bootstrap --python`.
-- uv for the project environment; Git; a C++ toolchain, CMake 3.27+,
-  pkg-config and Ninja as initial candidates (Debian-style:
-  `build-essential`/`clang`, `cmake`, `ninja-build`, `pkg-config`,
-  plus GLFW/OpenGL development packages for the GUI lane).
+- **No interpreter is required or used.** The transition oracle's
+  CPython 3.13 stack (the `bike_native` extension, the uv `--group native`
+  dependency group, `UV_PROJECT_ENVIRONMENT` selection and the
+  tools/dev.py bootstrap) was removed at T63; the qualification table
+  above records that stack as history only.
+- Git; a C++ toolchain, CMake 3.27+, pkg-config and Ninja as initial
+  candidates (Debian-style: `build-essential`/`clang`, `cmake`,
+  `ninja-build`, `pkg-config`, plus GLFW/OpenGL development packages for
+  the GUI lane), and the analysis tools used by the sweep lanes
+  (`clang-tidy`, the clang analyzer, `cppcheck`, `shellcheck`, LLVM
+  `llvm-profdata`/`llvm-cov` for coverage).
 - **The distribution compiler is a candidate, not a promise.** Configure
   runs real capability probes — strict ISO C++23, standard library
   hardening, sanitizer flags, MuJoCo 3.12.0 private ABI, and the NumPy
@@ -66,30 +68,33 @@ qualification evidence.
 The recipe was implemented with source inspection only on 2026-10-21.
 The earlier measured lane above does not qualify this new image.
 
-Run from a real Git checkout when executing the phase's validation:
+The lane currently carries a plan-change guard: Docker was stopped for the
+Darwin-arm64-only migration wave, so `container.sh` exits 3 until the
+Linux wave resumes and the guard block is removed. The commands below are
+the lane contract for that wave, not a run book for this checkout.
+
+Run from a real Git checkout when executing the lane's validation:
 
 ~~~sh
 tools/linux/container.sh image
 tools/linux/container.sh sync
-tools/linux/container.sh venv
-# Before configuring, regenerate both platforms' eight-symbol numerics
-# records as specified in completion-plan Task 1.10.
-tools/linux/container.sh configure native-clang native -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
-tools/linux/container.sh configure native-gcc native -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/g++-13
-tools/linux/container.sh build native-clang
-tools/linux/container.sh ctest native-clang -j8
+tools/linux/container.sh configure root-clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=OFF
+tools/linux/container.sh configure root-gcc -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=/usr/bin/g++-13 -DBIKE_BUILD_GUI=OFF
+tools/linux/container.sh build root-clang
+tools/linux/container.sh ctest root-clang -j8
 ~~~
 
 Each checkout has its own container, named `bike-dev-<checkout-name>`.
 `BIKE_LINUX_CONTAINER` overrides the name; an existing container belonging
 to a different checkout is rejected. `BIKE_LINUX_IMAGE` overrides the image
-tag. Sources are copied into `/src`; binding build trees stay in `/build`.
+tag. Sources are copied into `/src`; root-graph build trees stay in
+`/build`.
 The host `.venv`, `.deps` and generated build directories are excluded even
 if accidentally tracked. `/src/.deps` and `/src/build` stay intact on sync.
 Archive staging and rsync preserve unchanged mtimes for incremental builds.
 An unstaged deletion of a tracked file must be staged before sync.
 
-Available commands: image, up, sync, venv, configure, build, failures,
+Available commands: image, up, sync, configure, build, failures,
 ctest, exec, pull, gate, down. The driver retains the failing Ninja exit code
 through tee. The failures command prints the failed-command count and
 returns an error for an absent log; ctest rejects an empty test selection.
@@ -113,22 +118,19 @@ and original backups. This is not a crash-atomic snapshot; if rollback itself
 fails, the driver reports and retains its backup directory for recovery.
 No automatic cleanup removes old containers.
 After changing the Dockerfile, rebuilding the image does not replace an
-existing container. Use an explicit `down`, then `sync` and `venv` to create
+existing container. Use an explicit `down`, then `sync` to create
 and provision a replacement; `down` removes that container's build trees.
 
-During Phase 1, Linux configures the binding graph only. The root graph
-and its C++ checker have their qualification gate in Phase 2. Until that
-gate passes, use the Python checker invocations listed in Task 1.19 for
-Linux binding sweeps.
+The binding graph is gone (T63): `configure NAME` configures the root
+graph at `/src` directly, and the produced checkers are the C++
+`bike-native-checks` binary plus `tools/run_native_checks.sh` — there is
+no interpreter-side checker.
 
-#### Python-free root graph: Phase 2 source implementation
+#### Root graph lane
 
-The 2026-10-21 Phase 2 changes use the same `BikePlatform`,
+The root graph uses the same `BikePlatform`,
 `BikeCompilerPolicy`, schema-2 dependency-lock selection and check-context
-emitter as the binding graph. This session did not configure, build or run
-either graph. The historical counts above do not qualify these changes,
-and the Repomix input contains no Git objects from which to report a new
-`impl/python-free-cpp` commit. See
+emitter on every lane. See
 [`migration/cpp-linux-completion-evidence.md`](../../migration/cpp-linux-completion-evidence.md)
 for the source handoff and open checkpoints.
 
@@ -137,27 +139,23 @@ dependency lock. Its explicit acquisition stage verifies the selected
 Linux archives and extracted files before placing them in `/opt/bike-deps`.
 The final image supplies `/src/.deps` independently of the host checkout.
 Configuration itself performs no downloads and never substitutes a system
-OpenBLAS. The selected NumPy wheel's OpenBLAS and `libgfortran` companion
-are locked and installed together.
+OpenBLAS. The locked provider archive and its `libgfortran` companion
+are verified and installed together.
 
-Before configuring, finish Phase 1's real per-platform numerics probes.
-The supplied `native/numerics.lock.json` still contains the old Darwin
-four-operation record, whereas the validator now requires eight
-operations and a measured Linux entry. Source-only changes deliberately
-do not replace that generated evidence with guessed values.
+The numerics record `native/numerics.lock.json` is consumed record-only:
+configure binds the measured per-platform entries and never probes a live
+provider.
 
 When those prerequisites are ready and execution is authorized:
 
 ~~~sh
 tools/linux/container.sh image
 tools/linux/container.sh sync
-tools/linux/container.sh venv
-tools/linux/container.sh configure root-clang root -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=OFF
+tools/linux/container.sh configure root-clang -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=OFF
 tools/linux/container.sh build root-clang
 tools/linux/container.sh ctest root-clang -j8
 tools/linux/container.sh exec /build/root-clang/bin/bike-native-checks --kind context --build /build/root-clang
 tools/linux/container.sh exec tools/run_native_checks.sh /build/root-clang
-tools/linux/container.sh exec tools/run_native_checks.sh /build/native-clang
 ~~~
 
 `install_smoke` builds the full root graph, installs it, moves the prefix,
@@ -171,7 +169,7 @@ For the GUI lane, the complete locked GLFW tree builds with X11 enabled
 and Wayland disabled:
 
 ~~~sh
-tools/linux/container.sh configure root-gui root -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=ON
+tools/linux/container.sh configure root-gui -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18 -DBIKE_BUILD_GUI=ON
 tools/linux/container.sh build root-gui
 tools/linux/container.sh exec tools/linux/gui_smoke.sh /build/root-gui
 ~~~
@@ -185,37 +183,34 @@ physical or research run; without the flag the terminal window still
 stays open as before.
 
 The final Linux gate is `tools/linux/container.sh gate native`. It runs
-the existing `tools/run_tests.sh native` profile, with the binding tree at
-`/build/native-clang`, the produced checker tree at
-`/src/build/native-release`, and the environment at `/opt/bike-venv`.
+the existing `tools/run_tests.sh native` profile against the produced
+checker tree at `/src/build/native-release`.
 Fresh trees use Clang 18. An existing cache for a different compiler is
 rejected without deleting it; move that build directory aside and
 configure the correct lane. `sync` preserves the root gate's build tree.
-Checkpoint 2-A, L3, measured failure counts and the push remain pending.
 
-## Transition oracle environment
+## Dependency acquisition
 
-One editable environment per source tree. On Linux, always select a
-**Linux-native** venv before the first uv command and keep it for every
-step — a copied or cross-OS `.venv` is not portable (observed failure: a
-container `uv run` against a bind-mounted checkout clobbered the host's
-`.venv`).
+The standalone graph consumes the pinned lock at
+`native/dependencies.lock.json`. Populate `.deps` with the checked-in
+acquisition helper, which verifies every archive and member hash before
+placing files:
 
 ```sh
-export UV_PROJECT_ENVIRONMENT=/opt/bike-venv   # absolute Linux-native venv
-uv sync --frozen --group native
+bash tools/linux/acquire_deps.sh native/dependencies.lock.json .deps linux-aarch64
 ```
 
-Without the override, wrappers select `<checkout>/.venv`. A relative
-`UV_PROJECT_ENVIRONMENT` is rejected. `tools/dev.py bootstrap` is the
-explicit equivalent for `uv sync --locked --group native --group dev` and
-accepts `--python` to select the interpreter; it never relocks or upgrades
-dependencies. The native group pins `mujoco==3.12.0` and `numpy==2.5.2`;
-the loaded MuJoCo image must expose the project's private ABI symbols and
-the NumPy wheel supplies the qualified `NUMPY_OPENBLAS` provider — an
-arbitrary distro OpenBLAS is not a substitute
+For offline runs, `tools/linux/extract_deps.sh` consumes already-downloaded
+packages with the same verification and no network fallback. Configure
+points at the result with `-DBIKE_DEPENDENCY_ROOT=<checkout>/.deps` (the
+root presets already default there). The loaded MuJoCo image must expose
+the project's private ABI symbols, and the locked provider archive
+supplies the qualified `NUMPY_OPENBLAS` numerics backend — an arbitrary
+distro OpenBLAS is not a substitute
 ([numerical-profiles.md](numerical-profiles.md),
-[dependency-matrix.md](dependency-matrix.md)).
+[dependency-matrix.md](dependency-matrix.md)). The transition oracle's
+`uv sync --frozen --group native` environment and `UV_PROJECT_ENVIRONMENT`
+override were removed at T63; there is nothing to sync.
 
 ## Configure and build with root presets
 
@@ -244,31 +239,34 @@ and selected-file hashes, MuJoCo private ABI, compiler/stdlib support,
 numerics record and instrumentation controls. Inspect
 `build/<preset>/native_check_context.json` and `bike_policy_report.json`
 (`build/native-release` for release). A successful configure is not a CTest,
-performance, package or GUI acceptance result. The interpreter-specific
-checks below apply only to the transition binding graph, which remains
-until the Phase 4 deletion gate.
+performance, package or GUI acceptance result.
 
-## Transition Python entry points
+## Running the native executables
 
-The application selects `native/build/release` by default, or the absolute
-directory in **`BIKE_NATIVE_BUILD_PATH`**:
+Build products land in `build/<preset>/bin` (`build/native-release/bin`
+for the release preset). The CLI family — `bike-ride`, `bike-sim`,
+`bike-replay`, `bike-research`, `bike-batch`, `bike-settle`, `bike-export`,
+`bike-playground`, `bike-recording` — plus the lane executables
+`bike-native-ride`, `bike-native-checks`, `bike-validate` and
+`bike-measure-realtime` run directly; there is no interpreter, extension
+artifact or environment to select. The retired `BIKE_NATIVE_BUILD_PATH`
+selector and the `--backend` switch survive only as fail-closed CLI
+surface (`--backend` accepts `native` and rejects anything else); the
+interpreter backend was removed at T63.
 
 ```sh
-export BIKE_NATIVE_BUILD_PATH="$(pwd)/native/build/release"
-uv run --frozen --group native bike-ride --backend python --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --headless --duration 1 --no-plots
-uv run --frozen --group native bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --headless --duration 1 --no-plots
+build/native-release/bin/bike-ride --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --headless --duration 1 --no-plots
 ```
 
-`--backend python` is the reference path; `--backend native` requires the
-selected artifact and never falls back to Python. Headless runs need no
+Headless runs need no
 display and initialize no GLFW window. Strict headless physical runs
 terminate at the documented `energy.constraint_work` baseline violation —
 a retained diagnostic prefix, not a crash ([RIDE.md](../RIDE.md)).
 
 Interactive viewers require a real display (X11, or XWayland inside a
 Wayland session) plus the system GLFW/OpenGL stack — those are OS packages,
-not uv dependencies. `ensure_macos_mjpython()` returns immediately on
-Linux; there is no `mjpython` re-exec and no Cocoa main-thread rule. Linux
+not bundle dependencies. The `mjpython` re-exec never applied on Linux and
+is gone with the interpreter; there is no Cocoa main-thread rule. Linux
 GUI acceptance remains pending on the desktop matrix linked above — do not
 report a container run as viewer qualification.
 
@@ -276,28 +274,31 @@ report a container run as viewer qualification.
 
 ```sh
 bash tools/run_tests.sh quick
-NATIVE_TEST_BUILD_PATH="$(pwd)/native/build/release" bash tools/run_tests.sh native
+bash tools/run_tests.sh native
 ```
 
-Profiles: `quick` (Python tests minus `slow` minus direct native files;
-keeps `test_native_check_tools.py`), `native` (configure/build the selected
-directory, all sweeps and controls, CTest, then native+golden pytest —
-~3,200 items) and `full` (adds slow physical/realtime episodes).
-`NATIVE_TEST_BUILD_PATH` selects the absolute build directory; set
-`BIKE_NATIVE_BUILD_PATH` to the same directory for the full suite — the
-conftest fails when the two selectors disagree, and child `uv run`
-processes inherit the environment. The legacy `NATIVE_TEST_BUILD_DIR`
-values `''`, `asan`, `rtsan`, `coverage` remain accepted.
+Profiles: `quick` (one `cmake --workflow --preset <preset>` run whose test
+step excludes the `slow|audit|package` labels), `native` (configure +
+build, every produced static-analysis sweep and the structural contracts
+check via `tools/run_native_checks.sh`, then CTest without
+`slow|audit|package`) and `full` (`native` plus the explicit `slow`,
+`audit` and `package` label gates). `bash tools/run_tests.sh native asan`
+runs the same stages on `build/asan`. Inside the container lane
+`NATIVE_TEST_BUILD_PATH` points the produced checks at the selected build
+directory; on the host the preset selects it. The retired
+`BIKE_NATIVE_BUILD_PATH` selector was removed at T63.
 
-The `native`/`full` preflight runs the sweeps — also standalone CMake
-targets: `check_frontends` (second-frontend syntax+analyzer), `check_tidy`
+The `native`/`full` sweep stage runs the produced checks — also standalone
+CMake targets where defined: `check_frontends` (second-frontend
+syntax+analyzer), `check_tidy`
 (clang-tidy), `check_analyzer` (clang `--analyze`; alpha findings print but
 never block), `check_cppcheck`, `check_odr`, `check_scripts` (shellcheck),
-plus `headers`, `diagnostic-controls`, `context` and
-`check_native_contracts`. Each failed sweep names its CMake target, e.g.
-`cmake --build <selected-build> --target check_tidy`. **A missing required
-analysis tool is an error, not a skip.** Tools resolve through
-`tools/native_toolchain.py` — explicit `CLANG_TIDY`, `ANALYZER_CLANG`,
+plus `headers`, `diagnostic-controls`, `context` and the contracts sweep.
+Each failed sweep names its kind; rerun it standalone with
+`build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`.
+**A missing required
+analysis tool is an error, not a skip.** Tools resolve through the
+configure-recorded check context — explicit `CLANG_TIDY`, `ANALYZER_CLANG`,
 `CPPCHECK`, `GXX`, `LLVM_PROFDATA`, `LLVM_COV` overrides first, then the
 configured compiler's toolchain siblings and qualified PATH candidates
 (Linux never invokes `xcrun`). Clang 18's packaged `clang-tidy`/`clang++`
@@ -309,18 +310,15 @@ toolchain family fails rather than silently mixing.
 ASan/UBSan lane (Clang and GCC both qualified on aarch64):
 
 ```sh
-uv run --frozen --group native --no-sync cmake -S native -B native/build/asan -DNATIVE_SANITIZE=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++-18
-uv run --frozen --group native cmake --build native/build/asan
-NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native
+cmake --workflow --preset asan
+bash tools/run_tests.sh native asan
 ```
 
 The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
 with `-fno-sanitize-recover=all` on Clang lanes and `address,undefined` on
-GCC. Every instrumented consumer runs through
-`tools/native_runtime.py run --build <build> -- <argv>`, which prepends the
-recorded compiler-matched runtime to `LD_PRELOAD` — never a caller-side
-broad `LD_LIBRARY_PATH`. An unresolvable runtime fails closed; the import
-then verifies the runtime is actually mapped via `/proc/self/maps`.
+GCC. Instrumented executables link their own compiler-matched runtime —
+the preset's sanitizer link flags replaced the interpreter preload
+launcher; an unresolvable runtime fails closed at configure.
 
 **RTSan (`-fsanitize=realtime`) requires a separately qualified LLVM
 toolchain.** Clang 18 lacks the `[[clang::nonblocking]]` semantics and
@@ -332,66 +330,60 @@ its `clang++`. Do not mark the RTSan lane skipped-as-passed when the
 distribution toolchain lacks it — the lane is pending until a qualified
 toolchain runs it.
 
-Coverage (`NATIVE_COVERAGE=ON`) requires an LLVM clang-family compiler and
+Coverage requires an LLVM clang-family compiler and
 a `llvm-profdata`/`llvm-cov` pair qualified against it by a real
 instrumented control — resolution order is `LLVM_PROFDATA`/`LLVM_COV`
 overrides, the configured compiler's siblings, then PATH. The
 `xcrun --find` fallback is Darwin-only and never runs on Linux:
 
 ```sh
-tools/native_coverage.sh native/build/coverage
+cmake --workflow --preset coverage-report
 ```
 
-Artifacts land in `<build>/native_coverage_runs/run.*` with a
-`coverage_provenance.json`; mismatched tools fail with the tool's own
+The coverage preset builds the instrumented tree, runs the native tests,
+merges only fresh profiles and writes `build/coverage/coverage.lcov` plus
+`coverage-summary.txt`; mismatched tools fail with the tool's own
 diagnostics. See [TESTING.md](../TESTING.md) for sweep internals — its
 sanitizer/coverage examples retain their dated macOS paths.
 
 ## Editor setup
 
-`native/.clangd` points clangd at `native/build`'s
+`native/.clangd` points clangd at the default build tree's
 `compile_commands.json` — CMake writes one per configured build directory
 (`CMAKE_EXPORT_COMPILE_COMMANDS=ON`). Select a different build per editor
 session with `--compile-commands-dir=<build dir>` (for example
-`native/build-linux-clang`), and let clangd resolve the recorded compiler's
+`build/native-release` or a container `/build/<name>` tree), and let
+clangd resolve the recorded compiler's
 headers with `--query-driver=<the configured compiler in that build>` —
 e.g. `/usr/bin/clang++-18` or `/usr/bin/g++-13` here, never a fixed
 absolute path shared across machines.
 
-## Offline installation
+## Offline rehearsal and packages
 
-Native-capable offline delivery uses a **schema-1 source bundle**: the
-extracted root carries `manifest.json`, `project/` (the source tree),
-`wheelhouse/`, `requirements.txt`, `offline-tools.json`,
-`dependency-closure.json` and `assembly-report.json`. `tools/offline_bundle.py`
-assembles platform-matched bundles online; installation runs entirely from
-validated local payloads — no network, no warm-cache dependency.
+Native delivery is the CPack source/binary TGZ pair produced by the
+`package` lane (`bash tools/ci_presets.sh release package`). The
+`offline` mode rehearses the no-network rebuild: it unpacks the source
+package in a fresh container with `--network none`, extracts dependencies
+with `tools/linux/extract_deps.sh native/dependencies.lock.json`, then
+runs `cmake --workflow --preset release` — validated local payloads only,
+no warm-cache dependency.
 
-Entry points: `packaging/install_full.sh` and `packaging/install_slim.sh`
-inside an extracted bundle (both delegate to `tools/install_offline.py`).
-Their flags are still being qualified by the offline-install task — run
-`python3 tools/install_offline.py --help` inside the bundle for the
-authoritative surface rather than trusting a copied command line. A native
-install creates the source project's environment with
-`UV_PROJECT_ENVIRONMENT` pinned to the new venv, syncs the frozen native+dev
-closure offline, then configures/builds/doctors locally. Slim bundles
-verify every declared external provider at the exact pinned version on the
-selected interpreter before and after environment creation; an unqualified
-external stack fails with the full bundle as remediation.
-
-Legacy manifest-less bundles remain Python-only and are labeled as such —
-a filename never grants native capability. See
-[install-modes.md](install-modes.md) for the three installation modes.
+The interpreter-era schema-1 bundles (wheelhouse, `requirements.txt`,
+the offline_bundle assembler and the packaging install_full/install_slim
+entry points delegating to tools/install_offline.py) were removed at
+T63 — a filename never grants capability. See
+[install-modes.md](install-modes.md) for the delivery modes.
 
 ## Failure diagnosis
 
-`doctor --build <dir> --numerics` is the first evidence command for any
+Configure diagnostics and the selected build's
+`native_check_context.json` are the first evidence for any
 environment or artifact failure; the symptom → evidence → bounded
 remediation table (Apple SDK option on Linux, missing MuJoCo private
-symbol, provider/ABI mismatch, missing artifact, wrong SOABI, stale source
-stamp, unresolved DSO, missing display, unsupported sanitizer, coverage
+symbol, provider/ABI mismatch, missing artifact, unresolved DSO,
+missing display, unsupported sanitizer, coverage
 tool mismatch, strict invalid-controller stop, cross-environment replay
-rejection, slim external mismatch) lives in
+rejection) lives in
 [troubleshooting.md](troubleshooting.md).
 ## Phase 3 instrumentation and packaging
 

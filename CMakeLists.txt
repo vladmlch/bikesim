@@ -1,24 +1,18 @@
 cmake_minimum_required(VERSION 3.27)
 
-# Standalone repository-root build (migration task T03).
+# Standalone repository-root build (migration task T03; the only build
+# graph since T63 removed the cmake -S native transition graph).
 #
-# This is the FIRST build entry point that never finds Python, wheel, or
-# venv directories. Every native dependency is an explicitly acquired tree
-# under .deps/, verified against native/dependencies.lock.json at configure
-# time; configure, build, and install run no dependency-code-generation
-# Python and make no network calls.
+# This build entry point never finds Python, wheel, or venv directories.
+# Every native dependency is an explicitly acquired tree under .deps/,
+# verified against native/dependencies.lock.json at configure time;
+# configure, build, and install run no dependency-code-generation Python
+# and make no network calls.
 #
 #   cmake -S . -B build/native-release -DCMAKE_BUILD_TYPE=Release \
-#     -DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_BUILD_GUI=OFF \
-#     -DBIKE_DEPENDENCY_ROOT="$PWD/.deps"
+#     -DBIKE_BUILD_GUI=OFF -DBIKE_DEPENDENCY_ROOT="$PWD/.deps"
 #   cmake --build build/native-release
 #   ctest --test-dir build/native-release --output-on-failure
-#
-# The legacy binding build stays where it was (cmake -S native -B ...): this
-# file only takes over when the repository ROOT is the -S directory. The
-# extension is built only from cmake -S native, which compiles the same core
-# objects the standalone tests exercise. BIKE_BUILD_PYTHON_BINDINGS=ON from
-# the root is refused by native/CMakeLists.txt (see the option below).
 
 # Both build entry points share host/SDK dispatch before project(): the
 # compiler link check must see the selected Apple SDK, and Linux must never
@@ -32,13 +26,16 @@ if(CMAKE_CROSSCOMPILING)
   message(FATAL_ERROR "Cross-compilation is not supported by this native-build workflow")
 endif()
 
-# ON is not a root build mode. The root's dependencies come from the locked
-# .deps tree and its numerics from the committed record; native/ resolves
-# Python and its own dependency policy. Mixing the two in one configure
-# produced duplicate targets, so the root's ON branch (below) adds native/,
-# and native/CMakeLists.txt refuses that configure. The extension builds only
-# via cmake -S native.
-option(BIKE_BUILD_PYTHON_BINDINGS "Root: refused; build the nanobind extension with cmake -S native (requires the Python native dev group)" OFF)
+# The transition extension and its option were removed at T63. Passing ON
+# must still fail loudly — a silently accepted bindings request would hide
+# a stale caller — while OFF is tolerated as an inert leftover cache entry
+# from older presets/scripts.
+if(DEFINED BIKE_BUILD_PYTHON_BINDINGS AND BIKE_BUILD_PYTHON_BINDINGS)
+  message(FATAL_ERROR
+    "BIKE_BUILD_PYTHON_BINDINGS was removed at T63: the nanobind extension "
+    "and its interpreter dependency no longer exist. Configure this root "
+    "graph without the option.")
+endif()
 option(BIKE_BUILD_GUI "Enable the native GLFW viewer; headless recording/plots remain available when OFF" OFF)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -50,7 +47,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 get_filename_component(BIKE_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
-set(BIKE_ROOT_BUILD ON)
 
 # The platform policy owns hardening, instrumentation and every first-party
 # target's compiler/linker flags, just as it does in the binding graph.
@@ -81,18 +77,14 @@ set(_bike_native_dir "${CMAKE_CURRENT_SOURCE_DIR}/native")
 set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 
 # ---------------------------------------------------------------------------
-# First-party targets in the standalone graph. Only already Python-free
-# translation units are compiled here — the binding TUs and the headers they
-# require are deliberately out of scope until later migration tasks.
+# First-party targets in the standalone graph. Only Python-free translation
+# units are compiled here — the binding TUs and the headers they required
+# were removed at T63.
 
-# bike_core: the Python-free core object library — the identical TU set the
-# binding build shares as bike_native_contract_core, so the optional
-# extension and the standalone tests exercise the same core objects.
-# T07 moved three more TUs into the shared pure set: stepper.cpp (the
-# typed WriterConfig construction path), writers/rider_contacts.cpp and
-# writer_config.cpp (the owned bike::io::Value decode). They carry no
-# nanobind/Python edge — the binding-side callback recognizer stays in
-# binding.cpp behind stepper_detail::foreign_time_callback_probe().
+# bike_core: the Python-free core object library. T07 moved three more TUs
+# into the shared pure set: stepper.cpp (the typed WriterConfig
+# construction path), writers/rider_contacts.cpp and writer_config.cpp
+# (the owned bike::io::Value decode). They carry no nanobind/Python edge.
 # T08 adds the owned Value state codecs (drivetrain/state_codec.cpp,
 # rider/state_codec.cpp); the torque-curve/joint-envelope validators the
 # rider codec calls stay in the single-compile bike_rider_math STATIC and
@@ -103,13 +95,12 @@ set(_bike_native_tests_dir "${CMAKE_CURRENT_SOURCE_DIR}/native/tests")
 # runtime links — the physical step, accounting, presentation, samples
 # buffers, static brake and status faces, plus rider/intent.cpp and
 # rider/spindle_controller.cpp (the typed control/controller cores the
-# step consumes). The nanobind twins — *_wire.cpp, *_binding.cpp,
-# runtime_binding.cpp — stay in the optional extension.
+# step consumes). The removed nanobind twins — *_wire.cpp, *_binding.cpp,
+# runtime_binding.cpp — left this graph at T63.
 # T10 adds the owned research core: runtime/{sensors,programs,
 # research_metrics,recording,research,research_io}.cpp — the deterministic
 # sensor pipeline, research programs/truth metrics, the legacy recorder
-# and NativeResearchRuntime plus its capture-directory bootstrap face. The
-# adapter keeps only research_binding.cpp's nanobind parsing and boxing.
+# and NativeResearchRuntime plus its capture-directory bootstrap face.
 add_library(bike_core OBJECT
   "${_bike_native_dir}/src/stepper.cpp"
   "${_bike_native_dir}/src/writer_config.cpp"
@@ -176,12 +167,10 @@ target_include_directories(bike_core SYSTEM PRIVATE
   "${BIKE_DEP_rapidjson_ROOT}/include" "${BIKE_DEP_tomlplusplus_ROOT}/include"
   "${BIKE_DEP_eigen_ROOT}" "${BIKE_DEP_duckdb_ROOT}/include")
 
-# Track-B build identity for runtime/provenance.cpp — the identical
-# research_build_identity.hpp the legacy graph compiles into the extension,
-# generated here for bike_core so the bindings-OFF product carries the same
-# native_source_sha256 (artifact.py's native_source_fingerprint compares it).
-# The manifest algorithm is the legacy graph's verbatim: every first-party
-# native/{src,cmake} file plus native/CMakeLists.txt, hashed as sorted
+# Track-B build identity for runtime/provenance.cpp — the
+# research_build_identity.hpp generated for bike_core so the product
+# carries the native_source_sha256 fingerprint. The manifest algorithm:
+# every first-party native/{src,cmake} file hashed as sorted
 # "relative_path=sha256" lines relative to native/.
 file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   RELATIVE "${_bike_native_dir}"
@@ -191,7 +180,6 @@ file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   "${_bike_native_dir}/src/*.in"
   "${_bike_native_dir}/cmake/*.cmake"
   "${_bike_native_dir}/cmake/*.in")
-list(APPEND _runtime_identity_inputs "CMakeLists.txt")
 list(REMOVE_DUPLICATES _runtime_identity_inputs)
 list(SORT _runtime_identity_inputs)
 set(_runtime_identity_manifest "")
@@ -385,10 +373,9 @@ set(_platform_sdk "")
 if(APPLE)
   set(_platform_sdk "${CMAKE_OSX_SYSROOT}")
 endif()
+# Fixed "false" since T63 — the emitted identity field stays so readers of
+# platform_build_identity.hpp keep one schema.
 set(_platform_bindings_bool "false")
-if(BIKE_BUILD_PYTHON_BINDINGS)
-  set(_platform_bindings_bool "true")
-endif()
 set(_platform_gui_bool "false")
 if(BIKE_BUILD_GUI)
   set(_platform_gui_bool "true")
@@ -555,21 +542,18 @@ include("${_bike_native_dir}/cmake/NativeValidation.cmake")
 bike_add_native_validation("${_bike_native_dir}")
 
 # native_bench: the proto_native_bench prototype TU. The produced manifest
-# declares tools/proto_native_bench a first-party root exactly like the
-# legacy graph, so this target must exist here or the headers sweep has no
-# compile context for state_format.hpp (the oracle fails closed on that
-# hole). When the transition bindings are enabled, native/ owns the target.
-if(NOT BIKE_BUILD_PYTHON_BINDINGS)
-  add_executable(native_bench
-    "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/bench.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/state_format.hpp")
-  bike_apply_native_policy(native_bench)
-  target_include_directories(native_bench SYSTEM PRIVATE
-    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-  target_link_libraries(native_bench PRIVATE bike_engine)
-  bike_rewrite_mujoco_load_name(native_bench
-    "${BIKE_DEP_mujoco_LIBRARY}")
-endif()
+# declares tools/proto_native_bench a first-party root, so this target must
+# exist or the headers sweep has no compile context for state_format.hpp
+# (the oracle fails closed on that hole).
+add_executable(native_bench
+  "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/bench.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/state_format.hpp")
+bike_apply_native_policy(native_bench)
+target_include_directories(native_bench SYSTEM PRIVATE
+  "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(native_bench PRIVATE bike_engine)
+bike_rewrite_mujoco_load_name(native_bench
+  "${BIKE_DEP_mujoco_LIBRARY}")
 
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:
@@ -660,15 +644,9 @@ if(BUILD_TESTING AND TARGET bike_installed_provider)
 endif()
 
 # ---------------------------------------------------------------------------
-# BIKE_BUILD_PYTHON_BINDINGS=ON routes into native/, which refuses it when
-# BIKE_ROOT_BUILD is set (native/CMakeLists.txt). This root never builds the
-# extension: the binding TUs and Python discovery run only under cmake -S native.
-# The branch is kept on purpose. It is the only path that reaches that refusal.
-# Removing it would let ON configure silently without bindings, and
-# test_root_fails_closed_on_python_bindings would fail.
-if(BIKE_BUILD_PYTHON_BINDINGS)
-  add_subdirectory(native)
-endif()
+# Since T63 there is no second graph: a stray ON request for the removed
+# bindings option is refused at the option guard near the top of this file,
+# which is what root_fails_closed_on_python_bindings exercises.
 
 # ---------------------------------------------------------------------------
 # Install + provenance: the install tree is self-contained — binaries +
@@ -713,9 +691,9 @@ endif()
 # Produced check orchestration (T56): bike-native-checks/bike-python-audit
 # executables, the emitted native_check_context.json/native_sources.json for
 # the standalone graph, the check_<kind> sweep targets and the migration_T56
-# fixture contract. Included last so every first-party target — root scope,
-# native/tests/migration, and the transition extension when bindings are on —
-# is already defined before the manifest enumerates it.
+# fixture contract. Included last so every first-party target — root scope
+# and native/tests/migration — is already defined before the manifest
+# enumerates it.
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Sanitizers.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Checks.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Coverage.cmake")

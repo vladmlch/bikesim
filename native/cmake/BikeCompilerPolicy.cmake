@@ -910,10 +910,8 @@ function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
     "  return block == nullptr ? 1 : 0;\n"
     "}\n")
   set(_control_rpath_flags)
-  if(BIKE_ROOT_BUILD)
     get_filename_component(_runtime_directory "${runtime}" DIRECTORY)
     list(APPEND _control_rpath_flags "-DCMAKE_BUILD_RPATH:STRING=${_runtime_directory}")
-  endif()
   try_compile(_control_compiled
     "${_control_dir}/build"
     SOURCES "${_control_dir}/control.cpp"
@@ -931,25 +929,8 @@ function(_bike_run_sanitizer_control sanitizer runtime rc_var detail_var)
       "control build failed: ${_control_build_log}" PARENT_SCOPE)
     return()
   endif()
-  if(BIKE_ROOT_BUILD)
     set(_preload_arguments --unset=LD_PRELOAD --unset=DYLD_INSERT_LIBRARIES)
     set(_runtime_launch_description "linked runtime (no preload)")
-  else()
-    if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-      set(_preload_var "DYLD_INSERT_LIBRARIES")
-      set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
-    else()
-      set(_preload_var "LD_PRELOAD")
-      set(_existing_preload "$ENV{LD_PRELOAD}")
-    endif()
-    if(_existing_preload STREQUAL "")
-      set(_preload_value "${runtime}")
-    else()
-      set(_preload_value "${runtime}:${_existing_preload}")
-    endif()
-    set(_preload_arguments "${_preload_var}=${_preload_value}")
-    set(_runtime_launch_description "${_preload_var}=<selected>")
-  endif()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env
       ${_preload_arguments}
@@ -978,10 +959,8 @@ function(_bike_run_rtsan_violation_control runtime result_var detail_var)
   set(_violation_dir "${_bike_capability_probe_dir}/violation-rtsan")
   file(MAKE_DIRECTORY "${_violation_dir}")
   set(_control_rpath_flags)
-  if(BIKE_ROOT_BUILD)
     get_filename_component(_runtime_directory "${runtime}" DIRECTORY)
     list(APPEND _control_rpath_flags "-DCMAKE_BUILD_RPATH:STRING=${_runtime_directory}")
-  endif()
   try_compile(_violation_compiled
     "${_violation_dir}/build"
     SOURCES "${BIKE_NATIVE_ROOT}/tests/rtsan_control.cpp"
@@ -1001,25 +980,8 @@ function(_bike_run_rtsan_violation_control runtime result_var detail_var)
       "${_violation_build_log}" PARENT_SCOPE)
     return()
   endif()
-  if(BIKE_ROOT_BUILD)
     set(_preload_arguments --unset=LD_PRELOAD --unset=DYLD_INSERT_LIBRARIES)
     set(_runtime_launch_description "linked runtime (no preload)")
-  else()
-    if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
-      set(_preload_var "DYLD_INSERT_LIBRARIES")
-      set(_existing_preload "$ENV{DYLD_INSERT_LIBRARIES}")
-    else()
-      set(_preload_var "LD_PRELOAD")
-      set(_existing_preload "$ENV{LD_PRELOAD}")
-    endif()
-    if(_existing_preload STREQUAL "")
-      set(_preload_value "${runtime}")
-    else()
-      set(_preload_value "${runtime}:${_existing_preload}")
-    endif()
-    set(_preload_arguments "${_preload_var}=${_preload_value}")
-    set(_runtime_launch_description "${_preload_var}=<selected>")
-  endif()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env
       ${_preload_arguments}
@@ -1061,7 +1023,7 @@ set(BIKE_CAP_ASAN_ANNOTATION_CONTROL
   "annotation gate not applicable to the asan lane")
 set(BIKE_CAP_ASAN_MACRO_CONTROL "macro gate not applicable to the asan lane")
 set(BIKE_CAP_ASAN_VIOLATION_CONTROL
-  "asan violation evidence lives in sanitizer_negative_control (root) and the pytest subprocess control (binding)")
+  "asan violation evidence lives in sanitizer_negative_control (root)")
 set(BIKE_CAP_RTSAN_RUNTIME "")
 set(BIKE_CAP_RTSAN_RUNTIME_QUERY "rtsan runtime not queried")
 set(BIKE_CAP_RTSAN_RUN_CONTROL "rtsan run control not executed")
@@ -1352,14 +1314,12 @@ function(bike_apply_native_policy target)
   # Root executables discover the shared sanitizer they link without an
   # interpreter preload. This is a build-tree loader path, never an
   # instrumentation change or an installed-package runtime dependency.
-  if(BIKE_ROOT_BUILD)
     foreach(_runtime IN ITEMS "${BIKE_CAP_ASAN_RUNTIME}" "${BIKE_CAP_RTSAN_RUNTIME}")
       if((NATIVE_SANITIZE OR NATIVE_RTSAN) AND NOT _runtime STREQUAL "")
         get_filename_component(_runtime_directory "${_runtime}" DIRECTORY)
         set_property(TARGET ${target} APPEND PROPERTY BUILD_RPATH "${_runtime_directory}")
       endif()
     endforeach()
-  endif()
 endfunction()
 
 # --------------------------------------------------------------------------

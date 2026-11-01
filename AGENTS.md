@@ -1,6 +1,7 @@
-1. for Python always use uv
-2. you even can use it like `uv run --with numpy --with matplotlib ...`
-3. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
+1. There is no first-party Python: T63 removed the runtime, the uv
+   environment and the binding surface; do not reintroduce interpreter
+   invocations in tracked sources (the produced source audit gates this).
+2. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
 
 # Libraries source code (optional reference)
 
@@ -66,13 +67,9 @@ The numba caveat (cold `@njit(cache=True)` compiles overstating per-step cost)
 was removed with Python, see ADR-0003.
 
 Oracle parity ([ADR-0003](docs/adr/0003-native-authoritative-python-removal.md)):
-a pytest file comparing C++ with the live Python oracle stays a bitwise
-gate until its porting task captures goldens on macOS arm64 and Linux
-aarch64 under `tests/fixtures/golden/<platform>/` and lands the C++ port.
-From then on the C++ test against those goldens is the gate. Inside
-`test_native_*.py`, `tests/reference/conftest.py::_pin_oracle_kernels`
-rebinds njit cores to their `*_py` twins; a signature change updates the
-twin and fixture together. Python and this fixture are removed at T63.
+the Python oracle and its pytest comparison fixture were removed at T63.
+The gate is the C++ test suite against the captured goldens under
+`tests/fixtures/golden/<platform>/`.
 
 
 ## Behavioral Stability

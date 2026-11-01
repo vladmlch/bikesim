@@ -14,11 +14,6 @@
 # skipped when a name already exists (a bindings-ON configure still owns the
 # legacy targets under native/).
 
-if(NOT BIKE_ROOT_BUILD)
-  message(FATAL_ERROR
-    "native/cmake/Checks.cmake is the standalone-build check wiring; "
-    "the legacy graph owns its own emission under native/")
-endif()
 
 set(_checks_native_dir "${CMAKE_CURRENT_SOURCE_DIR}/native")
 set(_checks_tools_dir "${_checks_native_dir}/src/tools")
@@ -185,6 +180,7 @@ if(BUILD_TESTING)
       -D "AUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
       -D "BUILD_DIR=${CMAKE_BINARY_DIR}"
       -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "DEPS_ROOT=${BIKE_DEPENDENCY_ROOT}"
       -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/migration_T56"
       -P "${_checks_native_dir}/tests/migration/migration_T56_check.cmake")
   # The case list includes real-tree sweeps (headers/diagnostic-controls/
@@ -202,12 +198,14 @@ if(BUILD_TESTING)
   endif()
 endif()
 
-# --- T62 no-Python enforcement (completion-plan Task 4.04) -----------------
-# The source and documentation audits are measured-failure gates: the
-# current tree still carries the removal-ledger paths and live interpreter
-# invocations, so both report findings until Task 4.06 removes WILL_FAIL
-# from the source audit and Task 4.07 removes it from the documentation
-# audit after the rewrite. WILL_FAIL inverts ctest's *determined* result —
+# --- T62/T63 no-Python enforcement ------------------------------------------
+# The source audit is a positive gate since T63 deleted the ledger-owned
+# trees: the binary must exit 0 and print its clean summary. A nonzero
+# exit, a usage error, the 'audit failed' exception path, a findings
+# summary or silence all fail this test — a vacuous or broken audit can
+# never pass. The documentation audit remains a measured-failure gate:
+# live docs still carry historical interpreter commands whose rewrite is
+# tracked separately. WILL_FAIL inverts ctest's *determined* result —
 # including regex results — so FAIL_REGULAR_EXPRESSION names the audit's
 # own violation summary: the test passes only when the audit fails with a
 # real findings report. A clean audit (exit 0), a usage error (exit 2), the
@@ -223,8 +221,8 @@ if(BUILD_TESTING)
             --root "${CMAKE_SOURCE_DIR}"
             --policy "${CMAKE_SOURCE_DIR}/migration/no-python-policy.json")
   set_tests_properties(python_audit_source PROPERTIES
-    WILL_FAIL TRUE
-    FAIL_REGULAR_EXPRESSION "python source audit: [0-9]+ remaining edge"
+    PASS_REGULAR_EXPRESSION "source audit clean"
+    FAIL_REGULAR_EXPRESSION "remaining edge|audit failed"
     LABELS "audit"
     TIMEOUT 600)
   add_test(NAME python_audit_documentation
@@ -234,7 +232,33 @@ if(BUILD_TESTING)
             --policy "${CMAKE_SOURCE_DIR}/migration/no-python-policy.json")
   set_tests_properties(python_audit_documentation PROPERTIES
     WILL_FAIL TRUE
-    FAIL_REGULAR_EXPRESSION "python documentation audit: [0-9]+ active invocation"
+    FAIL_REGULAR_EXPRESSION "documentation audit: [0-9]+ active invocation"
     LABELS "audit"
     TIMEOUT 600)
+endif()
+
+# --- migration_T63: deletion completeness + closure contract ----------------
+# The removal transaction's own gate: the produced source audit exits 0,
+# every tracked first-party interpreter source sits inside the exempt set,
+# the removal ledger's rows are all deleted/exempt with verification ids,
+# and migration/final-closure.json records the closure evidence. Runs as a
+# script so the contract is inspectable without a compiled helper.
+if(BUILD_TESTING)
+  add_test(NAME migration_T63
+    COMMAND "${CMAKE_COMMAND}"
+      -D "AUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
+      -D "POLICY=${CMAKE_SOURCE_DIR}/migration/no-python-policy.json"
+      -D "REPO_ROOT=${CMAKE_SOURCE_DIR}"
+      -D "LEDGER=${CMAKE_SOURCE_DIR}/migration/python-removal.json"
+      -D "CLOSURE=${CMAKE_SOURCE_DIR}/migration/final-closure.json"
+      -P "${_checks_native_dir}/tests/migration/migration_T63_check.cmake")
+  set_tests_properties(migration_T63 PROPERTIES
+    LABELS "migration;t63" TIMEOUT 600)
+  if(NOT TARGET migration_T63)
+    add_custom_target(migration_T63
+      COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${CMAKE_BINARY_DIR}"
+              -R "^migration_T63$" --no-tests=error --output-on-failure
+      DEPENDS bike-python-audit
+      USES_TERMINAL)
+  endif()
 endif()

@@ -1,5 +1,12 @@
 # Physical ride, research and checked replay
 
+> **T63 note:** the Python interpreter, `uv` environment wrappers and the
+> `--backend python` route referenced in the historical commands below were
+> removed at T63. The executable surface is now the produced
+> `build/<preset>/bin/bike-*` family; run the commands directly without a
+> `uv run` prefix and without the retired `BIKE_NATIVE_BUILD_PATH`
+> selector.
+
 ## Status and prerequisites
 
 The 2026-10-13 run-recording delivery changes normal physical/research output

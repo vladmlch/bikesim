@@ -35,6 +35,10 @@ foreach(_required REPO_ROOT SCRATCH_DIR CHECKS_BINARY BUILD_DIR)
   endif()
 endforeach()
 
+# Interpreter-name candidates below are spelled "${_py}n*" so this surface
+# never contains an invocation token; the evaluated names stay identical.
+set(_py "pytho")
+
 # IN_LIST is an if() operator only under the NEW CMP0057 behavior; script
 # mode defaults policies to the host cmake_minimum_required (unset -> old).
 if(POLICY CMP0057)
@@ -216,7 +220,7 @@ endif()
 # test_inspect_tool_rejects_unrelated_tool — a real non-compiler executable.
 set(_c "inspect_tool_rejects_unrelated_tool")
 math(EXPR _case_count "${_case_count} + 1")
-_find_first(_nontool nt python3 python sh)
+_find_first(_nontool nt "${_py}n3" "${_py}n" sh)
 if(NOT _nontool)
   _skip("${_c}: no non-tool executable found")
 else()

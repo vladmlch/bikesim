@@ -6,8 +6,13 @@
 > aarch64 and lands its C++ test port. Then the C++ test against those per-platform
 > goldens becomes the gate. ADR-0002's historical immediate-removal statements
 > are superseded by this transition. Native unit/contract tests, in-build
-> determinism, physical invariants and reviewed self-goldens remain required;
-> Python is removed at T63. The dated execution records below are unchanged.
+> determinism, physical invariants and reviewed self-goldens remain required.
+> **Python was removed at T63**: the `uv run` invocations, `tools/dev.py`,
+> interpreter sweeps and binding-graph build directories quoted below are
+> historical evidence, not runnable commands; the produced
+> `build/<preset>/bin/bike-*` executables and `tools/run_tests.sh`
+> profiles are the live surface. The dated execution records below are
+> unchanged.
 
 ## Track C verification status (2026-10-10)
 

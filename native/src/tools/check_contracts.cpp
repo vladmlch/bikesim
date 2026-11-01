@@ -606,15 +606,12 @@ int run_context_checks(const fs::path &build) {
             const fs::path case_build = work_root / ("cmake-" + name);
             std::vector<std::string> argv = {
                 cmake.string(), "-S", project_source.string(), "-B", case_build.string()};
-            if (const auto python = opt_string(context, "python_executable"))
-                argv.push_back("-DPython_EXECUTABLE=" + *python);
             if (!use_default_compiler)
                 argv.push_back("-DCMAKE_CXX_COMPILER=" +
                                configured_compiler.value_or(compiler).string());
             if (const auto dependency_root =
                     opt_string(context, "dependency_root");
                 dependency_root.has_value()) {
-                argv.emplace_back("-DBIKE_BUILD_PYTHON_BINDINGS=OFF");
                 argv.push_back("-DBIKE_DEPENDENCY_ROOT=" + *dependency_root);
                 if (const auto dependency_lock =
                         opt_string(context, "dependency_lock"))

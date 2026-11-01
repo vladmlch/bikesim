@@ -28,7 +28,6 @@
         ]
       },
       "cacheVariables": {
-        "BIKE_BUILD_PYTHON_BINDINGS": "OFF",
         "BIKE_DEPENDENCY_ROOT": "${sourceDir}/.deps",
         "BIKE_BUILD_GUI": "OFF",
         "BUILD_TESTING": "ON",

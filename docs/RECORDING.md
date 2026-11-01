@@ -1,5 +1,10 @@
 # Run recording, analysis and checked replay
 
+> **T63 note:** the Python interpreter, its research entry point and the
+> `uv run` wrappers referenced in this document were removed at T63. The
+> recording/replay surface is the produced `build/<preset>/bin/bike-*`
+> family; the commands below are historical evidence of the delivery.
+
 ## Delivery status
 
 The ordinary-native and Python/native research paths are implemented and

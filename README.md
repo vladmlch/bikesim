@@ -1,19 +1,15 @@
 # bike-sim
 
 Bicycle suspension/kinematics, physical ride simulation, torque-control
-research and checked replay. Python code is in `src/bike_sim`; the native
-runtime is in `native`.
+research and checked replay — a native C++ product (the Python runtime was
+removed at T63; `native/` holds the product and its migration evidence).
 
 ## Development commands
 
-`tools/dev.py` is the explicit cross-platform development driver:
-`bootstrap`, `configure`, `build`, `doctor` and `test` (the last delegates
-the quick/native/full profiles to `tools/run_tests.sh`). All commands run
-through the frozen uv environment, e.g.:
-
-```sh
-uv run --frozen --group native --no-sync python tools/dev.py --help
-```
+`bash tools/run_tests.sh` is the test entry point — `quick`, `native` and
+`full` profiles drive the root CMake build (configure presets live in
+`CMakePresets.json`; every dependency resolves from the locked `.deps`
+tree).
 
 Measured development hosts today are **macOS arm64** and **Linux aarch64**
 (each guide records its qualified toolchain); other architectures and Linux

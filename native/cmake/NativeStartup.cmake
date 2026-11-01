@@ -1,51 +1,26 @@
-# T16–T18/T20–T25: one source registration shared by the standalone and
-# transition graphs. This module only declares targets; it runs no generator,
-# interpreter, solver, or application during configure.
+# T16–T18/T20–T25: source registration for the startup/application targets.
+# This module only declares targets; it runs no generator, interpreter,
+# solver, or application during configure.
 include_guard(GLOBAL)
 
 function(bike_startup_target_policy target native_dir)
   set_target_properties(${target} PROPERTIES
     POSITION_INDEPENDENT_CODE ON CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-  if(BIKE_ROOT_BUILD)
     bike_apply_native_policy(${target})
     target_include_directories(${target} SYSTEM PRIVATE
       "${native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include"
       "${BIKE_DEP_eigen_ROOT}" "${BIKE_DEP_rapidjson_ROOT}/include"
       "${BIKE_DEP_tomlplusplus_ROOT}/include" "${BIKE_DEP_duckdb_ROOT}/include")
-  else()
-    if(_native_contract_compile_options)
-      target_compile_options(${target} PRIVATE ${_native_contract_compile_options})
-    endif()
-    if(_native_contract_compile_definitions)
-      target_compile_definitions(${target} PRIVATE ${_native_contract_compile_definitions})
-    endif()
-    if(_native_contract_link_options)
-      target_link_options(${target} PRIVATE ${_native_contract_link_options})
-    endif()
-    target_include_directories(${target} SYSTEM PRIVATE "${native_dir}/src" "${MJ_DIR}/include")
-    if(_native_tomlplusplus_include)
-      target_include_directories(${target} SYSTEM PRIVATE "${_native_tomlplusplus_include}")
-    endif()
-    if(_native_contract_include_directories)
-      target_include_directories(${target} SYSTEM PRIVATE ${_native_contract_include_directories})
-    endif()
-  endif()
 endfunction()
 
 function(bike_add_native_startup native_dir)
   if(TARGET bike_app)
     return()
   endif()
-  if(BIKE_ROOT_BUILD)
     set(_startup_core bike_core)
     set(_startup_engine bike_engine)
     set(_startup_mujoco "${BIKE_DEP_mujoco_LIBRARY}")
-  else()
-    set(_startup_core bike_native_contract_core)
-    set(_startup_engine bike_native_engine)
-    set(_startup_mujoco "${MJ_DIR}/libmujoco.3.12.0.dylib")
-  endif()
 
   # Object-library objects do not propagate through an ordinary transitive
   # link edge. Carry the already compiled objects explicitly, exactly once,
@@ -55,8 +30,7 @@ function(bike_add_native_startup native_dir)
     ${_startup_core} "$<TARGET_OBJECTS:${_startup_core}>"
     ${_startup_engine} bike_rider_math)
   # The core objects call the typed blas:: face, so every app consumer links the
-  # qualified numerics adapter (provider included) in both graphs. The root
-  # graph's adapter comes from BikeNumerics.cmake's RECORD_ONLY binding.
+  # qualified numerics adapter (provider included) bound by BikeNumerics.cmake.
   target_link_libraries(bike_startup_runtime INTERFACE Bike::Numerics)
 
   add_library(bike_terrain STATIC
@@ -132,15 +106,9 @@ function(bike_add_native_startup native_dir)
   bike_add_physics_research("${native_dir}" "${_startup_core}")
   include("${native_dir}/cmake/RecordingApplication.cmake")
   bike_add_recording_application("${native_dir}" "${_startup_core}" "${_startup_mujoco}")
-  if(BIKE_ROOT_BUILD)
     bike_rewrite_mujoco_load_name(bike-native-ride "${_startup_mujoco}")
-  else()
-    bike_fix_mujoco_install_name(bike-native-ride)
-  endif()
   install(TARGETS bike-native-ride RUNTIME DESTINATION bin OPTIONAL)
-  if(BIKE_ROOT_BUILD)
     bike_install_relocate_mujoco(bike-native-ride)
-  endif()
   install(FILES "${native_dir}/src/numerics/SCIPY-LICENSE.txt"
     DESTINATION share/licenses/bike-native-ride)
   # Keep shipped TOML and relative rider assets together after relocation.

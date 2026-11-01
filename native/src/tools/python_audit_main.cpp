@@ -292,7 +292,21 @@ int audit_source(const fs::path &root, const Value &policy) {
         opt_string(policy, "removal_inventory")
             .value_or("migration/python-removal.json");
 
+    const std::vector<std::string> invocation_globs =
+        string_list(source_policy != nullptr ? *source_policy : Value{},
+                    "invocation_globs");
+    const std::vector<std::string> invocation_tokens =
+        string_list(source_policy != nullptr ? *source_policy : Value{},
+                    "invocation_tokens");
+    const std::vector<std::string> exempt =
+        string_list(source_policy != nullptr ? *source_policy : Value{},
+                    "exempt_globs");
+
     // Ledger rows whose path still exists are remaining owned Python files.
+    // Policy-exempted paths (the user-approved .agents / tools/research
+    // rulings) stay present by design: they are counted and named on stdout
+    // for visibility instead of being reported as violations.
+    std::size_t exempt_present = 0;
     {
         const fs::path inventory = root / inventory_path;
         std::error_code ec;
@@ -304,27 +318,26 @@ int audit_source(const fs::path &root, const Value &policy) {
                     const auto owner = opt_string(row, "owner_task")
                                            .value_or("unassigned");
                     if (!path.has_value()) continue;
-                    if (fs::exists(root / *path, ec))
-                        findings.push_back(
-                            {.path=*path,
-                             .detail="tracked Python source still present "
-                             "(owner: " +
-                                 owner + ")"});
+                    if (!fs::exists(root / *path, ec)) continue;
+                    if (any_glob(exempt, *path)) {
+                        ++exempt_present;
+                        std::cout << "python source audit: exempt ledger "
+                                     "path present (owner: "
+                                  << owner << "): " << *path << "\n";
+                        continue;
+                    }
+                    findings.push_back(
+                        {.path=*path,
+                         .detail="tracked Python source still present "
+                         "(owner: " +
+                             owner + ")"});
                 }
             }
         }
     }
-
-    // Interpreter invocation edges in first-party executable surfaces.
-    const std::vector<std::string> invocation_globs =
-        string_list(source_policy != nullptr ? *source_policy : Value{},
-                    "invocation_globs");
-    const std::vector<std::string> invocation_tokens =
-        string_list(source_policy != nullptr ? *source_policy : Value{},
-                    "invocation_tokens");
-    const std::vector<std::string> exempt =
-        string_list(source_policy != nullptr ? *source_policy : Value{},
-                    "exempt_globs");
+    if (exempt_present != 0)
+        std::cout << "python source audit: " << exempt_present
+                  << " exempt ledger path(s) present\n";
     const auto files = walk_files(root);
     for (const fs::path &file: files) {
         const std::string relative = relative_to(file, root);
@@ -675,13 +688,13 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
             ? resolved_root / "migration" / "no-python-policy.json"
             : fs::weakly_canonical(policy_path);
     try {
-        // An explicitly supplied policy that does not exist is a caller
-        // error: degrading to the empty policy would let a package/source
-        // audit pass vacuously (T62 fail-closed contract). The defaulted
-        // path still degrades — package roots legitimately lack the
-        // repo-resident policy file and callers pass --policy for it.
-        if (!policy_path.empty() &&
-            !fs::is_regular_file(resolved_policy, ec))
+        // T63 fail-closed contract: a missing policy file is an audit error
+        // in every mode. An explicitly supplied --policy that does not exist
+        // is a caller error; the defaulted repo-resident path missing means
+        // the audit runs against a tree that cannot prove its exemptions —
+        // degrading to the empty policy would let a package/source audit
+        // pass vacuously. Package-mode callers always pass --policy.
+        if (!fs::is_regular_file(resolved_policy, ec))
             throw AuditError("missing no-python policy: " +
                              resolved_policy.string());
         const Value policy =

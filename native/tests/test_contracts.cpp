@@ -3,7 +3,6 @@
 #include "../src/drivetrain/motor.hpp"
 #include "../src/drivetrain/freehub.hpp"
 #include "../src/drivetrain/transmission.hpp"
-#include "../src/binding_ownership.hpp"
 #include "../src/engine_call.hpp"
 #include "../src/engine_abi_312.hpp"
 #include "../src/diag.hpp"
@@ -737,95 +736,6 @@ namespace {
         require(succeeded, "warning operation must succeed");
         require(forwarded_warnings == 1, "nonfatal warning must reach prior handler");
         require(restored == &warning_handler, "prior TLS handler must be restored");
-    }
-
-    // F4 capsule-creation-failure seam. Production owned arrays stage the
-    // buffer through wire::detail::release_with_owner (binding_ownership.hpp):
-    // the owner is built while the unique_ptr still holds the allocation,
-    // so a throwing owner frees instead of leaking. nb::capsule cannot run
-    // in this Python-free executable, so OwnerSeam follows the same
-    // acquire/deleter protocol and can be armed to throw exactly where
-    // PyCapsule_New could fail.
-    struct TrackedCell {
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) test-local live-instance counter
-        static inline int live = 0;
-        TrackedCell() { ++live; }
-        TrackedCell(const TrackedCell &) = delete;
-        TrackedCell &operator=(const TrackedCell &) = delete;
-        TrackedCell(TrackedCell &&) = delete;
-        TrackedCell &operator=(TrackedCell &&) = delete;
-        ~TrackedCell() { --live; }
-    };
-    void delete_cell(void *pointer) noexcept {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) seam deleter owns the staged cell
-        delete static_cast<TrackedCell *>(pointer);
-    }
-    void delete_cells(void *pointer) noexcept {
-        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory) seam deleter owns the staged array
-        delete[] static_cast<TrackedCell *>(pointer);
-    }
-    struct OwnerSeam {
-        // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables) armed only inside the case
-        static inline bool armed = false;
-        void *pointer = nullptr;
-        void (*deleter)(void *) noexcept = nullptr;
-        OwnerSeam(void *p, void (*d)(void *) noexcept)
-            : pointer(p), deleter(d) {
-            if (armed)
-                throw std::runtime_error("seamed owner construction failure");
-        }
-        OwnerSeam(const OwnerSeam &) = delete;
-        OwnerSeam &operator=(const OwnerSeam &) = delete;
-        OwnerSeam(OwnerSeam &&other) noexcept
-            : pointer(std::exchange(other.pointer, nullptr)),
-              deleter(std::exchange(other.deleter, nullptr)) {}
-        OwnerSeam &operator=(OwnerSeam &&) = delete;
-        ~OwnerSeam() { if (pointer) deleter(pointer); }
-    };
-    template <typename Stage>
-    void require_owner_failure_frees(const Stage &stage, int &calls) {
-        try {
-            static_cast<void>(stage());
-        } catch (const std::runtime_error &) {
-            ++calls;
-        }
-    }
-    void test_owned_staging_owner_failure_frees_storage() {
-        const auto single_stage = [] {
-            return wire::detail::release_with_owner(
-                std::make_unique<TrackedCell>(),
-                [](TrackedCell *cell) { return OwnerSeam(cell, &delete_cell); });
-        };
-        const auto array_stage = [] {
-            // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) seam exercises the delete[] staging path
-            auto cells = std::make_unique<TrackedCell[]>(2);
-            return wire::detail::release_with_owner(
-                std::move(cells),
-                [](TrackedCell *array) { return OwnerSeam(array, &delete_cells); });
-        };
-        OwnerSeam::armed = true;
-        int calls = 0;
-        require_owner_failure_frees(single_stage, calls);
-        require(calls == 1 && TrackedCell::live == 0,
-                "single-object owner failure must free staged storage");
-        require_owner_failure_frees(array_stage, calls);
-        require(calls == 2 && TrackedCell::live == 0,
-                "array owner failure must free staged storage");
-        OwnerSeam::armed = false;
-        {
-            const auto &[data, owner] = single_stage();
-            require(data != nullptr && TrackedCell::live == 1,
-                    "successful staging releases storage to the owner");
-        }
-        require(TrackedCell::live == 0,
-                "owner destruction must run the single-object deleter");
-        {
-            const auto &[data, owner] = array_stage();
-            require(data != nullptr && TrackedCell::live == 2,
-                    "successful array staging releases storage to the owner");
-        }
-        require(TrackedCell::live == 0,
-                "array owner destruction must run the deleter");
     }
 
     void *fail_allocation(std::size_t) noexcept { return nullptr; }
@@ -4432,7 +4342,6 @@ namespace {
         {.name = "nested_engine_frames", .run = test_nested_engine_frames},
         {.name = "thread_local_engine_frames", .run = test_thread_local_engine_frames},
         {.name = "previous_tls_handler_restored", .run = test_previous_tls_handler_restored},
-        {.name = "owned_staging_owner_failure_frees_storage", .run = test_owned_staging_owner_failure_frees_storage},
         {.name = "transmission_staged_ratio_atomicity", .run = test_transmission_staged_ratio_atomicity},
         {.name = "interval_clock_contracts", .run = test_interval_clock_contracts},
         {.name = "cruise_live_timestep", .run = test_cruise_live_timestep},

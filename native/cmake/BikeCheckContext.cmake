@@ -74,18 +74,11 @@ function(bike_write_check_context)
 
   set(_ctx_required_vars BIKE_POLICY_REPORT_JSON BIKE_POLICY_REQUIRED_FLAGS
     BIKE_STDLIB_IDENTITY BIKE_STDLIB_VERSION)
-  if(BIKE_ROOT_BUILD)
     list(APPEND _ctx_required_vars
       BIKE_DEPENDENCY_ROOT BIKE_DEPENDENCY_LOCK BIKE_DEP_mujoco_ROOT
       BIKE_DEP_mujoco_LIBRARY BIKE_DEP_rapidjson_ROOT BIKE_DEP_tomlplusplus_ROOT
       BIKE_DEP_eigen_ROOT BIKE_DEP_duckdb_ROOT _numerics_record_json
       _native_numerics_record_key _native_numerics_provider_paths)
-  else()
-    list(APPEND _ctx_required_vars
-      _native_first_party_roots _native_mujoco_library MJ_DIR
-      _native_dependencies_json _native_python_include _native_nb_include
-      _native_robin_include)
-  endif()
   foreach(_required_var IN LISTS _ctx_required_vars)
     if(NOT DEFINED ${_required_var})
       message(FATAL_ERROR
@@ -94,7 +87,6 @@ function(bike_write_check_context)
     endif()
   endforeach()
 
-  if(BIKE_ROOT_BUILD)
     set(_native_first_party_roots "${_ctx_native_dir}"
       "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench")
     set(MJ_DIR "${BIKE_DEP_mujoco_ROOT}")
@@ -131,7 +123,6 @@ function(bike_write_check_context)
     endforeach()
     set(_native_dependencies_json
       "{\"numerics\":${_ctx_root_numerics},\"python\":null}")
-  endif()
 
   # ---------------------------------------------------------------
   # Platform + sysroot + SDK records.
@@ -348,7 +339,6 @@ function(bike_write_check_context)
   # ---------------------------------------------------------------
   # Dependency path lists (existence-validated at emission).
   # ---------------------------------------------------------------
-  if(BIKE_ROOT_BUILD)
     set(_native_required_includes
       "${_ctx_native_dir}/src"
       "${MJ_DIR}/include"
@@ -361,21 +351,6 @@ function(bike_write_check_context)
       "${MJ_DIR}/include/mujoco/mujoco.h"
       "${_native_mujoco_library}"
       "${BIKE_DEP_rapidjson_ROOT}/include/rapidjson/document.h")
-  else()
-    set(_native_required_includes
-      "${_ctx_native_dir}/src"
-      "${_native_python_include}"
-      "${_native_nb_include}"
-      "${_native_robin_include}"
-      "${MJ_DIR}/include")
-    set(_native_required_files
-      "${_ctx_native_dir}/analysis_suppressions.json"
-      "${_native_python_include}/Python.h"
-      "${_native_nb_include}/nanobind/nanobind.h"
-      "${_native_robin_include}/tsl/robin_map.h"
-      "${MJ_DIR}/include/mujoco/mujoco.h"
-      "${_native_mujoco_library}")
-  endif()
   foreach(_required_path IN LISTS _native_required_includes _native_required_files)
     if(NOT EXISTS "${_required_path}")
       message(FATAL_ERROR
@@ -537,27 +512,11 @@ function(bike_write_check_context)
   _native_json_array(_native_compiler_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
   _native_json_quote(_native_suppressions_manifest_json
     "${_ctx_native_dir}/analysis_suppressions.json")
-  if(BIKE_ROOT_BUILD)
-    set(_native_python_json "null")
-  else()
-    _native_json_quote(_native_python_json "${Python_EXECUTABLE}")
-  endif()
-  # Retain python_executable for all existing readers. The richer record is
-  # additive within schema 2; doctor can request reconfiguration when an old
-  # context lacks it, without making old contexts invalid for sweep readers.
-  string(JSON _ctx_python_json ERROR_VARIABLE _ctx_python_error
-    GET "${_native_dependencies_json}" python)
-  if(_ctx_python_error)
-    message(FATAL_ERROR
-      "Cannot record the configured Python identity: ${_ctx_python_error}")
-  endif()
-  # A JSON null member (the Python-free root record) reads back empty or
-  # -NOTFOUND through GET without tripping the error check above; emit the
-  # literal null the schema-2 context requires.
-  if("${_ctx_python_json}" STREQUAL ""
-     OR "${_ctx_python_json}" MATCHES "-NOTFOUND$")
-    set(_ctx_python_json "null")
-  endif()
+  # Since T63 the only graph is the Python-free root build: both schema-2
+  # interpreter records are the required explicit null (the context
+  # validator and the T56 fixtures demand the members, never a value).
+  set(_native_python_json "null")
+  set(_ctx_python_json "null")
   _native_json_quote(_ctx_source_directory_json "${CMAKE_CURRENT_SOURCE_DIR}")
   _native_json_quote(_ctx_build_directory_json "${CMAKE_BINARY_DIR}")
   _native_json_array(_native_include_paths_json ${_native_required_includes})
@@ -589,7 +548,6 @@ function(bike_write_check_context)
   string(APPEND _native_tool_overrides "}")
 
   set(_ctx_root_fields "")
-  if(BIKE_ROOT_BUILD)
     foreach(_ctx_directory "${BIKE_DEPENDENCY_ROOT}" "${CMAKE_CURRENT_SOURCE_DIR}")
       if(NOT IS_DIRECTORY "${_ctx_directory}")
         message(FATAL_ERROR "Root check-context directory is missing: ${_ctx_directory}")
@@ -606,7 +564,6 @@ function(bike_write_check_context)
     _native_json_quote(_ctx_configure_source_json "${CMAKE_CURRENT_SOURCE_DIR}")
     set(_ctx_root_fields
       ",\"cmake\":${_ctx_cmake_json},\"dependency_root\":${_ctx_dependency_root_json},\"dependency_lock\":${_ctx_dependency_lock_json},\"configure_source_dir\":${_ctx_configure_source_json}")
-  endif()
 
   # ---------------------------------------------------------------
   # Write the manifest (schema-1, configure-time constants) and the

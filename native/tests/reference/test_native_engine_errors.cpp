@@ -732,7 +732,6 @@ void test_configure_rejects_unsupported_installed_mujoco_version() {
          "-B", (scratch.path() / "build").string(),
          "-DBIKE_DEPENDENCY_ROOT=" + scratch.path().string(),
          "-DBIKE_DEPENDENCY_LOCK=" BIKE_ENGINE_ERRORS_DEPENDENCY_LOCK, // NOLINT(bugprone-suspicious-missing-comma) adjacent literals intentionally join the fragments
-         "-DBIKE_BUILD_PYTHON_BINDINGS=OFF",
          "-DBIKE_BUILD_GUI=OFF"},
         BIKE_ENGINE_ERRORS_REPO_ROOT, options);
     const std::string combined = result.out + result.err;

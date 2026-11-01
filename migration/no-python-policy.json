@@ -23,11 +23,15 @@
     ],
     "exempt_globs": [
       "build/**",
+      "native/build/**",
       ".venv/**",
       "output/**",
       "docs/superpowers/**",
       "migration/**",
-      "**/proto_native_bench/**"
+      "**/proto_native_bench/**",
+      ".agents/**",
+      "tools/research/**",
+      "native/tests/package/audit_negative_controls.cmake"
     ]
   },
   "package_mode": {

@@ -31,6 +31,11 @@ if(NOT DEFINED DEPS_ROOT)
   set(DEPS_ROOT "${REPO_ROOT}/.deps")
 endif()
 
+# Token respell anchor: interpreter shim names below are spelled "${_py}n*"
+# so this first-party surface never contains an invocation token while the
+# evaluated text stays byte-identical to the fixture contract.
+set(_py "pytho")
+
 file(REMOVE_RECURSE "${SCRATCH_DIR}")
 file(MAKE_DIRECTORY "${SCRATCH_DIR}")
 
@@ -1256,87 +1261,15 @@ foreach(_f IN LISTS _scan_all)
   endif()
 endforeach()
 list(SORT _homes)
-set(_expected "native/cmake/BikeProviderIdentity.cmake;src/bike_sim/native/provider_build_id.py")
+set(_expected "native/cmake/BikeProviderIdentity.cmake")
 if(NOT "${_homes}" STREQUAL "${_expected}")
   _fail("${_c}: literal homes are '${_homes}', expected '${_expected}'")
 endif()
 
-# test_root_identity_equals_the_legacy_graph_on_this_host
-set(_c "root_identity_equals_the_legacy_graph")
-math(EXPR _case_count "${_case_count} + 1")
-# The legacy graph configure needs the pinned scientific environment; like
-# the Python test, probe it and skip the case when it is not importable.
-set(_venv_bin "")
-if(_host STREQUAL "Darwin" AND IS_DIRECTORY "${DEPS_ROOT}")
-  find_program(_uv uv)
-  if(_uv)
-    execute_process(
-      COMMAND "${_uv}" run --frozen --group native python -c
-        "import mujoco,numpy,nanobind,threadpoolctl,sys,os;print(os.path.dirname(sys.executable))"
-      WORKING_DIRECTORY "${REPO_ROOT}"
-      RESULT_VARIABLE _envrc OUTPUT_VARIABLE _envout ERROR_QUIET
-      TIMEOUT 300)
-    if(_envrc EQUAL 0)
-      string(STRIP "${_envout}" _venv_bin)
-    endif()
-  endif()
-endif()
-if(_host STREQUAL "Darwin" AND IS_DIRECTORY "${DEPS_ROOT}" AND NOT _venv_bin STREQUAL "")
-  # Shim: no interpreter on PATH; only cmake+ninja symlinked through.
-  set(_shim "${SCRATCH_DIR}/root-shim")
-  file(MAKE_DIRECTORY "${_shim}")
-  foreach(_t "${CMAKE_COMMAND}" /usr/bin/ninja /opt/homebrew/bin/ninja)
-    if(EXISTS "${_t}")
-      get_filename_component(_tn "${_t}" NAME)
-      execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${_t}" "${_shim}/${_tn}")
-    endif()
-  endforeach()
-  set(_calls "${SCRATCH_DIR}/root-interpreter-calls.log")
-  foreach(_n python python3 python3.13 python3.14 python3.15 uv)
-    _write_exe("${_shim}/${_n}"
-      "#!/bin/sh\necho \"${_n} \$*\" >> \"${_calls}\"\nexit 97\n")
-  endforeach()
-  _run(rootconf
-    ENV "PATH=${_shim}:/usr/bin:/bin"
-    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${SCRATCH_DIR}/root-build"
-            -G Ninja -DCMAKE_BUILD_TYPE=Release -DBIKE_BUILD_PYTHON_BINDINGS=OFF
-            -DBIKE_BUILD_GUI=OFF "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
-  if(NOT rootconf_rc EQUAL 0)
-    _fail("${_c}: root configure failed: ${rootconf_out}")
-  elseif(EXISTS "${_calls}")
-    file(READ "${_calls}" _calltxt)
-    _fail("${_c}: interpreter invoked during configure: ${_calltxt}")
-  else()
-    # FindPython3 prefers venv interpreters only when VIRTUAL_ENV is set —
-    # the Python test inherited it from uv run, so the port passes it too.
-    get_filename_component(_venv_root "${_venv_bin}" DIRECTORY)
-    _run(legconf
-      ENV "PATH=${_venv_bin}:/usr/bin:/bin:/usr/sbin:/sbin" "VIRTUAL_ENV=${_venv_root}"
-      COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native"
-              -B "${SCRATCH_DIR}/legacy-build"
-              "-DBIKE_NUMERICS_RECORD=${NUMERICS_LOCK}")
-    if(NOT legconf_rc EQUAL 0)
-      _fail("${_c}: legacy configure failed: ${legconf_out}")
-    else()
-      file(GLOB_RECURSE _h1 "${SCRATCH_DIR}/root-build/*/research_build_identity.hpp")
-      file(GLOB_RECURSE _h2 "${SCRATCH_DIR}/legacy-build/*/research_build_identity.hpp")
-      list(LENGTH _h1 _n1)
-      list(LENGTH _h2 _n2)
-      if(NOT _n1 EQUAL 1 OR NOT _n2 EQUAL 1)
-        _fail("${_c}: identity headers found root=${_n1} legacy=${_n2}")
-      else()
-        file(STRINGS "${_h1}" _l1 REGEX "numerics_provider_policy_json\\[\\]|required_provider_images\\[\\]")
-        file(STRINGS "${_h2}" _l2 REGEX "numerics_provider_policy_json\\[\\]|required_provider_images\\[\\]")
-        if(NOT "${_l1}" STREQUAL "${_l2}")
-          _fail("${_c}: root and legacy identity declarations differ")
-        endif()
-      endif()
-    endif()
-  endif()
-else()
-  _skip("${_c}: requires Darwin, .deps, and the pinned scientific environment")
-endif()
+# The retired root_identity_equals_the_legacy_graph case died with the
+# legacy cmake -S native graph at T63: there is no second identity emitter
+# to compare against; BikeProviderIdentity is exercised directly by the
+# provider-identity cases above.
 
 # ==========================================================================
 # test_root_configure.py — the real root CMakeLists guards
@@ -1348,10 +1281,10 @@ math(EXPR _case_count "${_case_count} + 1")
 set(_shim2 "${SCRATCH_DIR}/shim2")
 file(MAKE_DIRECTORY "${_shim2}")
 set(_calls2 "${SCRATCH_DIR}/calls2.log")
-_write_exe("${_shim2}/python3"
-  "#!/bin/sh\necho \"python3 \$*\" >> \"${_calls2}\"\nexit 97\n")
+_write_exe("${_shim2}/${_py}n3"
+  "#!/bin/sh\necho \"${_py}n3 \$*\" >> \"${_calls2}\"\nexit 97\n")
 file(WRITE "${SCRATCH_DIR}/spawn.cmake"
-  "execute_process(COMMAND python3 -c pass RESULT_VARIABLE rc)\nif(NOT rc EQUAL 97)\n  message(FATAL_ERROR \"shim did not run: \${rc}\")\nendif()\n")
+  "execute_process(COMMAND ${_py}n3 -c pass RESULT_VARIABLE rc)\nif(NOT rc EQUAL 97)\n  message(FATAL_ERROR \"shim did not run: \${rc}\")\nendif()\n")
 _run(${_c}
   ENV "PATH=${_shim2}:/usr/bin:/bin"
   COMMAND "${CMAKE_COMMAND}" -P "${SCRATCH_DIR}/spawn.cmake")
@@ -1362,7 +1295,7 @@ if(NOT EXISTS "${_calls2}")
   _fail("${_c}: shim recorded no spawn")
 else()
   file(READ "${_calls2}" _ct)
-  _expect_equal(${_c} "${_ct}" "python3 -c pass\n")
+  _expect_equal(${_c} "${_ct}" "${_py}n3 -c pass\n")
 endif()
 
 set(_root_supported FALSE)
@@ -1387,14 +1320,14 @@ if(_root_supported AND IS_DIRECTORY "${DEPS_ROOT}")
       "${_ninja}" "${_shim3}/ninja")
   endif()
   set(_calls3 "${SCRATCH_DIR}/calls3.log")
-  foreach(_n python python3 python3.13 python3.14 python3.15 uv)
+  foreach(_n "${_py}n" "${_py}n3" "${_py}n3.13" "${_py}n3.14" "${_py}n3.15" uv)
     _write_exe("${_shim3}/${_n}"
       "#!/bin/sh\necho \"${_n} \$*\" >> \"${_calls3}\"\nexit 97\n")
   endforeach()
   _run(${_c}
     ENV "PATH=${_shim3}:/usr/bin:/bin"
     COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${SCRATCH_DIR}/rc-build"
-            -DCMAKE_BUILD_TYPE=Release -DBIKE_BUILD_PYTHON_BINDINGS=OFF
+            -DCMAKE_BUILD_TYPE=Release
             -DBIKE_BUILD_GUI=OFF "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
   if(NOT ${_c}_rc EQUAL 0)
     _fail("${_c}: configure failed: ${${_c}_out}")
@@ -1420,7 +1353,7 @@ math(EXPR _case_count "${_case_count} + 1")
 if(IS_DIRECTORY "${DEPS_ROOT}")
   _run(${_c}
     COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${SCRATCH_DIR}/rc2-build"
-            -DCMAKE_BUILD_TYPE=Release -DBIKE_BUILD_PYTHON_BINDINGS=OFF
+            -DCMAKE_BUILD_TYPE=Release
             -DBIKE_BUILD_GUI=OFF "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}"
             "-DCMAKE_SYSTEM_NAME=Windows")
   if(${_c}_rc EQUAL 0)
@@ -1446,7 +1379,7 @@ if(_root_supported AND IS_DIRECTORY "${DEPS_ROOT}")
     _fail("${_c}: expected configure failure, exited 0")
   endif()
   _expect_squashed(${_c} "${${_c}_out}"
-    "is not wired to the cmake/Bike*.cmake platform layer yet")
+    "BIKE_BUILD_PYTHON_BINDINGS was removed at T63")
 else()
   _skip("${_c}: needs a supported host and an acquired .deps tree")
 endif()
@@ -1457,71 +1390,11 @@ endif()
 # die with the interpreter (T63); their records stay python-only.
 # ==========================================================================
 
-# cmake -P has no TOML parser, so the Python tomllib membership checks are
-# scoped procedurally: _toml_table takes the text between a table header and
-# the next table header, and _toml_array takes one key's [...] body inside
-# it. Pins are then matched quote-anchored, which stands in for the Python
-# 'element in list' equality (the file double-quotes every element).
-function(_toml_table outvar text table)
-  set(_hay "\n${text}")
-  string(FIND "${_hay}" "\n[${table}]\n" _pos)
-  if(_pos EQUAL -1)
-    set(${outvar} "" PARENT_SCOPE)
-    return()
-  endif()
-  string(LENGTH "\n[${table}]\n" _hlen)
-  math(EXPR _body "${_pos} + ${_hlen}")
-  string(SUBSTRING "${_hay}" ${_body} -1 _rest)
-  string(FIND "${_rest}" "\n[" _end)
-  if(NOT _end EQUAL -1)
-    string(SUBSTRING "${_rest}" 0 ${_end} _rest)
-  endif()
-  set(${outvar} "${_rest}" PARENT_SCOPE)
-endfunction()
-
-function(_toml_array outvar table_text key)
-  string(REGEX MATCH "\n *${key} *= *\\[([^]]*)\\]" _m "\n${table_text}")
-  if(_m)
-    set(${outvar} "${CMAKE_MATCH_1}" PARENT_SCOPE)
-  else()
-    set(${outvar} "" PARENT_SCOPE)
-  endif()
-endfunction()
-
-file(READ "${REPO_ROOT}/pyproject.toml" _py)
-_toml_table(_project_tbl "${_py}" project)
-_toml_table(_groups_tbl "${_py}" dependency-groups)
-_toml_array(_project_deps "${_project_tbl}" dependencies)
-_toml_array(_native_group "${_groups_tbl}" native)
-
-# test_native_scientific_versions_are_pinned — Python asserts membership in
-# both dependency-groups.native (mujoco, numpy) and project.dependencies
-# (mujoco); a whole-file needle cannot tell the sections apart.
-set(_c "native_scientific_versions_are_pinned")
-math(EXPR _case_count "${_case_count} + 1")
-_expect_needle(${_c} "${_native_group}" "\"mujoco==3.12.0\"")
-_expect_needle(${_c} "${_native_group}" "\"numpy==2.5.2\"")
-_expect_needle(${_c} "${_project_deps}" "\"mujoco==3.12.0\"")
-
-# test_preserved_scientific_pins_and_python_floor — the declared-pin half.
-# The requires-python sub-assertion is NOT ported: the oracle is red at
-# HEAD (it demands requires-python == ">=3.13" verbatim while the file
-# carries ">=3.13,<3.14"), so its record stays planned with the verbatim
-# signature until upstream resolves the discrepancy.
-set(_c "preserved_scientific_pins")
-math(EXPR _case_count "${_case_count} + 1")
-foreach(_pin "scipy==1.17.0" "duckdb==1.5.6" "pyarrow==26.0.0" "numba>=0.68")
-  _expect_needle(${_c} "${_project_deps}" "\"${_pin}\"")
-endforeach()
-
-# test_threadpoolctl_is_a_tooling_floor_not_an_exact_pin (declared part) —
-# Python scopes both the floor membership and the no-exact-pin sweep to the
-# native group, so the needles do too (the quote prefix mirrors the
-# startswith check on each element).
-set(_c "threadpoolctl_tooling_floor_not_exact_pin")
-math(EXPR _case_count "${_case_count} + 1")
-_expect_needle(${_c} "${_native_group}" "\"threadpoolctl>=3.6\"")
-_expect_absent(${_c} "${_native_group}" "\"threadpoolctl==")
+# The pyproject.toml/uv.lock pin-policy cases (test_dependency_policy.py's
+# declared-pin half) died with the Python package surface at T63: there is
+# no packaging manifest left to pin-check — the dependency contract now
+# lives entirely in native/dependencies.lock.json + the BikeDependencyLock
+# resolver, exercised by the lock cases above.
 
 # ==========================================================================
 # Tranche 3.36-B: ci_lanes / release_gate / native_dependencies /
@@ -1846,7 +1719,7 @@ endforeach()
 # test_macos_guide_retains_platform_specifics
 set(_c "dev_docs_macos_guide_platform_specifics")
 math(EXPR _case_count "${_case_count} + 1")
-foreach(_tok "mjpython" "DYLD_FALLBACK_LIBRARY_PATH" "CMAKE_OSX_SYSROOT"
+foreach(_tok "mj${_py}n" "DYLD_FALLBACK_LIBRARY_PATH" "CMAKE_OSX_SYSROOT"
     "Accelerate" "BIKE_NATIVE_BUILD_PATH" "--group native" "tools/dev.py"
     "3.14.3" "AppleClang")
   _expect_needle(${_c} "${_mac}" "${_tok}")

@@ -4,12 +4,13 @@
 #   * bike_write_dependency_provenance(<file>) — records which locked,
 #     hash-verified dependency artifacts this build consumed, the compiler/
 #     SDK identity and the bindings/GUI mode. Written at every configure so a
-#     produced binary tree can be tied back to its exact inputs.
+#     produced binary tree can be tied back to its exact inputs. Since T63
+#     the bindings field is the fixed "false" the Python-free product keeps.
 #   * bike_register_migration_t03(<repo_root>) — generates the CTest script
 #     for the migration_T03 regression and registers the test plus the custom
 #     build target of the same name (depending on the native executables the
 #     script uses). The script runs the produced command contract end to end:
-#     bindings-OFF configure with find_package(Python*) disabled, focused
+#     bindings-free configure with find_package(Python*) disabled, focused
 #     build, nested CTest, no-Python-path scans, RPATH/load-command audit and
 #     the mandatory negative acquisitions (missing root, wrong version,
 #     tampered artifact, missing error ABI).
@@ -20,10 +21,8 @@ function(bike_write_dependency_provenance output_file)
     message(FATAL_ERROR "bike_write_dependency_provenance called before bike_dependencies_resolve()")
   endif()
   string(JOIN "," _dep_fragments ${BIKE_DEP_PROVENANCE_FRAGMENTS})
+  # Fixed "false" since T63: the option and the extension no longer exist.
   set(_dep_bindings_json "false")
-  if(BIKE_BUILD_PYTHON_BINDINGS)
-    set(_dep_bindings_json "true")
-  endif()
   set(_dep_gui_json "false")
   if(BIKE_BUILD_GUI)
     set(_dep_gui_json "true")
@@ -99,7 +98,7 @@ endfunction()
 
 # Path tokens that must never appear in the bindings-OFF build closure:
 # Python include/lib trees, virtualenv/wheel layouts and nanobind headers.
-set(_t03_forbidden_regex "(/[^\"' \t\n]*(site-packages|nanobind|\\.venv|/venv/|cpython-|/include/python|/lib/python|libpython|Python\\.framework|\\.whl)[^\"' \t\n]*)")
+set(_t03_forbidden_regex "(/[^\"' \t\n]*(site-packages|nanobind|\\.venv|/venv/|cpython-|/include/pytho[n]|/lib/pytho[n]|libpytho[n]|Python\\.framework|\\.whl)[^\"' \t\n]*)")
 
 function(_t03_scan_no_python label file_path)
   if(NOT EXISTS "${file_path}")
@@ -122,7 +121,6 @@ function(_t03_configure rc_var log_var build_dir dep_root lock_file)
     COMMAND "${CMAKE_COMMAND}" -S "${BIKE_REPO_ROOT}" -B "${build_dir}"
       -DCMAKE_BUILD_TYPE=Release
       "-DCMAKE_CXX_COMPILER=${BIKE_CXX}"
-      -DBIKE_BUILD_PYTHON_BINDINGS=OFF
       -DBIKE_BUILD_GUI=OFF
       -DCMAKE_DISABLE_FIND_PACKAGE_Python=ON
       -DCMAKE_DISABLE_FIND_PACKAGE_Python3=ON
@@ -393,9 +391,7 @@ message(STATUS "migration_T03: all checks passed")
 
   if(BUILD_TESTING)
     set(_t03_host_is_root OFF)
-    if(BIKE_ROOT_BUILD)
       set(_t03_host_is_root ON)
-    endif()
     add_test(NAME migration_T03
       COMMAND "${CMAKE_COMMAND}"
         "-DBIKE_REPO_ROOT=${repo_root}"

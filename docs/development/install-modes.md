@@ -1,10 +1,9 @@
-# Native and transition installation modes
+# Native installation modes
 
 The standalone C++ application build starts at the repository root and
 uses explicitly acquired native dependencies under `.deps`. Its root
 presets never resolve an interpreter. The transition Python package and
-binding graph remain in the tree until Phase 4's qualified deletion; they
-are separate build routes.
+binding graph were deleted at T63; no interpreter route remains.
 
 ## Choose an installation mode
 
@@ -13,7 +12,6 @@ are separate build routes.
 | Native binary archive | Installed `bin/`, runtime `lib/`, examples and provenance in `share/` | `package_smoke` and `install_smoke` on the target platform, then retain the complete directory when relocating |
 | Native source archive | Source plus target-matched dependency archives under `.deps/_archives` | Offline extractor, root release workflow, native checks and an isolated offline rebuild |
 | Native source development | Real checkout, extracted `.deps`, root CMake graph | `cmake --workflow --preset release`; other presets have separate build trees |
-| Transition Python/oracle | Existing Python source, locked CPython 3.13 environment and optional binding graph | Retained until its two-platform captures and C++ successors have qualified; it is not the native distribution |
 
 See [installation](../installation.md) for the exact acquisition,
 extraction, CPack and network-isolated rehearsal commands. Version `0.0.0`

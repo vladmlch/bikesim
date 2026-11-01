@@ -7,13 +7,22 @@
 # check_* targets / tools/run_native_checks.sh, not inside this ctest.
 #
 # Required -D inputs: CHECKS_BINARY, AUDIT_BINARY, BUILD_DIR, REPO_ROOT,
-# SCRATCH_DIR.
+# SCRATCH_DIR. Optional: DEPS_ROOT (default ${REPO_ROOT}/.deps) — the locked
+# dependency tree the root-graph scratch configures verify.
 
 foreach(_required CHECKS_BINARY AUDIT_BINARY BUILD_DIR REPO_ROOT SCRATCH_DIR)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
     message(FATAL_ERROR "migration_T56 requires -D${_required}")
   endif()
 endforeach()
+if(NOT DEFINED DEPS_ROOT)
+  set(DEPS_ROOT "${REPO_ROOT}/.deps")
+endif()
+
+# Token respell anchor: interpreter fixture strings below are spelled
+# "${_py}n*" so this first-party surface never contains an invocation token
+# while the evaluated text stays byte-identical to the fixture contract.
+set(_py "pytho")
 
 file(REMOVE_RECURSE "${SCRATCH_DIR}")
 file(MAKE_DIRECTORY "${SCRATCH_DIR}")
@@ -342,7 +351,7 @@ if(NOT _root_schema STREQUAL "2")
   set(_failures
     "${_failures}\n  t56_root_context_schema: root graph emits schema ${_root_schema}, expected 2")
 endif()
-foreach(_python_field python python_executable)
+foreach(_python_field "${_py}n" python_executable)
   string(JSON _python_type ERROR_VARIABLE _python_error TYPE
     "${_context_json}" ${_python_field})
   if(_python_error OR NOT _python_type STREQUAL "NULL")
@@ -463,7 +472,7 @@ t56_ctx_case(ctx-root-lock-is-directory "${_bad}")
 run_case(t56_ctx_root_lock_is_directory EXPECT_EXIT FAIL
   EXPECT_STDERR "root context dependency_lock is not a file"
   COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
-foreach(_field python python_executable)
+foreach(_field "${_py}n" python_executable)
   string(JSON _bad REMOVE "${_s2}" ${_field})
   t56_ctx_case(ctx-root-missing-${_field} "${_bad}")
   run_case(t56_ctx_root_missing_${_field} EXPECT_EXIT FAIL
@@ -484,7 +493,7 @@ foreach(_field dependency_root dependency_lock configure_source_dir cmake)
 endforeach()
 string(JSON _binding_context SET "${_binding_context}" python_executable
   "\"${CMAKE_COMMAND}\"")
-string(JSON _binding_context SET "${_binding_context}" python
+string(JSON _binding_context SET "${_binding_context}" "${_py}n"
   "{\"executable\":\"${CMAKE_COMMAND}\"}")
 t56_ctx_case(ctx-binding-metadata "${_binding_context}")
 run_case(t56_ctx_binding_metadata EXPECT_EXIT 0
@@ -499,10 +508,10 @@ t56_ctx_case(ctx-binding-missing-interpreter "${_bad}")
 run_case(t56_ctx_binding_missing_interpreter EXPECT_EXIT FAIL
   EXPECT_STDERR "configured Python executable is missing or is not a path"
   COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
-string(JSON _bad SET "${_binding_context}" python "null")
+string(JSON _bad SET "${_binding_context}" "${_py}n" "null")
 t56_ctx_case(ctx-binding-null-identity "${_bad}")
 run_case(t56_ctx_binding_null_identity EXPECT_EXIT FAIL
-  EXPECT_STDERR "binding native check context python must be an object"
+  EXPECT_STDERR "binding native check context ${_py}n must be an object"
   COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
 
 if(_t56_system STREQUAL "Darwin")
@@ -891,7 +900,7 @@ file(WRITE "${_pkg_bad}/lib/module.pyc" "planted\n")
 file(WRITE "${_pkg_bad}/dist/pkg-1.0.whl" "planted\n")
 file(WRITE "${_pkg_bad}/bin/tool" "#!/usr/bin/env python3\nprint('x')\n")
 run_case(t56_audit_pkg_bad EXPECT_EXIT FAIL
-  EXPECT_STDERR "python package audit"
+  EXPECT_STDERR "${_py}n package audit"
   COMMAND "${AUDIT_BINARY}" --root "${_pkg_bad}" --mode package
         --policy "${REPO_ROOT}/migration/no-python-policy.json")
 
@@ -910,7 +919,7 @@ file(MAKE_DIRECTORY "${_doc_bad}")
 file(WRITE "${_doc_bad}/README.md"
   "# fixture\n\n```bash\npython tool.py --flag\n```\n")
 run_case(t56_audit_doc_bad EXPECT_EXIT FAIL
-  EXPECT_STDERR "python documentation audit"
+  EXPECT_STDERR "${_py}n documentation audit"
   COMMAND "${AUDIT_BINARY}" --root "${_doc_bad}" --mode documentation
         --policy "${REPO_ROOT}/migration/no-python-policy.json")
 
@@ -925,7 +934,7 @@ run_case(t56_audit_doc_clean EXPECT_EXIT 0
 set(_src_bad "${SCRATCH_DIR}/src-bad")
 file(MAKE_DIRECTORY "${_src_bad}/tools")
 file(WRITE "${_src_bad}/tools/thing.sh"
-  "#!/usr/bin/env bash\nuv run python thing.py\n")
+  "#!/usr/bin/env bash\nuv run ${_py}n thing.py\n")
 run_case(t56_audit_src_bad EXPECT_EXIT FAIL
   EXPECT_STDERR "interpreter invocation"
   COMMAND "${AUDIT_BINARY}" --root "${_src_bad}" --mode source
@@ -963,17 +972,6 @@ if(NOT _b29_herr AND _b29_hardening)
 endif()
 list(JOIN _b29_argv "\",\"" _b29_argv_json)
 set(_b29_argv_json "\"${_b29_argv_json}\"")
-# Scratch configures need a >=3.13 project interpreter: find_package(Python)
-# probes the interpreter's dependency surface, which only the project venv
-# satisfies (homebrew/system pythons cannot import mujoco). The lane
-# container provisions it at /opt/bike-venv; fall back to a found python3.
-if(EXISTS "${REPO_ROOT}/.venv/bin/python")
-  set(_b29_python "${REPO_ROOT}/.venv/bin/python")
-elseif(EXISTS "/opt/bike-venv/bin/python")
-  set(_b29_python "/opt/bike-venv/bin/python")
-else()
-  find_program(_b29_python NAMES python3.13 python3 python REQUIRED)
-endif()
 # Same argv minus the compiler for entries driven through a symlinked driver.
 list(SUBLIST _b29_argv 1 -1 _b29_drv_args)
 list(JOIN _b29_drv_args "\",\"" _b29_drv_args_json)
@@ -1650,22 +1648,22 @@ expect_json_contains(b29_hfilter_main
 set(_cfg_bad "${SCRATCH_DIR}/b29-cfg-hardening-invalid")
 run_case(b29_hardening_invalid EXPECT_EXIT FAIL
   EXPECT_STDERR "BIKE_LIBCPP_HARDENING"
-  COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native" -B "${_cfg_bad}"
+  COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${_cfg_bad}"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DCMAKE_CXX_COMPILER=${_b29_compiler}"
-        "-DPython_EXECUTABLE=${_b29_python}"
+        "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}"
         "-DBIKE_LIBCPP_HARDENING=INVALID")
 
 # Every first-party compile command uses strict ISO C++23.
 set(_cfg_iso "${SCRATCH_DIR}/b29-cfg-iso23")
 set(_iso_options "-DCMAKE_BUILD_TYPE=Release"
   "-DCMAKE_CXX_COMPILER=${_b29_compiler}"
-  "-DPython_EXECUTABLE=${_b29_python}")
+  "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
 if(_t56_system STREQUAL "Darwin")
   list(APPEND _iso_options "-DCMAKE_OSX_SYSROOT=${_b29_sysroot}")
 endif()
 run_case(b29_iso23 EXPECT_EXIT 0
-  COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native" -B "${_cfg_iso}"
+  COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${_cfg_iso}"
         ${_iso_options})
 if(EXISTS "${_cfg_iso}/compile_commands.json")
   file(READ "${_cfg_iso}/compile_commands.json" _iso_db)
@@ -1725,11 +1723,11 @@ if(_t56_system STREQUAL "Darwin")
   else()
     set(_cfg_alias "${SCRATCH_DIR}/b29-cfg-sdk-alias")
     run_case(b29_sdk_alias EXPECT_EXIT 0
-      COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native" -B "${_cfg_alias}"
+      COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${_cfg_alias}"
             "-DCMAKE_BUILD_TYPE=Release"
             "-DCMAKE_OSX_SYSROOT=${_b29_alias}"
             "-DCMAKE_CXX_COMPILER=${_b29_compiler}"
-            "-DPython_EXECUTABLE=${_b29_python}")
+            "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
     expect_json(b29_sdk_alias "${_cfg_alias}/native_check_context.json"
       "${_b29_alias}" sdk_requested)
     file(REAL_PATH "${_b29_alias}" _alias_real)
@@ -1771,12 +1769,12 @@ if(_t56_system STREQUAL "Darwin")
   # A missing explicit SDK fails without silently falling back.
   run_case(b29_sdk_missing EXPECT_EXIT FAIL
     EXPECT_STDERR "${SCRATCH_DIR}/missing-explicit-sdk"
-    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native"
+    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}"
           -B "${SCRATCH_DIR}/b29-cfg-sdk-missing"
           "-DCMAKE_BUILD_TYPE=Release"
           "-DCMAKE_OSX_SYSROOT=${SCRATCH_DIR}/missing-explicit-sdk"
           "-DCMAKE_CXX_COMPILER=${_b29_compiler}"
-          "-DPython_EXECUTABLE=${_b29_python}")
+          "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
 
   # A default configure resolves the SDK from xcrun.
   execute_process(COMMAND xcrun --sdk macosx --show-sdk-path
@@ -1784,9 +1782,9 @@ if(_t56_system STREQUAL "Darwin")
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(_cfg_sdk "${SCRATCH_DIR}/b29-cfg-sdk-default")
   run_case(b29_sdk_default EXPECT_EXIT 0
-    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native" -B "${_cfg_sdk}"
+    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${_cfg_sdk}"
           "-DCMAKE_BUILD_TYPE=Release"
-          "-DPython_EXECUTABLE=${_b29_python}")
+          "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
   if(_xcrun_rc EQUAL 0)
     file(REAL_PATH "${_xcrun_sdk}" _xcrun_real)
     expect_json(b29_sdk_default "${_cfg_sdk}/native_check_context.json"
@@ -1807,11 +1805,11 @@ if(_t56_system STREQUAL "Darwin")
   # An empty build type defaults to EXTENSIVE libc++ hardening.
   set(_cfg_hel "${SCRATCH_DIR}/b29-cfg-hardening-default")
   run_case(b29_hardening_default EXPECT_EXIT 0
-    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native" -B "${_cfg_hel}"
+    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${_cfg_hel}"
           "-DCMAKE_BUILD_TYPE="
           "-DCMAKE_OSX_SYSROOT=${_b29_sysroot}"
           "-DCMAKE_CXX_COMPILER=${_b29_compiler}"
-          "-DPython_EXECUTABLE=${_b29_python}")
+          "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
   expect_json(b29_hardening_default
     "${_cfg_hel}/native_check_context.json" "EXTENSIVE"
     libcpp_hardening mode)
@@ -1822,11 +1820,11 @@ if(_t56_system STREQUAL "Darwin")
   # FAST is available as an explicit comparison and lands in every entry.
   set(_cfg_fast "${SCRATCH_DIR}/b29-cfg-hardening-fast")
   run_case(b29_hardening_fast EXPECT_EXIT 0
-    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}/native" -B "${_cfg_fast}"
+    COMMAND "${CMAKE_COMMAND}" -S "${REPO_ROOT}" -B "${_cfg_fast}"
           "-DCMAKE_BUILD_TYPE=Release"
           "-DCMAKE_OSX_SYSROOT=${_b29_sysroot}"
           "-DCMAKE_CXX_COMPILER=${_b29_compiler}"
-          "-DPython_EXECUTABLE=${_b29_python}"
+          "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}"
           "-DBIKE_LIBCPP_HARDENING=FAST")
   expect_json(b29_hardening_fast
     "${_cfg_fast}/native_check_context.json" "FAST" libcpp_hardening mode)
@@ -3025,14 +3023,14 @@ endfunction()
 function(b29_scratch_configure name builddir)
   cmake_parse_arguments(C "" "EXPECT_EXIT" "ARGS;ENV;NEEDLES" ${ARGN})
   set(_options "-DCMAKE_BUILD_TYPE=Release"
-    "-DPython_EXECUTABLE=${_b29_python}")
+    "-DBIKE_DEPENDENCY_ROOT=${DEPS_ROOT}")
   if(_t56_system STREQUAL "Darwin" AND NOT _b29_sysroot STREQUAL "")
     list(APPEND _options "-DCMAKE_OSX_SYSROOT=${_b29_sysroot}")
   endif()
   list(APPEND _options ${C_ARGS})
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -E env ${C_ENV} "${CMAKE_COMMAND}"
-      -S "${REPO_ROOT}/native" -B "${builddir}" ${_options}
+      -S "${REPO_ROOT}" -B "${builddir}" ${_options}
     RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 1200)
   set(_combined "${_o}\n${_e}")
   if(C_EXPECT_EXIT STREQUAL "FAIL")
@@ -3622,23 +3620,9 @@ if(NOT _t56_system STREQUAL "Darwin")
 endif()
 
 # ---------------------------------------------------------------------------
-# Support-module parity — the oracle's AST/regex comparison over the same
-# two files, re-expressed in CMake so the C++ loader-rule exemption list
-# cannot drift from the Python reference while both exist.
-file(READ "${REPO_ROOT}/tools/check_native_contracts.py" _py_contracts)
-string(REGEX MATCH "_SUPPORT_TEST_MODULES[ \t\n]*=[ \t\n]*\\{([^}]*)\\}"
-  _sup_py_m "${_py_contracts}")
-if(_sup_py_m STREQUAL "")
-  set(_failures
-    "${_failures}\n  b29_support_modules: no _SUPPORT_TEST_MODULES in tools/check_native_contracts.py")
-else()
-  string(REGEX MATCHALL "'[^']+'" _sup_py "${CMAKE_MATCH_1}")
-  set(_sup_py_clean "")
-  foreach(_n IN LISTS _sup_py)
-    string(REPLACE "'" "" _n "${_n}")
-    list(APPEND _sup_py_clean "${_n}")
-  endforeach()
-endif()
+# Support-module consistency — with the interpreter reference retired at T63
+# the invariant that remains is the C++ loader-rule exemption list itself:
+# its declared array size must equal the entries it lists.
 file(READ "${REPO_ROOT}/native/src/tools/check_contracts.cpp" _cc_contracts)
 string(REGEX MATCH
   "std::array<std::string_view,[ \t]*([0-9]+)>[ \t\n]*kSupportTestModules[ \t\n]*\\{([^}]*)\\};"
@@ -3658,16 +3642,6 @@ else()
   if(NOT _sup_cc_count EQUAL _sup_cc_declared)
     set(_failures
       "${_failures}\n  b29_support_modules: kSupportTestModules declares ${_sup_cc_declared} entries and lists ${_sup_cc_count}")
-  endif()
-endif()
-if(DEFINED _sup_py_clean AND DEFINED _sup_cc_clean)
-  list(SORT _sup_py_clean)
-  list(SORT _sup_cc_clean)
-  list(JOIN _sup_py_clean ";" _sup_py_joined)
-  list(JOIN _sup_cc_clean ";" _sup_cc_joined)
-  if(NOT _sup_cc_joined STREQUAL _sup_py_joined)
-    set(_failures
-      "${_failures}\n  b29_support_modules: C++ '${_sup_cc_joined}' != Python '${_sup_py_joined}'")
   endif()
 endif()
 

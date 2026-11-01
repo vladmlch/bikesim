@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Linux aarch64 lane for one checkout. No host venv or dependency/build tree
+# Linux aarch64 lane for one checkout. No host dependency/build tree
 # crosses into the container. Sources live in /src, build trees in /build.
 #
 # image                         build the pinned lane image
 # up                            create/start this checkout's container
 # sync                          copy tracked and unignored source files
-# venv                          provision /opt/bike-venv from uv.lock
-# configure NAME native|root    configure the selected graph; extra CMake args follow
+# configure NAME [args...]      configure the root graph; extra CMake args follow
 # build NAME [TARGET...]        build with Ninja; keep /build/NAME.log
 # failures NAME                 count failed commands in the last build log
 # ctest NAME [ARG...]            run CTest in /build/NAME
@@ -247,7 +246,7 @@ pull_paths_from_container() {
 }
 
 [[ $# -ge 1 ]] ||
-    die "usage: container.sh <image|up|sync|venv|configure|build|failures|ctest|exec|pull|gate|down> ..."
+    die "usage: container.sh <image|up|sync|configure|build|failures|ctest|exec|pull|gate|down> ..."
 [[ "$name" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] ||
     die "invalid container name; set BIKE_LINUX_CONTAINER"
 cmd="$1"
@@ -339,28 +338,15 @@ case "$cmd" in
             rsync -a --delete --exclude=/.deps/ --exclude=/build/ "$staged/" /src/
         '
         ;;
-    venv)
-        [[ $# -eq 0 ]] || die "usage: venv"
-        in_container uv sync --frozen --group native
-        ;;
     configure)
-        [[ $# -ge 2 ]] || die "usage: configure NAME native|root [cmake args...]"
+        [[ $# -ge 1 ]] || die "usage: configure NAME [cmake args...]"
         build="$1"
         build_name "$build"
-        graph="$2"
-        shift 2
-        case "$graph" in
-            native)
-                src=/src/native
-                extra=(-DPython_EXECUTABLE=/opt/bike-venv/bin/python3)
-                ;;
-            root)
-                src=/src
-                extra=(-DBIKE_BUILD_PYTHON_BINDINGS=OFF -DBIKE_DEPENDENCY_ROOT=/src/.deps)
-                ;;
-            *) die "unknown graph: $graph (expected native or root)" ;;
-        esac
-        in_container cmake -S "$src" -B "/build/$build" -G Ninja "${extra[@]}" "$@"
+        shift
+        # The root graph is the only graph (T63); dependencies come from the
+        # synced /src/.deps lock tree.
+        in_container cmake -S /src -B "/build/$build" -G Ninja \
+            -DBIKE_DEPENDENCY_ROOT=/src/.deps "$@"
         ;;
     build)
         [[ $# -ge 1 ]] || die "usage: build NAME [ninja targets...]"
@@ -401,13 +387,11 @@ case "$cmd" in
         esac
         # CXX only selects a compiler for a fresh tree. Refuse a stale GCC
         # cache instead of deleting it or silently running the wrong lane.
-        # The selected binding tree is likewise owned by the Clang lane.
         # shellcheck disable=SC2016  # Positionals and cache paths belong to the container shell.
         in_container bash -c '
             set -euo pipefail
             export CXX=/usr/bin/clang++-18
             export NATIVE_TEST_BUILD_PATH=/build/native-clang
-            export UV_PROJECT_ENVIRONMENT=/opt/bike-venv
             if [[ "$1" != quick ]]; then
                 for cache in /src/build/native-release/CMakeCache.txt /build/native-clang/CMakeCache.txt; do
                     [[ -f "$cache" ]] || continue

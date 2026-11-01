@@ -675,6 +675,15 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
             ? resolved_root / "migration" / "no-python-policy.json"
             : fs::weakly_canonical(policy_path);
     try {
+        // An explicitly supplied policy that does not exist is a caller
+        // error: degrading to the empty policy would let a package/source
+        // audit pass vacuously (T62 fail-closed contract). The defaulted
+        // path still degrades — package roots legitimately lack the
+        // repo-resident policy file and callers pass --policy for it.
+        if (!policy_path.empty() &&
+            !fs::is_regular_file(resolved_policy, ec))
+            throw AuditError("missing no-python policy: " +
+                             resolved_policy.string());
         const Value policy =
             fs::is_regular_file(resolved_policy, ec)
                 ? read_json(resolved_policy, "no-python policy")

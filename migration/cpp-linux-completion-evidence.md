@@ -11447,5 +11447,13 @@ and `migration_T10` 13.25 s; contract checks all passed; pytest
 
 Post-repair verification: `reference.native_atomicity` ctest 1/1 PASS
 (0.49 s); `test_native_atomicity.py` + `test_native_recording_retention.
-py` pytest **57 passed**. Remaining Darwin red = the documented
-drop-record pin only; gate exit 0 awaits that pin's owner.
+py` pytest **57 passed**.
+
+`bash tools/run_tests.sh native` **re-run on `6670b7fc` → exit 1**:
+all sweeps green/report-only again, CTest 62/62 again, pytest
+`1 failed, 3244 passed, 1 skipped (5592.39 s)` — the two repaired reds
+are gone; the sole remaining red is the documented `drop`/`python-only`
+pin `test_numpy_float32_shifting_metadata_retains_baseline_bits`.
+Darwin gate exit 0 awaits that pin's owner lane (deliberate live-oracle
+red per `test-port-map.json`); all FT-7-scoped reds repaired with
+oracle-parity evidence.

@@ -76,7 +76,8 @@ Lane: `lane/d4` · worktree `.worktrees/pfc-lane-d` · Darwin arm64 only
 | `ctest --test-dir build/native-release -R 'native_spindle_controller + native_rider_allocation + native_rider_dynamics + native_rider_forces'` | **0** (4/4 pass — the solved_effort golden stays valid; the scenario's joint powers stay ≤250 W) |
 | `BIKE_GOLDEN_CAPTURE=tests/fixtures/golden pytest …::test_tire_channel_parity_across_backends` | **0** (1 passed, 217 s — pair re-recorded) |
 | `pytest tests/reference/test_native_numeric_completion.py` | 1 failed (`float32_shifting` stale pin — documented baseline) / 531 passed |
-| `bash tools/run_tests.sh native` (final gate, post-`bc68f309`) | **1** — all 9 sweeps + CTest 62/62 green; pytest `3 failed / 3242 passed`; reds classified + repaired below (follow-up commit) |
+| `bash tools/run_tests.sh native` (gate 1, on `bc68f309`) | **1** — all sweeps + CTest 62/62 green; pytest `3 failed / 3242 passed`; reds classified + repaired below |
+| `bash tools/run_tests.sh native` (final gate, on `6670b7fc`) | **1** — all sweeps + CTest 62/62 green; pytest `1 failed / 3244 passed` in 5592.39 s; the only remaining red is the ledger-documented drop-record baseline pin |
 
 ## Final native gate (`bash tools/run_tests.sh native`, post-`bc68f309`)
 
@@ -84,7 +85,16 @@ Result: **exit 1**, ~3.2 h wall (heavy 3-worktree gate contention for the
 first half). Every static-analysis sweep green or report-only;
 **CTest 62/62 passed (800.66 s) including `migration_T09` 14.96 s and
 `migration_T10` 13.25 s**; contract checks all `passed`; pytest
-`3 failed, 3242 passed, 1 skipped in 5915.72 s`:
+`3 failed, 3242 passed, 1 skipped in 5915.72 s`.
+
+**Final gate re-run on `6670b7fc`: exit 1** — all sweeps green/report-only
+(frontends, tidy, analyzer report-only, cppcheck, odr, shellcheck,
+sdk-compat, diagnostic-controls, context, contracts, headers), **CTest
+62/62 passed again**, pytest **`1 failed, 3244 passed, 1 skipped in
+5592.39 s`** — the two repaired reds are gone; the sole remaining red is
+the documented drop-record baseline pin.
+
+Gate-1 red classification:
 
 | pytest red | Classification | Evidence |
 |---|---|---|
@@ -112,7 +122,7 @@ retention.py` **57 passed**; the two repaired nodes green.
 ## Commits
 
 - `bc68f309 golden(ft7): recapture welded/research oracles + fix solved_effort joint budget`
-- `<follow-up> fix(ft7): retire 2 stale pins exposed by the final gate` —
+- `6670b7fc fix(ft7): retire 2 stale pins exposed by the final gate` —
   mid-sweep ratio literal (both atomicity twins) + strict-flush floor pin
   (Python retention node); `Co-Authored-By: Devin`.
 
@@ -122,9 +132,9 @@ retention.py` **57 passed**; the two repaired nodes green.
   welded/delayed_bootstrap consumers green; the defect fix's blast
   radius (solved_effort fold) verified against the spindle/rider
   golden tests — unchanged scenarios stay bitwise-valid.
-- Final gate `bash tools/run_tests.sh native`: **exit 1** with the
-  pytest red set classified above. After the follow-up repairs the only
-  remaining red is the ledger-documented `drop`/`python-only` node
+- Final gate `bash tools/run_tests.sh native` on `6670b7fc`: **exit 1**
+  — `1 failed, 3244 passed`. The only remaining red is the
+  ledger-documented `drop`/`python-only` node
   `test_numpy_float32_shifting_metadata_retains_baseline_bits` — a
   deliberate live-oracle red owned outside FT-7 (`b21c63ec` drift,
   per `test-port-map.json`). **Exit 0 is not reachable in this lane

@@ -92,7 +92,7 @@ std::string source_fingerprint(const std::filesystem::path& root) {
     if(!std::filesystem::is_directory(root))throw std::invalid_argument("source fingerprint requires a source directory");
     std::vector<std::filesystem::path> files;
     for(const auto& entry:std::filesystem::recursive_directory_iterator(root)) {
-        if(!entry.is_regular_file())continue;const auto ext=entry.path().extension();
+        if(!entry.is_regular_file()){continue;}const auto ext=entry.path().extension();
         if(ext==".cpp"||ext==".hpp"||ext==".h"||ext==".cmake"||entry.path().filename()=="CMakeLists.txt")files.push_back(entry.path());
     }
     std::ranges::sort(files,[&](const auto& a,const auto& b){return a.lexically_relative(root).generic_string()<b.lexically_relative(root).generic_string();});
@@ -187,7 +187,7 @@ double interval_integral(const Value& rows,std::string_view key) {
         if(previous&&std::abs(start-*previous)>1e-9)throw std::invalid_argument("gap or overlap in force history");
         result+=x*(end-start);previous=end;
     }
-    if(!std::isfinite(result))throw std::invalid_argument("interval integral overflow");return result;
+    if(!std::isfinite(result)){throw std::invalid_argument("interval integral overflow");}return result;
 }
 double relative_change(double a,double b,double floor) {scalar(a,"value");scalar(b,"reference");positive(floor,"comparison scale");return std::abs(a-b)/std::max(std::abs(b),floor);}
 Value rider_work_ledger(const Value& work) {
@@ -200,7 +200,7 @@ Value rider_work_ledger(const Value& work) {
 
 // climbing_evidence.py:7-111: unknown status and interrupted histories never become valid.
 Value support_evidence(const Value& input,std::optional<double> required) {
-    if(required)positive(*required,"required duration");const auto& rows=io::as_array(input,"rows");
+    if(required){positive(*required,"required duration");}const auto& rows=io::as_array(input,"rows");
     Object out{{"interval_count",value::integer(static_cast<std::int64_t>(rows.size()))},{"complete",Value{false}},
         {"first_both_unloaded_s",{}},{"max_both_unloaded_s",value::real(0.)},{"max_front_gap_m",value::real(0.)},{"max_rear_gap_m",value::real(0.)},
         {"first_invalid_s",{}},{"invalid_reason",Value{Array{}}},{"first_unknown_s",{}},{"model_valid",{}},{"numerically_valid",{}},
@@ -215,7 +215,7 @@ Value support_evidence(const Value& input,std::optional<double> required) {
     for(const auto& row:rows) {
         const double start=real(row,"time_s"),end=real(row,"end_time_s");
         if(start<0.||end<=start)throw std::invalid_argument("support evidence requires finite ordered intervals");
-        if(previous&&std::abs(start-*previous)>1e-9)throw std::invalid_argument("support evidence requires contiguous intervals");previous=end;
+        if(previous&&std::abs(start-*previous)>1e-9){throw std::invalid_argument("support evidence requires contiguous intervals");}previous=end;
         bool available=false,unknown=false,support_unknown=false;double gap_max=0.;
         const auto rider=optional(row,"rider",empty_object());
         for(const auto side:{"front","rear"}) {
@@ -228,7 +228,7 @@ Value support_evidence(const Value& input,std::optional<double> required) {
         }
         if(available||support_unknown){loss_start.reset();loss_duration=0.;}
         else {
-            if(!loss_start)loss_start=start;loss_duration+=end-start;
+            if(!loss_start){loss_start=start;}loss_duration+=end-start;
             value::set(out,"max_both_unloaded_s",value::real(std::max(read_out("max_both_unloaded_s"),loss_duration)));
             if(loss_duration>=.20-1e-12&&io::is_null(*io::find_member(out,"first_both_unloaded_s")))value::set(out,"first_both_unloaded_s",value::real(*loss_start));
         }
@@ -349,7 +349,7 @@ Value compare_metrics(const Value& a,const Value& b) {
     for(const auto key:{"mean_fork_travel_m","max_fork_travel_m","mean_shock_stroke_m","max_shock_stroke_m"})criteria.emplace_back(key,criterion(std::abs(real(a,key)-real(b,key)),.001));
     criteria.emplace_back("peak_pitch_rate_rad_s",criterion(relative_change(real(a,"peak_pitch_rate_rad_s"),real(b,"peak_pitch_rate_rad_s"),.05),.05));
     const auto& x=io::as_array(get(a,"contact_events"),"events");const auto& y=io::as_array(get(b,"contact_events"),"events");bool matched=x.size()==y.size();double error=0.;Array actual,reference;
-    for(const auto& entry:x)actual.push_back(get(entry,"state"));for(const auto& entry:y)reference.push_back(get(entry,"state"));
+    for(const auto& entry:x){actual.push_back(get(entry,"state"));}for(const auto& entry:y){reference.push_back(get(entry,"state"));}
     if(matched)for(std::size_t i=0;i<x.size();++i){matched=matched&&text(x[i],"state")==text(y[i],"state");error=std::max(error,std::abs(real(x[i],"time_s")-real(y[i],"time_s")));}
     criteria.emplace_back("event_sequence",Value{Object{{"passed",Value{matched}},{"actual",Value{std::move(actual)}},{"reference",Value{std::move(reference)}}}});
     criteria.emplace_back("contact_event_time_s",matched?criterion(error,.005):Value{Object{{"passed",Value{false}},{"actual",{}},{"maximum",value::real(.005)},{"reason",value::text("categorical mismatch")}}});
@@ -394,7 +394,7 @@ Value resolution_variants(const Value& times,const Value& roads,const Value& sta
         for(std::size_t j=0;j<a.size();++j){positive(a[j],"resolution value");if(i==2&&(a[j]<16.||std::trunc(a[j])!=a[j]))throw std::invalid_argument("station counts must be integers of at least sixteen");if(j&&((i!=2&&a[j]>=a[j-1])||(i==2&&a[j]<=a[j-1])))throw std::invalid_argument("time and road steps decrease; station counts increase");}}
     const double dt=t[t.size()-2],dx=x[x.size()-2],count=n[n.size()-2];Array variants;
     const auto add=[&](std::string_view axis,double d,double r,double s){variants.push_back(Value{Array{value::text(axis),value::real(d),value::real(r),value::integer(static_cast<std::int64_t>(s))}});};
-    for(double const d:t)add("time",d,dx,count);for(double const r:x)add("road",dt,r,count);if(include_stations)for(double const s:n)add("stations",dt,dx,s);
+    for(double const d:t){add("time",d,dx,count);}for(double const r:x){add("road",dt,r,count);}if(include_stations)for(double const s:n)add("stations",dt,dx,s);
     return Value{Object{
         {"anchor",Value{Array{value::real(dt),value::real(dx),value::integer(static_cast<std::int64_t>(count))}}},
         {"variants",Value{std::move(variants)}}

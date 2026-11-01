@@ -268,7 +268,8 @@ test_snapshot_replay_and_mjdata_restore_is_independent() {
     // the writer's state.
     CruiseState detached = snapshot;
     detached.integral_mps_s = 999.;
-    bt::require(pair.native->cruise_state().integral_mps_s != 999.,
+    bt::require(detached.integral_mps_s == 999. &&
+                    pair.native->cruise_state().integral_mps_s != 999.,
                 "cruise_state() returns a detached snapshot");
 }
 

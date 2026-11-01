@@ -369,7 +369,7 @@ inline void tamper_jsonl_row(const std::filesystem::path& path, std::string_view
     std::vector<std::string> lines;
     for (std::size_t begin = 0; begin < source.size();) {
         const auto end = source.find('\n', begin);
-        lines.push_back(std::string(source.substr(begin, end == std::string::npos ? end : end - begin)));
+        lines.push_back(source.substr(begin, end == std::string::npos ? end : end - begin));
         if (end == std::string::npos) break;
         begin = end + 1;
     }

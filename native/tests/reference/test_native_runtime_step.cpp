@@ -189,7 +189,7 @@ void test_native_force_fold_matches_python_recorded_inputs() {
         {{0., 0.}, {.35, .2}, {1., 1.}}};
     char label[48];
     int fold = 0;
-    for (const auto [front, rear] : demands) {
+    for (const auto &[front, rear] : demands) {
         const runtime::PhysicalStep::ProbeResult probe =
             native->probe_step_inputs(command, front, rear);
         // components dict, in the oracle's compute_components order.

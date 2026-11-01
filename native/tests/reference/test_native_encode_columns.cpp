@@ -830,7 +830,7 @@ Piece concat_piece(const Piece &a, const Piece &b, std::size_t rows_a,
         out.offsets = a.offsets;
         const std::int32_t base = a.offsets.back();
         for (std::size_t i = 1; i < b.offsets.size(); ++i)
-            out.offsets.push_back(static_cast<std::int32_t>(base + b.offsets[i]));
+            out.offsets.push_back(base + b.offsets[i]);
     }
     for (const auto &[key, child] : a.children)
         out.children.emplace(key, concat_piece(child, b.children.at(key),
@@ -2037,7 +2037,7 @@ void test_map_struct_except_keys_and_nesting_channel_rider() {
         const auto &feet = targets.children.at("feet");
         const auto left = static_cast<std::size_t>(std::distance(
             feet.s.begin(), std::ranges::find(feet.s, "left")));
-        bt::require(left >= 0 && feet.offsets[1] == 1,
+        bt::require(left < feet.s.size() && feet.offsets[1] == 1,
                     "feet keeps the 'left' entry");
         const auto &goal = feet.items->children.at("goal_geometry");
         bt::require(goal.children.at("weld").b[left] == 1 &&

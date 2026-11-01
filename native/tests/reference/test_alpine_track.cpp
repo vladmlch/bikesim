@@ -156,8 +156,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "mixed numeric types equal the plain default hash");
     // np.float32(.3) widens to a different double; it must still hash.
     AlpineGenSpec widened;
-    widened.counter_prob = static_cast<double>(
-            static_cast<float>(.3F));
+    widened.counter_prob = static_cast<double>(.3F);
     (void)widened.sha256();
 }
 

@@ -72,8 +72,8 @@ void test_full_retention_keeps_every_interval_under_measurement_decimation() {
     const auto episode = full->runtime->seal_episode();
     bt::require(episode.generation == full->runtime->snapshot().generation &&
                 episode.samples.size() == 81 &&
-                interval_ids(episode.samples) == std::vector<std::int64_t>(
-                    [] { std::vector<std::int64_t> ids(81); std::iota(ids.begin(), ids.end(), 0); return ids; }()),
+                interval_ids(episode.samples) ==
+                    [] { std::vector<std::int64_t> ids(81); std::iota(ids.begin(), ids.end(), 0); return ids; }(),
                 "full retention keeps every interval under a decimated cadence");
     const auto batch = episode.batch(0, 81);
     bt::require(batch.samples.size() == 81 && interval_ids(batch) == interval_ids(episode.samples),
@@ -112,8 +112,8 @@ void test_off_retention_keeps_pending_evidence_without_history() {
                 "off retention keeps no history");
     const auto batch = rig->runtime->prepare_samples();
     rig->runtime->acknowledge_samples(batch);
-    bt::require(interval_ids(batch.samples) == std::vector<std::int64_t>(
-                    [] { std::vector<std::int64_t> ids(13); std::iota(ids.begin(), ids.end(), 0); return ids; }()),
+    bt::require(interval_ids(batch.samples) ==
+                    [] { std::vector<std::int64_t> ids(13); std::iota(ids.begin(), ids.end(), 0); return ids; }(),
                 "pending consumer delivery still drains every committed interval");
     bt::require(rig->runtime->seal_episode().samples.empty(),
                 "off retention seals to an empty episode");

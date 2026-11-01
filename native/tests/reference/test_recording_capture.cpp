@@ -399,7 +399,7 @@ void test_interrupt_shield_is_a_flag_holder_off_main_thread() {
         bike::platform::InterruptShield shield;
         installed = shield.installed();
         shield.note();
-        deferred = static_cast<std::sig_atomic_t>(shield.deferred());
+        deferred = shield.deferred();
         done = true;
     });
     worker.join();

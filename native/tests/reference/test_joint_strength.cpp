@@ -518,9 +518,9 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
     bt::require(diagnostics.passive_power_w <= 1e-9,
                 "tissue damping can only remove power");
     const double kd = controller.config().passive_damping_nms_rad();
-    const auto &passive_row =
+    const auto passive_row =
         component_row(last, "rider_passive_damping");
-    const auto &engine_row = component_row(last, "engine_passive");
+    const auto engine_row = component_row(last, "engine_passive");
     for (const auto &j : controller.joints()) {
         const auto *terms = static_cast<const ::rider::JointTerms *>(
             nullptr);
@@ -528,7 +528,7 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
             if (name == j.name) terms = &t;
         bt::require(terms != nullptr,
                     "last_terms carries " + j.name);
-        const auto &act_row = component_row(last, "act_" + j.name);
+        const auto act_row = component_row(last, "act_" + j.name);
         const auto dof = static_cast<std::size_t>(j.dof_adr);
         bt::require(terms->solved_active_nm.has_value() &&
                         rr::approx(*terms->solved_active_nm, act_row[dof]),
@@ -590,7 +590,7 @@ test_leg_curves_span_a_120_rpm_pedalling_envelope() {
     for (const std::string side : {"front", "rear"}) {
         for (const std::string joint : {"hip", "knee", "ankle"})
             for (const int direction : {1, -1}) {
-                const auto &curve = curve_at(
+                const auto curve = curve_at(
                     profile, "rider_" + joint + "_" + side, direction);
                 bt::require(curve.vmax_rad_s >= 20.,
                             joint + " " + side + ": vmax spans 120 rpm");
@@ -600,16 +600,16 @@ test_leg_curves_span_a_120_rpm_pedalling_envelope() {
                                 std::string::npos,
                             joint + " " + side + ": provenance is marked");
             }
-        const auto &knee =
+        const auto knee =
             curve_at(profile, "rider_knee_" + side, -1);
         bt::require(spindle::directional_capacity(knee, 1.0, -7.7, -1) >=
                         40.,
                     side + " knee extension holds ~40 N.m at 7.7 rad/s");
-        const auto &hip = curve_at(profile, "rider_hip_" + side, 1);
+        const auto hip = curve_at(profile, "rider_hip_" + side, 1);
         bt::require(spindle::directional_capacity(hip, .9, 5., 1) >= 60.,
                     side + " hip extension holds ~60 N.m at 5 rad/s");
     }
-    const auto &torso = curve_at(profile, "rider_torso_hinge", 1);
+    const auto torso = curve_at(profile, "rider_torso_hinge", 1);
     bt::require(torso.vmax_rad_s == 8., "the torso curve is untouched");
 }
 } // namespace

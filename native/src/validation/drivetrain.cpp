@@ -51,7 +51,7 @@ struct Fixture {
         }
         // Only the final continuation position is the source closure gate.
         std::array<double,4> q{};for(std::size_t i=0;i<q.size();++i)q[i]=qpos[static_cast<std::size_t>(indices[i])];closure=0.;for(double const x:residual(q))closure=std::max(closure,std::abs(x));
-        if(closure>1e-7)throw std::runtime_error("initial closed linkage did not converge");engine::forward(m,d);
+        if(closure>1e-7){throw std::runtime_error("initial closed linkage did not converge");}engine::forward(m,d);
         if(!bike.writers.drive||!bike.writers.suspension)throw std::logic_error("physical fixture writers were not projected");
         suspension=std::make_unique<SuspensionWriter>(m,*bike.writers.suspension);drive=std::make_unique<drivetrain::DrivetrainWriter>(m,d,*bike.writers.drive);drive->reset();
     }
@@ -107,7 +107,7 @@ RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,dou
         shock=component("shock_coil")+component("shock_bumper")+(component("shock_damper")+component("shock_hbo"))+component("shock_top_out")+component("shock_upper_stop");
         engine::step(m,d);(void)drive.settle();const double actual=actuator_force[static_cast<std::size_t>(aid)],power=actual*omega;power_error=std::max(power_error,std::abs(actual-torque));
         if(drive.transmission_storage())defect=std::max(defect,std::abs(mechanics::telemetry(drive,"transmission_constraint_defect_m")));
-        for(const char* name:{"root_x","root_z","root_pitch"})root_actuation=std::max(root_actuation,std::abs(qfrc_actuator[static_cast<std::size_t>(mechanics::dof(m,name))]));contacts=std::max(contacts,static_cast<mjtSize>(d->ncon));
+        for(const char* name:{"root_x","root_z","root_pitch"}){root_actuation=std::max(root_actuation,std::abs(qfrc_actuator[static_cast<std::size_t>(mechanics::dof(m,name))]));}contacts=std::max(contacts,static_cast<mjtSize>(d->ncon));
         rows[0].push_back(shock);rows[1].push_back(loads[0]);rows[2].push_back(travel);rows[3].push_back(power);rows[4].push_back(actual);work.add(power*dt);mechanics::finite_state(m,d);
     }
     return {.metrics=metrics({{"mean_shock_force_n",mean(rows[0])},{"mean_front_normal_load_n",mean(rows[1])},{"mean_rear_travel_delta_m",mean(rows[2])},{"final_rear_travel_delta_m",rows[2].back()},
@@ -132,8 +132,8 @@ Value drive_suspension_comparison(const Value& config,const std::filesystem::pat
     for(double const stroke:strokes)for(double const torque:{0.,20.,40.})for(auto const mode:{modes[0],modes[1]}){const auto& a=lookup.at({finest,stroke,torque,mode});const auto& b=lookup.at({finest,stroke,torque,modes[2]});Value result{Object{{"dt_s",value::real(finest)},{"mode",value::text(mode)},{"initial_shock_stroke_m",value::real(stroke)},{"torque_nm",value::real(torque)}}};auto& fields=std::get<Object>(result.data);bool ok=false;
         const auto& ma=get(a,"metrics");const auto& mb=get(b,"metrics");if(!io::is_null(ma)&&!io::is_null(mb)){Object errors;double maximum=0.;for(const char* name:{"mean_shock_force_n","mean_front_normal_load_n"}){const double error=relative_change(real(ma,name),real(mb,name),10.);maximum=std::max(maximum,error);errors.emplace_back(name,value::real(error));}ok=flag(a,"passed")&&flag(b,"passed")&&maximum<=.05;
             value::set(fields,"relative_force_errors",Value{std::move(errors)});value::set(fields,"rear_travel_difference_m",value::real(real(ma,"mean_rear_travel_delta_m")-real(mb,"mean_rear_travel_delta_m")));value::set(fields,"shaft_power_difference_w",value::real(real(ma,"mean_shaft_power_w")-real(mb,"mean_shaft_power_w")));}
-        else value::set(fields,"reason",value::text("missing fixture result"));value::set(fields,"passed",Value{ok});if(mode=="geometric_ideal_mid_drive"&&torque>0.){proposed=true;passed=passed&&ok;}comparisons.push_back(std::move(result));}
-    for(const auto& row:series)passed=passed&&flag(row,"passed");passed=passed&&proposed;auto& out=std::get<Object>(report.data);value::set(out,"comparisons",Value{std::move(comparisons)});value::set(out,"passed",Value{passed});value::set(out,"status",value::text(passed?"synthetic_local_fixture_pass":"experimental_gate_failed"));checkpoint();return report;
+        else{value::set(fields,"reason",value::text("missing fixture result"));}value::set(fields,"passed",Value{ok});if(mode=="geometric_ideal_mid_drive"&&torque>0.){proposed=true;passed=passed&&ok;}comparisons.push_back(std::move(result));}
+    for(const auto& row:series){passed=passed&&flag(row,"passed");}passed=passed&&proposed;auto& out=std::get<Object>(report.data);value::set(out,"comparisons",Value{std::move(comparisons)});value::set(out,"passed",Value{passed});value::set(out,"status",value::text(passed?"synthetic_local_fixture_pass":"experimental_gate_failed"));checkpoint();return report;
 }
 
 Value compiled_chain_motion_rig() {

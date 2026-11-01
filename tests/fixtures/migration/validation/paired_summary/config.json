@@ -1,0 +1,61 @@
+{
+  "records": [
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true
+      },
+      "operator_intervention": [
+        0
+      ],
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "passthrough",
+      "scenario_id": "s",
+      "seed": 1
+    },
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true,
+        "operator_intervention": 0
+      },
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "candidate",
+      "scenario_id": "s",
+      "seed": 1
+    },
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true,
+        "operator_intervention": ""
+      },
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "passthrough",
+      "scenario_id": "s",
+      "seed": 2
+    },
+    {
+      "metrics": {
+        "duration_s": 1,
+        "model_status": {
+          "model_valid": true
+        },
+        "numerically_valid": true
+      },
+      "plant_and_inputs_sha256": "p",
+      "policy_id": "candidate",
+      "scenario_id": "s",
+      "seed": 2
+    }
+  ]
+}

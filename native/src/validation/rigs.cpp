@@ -166,14 +166,14 @@ RigResult shaft_ratio_rig(double dt,double ratio,bool overrun){
         {"shaft_power_identity_error_w",power_error},{"max_transmission_reaction_norm",reaction_peak},{"overrun",overrun?1.:0.}}),.bounds=std::move(b)};
 }
 
-nativecfg::TireConfig distributed_config(int n,double mu){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
+nativecfg::TireConfig distributed_config(int n,double mu,const nativecfg::HingeDensity* density){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     nativecfg::TireConfig c;c.backend="distributed_2d_reference";c.surface_mode="configured";c.front={.material=std::nullopt,.tangent_k_n_m=20000.,.mu=mu,.relaxation_length_m=.2};c.rear=c.front;
     c.significant_delta_m=.0001;c.significance_fraction=.05;c.distinct_normal_deg=20.;
-    nativecfg::HingeDensity const density{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=2000.,.provenance="synthetic density; not fitted or measured"};
-    nativecfg::DistributedMaterial const material{.density=density,.fitting_dataset_id="none-synthetic",.valid_load_range_n={0.,2000.},.valid_deflection_range_m={0.,.04},.calibration_status="experimental_unvalidated"};
-    c.distributed=nativecfg::DistributedConfig{.station_count=n,.density=density,.front=material,.rear=material};return c;
+    const nativecfg::HingeDensity material_density=density?*density:nativecfg::HingeDensity{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=2000.,.provenance="synthetic density; not fitted or measured"};
+    nativecfg::DistributedMaterial const material{.density=material_density,.fitting_dataset_id="none-synthetic",.valid_load_range_n={0.,2000.},.valid_deflection_range_m={0.,.04},.calibration_status="experimental_unvalidated"};
+    c.distributed=nativecfg::DistributedConfig{.station_count=n,.density=material_density,.front=material,.rear=material};return c;
 }
-WheelStand wheel_stand(double dt,int n,const std::vector<std::array<double,2>>& vertices){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+WheelStand wheel_stand(double dt,int n,const std::vector<std::array<double,2>>& vertices,double mu,const nativecfg::HingeDensity* density){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     positive(dt,"stand step");if(n<16||n>512||vertices.size()<2)throw std::invalid_argument("invalid stand resolution");
     const double dx=vertices[1][0]-vertices[0][0];positive(dx,"heightfield spacing");double low=vertices.front()[1],high=low;
     for(std::size_t i=0;i<vertices.size();++i){scalar(vertices[i][0],"road x");scalar(vertices[i][1],"road z");if(i&&std::abs((vertices[i][0]-vertices[i-1][0])-dx)>1e-12+1e-9*std::abs(dx))throw std::invalid_argument("stand heightfield must be uniformly rasterized");low=std::min(low,vertices[i][1]);high=std::max(high,vertices[i][1]);} // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
@@ -181,7 +181,7 @@ WheelStand wheel_stand(double dt,int n,const std::vector<std::array<double,2>>& 
     auto s=std::make_unique<Stand>(R"(<mujoco><compiler angle="radian"/><option timestep=")"+xml_number(dt)+R"(" gravity="0 0 0" integrator="Euler"/><asset><hfield name="road" nrow="2" ncol=")"+std::to_string(vertices.size())+"\" size=\""+xml_number(radius)+" 1 "+xml_number(scale)+R"( .2"/></asset><worldbody><geom name="terrain" type="hfield" hfield="road" pos=")"+xml_number(center)+" 0 "+xml_number(low)+R"("/><body name="front_wheel" pos="0 0 .37"><joint name="root_x" type="slide" axis="1 0 0"/><joint name="root_z" type="slide" axis="0 0 1"/><joint name="front_wheel_spin" type="hinge" axis="0 1 0"/><inertial mass="2.4" pos="0 0 0" diaginertia=".15 .30 .15"/><geom name="geom_front_contact" type="cylinder" size=".37 .025" euler="1.5707963267948966 0 0" contype="0" conaffinity="0" mass="0"/></body><body name="rear_wheel" pos="0 0 2"><geom name="geom_rear_contact" type="sphere" size=".37" contype="0" conaffinity="0"/></body></worldbody></mujoco>)");
     const std::span<float> hfield=model_access::mutable_buffer(s->model->hfield_data,s->model->nhfielddata,"hfield_data");
     for(std::size_t row=0;row<2;++row)for(std::size_t i=0;i<vertices.size();++i)hfield[row*vertices.size()+i]=static_cast<float>((vertices[i][1]-low)/scale);
-    engine::forward(s->model.get(),s->data.get());auto tire=std::make_unique<DistributedTireWriter>(s->model.get(),s->data.get(),distributed_config(n));return {.stand=std::move(s),.tire=std::move(tire)};
+    engine::forward(s->model.get(),s->data.get());auto tire=std::make_unique<DistributedTireWriter>(s->model.get(),s->data.get(),distributed_config(n,mu,density));return {.stand=std::move(s),.tire=std::move(tire)};
 }
 namespace {
 double kinetic(const mjModel* m,const mjData* d){std::vector<double> momentum(static_cast<std::size_t>(m->nv));mj_mulM(m,d,momentum.data(),d->qvel);return .5*vector_dot(model_access::readonly_buffer(d->qvel,m->nv,"qvel"),momentum);}
@@ -204,8 +204,12 @@ std::pair<Value,Value> run_stand(WheelStand& s,double load,double duration){ // 
         {"max_energy_residual_j",maximum},{"dissipation_j",loss},{"native_wheel_contact_count",static_cast<double>(native)},{"final_speed_mps",qvel[0]}})};
 }
 }
-double flat_depth(double load,int n,double tolerance){const configuration::HingeDensity density; // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    return numerics::brentq([&](double x){const std::array depths{x};return numerics::flat_load(depths,.37,density,n).force[0]-load;},1e-9,.1,tolerance).root;
+double flat_depth(double load,int n,double tolerance,const nativecfg::HingeDensity* density){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+    const nativecfg::HingeDensity declared{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=2000.,.provenance="synthetic density; not fitted or measured"};if(!density)density=&declared;
+    // flat_load consumes the configuration schema type; copy the four
+    // mirrored fields across (same record, different namespace).
+    const configuration::HingeDensity analytic{.knots_m=density->knots_m,.stiffness_n_m=density->stiffness_n_m,.damping_ns_m=density->damping_ns_m,.provenance=density->provenance};
+    return numerics::brentq([&](double x){const std::array depths{x};return numerics::flat_load(depths,.37,analytic,n).force[0]-load;},1e-9,.1,tolerance).root;
 }
 RigResult distributed_flat_rig(double dt,int n,double load){
     positive(load,"axle load");std::vector<std::array<double,2>> vertices;for(double const x:geometry::detail::np_linspace(-2.,2.,801))vertices.push_back({x,0.});

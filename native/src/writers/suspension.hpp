@@ -87,6 +87,15 @@ public:
     // re-derives every term from the coordinates.
     [[nodiscard]] SuspensionStoredTerms stored_terms(const mjData *d) const;
 
+    // SuspensionForceApplier.shock_total_n (forces.py:207-221): the
+    // scalar spring+bumper+damper+stops sum retained by the most recent
+    // compute. The oracle's validation/drive_suspension_rig.py reads this
+    // attribute after compute_qfrc; reconstructing it post-hoc from the
+    // per-component vectors reorders the additions and is not bit-stable.
+    [[nodiscard]] double shock_total_n() const noexcept {
+        return shock_total_n_;
+    }
+
 private:
     nativecfg::SuspensionConfig cfg_;
     bool physical_ = false;
@@ -113,4 +122,8 @@ private:
     // 8 physical entries of nv each), rewritten in place every compute.
     // export_views borrows them, so they must never resize.
     mutable std::vector<std::vector<double> > components_;
+
+    // The retained scalar telemetry the oracle stores on self.*_n each
+    // compute — read by validation/drive_suspension_rig.py.
+    mutable double shock_total_n_ = 0.0;
 };

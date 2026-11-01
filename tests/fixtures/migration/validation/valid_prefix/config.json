@@ -1,0 +1,40 @@
+{
+  "samples": [
+    {
+      "channels": {
+        "model_status": {
+          "model_valid": true,
+          "numerically_valid": true
+        },
+        "tires": {
+          "front": {
+            "normal_load_n": 100.0
+          },
+          "rear": {
+            "normal_load_n": 200.0
+          }
+        }
+      },
+      "end_time_s": 0.01,
+      "time_s": 0.0
+    },
+    {
+      "channels": {
+        "model_status": {
+          "model_valid": false,
+          "numerically_valid": true
+        },
+        "tires": {
+          "front": {
+            "normal_load_n": 100.0
+          },
+          "rear": {
+            "normal_load_n": 200.0
+          }
+        }
+      },
+      "end_time_s": 0.02,
+      "time_s": 0.01
+    }
+  ]
+}

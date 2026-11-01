@@ -1,0 +1,20 @@
+{
+  "all_invalid_reasons": [],
+  "complete": false,
+  "first_both_unloaded_s": null,
+  "first_invalid_s": null,
+  "first_unknown_s": null,
+  "interval_count": 2,
+  "invalid_reason": [],
+  "invalid_reason_counts": {},
+  "max_both_unloaded_s": 0.05,
+  "max_energy_residual_ratio": 0.002,
+  "max_front_gap_m": 0.01,
+  "max_rear_gap_m": 0.02,
+  "model_valid": true,
+  "numerically_valid": true,
+  "support_observed": true,
+  "valid_for_learning": true,
+  "valid_prefix_duration_s": 0.1,
+  "valid_prefix_max_gap_m": 0.02
+}

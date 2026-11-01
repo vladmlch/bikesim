@@ -1,0 +1,28 @@
+{
+  "comparisons": [
+    {
+      "axes_passed": {
+        "road": true,
+        "stations": true,
+        "time": true
+      },
+      "case": "step",
+      "dt_s": 0.0003125,
+      "dx_m": 0.005,
+      "passed": true,
+      "station_count": 256
+    },
+    {
+      "axes_passed": {
+        "road": true,
+        "stations": true,
+        "time": true
+      },
+      "case": "step",
+      "dt_s": 0.000625,
+      "dx_m": 0.0025,
+      "passed": true,
+      "station_count": 128
+    }
+  ]
+}

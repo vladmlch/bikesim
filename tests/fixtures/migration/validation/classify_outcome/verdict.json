@@ -1,0 +1,9 @@
+{
+  "control": {
+    "torque_nm": 0.0
+  },
+  "outcome": "completed",
+  "position_m": 5.5,
+  "reason": "declared distance reached",
+  "time_s": 1.0
+}

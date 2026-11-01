@@ -98,13 +98,13 @@ RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,dou
             mechanics::add_transpose(force,jac,{tangent,0.,normal});loads[s]=normal;}
         mj_jac(m,d,jac.data(),rot.data(),xipos.subspan(3*static_cast<std::size_t>(frame),3).data(),frame);mechanics::add_transpose(force,jac,{0.,0.,-frame_load});std::ranges::copy(force,qfrc_applied.begin());
         const double omega=qvel[static_cast<std::size_t>(mechanics::dof(m,"crank_spin"))],travel=rear_z()-initial_rear;
-        // This report currently reconstructs the writer's discarded scalar
-        // from components. Subtracting/readding HBO can differ in the last
-        // bits from Python shock_total; qualification must compare the
-        // original scalar before calling this source port equivalent.
-        const int sd=suspension.shock_dofadr();double shock=0.;
-        const auto component=[&](std::string_view key){for(const auto& [name,v]:suspension_components)if(name==key)return -v[static_cast<std::size_t>(sd)];return 0.;};
-        shock=component("shock_coil")+component("shock_bumper")+(component("shock_damper")+component("shock_hbo"))+component("shock_top_out")+component("shock_upper_stop");
+        // The oracle reads suspension.shock_total_n — the scalar the
+        // writer computed and retained inside the components() call
+        // above. Reconstructing it from the per-dof component vectors
+        // (damper stored as shock_damper-shock_hbo, then re-adding hbo)
+        // can differ in the last bits; the retained scalar is the
+        // bitwise-faithful source.
+        const double shock=suspension.shock_total_n();
         engine::step(m,d);(void)drive.settle();const double actual=actuator_force[static_cast<std::size_t>(aid)],power=actual*omega;power_error=std::max(power_error,std::abs(actual-torque));
         if(drive.transmission_storage())defect=std::max(defect,std::abs(mechanics::telemetry(drive,"transmission_constraint_defect_m")));
         for(const char* name:{"root_x","root_z","root_pitch"}){root_actuation=std::max(root_actuation,std::abs(qfrc_actuator[static_cast<std::size_t>(mechanics::dof(m,name))]));}contacts=std::max(contacts,static_cast<mjtSize>(d->ncon));

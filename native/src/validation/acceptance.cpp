@@ -54,8 +54,11 @@ Value check_bounds(const Value& metrics,const Value& bounds) { // NOLINT(bugpron
         if(std::isnan(lower)||std::isnan(upper)||lower>upper)throw std::invalid_argument("invalid acceptance bound");
         bool passed=false;
         if(const auto* metric=find(metrics,name)) {
-            try {const auto x=io::tagged_double(*metric,name);passed=std::isfinite(x)&&lower<=x&&x<=upper;}
-            catch(const std::invalid_argument&){passed=false;}
+            // float() semantics: strings/bools the oracle coerces are
+            // evaluated; everything float() would reject stays a failed
+            // bound (fail-closed where the oracle would raise).
+            if(const auto x=python_float(*metric))
+                passed=std::isfinite(*x)&&lower<=*x&&*x<=upper;
         }
         checks.emplace_back(name,Value{passed});
     }
@@ -105,7 +108,7 @@ Value paired_summary(const Value& records) {
             durations.push_back(nonnegative(real(m,"duration_s",0.),"pair duration"));
             if(!flag(m,"numerically_valid"))reasons.insert("numerical_invalid");
             if(!flag(optional(m,"model_status",empty_object()),"model_valid"))reasons.insert("model_invalid");
-            if(flag(record,"operator_intervention")||flag(m,"operator_intervention"))reasons.insert("operator_intervention");
+            if(python_truthy(find(record,"operator_intervention"))||python_truthy(find(m,"operator_intervention")))reasons.insert("operator_intervention");
             const auto raw=optional(m,"outcome");const auto state=io::is_null(raw)?std::string{}:io::as_string(raw,"outcome");
             if(state=="policy_error"||state=="simulation_error"||state=="operator_stop")reasons.insert("incomplete_run");
         }

@@ -1,0 +1,38 @@
+{
+  "bounds": {
+    "junk": [
+      0.0,
+      2.0
+    ],
+    "not_a_number": [
+      0.0,
+      2.0
+    ],
+    "padded": [
+      0.0,
+      2000.0
+    ],
+    "text": [
+      0.0,
+      2.0
+    ],
+    "truth": [
+      0.5,
+      2.0
+    ],
+    "vector": [
+      0.0,
+      2.0
+    ]
+  },
+  "metrics": {
+    "junk": "x",
+    "not_a_number": "nan",
+    "padded": " 1_000.5 ",
+    "text": "1.5",
+    "truth": true,
+    "vector": [
+      1
+    ]
+  }
+}

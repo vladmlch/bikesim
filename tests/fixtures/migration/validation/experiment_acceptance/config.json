@@ -1,0 +1,12 @@
+{
+  "converged": true,
+  "fit": [
+    "fit-a"
+  ],
+  "holdout": [
+    "hold-b"
+  ],
+  "holdout_passed": true,
+  "synthetic": false,
+  "within_scope": true
+}

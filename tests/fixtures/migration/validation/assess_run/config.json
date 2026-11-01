@@ -1,0 +1,13 @@
+{
+  "minimum_progress_m": 1.0,
+  "required_duration_s": 5.0,
+  "summary": {
+    "duration_s": 4.5,
+    "model_status": {
+      "model_valid": true
+    },
+    "numerically_valid": true,
+    "outcome": "duration",
+    "progress_m": 3.0
+  }
+}

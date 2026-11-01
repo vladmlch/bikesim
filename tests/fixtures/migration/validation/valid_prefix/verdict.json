@@ -1,0 +1,14 @@
+{
+  "accepted": 1,
+  "first_bad": {
+    "model_event": null,
+    "reasons": [
+      "model_violation"
+    ],
+    "time_s": 0.01
+  },
+  "front_normal_impulse_ns": 1.0,
+  "rear_normal_impulse_ns": 2.0,
+  "seen": 2,
+  "valid_until_s": 0.01
+}

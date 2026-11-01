@@ -153,10 +153,27 @@ void validate_split(const Value& fit,const Value& holdout) {
     if (a.empty()||b.empty()) throw std::invalid_argument("fit and holdout experiments are both required as lists");
     for (const auto& id:a) if (b.contains(id)) throw std::invalid_argument("fit/holdout leakage at experiment level");
 }
+// experiment_acceptance.py: str(payload.get('source','')) — Python str()
+// over whatever JSON value the field holds. Scalars stringify exactly;
+// arrays/objects can only ever render starting with a bracket, which no
+// synthetic prefix matches, so they collapse to a non-matching marker.
+std::string python_str(const Value& v) {
+    if(io::is_null(v))return "None";
+    if(const auto* b=std::get_if<bool>(&v.data))return *b?"True":"False";
+    if(const auto* n=std::get_if<io::Number>(&v.data)) {
+        if(n->lexeme.find_first_of(".eE")==std::string::npos) {
+            // int: JSON -0 decodes to Python 0
+            return n->lexeme=="-0"?"0":n->lexeme;
+        }
+        return io::repr_binary64(io::as_double(v,"source"));
+    }
+    if(const auto* s=std::get_if<std::string>(&v.data))return *s;
+    return std::holds_alternative<Array>(v.data)?"[":"{";
+}
 bool is_synthetic(const Value& payload) {
     bool synthetic=false;
     if (const auto* item=find(payload,"synthetic")) synthetic=io::as_bool(*item,"synthetic declaration");
-    auto source=trim(text(payload,"source"));
+    auto source=trim(find(payload,"source")?python_str(*find(payload,"source")):std::string{});
     std::ranges::transform(source,source.begin(),[](unsigned char c){return static_cast<char>(std::tolower(c));});
     return synthetic || source.starts_with("synthetic") || source.starts_with("simulation:") || source.starts_with("fixture:");
 }

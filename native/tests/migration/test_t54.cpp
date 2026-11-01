@@ -78,6 +78,22 @@ void migration_fixture_verdicts(){
     verdict_fixture("validation/contact_case_edge_unload","contact_case_vertices");
     verdict_fixture("validation/contact_case_recontact","contact_case_vertices");
     verdict_fixture("validation/contact_case_incline","contact_case_vertices");
+    verdict_fixture("validation/holdout_metrics_multidim","holdout_metrics");
+    verdict_fixture("validation/contact_bounds","contact_bounds");
+    verdict_fixture("validation/experiment_acceptance","experiment_acceptance");
+    verdict_fixture("validation/paired_summary","paired_summary");
+    verdict_fixture("validation/assess_run","assess_run");
+    verdict_fixture("validation/rider_work","rider_work");
+    verdict_fixture("validation/trace_integral","trace_integral");
+    verdict_fixture("validation/interval_integral","interval_integral");
+    verdict_fixture("validation/timing_metrics","timing_metrics");
+    verdict_fixture("validation/support_evidence","support_evidence");
+    verdict_fixture("validation/resolution_variants","resolution_variants");
+    verdict_fixture("validation/release_gates","release_gates");
+    verdict_fixture("validation/select_verified_resolution","select_verified_resolution");
+    verdict_fixture("validation/valid_prefix","valid_prefix");
+    verdict_fixture("validation/plant_release","plant_release");
+    verdict_fixture("validation/classify_outcome","classify_outcome");
 }
 void material_curve_contract(){
     auto record=json(R"({"dataset_id":"synthetic-radial","source_kind":"synthetic","tyre_label":"bench",
@@ -246,7 +262,12 @@ void actual_stand_checks(){
             "incline_30_deg","chain_locked_geometry",
             // contact_manifold_rigs.py + load_transfer.py stands: distributed
             // flat/step/incline cells and the free-pitch rigid-equivalent stand.
-            "distributed_flat_600","distributed_step","distributed_incline","rigid_load_transfer"}){
+            "distributed_flat_600","distributed_step","distributed_incline","rigid_load_transfer",
+            // system_momentum.py + rider_cases.py + rigs.py suspension cycle:
+            // the bounded momentum-ledger, airborne articulated-actuation and
+            // damper-cycle fixtures.
+            "whole_system_passive","whole_system_active","motor_only_airborne",
+            "airborne_internal_actuation","suspension_cycle"}){
         const auto result=benchmark_case(name,.0005);const auto checks=check_bounds(result.metrics,result.bounds);
         bt::require(!io::as_object(checks,"checks").empty()&&checks_passed(checks),std::string("source stand conservation/geometry bounds: ")+name);
     }
@@ -328,8 +349,69 @@ void contact_and_environment_checks(){
     bt::require(first.size()==64&&first==second,"source fingerprint is a stable length-delimited digest");
     bt::invalid([&]{(void)source_fingerprint(repo/"native/does-not-exist");});
 }
+void python_coercion_and_density_contract(){
+    // contact_acceptance.py::check_bounds — float(metrics[name]) coercion:
+    // Python accepts numeric strings, bools and float-parseable literals;
+    // everything float() would reject fails closed.
+    const auto bounds=run_case("contact_bounds",json(R"({"metrics":{"text":"1.5","truth":true,"not_a_number":"nan","junk":"x","vector":[1],"padded":" 1_000.5 "},
+        "bounds":{"text":[0,2],"truth":[0.5,2],"not_a_number":[0,2],"junk":[0,2],"vector":[0,2],"padded":[0,2000]}})"));
+    bt::require(!bounds.accepted,"mixed bound checks reject when any declared metric fails");
+    bt::require(flag(bounds.evidence,"text")&&flag(bounds.evidence,"truth")&&flag(bounds.evidence,"padded"),
+        "float() coercion accepts parseable strings and bools like the oracle");
+    bt::require(!flag(bounds.evidence,"not_a_number")&&!flag(bounds.evidence,"junk")&&!flag(bounds.evidence,"vector"),
+        "non-finite, unparseable and non-scalar metrics fail closed");
+    // datasets.py::holdout_metrics — np.asarray(dtype=float) accepts
+    // same-shaped multidimensional inputs and reduces them in C order;
+    // ragged trees, shape mismatches and non-numeric leaves reject.
+    const auto holdout=run_case("holdout_metrics",json(R"({"measured":[[1.0,2.0],[3.0,4.0]],"predicted":[[1.5,2.0],[2.5,4.5]]})"));
+    bt::require(real(holdout.evidence,"rmse")==std::sqrt(.1875)&&real(holdout.evidence,"max_abs")==.5&&real(holdout.evidence,"bias")==.125,
+        "multidimensional holdout arrays reduce flat in C order");
+    bt::invalid([&]{(void)run_case("holdout_metrics",json(R"({"measured":[1,[2,3]],"predicted":[1,2,3]})"));});
+    bt::invalid([&]{(void)run_case("holdout_metrics",json(R"({"measured":[[1,2],[3,4]],"predicted":[1,2,3,4]})"));});
+    bt::invalid([&]{(void)run_case("holdout_metrics",json(R"({"measured":[null,2],"predicted":[1,2]})"));});
+    const auto strings=run_case("holdout_metrics",json(R"({"measured":["1.5","2.0"],"predicted":[1.0,2.5]})"));
+    bt::require(real(strings.evidence,"rmse")==.5,"float-parseable string leaves coerce like np.asarray");
+    // experiment_acceptance.py::is_synthetic — str(source).strip().lower()
+    // prefix matching plus the strict boolean synthetic declaration.
+    for(const char* source:{"synthetic"," Synthetic-2 ","SIMULATION: v3","fixture:gold"})
+        bt::require(is_synthetic(json(std::string("{\"source\":\"")+source+"\"}")),"str() source prefixes survive strip/lower");
+    for(const char* source:{"lab","[1]","123.4","none-sourced"})
+        bt::require(!is_synthetic(json(std::string("{\"source\":\"")+source+"\"}")),"non-synthetic sources stay measured");
+    bt::require(!is_synthetic(json(R"({"source":123})"))&&!is_synthetic(json(R"({"source":null})"))&&
+        !is_synthetic(json(R"({"source":["synthetic:x"]})"))&&!is_synthetic(json(R"({})")),
+        "Python str() over non-string JSON values cannot produce a synthetic prefix");
+    bt::require(is_synthetic(json(R"({"synthetic":true,"source":"lab"})")),"explicit declaration marks synthetic regardless of source");
+    bt::invalid([&]{(void)is_synthetic(json(R"({"synthetic":"yes"})"));});
+    // antiwheelie_reports.py::paired_summary — Python `or` truthiness over
+    // operator_intervention: a truthy container flags the exclusion while
+    // numeric zero and the empty string do not.
+    const auto records=json(R"([{"scenario_id":"s","seed":1,"plant_and_inputs_sha256":"p","policy_id":"passthrough","operator_intervention":[0],
+        "metrics":{"duration_s":1,"model_status":{"model_valid":true},"numerically_valid":true}},
+        {"scenario_id":"s","seed":1,"plant_and_inputs_sha256":"p","policy_id":"candidate",
+        "metrics":{"duration_s":1,"model_status":{"model_valid":true},"numerically_valid":true,"operator_intervention":0}},
+        {"scenario_id":"s","seed":2,"plant_and_inputs_sha256":"p","policy_id":"passthrough",
+        "metrics":{"duration_s":1,"model_status":{"model_valid":true},"numerically_valid":true,"operator_intervention":""}},
+        {"scenario_id":"s","seed":2,"plant_and_inputs_sha256":"p","policy_id":"candidate",
+        "metrics":{"duration_s":1,"model_status":{"model_valid":true},"numerically_valid":true}}])");
+    const auto summary=paired_summary(records);const auto& excluded=io::as_array(get(summary,"exclusions"),"exclusions");
+    bt::require(excluded.size()==1&&real(excluded[0],"seed")==1.,"truthy non-boolean interventions exclude the pair like the oracle");
+    const auto& why=io::as_array(get(excluded[0],"reasons"),"reasons");
+    bt::require(std::ranges::any_of(why,[](const Value& r){return io::as_string(r,"reason")=="operator_intervention";}),
+        "the exclusion names operator_intervention as its reason");
+    // contact_manifold_rigs.py::wheel_stand — arbitrary density/mu inputs:
+    // a stiffer declared density compresses less under the same load and
+    // mu/density both reach the distributed material record.
+    const nativecfg::HingeDensity stiff{.knots_m={0.,.004,.012},.stiffness_n_m={600000.,0.,0.},.damping_ns_m=2000.,.provenance="doubled synthetic density"};
+    const double declared=flat_depth(600.,128),stiffened=flat_depth(600.,128,2e-12,&stiff);
+    bt::require(declared>stiffened&&stiffened>0.,"stiffer density reduces the analytic flat depth under the same load");
+    const auto config=distributed_config(128,.5,&stiff);
+    bt::require(config.front.mu==.5&&config.rear.mu==.5,"mu reaches both tire ends");
+    bt::require(config.distributed&&config.distributed->density.stiffness_n_m.front()==600000.&&config.distributed->front.density.stiffness_n_m.front()==600000.,
+        "custom density reaches the shared and per-wheel material records");
+}
 } // namespace
 int main(){return bt::run([]{
     captured_tire_characterization();material_curve_contract();calibration_evidence_contract();invalid_prefix_and_axes();publication_coverage_contract();migration_fixture_verdicts();
     release_and_bound_rejections();intervals_and_dimensions();resolution_and_pair_inventory();cli_option_contract();actual_stand_checks();contact_and_environment_checks();
+    python_coercion_and_density_contract();
 });}

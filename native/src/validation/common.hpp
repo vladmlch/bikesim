@@ -8,6 +8,7 @@
 #include "../numeric_sum.hpp"
 #include "../recording/value_util.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -53,6 +54,57 @@ inline bool flag(const Value& object, std::string_view key) {
 inline bool checks_passed(const Value& checks) {
     const auto& entries=io::as_object(checks,"checks");
     return std::ranges::all_of(entries,[](const auto& item){return true_value(item.second);});
+}
+// Python float(value) coercion at the JSON boundary — the oracle's
+// check_bounds calls float(metrics.get(name)) and np.asarray(dtype=float)
+// performs the same leaf coercion: numbers, bools and float-parseable
+// strings (whitespace-padded literals, inf/infinity, nan, underscored
+// digits). Nullopt where float()/np.asarray would raise.
+[[nodiscard]] inline std::optional<double> python_float(const Value& v) {
+    if(const auto* n=std::get_if<io::Number>(&v.data)){(void)n;return io::as_double(v,"float coercion");}
+    if(const auto* b=std::get_if<bool>(&v.data))return *b?1.:0.;
+    const auto* s=std::get_if<std::string>(&v.data);if(!s)return {};
+    std::string_view text=*s;
+    const auto blank=[](char c){return c==' '||c=='\t'||c=='\n'||c=='\r'||c=='\v'||c=='\f';};
+    while(!text.empty()&&blank(text.front()))text.remove_prefix(1);
+    while(!text.empty()&&blank(text.back()))text.remove_suffix(1);
+    if(text.empty())return {};
+    bool negative=false;
+    if(text.front()=='+'||text.front()=='-'){negative=text.front()=='-';text.remove_prefix(1);if(text.empty())return {};}
+    std::string lowered(text);for(char& c:lowered)c=static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    if(lowered=="inf"||lowered=="infinity")
+        return negative?-std::numeric_limits<double>::infinity():std::numeric_limits<double>::infinity();
+    if(lowered=="nan")return std::numeric_limits<double>::quiet_NaN();
+    // Python literal grammar: digits[.digits][e[sign]digits], a single
+    // underscore allowed between digits. The cleaned literal is a valid
+    // C double for strtod.
+    const auto digit=[](char c){return c>='0'&&c<='9';};
+    std::string clean;clean.reserve(text.size());std::size_t i=0;
+    const auto digits=[&]{bool any=false;while(i<text.size()){
+        if(digit(text[i])){clean+=text[i++];any=true;}
+        else if(text[i]=='_'&&any&&i+1<text.size()&&digit(text[i+1]))++i;
+        else break;}return any;};
+    const bool before=digits();bool after=false;
+    if(i<text.size()&&text[i]=='.'){clean+='.';++i;after=digits();}
+    if(!before&&!after)return {};
+    if(i<text.size()&&(text[i]=='e'||text[i]=='E')){clean+='e';++i;
+        if(i<text.size()&&(text[i]=='+'||text[i]=='-'))clean+=text[i++];
+        if(!digits())return {};}
+    if(i!=text.size())return {};
+    try{const double out=std::stod(clean);return negative?-out:out;}
+    catch(const std::exception&){return {};}
+}
+// Python truthiness at the JSON boundary (the oracle's
+// `record.get(...) or metrics.get(...)` intervention checks):
+// null/false/numeric zero/empty containers are falsy.
+[[nodiscard]] inline bool python_truthy(const Value* v) {
+    if(!v||io::is_null(*v))return false;
+    if(const auto* b=std::get_if<bool>(&v->data))return *b;
+    if(const auto* n=std::get_if<io::Number>(&v->data)){(void)n;return io::as_double(*v,"truthy value")!=0.;}
+    if(const auto* s=std::get_if<std::string>(&v->data))return !s->empty();
+    if(const auto* a=std::get_if<Array>(&v->data))return !a->empty();
+    if(const auto* o=std::get_if<Object>(&v->data))return !o->empty();
+    return false;
 }
 inline double real(const Value& object, std::string_view key) {
     return io::as_double(get(object, key), key);

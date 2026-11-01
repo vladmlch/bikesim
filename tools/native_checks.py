@@ -51,6 +51,14 @@ _PATH_OPTIONS = {
     "-imacros",
 }
 _DIAGNOSTIC = re.compile(r"\b(?:warning|error):|fatal error:", re.IGNORECASE)
+# Clang-family text diagnostics echo the flagged source beneath each located
+# diagnostic in "   NN | <source>" gutter form. The echoed source can itself
+# contain "warning:"/"error:" inside a literal (e.g.
+# `std::cerr << command << ": error: "`) — that is program text, not a
+# diagnostic. Every real diagnostic either carries a path:line(:column)
+# origin or is a bare driver/fatal message; neither opens with a numeric
+# gutter, so gutter lines are excluded from collection.
+_SNIPPET_GUTTER = re.compile(r"^\s*\d+\s*\|")
 _LOCATED_DIAGNOSTIC = re.compile(
     r"^(?P<origin>.*?):(?P<line>\d+):(?P<column>\d+):\s+"
     r"(?P<severity>warning|error):\s*(?P<message>.*?)(?:\s+\[(?P<checker>[^\]]+)\])?\s*$",
@@ -1071,7 +1079,11 @@ def _run_process(
     stdout_path.write_text(stdout)
     stderr_path.write_text(stderr)
     combined = f"{stdout}\n{stderr}"
-    diagnostic_lines = [line for line in combined.splitlines() if _DIAGNOSTIC.search(line)]
+    diagnostic_lines = [
+        line
+        for line in combined.splitlines()
+        if _DIAGNOSTIC.search(line) and not _SNIPPET_GUTTER.match(line)
+    ]
     process_failed = launch_error is not None or timed_out or returncode != 0
     return {
         "argv": list(argv),

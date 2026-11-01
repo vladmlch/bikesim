@@ -85,11 +85,17 @@ xml::Element miniature(bool legacy_weld) {
 void test_saddle_connection_does_not_constrain_orientation() {
     auto root = miniature(false);
     bike::model::detail::add_saddle_pin(root, .0025);
-    auto *equality = root.child("equality");
-    bt::require(equality != nullptr, "the equality block exists");
-    auto *connect = equality->find("connect", "connect_saddle");
-    bt::require(connect != nullptr,
-                "the saddle pin emits a connect equality");
+    auto const *equality = root.child("equality");
+    // The null guards must be visible in this translation unit:
+    // bt::require's throw lives in the harness TU, so the analyzer cannot
+    // prove the -> dereferences below are unreachable on the null path.
+    // The failure mode is identical — std::runtime_error with the same
+    // messages.
+    if (equality == nullptr)
+        throw std::runtime_error("the equality block exists");
+    auto const *connect = equality->find("connect", "connect_saddle");
+    if (connect == nullptr)
+        throw std::runtime_error("the saddle pin emits a connect equality");
     bt::require(connect->get("body1") == "rider_pelvis",
                 "the connect binds the pelvis");
     bt::require(connect->get("body2") == "frame",

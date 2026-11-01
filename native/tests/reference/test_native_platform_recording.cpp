@@ -35,7 +35,12 @@ using runtime::SamplePtr;
 
 const Value& req(const Value::Object& object, std::string_view key) {
     const Value* slot = rt::member(object, key);
-    bt::require(slot != nullptr, "member ." + std::string(key) + " is present");
+    // The guard must be visible in this translation unit: bt::require's
+    // throw lives in the harness TU, so the analyzer cannot prove the
+    // dereference below is unreachable on the null path. The failure mode
+    // is identical — std::runtime_error with the same message.
+    if (slot == nullptr)
+        throw std::runtime_error("member ." + std::string(key) + " is present");
     return *slot;
 }
 const Value& reqv(const Value& value, std::string_view key) {

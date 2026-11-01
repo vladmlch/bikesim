@@ -583,7 +583,10 @@ void test_model_migration_bristle_broadcast_semantics() {
     bt::require(w >= 8, "patch width covers the broadcast windows");
 
     const auto drive = [&](std::vector<double> bristle) {
-        auto model = make_model(tyre, tier);
+        // kDetail64 is spelled out rather than captured through `tier`:
+        // the static analyzer loses the reference's binding through the
+        // lambda capture and reports the argument as uninitialized.
+        auto model = make_model(tyre, kDetail64);
         model->restore_patch_states(std::array{injected(
                 s0 - 2, e0 - 2, 0.4, std::move(bristle), 0.4)});
         return model;

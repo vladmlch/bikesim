@@ -763,13 +763,17 @@ void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
             synth.i.assign(static_cast<std::size_t>(table.rows), episode_id);
             piece = &synth;
         } else {
-            bt::require(false, spec.name + ": encoder emitted no " + name +
-                                   " column");
+            // Visible-in-TU throw, not bt::require: the analyzers cannot
+            // prove the `*piece` dereference below is unreachable on the
+            // missing-column path. Identical failure mode —
+            // std::runtime_error with the same message.
+            throw std::runtime_error(spec.name + ": encoder emitted no " +
+                                     name + " column");
         }
         const rec::FieldSpec *field = spec.field(name);
         const std::string bits = column_bits(*piece, field ? *field : BOOL_FIELD);
         bytes_compare(node, bits, "|u1", bits.size(),
-                      prefix + "/bits/" + name);
+                      prefix + "/bits/" + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         ++covered;
     }
     bt::require(covered == table.columns.size() +

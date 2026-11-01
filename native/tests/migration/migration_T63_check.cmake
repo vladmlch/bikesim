@@ -142,8 +142,12 @@ foreach(_surface IN LISTS _absent_surfaces)
     _t63_fail("binding/package surface still present: ${_surface}")
   endif()
 endforeach()
+# The binding-only surface lived under native/src/ (drive/policy/contact/
+# intent/spindle wire adapters + *_binding translation units); wire-codec
+# coverage elsewhere (e.g. reference/test_native_pneumatic_wire.cpp) is
+# legitimate and stays.
 foreach(_file IN LISTS _tracked)
-  if(_file MATCHES "^native/.*(_binding|_wire)\\.(cpp|hpp)$")
+  if(_file MATCHES "^native/src/.*(_binding|_wire)\\.(cpp|hpp)$")
     _t63_fail("binding-only translation unit still tracked: ${_file}")
   endif()
 endforeach()

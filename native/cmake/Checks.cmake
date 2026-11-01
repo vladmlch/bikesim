@@ -8,6 +8,7 @@
 #     oracle emitted for the legacy build, with python_executable:null
 #   * check_<kind> custom targets driving the produced binary
 #   * the migration_T56 ctest script test (fixture negative controls)
+#   * the T62 python_audit_source/python_audit_documentation ctest gates
 #
 # This file resolves no interpreter and invokes none. check_* targets are
 # skipped when a name already exists (a bindings-ON configure still owns the
@@ -199,4 +200,41 @@ if(BUILD_TESTING)
       DEPENDS bike-native-checks bike-python-audit
       USES_TERMINAL)
   endif()
+endif()
+
+# --- T62 no-Python enforcement (completion-plan Task 4.04) -----------------
+# The source and documentation audits are measured-failure gates: the
+# current tree still carries the removal-ledger paths and live interpreter
+# invocations, so both report findings until Task 4.06 removes WILL_FAIL
+# from the source audit and Task 4.07 removes it from the documentation
+# audit after the rewrite. WILL_FAIL inverts ctest's *determined* result —
+# including regex results — so FAIL_REGULAR_EXPRESSION names the audit's
+# own violation summary: the test passes only when the audit fails with a
+# real findings report. A clean audit (exit 0), a usage error (exit 2), the
+# 'audit failed' exception path and a crash all produce no summary match,
+# so ctest determines 'pass' and the inversion fails the test — a vacuous
+# or broken audit can never pass as an expected failure. The package-mode
+# audit is a positive gate already: it ships inside package_smoke and the
+# no_python/audit_negative_controls script tests under packaging/.
+if(BUILD_TESTING)
+  add_test(NAME python_audit_source
+    COMMAND "$<TARGET_FILE:bike-python-audit>"
+            --mode source
+            --root "${CMAKE_SOURCE_DIR}"
+            --policy "${CMAKE_SOURCE_DIR}/migration/no-python-policy.json")
+  set_tests_properties(python_audit_source PROPERTIES
+    WILL_FAIL TRUE
+    FAIL_REGULAR_EXPRESSION "python source audit: [0-9]+ remaining edge"
+    LABELS "audit"
+    TIMEOUT 600)
+  add_test(NAME python_audit_documentation
+    COMMAND "$<TARGET_FILE:bike-python-audit>"
+            --mode documentation
+            --root "${CMAKE_SOURCE_DIR}"
+            --policy "${CMAKE_SOURCE_DIR}/migration/no-python-policy.json")
+  set_tests_properties(python_audit_documentation PROPERTIES
+    WILL_FAIL TRUE
+    FAIL_REGULAR_EXPRESSION "python documentation audit: [0-9]+ active invocation"
+    LABELS "audit"
+    TIMEOUT 600)
 endif()

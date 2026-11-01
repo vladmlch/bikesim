@@ -86,7 +86,14 @@ def test_valid_shift_commits_atomically(tmp_path, kind):
     result = native.drive_prepare_pedaling({}, .1)
     state = native.drive_state()
     # Cadence ~38 rpm is below the 100 rpm floor: downshift 24 -> 28 teeth.
-    assert state['ideal_hub']['ratio'] == 34. / 28.
+    # The ideal hub's applied ratio sweeps linearly across the declared cut
+    # (S6): the committed decision retires dt/remaining = .1/(.2+.1) of the
+    # 34/24 -> 34/28 gap inside this call, so the wrap coefficient reads
+    # mid-sweep. The sprocket-geometric hub still lands its integer cog in
+    # one step. (Python oracle value verified bitwise: 1.3492063492063493.)
+    expected_ratio = (34. / 24. + (34. / 28. - 34. / 24.) * .1 / (.2 + .1)
+                      if kind == 'ideal_mid_drive' else 34. / 28.)
+    assert state['ideal_hub']['ratio'] == expected_ratio
     # Geometric hubs re-derive their sprocket; ideal hubs keep the configured
     # rear_teeth — only the wrap coefficient carries the shifted ratio.
     assert state['ideal_hub']['rear_teeth'] == (28 if kind == GEOMETRIC else 24)

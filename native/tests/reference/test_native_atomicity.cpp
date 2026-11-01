@@ -145,8 +145,19 @@ void test_valid_shift_commits_atomically() {
         const auto result = owner->drive().prepare({}, .1, false, true, true, true, {}, {});
         const auto after = state(*owner);
         // Cadence ~38 rpm is below the 100 rpm floor: downshift 24 -> 28.
-        bt::require(bike::io::as_double(field(field(after, "ideal_hub"), "ratio"), "ratio") == 34. / 28.,
-                    "committed shift lands the 34/28 ratio atomically");
+        // The ideal hub's applied ratio sweeps linearly across the declared
+        // cut (S6): the committed decision retires dt/remaining = .1/(.2+.1)
+        // of the 34/24 -> 34/28 gap inside this call, so the wrap
+        // coefficient reads mid-sweep (the geometric hub still lands its
+        // integer sprocket in one step). The live Python oracle produces
+        // the identical mid-sweep value bitwise: 1.3492063492063493.
+        const double expected_ratio =
+            kind == kGeometric
+                ? 34. / 28.
+                : 34. / 24. + (34. / 28. - 34. / 24.) * .1 / (.2 + .1);
+        bt::require(bike::io::as_double(field(field(after, "ideal_hub"), "ratio"), "ratio") ==
+                        expected_ratio,
+                    "committed shift lands the swept ratio atomically");
         // Geometric hubs re-derive their sprocket; ideal hubs keep the
         // configured rear_teeth — only the wrap coefficient carries it.
         const bool geometric = kind == kGeometric;

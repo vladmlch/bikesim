@@ -303,8 +303,12 @@ def test_failed_sealing_leaves_active_evidence_available(monkeypatch):
 
 
 @pytest.mark.slow
-def test_strict_flush_rejection_preserves_retained_evidence():
-    sim = make_python_ride(strict=True, decimation=7)
+def test_strict_flush_rejection_preserves_retained_evidence(tmp_path):
+    from _native_runtime_support import violating_physics
+    # F1: the re-scoped welded plant is healthy — the strict rejection needs
+    # the pinned weld-envelope violation, not the plant's incidental state.
+    physics = violating_physics(tmp_path/'physics.toml')
+    sim = make_python_ride(strict=True, decimation=7, physics=physics)
     driver = create_native_ride(sim, strict=True, record_decimation=7,
                                 retention='full')
     try:

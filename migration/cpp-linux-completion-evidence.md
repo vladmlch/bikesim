@@ -11412,3 +11412,40 @@ insertion); lane/c3's own comment refs (873-931) match the merged file.
 - No docker/container use — coordinator guard honored; Darwin only.
   Linux-aarch64 legs of the recaptured fixtures/golden pair deferred
   with the linux wave (same convention as FT-3 `3b32934f`).
+
+### FT-7 final gate + stale-pin dispositions (post-`bc68f309`)
+
+`bash tools/run_tests.sh native` on `bc68f309` → **exit 1**: all
+static-analysis sweeps green/report-only (frontends, tidy, analyzer
+report-only, cppcheck, odr, shellcheck, sdk-compat, diagnostic-controls,
+headers); **CTest 62/62 passed (800.66 s)** incl. `migration_T09` 14.96 s
+and `migration_T10` 13.25 s; contract checks all passed; pytest
+`3 failed, 3242 passed, 1 skipped (5915.72 s)`:
+
+- `test_valid_shift_commits_atomically[ideal_mid_drive]` — **stale
+  literal pin**, not a native defect and not an FT-7 regression: the
+  committed ideal-hub wrap coefficient reads `1.3492063492063493`
+  (= `34/24 + (34/28−34/24)·0.1/0.3`, mid-S6-cut sweep), and the live
+  Python oracle (`DrivetrainForceApplier.prepare_pedaling`, same
+  pair/spin) produces the identical value **bitwise**. Introduced by
+  `a0e35355` (ft-3 applied-ratio sweep mirror — ancestor of `bc68f309`,
+  absent from lane-g whose gate passed the node). The ported twin
+  `reference.native_atomicity` red-failed the same literal (ctest exit
+  8). Repaired: both twins now pin the reviewed mid-sweep commit value.
+- `test_strict_flush_rejection_preserves_retained_evidence` — **stale
+  rejection expectation** (`DID NOT RAISE InvalidReferenceRun`): relied
+  on the plant's incidental violation; the re-scoped welded plant is
+  healthy (lane-g fails it identically ⇒ pre-FT-7 red). Repaired F1-
+  style: `violating_physics()` pins `weld_foot_min_normal_n = 100.` for
+  the deterministic `foot_front/rear.normal` rejection at t=0.00125 s;
+  `make_python_ride` gained an optional `physics=` keyword.
+- `test_numpy_float32_shifting_metadata_retains_baseline_bits` —
+  **documented baseline red, untouched**: `test-port-map.json` record is
+  disposition `drop`/`python-only` with the `b21c63ec` multi-cog drift
+  already recorded as a deliberate live-oracle red (lane-g fails it
+  identically). Owner-lane territory — FT-7 leaves it red on purpose.
+
+Post-repair verification: `reference.native_atomicity` ctest 1/1 PASS
+(0.49 s); `test_native_atomicity.py` + `test_native_recording_retention.
+py` pytest **57 passed**. Remaining Darwin red = the documented
+drop-record pin only; gate exit 0 awaits that pin's owner.

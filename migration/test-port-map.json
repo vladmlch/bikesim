@@ -4901,7 +4901,8 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture)."
+        "2026-10-2x 3.28 lane/c: ported to native/tests/reference/test_native_atomicity.cpp; CTest reference.native_atomicity green on darwin-arm64 (build/native-release, 1.18s) and linux-aarch64 (root-clang container, 0.04s); source pytest nodes pass in the required parity run (78 passed; the file's 59 errors are all in the sibling input_contracts fixture).",
+        "2026-11-01 FT-7 final-gate red classification: pytest node [ideal_mid_drive] failed ratio==34/28 with native committed 1.3492063492063493 \u2014 the mid-S6-cut sweep value introduced by a0e35355 (ft-3, ancestor of bc68f309, absent from lane-g which passed the node); live Python oracle on the same pair/spin produces the identical value bitwise, so the 34/28 literal was a stale endpoint pin, not a native defect and not an FT-7 regression. C++ port twin red-failed the identical literal (ctest exit 8). Both twins repaired to pin the reviewed mid-sweep commit value 34/24 + (34/28-34/24)*0.1/(0.2+0.1); ctest reference.native_atomicity 1/1 PASS (0.49 s), pytest node green."
       ]
     },
     {
@@ -17505,7 +17506,8 @@
       "disposition": "port",
       "evidence": [
         "2026-10-27 3.30 lane/e: ported to native/tests/reference/test_native_recording_retention.cpp; oracle green on darwin-arm64 (78 nodes); linux oracle run not required (no live-oracle/golden comparisons in batch); CTest reference.native_recording_retention green on darwin-arm64 + linux-aarch64 (ctest 4/4 both)",
-        "2026-10-31 FT-7: strict-rejection check re-based on the same weld_foot_min_normal_n=100 floor pin welded_floor_docs uses \u2014 the recaptured healthy welded fixture no longer trips the monitor inside 800 steps. welded_runtime(floor_pin=true) in recording_test_support.hpp; reference.native_recording_retention ctest: 1/1 passed."
+        "2026-10-31 FT-7: strict-rejection check re-based on the same weld_foot_min_normal_n=100 floor pin welded_floor_docs uses \u2014 the recaptured healthy welded fixture no longer trips the monitor inside 800 steps. welded_runtime(floor_pin=true) in recording_test_support.hpp; reference.native_recording_retention ctest: 1/1 passed.",
+        "2026-11-01 FT-7 final-gate red classification: source pytest node DID NOT RAISE InvalidReferenceRun \u2014 relied on the plant's incidental violation; lane-g fails it identically so the red predates the FT-7 recapture. Repaired F1-style: violating_physics() pins weld_foot_min_normal_n=100 for the deterministic foot_front/rear.normal rejection at t=0.00125 s; make_python_ride gained an optional physics= keyword. Node + file green (57 passed with atomicity)."
       ]
     },
     {

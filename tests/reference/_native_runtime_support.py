@@ -44,9 +44,9 @@ def violating_physics(path):
 VIOLATION_NAMES = ('foot_front.normal', 'foot_rear.normal')
 
 
-def make_python_ride(*, strict=False, decimation=1):
+def make_python_ride(*, strict=False, decimation=1, physics=PHYSICS):
     args = ride.parse_args([
-        "--physics-config", str(PHYSICS), "--track", str(TRACK),
+        "--physics-config", str(physics), "--track", str(TRACK),
         "--headless", "--duration", "1", "--no-plots",
     ])
     sim = ride.build_physical_simulation_from_args(args)

@@ -105,8 +105,8 @@ Value mechanics_check(std::string_view kind,const std::filesystem::path& out,con
     set(check,"artifact",value::text(artifact.string()));
     try{if(kind=="analytic")result=benchmark_suite(Value{Object{{"output",value::text((out/"analytic").string())},{"cases",value::strings(std::array<std::string,6>{
         "wheel_inertia","chain_suspension_motion","suspension_cycle","airborne_internal_actuation","incline_30_deg","brake_hold"})}}},root);
-        else if(kind=="load_and_shaft"){Array cases;for(double grade:{0.,.12,.28,.35})for(const auto& [x,h]:std::array<std::pair<double,double>,2>{{{.45,.9},{.55,.8}}})
-            cases.push_back(bounded(std::format("load_grade{}_com{}_{}",grade,x,h),load_transfer_rig(.00025,std::atan(grade),x,h),true));
+        else if(kind=="load_and_shaft"){Array cases;for(double grade:{0.,.12,.28,.35}){for(const auto& [x,h]:std::array<std::pair<double,double>,2>{{{.45,.9},{.55,.8}}})
+            cases.push_back(bounded(std::format("load_grade{}_com{}_{}",grade,x,h),load_transfer_rig(.00025,std::atan(grade),x,h),true));}
             for(int rear:{10,24,51})for(bool const overrun:{false,true})cases.push_back(bounded(std::format("shaft_34_{}_overrun{}",rear,overrun?"True":"False"),shaft_ratio_rig(.000125,34./rear,overrun),true));
             bool passed=!cases.empty();for(const auto& c:cases)passed=passed&&flag(c,"passed");result=Value{Object{{"cases",Value{std::move(cases)}},{"passed",Value{passed}}}};write_report(artifact,result);}
         else if(kind=="drive_suspension")result=drive_suspension_comparison(Value{Object{{"output",value::text(artifact.string())}}},root);
@@ -231,7 +231,7 @@ Value benchmark_suite(const Value& config,const std::filesystem::path& root){
     if(jobs!=1)throw std::invalid_argument("native benchmark worker isolation is not implemented; jobs must be 1");
     auto dts=numbers(optional(config,"dt_values_s",Value{Array{value::real(.0005),value::real(.00025),value::real(.000125)}}),"dt_values_s");
     if(dts.empty())throw std::invalid_argument("positive, finite, distinct timestep values required");
-    for(double const dt:dts)positive(dt,"timestep");std::ranges::sort(dts,std::greater<>{});
+    for(double const dt:dts){positive(dt,"timestep");}std::ranges::sort(dts,std::greater<>{});
     if(std::ranges::adjacent_find(dts)!=dts.end())throw std::invalid_argument("positive, finite, distinct timestep values required");
     const auto chosen=strings(optional(config,"cases",value::strings(std::vector<std::string>(names.begin(),names.end()))),"cases");
     if(chosen.empty()||std::set<std::string>(chosen.begin(),chosen.end()).size()!=chosen.size())throw std::invalid_argument("unknown, duplicate or empty validation case selection");
@@ -272,7 +272,7 @@ Value mechanics_report(const Value& config,const std::filesystem::path& root){
     for(const char* name:{"analytic","load_and_shaft","drive_suspension","contact","rider"}){
         checks.push_back(mechanics_check(name,out,profile,root));set(report,"checks",Value{checks});write_report(out/"mechanics.json",report);}
     const bool unchanged=text(report,"source_sha256")==source_fingerprint(root/"native/src");bool passed=checks.size()==5&&unchanged;
-    for(const auto& check:checks)passed=passed&&flag(check,"passed");set(report,"source_unchanged_during_run",Value{unchanged});set(report,"passed",Value{passed});write_report(out/"mechanics.json",report);return report;
+    for(const auto& check:checks){passed=passed&&flag(check,"passed");}set(report,"source_unchanged_during_run",Value{unchanged});set(report,"passed",Value{passed});write_report(out/"mechanics.json",report);return report;
 }
 
 Value climbing_benchmark(const Value& config,const std::filesystem::path& root){
@@ -281,7 +281,7 @@ Value climbing_benchmark(const Value& config,const std::filesystem::path& root){
     if(repeats<1)throw std::invalid_argument("benchmark repetitions must be positive integers");
     const auto physics=root/identifier(get(config,"physics_profile"),"physics profile"),track=root/identifier(get(config,"track"),"track"),out=root/identifier(get(config,"output"),"output");
     if(std::filesystem::exists(out)&&(!std::filesystem::is_directory(out)||!std::filesystem::is_empty(out)))throw std::invalid_argument("benchmark output already exists; choose a new directory");
-    std::filesystem::create_directories(out);const auto source=source_fingerprint(root/"native/src");struct utsname hardware{};const bool has_hardware=::uname(&hardware)==0;
+    std::filesystem::create_directories(out);const auto source=source_fingerprint(root/"native/src");utsname hardware{};const bool has_hardware=::uname(&hardware)==0;
     Value report{Object{{"schema_version",value::integer(1)},{"mode",value::text(mode)},{"duration_requested_s",value::real(duration)},
         {"physics_profile",value::text(physics.string())},{"track_path",value::text(track.string())},{"source_sha256",value::text(source)},
         {"hardware",Value{Object{{"machine",has_hardware?value::text(static_cast<const char *>(hardware.machine)):Value{}},{"platform",has_hardware?value::text(std::string(static_cast<const char *>(hardware.sysname))+" "+static_cast<const char *>(hardware.release)):Value{}},

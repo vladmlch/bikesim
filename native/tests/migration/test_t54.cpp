@@ -33,7 +33,7 @@ void exact_value(const Value& actual,const Value& expected,const std::string& pa
     }
     if(const auto* entries=std::get_if<Array>(&expected.data)){
         const auto& found=io::as_array(actual,path);bt::require(found.size()==entries->size(),path+": exact shape");
-        for(std::size_t i=0;i<entries->size();++i)exact_value(found[i],(*entries)[i],path+"["+std::to_string(i)+"]");return;
+        for(std::size_t i=0;i<entries->size();++i){exact_value(found[i],(*entries)[i],path+"["+std::to_string(i)+"]");}return;
     }
     bt::require(io::canonical_json(actual)==io::canonical_json(expected),path+": exact scalar");
 }

@@ -58,7 +58,7 @@ int main(int argc,char** argv){
         std::vector<std::string> args;for(char* argument:bike::platform::main_arguments(argc,argv).subspan(1))args.emplace_back(argument);
         if(args[0]=="--help"||args[0]=="-h"||args[0]=="help"){help();return 0;}
         if(args[0]=="list"||args[0]=="discover"||args[0]=="--list"){
-            if(args.size()!=1)throw std::invalid_argument("list/discover accepts no simulation options");Array rows;
+            if(args.size()!=1){throw std::invalid_argument("list/discover accepts no simulation options");}Array rows;
             for(const auto& item:bv::cases())rows.push_back(Value{Object{{"id",value::text(item.id)},{"source",value::text(item.source)},
                 {"description",value::text(item.description)},{"slow",Value{item.slow}}}});
             std::cout<<io::recording_json(Value{Object{{"schema_version",value::integer(1)},{"cases",Value{std::move(rows)}}}})<<'\n';return 0;
@@ -84,10 +84,10 @@ int main(int argc,char** argv){
             if(const auto it=integers.find(option);it!=integers.end()){value::set(std::get<Object>(overrides.data),it->second,numeric_value(next(),option,true));continue;}
             if(const auto it=lists.find(option);it!=lists.end()){Array entries;const bool named=option=="--cases"||option=="--scenarios";
                 while(at<args.size()&&!args[at].starts_with("--")){const auto& token=args[at++];entries.push_back(named?value::text(token):numeric_value(token,option,option=="--station-counts"));}
-                if(entries.empty())throw std::invalid_argument(option+" requires at least one value");value::set(std::get<Object>(overrides.data),it->second,Value{std::move(entries)});continue;}
+                if(entries.empty()){throw std::invalid_argument(option+" requires at least one value");}value::set(std::get<Object>(overrides.data),it->second,Value{std::move(entries)});continue;}
             throw std::invalid_argument("unknown argument: "+option);
         }
-        if(!std::filesystem::is_directory(root))throw std::invalid_argument("--root must name an existing directory");root=std::filesystem::absolute(root);
+        if(!std::filesystem::is_directory(root)){throw std::invalid_argument("--root must name an existing directory");}root=std::filesystem::absolute(root);
         if(input){const auto path=root/ *input;config=path.extension()==".toml"?bike::configuration::detail::parse_toml_file(path):bv::read_json(path);(void)io::as_object(config,"case configuration");}
         for(const auto& [key,item]:io::as_object(overrides,"options"))value::set(std::get<Object>(config.data),key,item);
         if(id=="rider_replay")(void)bv::identifier(bv::get(config,"output"),"output");

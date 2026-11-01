@@ -695,8 +695,7 @@ void test_model_rolling_loss_signs_bitwise(std::size_t tier_index) {
                      const biketyre::PneumaticTyreModel &model,
                      const std::string &tag) {
                      const std::size_t k =
-                             static_cast<std::size_t>(
-                                     std::stoul(tag.substr(5)));
+                             std::stoul(tag.substr(5));
                      const auto &p = out.patches().front();
                      const auto &vel = table[k].velocity;
                      const double v_x =

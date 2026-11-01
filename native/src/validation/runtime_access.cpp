@@ -42,9 +42,9 @@ Value RuntimeRigAccess::rebase_airborne(runtime::NativeRideRuntime& ride,double 
     stepper.mutate([&]{
         if(release)release_rider(stepper,physical);
         for(const char* name:{"root_z","rider_root_z"}){qpos[static_cast<std::size_t>(mechanics::qpos(m,name))]+=height;}
-        if(zero)std::ranges::fill(qvel,0.);for(const char* name:{"root_z","rider_root_z"})qvel[static_cast<std::size_t>(mechanics::dof(m,name))]=vertical_speed;
+        if(zero){std::ranges::fill(qvel,0.);}for(const char* name:{"root_z","rider_root_z"})qvel[static_cast<std::size_t>(mechanics::dof(m,name))]=vertical_speed;
         if(spin){qvel[static_cast<std::size_t>(mechanics::dof(m,"front_wheel_spin"))]=10.;qvel[static_cast<std::size_t>(mechanics::dof(m,"rear_wheel_spin"))]=20.;}
-        if(reset_tire&&stepper.has_tire())stepper.tire_writer().reset();stepper.note_posvel_stale();stepper.forward();
+        if(reset_tire&&stepper.has_tire()){stepper.tire_writer().reset();}stepper.note_posvel_stale();stepper.forward();
         if(stepper.has_rider_contacts())reset_rider_contacts(stepper);
         result=rebase_energy(physical);
         engine::get_state(m,d,ride.bootstrap_.integration_state.data(),static_cast<int>(mjSTATE_INTEGRATION));ride.bootstrap_step_state_=physical.state();
@@ -78,6 +78,6 @@ void RuntimeRigAccess::external_interval(runtime::NativeRideRuntime& ride,std::s
     const Guard guard(ride.advancing_);ride.require_open();if(ride.committed_step_!=0)throw std::invalid_argument("external impulse fixture requires the initial interval");std::vector<double> force(values.begin(),values.end());
     auto& physical=*ride.physical_;auto const& stepper=*ride.stepper_;ride.accounting_->collect(false);physical.capture_accounted_presentation(ride.committed_presentation_);ride.accounting_->push(physical.advance_physics(0.,0.,force,{}));
     engine::get_state(stepper.model(),stepper.data(),ride.next_integration_state_.data(),static_cast<int>(mjSTATE_INTEGRATION));physical.capture_presentation(ride.next_presentation_);ride.committed_integration_state_.swap(ride.next_integration_state_);std::swap(ride.committed_presentation_,ride.next_presentation_);ride.committed_step_=physical.step();ride.committed_time_s_=stepper.time();
-    if(physical.crash())ride.committed_outcome_="crash:"+physical.crash()->cause;ride.cache_research_boundary();if(ride.committed_outcome_)ride.flush_accounting();else if(ride.accounting_->full()){ride.accounting_->close_period();physical.capture_accounted_presentation(ride.committed_presentation_);}
+    if(physical.crash()){ride.committed_outcome_="crash:"+physical.crash()->cause;}ride.cache_research_boundary();if(ride.committed_outcome_)ride.flush_accounting();else if(ride.accounting_->full()){ride.accounting_->close_period();physical.capture_accounted_presentation(ride.committed_presentation_);}
 }
 } // namespace bike::validation

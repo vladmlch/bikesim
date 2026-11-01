@@ -55,14 +55,14 @@ initialization::PhysicalInitialState Simulation::initial_state(std::optional<int
     auto request=std::make_unique<initialization::SetupRequest>();request->model=profile_model(physics,dt,overrides);request->track=terrain::load_track(track);request->model.field=terrain::HeightFieldSpec::for_track(request->track);
     request->asset_root=physics.parent_path();request->origin="validation:"+physics.string();return request;
 }
-runtime::RideControl resume_schedule(double time){nonnegative(time,"schedule time");return runtime::RideControl{.motor_torque_nm=0.,.human_torque_nm=time<2.||time>=4.?20.:0.};} // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+runtime::RideControl resume_schedule(double time){nonnegative(time,"schedule time");return runtime::RideControl{.motor_torque_nm=0.,.motor_limit_nm=std::nullopt,.human_torque_nm=time<2.||time>=4.?20.:0.,.crank_target_rate_rad_s=std::nullopt,.posture=std::nullopt};} // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
 runtime::RideControl automatic_schedule(double time){nonnegative(time,"schedule time");return {};}
 runtime::RideControl open_loop_schedule(double time){nonnegative(time,"schedule time");throw std::invalid_argument(std::string(motor_only_unsupported));}
 Value diagnostic_row(const runtime::PhysicalSampleData& sample) {
     const auto c=research::wire_value(runtime::Wire{sample.channels});Object row{{"interval_id",value::integer(sample.interval_id)},{"time_s",value::real(sample.time_s)},{"end_time_s",value::real(sample.end_time_s)}};
     for(const auto& [target,source]:std::array<std::pair<const char*,const char*>,7>{{{"drive","drive"},{"rider","rider"},{"support","rider_support_targets"},{"joint_terms","rider_control"},{"ik_saturation","rider_ik_saturation"},{"tires","tires"},{"energy","energy"}}})row.emplace_back(target,get(c,source));
     for(const char* name:{"control","model_status","rider_intent","suspension","mass"})row.emplace_back(name,optional(c,name,empty_object()));
-    for(const auto& [key,x]:io::as_object(c,"channels"))if(key.starts_with("rider_active")||key=="rider_positive_power_w"||key=="rider_activation_saturated"||key=="rider_passive_power_w"||key=="rider_effort_budget_exceeded")row.emplace_back(key,x);return Value{std::move(row)};
+    for(const auto& [key,x]:io::as_object(c,"channels")){if(key.starts_with("rider_active")||key=="rider_positive_power_w"||key=="rider_activation_saturated"||key=="rider_passive_power_w"||key=="rider_effort_budget_exceeded")row.emplace_back(key,x);}return Value{std::move(row)};
 }
 Value interval_row(const runtime::PhysicalSampleData& sample,const runtime::TruthGeometry& geometry,runtime::WheelieTracker& tracker) {
     const auto c=research::wire_value(runtime::Wire{sample.channels});const auto truth=runtime::research_truth(sample,geometry);tracker.update(truth,sample.dt_s());const auto quality=research::energy_quality(runtime::sample_wire::object(runtime::sample_wire::required(sample.channels,"energy")));
@@ -144,7 +144,7 @@ Value rider_factor_matrix(const Value& config,const std::filesystem::path& root)
 }
 Value automatic_coast_case(double dt,double duration,const std::filesystem::path& root) {
     auto report=run_replay(Value{Object{{"mode",value::text("automatic")},{"dt_s",value::real(dt)},{"duration_s",value::real(duration)},{"physics_profile",value::text("examples/research/viewer_physics_fast.toml")},{"track",value::text("examples/research/rough_uphill_extreme.toml")}}},root);
-    if(find(report,"error"))return report;const auto rows=get(report,"rows");Value result=coasting_evidence(rows);merge(result,Value{Object{{"metadata",report},{"rows",rows},{"duration_s",get(report,"end_time_s")},{"model_valid",Value{flag(get(report,"model_status"),"model_valid")}}}});bool numeric_valid=!io::as_array(rows,"rows").empty();for(const auto& row:io::as_array(rows,"rows"))numeric_valid=numeric_valid&&research::energy_quality(runtime::sample_wire::object(vread::wire_from_value(get(row,"energy"),"energy"))).acceptable;value::set(std::get<Object>(result.data),"numerically_valid",Value{numeric_valid});return result;
+    if(find(report,"error")){return report;}const auto rows=get(report,"rows");Value result=coasting_evidence(rows);merge(result,Value{Object{{"metadata",report},{"rows",rows},{"duration_s",get(report,"end_time_s")},{"model_valid",Value{flag(get(report,"model_status"),"model_valid")}}}});bool numeric_valid=!io::as_array(rows,"rows").empty();for(const auto& row:io::as_array(rows,"rows"))numeric_valid=numeric_valid&&research::energy_quality(runtime::sample_wire::object(vread::wire_from_value(get(row,"energy"),"energy"))).acceptable;value::set(std::get<Object>(result.data),"numerically_valid",Value{numeric_valid});return result;
 }
 
 namespace {
@@ -178,7 +178,7 @@ RigResult ride_requested_sag(std::string_view,double dt){
 }
 RigResult ride_brake_hold(std::string_view,double dt){
     const double inf=std::numeric_limits<double>::infinity();
-    const auto request=simple_request(dt,"lumped",0.,"coast",0.,.8,true);request->track={.name="incline_10_deg",.length_m=8.,.grade_profile=terrain::GradeProfile{{{0.,std::tan(10.*std::numbers::pi/180.)},{8.,std::tan(10.*std::numbers::pi/180.)}}}};request->model.field={.ncol=1601,.radius_x_m=4.,.elevation_m=2.,.datum_z_m=.1};const auto sim=std::make_unique<Simulation>(std::move(*request));const double start=position(*sim);replay(*sim,automatic_schedule,5.,[](const auto&){},1.,1.);const auto frame=sim->runtime->render_frame();const auto account=research::wire_value(runtime::Wire{sim->runtime->accounting_state()});const auto work=optional(get(account,"history"),"work_j",empty_object());return {.metrics=metrics({{"displacement_m",std::abs(frame.presentation.position_m-start)},{"speed_mps",std::abs(frame.presentation.speed_mps)},{"motor_torque_nm",std::get<double>(frame.presentation.drive.at("motor_torque_nm"))},{"front_brake_work_j",real(work,"front_static_brake",0.)},{"rear_brake_work_j",real(work,"rear_static_brake",0.)}}),.bounds=bounds({{"displacement_m",0.,.001},{"motor_torque_nm",0.,0.},{"front_brake_work_j",-inf,1e-8},{"rear_brake_work_j",-inf,1e-8}})}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+    const auto request=simple_request(dt,"lumped",0.,"coast",0.,.8,true);request->track={.name="incline_10_deg",.length_m=8.,.obstacles={},.description={},.grade_profile=terrain::GradeProfile{{{0.,std::tan(10.*std::numbers::pi/180.)},{8.,std::tan(10.*std::numbers::pi/180.)}}},.surface_sections={}};request->model.field={.ncol=1601,.radius_x_m=4.,.elevation_m=2.,.datum_z_m=.1};const auto sim=std::make_unique<Simulation>(std::move(*request));const double start=position(*sim);replay(*sim,automatic_schedule,5.,[](const auto&){},1.,1.);const auto frame=sim->runtime->render_frame();const auto account=research::wire_value(runtime::Wire{sim->runtime->accounting_state()});const auto work=optional(get(account,"history"),"work_j",empty_object());return {.metrics=metrics({{"displacement_m",std::abs(frame.presentation.position_m-start)},{"speed_mps",std::abs(frame.presentation.speed_mps)},{"motor_torque_nm",std::get<double>(frame.presentation.drive.at("motor_torque_nm"))},{"front_brake_work_j",real(work,"front_static_brake",0.)},{"rear_brake_work_j",real(work,"rear_static_brake",0.)}}),.bounds=bounds({{"displacement_m",0.,.001},{"motor_torque_nm",0.,0.},{"front_brake_work_j",-inf,1e-8},{"rear_brake_work_j",-inf,1e-8}})}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
 }
 RigResult ride_drive_low_mu(std::string_view,double dt){
     const double inf=std::numeric_limits<double>::infinity();
@@ -193,7 +193,7 @@ RigResult ride_terrain_resolution(std::string_view,double dt){
     std::array<Value,2> results;
     for(std::size_t i=0;i<2;++i){
         const auto request=simple_request(dt,"lumped",3.);
-        request->track={.name="spatial_refinement_rig",.length_m=20.,.obstacles={{.shape=terrain::Washboard{.start_m=3.,.amplitude_m=.002,.wavelength_m=2.,.n_waves=6}}}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+        request->track={.name="spatial_refinement_rig",.length_m=20.,.obstacles={{.shape=terrain::Washboard{.start_m=3.,.amplitude_m=.002,.wavelength_m=2.,.n_waves=6}}},.description={},.grade_profile=std::nullopt,.surface_sections={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
         request->model.field.ncol=i==0?1001:2001;request->model.field.radius_x_m=10.;const auto sim=std::make_unique<Simulation>(std::move(*request));
         std::vector<double> loads,travels;
         replay(*sim,automatic_schedule,2.,[&](const auto& sample){
@@ -216,9 +216,9 @@ for(double const x:loads)squared.push_back(x*x);
 RigResult ride_coast(std::string_view name,double dt){
     const double inf=std::numeric_limits<double>::infinity();
     const double duration=name=="single_edge"?2.:5.;const auto request=simple_request(dt,"lumped",3.);
-    if(name=="single_edge")request->track={.name="single_edge_rig",.length_m=20.,.obstacles={{.shape=terrain::SquareEdge{.start_m=3.5,.height_m=.04,.ledge_length_m=.5}}}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+    if(name=="single_edge")request->track={.name="single_edge_rig",.length_m=20.,.obstacles={{.shape=terrain::SquareEdge{.start_m=3.5,.height_m=.04,.ledge_length_m=.5}}},.description={},.grade_profile=std::nullopt,.surface_sections={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     else if(name=="road_worn")request->track=terrain::get_preset("road_worn");
-    else request->track={.name="smooth_coast_rig",.length_m=20.,.obstacles={{.shape=terrain::Washboard{.start_m=3.,.amplitude_m=.002,.wavelength_m=2.,.n_waves=6}}}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+    else request->track={.name="smooth_coast_rig",.length_m=20.,.obstacles={{.shape=terrain::Washboard{.start_m=3.,.amplitude_m=.002,.wavelength_m=2.,.n_waves=6}}},.description={},.grade_profile=std::nullopt,.surface_sections={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     const auto sim=std::make_unique<Simulation>(std::move(*request));const double start=position(*sim);std::vector<double> loads,travels;
     std::array<std::vector<double>,2> wheel;double maximum=0.,impulse=0.,residual=0.;std::size_t multi=0;
     replay(*sim,automatic_schedule,duration,[&](const auto& s){
@@ -232,7 +232,7 @@ RigResult ride_coast(std::string_view name,double dt){
         loads.push_back(sum.total());impulse+=sum.total()*dt;multi+=multiple?1:0;
     },0.,0.,[&](const auto& endpoint){travels.push_back(endpoint.presentation.fork_travel_mm/1000.);});
     const auto rms=[](const auto& data){std::vector<double> squares;squares.reserve(data.size());
-for(double const x:data)squares.push_back(x*x);return std::sqrt(mean(squares));};
+        for(double const x:data){squares.push_back(x*x);}return std::sqrt(mean(squares));};
     const auto account=research::wire_value(runtime::Wire{sim->runtime->accounting_state()});const auto& airtime=get(get(account,"history"),"airtime_s");
     Value result=metrics({{"mean_load_n",mean(loads)},{"rms_load_n",rms(loads)},{"normal_impulse_ns",impulse},
         {"mean_fork_travel_m",mean(travels)},{"distance_m",position(*sim)-start},{"energy_residual_relative",residual},

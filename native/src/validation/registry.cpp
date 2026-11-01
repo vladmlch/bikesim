@@ -98,7 +98,7 @@ Value tire_characterization(const Value& config,const std::filesystem::path& bas
     const auto surface_name=identifier(get(config,"surface"),"surface");const auto& s=terrain::get_surface(surface_name);
     const nativecfg::SurfaceSpec surface{.name=s.name,.mu_peak=s.mu_peak,.mu_slide=s.mu_slide,.slip_stiffness_per_load=s.slip_stiffness_per_load,.stribeck_speed_mps=s.stribeck_speed_mps};
     const auto slips=numbers(get(config,"slip_ratios"),"slip ratios"),loads=numbers(get(config,"loads_n"),"loads");
-    if(slips.empty()||loads.empty())throw std::invalid_argument("tire characterization requires nonempty slip/load axes");Array rows;
+    if(slips.empty()||loads.empty()){throw std::invalid_argument("tire characterization requires nonempty slip/load axes");}Array rows;
     for(double const slip:slips)for(double const load:loads)rows.push_back(steady_brush_force(tire,surface,slip,load,real(config,"speed_mps",2.),real(config,"dt_s",.000625),real(config,"duration_s",1.)));
     return Value{Object{{"surface",value::text(surface_name)},{"cases",Value{std::move(rows)}}}};
 }
@@ -111,7 +111,7 @@ Verdict case_tire_calibration(const Value& c,const std::filesystem::path&){const
 Verdict case_tire_curve(const Value& c,const std::filesystem::path&){const nativecfg::TireTable table{.deflection_m=numbers(get(c,"deflection_m"),"deflection"),.force_n=numbers(get(c,"force_n"),"force")};const contactlaw::TabulatedRadial curve(table);const double damping=nonnegative(real(c,"radial_c_ns_m",0.),"radial damping");Array rows;
     for(const auto& entry:io::as_array(get(c,"samples"),"samples")){const auto elastic=curve.elastic_response(real(entry,"penetration_m"));const auto contact=curve.normal_contact(real(entry,"penetration_m"),real(entry,"rate_mps",0.),damping);
         rows.push_back(Value{Object{{"elastic_force_n",value::real(elastic.first)},{"stored_energy_j",value::real(elastic.second)},{"normal_force_n",value::real(contact.first)},{"contact_stored_energy_j",value::real(contact.second)}}});}
-    if(rows.empty())throw std::invalid_argument("curve samples required");return {.accepted=true,.evidence=Value{std::move(rows)}};}
+    if(rows.empty()){throw std::invalid_argument("curve samples required");}return {.accepted=true,.evidence=Value{std::move(rows)}};}
 Verdict case_datasets(const Value& c,const std::filesystem::path&){auto payload=validate_dataset(get(c,"dataset"),boolean(c,"allow_synthetic"));return {.accepted=true,.evidence=std::move(payload)};}
 Verdict case_dataset_hash(const Value& c,const std::filesystem::path&){return {.accepted=true,.evidence=value::text(dataset_hash(get(c,"dataset")))};}
 Verdict case_calibration_report(const Value& c,const std::filesystem::path&){return report_result(calibration_report(get(c,"dataset"),get(c,"predictions"),text(c,"quantity"),get(c,"parameters"),get(c,"bounds"),get(c,"error_budget"),boolean(c,"allow_synthetic")),"holdout_passed");}
@@ -202,7 +202,7 @@ constexpr auto handlers=std::to_array<CaseHandler>({
 
 std::span<const CaseDescription> cases(){
     static const std::vector<CaseDescription> table=[] {std::vector<CaseDescription> rows(operations.begin(),operations.end());
-        for(const auto id:benchmark_case_names())rows.push_back({.id=id,.source="validation/benchmarks.py:89-118",.description="Bounded source benchmark case",.slow=true});return rows;}();
+        for(const auto id:benchmark_case_names()){rows.push_back({.id=id,.source="validation/benchmarks.py:89-118",.description="Bounded source benchmark case",.slow=true});}return rows;}();
     return table;
 }
 Value report_axes(const Value& evidence){

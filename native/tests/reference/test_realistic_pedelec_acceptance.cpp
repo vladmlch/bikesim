@@ -25,6 +25,7 @@
 #include <memory>
 #include <numeric>
 #include <optional>
+#include <print>
 #include <string>
 #include <string_view>
 #include <tuple>
@@ -177,64 +178,64 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
 // captured once; the oracle's close-period hook is the recorded-interval
 // delta since the last window.
 [[nodiscard]] RideResult ride(PedelecEnv &env) {
-    runtime::RideControl control;
-    RideResult result;
-    std::int64_t last_interval = -1;
-    while (true) {
-        const auto snapshot = env.runtime->snapshot();
-        double position = 0.;
-        if (snapshot.latest_sample)
-            position = snapshot.latest_sample->qpos.at(
-                static_cast<std::size_t>(env.root_x_qpos));
-        if (position >= env.track_length_m) {
-            result.reason = "finish";
-            break;
-        }
-        if (snapshot.step >= env.max_steps) {
-            result.reason = "duration";
-            break;
-        }
-        if (snapshot.outcome.has_value()) {
-            result.reason = *snapshot.outcome;
-            break;
-        }
-        (void)env.runtime->advance(snapshot.step + env.control_steps,
-                                   control, 0., 0., std::nullopt);
-        const auto intervals = env.runtime->recorded_intervals();
-        WindowRow row;
-        for (const auto &sample : intervals) {
-            if (sample->interval_id <= last_interval) continue;
-            last_interval = sample->interval_id;
-            ++result.interval_rows;
-            auto violations = violation_strings(*sample);
-            if (!violations.empty())
-                row.interval_violations.emplace_back(
-                    sample->interval_id, sample->time_s,
-                    std::move(violations));
-        }
-        const auto now = env.runtime->snapshot();
-        bt::require(now.latest_sample != nullptr,
-                    "a committed interval exists after the window");
-        const auto &sample = *now.latest_sample;
-        row.t = now.time_s;
-        row.v = sample.qvel.at(static_cast<std::size_t>(env.root_x_dof));
-        row.x = sample.qpos.at(static_cast<std::size_t>(env.root_x_qpos));
-        const auto &drive = section(sample.channels, "drive");
-        row.cadence = sw::number(sw::required(drive, "cadence_rpm"));
-        row.human = sw::number(sw::required(drive, "human_sensor_nm"));
-        row.motor = sw::number(sw::required(drive, "motor_torque_nm"));
-        row.mode = sw::string(sw::required(drive, "rider_mode"));
-        row.shift = sw::boolean(sw::required(drive, "shift_active"));
-        row.balance_lost = sw::boolean(sw::required(
-            section(sample.channels, "rider_balance"), "balance_lost"));
-        result.rows.push_back(std::move(row));
+  runtime::RideControl const control;
+  RideResult result;
+  std::int64_t last_interval = -1;
+  while (true) {
+    const auto snapshot = env.runtime->snapshot();
+    double position = 0.;
+    if (snapshot.latest_sample)
+      position = snapshot.latest_sample->qpos.at(
+          static_cast<std::size_t>(env.root_x_qpos));
+    if (position >= env.track_length_m) {
+      result.reason = "finish";
+      break;
     }
+    if (snapshot.step >= env.max_steps) {
+      result.reason = "duration";
+      break;
+    }
+    if (snapshot.outcome.has_value()) {
+      result.reason = *snapshot.outcome;
+      break;
+    }
+    (void)env.runtime->advance(snapshot.step + env.control_steps, control, 0.,
+                               0., std::nullopt);
+    const auto intervals = env.runtime->recorded_intervals();
+    WindowRow row;
+    for (const auto &sample : intervals) {
+      if (sample->interval_id <= last_interval)
+        continue;
+      last_interval = sample->interval_id;
+      ++result.interval_rows;
+      auto violations = violation_strings(*sample);
+      if (!violations.empty())
+        row.interval_violations.emplace_back(
+            sample->interval_id, sample->time_s, std::move(violations));
+    }
+    const auto now = env.runtime->snapshot();
+    bt::require(now.latest_sample != nullptr,
+                "a committed interval exists after the window");
+    const auto &sample = *now.latest_sample;
+    row.t = now.time_s;
+    row.v = sample.qvel.at(static_cast<std::size_t>(env.root_x_dof));
+    row.x = sample.qpos.at(static_cast<std::size_t>(env.root_x_qpos));
+    const auto &drive = section(sample.channels, "drive");
+    row.cadence = sw::number(sw::required(drive, "cadence_rpm"));
+    row.human = sw::number(sw::required(drive, "human_sensor_nm"));
+    row.motor = sw::number(sw::required(drive, "motor_torque_nm"));
+    row.mode = sw::string(sw::required(drive, "rider_mode"));
+    row.shift = sw::boolean(sw::required(drive, "shift_active"));
+    row.balance_lost = sw::boolean(sw::required(
+        section(sample.channels, "rider_balance"), "balance_lost"));
+    result.rows.push_back(std::move(row));
+  }
     env.runtime->flush();
     // len(interval_rows) == env.sim.steps — every physical interval is
     // captured exactly once.
-    bt::require(result.interval_rows ==
-                    static_cast<std::size_t>(env.runtime->snapshot().step),
-                "every physical interval is captured exactly once");
+    bt::require(
+        std::cmp_equal(result.interval_rows, env.runtime->snapshot().step),
+        "every physical interval is captured exactly once");
     return result;
 }
 
@@ -263,23 +264,22 @@ void test_flat_reaches_25_kmh_within_10_s() {
     // Always-on measurand report — the closed_form_rider precedent: the
     // 3.09-blocked bars are re-measured from this output when the physics
     // decision lands.
-    std::fprintf(stderr,
-        "pedelec.flat: fast_t=%.2f steady=%zu cadence_in_band=%.4f/%.8f "
-        "balance_lost=%d late_violations=%zu reason=%s\n",
+    std::println(
+        stderr,
+        "pedelec.flat: fast_t={:.2f} steady={} cadence_in_band={:.4f}/{:.8f} "
+        "balance_lost={} late_violations={} reason={}",
         fast != result.rows.end() ? fast->t : -1., steady.size(), in_band,
         steady.empty() ? 0. : in_band / static_cast<double>(steady.size()),
         static_cast<int>(!no_balance_loss(result)),
-        violations_after(result.rows).size(), result.reason.c_str());
+        violations_after(result.rows).size(), result.reason);
     {
         const auto late = violations_after(result.rows);
         for (std::size_t i = 0; i < std::min<std::size_t>(late.size(), 8);
              ++i) {
             const auto &[interval, time, names] = late[i];
             for (const auto &name : names)
-                std::fprintf(stderr,
-                           "  pedelec.flat violation i=%lld t=%.3f %s\n",
-                           static_cast<long long>(interval), time,
-                           name.c_str());
+              std::println(stderr, "  pedelec.flat violation i={} t={:.3f} {}",
+                           static_cast<long long>(interval), time, name);
         }
     }
     bt::require(fast != result.rows.end() && fast->t <= 10.,
@@ -342,12 +342,13 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
 #endif
         ++checked;
     }
-    std::fprintf(stderr,
-        "pedelec.shift: shifts=%zu checked=%d failing=%d worst_ratio=%.4f "
-        "balance_lost=%d late_violations=%zu reason=%s\n",
+    std::println(
+        stderr,
+        "pedelec.shift: shifts={} checked={} failing={} worst_ratio={:.4f} "
+        "balance_lost={} late_violations={} reason={}",
         shifts.size(), checked, failed, worst_ratio,
         static_cast<int>(!no_balance_loss(result)),
-        violations_after(result.rows).size(), result.reason.c_str());
+        violations_after(result.rows).size(), result.reason);
     bt::require(checked >= 1, "at least one shift window is measurable");
     bt::require(no_balance_loss(result), "the rider never loses balance");
 #if 0 // ORACLE PARITY GAP — same rider_strength.* family as flat:
@@ -366,11 +367,11 @@ void test_fifteen_percent_climb_holds_12_kmh() {
     double minimum = std::numeric_limits<double>::infinity();
     for (const auto &row : result.rows)
         if (row.t >= 12.) minimum = std::min(minimum, row.v);
-    std::fprintf(stderr,
-        "pedelec.climb: late_min_kmh=%.3f balance_lost=%d "
-        "late_violations=%zu reason=%s\n",
-        minimum * 3.6, static_cast<int>(!no_balance_loss(result)),
-        violations_after(result.rows).size(), result.reason.c_str());
+    std::println(stderr,
+                 "pedelec.climb: late_min_kmh={:.3f} balance_lost={} "
+                 "late_violations={} reason={}",
+                 minimum * 3.6, static_cast<int>(!no_balance_loss(result)),
+                 violations_after(result.rows).size(), result.reason);
     bt::require(minimum != std::numeric_limits<double>::infinity(),
                 "the ride reaches the steady climb interval");
     bt::require(minimum >= 12. * KMH,
@@ -412,13 +413,13 @@ void test_savage_is_ridden_to_the_end() {
         plateau.empty() ? 0. :
         std::accumulate(plateau.begin(), plateau.end(), 0.) /
             static_cast<double>(plateau.size());
-    std::fprintf(stderr,
-        "pedelec.savage: x_max=%.3f plateau=%zu mean_kmh=%.3f "
-        "balance_lost=%d late_violations=%zu reason=%s ride_error=%s\n",
-        maximum_x, plateau.size(), mean * 3.6,
-        static_cast<int>(!no_balance_loss(result)),
-        violations_after(result.rows).size(), result.reason.c_str(),
-        ride_error.empty() ? "-" : ride_error.c_str());
+    std::println(stderr,
+                 "pedelec.savage: x_max={:.3f} plateau={} mean_kmh={:.3f} "
+                 "balance_lost={} late_violations={} reason={} ride_error={}",
+                 maximum_x, plateau.size(), mean * 3.6,
+                 static_cast<int>(!no_balance_loss(result)),
+                 violations_after(result.rows).size(), result.reason,
+                 ride_error.empty() ? "-" : ride_error.c_str());
 #if 0 // ORACLE PARITY GAP — Task 3.09 physics stop rule (undecided).
     // The oracle stalls on the 25 % plateau: x_max ≈ 53 m, ends 'duration',
     // plateau mean ≈ 0.57 km/h, balance_lost at t≈23.7 s

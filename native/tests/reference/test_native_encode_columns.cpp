@@ -36,6 +36,7 @@
 #include <ranges>
 #include <set>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -54,7 +55,7 @@ using runtime::EncodedTable;
 using runtime::SamplePtr;
 using bike::io::Value;
 
-const char *NODE_FILE = "tests/reference/test_native_encode_columns.py";
+const char *const NODE_FILE = "tests/reference/test_native_encode_columns.py";
 
 std::string node_id(std::string_view test) {
     return std::string(NODE_FILE) + "::" + std::string(test);
@@ -79,11 +80,21 @@ void throws(F &&action, std::string_view needle, std::string_view message) {
 // ---- authored canonical sample trees (_recording_support.py) --------------
 
 // The small planar joint set of support.synthetic_joints().
-const std::vector<rec::JointCoords> SYNTHETIC_JOINTS = {
-    {"root_x", "slide", 0, 0}, {"root_z", "slide", 1, 1},
-    {"root_pitch", "hinge", 2, 2}, {"front_wheel_spin", "hinge", 3, 3},
-    {"rear_wheel_spin", "hinge", 4, 4}, {"crank_spin", "hinge", 5, 5},
-    {"fork_slide", "slide", 6, 6}, {"shock_slide", "slide", 7, 7}};
+const std::vector<rec::JointCoords> SYNTHETIC_JOINTS = { // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
+    {.name = "root_x", .joint_type = "slide", .qposadr = 0, .dofadr = 0},
+    {.name = "root_z", .joint_type = "slide", .qposadr = 1, .dofadr = 1},
+    {.name = "root_pitch", .joint_type = "hinge", .qposadr = 2, .dofadr = 2},
+    {.name = "front_wheel_spin",
+     .joint_type = "hinge",
+     .qposadr = 3,
+     .dofadr = 3},
+    {.name = "rear_wheel_spin",
+     .joint_type = "hinge",
+     .qposadr = 4,
+     .dofadr = 4},
+    {.name = "crank_spin", .joint_type = "hinge", .qposadr = 5, .dofadr = 5},
+    {.name = "fork_slide", .joint_type = "slide", .qposadr = 6, .dofadr = 6},
+    {.name = "shock_slide", .joint_type = "slide", .qposadr = 7, .dofadr = 7}};
 
 const rec::Catalog &support_catalog() {
     static const rec::Catalog catalog = rec::build_catalog(SYNTHETIC_JOINTS);
@@ -98,21 +109,24 @@ rec::CoordinateCatalog synthetic_coordinates() {
     return coordinates;
 }
 
-Wire w_arr(std::vector<double> values) {
-    WireArray out;
-    out.reserve(values.size());
-    for (const double v : values) out.emplace_back(v);
-    return Wire{std::move(out)};
+Wire w_arr(const std::vector<double> &values) {
+  WireArray out;
+  out.reserve(values.size());
+  for (const double v : values)
+    out.emplace_back(v);
+  return Wire{std::move(out)};
 }
-Wire w_ints(std::vector<std::int64_t> values) {
-    WireArray out;
-    for (const std::int64_t v : values) out.emplace_back(v);
-    return Wire{std::move(out)};
+Wire w_ints(const std::vector<std::int64_t> &values) {
+  WireArray out;
+  for (const std::int64_t v : values)
+    out.emplace_back(v);
+  return Wire{std::move(out)};
 }
-Wire w_strs(std::vector<std::string> values) {
-    WireArray out;
-    for (const std::string &v : values) out.emplace_back(v);
-    return Wire{std::move(out)};
+Wire w_strs(const std::vector<std::string> &values) {
+  WireArray out;
+  for (const std::string &v : values)
+    out.emplace_back(v);
+  return Wire{std::move(out)};
 }
 
 // The **overrides protocol of the support builders is dict.update():
@@ -120,7 +134,7 @@ Wire w_strs(std::vector<std::string> values) {
 // not merge into it. Order is insertion order for new members.
 void merge_into(WireObject &into, const WireObject &extra) {
     for (const auto &[key, value] : extra) {
-        if (auto *slot = const_cast<Wire *>(sw::find(into, key)))
+        if (auto *slot = const_cast<Wire *>(sw::find(into, key))) // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             *slot = value;
         else
             into.emplace_back(key, value);
@@ -461,7 +475,7 @@ WireObject suspension_channels(const WireObject &over = {}) {
     return {{"suspension", Wire{std::move(suspension)}}};
 }
 
-SamplePtr sample_row(std::int64_t interval_id = 0, double start = 0.,
+SamplePtr sample_row(std::int64_t interval_id = 0, double start = 0., // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                      double dt = 0.001,
                      const std::vector<double> &qpos = {},
                      const std::vector<double> &qvel = {},
@@ -476,7 +490,7 @@ SamplePtr sample_row(std::int64_t interval_id = 0, double start = 0.,
     sample->forces = std::move(forces);
     sample->powers_w = std::move(powers);
     sample->channels = std::move(channels);
-    return SamplePtr(std::move(sample));
+    return {std::move(sample)};
 }
 
 runtime::OwnedNativeEpisode make_episode(std::vector<SamplePtr> rows,
@@ -503,7 +517,7 @@ std::int64_t episode_rows(const runtime::OwnedNativeEpisode &episode) {
 // exists (structs always read buffer 0 — an absent mask contributes an
 // empty part, still visible in the join).
 
-std::size_t piece_rows(const Piece &piece) {
+std::size_t piece_rows(const Piece &piece) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     if (!piece.offsets.empty()) return piece.offsets.size() - 1;
     switch (piece.kind) {
         case Piece::Kind::scalar_d: return piece.d.size();
@@ -527,8 +541,8 @@ std::size_t piece_rows(const Piece &piece) {
 std::string bitmap(const std::vector<char> &valid) {
     std::string out((valid.size() + 7) / 8, '\0');
     for (std::size_t i = 0; i < valid.size(); ++i)
-        if (valid[i]) out[i >> 3] = static_cast<char>(
-            out[i >> 3] | static_cast<char>(1u << (i & 7)));
+        if (valid[i]) out[i >> 3] = static_cast<char>( // NOLINT(bugprone-signed-bitwise) fixed-width literal shift is the fixture contract
+            out[i >> 3] | static_cast<char>(1u << (i & 7))); // NOLINT(bugprone-signed-bitwise) fixed-width literal shift is the fixture contract
     return out;
 }
 
@@ -568,7 +582,7 @@ void append_i32(std::string &out, std::int32_t value) {
     for (const std::byte b : raw) out.push_back(std::to_integer<char>(b));
 }
 
-const rec::FieldSpec BOOL_FIELD{
+const rec::FieldSpec BOOL_FIELD{ // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     .key = "", .dtype = "boolean", .unit = "n/a", .phase = "n/a",
     .optional = false, .measurement = "declared", .source = "test",
     .description = "generated boolean column", .frame = "n/a", .path = {},
@@ -627,7 +641,7 @@ void flat_lane_bits(std::vector<std::string> &parts, const Piece &piece,
     parts.push_back(std::move(payload));
 }
 
-void bits_into(std::vector<std::string> &parts, const Piece &piece,
+void bits_into(std::vector<std::string> &parts, const Piece &piece, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                const rec::FieldSpec &field, const std::vector<char> *ctx) {
     const std::string &dtype = field.dtype;
     switch (piece.kind) {
@@ -663,13 +677,22 @@ void bits_into(std::vector<std::string> &parts, const Piece &piece,
             // The MapArray's key column is an all-valid string array.
             flat_lane_bits(parts, piece, "varchar");
             const std::string member = dtype.substr(4, dtype.size() - 5);
-            rec::FieldSpec member_spec{
-                .key = "", .dtype = member == "struct" ? "struct" : member,
-                .unit = "n/a", .phase = "n/a", .optional = false,
-                .measurement = "declared", .source = "test",
-                .description = "map member", .frame = "n/a", .path = {},
-                .aliases = {}, .shape = std::nullopt, .axes = std::nullopt,
-                .except_keys = {}, .children = field.children};
+            rec::FieldSpec const member_spec{
+                .key = "",
+                .dtype = member == "struct" ? "struct" : member,
+                .unit = "n/a",
+                .phase = "n/a",
+                .optional = false,
+                .measurement = "declared",
+                .source = "test",
+                .description = "map member",
+                .frame = "n/a",
+                .path = {},
+                .aliases = {},
+                .shape = std::nullopt,
+                .axes = std::nullopt,
+                .except_keys = {},
+                .children = field.children};
             bt::require(piece.items != nullptr, "map piece without items lane");
             // Map entries are always valid, so the item lane gets an
             // all-valid context.
@@ -731,8 +754,8 @@ std::string column_bits(const Piece &piece, const rec::FieldSpec &field) {
 void bytes_compare(bt_oracle::Node &node, std::string_view bytes,
                    std::string_view dtype, std::size_t count,
                    const std::string &label) {
-    node.bytes(std::as_bytes(std::span(bytes)), std::string(dtype),
-               std::array<std::size_t, 1>{count}, label);
+  node.bytes(std::as_bytes(std::span(bytes)), dtype,
+             std::array<std::size_t, 1>{count}, label);
 }
 
 void rows_compare(bt_oracle::Node &node, std::int64_t rows,
@@ -763,13 +786,17 @@ void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
             synth.i.assign(static_cast<std::size_t>(table.rows), episode_id);
             piece = &synth;
         } else {
-            bt::require(false, spec.name + ": encoder emitted no " + name +
-                                   " column");
+            // Visible-in-TU throw, not bt::require: the analyzers cannot
+            // prove the `*piece` dereference below is unreachable on the
+            // missing-column path. Identical failure mode —
+            // std::runtime_error with the same message.
+            throw std::runtime_error(spec.name + ": encoder emitted no " +
+                                     name + " column");
         }
         const rec::FieldSpec *field = spec.field(name);
         const std::string bits = column_bits(*piece, field ? *field : BOOL_FIELD);
         bytes_compare(node, bits, "|u1", bits.size(),
-                      prefix + "/bits/" + name);
+                      prefix + "/bits/" + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         ++covered;
     }
     bt::require(covered == table.columns.size() +
@@ -782,14 +809,15 @@ void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
 void assert_identical(bt_oracle::Node &node, const rec::TableSpec &spec,
                       const runtime::OwnedNativeEpisode &episode,
                       const rec::Catalog &catalog, std::int64_t episode_id = 0) {
-    auto plan = rec::compile_plan(catalog, spec.name);
-    auto table = runtime::encode_table_native(episode, plan, 0, episode_rows(episode));
-    rec::validate_pieces(table, spec);
-    compare_batch(node, table, spec, episode_id, spec.name);
+  auto const plan = rec::compile_plan(catalog, spec.name);
+  auto const table =
+      runtime::encode_table_native(episode, plan, 0, episode_rows(episode));
+  rec::validate_pieces(table, spec);
+  compare_batch(node, table, spec, episode_id, spec.name);
 }
 
 // Pieces are move-only; the merge needs a deep copy for first insertion.
-Piece copy_piece(const Piece &piece) {
+Piece copy_piece(const Piece &piece) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     Piece out;
     out.kind = piece.kind;
     out.d = piece.d;
@@ -806,7 +834,7 @@ Piece copy_piece(const Piece &piece) {
 
 // concat_batches over emitted fragments: piece lanes concatenate, offsets
 // rebase like _slice_piece + concat, validity masks widen all-valid lanes.
-Piece concat_piece(const Piece &a, const Piece &b, std::size_t rows_a,
+Piece concat_piece(const Piece &a, const Piece &b, std::size_t rows_a, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                    std::size_t rows_b) {
     bt::require(a.kind == b.kind, "fragments disagree on piece kind");
     Piece out;
@@ -862,7 +890,7 @@ EncodedTable concat_tables(const std::vector<EncodedTable> &fragments) {
 // ---- derived scan (recording/native.py::iter_derived_events) --------------
 
 // The _DERIVED_FIELDS (kind, path) table the Python module authors.
-const std::pair<const char *, std::vector<const char *>> DERIVED_FIELDS[] = {
+const std::pair<const char *, std::vector<const char *>> DERIVED_FIELDS[] = { // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) static fixture table built once at startup; a throw is a fatal defect; bounded label buffer for snprintf
     {"tire_contact", {"tires", "front", "raw_contact"}},
     {"tire_contact", {"tires", "rear", "raw_contact"}},
     {"tire_contact", {"tires", "front", "controller_grounded"}},
@@ -916,7 +944,7 @@ std::vector<WireObject> derived_rows(const runtime::OwnedNativeEpisode &episode,
 // The iter_derived_events native branch — chunked derived_rows calls plus
 // the InputEvent wrap (identity, steps, values tree) kept byte-faithful.
 std::vector<WireObject> derived_events(const runtime::OwnedNativeEpisode &episode,
-                                       std::int64_t episode_id,
+                                       std::int64_t episode_id, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                        std::int64_t start_event_id,
                                        double received_wall_s) {
     const auto plan = runtime::parse_derived_event_plan(derived_plan_value());
@@ -946,7 +974,7 @@ std::vector<WireObject> derived_events(const runtime::OwnedNativeEpisode &episod
 
 // test_native_encode_columns.py::_freeze — the typed-tree serializer the
 // captured 'events' blobs are written in.
-void freeze_into(std::string &out, const Wire &value) {
+void freeze_into(std::string &out, const Wire &value) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     if (std::holds_alternative<std::monostate>(value.value)) { out += 'n'; return; }
     if (const auto *b = std::get_if<bool>(&value.value)) {
         out += 'b';
@@ -995,14 +1023,15 @@ std::string freeze(const Wire &value) {
 }
 std::string freeze(const std::vector<WireObject> &rows) {
     WireArray wrapped;
-    for (const auto &row : rows) wrapped.emplace_back(Wire{row});
+    for (const auto &row : rows)
+      wrapped.emplace_back(row);
     return freeze(Wire{std::move(wrapped)});
 }
 
 // assert_plain_bitwise — chunked vs whole walk that consumes the recorded
 // scalar leaves. Labels mirror the pytest `what[key!r]` / `what[index]`
 // convention so the golden cursor lands on each captured f64 scalar.
-void plain_bitwise(bt_oracle::Node *node, const Wire &actual,
+void plain_bitwise(bt_oracle::Node *node, const Wire &actual, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                    const Wire &expected, const std::string &what) {
     if (const auto *e_obj = std::get_if<WireObject>(&expected.value)) {
         const auto *a_obj = std::get_if<WireObject>(&actual.value);
@@ -1013,7 +1042,7 @@ void plain_bitwise(bt_oracle::Node *node, const Wire &actual,
         bt::require(a_keys == e_keys, what + ": member order differs");
         for (const auto &[key, member] : *e_obj)
             plain_bitwise(node, *sw::find(*a_obj, key), member,
-                          what + "['" + key + "']");
+                          what + "['" + key + "']"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         return;
     }
     if (const auto *e_arr = std::get_if<WireArray>(&expected.value)) {
@@ -1068,7 +1097,7 @@ void plain_bitwise(bt_oracle::Node *node, const Wire &actual,
 
 std::string input_bytes(std::span<const double> payload) {
     const auto view = std::as_bytes(payload);
-    return {reinterpret_cast<const char *>(view.data()), view.size()};
+    return {reinterpret_cast<const char *>(view.data()), view.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
 }
 
 // Materialize the recorded bootstrap manifest — config.json, state.json,
@@ -1079,32 +1108,32 @@ std::string input_bytes(std::span<const double> payload) {
 // too; the committed fixture image stays the canonical reference.
 std::unique_ptr<runtime::NativeRideRuntime> replay_ride(bt_oracle::Node &node,
                                                       const char *label) {
-    bt::TemporaryDirectory stage(std::string("ec-") + label);
-    std::string manifest_text =
-        input_bytes(node.f64_input(std::string(label) + ".files"));
-    while (!manifest_text.empty() && manifest_text.back() == ' ')
-        manifest_text.pop_back();
-    const Value manifest = bike::io::parse_json(manifest_text);
-    for (const Value &item : bike::io::as_array(manifest, "manifest")) {
-        const auto &object = bike::io::as_object(item, "manifest");
-        const auto *name_member = bike::io::find_member(object, "name");
-        const auto *bytes_member = bike::io::find_member(object, "bytes");
-        bt::require(name_member != nullptr && bytes_member != nullptr,
-                    "manifest entries carry name and bytes");
-        const std::string name = bike::io::as_string(*name_member, "manifest.name");
-        const auto nbytes = static_cast<std::size_t>(bike::io::number_i64(
-            bike::io::as_number(*bytes_member, "manifest.bytes"), "manifest.bytes"));
-        const auto payload =
-            node.f64_input(std::string(label) + ".file::" + name);
-        bt::require(payload.size() * 8 >= nbytes,
-                    "recorded file payload truncated");
-        const std::filesystem::path path = stage.path() / name;
-        std::filesystem::create_directories(path.parent_path());
-        std::ofstream out(path, std::ios::binary);
-        out.write(reinterpret_cast<const char *>(payload.data()),
-                  static_cast<std::streamsize>(nbytes));
-        bt::require(out.good(), "recorded file materialization failed");
-    }
+  bt::TemporaryDirectory const stage(std::string("ec-") + label);
+  std::string manifest_text =
+      input_bytes(node.f64_input(std::string(label) + ".files"));
+  while (!manifest_text.empty() && manifest_text.back() == ' ')
+    manifest_text.pop_back();
+  const Value manifest = bike::io::parse_json(manifest_text);
+  for (const Value &item : bike::io::as_array(manifest, "manifest")) {
+    const auto &object = bike::io::as_object(item, "manifest");
+    const auto *name_member = bike::io::find_member(object, "name");
+    const auto *bytes_member = bike::io::find_member(object, "bytes");
+    bt::require(name_member != nullptr && bytes_member != nullptr,
+                "manifest entries carry name and bytes");
+    const std::string name = bike::io::as_string(*name_member, "manifest.name");
+    const auto nbytes = static_cast<std::size_t>(bike::io::number_i64(
+        bike::io::as_number(*bytes_member, "manifest.bytes"),
+        "manifest.bytes"));
+    const auto payload = node.f64_input(std::string(label) + ".file::" + name);
+    bt::require(payload.size() * 8 >= nbytes,
+                "recorded file payload truncated");
+    const std::filesystem::path path = stage.path() / name;
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream out(path, std::ios::binary);
+    out.write(reinterpret_cast<const char *>(payload.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
+              static_cast<std::streamsize>(nbytes));
+    bt::require(out.good(), "recorded file materialization failed");
+  }
     // RuntimeBootstrap is large; heap it like the period_buffer rig does.
     auto bootstrap = std::make_unique<runtime::RuntimeBootstrap>(
         runtime::read_bootstrap(stage.path()));
@@ -1174,9 +1203,9 @@ bool lane_valid(const Piece &piece, std::size_t row) {
 }
 
 void expect_bool_column(const EncodedTable &table, std::string_view name,
-                        std::vector<int> expected) {
-    bt::require(bool_lane(column(table, name)) == expected,
-                "boolean lane mismatch for " + std::string(name));
+                        const std::vector<int> &expected) {
+  bt::require(bool_lane(column(table, name)) == expected,
+              "boolean lane mismatch for " + std::string(name));
 }
 
 // pylist() of a map<double> column: per row, nullopt or (key, value) pairs.
@@ -1198,15 +1227,15 @@ void expect_map_d(const Piece &piece,
         std::vector<std::pair<std::string, double>> entries;
         for (std::size_t i = lo; i < hi; ++i)
             entries.emplace_back(piece.s[i], piece.items->d[i]);
-        bt::require(entries == *expected[row], "map row contents differ");
+        bt::require(entries == (expected[row]).value(), "map row contents differ"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     }
 }
 
 EncodedTable native_batch(const rec::TableSpec &spec,
                           const runtime::OwnedNativeEpisode &episode,
                           const rec::Catalog &catalog) {
-    auto plan = rec::compile_plan(catalog, spec.name);
-    return runtime::encode_table_native(episode, plan, 0, episode_rows(episode));
+  auto const plan = rec::compile_plan(catalog, spec.name);
+  return runtime::encode_table_native(episode, plan, 0, episode_rows(episode));
 }
 
 // ---- the ported records, in source-file order -------------------------------
@@ -1214,14 +1243,17 @@ EncodedTable native_batch(const rec::TableSpec &spec,
 // test_make_episode_builds_retained_samples
 void test_make_episode_builds_retained_samples() {
     std::vector<SamplePtr> rows;
-    for (std::int64_t i = 0; i < 3; ++i) rows.push_back(sample_row(i, static_cast<double>(i) * .001));
+    rows.reserve(3);
+    for (std::int64_t i = 0; i < 3; ++i)
+      rows.push_back(sample_row(i, static_cast<double>(i) * .001));
     const auto episode = make_episode(std::move(rows));
     bt::require(episode_rows(episode) == 3, "row_count == 3");
     bt::require(episode.generation == 1, "generation == 1");
     const auto batch = episode.sample_batch(0, 3);
     std::vector<std::int64_t> ids;
+    ids.reserve(batch.samples.size());
     for (const auto &sample : batch.samples)
-        ids.push_back(sample->interval_id);
+      ids.push_back(sample->interval_id);
     bt::require(ids == std::vector<std::int64_t>({0, 1, 2}),
                 "interval_ids == (0, 1, 2)");
 }
@@ -1448,7 +1480,7 @@ void test_optional_leaf_absent_vs_null() {
     const auto &spec = cat.table("channel_drive");
     auto absent = drive_channels();
     auto &absent_drive = std::get<WireObject>(
-        const_cast<Wire &>(*sw::find(absent, "drive")).value);
+        const_cast<Wire &>(*sw::find(absent, "drive")).value); // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
     absent_drive.erase(std::ranges::find_if(absent_drive, [](const auto &kv) {
         return kv.first == "coasting_reason";
     }));
@@ -1476,7 +1508,7 @@ void test_parent_mask_absent_vs_null() {
     const auto &spec = cat.table("channel_sensors");
     auto absent = sensors_channels();
     auto &absent_sensors = std::get<WireObject>(
-        const_cast<Wire &>(*sw::find(absent, "sensors")).value);
+        const_cast<Wire &>(*sw::find(absent, "sensors")).value); // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
     absent_sensors.erase(std::ranges::find_if(
         absent_sensors, [](const auto &kv) {
             return kv.first == "encoders_rad_s";
@@ -1552,7 +1584,7 @@ void test_unknown_channel_root_rejected() {
 void test_unknown_channel_member_rejected() {
     const auto &cat = support_catalog();
     auto channels = drive_channels();
-    std::get<WireObject>(const_cast<Wire &>(*sw::find(channels, "drive")).value)
+    std::get<WireObject>(const_cast<Wire &>(*sw::find(channels, "drive")).value) // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
         .emplace_back("bogus_member", Wire{std::int64_t{1}});
     std::vector<SamplePtr> rows{
         sample_row(0, 0., .001, {}, {}, {}, {}, std::move(channels))};
@@ -1615,7 +1647,7 @@ void test_map_channel_tables_bitwise() {
 void test_map_leaf_rejects_non_dict_and_bad_member() {
     const auto &cat = support_catalog();
     const auto plan = rec::compile_plan(cat, "channel_suspension");
-    const Wire members[] = {
+    const Wire members[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         Wire{"a-string"},
         Wire{WireObject{{"fork_slide", Wire{"text"}}}},
         Wire{WireObject{{"fork_slide", w_arr({1.0})}}},
@@ -1636,7 +1668,7 @@ void test_map_required_leaf_missing_rejects() {
     const auto &cat = support_catalog();
     auto channels = suspension_channels();
     auto &suspension = std::get<WireObject>(
-        const_cast<Wire &>(*sw::find(channels, "suspension")).value);
+        const_cast<Wire &>(*sw::find(channels, "suspension")).value); // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
     suspension.erase(std::ranges::find_if(suspension, [](const auto &kv) {
         return kv.first == "generalized_force_components_n";
     }));
@@ -1651,19 +1683,25 @@ void test_map_required_leaf_missing_rejects() {
 
 // Mini-catalog helpers — TableSpec/FieldSpec authoring mirrors the Python
 // tests' inline leaf() constructors exactly.
-rec::FieldSpec leaf(std::string key, std::string dtype,
+rec::FieldSpec leaf(const std::string &key, std::string dtype,
                     std::vector<std::string> path, bool optional = false,
                     std::vector<std::string> except_keys = {}) {
-    rec::FieldSpec field{.key = key, .dtype = std::move(dtype),
-                         .unit = "n/a", .phase = "interval",
-                         .optional = optional, .measurement = "diagnostic",
-                         .source = "test", .description = key + " leaf",
-                         .frame = "n/a", .path = std::move(path),
-                         .aliases = {}, .shape = std::nullopt,
-                         .axes = std::nullopt,
-                         .except_keys = std::move(except_keys),
-                         .children = {}};
-    return field;
+  rec::FieldSpec field{.key = key,
+                       .dtype = std::move(dtype),
+                       .unit = "n/a",
+                       .phase = "interval",
+                       .optional = optional,
+                       .measurement = "diagnostic",
+                       .source = "test",
+                       .description = key + " leaf",
+                       .frame = "n/a",
+                       .path = std::move(path),
+                       .aliases = {},
+                       .shape = std::nullopt,
+                       .axes = std::nullopt,
+                       .except_keys = std::move(except_keys),
+                       .children = {}};
+  return field;
 }
 rec::FieldSpec key_field(std::string key) {
     rec::FieldSpec field{.key = std::move(key), .dtype = "bigint",
@@ -1689,7 +1727,7 @@ void test_map_except_keys_routes_owned_member() {
                    leaf("owned_value", "double", {"bag", "owned"}, true)},
         .description = "map remainder routing", .source = "test",
         .claims = {"bag"}, .exempt_keys = {}};
-    auto mini = mini_catalog(std::move(spec));
+    auto const mini = mini_catalog(std::move(spec));
     std::vector<SamplePtr> rows;
     rows.push_back(sample_row(0, 0., .001, {}, {}, {}, {},
         WireObject{{"bag", Wire{WireObject{{"owned", Wire{3.5}},
@@ -1731,7 +1769,7 @@ void test_all_list_and_map_dtypes_bitwise() {
         .description = "list/map dtype matrix", .source = "test",
         .claims = {"ints", "tags", "map_d", "map_b", "map_s", "map_v"},
         .exempt_keys = {}};
-    auto mini = mini_catalog(std::move(spec));
+    auto const mini = mini_catalog(std::move(spec));
     std::vector<SamplePtr> rows;
     rows.push_back(sample_row(0, 0., .001, {}, {}, {}, {}, WireObject{
         {"ints", w_ints({1, 2, -3})}, {"tags", w_strs({"a", "b"})},
@@ -1802,9 +1840,10 @@ void test_struct_field_bitwise_channel_mass() {
     const auto &cat = support_catalog();
     const auto &spec = cat.table("channel_mass");
     std::vector<SamplePtr> rows;
+    rows.reserve(3);
     for (std::int64_t i = 0; i < 3; ++i)
-        rows.push_back(sample_row(i, static_cast<double>(i) * .001, .001, {}, {}, {}, {},
-                                  mass_channels(i % 2 == 0)));
+      rows.push_back(sample_row(i, static_cast<double>(i) * .001, .001, {}, {},
+                                {}, {}, mass_channels(i % 2 == 0)));
     const auto episode = make_episode(std::move(rows));
     assert_identical(node, spec, episode, cat);
     const auto table = native_batch(spec, episode, cat);
@@ -1969,7 +2008,7 @@ void test_map_struct_except_keys_and_nesting_channel_rider() {
         auto channels = rider_channels();
         // welds_owned_only replaces the whole member — only the owned
         // crank_torque_nm payload remains, so the map is all-owned.
-        *const_cast<Wire *>(sw::find(channels, "rider_welds")) =
+        *const_cast<Wire *>(sw::find(channels, "rider_welds")) = // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             Wire{WireObject{{"crank_torque_nm", Wire{4.0}}}};
         rows.push_back(sample_row(1, 0., .001, {}, {}, {}, {},
                                   std::move(channels)));
@@ -2002,7 +2041,7 @@ void test_map_struct_except_keys_and_nesting_channel_rider() {
     const auto &rider = column(table, "rider");
     {
         const auto hi = static_cast<std::ptrdiff_t>(rider.offsets[1]);
-        std::set<std::string> keys(rider.s.begin(), rider.s.begin() + hi);
+        std::set<std::string> const keys(rider.s.begin(), rider.s.begin() + hi);
         bt::require(keys == std::set<std::string>({"saddle", "bar"}),
                     "rider row 0 entries are saddle and bar");
         const auto saddle = static_cast<std::size_t>(std::distance(
@@ -2068,7 +2107,7 @@ void test_struct_member_validation_parity() {
     const auto plan = rec::compile_plan(cat, "channel_mass");
     {
         auto channels = mass_channels();
-        std::get<WireObject>(const_cast<Wire &>(
+        std::get<WireObject>(const_cast<Wire &>( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             *sw::find(channels, "endpoint_mass")).value)
             .emplace_back("bogus", Wire{std::int64_t{1}});
         std::vector<SamplePtr> rows{
@@ -2080,7 +2119,7 @@ void test_struct_member_validation_parity() {
     }
     {
         auto channels = mass_channels();
-        auto &endpoint = std::get<WireObject>(const_cast<Wire &>(
+        auto &endpoint = std::get<WireObject>(const_cast<Wire &>( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             *sw::find(channels, "endpoint_mass")).value);
         endpoint.erase(std::ranges::find_if(endpoint, [](const auto &kv) {
             return kv.first == "mass_kg";
@@ -2094,7 +2133,7 @@ void test_struct_member_validation_parity() {
     }
     {
         auto channels = mass_channels();
-        *const_cast<Wire *>(sw::find(channels, "endpoint_mass")) =
+        *const_cast<Wire *>(sw::find(channels, "endpoint_mass")) = // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             w_arr({1.0, 2.0});
         std::vector<SamplePtr> rows{
             sample_row(0, 0., .001, {}, {}, {}, {}, std::move(channels))};
@@ -2111,7 +2150,7 @@ void test_map_struct_bad_key_and_member_parity() {
     const auto plan = rec::compile_plan(cat, "channel_rider");
     {
         auto channels = rider_channels();
-        *const_cast<Wire *>(sw::find(channels, "rider_welds")) =
+        *const_cast<Wire *>(sw::find(channels, "rider_welds")) = // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             Wire{WireObject{{"", Wire{WireObject{
                 {"force_on_rider_n", w_arr({0.0, 0.0, -1.0})}}}}}};
         std::vector<SamplePtr> rows{
@@ -2123,9 +2162,9 @@ void test_map_struct_bad_key_and_member_parity() {
     }
     {
         auto channels = rider_channels();
-        auto &welds = std::get<WireObject>(const_cast<Wire &>(
-            *sw::find(channels, "rider_welds")).value);
-        auto &pedal = std::get<WireObject>(const_cast<Wire &>(
+        auto const &welds = std::get<WireObject>(
+            const_cast<Wire &>(*sw::find(channels, "rider_welds")).value); // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
+        auto &pedal = std::get<WireObject>(const_cast<Wire &>( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
             *sw::find(welds, "pedal_left")).value);
         pedal.erase(std::ranges::find_if(pedal, [](const auto &kv) {
             return kv.first == "force_on_rider_n";
@@ -2158,8 +2197,7 @@ void test_struct_fragments_respect_batch_rows_bound() {
     }
     const auto episode = make_episode(std::move(rows));
     const auto source = rec::make_physical_source(
-        std::make_shared<runtime::OwnedNativeEpisode>(std::move(episode)),
-        cat, false);
+        std::make_shared<runtime::OwnedNativeEpisode>(episode), cat, false);
     std::map<std::string, std::vector<EncodedTable>> fragments;
     source->tables(2, [&](std::string_view name, EncodedTable &&table) {
         fragments[std::string(name)].push_back(std::move(table));
@@ -2194,15 +2232,15 @@ void test_applied_rows_bitwise_vs_python_mirror() {
     for (std::int64_t i = 0; i < 9; ++i) {
         auto channels = drive_channels(0.0);
         channels.emplace_back("control", Wire{WireObject{
-            {"motor_torque_nm", Wire{static_cast<double>(i / 3)}},
+            {"motor_torque_nm", Wire{static_cast<double>(i / 3)}}, // NOLINT(bugprone-integer-division) integer channel grouping into thirds is deliberate
             {"rider_enabled", Wire{true}}}});
         rows.push_back(sample_row(i, static_cast<double>(i) * .001, .001, {}, {}, {}, {},
                                   std::move(channels)));
     }
     const auto episode = make_episode(std::move(rows));
     const auto source = rec::make_physical_source(
-        std::make_shared<runtime::OwnedNativeEpisode>(std::move(episode)),
-        std::move(mini), true);
+        std::make_shared<runtime::OwnedNativeEpisode>(episode), std::move(mini),
+        true);
     std::vector<EncodedTable> applied;
     source->tables(4, [&](std::string_view name, EncodedTable &&table) {
         if (name == "commands_applied") applied.push_back(std::move(table));
@@ -2239,7 +2277,7 @@ void test_verdict_leaf_coerces_bool_to_text() {
                    leaf("tags", "varchar[]", {"model_status", "tags"}, true)},
         .description = "verdict coverage", .source = "test",
         .claims = {"model_status"}, .exempt_keys = {}};
-    auto mini = mini_catalog(std::move(spec));
+    auto const mini = mini_catalog(std::move(spec));
     std::vector<SamplePtr> rows;
     rows.push_back(sample_row(0, 0., .001, {}, {}, {}, {}, WireObject{
         {"model_status", Wire{WireObject{
@@ -2291,17 +2329,18 @@ void test_forces_fragments_respect_batch_rows_bound() {
     const auto &cat = support_catalog();
     const std::size_t n = 8;
     std::vector<SamplePtr> rows;
+    rows.reserve(5);
     for (std::int64_t i = 0; i < 5; ++i)
-        rows.push_back(sample_row(i, static_cast<double>(i) * .001, .001, {}, {},
-            {{"a", std::vector<double>(n, 0.)},
-             {"b", std::vector<double>(n, 1.)},
-             {"c", std::vector<double>(n, 2.)}},
-            WireObject{{"a", Wire{0.0}}, {"b", Wire{1.0}}, {"c", Wire{2.0}}},
-            {}));
+      rows.push_back(sample_row(
+          i, static_cast<double>(i) * .001, .001, {}, {},
+          {{"a", std::vector<double>(n, 0.)},
+           {"b", std::vector<double>(n, 1.)},
+           {"c", std::vector<double>(n, 2.)}},
+          WireObject{{"a", Wire{0.0}}, {"b", Wire{1.0}}, {"c", Wire{2.0}}},
+          {}));
     const auto episode = make_episode(std::move(rows));
     const auto source = rec::make_physical_source(
-        std::make_shared<runtime::OwnedNativeEpisode>(std::move(episode)),
-        cat, false);
+        std::make_shared<runtime::OwnedNativeEpisode>(episode), cat, false);
     std::vector<EncodedTable> forces;
     source->tables(4, [&](std::string_view name, EncodedTable &&table) {
         if (name == "forces") forces.push_back(std::move(table));
@@ -2338,8 +2377,7 @@ void test_map_fragments_respect_batch_rows_bound() {
     }
     const auto episode = make_episode(std::move(rows));
     const auto source = rec::make_physical_source(
-        std::make_shared<runtime::OwnedNativeEpisode>(std::move(episode)),
-        cat, false);
+        std::make_shared<runtime::OwnedNativeEpisode>(episode), cat, false);
     std::vector<EncodedTable> batches;
     source->tables(2, [&](std::string_view name, EncodedTable &&table) {
         if (name == "channel_energy") batches.push_back(std::move(table));
@@ -2378,7 +2416,7 @@ void test_whole_episode_single_pass() {
         // compile_plan + the optimized() gate are the two conditions under
         // which tables() takes the reviewed encode_rows fallback.
         (void)rec::compile_plan(*ride.catalog, spec.name);
-        const auto optimized = [](this auto &&self, const rec::FieldSpec &f)
+        const auto optimized = [](this auto &&self, const rec::FieldSpec &f) // NOLINT(misc-no-recursion) recursion mirrors the document tree
                 -> bool {
             if (f.dtype == "map<bigint>") return false;
             return std::ranges::all_of(f.children, self);
@@ -2391,7 +2429,7 @@ void test_whole_episode_single_pass() {
     rec::make_physical_source(
         std::make_shared<runtime::OwnedNativeEpisode>(ride.episode),
         *ride.catalog, false)
-        ->tables(8, [&](std::string_view name, EncodedTable &&table) {
+        ->tables(8, [&](std::string_view name, EncodedTable &&table) { // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved) callback signature is fixed by the API; the argument is consumed-read
             seen.insert(std::string(name));
             emitted[std::string(name)] += table.rows;
         });
@@ -2530,8 +2568,10 @@ void test_derived_rows_window_seeding() {
                 "the chunked pass emits the same row count");
     {
         WireArray a, e;
-        for (const auto &row : chunked) a.emplace_back(Wire{row});
-        for (const auto &row : whole) e.emplace_back(Wire{row});
+        for (const auto &row : chunked)
+          a.emplace_back(row);
+        for (const auto &row : whole)
+          e.emplace_back(row);
         plain_bitwise(&node, Wire{std::move(a)}, Wire{std::move(e)},
                       "chunked");
     }
@@ -2597,7 +2637,7 @@ void test_derived_rows_rejects_bad_plans_and_ranges() {
 // is frozen including dict-valued changes.
 void test_derived_events_real_episode_bitwise() {
     bt_oracle::Node node(node_id("test_derived_events_real_episode_bitwise"));
-    auto ride = replay_episode(node);
+    auto const ride = replay_episode(node);
     const auto actual = derived_events(ride.episode, 2, 5, 3.25);
     compare_derived_events(node, actual);
     // F1 merge-back: the completed weld-press servo holds the freehub
@@ -2613,6 +2653,7 @@ void test_derived_events_real_episode_bitwise() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_make_episode_builds_retained_samples();
         test_make_episode_preserves_authored_value_tree();

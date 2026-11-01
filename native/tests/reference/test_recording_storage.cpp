@@ -31,12 +31,12 @@ using Object = io::Value::Object;
 std::vector<SamplePtr> energy_rows(std::span<const double> residuals,
                                    double dt = 1. / 8) {
     std::vector<SamplePtr> rows;
+    rows.reserve(residuals.size());
     for (std::size_t i = 0; i < residuals.size(); ++i)
-        rows.push_back(sample_row(static_cast<std::int64_t>(i),
-                                  static_cast<double>(i) * dt, dt,
-                                  {}, {}, {}, {},
-                                  energy_channels(WireObject{
-                                      {"residual_j", Wire{residuals[i]}}})));
+      rows.push_back(sample_row(
+          static_cast<std::int64_t>(i), static_cast<double>(i) * dt, dt, {}, {},
+          {}, {},
+          energy_channels(WireObject{{"residual_j", Wire{residuals[i]}}})));
     return rows;
 }
 
@@ -61,58 +61,64 @@ std::vector<std::string> names(const std::filesystem::path &dir) {
 }
 
 void test_roundtrip_typed_nonfinite_presence_and_owned_asset() {
-    bt::TemporaryDirectory dir("storage-roundtrip");
-    const double residuals[] = {0., -0.,
-                                std::numeric_limits<double>::quiet_NaN(),
-                                std::numeric_limits<double>::infinity(),
-                                -std::numeric_limits<double>::infinity()};
-    const std::string payload = "captured input, not a reference to a mutable pathname";
-    const auto payload_bytes = std::as_bytes(std::span{payload});
-    const std::vector<std::byte> bytes(payload_bytes.begin(),
-                                       payload_bytes.end());
-    auto capture = capture_rows(
-        energy_rows(residuals), "viewer",
-        Value{Object{{"outcome", Value{Object{{"reason", text("synthetic")}}}}}},
-        {rec::asset("test.txt", "text/plain", bytes)});
-    const auto published = rec::finalize(*capture, dir.path());
-    bt::require(names(published.directory) ==
-                    std::vector<std::string>(
-                        {"manifest.json", "run.duckdb", "summary.md"}),
-                "sealed directory carries exactly the fixed payload files");
-    const auto reader = sealed(published.directory);
-    const auto stored = reader->rows(
-        "SELECT residual_j FROM channel_energy ORDER BY interval_id");
-    bt::require(stored.size() == 5, "five stored residual rows");
-    bt::require(io::tagged_double(detail::field(stored[0], "residual_j"), "r") == 0. &&
-                std::signbit(io::tagged_double(detail::field(stored[1], "residual_j"), "r")) &&
-                std::isnan(io::tagged_double(detail::field(stored[2], "residual_j"), "r")) &&
-                io::tagged_double(detail::field(stored[3], "residual_j"), "r") ==
-                    std::numeric_limits<double>::infinity() &&
-                io::tagged_double(detail::field(stored[4], "residual_j"), "r") ==
-                    -std::numeric_limits<double>::infinity(),
-                "typed nonfinite and signed-zero round trip");
-    const auto asset_row = reader->rows("SELECT content FROM assets");
-    bt::require(asset_row.size() == 1, "one stored asset");
-    const auto *content =
-        std::get_if<io::Bytes>(&detail::field(asset_row[0], "content").data);
-    bt::require(content && content->value == bytes,
-                "asset bytes are owned data, not a pathname");
-    const auto episode = reader->episode();
-    bt::require(io::as_int64(detail::field(episode, "physical_rows"), "rows") == 5 &&
-                io::is_null(detail::field(episode, "replay_contract_version")),
-                "episode extent and absent replay contract");
-    bt::require(io::as_string(detail::field(reader->manifest(), "report_status"),
-                              "status") == "complete",
-                "complete report status on a healthy publication");
+  bt::TemporaryDirectory const dir("storage-roundtrip");
+  const double residuals[] = {0., -0., std::numeric_limits<double>::quiet_NaN(), // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+                              std::numeric_limits<double>::infinity(),
+                              -std::numeric_limits<double>::infinity()};
+  const std::string payload =
+      "captured input, not a reference to a mutable pathname";
+  const auto payload_bytes = std::as_bytes(std::span{payload});
+  const std::vector<std::byte> bytes(payload_bytes.begin(),
+                                     payload_bytes.end());
+  auto capture = capture_rows(
+      energy_rows(residuals), "viewer",
+      Value{Object{{"outcome", Value{Object{{"reason", text("synthetic")}}}}}},
+      {rec::asset("test.txt", "text/plain", bytes)});
+  const auto published = rec::finalize(*capture, dir.path());
+  bt::require(names(published.directory) ==
+                  std::vector<std::string>(
+                      {"manifest.json", "run.duckdb", "summary.md"}),
+              "sealed directory carries exactly the fixed payload files");
+  const auto reader = sealed(published.directory);
+  const auto stored = reader->rows(
+      "SELECT residual_j FROM channel_energy ORDER BY interval_id");
+  bt::require(stored.size() == 5, "five stored residual rows");
+  bt::require(
+      io::tagged_double(detail::field(stored[0], "residual_j"), "r") == 0. &&
+          std::signbit(
+              io::tagged_double(detail::field(stored[1], "residual_j"), "r")) &&
+          std::isnan(
+              io::tagged_double(detail::field(stored[2], "residual_j"), "r")) &&
+          io::tagged_double(detail::field(stored[3], "residual_j"), "r") ==
+              std::numeric_limits<double>::infinity() &&
+          io::tagged_double(detail::field(stored[4], "residual_j"), "r") ==
+              -std::numeric_limits<double>::infinity(),
+      "typed nonfinite and signed-zero round trip");
+  const auto asset_row = reader->rows("SELECT content FROM assets");
+  bt::require(asset_row.size() == 1, "one stored asset");
+  const auto *content =
+      std::get_if<io::Bytes>(&detail::field(asset_row[0], "content").data);
+  bt::require(content && content->value == bytes,
+              "asset bytes are owned data, not a pathname");
+  const auto episode = reader->episode();
+  bt::require(
+      io::as_int64(detail::field(episode, "physical_rows"), "rows") == 5 &&
+          io::is_null(detail::field(episode, "replay_contract_version")),
+      "episode extent and absent replay contract");
+  bt::require(io::as_string(detail::field(reader->manifest(), "report_status"),
+                            "status") == "complete",
+              "complete report status on a healthy publication");
 }
 
 void test_default_publisher_handles_empty_run_and_zero_step_episode() {
-    bt::TemporaryDirectory dir("storage-empty");
-    rec::RunCapture empty(run_metadata(), true);
-    const auto empty_path = rec::finalize(empty, dir.path() / "no-episodes");
-    {   const auto reader = sealed(empty_path.directory);
-        bt::require(reader->episode_ids().empty(),
-                    "episode-free run seals with no episode ids"); }
+  bt::TemporaryDirectory const dir("storage-empty");
+  rec::RunCapture empty(run_metadata(), true);
+  const auto empty_path = rec::finalize(empty, dir.path() / "no-episodes");
+  {
+    const auto reader = sealed(empty_path.directory);
+    bt::require(reader->episode_ids().empty(),
+                "episode-free run seals with no episode ids");
+  }
     auto zero = capture_rows({});
     const auto zero_path = rec::finalize(*zero, dir.path() / "zero-step");
     {   const auto reader = sealed(zero_path.directory);
@@ -123,57 +129,56 @@ void test_default_publisher_handles_empty_run_and_zero_step_episode() {
 }
 
 void test_disabled_capture_does_not_create_output() {
-    bt::TemporaryDirectory dir("storage-disabled");
-    const auto path = dir.path() / "must-not-exist";
-    rec::RunCapture capture(run_metadata(), false);
-    const auto result = rec::finalize(capture, path);
-    bt::require(result.directory.empty() && result.report_status == "disabled" &&
-                !std::filesystem::exists(path),
-                "disabled capture publishes nothing");
+  bt::TemporaryDirectory const dir("storage-disabled");
+  const auto path = dir.path() / "must-not-exist";
+  rec::RunCapture capture(run_metadata(), false);
+  const auto result = rec::finalize(capture, path);
+  bt::require(result.directory.empty() && result.report_status == "disabled" &&
+                  !std::filesystem::exists(path),
+              "disabled capture publishes nothing");
 }
 
 void test_publication_collision_does_not_adopt_even_an_empty_directory() {
-    bt::TemporaryDirectory dir("storage-collision");
-    auto first_capture = capture_rows({});
-    const auto first = rec::finalize(*first_capture, dir.path()).directory;
-    const auto before = snapshot(first);
-    const auto occupied =
-        first.parent_path() / (first.filename().string() + "-1");
-    std::filesystem::create_directory(occupied);
-    auto second_capture = capture_rows({});
-    const auto second = rec::finalize(*second_capture, dir.path()).directory;
-    bt::require(second.filename().string() ==
-                    first.filename().string() + "-2",
-                "collision bumps the publication suffix, never adopts");
-    bt::require(std::filesystem::is_empty(occupied),
-                "the occupied directory stays untouched");
-    bt::require(snapshot(first) == before, "first publication is byte-stable");
+  bt::TemporaryDirectory const dir("storage-collision");
+  auto first_capture = capture_rows({});
+  const auto first = rec::finalize(*first_capture, dir.path()).directory;
+  const auto before = snapshot(first);
+  const auto occupied =
+      first.parent_path() / (first.filename().string() + "-1");
+  std::filesystem::create_directory(occupied);
+  auto second_capture = capture_rows({});
+  const auto second = rec::finalize(*second_capture, dir.path()).directory;
+  bt::require(second.filename().string() == first.filename().string() + "-2",
+              "collision bumps the publication suffix, never adopts");
+  bt::require(std::filesystem::is_empty(occupied),
+              "the occupied directory stays untouched");
+  bt::require(snapshot(first) == before, "first publication is byte-stable");
 }
 
 void test_report_failure_publishes_valid_database_with_explicit_status() {
-    bt::TemporaryDirectory dir("storage-report-fail");
-    auto capture = capture_rows({});
-    rec::FinalizeOptions options;
-    options.report = [](const std::filesystem::path &database) -> std::string {
-        // The oracle's _reporter wrote a partial destination then raised.
-        std::ofstream(database.parent_path() / "summary.md")
-            << "partial report";
-        throw std::runtime_error("report failure injection");
-    };
-    const auto published = rec::finalize(*capture, dir.path(), options);
-    const auto reader = sealed(published.directory);
-    bt::require(io::as_string(detail::field(reader->manifest(), "report_status"),
-                              "status") == "failed" &&
-                io::as_string(detail::field(reader->manifest(), "report_error"),
-                              "error").find("report failure injection") !=
-                    std::string::npos,
-                "failed report keeps an explicit status and error");
-    const auto &hashes =
-        io::as_object(detail::field(reader->manifest(), "file_sha256"), "hashes");
-    bt::require(hashes.size() == 1 && detail::find(hashes, "run.duckdb"),
-                "only the database payload is sealed on report failure");
-    bt::require(!std::filesystem::exists(published.directory / "summary.md"),
-                "no partial report is published");
+  bt::TemporaryDirectory const dir("storage-report-fail");
+  auto capture = capture_rows({});
+  rec::FinalizeOptions options;
+  options.report = [](const std::filesystem::path &database) -> std::string {
+    // The oracle's _reporter wrote a partial destination then raised.
+    std::ofstream(database.parent_path() / "summary.md") << "partial report";
+    throw std::runtime_error("report failure injection");
+  };
+  const auto published = rec::finalize(*capture, dir.path(), options);
+  const auto reader = sealed(published.directory);
+  bt::require(
+      io::as_string(detail::field(reader->manifest(), "report_status"),
+                    "status") == "failed" &&
+          io::as_string(detail::field(reader->manifest(), "report_error"),
+                        "error")
+                  .find("report failure injection") != std::string::npos,
+      "failed report keeps an explicit status and error");
+  const auto &hashes =
+      io::as_object(detail::field(reader->manifest(), "file_sha256"), "hashes");
+  bt::require(hashes.size() == 1 && detail::find(hashes, "run.duckdb"),
+              "only the database payload is sealed on report failure");
+  bt::require(!std::filesystem::exists(published.directory / "summary.md"),
+              "no partial report is published");
 }
 
 void test_manifest_is_last_and_failed_link_keeps_owned_evidence_retryable() {
@@ -216,14 +221,14 @@ void test_manifest_is_last_and_failed_link_keeps_owned_evidence_retryable() {
 }
 
 void test_reader_rejects_unsealed_or_tampered_payload() {
-    bt::TemporaryDirectory dir("storage-tamper");
-    {   // missing_manifest
-        auto capture = capture_rows({});
-        const auto path = rec::finalize(*capture, dir.path() / "a").directory;
-        std::filesystem::remove(path / "manifest.json");
-        throws<rec::RecordingError>(
-            [&] { (void)rec::Recording(path); }, "unsealed",
-            "missing manifest refuses open"); }
+  bt::TemporaryDirectory const dir("storage-tamper");
+  { // missing_manifest
+    auto capture = capture_rows({});
+    const auto path = rec::finalize(*capture, dir.path() / "a").directory;
+    std::filesystem::remove(path / "manifest.json");
+    throws<rec::RecordingError>([&] { (void)rec::Recording(path); }, "unsealed",
+                                "missing manifest refuses open");
+  }
     {   // changed_database
         auto capture = capture_rows({});
         const auto path = rec::finalize(*capture, dir.path() / "b").directory;
@@ -244,14 +249,14 @@ void test_reader_rejects_unsealed_or_tampered_payload() {
 }
 
 void test_resealed_catalog_tamper_is_rejected_before_analysis() {
-    bt::TemporaryDirectory dir("storage-catalog-tamper");
-    auto capture = capture_rows({});
-    const auto path = rec::finalize(*capture, dir.path()).directory;
-    mutate_database(path, "UPDATE field_catalog SET unit='invented' "
-                          "WHERE table_name='physics' AND field_name='time_s'");
-    throws<std::invalid_argument>(
-        [&] { (void)rec::Recording(path); }, "field catalog",
-        "rehashed catalog tamper is rejected before analysis");
+  bt::TemporaryDirectory const dir("storage-catalog-tamper");
+  auto capture = capture_rows({});
+  const auto path = rec::finalize(*capture, dir.path()).directory;
+  mutate_database(path, "UPDATE field_catalog SET unit='invented' "
+                        "WHERE table_name='physics' AND field_name='time_s'");
+  throws<std::invalid_argument>(
+      [&] { (void)rec::Recording(path); }, "field catalog",
+      "rehashed catalog tamper is rejected before analysis");
 }
 
 void test_assets_are_verified_before_publication() {
@@ -261,8 +266,10 @@ void test_assets_are_verified_before_publication() {
     const std::vector<std::byte> bytes(payload_bytes.begin(),
                                        payload_bytes.end());
     auto capture = capture_rows({}, "viewer", Value{Object{}},
-                                {rec::Asset{"bad.txt", "text/plain",
-                                            std::string(64, '0'), bytes}});
+                                {rec::Asset{.name = "bad.txt",
+                                            .media_type = "text/plain",
+                                            .sha256 = std::string(64, '0'),
+                                            .content = bytes}});
     throws<std::runtime_error>(
         [&] { (void)rec::finalize(*capture, dir.path()); }, "asset checksum",
         "a declared-digest mismatch refuses publication");
@@ -273,83 +280,84 @@ void test_assets_are_verified_before_publication() {
 }
 
 void test_multi_episode_round_trip_keeps_extents_and_events_isolated() {
-    bt::TemporaryDirectory dir("storage-multi");
-    std::vector<SamplePtr> first, second;
-    for (int i = 0; i < 3; ++i)
-        first.push_back(sample_row(i, static_cast<double>(i) / 8, 1. / 8));
-    for (int i = 0; i < 2; ++i)
-        second.push_back(sample_row(i, static_cast<double>(i) / 4, 1. / 4));
-    SyntheticCapture options;
-    options.episodes = {std::move(first), std::move(second)};
-    options.events = {
-        input_event(0, 0, "episode_start", .1, 0),
-        input_event(0, 1, "quit", .2, 2,
-                    Value{Object{{"reason", text("user")}}}),
-        input_event(1, 0, "episode_start", .3, 0)};
-    options.summaries = {
-        Value{Object{{"outcome", Value{Object{{"reason", text("first")}}}}}},
-        Value{Object{{"outcome", Value{Object{{"reason", text("second")}}}}}}};
-    auto capture = synthetic_capture({}, std::move(options));
-    const auto path = rec::finalize(*capture, dir.path()).directory;
-    const auto reader = sealed(path);
-    bt::require(reader->episode_ids() == std::vector<std::int64_t>({0, 1}),
-                "two episodes seal in order");
-    const auto extents = reader->rows(
-        "SELECT episode_id,count(*) AS n,min(interval_id) AS lo,"
-        "max(interval_id) AS hi,min(time_s) AS t0,"
-        "max(interval_end_s) AS t1 FROM physics GROUP BY episode_id "
-        "ORDER BY episode_id");
-    bt::require(extents.size() == 2, "one extent row per episode");
-    bt::require(io::as_int64(detail::field(extents[0], "n"), "n") == 3 &&
-                io::as_int64(detail::field(extents[0], "lo"), "lo") == 0 &&
-                io::as_int64(detail::field(extents[0], "hi"), "hi") == 2 &&
-                io::as_double(detail::field(extents[0], "t0"), "t0") == 0. &&
-                io::as_double(detail::field(extents[0], "t1"), "t1") == .375,
-                "episode 0 keeps its own extent");
-    bt::require(io::as_int64(detail::field(extents[1], "episode_id"), "e") == 1 &&
-                io::as_int64(detail::field(extents[1], "n"), "n") == 2 &&
-                io::as_double(detail::field(extents[1], "t1"), "t1") == .5,
-                "episode 1 keeps its own extent");
-    const auto journal = reader->rows(
-        "SELECT episode_id,event_id,kind,values_json "
-        "FROM events ORDER BY episode_id,event_id");
-    bt::require(journal.size() == 3 &&
-                io::as_int64(detail::field(journal[0], "event_id"), "e") == 0 &&
-                io::as_string(detail::field(journal[0], "kind"), "k") ==
-                    "episode_start" &&
-                io::as_string(detail::field(journal[1], "kind"), "k") == "quit" &&
-                io::as_int64(detail::field(journal[2], "episode_id"), "e") == 1,
-                "journaled events keep episode isolation and order");
-    const auto values = io::parse_recording_json(
-        io::as_string(detail::field(journal[1], "values_json"), "v"));
-    bt::require(io::as_string(detail::field(values, "reason"), "r") == "user",
-                "event values round-trip through recording JSON");
-    const auto count = reader->rows(
-        "SELECT count(*) AS n FROM events WHERE episode_id=1");
-    bt::require(io::as_int64(detail::field(count[0], "n"), "n") == 1,
-                "episode 1 owns exactly its start event");
-    const auto summaries = reader->rows(
-        "SELECT episode_id,summary_json FROM episodes ORDER BY episode_id");
-    for (std::size_t i = 0; i < 2; ++i) {
-        const auto summary = io::parse_recording_json(io::as_string(
-            detail::field(summaries[i], "summary_json"), "s"));
-        bt::require(io::as_string(
-                        detail::field(detail::field(summary, "outcome"), "reason"),
-                        "r") == (i == 0 ? "first" : "second"),
-                    "per-episode summaries stay aligned");
-    }
+  bt::TemporaryDirectory const dir("storage-multi");
+  std::vector<SamplePtr> first, second;
+  for (int i = 0; i < 3; ++i)
+    first.push_back(sample_row(i, static_cast<double>(i) / 8, 1. / 8));
+  for (int i = 0; i < 2; ++i)
+    second.push_back(sample_row(i, static_cast<double>(i) / 4, 1. / 4));
+  SyntheticCapture options;
+  options.episodes = {std::move(first), std::move(second)};
+  options.events = {
+      input_event(0, 0, "episode_start", .1, 0),
+      input_event(0, 1, "quit", .2, 2, Value{Object{{"reason", text("user")}}}),
+      input_event(1, 0, "episode_start", .3, 0)};
+  options.summaries = {
+      Value{Object{{"outcome", Value{Object{{"reason", text("first")}}}}}},
+      Value{Object{{"outcome", Value{Object{{"reason", text("second")}}}}}}};
+  auto capture = synthetic_capture({}, std::move(options));
+  const auto path = rec::finalize(*capture, dir.path()).directory;
+  const auto reader = sealed(path);
+  bt::require(reader->episode_ids() == std::vector<std::int64_t>({0, 1}),
+              "two episodes seal in order");
+  const auto extents =
+      reader->rows("SELECT episode_id,count(*) AS n,min(interval_id) AS lo,"
+                   "max(interval_id) AS hi,min(time_s) AS t0,"
+                   "max(interval_end_s) AS t1 FROM physics GROUP BY episode_id "
+                   "ORDER BY episode_id");
+  bt::require(extents.size() == 2, "one extent row per episode");
+  bt::require(io::as_int64(detail::field(extents[0], "n"), "n") == 3 &&
+                  io::as_int64(detail::field(extents[0], "lo"), "lo") == 0 &&
+                  io::as_int64(detail::field(extents[0], "hi"), "hi") == 2 &&
+                  io::as_double(detail::field(extents[0], "t0"), "t0") == 0. &&
+                  io::as_double(detail::field(extents[0], "t1"), "t1") == .375,
+              "episode 0 keeps its own extent");
+  bt::require(io::as_int64(detail::field(extents[1], "episode_id"), "e") == 1 &&
+                  io::as_int64(detail::field(extents[1], "n"), "n") == 2 &&
+                  io::as_double(detail::field(extents[1], "t1"), "t1") == .5,
+              "episode 1 keeps its own extent");
+  const auto journal =
+      reader->rows("SELECT episode_id,event_id,kind,values_json "
+                   "FROM events ORDER BY episode_id,event_id");
+  bt::require(
+      journal.size() == 3 &&
+          io::as_int64(detail::field(journal[0], "event_id"), "e") == 0 &&
+          io::as_string(detail::field(journal[0], "kind"), "k") ==
+              "episode_start" &&
+          io::as_string(detail::field(journal[1], "kind"), "k") == "quit" &&
+          io::as_int64(detail::field(journal[2], "episode_id"), "e") == 1,
+      "journaled events keep episode isolation and order");
+  const auto values = io::parse_recording_json(
+      io::as_string(detail::field(journal[1], "values_json"), "v"));
+  bt::require(io::as_string(detail::field(values, "reason"), "r") == "user",
+              "event values round-trip through recording JSON");
+  const auto count =
+      reader->rows("SELECT count(*) AS n FROM events WHERE episode_id=1");
+  bt::require(io::as_int64(detail::field(count[0], "n"), "n") == 1,
+              "episode 1 owns exactly its start event");
+  const auto summaries = reader->rows(
+      "SELECT episode_id,summary_json FROM episodes ORDER BY episode_id");
+  for (std::size_t i = 0; i < 2; ++i) {
+    const auto summary = io::parse_recording_json(
+        io::as_string(detail::field(summaries[i], "summary_json"), "s"));
+    bt::require(io::as_string(
+                    detail::field(detail::field(summary, "outcome"), "reason"),
+                    "r") == (i == 0 ? "first" : "second"),
+                "per-episode summaries stay aligned");
+  }
 }
 
 void test_forces_round_trip_records_components_and_checks_qfrc_width() {
     bt::TemporaryDirectory dir("storage-forces");
     std::vector<SamplePtr> rows;
+    rows.reserve(2);
     for (int i = 0; i < 2; ++i)
-        rows.push_back(sample_row(i, static_cast<double>(i) / 8, 1. / 8, {},
-                                  std::vector<double>{2., 0., 0., 0.,
-                                                      0., 0., 0., 0.}));
+      rows.push_back(
+          sample_row(i, static_cast<double>(i) / 8, 1. / 8, {},
+                     std::vector<double>{2., 0., 0., 0., 0., 0., 0., 0.}));
     SyntheticCapture options;
     options.forces = true;
-    auto capture = synthetic_capture(std::move(rows), std::move(options));
+    auto capture = synthetic_capture(rows, options);
     const auto path = rec::finalize(*capture, dir.path()).directory;
     {   const auto reader = sealed(path);
         const auto stored = reader->rows(
@@ -404,6 +412,7 @@ void test_forces_round_trip_records_components_and_checks_qfrc_width() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_roundtrip_typed_nonfinite_presence_and_owned_asset();
         test_default_publisher_handles_empty_run_and_zero_step_episode();

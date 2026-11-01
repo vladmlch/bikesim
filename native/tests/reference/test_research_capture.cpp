@@ -205,134 +205,148 @@ void test_python_verify_suffix_is_consumed_only_after_freezing() {
 // tests/reference/test_research_capture.py::
 //   test_two_episode_launch_writes_only_after_finalization
 void test_two_episode_launch_writes_only_after_finalization() {
-    Directory directory;
-    const auto output = directory.path / "recording";
-    auto [env, publication] = recording_env(output);
-    research::ResearchRun launch(*env, publication);
-    (void)step(*env, motor_control(0.));
-    launch.reset();
-    bt::require(!std::filesystem::exists(output),
-                "a mid-run seal writes nothing before finalization");
-    (void)step(*env, motor_control(1.));
-    env->stop();
-    (void)launch.seal(*text(env->status(), "reason"));
-    bt::require(!std::filesystem::exists(output),
-                "a requested seal still writes nothing before finalization");
-    const auto path = launch.finish();
-    env->close();
-    bt::require(path.has_value(), "finish publishes the run directory");
-    {
-        rec::Recording reader(*path);
-        bt::require(reader.episode_ids() == std::vector<std::int64_t>({0, 1}),
-                    "both sealed episodes publish");
-        invalid_with([&] { (void)reader.episode(); }, "select --episode");
-        for (const std::int64_t identity : {0, 1})
-            bt::require(io::as_int64(rd::field(reader.episode(identity), "complete_control_steps"),
-                                     "complete_control_steps") == 1,
-                        "each episode retains one completed control step");
-        bt::require(row_count(reader, "SELECT count(*) AS n FROM observations") == 4,
-                    "two episodes publish startup + one delivered observation each");
-    }
+  Directory const directory;
+  const auto output = directory.path / "recording";
+  auto [env, publication] = recording_env(output);
+  research::ResearchRun launch(*env, publication);
+  (void)step(*env, motor_control(0.));
+  launch.reset();
+  bt::require(!std::filesystem::exists(output),
+              "a mid-run seal writes nothing before finalization");
+  (void)step(*env, motor_control(1.));
+  env->stop();
+  (void)launch.seal(text(env->status(), "reason").value()); // NOLINT(bugprone-unchecked-optional-access) the status text is the fixture contract under test; .value() reports violations loudly
+  bt::require(!std::filesystem::exists(output),
+              "a requested seal still writes nothing before finalization");
+  const auto path = launch.finish();
+  env->close();
+  bt::require(path.has_value(), "finish publishes the run directory");
+  {
+    rec::Recording reader((path).value()); // NOLINT(bugprone-unchecked-optional-access) has_value() above is the fixture guard; .value() reports violations loudly
+    bt::require(reader.episode_ids() == std::vector<std::int64_t>({0, 1}),
+                "both sealed episodes publish");
+    invalid_with([&] { (void)reader.episode(); }, "select --episode");
+    for (const std::int64_t identity : {0, 1})
+      bt::require(io::as_int64(rd::field(reader.episode(identity),
+                                         "complete_control_steps"),
+                               "complete_control_steps") == 1,
+                  "each episode retains one completed control step");
+    bt::require(
+        row_count(reader, "SELECT count(*) AS n FROM observations") == 4,
+        "two episodes publish startup + one delivered observation each");
+  }
     bt::require(launch.finish() == path, "repeat finish is idempotent");
 }
 
 // tests/reference/test_research_capture.py::
 //   test_incomplete_window_and_failed_policy_remain_analyzable
 void test_incomplete_window_and_failed_policy_remain_analyzable() {
-    Directory directory;
-    auto [env, publication] = recording_env(directory.path);
-    env->begin_control(motor_control(0.), 0., 0.);
-    (void)env->advance_control(std::nullopt, 1);
-    research::ResearchRun launch(*env, publication);
-    // A failure seal owns the actual committed prefix, not a fabricated
-    // completed step. launch.capture.finalize(tmp_path) is the raw
-    // publication seam — no drain, no finish bookkeeping.
-    (void)launch.seal("simulation_error");
-    const auto path = publication->publish(launch.episodes(), launch.events());
-    env->close(); // discard_pending — the native close has no pending guard
-    {
-        rec::Recording reader(path);
-        const auto episode = reader.episode();
-        bt::require(io::as_int64(rd::field(episode, "complete_control_steps"),
-                                 "complete_control_steps") == 0,
-                    "a mid-window seal records no completed control step");
-        bt::require(io::as_int64(rd::field(episode, "physical_rows"), "physical_rows") == 1,
-                    "the seal retains exactly the committed physical prefix");
-        bt::require(!io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
-                    "a failure-sealed prefix is not replay eligible");
-        bt::require(row_count(reader, "SELECT count(*) AS n FROM commands_requested") == 1,
-                    "the requested command of the incomplete window is retained");
-        bt::require(row_count(reader, "SELECT count(*) AS n FROM observations") == 1,
-                    "only the startup observation is retained");
-    }
+  Directory const directory;
+  auto [env, publication] = recording_env(directory.path);
+  env->begin_control(motor_control(0.), 0., 0.);
+  (void)env->advance_control(std::nullopt, 1);
+  research::ResearchRun launch(*env, publication);
+  // A failure seal owns the actual committed prefix, not a fabricated
+  // completed step. launch.capture.finalize(tmp_path) is the raw
+  // publication seam — no drain, no finish bookkeeping.
+  (void)launch.seal("simulation_error");
+  const auto path = publication->publish(launch.episodes(), launch.events());
+  env->close(); // discard_pending — the native close has no pending guard
+  {
+    rec::Recording const reader(path);
+    const auto episode = reader.episode();
+    bt::require(io::as_int64(rd::field(episode, "complete_control_steps"),
+                             "complete_control_steps") == 0,
+                "a mid-window seal records no completed control step");
+    bt::require(
+        io::as_int64(rd::field(episode, "physical_rows"), "physical_rows") == 1,
+        "the seal retains exactly the committed physical prefix");
+    bt::require(
+        !io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
+        "a failure-sealed prefix is not replay eligible");
+    bt::require(
+        row_count(reader, "SELECT count(*) AS n FROM commands_requested") == 1,
+        "the requested command of the incomplete window is retained");
+    bt::require(row_count(reader, "SELECT count(*) AS n FROM observations") ==
+                    1,
+                "only the startup observation is retained");
+  }
     invalid_with([&] { (void)bike::replay::load_replay_input(path); }, "incomplete-prefix");
 }
 
 // tests/reference/test_research_capture.py::
 //   test_policy_failure_before_first_request_seals_zero_step_evidence
 void test_policy_failure_before_first_request_seals_zero_step_evidence() {
-    Directory directory;
-    auto [env, publication] = recording_env(directory.path);
-    research::ResearchRun launch(*env, publication);
-    env->fail_policy("policy setup injection");
-    // finish(primary=error, stop=True): the native owner rethrows the primary
-    // after publishing; the adapter returned the path. Catch, then read the
-    // idempotent second call.
-    throws_runtime([&] {
-        (void)launch.finish(std::make_exception_ptr(std::runtime_error("policy setup injection")), true); },
-        "policy setup injection");
-    const auto path = launch.finish();
-    env->close();
-    bt::require(path.has_value(), "the failure seal still publishes");
-    rec::Recording reader(*path);
-    const auto episode = reader.episode();
-    bt::require(io::as_int64(rd::field(episode, "physical_rows"), "physical_rows") == 0,
-                "a policy failure before the first request retains no physical rows");
-    bt::require(!io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
-                "zero-step policy failure evidence is not replay eligible");
-    bt::require(row_count(reader, "SELECT count(*) AS n FROM observations") == 1,
-                "only the startup observation is retained");
+  Directory const directory;
+  auto [env, publication] = recording_env(directory.path);
+  research::ResearchRun launch(*env, publication);
+  env->fail_policy("policy setup injection");
+  // finish(primary=error, stop=True): the native owner rethrows the primary
+  // after publishing; the adapter returned the path. Catch, then read the
+  // idempotent second call.
+  throws_runtime(
+      [&] {
+        (void)launch.finish(std::make_exception_ptr(std::runtime_error("policy setup injection")), true);
+      },
+      "policy setup injection");
+  const auto path = launch.finish();
+  env->close();
+  bt::require(path.has_value(), "the failure seal still publishes");
+  rec::Recording const reader((path).value()); // NOLINT(bugprone-unchecked-optional-access) has_value() above is the fixture guard; .value() reports violations loudly
+  const auto episode = reader.episode();
+  bt::require(
+      io::as_int64(rd::field(episode, "physical_rows"), "physical_rows") == 0,
+      "a policy failure before the first request retains no physical rows");
+  bt::require(
+      !io::as_bool(rd::field(episode, "replay_eligible"), "replay_eligible"),
+      "zero-step policy failure evidence is not replay eligible");
+  bt::require(row_count(reader, "SELECT count(*) AS n FROM observations") == 1,
+              "only the startup observation is retained");
 }
 
 // tests/reference/test_research_capture.py::
 //   test_interruption_drains_only_the_already_accepted_control
 void test_interruption_drains_only_the_already_accepted_control() {
-    Directory directory;
-    auto [env, publication] = recording_env(directory.path);
-    auto counting = std::make_unique<CountingPolicy>();
-    auto *const policy = counting.get();
-    // ResearchRun(env, ...) + launch.attach(session) — the session-form
-    // constructor is the same ownership pair in one step.
-    research::PolicySession session(std::move(env), std::move(counting));
-    auto *const environment_ptr = &session.environment();
-    research::ResearchRun launch(session, publication);
-    session.begin_advance();
-    (void)session.advance_pending(std::nullopt, 1);
-    throws_runtime([&] {
-        (void)launch.finish(std::make_exception_ptr(research::OperatorInterrupted{}), true); },
-        "operator interrupt");
-    const auto path = launch.finish();
-    bt::require(policy->calls.size() == 1 &&
-                    environment_ptr->snapshot().step ==
-                        environment_ptr->configuration().control_steps,
-                "the interrupt drains only the already accepted window");
-    bt::require(!session.pending(), "no pending window remains after the drain");
-    environment_ptr->close();
-    bt::require(path.has_value(), "the interrupt seal still publishes");
-    rec::Recording reader(*path);
-    bt::require(io::as_int64(rd::field(reader.episode(), "complete_control_steps"),
-                             "complete_control_steps") == 1,
-                "the drained window records one completed control step");
-    bool interrupted = false;
-    for (const auto &row : reader.rows("SELECT kind FROM events"))
-        if (io::as_string(rd::field(row, "kind"), "kind") == "launch_interrupted")
-            interrupted = true;
-    bt::require(interrupted, "the launch_interrupted event is journaled");
+  Directory const directory;
+  auto [env, publication] = recording_env(directory.path);
+  auto counting = std::make_unique<CountingPolicy>();
+  auto const *const policy = counting.get();
+  // ResearchRun(env, ...) + launch.attach(session) — the session-form
+  // constructor is the same ownership pair in one step.
+  research::PolicySession session(std::move(env), std::move(counting));
+  auto *const environment_ptr = &session.environment();
+  research::ResearchRun launch(session, publication);
+  session.begin_advance();
+  (void)session.advance_pending(std::nullopt, 1);
+  throws_runtime(
+      [&] {
+        (void)launch.finish(std::make_exception_ptr(research::OperatorInterrupted{}), true);
+      },
+      "operator interrupt");
+  const auto path = launch.finish();
+  bt::require(policy->calls.size() == 1 &&
+                  environment_ptr->snapshot().step ==
+                      environment_ptr->configuration().control_steps,
+              "the interrupt drains only the already accepted window");
+  bt::require(!session.pending(), "no pending window remains after the drain");
+  environment_ptr->close();
+  bt::require(path.has_value(), "the interrupt seal still publishes");
+  rec::Recording const reader((path).value()); // NOLINT(bugprone-unchecked-optional-access) has_value() above is the fixture guard; .value() reports violations loudly
+  bt::require(
+      io::as_int64(rd::field(reader.episode(), "complete_control_steps"),
+                   "complete_control_steps") == 1,
+      "the drained window records one completed control step");
+  bool interrupted = false;
+  for (const auto &row : reader.rows("SELECT kind FROM events"))
+    if (io::as_string(rd::field(row, "kind"), "kind") == "launch_interrupted")
+      interrupted = true;
+  bt::require(interrupted, "the launch_interrupted event is journaled");
 }
 
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_python_on_off_capture_does_not_change_state_noise_or_results();
         test_sealed_python_source_survives_reset_close_and_forbids_array_mutation();

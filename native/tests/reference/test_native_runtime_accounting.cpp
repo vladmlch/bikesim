@@ -154,11 +154,16 @@ void test_work_rejects_nonfinite_or_nonpositive_inputs() {
 void test_interval_markers_survive_period_clear() {
     struct Marker { std::int64_t id; double begin, end; };
     const std::array<std::array<Marker, 2>, 5> programs{{
-        {{{0, 0., .1}, {0, .1, .2}}},
-        {{{0, 0., .1}, {2, .1, .2}}},
-        {{{0, 0., .1}, {1, .11, .2}}},
-        {{{0, 0., .1}, {1, .09, .2}}},
-        {{{0, 0., .1}, {1, .1, .1}}},
+        {{{.id = 0, .begin = 0., .end = .1},
+          {.id = 0, .begin = .1, .end = .2}}},
+        {{{.id = 0, .begin = 0., .end = .1},
+          {.id = 2, .begin = .1, .end = .2}}},
+        {{{.id = 0, .begin = 0., .end = .1},
+          {.id = 1, .begin = .11, .end = .2}}},
+        {{{.id = 0, .begin = 0., .end = .1},
+          {.id = 1, .begin = .09, .end = .2}}},
+        {{{.id = 0, .begin = 0., .end = .1},
+          {.id = 1, .begin = .1, .end = .1}}},
     }};
     for (const auto &program : programs)
         for (const std::size_t capacity : {1U, 4U}) {
@@ -292,7 +297,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
     rcr::PinnedPlant plant = rcr::pinned_model();
     mjModel *model = plant.model.get();
-    mjData *data = plant.data.get();
+    mjData const *data = plant.data.get();
     const auto nq = static_cast<std::size_t>(model->nq);
     const auto nv = static_cast<std::size_t>(model->nv);
     const auto nu = static_cast<std::size_t>(model->nu);
@@ -392,7 +397,8 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
         };
         const auto names = [](const std::vector<std::string> &items) {
             runtime::WireArray out;
-            for (const auto &item : items) out.emplace_back(runtime::Wire(item));
+            for (const auto &item : items)
+              out.emplace_back(item);
             return runtime::Wire(std::move(out));
         };
         expected_channels.emplace_back("rider_active_delivered_nm",
@@ -428,7 +434,8 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
             expected_errors.push_back("rider_power." + name);
         for (const auto &name : *expected.joint_speed_violations)
             expected_errors.push_back("rider_speed." + name);
-        if (expected.budget_exceeded) expected_errors.push_back("rider_power.positive");
+        if (expected.budget_exceeded)
+          expected_errors.emplace_back("rider_power.positive");
         bt::require(observed.violations == expected_errors,
                     "violations fold in oracle order");
         measured.push_back(wire_number(observed.channels, "rider_positive_power_w"));
@@ -519,16 +526,16 @@ void test_strict_rejection_publishes_the_whole_period_before_raising() {
     bt::require(earliest.has_value(),
                 "at least one published row carries attachment violations");
     for (std::size_t i = 0; i < ids.size(); ++i)
-        bt::require(ids[i] == static_cast<std::int64_t>(i),
-                    "published interval ids are dense from zero");
+      bt::require(std::cmp_equal(ids[i], i),
+                  "published interval ids are dense from zero");
     const auto snap =
         std::make_unique<const runtime::RuntimeSnapshot>(runtime->snapshot());
-    bt::require(snap->step == static_cast<std::int64_t>(ids.size()),
+    bt::require(std::cmp_equal(snap->step, ids.size()),
                 "snapshot.step equals the published interval count");
     bt::require(snap->first_failure.has_value(),
                 "the strict failure is retained as first_failure");
-    bt::require(snap->first_failure->time_s == earliest_end &&
-                    snap->first_failure->violations == earliest_violations,
+    bt::require(snap->first_failure.value().time_s == earliest_end && // NOLINT(bugprone-unchecked-optional-access) snap is freshly make_unique'd and first_failure is proven engaged by the require above; .value() reports violations loudly
+                    snap->first_failure.value().violations == earliest_violations, // NOLINT(bugprone-unchecked-optional-access) same fixture contract as the line above
                 "first_failure is the earliest violating published row");
     const runtime::WireObject accounting = runtime->accounting_state();
     const auto &history = sw::object(wire_member(accounting, "history"));
@@ -568,8 +575,8 @@ void test_diagnostic_warns_once_and_keeps_failure_after_more_periods() {
                 "later failing periods do not re-warn");
     const auto after = runtime->snapshot();
     bt::require(after.first_failure.has_value() &&
-                    after.first_failure->time_s == first->time_s &&
-                    after.first_failure->violations == first->violations,
+                    after.first_failure.value().time_s == first.value().time_s && // NOLINT(bugprone-unchecked-optional-access) has_value() on the line above is the guard; .value() reports violations loudly
+                    after.first_failure.value().violations == first.value().violations, // NOLINT(bugprone-unchecked-optional-access) has_value() above is the guard; .value() reports violations loudly
                 "first_failure stays latched after more periods");
     const auto &status = after.model_status;
     bt::require(!wire_bool(status, "model_valid"),
@@ -578,8 +585,8 @@ void test_diagnostic_warns_once_and_keeps_failure_after_more_periods() {
     bt::require(batch.samples.size() == 81,
                 "non-strict diagnostics publish all 81 intervals");
     for (std::size_t i = 0; i < batch.samples.size(); ++i)
-        bt::require(batch.samples[i]->interval_id == static_cast<std::int64_t>(i),
-                    "drained interval ids are dense from zero");
+      bt::require(std::cmp_equal(batch.samples[i]->interval_id, i),
+                  "drained interval ids are dense from zero");
     runtime->close();
 }
 NATIVE_DIAG_POP

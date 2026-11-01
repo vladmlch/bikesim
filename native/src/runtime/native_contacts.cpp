@@ -97,8 +97,13 @@ NativeContactResult RuntimeContactQuery::query(
         throw std::invalid_argument("contact sample time/timestep is invalid");
     const double interval = std::nearbyint(sample_time / model->opt.timestep);
     // Both endpoints are checked before conversion: double(INT64_MAX)
-    // rounds up to 2^63 and cannot itself be converted to int64_t.
-    if (!std::isfinite(interval) || interval < -0x1p63 || interval >= 0x1p63)
+    // rounds up to 2^63 and cannot itself be converted to int64_t, so the
+    // upper bound is queried through numeric_limits, not a 2^63 literal.
+    if (!std::isfinite(interval) ||
+        interval < static_cast<double>(
+                       std::numeric_limits<std::int64_t>::min()) ||
+        interval >= static_cast<double>(
+                        std::numeric_limits<std::int64_t>::max()))
         throw std::invalid_argument("contact interval is outside int64 range");
     NativeContactResult out;
     const std::array<int, 3> tracked_ids{front_id, rear_id, handlebar_id};

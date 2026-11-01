@@ -26,10 +26,22 @@ struct TierCfg {
     double timestep_s;
     bool discretised;
 };
-constexpr TierCfg kFast{64, 75.0, 0.0005, false};
-constexpr TierCfg kDetail{256, 75.0, 0.00025, true};
-constexpr TierCfg kDetail64{64, 75.0, 0.0005, true};
-constexpr TierCfg kFast256{256, 75.0, 0.00025, false};
+constexpr TierCfg kFast{.n_rays = 64,
+                        .half_angle_deg = 75.0,
+                        .timestep_s = 0.0005,
+                        .discretised = false};
+constexpr TierCfg kDetail{.n_rays = 256,
+                          .half_angle_deg = 75.0,
+                          .timestep_s = 0.00025,
+                          .discretised = true};
+constexpr TierCfg kDetail64{.n_rays = 64,
+                            .half_angle_deg = 75.0,
+                            .timestep_s = 0.0005,
+                            .discretised = true};
+constexpr TierCfg kFast256{.n_rays = 256,
+                           .half_angle_deg = 75.0,
+                           .timestep_s = 0.00025,
+                           .discretised = false};
 
 // ---------------------------------------------------------------------
 // Entry consumers — the capture order inside _assert_outputs_bitwise /
@@ -229,9 +241,10 @@ void state(bt::oracle::Node &golden, const biketyre::PneumaticTyreModel &model,
 
 // _zoned_map — hardpack base with loose [4.6,5.1) and scree [5.1,5.6).
 [[nodiscard]] nativecfg::SurfaceMap zoned_map() {
-    return {.surface = surface("hardpack"),
-            .sections = {{4.6, 5.1, surface("loose")},
-                         {5.1, 5.6, surface("scree")}}};
+  return {.surface = surface("hardpack"),
+          .sections = {
+              {.start_m = 4.6, .end_m = 5.1, .surface = surface("loose")},
+              {.start_m = 5.1, .end_m = 5.6, .surface = surface("scree")}}};
 }
 
 // Heap-owning factory: the model's scratch banks contain spans into its
@@ -251,15 +264,19 @@ struct Row {
 
 [[nodiscard]] std::vector<Row>
 rows(std::span<const double> xs, std::span<const double> zs,
-     std::span<const double> omegas, std::span<const double> dts = {},
+     std::span<const double> omegas, std::span<const double> dts = {}, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
      double speed = 3.0) {
     std::vector<Row> out;
     const std::vector<double> default_dts(
             xs.size() ? xs.size() : 0, 0.002);
     const auto dt = dts.empty() ? std::span(default_dts) : dts;
+    out.reserve(xs.size());
     for (std::size_t i = 0; i < xs.size(); ++i)
-        out.push_back({{xs[i], 0.0, zs[i]}, {speed, 0.0, 0.0},
-                       omegas[i], dt[i], std::nullopt});
+      out.push_back({.hub = {xs[i], 0.0, zs[i]},
+                     .velocity = {speed, 0.0, 0.0},
+                     .omega = omegas[i],
+                     .dt = dt[i],
+                     .pressure = std::nullopt});
     return out;
 }
 
@@ -289,7 +306,7 @@ void run_sequence(bt::oracle::Node &golden,
 
 // An injected _PatchBrushState — the C++ twin of _injected_state.
 [[nodiscard]] biketyre::PatchBrushState
-injected(int start, int stop, double kappa_prime = 0.0,
+injected(int start, int stop, double kappa_prime = 0.0, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
          std::vector<double> bristle = {}, double detailed_kappa = 0.0) {
     biketyre::PatchBrushState state;
     state.start = start;
@@ -394,11 +411,31 @@ void test_model_mixed_velocity_components_bitwise(std::size_t tier_index) {
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.025;
     const std::vector<Row> table{
-            {{5.0, 0.0, lo}, {3.0, 0.4, 0.0}, 9.0, 0.002, {}},
-            {{5.0, 0.1, lo}, {2.0, -0.3, 0.8}, 9.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {1.5, 0.0, -1.2}, 9.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {0.0, 0.0, 2.0}, 9.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {0.0, -0.7, 0.0}, -4.0, 0.002, {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.4, 0.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.1, lo},
+         .velocity = {2.0, -0.3, 0.8},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {1.5, 0.0, -1.2},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {0.0, 0.0, 2.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {0.0, -0.7, 0.0},
+         .omega = -4.0,
+         .dt = 0.002,
+         .pressure = {}},
     };
     run_sequence(golden, tyre, tier, bump_road(), uniform_map("asphalt"),
                  table);
@@ -511,7 +548,7 @@ void test_model_patch_no_overlap_drops_stale(std::size_t tier_index) {
 void test_model_patch_migration_injected_candidates() {
     auto golden = node(kFile,
                        "test_model_patch_migration_injected_candidates");
-    const TierCfg tier = kDetail64;
+    const TierCfg &tier = kDetail64;
     const auto tyre = bike::legacy::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
@@ -535,14 +572,12 @@ void test_model_patch_migration_injected_candidates() {
     };
 
     // tie-break — equal three-ray overlaps, the larger (start, stop) wins.
-    auto keys = drive(
-            {injected(s0 - 2, s0 + 3, 0.5,
-                      bike::geometry::detail::np_linspace(0.01, 0.02, 5),
-                      0.5),
-             injected(e0 - 3, e0 + 2, 0.75,
-                      bike::geometry::detail::np_linspace(-0.02, -0.01, 5),
-                      0.75)},
-            "tie-break");
+    auto const keys = drive(
+        {injected(s0 - 2, s0 + 3, 0.5,
+                  bike::geometry::detail::np_linspace(0.01, 0.02, 5), 0.5),
+         injected(e0 - 3, e0 + 2, 0.75,
+                  bike::geometry::detail::np_linspace(-0.02, -0.01, 5), 0.75)},
+        "tie-break");
     bt::require(keys == std::set<std::pair<int, int>>{{s0, e0}},
                 "tie-break kept the live key");
 
@@ -570,7 +605,7 @@ void test_model_patch_migration_injected_candidates() {
 void test_model_migration_bristle_broadcast_semantics() {
     auto golden = node(
             kFile, "test_model_migration_bristle_broadcast_semantics");
-    const TierCfg tier = kDetail64;
+    const TierCfg &tier = kDetail64;
     const auto tyre = bike::legacy::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
@@ -583,7 +618,10 @@ void test_model_migration_bristle_broadcast_semantics() {
     bt::require(w >= 8, "patch width covers the broadcast windows");
 
     const auto drive = [&](std::vector<double> bristle) {
-        auto model = make_model(tyre, tier);
+        // kDetail64 is spelled out rather than captured through `tier`:
+        // the static analyzer loses the reference's binding through the
+        // lambda capture and reports the argument as uninitialized.
+        auto model = make_model(tyre, kDetail64);
         model->restore_patch_states(std::array{injected(
                 s0 - 2, e0 - 2, 0.4, std::move(bristle), 0.4)});
         return model;
@@ -618,7 +656,7 @@ void test_model_migration_bristle_broadcast_semantics() {
 // test_model_migration_from_detailed_none
 void test_model_migration_from_detailed_none() {
     auto golden = node(kFile, "test_model_migration_from_detailed_none");
-    const TierCfg tier = kDetail64;
+    const TierCfg &tier = kDetail64;
     const auto tyre = bike::legacy::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
@@ -679,14 +717,46 @@ void test_model_rolling_loss_signs_bitwise(std::size_t tier_index) {
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.025;
     const std::vector<Row> table{
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 8.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {-2.0, 0.0, 0.0}, -7.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {0.0, 0.0, 0.0}, 8.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {0.0, 0.0, 0.0}, -8.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {0.0, 0.0, 0.0}, 0.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 0.4, 0.002, {}},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 1.0, 0.002, {}},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 1.5, 0.002, {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 8.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {-2.0, 0.0, 0.0},
+         .omega = -7.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {0.0, 0.0, 0.0},
+         .omega = 8.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {0.0, 0.0, 0.0},
+         .omega = -8.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {0.0, 0.0, 0.0},
+         .omega = 0.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 0.4,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 1.0,
+         .dt = 0.002,
+         .pressure = {}},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 1.5,
+         .dt = 0.002,
+         .pressure = {}},
     };
     std::vector<double> losses, loads;
     run_sequence(golden, tyre, tier, flat_road(), uniform_map("asphalt"),
@@ -752,12 +822,31 @@ void test_model_pressure_power_and_set_pressure_bitwise(
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.025;
     const std::vector<Row> table{
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 9.0, 0.002, 2.4},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 9.0, 0.002, std::nullopt},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 9.0, 0.002, 0.2},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 9.0, 0.002, 9.9},
-            {{5.0, 0.0, lo}, {3.0, 0.0, 0.0}, 9.0, 0.002,
-             std::numeric_limits<double>::quiet_NaN()},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = 2.4},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = std::nullopt},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = 0.2},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = 9.9},
+        {.hub = {5.0, 0.0, lo},
+         .velocity = {3.0, 0.0, 0.0},
+         .omega = 9.0,
+         .dt = 0.002,
+         .pressure = std::numeric_limits<double>::quiet_NaN()},
     };
     run_sequence(golden, tyre, tier, flat_road(), uniform_map("asphalt"),
                  table);
@@ -897,24 +986,24 @@ void test_model_validation_bitwise_atomicity(std::size_t tier_index) {
     const std::array<double, 3> nan_hub{5.0, nan, hub[2]},
             inf_hub{5.0, 0.0, inf}, nan_vel{nan, 0.0, 0.0},
             inf_vel{0.0, 0.0, -inf};
-    const struct {
+    const struct { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         const char *tag;
         std::span<const double> h, v;
         double o, dt;
     } bad[]{
-            {"shape", hub4, vel, 9.0, 0.002},
-            {"shape-vel", hub, vel2, 9.0, 0.002},
-            {"nan-hub", nan_hub, vel, 9.0, 0.002},
-            {"inf-hub", inf_hub, vel, 9.0, 0.002},
-            {"nan-vel", hub, nan_vel, 9.0, 0.002},
-            {"inf-vel", hub, inf_vel, 9.0, 0.002},
-            {"nan-omega", hub, vel, nan, 0.002},
-            {"inf-omega", hub, vel, inf, 0.002},
-            // carcass-level checks that fire on the loaded path.
-            {"zero-dt", hub, vel, 9.0, 0.0},
-            {"neg-dt", hub, vel, 9.0, -0.002},
-            {"nan-dt", hub, vel, 9.0, nan},
-            {"inf-dt", hub, vel, 9.0, inf},
+        {.tag = "shape", .h = hub4, .v = vel, .o = 9.0, .dt = 0.002},
+        {.tag = "shape-vel", .h = hub, .v = vel2, .o = 9.0, .dt = 0.002},
+        {.tag = "nan-hub", .h = nan_hub, .v = vel, .o = 9.0, .dt = 0.002},
+        {.tag = "inf-hub", .h = inf_hub, .v = vel, .o = 9.0, .dt = 0.002},
+        {.tag = "nan-vel", .h = hub, .v = nan_vel, .o = 9.0, .dt = 0.002},
+        {.tag = "inf-vel", .h = hub, .v = inf_vel, .o = 9.0, .dt = 0.002},
+        {.tag = "nan-omega", .h = hub, .v = vel, .o = nan, .dt = 0.002},
+        {.tag = "inf-omega", .h = hub, .v = vel, .o = inf, .dt = 0.002},
+        // carcass-level checks that fire on the loaded path.
+        {.tag = "zero-dt", .h = hub, .v = vel, .o = 9.0, .dt = 0.0},
+        {.tag = "neg-dt", .h = hub, .v = vel, .o = 9.0, .dt = -0.002},
+        {.tag = "nan-dt", .h = hub, .v = vel, .o = 9.0, .dt = nan},
+        {.tag = "inf-dt", .h = hub, .v = vel, .o = 9.0, .dt = inf},
     };
     for (const auto &row : bad)
         expect_reject(row.h, row.v, row.o, row.dt, row.tag);

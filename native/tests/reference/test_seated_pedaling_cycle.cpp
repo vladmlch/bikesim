@@ -9,16 +9,14 @@
 // the immediate rider fields reach the APPLIED control on the same call
 // — survives on the committed interval's 'control' channel, which is
 // wire_control(applied_control_) verbatim.
-#include "support/migration_test.hpp"
-#include "support/golden.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/physical_config.hpp"
 #include "configuration/rider_spec.hpp"
 #include "drivetrain/pedaling.hpp"
 #include "initialization/setup_owner.hpp"
-#include "model_access.hpp"
 #include "model/rider_geometry.hpp"
+#include "model_access.hpp"
 #include "research/environment.hpp"
 #include "rider/intent.hpp"
 #include "rider/spindle_controller.hpp"
@@ -26,14 +24,17 @@
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
 #include "runtime/step.hpp"
+#include "stepper.hpp"
+#include "support/golden.hpp"
+#include "support/migration_test.hpp"
 #include "terrain/trackfile.hpp"
 #include "validation/runtime_access.hpp"
-#include "stepper.hpp"
-#include <mujoco/mujoco.h>
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <memory>
+#include <mujoco/mujoco.h>
+#include <numbers>
 #include <numeric>
 #include <optional>
 #include <span>
@@ -44,10 +45,8 @@
 
 namespace {
 
-namespace rider = ::rider;
 namespace research = bike::research;
 namespace cfg = bike::configuration;
-namespace init = bike::initialization;
 namespace sw = runtime::sample_wire;
 
 // The live example document — bt::oracle::root() is
@@ -59,7 +58,7 @@ std::filesystem::path repo_file(std::string_view relative) {
            std::filesystem::path(relative);
 }
 
-constexpr double kPi = 3.14159265358979323846;
+constexpr double kPi = std::numbers::pi;
 
 // test_ankle_program_is_periodic_and_scrape_is_only_an_intent
 void test_ankle_program_is_periodic_and_scrape_is_only_an_intent() {
@@ -218,7 +217,7 @@ CycleEnv cycle_env() {
     const auto budget = articulated.delivered_positive_budget_w();
     bt::require(budget.has_value(),
                 "the welded config declares a delivered-power budget");
-    env.delivered_positive_budget_w = *budget;
+    env.delivered_positive_budget_w = (budget).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     env.runtime =
         std::make_unique<runtime::NativeRideRuntime>(std::move(*bootstrap));
     bike::validation::RuntimeRigAccess::inspect(
@@ -232,8 +231,8 @@ CycleEnv cycle_env() {
 }
 
 std::span<const runtime::SamplePtr>
-intervals_of(runtime::NativeRideRuntime &runtime) {
-    return runtime.recorded_intervals();
+intervals_of(runtime::NativeRideRuntime const &runtime) {
+  return runtime.recorded_intervals();
 }
 
 const runtime::Wire *channel(const runtime::PhysicalSampleData &row,
@@ -265,7 +264,7 @@ void assert_physical_intervals(
     bt::require(!rows.empty(), "the episode recorded intervals");
     for (std::size_t index = 0; index < rows.size(); ++index) {
         const auto &sample = *rows[static_cast<std::size_t>(index)];
-        bt::require(static_cast<std::size_t>(sample.interval_id) == index,
+        bt::require(std::cmp_equal(sample.interval_id, index),
                     "interval ids are consecutive");
         // The interval violation lists carry every monitor verdict. On
         // this weld-heavy plant the two backends are documented to drift

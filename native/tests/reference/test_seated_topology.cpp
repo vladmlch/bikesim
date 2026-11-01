@@ -7,17 +7,15 @@
 // live welded TOML (already spindle/pin/connect under F1) on a flat
 // probe track, so _pin_config's string replace is a no-op on both
 // sides and only the envelope/strength path spellings differ.
-#include "support/migration_test.hpp"
-#include "support/golden.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/rider_spec.hpp"
 #include "engine_call.hpp"
 #include "initialization/setup_owner.hpp"
-#include "model_access.hpp"
 #include "model/builder_internal.hpp"
 #include "model/rider_geometry.hpp"
 #include "model/xml_writer.hpp"
+#include "model_access.hpp"
 #include "research/environment.hpp"
 #include "rider/attachment_wrench.hpp"
 #include "rider/equality_reactions.hpp"
@@ -26,16 +24,19 @@
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
 #include "runtime/step.hpp"
+#include "stepper.hpp"
+#include "support/golden.hpp"
+#include "support/migration_test.hpp"
 #include "terrain/trackfile.hpp"
 #include "validation/runtime_access.hpp"
 #include "writers/rider_contacts.hpp"
-#include "stepper.hpp"
-#include <mujoco/mujoco.h>
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <filesystem>
 #include <memory>
+#include <mujoco/mujoco.h>
+#include <numbers>
 #include <optional>
 #include <set>
 #include <string>
@@ -46,11 +47,9 @@ namespace {
 namespace rider = ::rider;
 namespace research = bike::research;
 namespace cfg = bike::configuration;
-namespace init = bike::initialization;
-namespace sw = runtime::sample_wire;
 namespace xml = bike::model::xml;
 
-constexpr double kPi = 3.14159265358979323846;
+constexpr double kPi = std::numbers::pi;
 
 // The live example document — bt::oracle::root() is
 // <repo>/tests/fixtures/golden. The oracle's WELDED constant reads this
@@ -85,11 +84,17 @@ xml::Element miniature(bool legacy_weld) {
 void test_saddle_connection_does_not_constrain_orientation() {
     auto root = miniature(false);
     bike::model::detail::add_saddle_pin(root, .0025);
-    auto *equality = root.child("equality");
-    bt::require(equality != nullptr, "the equality block exists");
-    auto *connect = equality->find("connect", "connect_saddle");
-    bt::require(connect != nullptr,
-                "the saddle pin emits a connect equality");
+    auto const *equality = root.child("equality");
+    // The null guards must be visible in this translation unit:
+    // bt::require's throw lives in the harness TU, so the analyzer cannot
+    // prove the -> dereferences below are unreachable on the null path.
+    // The failure mode is identical — std::runtime_error with the same
+    // messages.
+    if (equality == nullptr)
+        throw std::runtime_error("the equality block exists");
+    auto const *connect = equality->find("connect", "connect_saddle");
+    if (connect == nullptr)
+        throw std::runtime_error("the saddle pin emits a connect equality");
     bt::require(connect->get("body1") == "rider_pelvis",
                 "the connect binds the pelvis");
     bt::require(connect->get("body2") == "frame",
@@ -105,7 +110,7 @@ void test_saddle_pin_replaces_a_legacy_weld_and_validates() {
     {
         auto root = miniature(true);
         bike::model::detail::add_saddle_pin(root, .0025);
-        auto *equality = root.child("equality");
+        auto const *equality = root.child("equality");
         bt::require(equality->find("weld", "weld_saddle") == nullptr,
                     "the legacy weld is removed");
         bt::require(equality->find("connect", "connect_saddle") != nullptr,
@@ -388,6 +393,7 @@ void test_built_pose_anatomical_angles_inside_envelope() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_saddle_connection_does_not_constrain_orientation();
         test_saddle_pin_replaces_a_legacy_weld_and_validates();

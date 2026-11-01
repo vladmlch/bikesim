@@ -65,8 +65,9 @@ constexpr double kDt = .0005;
     raw.constraint_snapshot.interval_start_s = raw.time_s;
     raw.constraint_snapshot.interval_end_s = raw.end_time_s;
     raw.constraint_snapshot.qvel_start = raw.qvel;
-    runtime::WireObject front_tire{{"unloaded_radius_m", runtime::Wire(.35)},
-                                   {"patches", runtime::Wire(runtime::WireArray{})}};
+    runtime::WireObject const front_tire{
+        {"unloaded_radius_m", runtime::Wire(.35)},
+        {"patches", runtime::Wire(runtime::WireArray{})}};
     raw.channels = {{"tires", runtime::Wire(runtime::WireObject{
                                 {"front", runtime::Wire(front_tire)},
                                 {"rear", runtime::Wire(front_tire)}})}};

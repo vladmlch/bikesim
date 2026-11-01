@@ -76,8 +76,8 @@ void test_build_road_profile_matches_the_former_inline_construction_bitwise() {
 // outer radius, constant forward velocity — dt is the tier's own step.
 // Capture per node: patch count, then expected_v_s per patch.
 void test_patch_slip_speed_mps_is_the_signed_tread_slip(
-        std::string_view parameters, std::string_view tier_name,
-        double v_x_mps, double omega_radps, double sign) {
+        std::string_view parameters, std::string_view tier_name, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
+        double v_x_mps, double omega_radps, double sign) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     auto golden = node(kFile,
                        "test_patch_slip_speed_mps_is_the_signed_tread_slip",
                        parameters);
@@ -85,7 +85,7 @@ void test_patch_slip_speed_mps_is_the_signed_tread_slip(
     const auto tier = bike::legacy::tier_spec(tier_name);
     const double radius_m = tyre.outer_radius_mm / 1000.;
     // RoadProfile.from_samples(linspace(0, 20, 4001), zeros) — x0 0, dx 5 mm.
-    biketyre::RoadProfile road(0., .005, std::vector<double>(4001, 0.));
+    biketyre::RoadProfile const road(0., .005, std::vector<double>(4001, 0.));
     biketyre::PneumaticTyreModel model(
             tyre, tier.n_rays, tier.half_angle_deg, tier.discretised_brush);
     const std::array<double, 3> hub{5., 0., radius_m - .006};

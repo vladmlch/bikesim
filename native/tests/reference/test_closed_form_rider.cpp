@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdio>
 #include <optional>
+#include <print>
 #include <set>
 #include <string>
 #include <vector>
@@ -127,9 +128,9 @@ test_upper_pose_target_accounts_for_pelvis_and_frame_pitch() {
     const double *torso = find(neutral, "rider_torso_hinge");
     bt::require(torso != nullptr, "upper targets name the torso hinge");
     bt::require(approx(*torso, .1), "neutral target mirrors torso_lean_rad");
-    mjModel *m = plant.model.get();
+    mjModel const *m = plant.model.get();
     mjData *d = plant.data.get();
-    auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+    auto const qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
     qpos[static_cast<std::size_t>(jnt_qposadr(m, "rider_root_pitch"))] = .08;
     qpos[static_cast<std::size_t>(jnt_qposadr(m, "root_pitch"))] = -.03;
     engine::forward(m, d);
@@ -144,7 +145,7 @@ test_upper_pose_target_accounts_for_pelvis_and_frame_pitch() {
 test_native_torso_torque_has_restoring_pelvis_reaction() {
     // tests/reference/test_closed_form_rider.py::test_native_torso_torque_has_restoring_pelvis_reaction
     auto plant = rr::pinned_model();
-    mjModel *m = plant.model.get();
+    mjModel const *m = plant.model.get();
     mjData *d = plant.data.get();
     const int root = jnt_dofadr(m, "rider_root_pitch");
     int actuator = -1;
@@ -152,8 +153,8 @@ test_native_torso_torque_has_restoring_pelvis_reaction() {
         if (j.name == "rider_torso_hinge")
             actuator = j.actuator_id;
     bt::require(actuator >= 0, "torso hinge actuator is resolved");
-    auto ctrl = model_access::mutable_buffer(d->ctrl, m->nu, "ctrl");
-    auto qacc = model_access::readonly_buffer(d->qacc, m->nv, "qacc");
+    auto const ctrl = model_access::mutable_buffer(d->ctrl, m->nu, "ctrl");
+    auto const qacc = model_access::readonly_buffer(d->qacc, m->nv, "qacc");
     ctrl[static_cast<std::size_t>(actuator)] = -1.;
     engine::forward(m, d);
     const double negative = qacc[static_cast<std::size_t>(root)];
@@ -168,26 +169,25 @@ test_final_torques_obey_strength_power_and_accelerating_speed_limits() {
     // tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits
     auto plant = rr::pinned_model();
     auto &c = *plant.controller;
-    mjModel *m = plant.model.get();
+    mjModel const *m = plant.model.get();
     mjData *d = plant.data.get();
     for (const double speed : {4., -4., 25., -25.}) {
-        auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
-        for (const auto &j : c.joints())
-            qvel[static_cast<std::size_t>(j.dof_adr)] = speed;
-        engine::forward(m, d);
-        const auto result = c.compute(d, crank_command(1000.),
-                                      /*advance=*/false);
-        double max_power = -std::numeric_limits<double>::infinity();
-        double positive_sum = 0.;
-        for (const auto &j : c.joints()) {
-            const double *torque = find(result, j.name);
-            bt::require(torque != nullptr,
-                        "every joint has a delivered torque");
-            const double power =
-                *torque * qvel[static_cast<std::size_t>(j.dof_adr)];
-            max_power = std::max(max_power, power);
-            positive_sum += std::max(power, 0.);
-        }
+      auto const qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+      for (const auto &j : c.joints())
+        qvel[static_cast<std::size_t>(j.dof_adr)] = speed;
+      engine::forward(m, d);
+      const auto result = c.compute(d, crank_command(1000.),
+                                    /*advance=*/false);
+      double max_power = -std::numeric_limits<double>::infinity();
+      double positive_sum = 0.;
+      for (const auto &j : c.joints()) {
+        const double *torque = find(result, j.name);
+        bt::require(torque != nullptr, "every joint has a delivered torque");
+        const double power =
+            *torque * qvel[static_cast<std::size_t>(j.dof_adr)];
+        max_power = std::max(max_power, power);
+        positive_sum += std::max(power, 0.);
+      }
         bt::require(max_power <= 250. + 1e-9,
                     "per-joint power respects the 250 W cap");
         bt::require(positive_sum <= 450. + 1e-9,
@@ -268,7 +268,7 @@ test_disabled_activation_probe_returns_zero_without_advancing_state() {
     // tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque
     auto rig = rr::pinned_rig({}, flat_track());
     auto &physical = *rig->physical;
-    mjModel *m = rig->stepper->model();
+    mjModel const *m = rig->stepper->model();
     const int root_x = jnt_dofadr(m, "root_x");
     double human_sum = 0., motor_on = 0., max_v = 0.;
     std::size_t late = 0;
@@ -306,11 +306,10 @@ test_disabled_activation_probe_returns_zero_without_advancing_state() {
     // work) closed the mechanism: the leg now measures 354/401 = 88.3% on
     // darwin-arm64 and 326/401 = 81.3% on linux-aarch64, so the source's
     // contract runs unsuppressed.
-    std::fprintf(stderr,
-                 "engagement measurand: motor_on %.0f/%zu = %.1f%% of late "
-                 "intervals (gate >=80%%)\n",
-                 motor_on, late,
-                 100. * motor_on / static_cast<double>(late));
+    std::println(stderr,
+                 "engagement measurand: motor_on {:.0f}/{} = {:.1f}% of late "
+                 "intervals (gate >=80%)",
+                 motor_on, late, 100. * motor_on / static_cast<double>(late));
     bt::require(motor_on / static_cast<double>(late) >= .8,
                 "the pedelec assist is engaged >=80% of the ride");
     bt::require(max_v >= 15. / 3.6,
@@ -339,7 +338,7 @@ test_runtime_produces_front_load_share_without_changing_external_sensors() {
     const auto share = physical.intent_signals().front_load_share;
     bt::require(share.has_value(),
                 "the intent signal publishes a front load share");
-    bt::require(approx(*share, front / (front + rear)),
+    bt::require(approx((share).value(), front / (front + rear)), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "front_load_share tracks measured tire normals");
     const auto &sensors =
         sw::object(sw::required(last.channels, "sensors"));

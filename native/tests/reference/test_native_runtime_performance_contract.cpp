@@ -69,11 +69,10 @@ public:
     }
     void flush() override {}
     Value summary(std::string_view reason) const override {
-        return Value{Object{
-            {"outcome", Value{Object{{"reason", text(std::string(reason))}}}},
-            {"model_status", Value{Object{
-                {"model_valid", Value{true}},
-                {"numerically_valid", Value{true}}}}}}};
+      return Value{Object{
+          {"outcome", Value{Object{{"reason", text(reason)}}}},
+          {"model_status", Value{Object{{"model_valid", Value{true}},
+                                        {"numerically_valid", Value{true}}}}}}};
     }
     Value execution_identity() const override {
         return field(settings_.metadata, "execution");
@@ -230,10 +229,10 @@ bool boolean(const Value& v, std::string_view key) {
 // f'1x mean achieved RTF >= {VISUAL_1X_MEAN_RTF_MIN}' — the pending-gate
 // needle formatted from the named constant.
 [[nodiscard]] std::string visual_gate_needle() {
-    char buffer[32];
-    std::snprintf(buffer, sizeof(buffer), "1x mean achieved RTF >= %g",
+    char buffer[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+    std::snprintf(buffer, sizeof(buffer), "1x mean achieved RTF >= %g", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                   kVisual1xMeanRtfMin);
-    return buffer;
+    return buffer; // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
 }
 std::string joined_gates(const Value& v) {
     std::string out;
@@ -243,14 +242,16 @@ std::string joined_gates(const Value& v) {
     }
     return out;
 }
-bool contains_fold(const Value& v, std::string_view key, std::string_view needle) {
+bool contains_fold(const Value& v, std::string_view key, std::string_view needle) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     const auto& entries = io::as_array(field(v, key), key);
     for (const auto& entry : entries) {
-        std::string line = io::as_string(entry, "limitations[]");
-        std::string lowered;
-        lowered.reserve(line.size());
-        for (char c : line) lowered += static_cast<char>(std::tolower(c));
-        if (lowered.find(needle) != std::string::npos) return true;
+      std::string const line = io::as_string(entry, "limitations[]");
+      std::string lowered;
+      lowered.reserve(line.size());
+      for (char const c : line)
+        lowered += static_cast<char>(std::tolower(c));
+      if (lowered.find(needle) != std::string::npos)
+        return true;
     }
     return false;
 }

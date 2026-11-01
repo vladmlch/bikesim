@@ -32,25 +32,26 @@ void throws(F &&action, std::string_view needle, std::string_view message) {
 // emission tied to the observing call, not to whichever call runs next.
 std::optional<std::string> accept(runtime::ReferenceMonitor &monitor, double time_s,
                                   std::vector<std::string> violations) {
-    runtime::ReferenceFailure failure{.time_s = time_s,
-                                      .violations = std::move(violations)};
-    const auto message = failure.message();
-    const bool had_failure = monitor.first_failure.has_value();
-    monitor.observe(failure);
-    if (monitor.strict && !failure.violations.empty())
-        throw runtime::InvalidReferenceRun(message);
-    return !had_failure && monitor.warning_pending ? monitor.take_warning()
-                                                   : std::nullopt;
+  runtime::ReferenceFailure const failure{.time_s = time_s,
+                                          .violations = std::move(violations)};
+  const auto message = failure.message();
+  const bool had_failure = monitor.first_failure.has_value();
+  monitor.observe(failure);
+  if (monitor.strict && !failure.violations.empty())
+    throw runtime::InvalidReferenceRun(message);
+  return !had_failure && monitor.warning_pending ? monitor.take_warning()
+                                                 : std::nullopt;
 }
 
 void require_first(const runtime::ReferenceMonitor &monitor, double time_s,
-                   std::vector<std::string> violations, std::string_view message) {
-    bt::require(monitor.first_failure.has_value(),
-                std::string(message) + ": first_failure was not stored");
-    bt::require(monitor.first_failure->time_s == time_s,
-                std::string(message) + ": first_failure time drifted");
-    bt::require(monitor.first_failure->violations == violations,
-                std::string(message) + ": first_failure violations drifted");
+                   const std::vector<std::string> &violations,
+                   std::string_view message) {
+  bt::require(monitor.first_failure.has_value(),
+              std::string(message) + ": first_failure was not stored");
+  bt::require(monitor.first_failure.value().time_s == time_s, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+              std::string(message) + ": first_failure time drifted");
+  bt::require(monitor.first_failure.value().violations == violations, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+              std::string(message) + ": first_failure violations drifted");
 }
 
 // test_reference_monitor.py::test_research_stops_before_decimation_can_hide_bad_step
@@ -104,6 +105,7 @@ void test_strict_raises_even_after_a_stored_failure() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_research_stops_before_decimation_can_hide_bad_step();
         test_viewer_warns_but_never_restores_valid_status();

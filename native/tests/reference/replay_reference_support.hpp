@@ -182,7 +182,7 @@ inline void step_control(runtime::NativeResearchRuntime& environment) {
             set(owner.run_metadata, "policy",
                 io::Value{io::Value::Object{{"reference", text(*policy_reference)}}});
         const auto summary = sealed_summary(owner);
-        run.add_episode(rec::make_research_evidence(0, std::move(owner), *environment->catalog, summary));
+        run.add_episode(rec::make_research_evidence(0, std::move(owner), (environment->catalog).value(), summary)); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     }
     if (two_episodes) {
         environment->runtime->reset();
@@ -190,7 +190,7 @@ inline void step_control(runtime::NativeResearchRuntime& environment) {
         environment->runtime->stop();
         auto owner = environment->runtime->seal_episode();
         const auto summary = sealed_summary(owner);
-        run.add_episode(rec::make_research_evidence(1, std::move(owner), *environment->catalog, summary));
+        run.add_episode(rec::make_research_evidence(1, std::move(owner), (environment->catalog).value(), summary)); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     }
     auto publication = rec::finalize(run, root / "runs");
     environment->runtime->close();
@@ -225,7 +225,7 @@ inline void step_control(runtime::NativeResearchRuntime& environment) {
     auto owner = environment->runtime->seal_episode();
     const auto summary = sealed_summary(owner);
     rec::RunCapture run(recording_fixture::metadata("00000000-0000-4000-8000-000000000054"));
-    run.add_episode(rec::make_research_evidence(0, std::move(owner), *environment->catalog, summary));
+    run.add_episode(rec::make_research_evidence(0, std::move(owner), (environment->catalog).value(), summary)); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     auto publication = rec::finalize(run, root / "failed-runs");
     environment->runtime->close();
     return publication;
@@ -243,7 +243,7 @@ inline void step_control(runtime::NativeResearchRuntime& environment) {
 inline void reseal_manifest(const std::filesystem::path& directory, std::string_view member) {
     auto manifest = io::parse_recording_json(read_file(directory / "manifest.json"));
     auto hashes = field(manifest, "file_sha256");
-    set(hashes, std::string(member), text(digest(directory / std::string(member))));
+    set(hashes, member, text(digest(directory / std::string(member))));
     set(manifest, "file_sha256", std::move(hashes));
     write_json(directory / "manifest.json", manifest);
 }
@@ -253,9 +253,9 @@ inline void reseal_manifest(const std::filesystem::path& directory, std::string_
 template <class Mutate>
 inline void patch_database(const std::filesystem::path& directory, Mutate&& mutate) {
     {
-        rec::Database database(directory / "run.duckdb");
-        mutate(database.connection());
-        database.connection().execute("CHECKPOINT");
+      rec::Database const database(directory / "run.duckdb");
+      std::forward<Mutate>(mutate)(database.connection());
+      database.connection().execute("CHECKPOINT");
     }
     reseal_manifest(directory, "run.duckdb");
 }
@@ -280,9 +280,10 @@ inline void patch_execution(const std::filesystem::path& directory, Mutate&& mut
         const auto asset_rows = connection.query(
             "SELECT content FROM assets WHERE episode_id=? AND name='recipe.json'", params);
         const auto& blob = std::get<io::Bytes>(field(asset_rows.at(0), "content").data).value;
-        const std::string_view recipe_text(reinterpret_cast<const char*>(blob.data()), blob.size());
+        const std::string_view recipe_text(reinterpret_cast<const char*>(blob.data()), blob.size()); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
         auto recipe = io::parse_recording_json(recipe_text);
-        set(recipe, "execution", mutate(field(recipe, "execution")));
+        // mutate runs twice; only the last use may move the callable.
+        set(recipe, "execution", std::forward<Mutate>(mutate)(field(recipe, "execution")));
         const auto recipe_bytes = io::recording_json(recipe);
         const auto recipe_view = std::as_bytes(std::span{recipe_bytes});
         const std::array asset_update{
@@ -317,7 +318,7 @@ inline void tamper_final_state(const std::filesystem::path& directory) {
 inline void reseal(const std::filesystem::path& path, std::string_view name) {
     auto manifest = io::parse_json(read_file(path / "replay.json"));
     auto hashes = field(manifest, "file_sha256");
-    set(hashes, std::string(name), text(digest(path / std::string(name))));
+    set(hashes, name, text(digest(path / std::string(name))));
     set(manifest, "file_sha256", std::move(hashes));
     write_file(path / "replay.json", io::recording_json(manifest) + "\n");
 }
@@ -334,7 +335,8 @@ inline void patch_legacy_execution(const std::filesystem::path& path, Mutate&& m
     write_file(path / "summary.json", io::recording_json(summary) + "\n");
     reseal(path, "summary.json");
     auto manifest = io::parse_json(read_file(path / "replay.json"));
-    set(manifest, "execution", mutate(field(manifest, "execution")));
+    // mutate runs twice; only the last use may move the callable.
+    set(manifest, "execution", std::forward<Mutate>(mutate)(field(manifest, "execution")));
     write_file(path / "replay.json", io::recording_json(manifest) + "\n");
 }
 
@@ -355,7 +357,7 @@ inline void tamper_npz_state(const std::filesystem::path& path, std::string_view
         array.bytes.assign(bytes_view.begin(), bytes_view.end());
     }
     const auto packed = io::encode_npz(archive);
-    write_file(full, std::string_view(reinterpret_cast<const char*>(packed.data()), packed.size()));
+    write_file(full, std::string_view(reinterpret_cast<const char*>(packed.data()), packed.size())); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
     reseal(path, "states.npz");
 }
 
@@ -375,10 +377,11 @@ inline void tamper_jsonl_row(const std::filesystem::path& path, std::string_view
     }
     bt::require(index < lines.size(), "tamper target row exists");
     auto row = io::parse_json(lines[index]);
-    const auto& current = field(row, std::string(key));
+    const auto &current = field(row, key);
     if (const auto* number = std::get_if<io::Number>(&current.data); number && io::is_integer_lexeme(number->lexeme))
-        set(row, std::string(key), integer(count(current) + 1));
-    else set(row, std::string(key), real(io::as_double(current, key) + 1.));
+      set(row, key, integer(count(current) + 1));
+    else
+      set(row, key, real(io::as_double(current, key) + 1.));
     lines[index] = io::recording_json(row);
     std::string joined;
     for (const auto& line : lines) { joined += line; joined += '\n'; }
@@ -462,13 +465,13 @@ inline constexpr std::string_view STRENGTH_FILE = "rider_joint_strength.json";
         return array;
     };
     for (const auto& name : files) {
-        if (name == "observations.jsonl") write_file(path / name, "{}\n");
+        if (name == "observations.jsonl") write_file(path / name, "{}\n"); // NOLINT(bugprone-branch-clone) symmetric cases share the body by design
         else if (name == "states.npz") {
             const auto packed = io::encode_npz(io::NpzArchive{{"initial", zero_f8({2})}, {"final", zero_f8({2})}});
-            write_file(path / name, std::string_view(reinterpret_cast<const char*>(packed.data()), packed.size()));
+            write_file(path / name, std::string_view(reinterpret_cast<const char*>(packed.data()), packed.size())); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
         } else if (name == "terrain_vertices.npy") {
             const auto packed = io::encode_npy(zero_f8({1, 2}));
-            write_file(path / name, std::string_view(reinterpret_cast<const char*>(packed.data()), packed.size()));
+            write_file(path / name, std::string_view(reinterpret_cast<const char*>(packed.data()), packed.size())); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
         } else if (name == "episode_metrics.json") write_file(path / name, "{}\n");
         else if (name.ends_with(".jsonl")) write_file(path / name, "");
         else write_file(path / name, "opaque data-only reader fixture\n");
@@ -549,13 +552,13 @@ template <class Action> inline void incompatible(Action&& action, std::string_vi
             "rejection names the mismatched field: " + std::string(needle) + " (got: " + message + ")");
 }
 [[nodiscard]] inline bool flag(const io::Value& value, std::string_view key) {
-    return io::as_bool(field(value, std::string(key)), std::string(key));
+  return io::as_bool(field(value, key), key);
 }
 [[nodiscard]] inline std::string_view text_of(const io::Value& value, std::string_view key) {
-    const auto& child = field(value, std::string(key));
-    const auto* result = std::get_if<std::string>(&child.data);
-    bt::require(result != nullptr, "diagnostic field is a string");
-    return *result;
+  const auto &child = field(value, key);
+  const auto *result = std::get_if<std::string>(&child.data);
+  bt::require(result != nullptr, "diagnostic field is a string");
+  return *result;
 }
 // ReplaySession report() must refuse before completed verification.
 inline void report_incomplete(const replay::ReplaySession& session) {

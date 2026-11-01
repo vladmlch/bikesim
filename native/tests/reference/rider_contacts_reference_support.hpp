@@ -66,7 +66,7 @@ using bike::io::Value;
 // ---------------------------------------------------------------------
 
 [[nodiscard]] inline bt::oracle::Node node(std::string_view file,
-                                           std::string_view function,
+                                           std::string_view function, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                            std::string_view parameters = {}) {
     std::string name = "tests/reference/" + std::string(file) + "::" +
                        std::string(function);
@@ -357,7 +357,7 @@ inline void settled_welds(bt::oracle::Node &golden,
         return;
     }
     for (const auto &[name, entry] : w->entries)
-        settled_entry(golden, entry, path + "[0]." + name);
+        settled_entry(golden, entry, path + "[0]." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     scalar(golden, w->crank_torque_nm, path + "[1]");
 }
 
@@ -437,10 +437,10 @@ inline void measurement(bt::oracle::Node &golden,
                         const std::string &path) {
     if (m.raw) {
         for (const auto &[name, raw] : m.raws)
-            attachment_raw(golden, raw, path + "." + name);
+            attachment_raw(golden, raw, path + "." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     } else {
         for (const auto &[name, sample] : m.samples)
-            attachment_sample(golden, sample, path + "." + name);
+            attachment_sample(golden, sample, path + "." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     }
 }
 
@@ -457,7 +457,7 @@ inline void settle_result(bt::oracle::Node &golden,
                           const wc::RiderSettleOutcome &outcome,
                           const std::string &path) {
     for (const auto &[name, entry] : outcome.entries)
-        settled_entry(golden, entry, path + "." + name);
+        settled_entry(golden, entry, path + "." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     if (outcome.crank_torque_nm_appended)
         scalar(golden, outcome.crank_torque_nm, path + ".crank_torque_nm");
 }
@@ -467,12 +467,12 @@ inline void settle_raw_triple(bt::oracle::Node &golden,
                               const wc::RiderSettleOutcome &outcome,
                               const std::string &path) {
     for (const auto &[name, entry] : outcome.entries)
-        settled_entry(golden, entry, path + "[0]." + name);
+        settled_entry(golden, entry, path + "[0]." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     if (outcome.crank_torque_nm_appended)
         scalar(golden, outcome.crank_torque_nm,
                path + "[0].crank_torque_nm");
     for (const auto &[name, raw] : outcome.measurement.raws)
-        attachment_raw(golden, raw, path + "[1]." + name);
+        attachment_raw(golden, raw, path + "[1]." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     errors(golden, outcome.measurement.errors, path + "[2]");
 }
 
@@ -489,9 +489,9 @@ inline void state_body(bt::oracle::Node &golden,
                 std::string(wc::kSupportNames[key / wc::kPadsPerSupport]) +
                 ":" + std::to_string(key % wc::kPadsPerSupport);
         const auto &pad = s.supports[key];
-        scalar(golden, pad.xi, path + ".supports." + name + ".xi");
+        scalar(golden, pad.xi, path + ".supports." + name + ".xi"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         optional_vec3(golden, pad.tangent,
-                      path + ".supports." + name + ".tangent");
+                      path + ".supports." + name + ".tangent"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     }
     for (std::size_t side = 0; side < wc::kSideCount; ++side)
         vec3(golden, s.grip_xi_local[side],
@@ -514,7 +514,7 @@ inline void state_body(bt::oracle::Node &golden,
     settled_welds(golden, s.settled_welds, path + ".settled_welds");
     for (const auto &[name, entry] : s.attachment_samples)
         attachment_entry(golden, entry,
-                         path + ".last_attachment_samples." + name);
+                         path + ".last_attachment_samples." + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     errors(golden, s.attachment_errors, path + ".last_attachment_errors");
 }
 
@@ -541,9 +541,9 @@ inline void state(bt::oracle::Node &golden, const wc::RiderContactsState &s,
 // The tiny _contact_xml plant + Stepper construction
 // ---------------------------------------------------------------------
 
-enum class Pedal { flat, weld, spindle };
-enum class Saddle { flat, weld, pin };
-enum class Grip { spring, connect };
+enum class Pedal : std::uint8_t { flat, weld, spindle };
+enum class Saddle : std::uint8_t { flat, weld, pin };
+enum class Grip : std::uint8_t { spring, connect };
 
 [[nodiscard]] inline const char *pedal_name(Pedal p) {
     switch (p) {
@@ -598,10 +598,9 @@ enum class Grip { spring, connect };
     if (grip == Grip::connect)
         for (const auto &[s, y] : {std::pair{"left", "0.12"},
                                    std::pair{"right", "-0.12"}})
-            equalities += "<connect name=\"connect_grip_" + std::string(s) +
-                          "\" body1=\"rider_forearm_" + s +
-                          "\" body2=\"steer\" anchor=\"0.44 " + y +
-                          " 1.5\"/>";
+          equalities += "<connect name=\"connect_grip_" + std::string(s) +
+                        "\" body1=\"rider_forearm_" + s +
+                        R"(" body2="steer" anchor="0.44 )" + y + " 1.5\"/>";
     const std::string eq =
             equalities.empty() ? "" : "<equality>" + equalities + "</equality>";
     return std::string(R"xml(<mujoco>
@@ -822,20 +821,20 @@ struct Plant {
 
 // mjData write faces through the same span gate — the oracle's bare
 // data.qpos[data.qvel/...] index assignments.
-[[nodiscard]] inline std::span<double> qpos_mut(Stepper &stepper) {
-    return model_access::mutable_buffer(stepper.data()->qpos,
-                                        stepper.model()->nq, "qpos");
+[[nodiscard]] inline std::span<double> qpos_mut(Stepper const &stepper) {
+  return model_access::mutable_buffer(stepper.data()->qpos, stepper.model()->nq,
+                                      "qpos");
 }
 
-[[nodiscard]] inline std::span<double> qvel_mut(Stepper &stepper) {
-    return model_access::mutable_buffer(stepper.data()->qvel,
-                                        stepper.model()->nv, "qvel");
+[[nodiscard]] inline std::span<double> qvel_mut(Stepper const &stepper) {
+  return model_access::mutable_buffer(stepper.data()->qvel, stepper.model()->nv,
+                                      "qvel");
 }
 
-[[nodiscard]] inline std::span<double> qfrc_applied_mut(Stepper &stepper) {
-    return model_access::mutable_buffer(stepper.data()->qfrc_applied,
-                                        stepper.model()->nv,
-                                        "qfrc_applied");
+[[nodiscard]] inline std::span<double>
+qfrc_applied_mut(Stepper const &stepper) {
+  return model_access::mutable_buffer(stepper.data()->qfrc_applied,
+                                      stepper.model()->nv, "qfrc_applied");
 }
 
 // _reset_pair: forward on the current buffers, then the writer reset
@@ -886,12 +885,11 @@ void error(F &&action, std::string_view needle = {},
         std::forward<F>(action)();
     } catch (const Exception &failure) {
         thrown = true;
-        bt::require(needle.empty() ||
-                            std::string_view(failure.what())
-                                            .find(needle) !=
-                                    std::string_view::npos,
-                    (std::string("exception text lacks '") +=
-                     std::string(needle)) += "'");
+        bt::require(
+            needle.empty() || std::string_view(failure.what()).find(needle) !=
+                                  std::string_view::npos,
+            (std::string("exception text lacks '") += std::string(needle)) +=
+            '\'');
     }
     bt::require(thrown, (std::string("expected rejection at ") +=
                          loc.file_name()) += ":" +

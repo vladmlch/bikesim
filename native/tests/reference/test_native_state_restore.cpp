@@ -131,10 +131,14 @@ struct LiveBuffers {
 };
 
 [[nodiscard]] LiveBuffers live_buffers(const Stepper &st) {
-    return {copy_of(st.qpos()),           copy_of(st.qvel()),
-            copy_of(st.qacc()),           copy_of(st.qfrc_constraint()),
-            copy_of(st.efc_force()),      copy_of(st.ctrl()),
-            copy_of(st.qfrc_applied()),   st.time()};
+  return {.qpos = copy_of(st.qpos()),
+          .qvel = copy_of(st.qvel()),
+          .qacc = copy_of(st.qacc()),
+          .qfrc_constraint = copy_of(st.qfrc_constraint()),
+          .efc_force = copy_of(st.efc_force()),
+          .ctrl = copy_of(st.ctrl()),
+          .qfrc_applied = copy_of(st.qfrc_applied()),
+          .time = st.time()};
 }
 
 void require_live_buffers(const Stepper &st, const LiveBuffers &before) {
@@ -619,26 +623,45 @@ void test_drive_restore_relational_rejection_is_atomic() {
     };
     constexpr std::array cases{
         // The ideal-hub ratio is always the shifter's current gear.
-        Case{"ideal_hub.ratio", "x1.5", "ratio/gear"},
+        Case{.path = "ideal_hub.ratio", .spec = "x1.5", .match = "ratio/gear"},
         // The transmission sprocket tracks shifting.rear_teeth (geometric)
         // or the configured gearing (ideal).
-        Case{"ideal_hub.rear_teeth", "i28", "rear-teeth"},
-        Case{"ideal_hub.coefficients", "short", "coefficient width"},
+        Case{.path = "ideal_hub.rear_teeth",
+             .spec = "i28",
+             .match = "rear-teeth"},
+        Case{.path = "ideal_hub.coefficients",
+             .spec = "short",
+             .match = "coefficient width"},
         // The gear-ratio relation reaches the shifter's sprocket even with
         // the shifter disabled (cassette membership applies only when
         // enabled).
-        Case{"policies.shifting.rear_teeth", "i25", "ratio/gear"},
+        Case{.path = "policies.shifting.rear_teeth",
+             .spec = "i25",
+             .match = "ratio/gear"},
         // count == 0 requires no shift clock, direction 'none', zero
         // cooldowns.
-        Case{"policies.shifting.direction", "up", "shift clock/count"},
-        Case{"policies.shifting.cooldown_s", "half", "shift clock/count"},
-        Case{"policies.shifting.cut_remaining_s", "half",
-             "shift clock/count"},
-        Case{"shift_time_s", "half", "shift clock/count"},
+        Case{.path = "policies.shifting.direction",
+             .spec = "up",
+             .match = "shift clock/count"},
+        Case{.path = "policies.shifting.cooldown_s",
+             .spec = "half",
+             .match = "shift clock/count"},
+        Case{.path = "policies.shifting.cut_remaining_s",
+             .spec = "half",
+             .match = "shift clock/count"},
+        Case{.path = "shift_time_s",
+             .spec = "half",
+             .match = "shift clock/count"},
         // The store is sized by the config and only ever drains.
-        Case{"policies.battery.energy_j", "over", "battery energy"},
-        Case{"policies.battery.drawn_energy_j", "over", "battery energy"},
-        Case{"policies.battery.initial_energy_j", "over", "battery energy"},
+        Case{.path = "policies.battery.energy_j",
+             .spec = "over",
+             .match = "battery energy"},
+        Case{.path = "policies.battery.drawn_energy_j",
+             .spec = "over",
+             .match = "battery energy"},
+        Case{.path = "policies.battery.initial_energy_j",
+             .spec = "over",
+             .match = "battery energy"},
     };
     for (const std::string_view kind :
          {"ideal_mid_drive", "geometric_ideal_mid_drive"})
@@ -793,8 +816,7 @@ void test_drive_restore_cassette_membership_when_shifter_enabled() {
             *owner,
             [key](Value &bad) {
                 // 25 is outside CASSETTE_12S_TEETH.
-                set(at(bad, "policies.shifting"), std::string(key),
-                    integer(25));
+                set(at(bad, "policies.shifting"), key, integer(25));
             },
             "cassette");
 }
@@ -847,10 +869,13 @@ void test_drive_policies_set_state_relational_rejections() {
         const char *key;
     };
     constexpr std::array cases{
-        Case{"shifting", "direction"},   Case{"shifting", "cooldown_s"},
-        Case{"shifting", "cut_remaining_s"}, Case{"shifting", "rear_teeth"},
-        Case{"battery", "energy_j"},     Case{"battery", "drawn_energy_j"},
-        Case{"battery", "initial_energy_j"},
+        Case{.section = "shifting", .key = "direction"},
+        Case{.section = "shifting", .key = "cooldown_s"},
+        Case{.section = "shifting", .key = "cut_remaining_s"},
+        Case{.section = "shifting", .key = "rear_teeth"},
+        Case{.section = "battery", .key = "energy_j"},
+        Case{.section = "battery", .key = "drawn_energy_j"},
+        Case{.section = "battery", .key = "initial_energy_j"},
     };
     const double over = bike::io::as_double(
         field(field(before, "battery"), "initial_energy_j"),

@@ -56,6 +56,7 @@ NATIVE_DIAG_PUSH
 // The settle-and-serve tests keep whole decoded StateFile fixtures (model
 // arrays plus state arrays) in automatic storage; like the T22-T26 runtime
 // ports the frame budget is suppressed instead of heap-routing the fixture.
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 namespace init = bike::initialization;
@@ -123,7 +124,7 @@ write_pose(const init::SetupRequest &request,
 void test_state_file_round_trip() {
     const bt::TemporaryDirectory dir("eq_state_rt");
     const auto pose_path = dir.path() / "pose.npz";
-    auto pose_request = welded_request(dir.path() / "cache_a", false);
+    auto const pose_request = welded_request(dir.path() / "cache_a", false);
     const auto [steps, pose] = write_pose(pose_request, pose_path);
     const std::string before = bt::text(pose_path);
 
@@ -161,14 +162,14 @@ void test_state_file_wins_over_the_auto_cache() {
 
     // Populate the canonical entry with a cache-enabled settle on the same
     // configuration (cache/state-file knobs are fingerprint-excluded).
-    auto cache_request = welded_request(cache_dir, true);
+    auto const cache_request = welded_request(cache_dir, true);
     auto first = init::make_setup(cache_request);
     const auto first_result = init::settle(*first);
     bt::require(!first_result.cache_hit && first_result.steps == pose_steps,
                 "the canonical settle reproduces the recorded pose");
     const auto entries = npz_files(cache_dir);
     bt::require(entries.size() == 1, "one canonical entry was published");
-    const auto canonical = entries.front();
+    const auto &canonical = entries.front();
 
     // Poison: same fingerprint array, sentinel steps — a served cache hit
     // would report 777777 steps.
@@ -351,7 +352,7 @@ void test_toml_state_file_resolves_relative_to_the_config() {
 // ---------------------------------------------------------------------------
 void test_equilibrium_override_kwargs_reach_the_solve() {
     const bt::TemporaryDirectory dir("eq_state_opts");
-    auto request = welded_request(dir.path() / "cache", false);
+    auto const request = welded_request(dir.path() / "cache", false);
     {
         auto owner = init::make_setup(request);
         const auto result =
@@ -392,14 +393,14 @@ void test_equilibrium_override_kwargs_reach_the_solve() {
 void test_post_episode_lifecycle_writes_no_cache_entry() {
     const bt::TemporaryDirectory dir("eq_state_poison");
     const auto cache_dir = dir.path() / "cache";
-    auto request = welded_request(cache_dir, true);
+    auto const request = welded_request(cache_dir, true);
     auto owner = init::make_setup(request);
     const auto first = init::settle(*owner);
     bt::require(!first.cache_hit,
                 "the construction-time settle publishes the canonical entry");
     const auto entries = npz_files(cache_dir);
     bt::require(entries.size() == 1, "exactly one canonical entry exists");
-    const auto canonical = entries.front();
+    const auto &canonical = entries.front();
     const std::string canonical_bytes = bt::text(canonical);
 
     // The construction-time settle is the only settle an owner can run.

@@ -164,8 +164,9 @@ void dot_nodes() {
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(
-            Operand{a, {a.size()}, Layout::c},
-            Operand{b, {b.size()}, Layout::c}, "dot");
+            Operand{.stored = a, .shape = {a.size()}, .layout = Layout::c},
+            Operand{.stored = b, .shape = {b.size()}, .layout = Layout::c},
+            "dot");
         node_.f64(actual, node_.peek_label());
         node_.done();
     }
@@ -174,8 +175,9 @@ void dot_nodes() {
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(
-            Operand{a, {a.size()}, Layout::c},
-            Operand{b, {b.size()}, Layout::c}, "dot");
+            Operand{.stored = a, .shape = {a.size()}, .layout = Layout::c},
+            Operand{.stored = b, .shape = {b.size()}, .layout = Layout::c},
+            "dot");
         node_.f64(actual, node_.peek_label());
         node_.done();
     }
@@ -188,26 +190,26 @@ void matvec_node(std::string_view param, std::size_t m, std::size_t n,
     const auto a = node_.f64_input("input.a");
     const auto x = node_.f64_input("input.b");
     const auto actual = platform_blas(
-        Operand{a, {m, n}, layout}, Operand{x, {n}, Layout::c}, "matvec");
+        Operand{.stored = a, .shape = {m, n}, .layout = layout},
+        Operand{.stored = x, .shape = {n}, .layout = Layout::c}, "matvec");
     node_.f64(actual, node_.peek_label());
     node_.done();
 }
 
 void matvec_nodes() {
-    const std::pair<std::size_t, std::size_t> dims[] = {
+    const std::pair<std::size_t, std::size_t> dims[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {0, 0}, {0, 3}, {1, 1}, {2, 3}, {3, 2}, {3, 17}, {16, 16},
         {17, 129}, {64, 127}, {128, 64}, {129, 1}};
     for (const auto& [m, n] : dims)
         for (const char* layout : {"C", "F"}) {
-            std::string param = std::string(layout) + "-" +
-                std::to_string(m) + "-" + std::to_string(n);
-            matvec_node(param, m, n,
-                        layout[0] == 'C' ? Layout::c : Layout::f);
+          std::string const param = std::string(layout) + "-" +
+                                    std::to_string(m) + "-" + std::to_string(n);
+          matvec_node(param, m, n, *layout == 'C' ? Layout::c : Layout::f);
         }
 }
 
 void matmul_nodes() {
-    const std::array<std::size_t, 3> dims[] = {
+    const std::array<std::size_t, 3> dims[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {0, 0, 0}, {0, 3, 2}, {2, 0, 3}, {1, 1, 1}, {2, 3, 4}, {3, 2, 2},
         {3, 17, 5}, {16, 17, 64}, {127, 1, 2}, {129, 64, 7}};
     for (const auto& [m, k, n] : dims)
@@ -221,10 +223,14 @@ void matmul_nodes() {
             const auto a = node_.f64_input("input.a");
             const auto b = node_.f64_input("input.b");
             const auto actual = platform_blas(
-                Operand{a, {m, k},
-                        layout_str.at(0) == 'C' ? Layout::c : Layout::f},
-                Operand{b, {k, n},
-                        layout_str.at(2) == 'C' ? Layout::c : Layout::f},
+                Operand{.stored = a,
+                        .shape = {m, k},
+                        .layout =
+                            layout_str.at(0) == 'C' ? Layout::c : Layout::f},
+                Operand{.stored = b,
+                        .shape = {k, n},
+                        .layout =
+                            layout_str.at(2) == 'C' ? Layout::c : Layout::f},
                 "matmul");
             node_.f64(actual, node_.peek_label());
             node_.done();
@@ -241,8 +247,10 @@ void transposed_and_rectangular() {
         const auto a = node_.f64_input("input.a");
         const auto x = node_.f64_input("input.b");
         const auto actual = platform_blas(
-            Operand{a, {3, 17}, layout[0] == 'C' ? Layout::c : Layout::f},
-            Operand{x, {17}, Layout::c}, "matvec");
+            Operand{.stored = a,
+                    .shape = {3, 17},
+                    .layout = *layout == 'C' ? Layout::c : Layout::f},
+            Operand{.stored = x, .shape = {17}, .layout = Layout::c}, "matvec");
         node_.f64(actual, node_.peek_label());
         node_.done();
     }
@@ -254,7 +262,8 @@ void transposed_and_rectangular() {
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(
-            Operand{a, {4, 3}, Layout::c}, Operand{b, {3, 3}, Layout::f},
+            Operand{.stored = a, .shape = {4, 3}, .layout = Layout::c},
+            Operand{.stored = b, .shape = {3, 3}, .layout = Layout::f},
             "matmul");
         node_.f64(actual, node_.peek_label());
         node_.done();
@@ -266,7 +275,8 @@ void transposed_and_rectangular() {
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(
-            Operand{a, {3, 17}, Layout::c}, Operand{b, {17, 5}, Layout::c},
+            Operand{.stored = a, .shape = {3, 17}, .layout = Layout::c},
+            Operand{.stored = b, .shape = {17, 5}, .layout = Layout::c},
             "matmul");
         node_.f64(actual, node_.peek_label());
         node_.done();
@@ -280,55 +290,62 @@ void rejection_suites() {
     const std::vector<double> two{1., 1.}, three{1., 1., 1.},
         four{1., 1., 1., 1.};
     bt::invalid([&] {
-        static_cast<void>(platform_blas(Operand{two, {2}, Layout::c},
-                                      Operand{two, {2}, Layout::c}, "ger"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c},
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c}, "ger"));
     });
     // shape mismatch: unequal dot lengths and unmatched inner dims.
     bt::invalid([&] {
-        static_cast<void>(platform_blas(Operand{three, {3}, Layout::c},
-                                      Operand{four, {4}, Layout::c}, "dot"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = three, .shape = {3}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {4}, .layout = Layout::c}, "dot"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 3}, Layout::c}, Operand{four, {4}, Layout::c},
-            "matvec"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 3}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {4}, .layout = Layout::c},
+          "matvec"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 3}, Layout::c}, Operand{four, {4, 2}, Layout::c},
-            "matmul"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 3}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {4, 2}, .layout = Layout::c},
+          "matmul"));
     });
     // non-contiguous storage rejected, never strided through.
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {4}, Layout::strided},
-            Operand{four, {4}, Layout::c}, "dot"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {4}, .layout = Layout::strided},
+          Operand{.stored = four, .shape = {4}, .layout = Layout::c}, "dot"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 2}, Layout::strided},
-            Operand{two, {2}, Layout::c}, "matvec"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::strided},
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c}, "matvec"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 2}, Layout::strided},
-            Operand{four, {2, 2}, Layout::c}, "matmul"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::strided},
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::c},
+          "matmul"));
     });
     // wrong rank and wrong dtype.
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{four, {2, 2, 2}, Layout::c},
-            Operand{four, {2, 2}, Layout::c}, "matmul"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = four, .shape = {2, 2, 2}, .layout = Layout::c},
+          Operand{.stored = four, .shape = {2, 2}, .layout = Layout::c},
+          "matmul"));
     });
     bt::invalid([&] {
-        static_cast<void>(platform_blas(
-            Operand{two, {2}, Layout::wrong_dtype},
-            Operand{two, {2}, Layout::c}, "dot"));
+      static_cast<void>(platform_blas(
+          Operand{.stored = two, .shape = {2}, .layout = Layout::wrong_dtype},
+          Operand{.stored = two, .shape = {2}, .layout = Layout::c}, "dot"));
     });
 }
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         dot_nodes();
         matvec_nodes();

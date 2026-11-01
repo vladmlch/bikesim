@@ -156,7 +156,7 @@ struct Plant {
 rider::RiderIntent &require_intent(Plant &plant) {
     bt::require(plant.intent.has_value(),
                 "the recorded adapter construction succeeded");
-    return *plant.intent;
+    return (plant.intent).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
 }
 
 std::string state_text(const rider::RiderIntent &intent) {
@@ -362,7 +362,7 @@ void test_resolve_merges_only_unset_fields() {
     Seq seq;
     drain(plant, golden, seq);
     golden.done();
-    const auto &control = *plant.last_control;
+    const auto &control = (plant.last_control).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(control.posture.has_value() &&
                     approx12(control.posture->torso_lean_rad, .12),
                 "resolve keeps the held torso_lean_rad");
@@ -377,10 +377,10 @@ void test_resolve_partial_merge() {
     Seq seq;
     drain(plant, golden, seq);
     golden.done();
-    bt::require(plant.last_control->posture.has_value(),
+    bt::require(plant.last_control.value().posture.has_value(), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "resolve fills the unset posture from the intent");
-    bt::require(plant.last_control->human_torque_nm.has_value() &&
-                    approx12(*plant.last_control->human_torque_nm, 25.),
+    bt::require(plant.last_control.value().human_torque_nm.has_value() && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    approx12((plant.last_control.value().human_torque_nm).value(), 25.), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "resolve keeps the held human_torque_nm");
 }
 
@@ -390,8 +390,8 @@ void test_resolve_rider_disabled_keeps_control_but_ticks() {
     Seq seq;
     drain(plant, golden, seq);
     golden.done();
-    bt::require(!plant.last_control->posture.has_value() &&
-                    !plant.last_control->human_torque_nm.has_value(),
+    bt::require(!plant.last_control.value().posture.has_value() && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    !plant.last_control.value().human_torque_nm.has_value(), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "rider_enabled=false suppresses the merge");
     bt::require(require_intent(plant).state().last_tick_step == 0,
                 "the acquisition tick still ran");
@@ -528,7 +528,7 @@ void test_resolve_enabled_delayed_none_front_load() {
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
-    auto &intent = require_intent(plant);
+    auto const &intent = require_intent(plant);
     bool saw_delayed_none = false;
     for (int step = 0; step < 450; ++step) {
         event(plant, golden, seq);  // _resolve

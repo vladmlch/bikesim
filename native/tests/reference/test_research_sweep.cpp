@@ -35,33 +35,34 @@ namespace rd = bike::recording::detail;
 
 // tests/reference/test_research_sweep.py::test_dry_run_lists_one_command_per_seed
 void test_dry_run_lists_one_command_per_seed() {
-    Directory directory;
-    const auto sweep = sweep_binary();
-    bt::require(std::filesystem::exists(sweep),
-                "the bike-research-sweep artifact is built");
-    const auto result = bike::platform::run(
-        {sweep.string(), "--out", directory.path.string(), "--seeds", "3-5",
-         "--dry-run", "--", "--duration", "1"},
-        directory.path);
-    bt::require(result.exit_code == 0, "a dry run exits 0: " + result.err);
-    // lines = [l for l in capsys...out.splitlines() if 'bike-research' in l]
-    std::vector<std::string> lines;
-    std::istringstream stream(result.out);
-    for (std::string line; std::getline(stream, line);)
-        if (line.find("bike-research") != std::string::npos) lines.push_back(line);
-    bt::require(lines.size() == 3, "one listed command per seed");
-    std::vector<std::string> seeds;
-    for (const auto &line : lines) {
-        bt::require(line.find("--duration 1") != std::string::npos,
-                    "the passthrough arguments reach every command");
-        // l.split('--seed ')[1].split()[0]
-        const auto at = line.find("--seed ");
-        bt::require(at != std::string::npos, "each command carries its seed");
-        const auto begin = at + std::string_view("--seed ").size();
-        const auto end = line.find(' ', begin);
-        seeds.push_back(line.substr(
-            begin, end == std::string::npos ? end : end - begin));
-    }
+  Directory const directory;
+  const auto sweep = sweep_binary();
+  bt::require(std::filesystem::exists(sweep),
+              "the bike-research-sweep artifact is built");
+  const auto result = bike::platform::run(
+      {sweep.string(), "--out", directory.path.string(), "--seeds", "3-5",
+       "--dry-run", "--", "--duration", "1"},
+      directory.path);
+  bt::require(result.exit_code == 0, "a dry run exits 0: " + result.err);
+  // lines = [l for l in capsys...out.splitlines() if 'bike-research' in l]
+  std::vector<std::string> lines;
+  std::istringstream stream(result.out);
+  for (std::string line; std::getline(stream, line);)
+    if (line.find("bike-research") != std::string::npos)
+      lines.push_back(line);
+  bt::require(lines.size() == 3, "one listed command per seed");
+  std::vector<std::string> seeds;
+  for (const auto &line : lines) {
+    bt::require(line.find("--duration 1") != std::string::npos,
+                "the passthrough arguments reach every command");
+    // l.split('--seed ')[1].split()[0]
+    const auto at = line.find("--seed ");
+    bt::require(at != std::string::npos, "each command carries its seed");
+    const auto begin = at + std::string_view("--seed ").size();
+    const auto end = line.find(' ', begin);
+    seeds.push_back(
+        line.substr(begin, end == std::string::npos ? end : end - begin));
+  }
     bt::require(seeds == std::vector<std::string>({"3", "4", "5"}),
                 "the seed fan-out preserves range order");
 }
@@ -77,20 +78,21 @@ void test_seed_ranges_and_lists_parse() {
 
 // tests/reference/test_research_sweep.py::test_summary_records_return_codes
 void test_summary_records_return_codes() {
-    Directory directory;
-    // run_one twin: exit 0 iff the child command line names --seed 2.
-    const auto stub = directory.path / "stub-research.sh";
-    {
-        std::ofstream script(stub);
-        script << "#!/bin/sh\ncase \" $* \" in *\" --seed 2 \"*) exit 0;; *) exit 3;; esac\n";
-    }
+  Directory const directory;
+  // run_one twin: exit 0 iff the child command line names --seed 2.
+  const auto stub = directory.path / "stub-research.sh";
+  {
+    std::ofstream script(stub);
+    script << "#!/bin/sh\ncase \" $* \" in *\" --seed 2 \"*) exit 0;; *) exit "
+              "3;; esac\n";
+  }
     std::filesystem::permissions(stub, std::filesystem::perms::owner_all);
     // --out must be empty at dispatch (the stub script already occupies the
     // temp root, so the run root is a fresh child).
     const auto out = (directory.path / "out").string();
     const std::array<std::string_view, 6> argv{
         "--out", std::string_view{out}, "--seeds", "1-2", "--jobs", "2"};
-    std::ostringstream captured;
+    std::ostringstream const captured;
     auto *const restore = std::cout.rdbuf(captured.rdbuf());
     const auto code = bike::batch::research_sweep(argv, stub);
     std::cout.rdbuf(restore);

@@ -7,24 +7,23 @@
 
 namespace {
 namespace rr = replay_reference;
-using rr::count;
-using rr::field;
-using rr::text;
 using bike::io::Value;
+using rr::text;
 
 // test_python_headless_and_incremental_replay_share_checks (count ∈ {0,2}) —
 // the incremental session verifies the same evidence as headless replay.
 void headless_incremental(std::size_t controls) {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode", controls);
-    const auto expected = rr::replay::check(path, 0);
-    rr::replay::ReplaySession session(path);
-    if (controls) {
-        bt::require(!session.advance(0.) && !session.advance(0.),
-            "a zero wall-budget advance yields without consuming a control");
-        bt::require(session.snapshot().step == 0,
-            "zero-budget yields preserve the pending request state");
-    }
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode", controls);
+  const auto expected = rr::replay::check(path, 0);
+  rr::replay::ReplaySession session(path);
+  if (controls) {
+    bt::require(
+        !session.advance(0.) && !session.advance(0.),
+        "a zero wall-budget advance yields without consuming a control");
+    bt::require(session.snapshot().step == 0,
+                "zero-budget yields preserve the pending request state");
+  }
     while (!session.advance(std::nullopt, session.snapshot().step + 1)) {
         bt::require(!session.done(), "mid-replay states are never terminal");
     }
@@ -47,67 +46,75 @@ void headless_incremental(std::size_t controls) {
 
 // test_early_close_never_finishes_a_pending_replay.
 void early_close() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode");
-    rr::replay::ReplaySession session(path);
-    bt::require(!session.advance(std::nullopt, 1), "one control consumes without finishing");
-    bt::require(session.snapshot().step == 1 && session.pending(),
-        "a pending request survives the committed step");
-    bt::require(!rr::flag(session.diagnostics(), "passed") && !session.error(),
-        "an incomplete session reports no verified result");
-    const auto frame = session.snapshot();
-    session.close();
-    bt::require(frame.step == 1, "the detached snapshot keeps its step");
-    rr::report_incomplete(session);
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode");
+  rr::replay::ReplaySession session(path);
+  bt::require(!session.advance(std::nullopt, 1),
+              "one control consumes without finishing");
+  bt::require(session.snapshot().step == 1 && session.pending(),
+              "a pending request survives the committed step");
+  bt::require(!rr::flag(session.diagnostics(), "passed") && !session.error(),
+              "an incomplete session reports no verified result");
+  const auto frame = session.snapshot();
+  session.close();
+  bt::require(frame.step == 1, "the detached snapshot keeps its step");
+  rr::report_incomplete(session);
 }
 
 // test_last_frame_remains_unverified_until_final_state_comparison — the
 // resealed states.npz edit passes format loading; only the terminal
 // comparison notices, and the session rolls back to the verified frame.
 void last_frame_unverified() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode");
-    rr::tamper_npz_state(path, "final", 1, .01);
-    rr::replay::ReplaySession session(path);
-    bt::require(!session.advance(), "the first control still verifies");
-    const auto verified = session.snapshot();
-    rr::rejects([&] { (void)session.advance(); }, "final integration state");
-    const auto& now = session.snapshot();
-    bt::require(now.step == verified.step && now.generation > verified.generation,
-        "a terminal mismatch restores the verified frame under a new generation");
-    bt::require(!session.done() && session.error().has_value() &&
-        session.error()->find("final integration state") != std::string::npos,
-        "the failure records the final-state mismatch");
-    bt::require(!rr::flag(session.diagnostics(), "passed"),
-        "diagnostics stay unverified after the mismatch");
-    rr::report_incomplete(session);
-    session.close();
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode");
+  rr::tamper_npz_state(path, "final", 1, .01);
+  rr::replay::ReplaySession session(path);
+  bt::require(!session.advance(), "the first control still verifies");
+  const auto verified = session.snapshot();
+  rr::rejects([&] { (void)session.advance(); }, "final integration state");
+  const auto &now = session.snapshot();
+  bt::require(
+      now.step == verified.step && now.generation > verified.generation,
+      "a terminal mismatch restores the verified frame under a new generation");
+  bt::require(!session.done() && session.error().has_value() &&
+                  session.error()->find("final integration state") !=
+                      std::string::npos,
+              "the failure records the final-state mismatch");
+  bt::require(!rr::flag(session.diagnostics(), "passed"),
+              "diagnostics stay unverified after the mismatch");
+  rr::report_incomplete(session);
+  session.close();
 }
 
 // test_recorded_policy_reference_is_never_loaded — an absent recorded policy
 // reference stays inert text; replay passes without any loader to invoke.
 void policy_never_loaded() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode", 2,
-        "recorded_untrusted_missing_module:factory");
-    bt::require(rr::replay::check(path, 0).matched,
-        "replay never resolves recorded policy references");
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(
+      tmp.path / "episode", 2, "recorded_untrusted_missing_module:factory");
+  bt::require(rr::replay::check(path, 0).matched,
+              "replay never resolves recorded policy references");
 }
 
 // test_resealed_semantic_tamper_still_fails_verification — three streams.
-void semantic_tamper(std::string_view file, std::size_t index, std::string_view key,
+void semantic_tamper(std::string_view file, std::size_t index, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     std::string_view label) {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode");
-    rr::tamper_jsonl_row(path, file, index, key);
-    rr::replay::ReplaySession session(path);
-    rr::rejects([&] { while (!session.advance()) {} }, label);
-    bt::require(!session.done() && session.error().has_value(),
-        "a checksum-honest semantic edit fails the comparison");
-    bt::require(!rr::flag(session.diagnostics(), "passed"),
-        "the session records its failure");
-    rr::report_incomplete(session);
-    session.close();
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode");
+  rr::tamper_jsonl_row(path, file, index, key);
+  rr::replay::ReplaySession session(path);
+  rr::rejects(
+      [&] {
+        while (!session.advance()) {
+        }
+      },
+      label);
+  bt::require(!session.done() && session.error().has_value(),
+              "a checksum-honest semantic edit fails the comparison");
+  bt::require(!rr::flag(session.diagnostics(), "passed"),
+              "the session records its failure");
+  rr::report_incomplete(session);
+  session.close();
 }
 void semantic_tampers() {
     semantic_tamper("commands_applied.jsonl", 0, "step", "applied commands");
@@ -121,13 +128,17 @@ void semantic_tampers() {
 // (Python patches mujoco_version on the legacy profile; the native-executable
 // profile's analogous bound field is mujoco_library_sha256.)
 void identity_before_plant() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode");
-    rr::patch_legacy_execution(path, [](const Value& execution) {
-        auto patched = execution; rr::set(patched, "mujoco_library_sha256",
-            text("0000000000000000000000000000000000000000000000000000000000000000"));
-        return patched; });
-    rr::incompatible([&] { rr::replay::ReplaySession session(path); }, "mujoco_library_sha256");
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode");
+  rr::patch_legacy_execution(path, [](const Value &execution) {
+    auto patched = execution;
+    rr::set(patched, "mujoco_library_sha256",
+            text("0000000000000000000000000000000000000000000000000000000000000"
+                 "000"));
+    return patched;
+  });
+  rr::incompatible([&] { rr::replay::ReplaySession const session(path); },
+                   "mujoco_library_sha256");
 }
 
 // test_identity_recheck_failure_advances_no_physics — native revalidation
@@ -138,35 +149,46 @@ void identity_before_plant() {
 // no native patch point — so the post-mismatch no-physics clause is verified
 // on a session that recorded a real mid-run mismatch.
 void identity_recheck() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode");
-    rr::replay::ReplaySession session(path);
-    bt::require(!session.advance(), "one control verifies before the boundary");
-    const auto verified = session.snapshot();
-    rr::patch_legacy_execution(path, [](const Value& execution) {
-        auto patched = execution; rr::set(patched, "mujoco_library_sha256",
-            text("0000000000000000000000000000000000000000000000000000000000000000"));
-        return patched; });
-    rr::incompatible([&] { session.restart(); }, "mujoco_library_sha256");
-    bt::require(session.snapshot().step == verified.step &&
-        session.snapshot().generation == verified.generation && !session.done(),
-        "a failed identity revalidation keeps the verified frame, un-advanced");
-    session.close();
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode");
+  rr::replay::ReplaySession session(path);
+  bt::require(!session.advance(), "one control verifies before the boundary");
+  const auto verified = session.snapshot();
+  rr::patch_legacy_execution(path, [](const Value &execution) {
+    auto patched = execution;
+    rr::set(patched, "mujoco_library_sha256",
+            text("0000000000000000000000000000000000000000000000000000000000000"
+                 "000"));
+    return patched;
+  });
+  rr::incompatible([&] { session.restart(); }, "mujoco_library_sha256");
+  bt::require(
+      session.snapshot().step == verified.step &&
+          session.snapshot().generation == verified.generation &&
+          !session.done(),
+      "a failed identity revalidation keeps the verified frame, un-advanced");
+  session.close();
 }
 void mismatch_refusal() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "episode");
-    rr::tamper_jsonl_row(path, "transitions.jsonl", 0, "physics_steps");
-    rr::replay::ReplaySession session(path);
-    rr::rejects([&] { while (!session.advance()) {} }, "transition");
-    const auto stopped = session.snapshot();
-    bt::require(session.error().has_value() && !session.done(),
-        "the mismatch is recorded");
-    rr::rejects([&] { (void)session.advance(); }, "replay stopped after mismatch");
-    bt::require(session.snapshot().step == stopped.step,
-        "post-mismatch advance commits no further physics");
-    rr::report_incomplete(session);
-    session.close();
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "episode");
+  rr::tamper_jsonl_row(path, "transitions.jsonl", 0, "physics_steps");
+  rr::replay::ReplaySession session(path);
+  rr::rejects(
+      [&] {
+        while (!session.advance()) {
+        }
+      },
+      "transition");
+  const auto stopped = session.snapshot();
+  bt::require(session.error().has_value() && !session.done(),
+              "the mismatch is recorded");
+  rr::rejects([&] { (void)session.advance(); },
+              "replay stopped after mismatch");
+  bt::require(session.snapshot().step == stopped.step,
+              "post-mismatch advance commits no further physics");
+  rr::report_incomplete(session);
+  session.close();
 }
 } // namespace
 int main() {

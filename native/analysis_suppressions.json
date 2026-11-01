@@ -225,6 +225,15 @@
       "reason": "clang-tidy 23.1.2 flags the read-only `std::getenv(\"OPENBLAS_NUM_THREADS\")` telemetry probe at summary.cpp:51 in the single-threaded batch-summary builder. getenv is MT-unsafe only against concurrent environment mutation, and no setenv/putenv exists anywhere in native/src — the variable is read once for the worker thread-policy record and never written back. Introduced at 29509355 (3.34 lane/d) after the last green baseline gate; verified baseline-red on an independent checkout at d20ea74c with none of the 3.36t2a changes.",
       "reproducer": "cmake --build native/build --target check_tidy; concurrency-mt-unsafe at native/src/batch/summary.cpp:51:28 on the OPENBLAS_NUM_THREADS getenv call",
       "remove_when": "Remove when the summary builder reads the variable through a thread-safe snapshot (or the call moves behind NOLINT with justification), or when clang-tidy stops emitting this exact diagnostic at summary.cpp:51."
+    },
+    {
+      "checker": "misc-no-recursion",
+      "origin": "(?:^|/)__type_traits/invoke\\.h$",
+      "message": "is within a recursive call chain",
+      "tool_version": "23.1.2",
+      "reason": "libc++23 attributes the data-bounded recursion over the recursive Wire/FieldSpec trees to the std::__invoke dispatch frame at invoke.h:88: the std::visit/function_ref machinery that reaches the recursive test walkers is reported as the recursive node. Every actual recursion level consumes a strictly smaller tree subtree and terminates; the recursion pattern is the deliberate mirror of the Python oracle tree walk. NOLINT cannot annotate the SDK header, and the first-party walkers carry their own NOLINT justifications.",
+      "reproducer": "cmake --build native/build --target check_tidy; misc-no-recursion at MacOSX.sdk/usr/include/c++/v1/__type_traits/invoke.h:88 for __invoke specializations of the Wire-tree walker lambdas",
+      "remove_when": "Remove when clang-tidy misc-no-recursion stops attributing recursive-variant call chains to libc++ __invoke frames, or the SDK toolchain changes."
     }
   ]
 }

@@ -90,21 +90,21 @@ void test_native_off_full_are_passive_and_full_records_every_interval() {
         std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt,
         std::nullopt, accel_bias, .01, .25);
     const std::array<double, 3> torques{0., 2., 1.};
-    char label[40];
+    char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t index = 0; index < torques.size(); ++index) {
         const auto control = motor_control(torques[index]);
-        std::snprintf(label, sizeof(label), "step.%zu.transition", index);
+        std::snprintf(label, sizeof(label), "step.%zu.transition", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
         ft2_reference::consume_tree(node_off, step(*off, control).as_wire(),
-                                    label);
+                                    label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         ft2_reference::consume_tree(node_full, step(*full, control).as_wire(),
-                                    label);
-        std::snprintf(label, sizeof(label), "step.%zu.integration_state",
+                                    label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), "step.%zu.integration_state", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       index);
         const std::vector<double> off_state = off->snapshot().integration_state;
-        node_off.f64(off_state, label);
+        node_off.f64(off_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         const std::vector<double> full_state =
             full->snapshot().integration_state;
-        node_full.f64(full_state, label);
+        node_full.f64(full_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     bt::require(off->commands_requested().empty() &&
                     off->commands_applied().empty() &&

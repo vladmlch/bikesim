@@ -60,6 +60,7 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <random>
 #include <ranges>
@@ -96,7 +97,7 @@ rcfg::AttachmentBudget attachment_budget() {
             .foot_shear_n = source.foot_shear_n,
             .saddle_shear_n = source.saddle_shear_n};
 }
-const rcfg::AttachmentBudget BUDGET = attachment_budget();
+const rcfg::AttachmentBudget BUDGET = attachment_budget(); // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
 
 bool approx(double actual, double expected, double rtol = 1e-6,
             double atol = 1e-12) {
@@ -307,8 +308,8 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
     const auto wished = ::spindle::activation_step(state, Vector{50.}, .005,
                                                    .04);
     allclose(wished, Vector{expected}, 0., 1e-12, "activation-shaped wish");
-    rider::ActivationLaw law(state, {1.}, {-50.}, {50.}, .005, .04,
-                             std::nullopt);
+    rider::ActivationLaw const law(state, {1.}, {-50.}, {50.}, .005, .04,
+                                   std::nullopt);
     bt::require(approx(law.gain(), 1. - std::exp(-.005 / .04), 1e-6, 1e-12),
                 "the activation gain matches the first-order law");
     bt::require(state == Vector{10.},
@@ -339,7 +340,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
     const double scale = 300.;
     auto map = d::identity(2);
     for (auto &v : map.values) v *= scale;
-    const double inv = 1. / std::sqrt(2.);
+    const double inv = 1. / std::numbers::sqrt2;
     const auto constraints = rider::grip_constraints(
         map, {inv, inv}, true, 300.);
     const auto result = rider::allocate(problem(
@@ -360,7 +361,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
     const double scale = 300.;
     auto map = d::identity(2);
     for (auto &v : map.values) v *= scale;
-    const double inv = 1. / std::sqrt(2.);
+    const double inv = 1. / std::numbers::sqrt2;
     const auto constraints = rider::grip_constraints(
         map, {inv, inv}, true, 300.);
     const auto result = rider::allocate(problem(
@@ -373,7 +374,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 
 [[gnu::noinline]] void test_grip_constraint_validation() {
     // tests/reference/test_rider_allocation.py::test_grip_constraint_validation
-    const double inv = 1. / std::sqrt(2.);
+    const double inv = 1. / std::numbers::sqrt2;
     throws([&] { (void)rider::grip_constraints(d::identity(2), {2., 0.},
                                                true, 300.); },
            "unit direction", "a non-unit direction is rejected");
@@ -391,7 +392,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
     const double scale = 300.;
     auto map = d::identity(2);
     for (auto &v : map.values) v *= scale;
-    const double inv = 1. / std::sqrt(2.);
+    const double inv = 1. / std::numbers::sqrt2;
     const auto constraints = rider::grip_constraints(
         map, {inv, inv}, false, 300.);
     const auto result = rider::allocate(problem(
@@ -572,18 +573,23 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 
 [[gnu::noinline]] void test_invalid_warm_start_is_rejected() {
     // tests/reference/test_rider_allocation.py::test_invalid_warm_start_is_rejected
-    throws([&] {
-        auto args = problem({1., 1.}, d::zeros(0, 2), {}, d::zeros(0, 2), {},
-                            {-1., -1.}, {1., 1.}, {}, Vector{0., 0., 0.});
-        (void)rider::allocate(args);
-    }, "warm start", "a mistargeted warm start is rejected");
-    throws([&] {
-        auto args = problem(
-            {1., 1.}, d::zeros(0, 2), {}, d::zeros(0, 2), {}, {-1., -1.},
-            {1., 1.}, {},
-            Vector{std::numeric_limits<double>::quiet_NaN(), 0.});
-        (void)rider::allocate(args);
-    }, "warm start", "a nonfinite warm start is rejected");
+    throws(
+        [&] {
+          auto const args =
+              problem({1., 1.}, d::zeros(0, 2), {}, d::zeros(0, 2), {},
+                      {-1., -1.}, {1., 1.}, {}, Vector{0., 0., 0.});
+          (void)rider::allocate(args);
+        },
+        "warm start", "a mistargeted warm start is rejected");
+    throws(
+        [&] {
+          auto const args =
+              problem({1., 1.}, d::zeros(0, 2), {}, d::zeros(0, 2), {},
+                      {-1., -1.}, {1., 1.}, {},
+                      Vector{std::numeric_limits<double>::quiet_NaN(), 0.});
+          (void)rider::allocate(args);
+        },
+        "warm start", "a nonfinite warm start is rejected");
 }
 
 [[gnu::noinline]] void test_branch_memory_preserves_cold_ranking_and_full_fallback() {
@@ -1053,7 +1059,7 @@ welded_attachments(const mjModel &model) {
     const Vector qpos = channel_array(allocation, "solution_qpos");
     const Vector qvel = channel_array(allocation, "solution_qvel");
     const double solved_time = channel_real(allocation, "solution_time_s");
-    auto &clock = rig->physical->control_clock();
+    auto const &clock = rig->physical->control_clock();
     const auto step =
         std::llround(solved_time / clock.timestep_s);
     bt::require(clock.is_tick(step),
@@ -1078,7 +1084,7 @@ welded_attachments(const mjModel &model) {
     const auto nv = static_cast<std::size_t>(model->nv);
     const auto dof_adr = model_access::readonly_buffer(
         model->jnt_dofadr, model->njnt, "jnt_dofadr");
-    auto &controller = rig->physical->rider_control();
+    auto const &controller = rig->physical->rider_control();
     // rider_dofs = {root_x, root_z, root_pitch dofadr} + hinge dofs;
     // bike_dofs = the complement, in model order.
     std::vector<int> rd, bd;
@@ -1167,7 +1173,7 @@ welded_attachments(const mjModel &model) {
         rig->stepper->data(), command, false);
     const auto nefc = static_cast<std::size_t>(rig->stepper->data()->nefc);
     const auto nv = static_cast<std::size_t>(rig->stepper->model()->nv);
-    std::mt19937_64 rng(7);
+    std::mt19937_64 rng(7); // NOLINT(bugprone-random-generator-seed,cert-msc32-c,cert-msc51-cpp) deterministic fixture seed is required for golden parity
     std::normal_distribution<double> normal(0., 1.);
     std::vector<double> perturbed(nefc);
     for (auto &v : perturbed) v = normal(rng);
@@ -1214,9 +1220,9 @@ welded_attachments(const mjModel &model) {
     // tests/reference/test_rider_allocation.py::test_infeasible_intent_keeps_the_physical_bounds
     auto rig = welded_rig();
     (void)advance_env_steps(*rig->physical, 20);
-    auto *model = rig->stepper->model();
-    auto *data = rig->stepper->data();
-    auto &controller = rig->physical->rider_control();
+    auto const *model = rig->stepper->model();
+    auto const *data = rig->stepper->data();
+    auto const &controller = rig->physical->rider_control();
     const auto &config = controller.config();
     const auto &legacy = config.legacy;
     bt::require(legacy.has_value(),
@@ -1241,7 +1247,7 @@ welded_attachments(const mjModel &model) {
     // allocation_request's bound assembly, through the public capacity
     // accessors (strength_capacity == directional_limit's public twin).
     rider::ResponseRequest request;
-    request.config = *legacy;
+    request.config = (legacy).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     for (const auto &j : joints) {
         const auto dof = static_cast<std::size_t>(j.dof_adr);
         request.actuator_dofs.push_back(j.dof_adr);

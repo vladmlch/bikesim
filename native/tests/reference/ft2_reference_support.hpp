@@ -173,14 +173,11 @@ research_bootstrap(std::string_view name) {
                 text(bio::sha256(std::as_bytes(
                     std::span{canonical.data(), canonical.size()}))));
         }
-        bio::Value execution{bio::Value::Object{
+        bio::Value const execution{bio::Value::Object{
             {"backend", text("native")},
-            {"native_source_sha256",
-             text(identity.native_source_sha256)},
-            {"execution_identity",
-             text(bike::platform::execution_identity())},
-            {"mujoco_library_sha256",
-             text(engine.library_sha256)},
+            {"native_source_sha256", text(identity.native_source_sha256)},
+            {"execution_identity", text(bike::platform::execution_identity())},
+            {"mujoco_library_sha256", text(engine.library_sha256)},
             {"numeric_provider", text(engine.numeric_provider)},
             {"executable_sha256", text(build.executable_sha256)},
             {"source_identity_scope",
@@ -313,36 +310,34 @@ research_variant(std::string_view name,
     // config patches above change, in document units (seconds, decimals).
     if (std::holds_alternative<bio::Value::Object>(
             bootstrap.config.metadata.data)) {
-        const auto patch_member = [&](std::string_view member,
-                                      std::string_view key,
-                                      bio::Value value) {
+      const auto patch_member =
+          [&](std::string_view member, std::string_view key, bio::Value value) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
             auto doc =
-                runtime_reference::member(bootstrap.config.metadata,
-                                          std::string(member));
+                runtime_reference::member(bootstrap.config.metadata, member);
             runtime_reference::set_member(doc, std::string(key),
                                           std::move(value));
             runtime_reference::set_member(bootstrap.config.metadata,
                                           std::string(member),
                                           std::move(doc));
-        };
-        const auto real = [](double value) {
-            return bio::Value{bio::Number{bio::repr_binary64(value)}};
-        };
-        if (decimation)
-            patch_member("experiment", "record_decimation",
-                         runtime_reference::num(*decimation));
-        if (control_steps)
-            patch_member("experiment", "control_period_s",
-                         real(static_cast<double>(*control_steps) *
-                              bootstrap.config.timestep_s));
-        if (sensor_steps) {
-            patch_member("experiment", "sensor_period_s",
-                         real(static_cast<double>(*sensor_steps) *
-                              bootstrap.config.timestep_s));
-            patch_member("sensor_config", "sample_period_s",
-                         real(static_cast<double>(*sensor_steps) *
-                              bootstrap.config.timestep_s));
-        }
+          };
+      const auto real = [](double value) {
+        return bio::Value{bio::Number{bio::repr_binary64(value)}};
+      };
+      if (decimation)
+        patch_member("experiment", "record_decimation",
+                     runtime_reference::num(*decimation));
+      if (control_steps)
+        patch_member("experiment", "control_period_s",
+                     real(static_cast<double>(*control_steps) *
+                          bootstrap.config.timestep_s));
+      if (sensor_steps) {
+        patch_member("experiment", "sensor_period_s",
+                     real(static_cast<double>(*sensor_steps) *
+                          bootstrap.config.timestep_s));
+        patch_member("sensor_config", "sample_period_s",
+                     real(static_cast<double>(*sensor_steps) *
+                          bootstrap.config.timestep_s));
+      }
         if (max_steps)
             patch_member("experiment", "duration_s",
                          real(static_cast<double>(*max_steps) *
@@ -389,7 +384,7 @@ research_variant(std::string_view name,
                 sensors, bootstrap.config.seed_decimal, count);
         }
         bootstrap.startup = bike::research::startup_sensor_state(
-            sensors, bootstrap.tape, *bootstrap.config.raw_initial);
+            sensors, bootstrap.tape, (bootstrap.config.raw_initial).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     }
     return runtime::make_research(std::move(bootstrap));
 }
@@ -437,7 +432,7 @@ inline void flatten_into(const runtime::Wire &wire, const std::string &path,
                     leaves.other.emplace(path, bio::Value{std::move(marker)});
                 }
                 for (const auto &[name, child] : value)
-                    flatten_into(child, path + "." + name, leaves);
+                    flatten_into(child, path + "." + name, leaves); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             } else if constexpr (std::is_same_v<T, runtime::WireArray>) {
                 if (value.empty()) {
                     bio::Value::Object marker;
@@ -445,9 +440,9 @@ inline void flatten_into(const runtime::Wire &wire, const std::string &path,
                     leaves.other.emplace(path, bio::Value{std::move(marker)});
                 }
                 for (std::size_t index = 0; index < value.size(); ++index) {
-                    char suffix[16];
-                    std::snprintf(suffix, sizeof(suffix), "[%08zu]", index);
-                    flatten_into(value[index], path + suffix, leaves);
+                    char suffix[16]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+                    std::snprintf(suffix, sizeof(suffix), "[%08zu]", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+                    flatten_into(value[index], path + suffix, leaves); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
                 }
             } else if constexpr (std::is_same_v<T, std::int64_t>) {
                 leaves.numeric[path] = {static_cast<double>(value)};
@@ -480,7 +475,7 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
         map.emplace_back(path, std::move(leaf));
     const std::string canonical = bio::canonical_json(bio::Value{std::move(map)});
     const auto bytes = std::as_bytes(std::span<const char>(canonical));
-    const std::size_t shape[1] = {canonical.size()};
+    const std::size_t shape[1] = {canonical.size()}; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     node.bytes(bytes, "|u1", shape, std::string(label) + ".other");
 }
 
@@ -497,7 +492,7 @@ inline void consume_canonical(bt::oracle::Node &node,
                               std::string_view label) {
     const std::string canonical = bio::canonical_json(actual);
     const auto bytes = std::as_bytes(std::span<const char>(canonical));
-    const std::size_t shape[1] = {canonical.size()};
+    const std::size_t shape[1] = {canonical.size()}; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     node.bytes(bytes, "|u1", shape, label);
 }
 

@@ -10,15 +10,16 @@
 //
 // Comparisons are self-contained contracts on literal structure — no
 // platform goldens.
-#include "recording_test_support.hpp"
+#include "recording/analysis_detail.hpp"
 #include "recording/duckdb.hpp"
 #include "recording/encoding.hpp"
-#include "recording/analysis_detail.hpp"
+#include "recording_test_support.hpp"
 #include "support/temporary_directory.hpp"
 #include <cmath>
 #include <limits>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -87,14 +88,13 @@ Object &members_of(Object &row, std::string_view root) {
 // the same engine the sealed reader uses.
 std::vector<Object> round_trip(const rec::TableSpec &spec,
                                std::vector<Object> rows,
-                               bt::TemporaryDirectory &dir) {
-    rec::Database database(dir.path() / "round-trip.duckdb");
-    rec::create_streams(database.connection());
-    auto batch = rec::encode_rows(spec, rows, 0);
-    rec::append_pieces(database.connection(), spec, batch, 0);
-    return database.connection().query(
-        "SELECT * FROM " + rec::quote(spec.name) +
-        " ORDER BY interval_id");
+                               bt::TemporaryDirectory const &dir) {
+  rec::Database const database(dir.path() / "round-trip.duckdb");
+  rec::create_streams(database.connection());
+  auto const batch = rec::encode_rows(spec, rows, 0);
+  rec::append_pieces(database.connection(), spec, batch, 0);
+  return database.connection().query("SELECT * FROM " + rec::quote(spec.name) +
+                                     " ORDER BY interval_id");
 }
 
 const Piece &piece(const EncodedTable &table, std::string_view name) {
@@ -152,36 +152,105 @@ void test_legacy_flat_aliases_resolve_to_canonical_fields() {
     struct Case { std::string_view alias, canonical; std::optional<std::int64_t> index;
                   std::optional<std::string> parameter; };
     const std::vector<Case> cases = {
-        {"interval_start_s", "physics.time_s", {}, {}},
-        {"interval_dt_s", "physics.dt_s", {}, {}},
-        {"x_m", "physics.qpos", 0, {}},
-        {"pitch_rad", "physics.qpos", 2, {}},
-        {"speed_mps", "physics.qvel", 0, {}},
-        {"prestep_qpos_5", "physics.qpos", 5, {}},
-        {"prestep_qvel_3", "physics.qvel", 3, {}},
-        {"qpos.4", "physics.qpos", 4, {}},
-        {"qvel.7", "physics.qvel", 7, {}},
-        {"compiled_mass_kg", "channel_mass.mass_kg", {}, {}},
-        {"compiled_com_y_m", "channel_mass.com_m", 1, {}},
-        {"kinetic_energy_j", "channel_mass.kinetic_energy_j", {}, {}},
-        {"gravitational_energy_j", "channel_mass.gravitational_energy_j", {}, {}},
-        {"mechanical_energy_j", "channel_energy.mechanical_energy_j", {}, {}},
-        {"energy_residual_j", "channel_energy.residual_j", {}, {}},
-        {"powers_w.chain", "forces.power_w", {}, {"chain"}},
-        {"power_chain_w", "forces.power_w", {}, {"chain"}},
-        {"chain_power_w", "forces.power_w", {}, {"chain"}},
-        {"chain_work_j", "channel_energy.component_work_j", {}, {"chain"}},
-        {"component_work_j.tires", "channel_energy.component_work_j", {}, {"tires"}},
-        {"drive.cadence_rpm", "channel_drive.cadence_rpm", {}, {}},
-        {"tires.front.normal_load_n", "channel_tires.front.normal_load_n", {}, {}},
-        {"sensors.encoders_rad_s.crank", "channel_sensors.encoder_crank_rad_s", {}, {}}};
+        {.alias = "interval_start_s",
+         .canonical = "physics.time_s",
+         .index = {},
+         .parameter = {}},
+        {.alias = "interval_dt_s",
+         .canonical = "physics.dt_s",
+         .index = {},
+         .parameter = {}},
+        {.alias = "x_m",
+         .canonical = "physics.qpos",
+         .index = 0,
+         .parameter = {}},
+        {.alias = "pitch_rad",
+         .canonical = "physics.qpos",
+         .index = 2,
+         .parameter = {}},
+        {.alias = "speed_mps",
+         .canonical = "physics.qvel",
+         .index = 0,
+         .parameter = {}},
+        {.alias = "prestep_qpos_5",
+         .canonical = "physics.qpos",
+         .index = 5,
+         .parameter = {}},
+        {.alias = "prestep_qvel_3",
+         .canonical = "physics.qvel",
+         .index = 3,
+         .parameter = {}},
+        {.alias = "qpos.4",
+         .canonical = "physics.qpos",
+         .index = 4,
+         .parameter = {}},
+        {.alias = "qvel.7",
+         .canonical = "physics.qvel",
+         .index = 7,
+         .parameter = {}},
+        {.alias = "compiled_mass_kg",
+         .canonical = "channel_mass.mass_kg",
+         .index = {},
+         .parameter = {}},
+        {.alias = "compiled_com_y_m",
+         .canonical = "channel_mass.com_m",
+         .index = 1,
+         .parameter = {}},
+        {.alias = "kinetic_energy_j",
+         .canonical = "channel_mass.kinetic_energy_j",
+         .index = {},
+         .parameter = {}},
+        {.alias = "gravitational_energy_j",
+         .canonical = "channel_mass.gravitational_energy_j",
+         .index = {},
+         .parameter = {}},
+        {.alias = "mechanical_energy_j",
+         .canonical = "channel_energy.mechanical_energy_j",
+         .index = {},
+         .parameter = {}},
+        {.alias = "energy_residual_j",
+         .canonical = "channel_energy.residual_j",
+         .index = {},
+         .parameter = {}},
+        {.alias = "powers_w.chain",
+         .canonical = "forces.power_w",
+         .index = {},
+         .parameter = {"chain"}},
+        {.alias = "power_chain_w",
+         .canonical = "forces.power_w",
+         .index = {},
+         .parameter = {"chain"}},
+        {.alias = "chain_power_w",
+         .canonical = "forces.power_w",
+         .index = {},
+         .parameter = {"chain"}},
+        {.alias = "chain_work_j",
+         .canonical = "channel_energy.component_work_j",
+         .index = {},
+         .parameter = {"chain"}},
+        {.alias = "component_work_j.tires",
+         .canonical = "channel_energy.component_work_j",
+         .index = {},
+         .parameter = {"tires"}},
+        {.alias = "drive.cadence_rpm",
+         .canonical = "channel_drive.cadence_rpm",
+         .index = {},
+         .parameter = {}},
+        {.alias = "tires.front.normal_load_n",
+         .canonical = "channel_tires.front.normal_load_n",
+         .index = {},
+         .parameter = {}},
+        {.alias = "sensors.encoders_rad_s.crank",
+         .canonical = "channel_sensors.encoder_crank_rad_s",
+         .index = {},
+         .parameter = {}}};
     for (const auto &expected : cases) {
         const auto resolved = catalog.resolve_alias(expected.alias);
         bt::require(resolved.has_value(),
                     "alias resolves: " + std::string(expected.alias));
-        bt::require(resolved->canonical == expected.canonical &&
-                    resolved->index == expected.index &&
-                    resolved->parameter == expected.parameter,
+        bt::require(resolved.value().canonical == expected.canonical && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    resolved.value().index == expected.index && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+                    resolved.value().parameter == expected.parameter, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                     "alias target: " + std::string(expected.alias));
     }
     bt::require(!catalog.resolve_alias("not_a_field").has_value(),
@@ -189,7 +258,7 @@ void test_legacy_flat_aliases_resolve_to_canonical_fields() {
 }
 
 void test_r10_presence_and_exceptional_values_round_trip() {
-    bt::TemporaryDirectory dir("catalog-r10");
+    const bt::TemporaryDirectory dir("catalog-r10");
     const auto &spec = synthetic_catalog().table("channel_energy");
     auto absent = energy_row();
     detail::pop(members_of(absent, "energy"), "residual_j");
@@ -202,7 +271,7 @@ void test_r10_presence_and_exceptional_values_round_trip() {
     rows.push_back(std::move(nan_row));
     rows.push_back(std::move(null_row));
     rows.push_back(std::move(absent));
-    auto batch = rec::encode_rows(spec, rows, 0);
+    auto const batch = rec::encode_rows(spec, rows, 0);
     bt::require(batch.rows == 3, "three encoded rows");
     const auto &value = piece(batch, "residual_j");
     const auto &present = piece(batch, "residual_j_present");
@@ -223,7 +292,7 @@ void test_r10_presence_and_exceptional_values_round_trip() {
 }
 
 void test_false_zero_empty_and_signed_values_survive_encoding() {
-    bt::TemporaryDirectory dir("catalog-false");
+    const bt::TemporaryDirectory dir("catalog-false");
     const auto &spec = synthetic_catalog().table("channel_energy");
     std::vector<Object> rows;
     auto row = energy_row({{"constraint_work_ok", io::Value{false}},
@@ -232,7 +301,7 @@ void test_false_zero_empty_and_signed_values_survive_encoding() {
                            {"residual_j", real(0.)}});
     row.emplace_back("interval_id", integer(0));
     rows.push_back(std::move(row));
-    auto batch = rec::encode_rows(spec, rows, 0);
+    auto const batch = rec::encode_rows(spec, rows, 0);
     bt::require(piece(batch, "constraint_work_ok").b[0] == 0,
                 "false survives as a boolean zero lane");
     const auto &loss = piece(batch, "loss_j");
@@ -256,14 +325,14 @@ void test_false_zero_empty_and_signed_values_survive_encoding() {
 }
 
 void test_nonfinite_doubles_are_not_null() {
-    bt::TemporaryDirectory dir("catalog-nonfinite");
+    const bt::TemporaryDirectory dir("catalog-nonfinite");
     const auto &spec = synthetic_catalog().table("channel_energy");
     std::vector<Object> rows;
     auto row = energy_row({{"mechanical_energy_j", real(std::numeric_limits<double>::infinity())},
                            {"external_work_j", real(-std::numeric_limits<double>::infinity())}});
     row.emplace_back("interval_id", integer(0));
     rows.push_back(std::move(row));
-    auto batch = rec::encode_rows(spec, rows, 0);
+    auto const batch = rec::encode_rows(spec, rows, 0);
     const auto &mechanical = piece(batch, "mechanical_energy_j");
     const auto &external = piece(batch, "external_work_j");
     bt::require(mechanical.d[0] == std::numeric_limits<double>::infinity() &&
@@ -279,7 +348,7 @@ void test_nonfinite_doubles_are_not_null() {
 }
 
 void test_nullable_parent_objects_carry_their_own_presence() {
-    bt::TemporaryDirectory dir("catalog-parent");
+    const bt::TemporaryDirectory dir("catalog-parent");
     const auto &spec = synthetic_catalog().table("channel_mass");
     auto measured = [] {
         return io::Value{Object{{"mass_kg", real(80.)},
@@ -288,15 +357,17 @@ void test_nullable_parent_objects_carry_their_own_presence() {
     auto endpoint = io::Value{Object{{"mass_kg", real(80.)},
                                     {"com_m", io::Value{Value::Array{real(0.), real(0.), real(.5)}}},
                                     {"kinetic_energy_j", real(2.)}}};
-    auto row_at = [&](std::int64_t id, io::Value endpoint_value, bool has_endpoint) {
-        Object row{{"mass", measured()}, {"interval_id", integer(id)}};
-        if (has_endpoint) row.emplace_back("endpoint_mass", std::move(endpoint_value));
-        return row;
+    auto const row_at = [&](std::int64_t id, io::Value endpoint_value,
+                            bool has_endpoint) {
+      Object row{{"mass", measured()}, {"interval_id", integer(id)}};
+      if (has_endpoint)
+        row.emplace_back("endpoint_mass", std::move(endpoint_value));
+      return row;
     };
     std::vector<Object> rows{row_at(0, std::move(endpoint), true),
                              row_at(1, io::Value{}, true),
                              row_at(2, io::Value{}, false)};
-    auto batch = rec::encode_rows(spec, rows, 0);
+    auto const batch = rec::encode_rows(spec, rows, 0);
     const auto &endpoint_present = piece(batch, "endpoint_mass_present");
     bt::require(endpoint_present.b == std::vector<char>({1, 1, 0}),
                 "parent presence flag separates authored/null/absent");
@@ -320,15 +391,15 @@ void test_nullable_parent_objects_carry_their_own_presence() {
 }
 
 void test_empty_lists_round_trip_separately_from_absent() {
-    bt::TemporaryDirectory dir("catalog-lists");
+    const bt::TemporaryDirectory dir("catalog-lists");
     const auto &spec = synthetic_catalog().table("channel_model_status");
-    auto status = [] {
-        return io::Value{Object{
-            {"model_valid", io::Value{true}},
-            {"first_model_violation", io::Value{}},
-            {"model_violation_counts", io::Value{Object{}}},
-            {"numerically_valid", text("not_evaluated")},
-            {"calibration_status", text("parameterized_unvalidated")}}};
+    auto const status = [] {
+      return io::Value{
+          Object{{"model_valid", io::Value{true}},
+                 {"first_model_violation", io::Value{}},
+                 {"model_violation_counts", io::Value{Object{}}},
+                 {"numerically_valid", text("not_evaluated")},
+                 {"calibration_status", text("parameterized_unvalidated")}}};
     };
     std::vector<Object> rows;
     Object first{{"model_status", status()}, {"interval_id", integer(0)},
@@ -336,7 +407,7 @@ void test_empty_lists_round_trip_separately_from_absent() {
     Object second{{"model_status", status()}, {"interval_id", integer(1)}};
     rows.push_back(std::move(first));
     rows.push_back(std::move(second));
-    auto batch = rec::encode_rows(spec, rows, 0);
+    auto const batch = rec::encode_rows(spec, rows, 0);
     const auto &list = piece(batch, "attachment_violations");
     const auto &present = piece(batch, "attachment_violations_present");
     bt::require(list.kind == Piece::Kind::list_s && list.offsets[1] == 0 &&
@@ -459,8 +530,9 @@ void test_source_backed_catalog_entries_for_reviewed_semantics() {
 
 void test_tree_physical_source_emits_typed_batches_through_the_catalog() {
     std::vector<SamplePtr> rows;
+    rows.reserve(3);
     for (int i = 0; i < 3; ++i)
-        rows.push_back(sample_row(i, .001 * i));
+      rows.push_back(sample_row(i, .001 * i));
     const auto source = make_source(
         std::make_shared<runtime::OwnedNativeEpisode>(make_episode(rows)));
     std::map<std::string, std::vector<EncodedTable>> by_table;
@@ -479,7 +551,7 @@ void test_tree_physical_source_emits_typed_batches_through_the_catalog() {
     for (auto &batch : by_table["channel_energy"]) {
         const auto &ids = batch.columns.at("interval_id");
         bt::require(ids.kind == Piece::Kind::scalar_i &&
-                    static_cast<std::int64_t>(ids.i.size()) == batch.rows,
+                        std::cmp_equal(ids.i.size(), batch.rows),
                     "channel interval ids are typed integers");
     }
     // Every catalog table reports a batch per window even when its channel
@@ -532,7 +604,7 @@ void test_forces_explode_per_component_with_vector_and_power() {
                 batch.columns.at("component").s ==
                     std::vector<std::string>({"chain", "tires"}),
                 "the canonical encoder keeps component order");
-    bt::TemporaryDirectory dir("catalog-forces");
+    const bt::TemporaryDirectory dir("catalog-forces");
     const auto decoded = round_trip(synthetic_catalog().table("forces"),
                                     std::move(manual), dir);
     bt::require(io::as_double(detail::field(decoded[0], "power_w"), "power") == .5,
@@ -543,7 +615,7 @@ void test_tree_source_rejects_batch_arguments_and_bad_intervals() {
     const auto source = make_source(
         std::make_shared<runtime::OwnedNativeEpisode>(make_episode({sample_row(0, 0.)})));
     throws<std::invalid_argument>(
-        [&] { source->tables(0, [](std::string_view, EncodedTable &&) {}); },
+        [&] { source->tables(0, [](std::string_view, EncodedTable &&) {}); }, // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved) callback signature is fixed by the API; the argument is consumed-read
         "batch_rows", "zero batch bound is rejected");
     const auto &spec = synthetic_catalog().table("physics");
     // Physics rows are addressed by source path (end_time_s), which the
@@ -561,21 +633,26 @@ void test_tree_source_rejects_batch_arguments_and_bad_intervals() {
 }
 
 void test_catalog_rejects_malformed_joint_descriptors() {
-    const std::vector<rec::JointCoords> nameless{{"", "slide", 0, 0}};
-    throws<std::invalid_argument>([&] { (void)rec::build_catalog(nameless); },
-                                  "joint coordinates",
-                                  "empty joint identity is rejected");
-    const std::vector<rec::JointCoords> weird{{"a", "weird", 0, 0}};
-    throws<std::invalid_argument>([&] { (void)rec::build_catalog(weird); },
-                                  "joint type", "unsupported joint type is rejected");
-    const std::vector<rec::JointCoords> sparse{{"a", "slide", 2, 2}};
-    throws<std::invalid_argument>([&] { (void)rec::build_catalog(sparse); },
-                                  "dense", "non-dense addresses are rejected");
+  const std::vector<rec::JointCoords> nameless{
+      {.name = "", .joint_type = "slide", .qposadr = 0, .dofadr = 0}};
+  throws<std::invalid_argument>([&] { (void)rec::build_catalog(nameless); },
+                                "joint coordinates",
+                                "empty joint identity is rejected");
+  const std::vector<rec::JointCoords> weird{
+      {.name = "a", .joint_type = "weird", .qposadr = 0, .dofadr = 0}};
+  throws<std::invalid_argument>([&] { (void)rec::build_catalog(weird); },
+                                "joint type",
+                                "unsupported joint type is rejected");
+  const std::vector<rec::JointCoords> sparse{
+      {.name = "a", .joint_type = "slide", .qposadr = 2, .dofadr = 2}};
+  throws<std::invalid_argument>([&] { (void)rec::build_catalog(sparse); },
+                                "dense", "non-dense addresses are rejected");
 }
 
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         test_catalog_tables_are_finite_and_fully_described();
         test_coordinate_catalog_maps_qpos_and_dof_addresses();

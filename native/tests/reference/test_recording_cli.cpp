@@ -20,7 +20,7 @@ namespace {
 using namespace recording_test;
 namespace cli = bike::cli;
 
-const std::string PROFILE =
+const std::string PROFILE = // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     repo_file("examples/research/viewer_physics_welded.toml").string();
 
 // std::string_view elements accept both literals and the PROFILE string.
@@ -40,10 +40,10 @@ cli::Arguments resolve(std::initializer_list<std::string_view> input) {
 // option (which is unset whenever --physics-config supplies the mode).
 std::string resolved_physics(std::initializer_list<std::string_view> input) {
     auto resolved = cli::resolve_ride(parse(input));
-    return resolved->setup.model.physics->physics_mode;
+    return resolved->setup.model.physics.value().physics_mode; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
 }
 void rejected(std::initializer_list<std::string_view> input,
-              std::string_view needle, std::string_view message) {
+              std::string_view needle, std::string_view message) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     throws<cli::ArgumentError>(
         [&] { (void)cli::resolve_ride(parse(input)); }, needle, message);
 }

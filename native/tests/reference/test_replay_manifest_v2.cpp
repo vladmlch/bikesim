@@ -5,19 +5,19 @@
 #include "replay_reference_support.hpp"
 #include "runtime/provenance.hpp"
 #include <algorithm>
+#include <print>
 #include <set>
 
 namespace {
 namespace rr = replay_reference;
-using rr::count;
+using bike::io::Value;
 using rr::field;
 using rr::integer;
 using rr::set;
 using rr::text;
-using bike::io::Value;
 
 // The eight legacy EXECUTION_FIELDS (artifact.EXECUTION_FIELDS).
-const std::set<std::string> EXECUTION_FIELDS{"backend", "runtime_schema",
+const std::set<std::string> EXECUTION_FIELDS{"backend", "runtime_schema", // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp) static fixture table built once at startup; a throw is a fatal defect
     "python_source_sha256", "native_source_sha256", "extension_sha256",
     "mujoco_version", "mujoco_library_sha256", "build_context"};
 
@@ -46,14 +46,18 @@ std::set<std::string> key_set(const Value& value) {
 // data-only reader loads the bundle; the recorded policy reference stays a
 // string (no import machinery exists natively to invoke).
 void schema_compat_one(int version, std::string_view backend, bool versioned) {
-    rr::Directory tmp;
-    const auto path = rr::synthetic_recording(tmp.path, version, backend, true, versioned);
-    const auto input = bike::replay::load_legacy_input(path);
-    bt::require(input.replay_contract_version == version, "manifest schema round-trips");
-    const auto reference = rr::text_of(
-        field(field(field(input.summary, "research"), "run_metadata"), "policy"), "reference");
-    bt::require(reference.starts_with("malicious_"),
-        "recorded policy references stay inert text through the data-only reader");
+  rr::Directory const tmp;
+  const auto path =
+      rr::synthetic_recording(tmp.path, version, backend, true, versioned);
+  const auto input = bike::replay::load_legacy_input(path);
+  bt::require(input.replay_contract_version == version,
+              "manifest schema round-trips");
+  const auto reference = rr::text_of(
+      field(field(field(input.summary, "research"), "run_metadata"), "policy"),
+      "reference");
+  bt::require(reference.starts_with("malicious_"),
+              "recorded policy references stay inert text through the "
+              "data-only reader");
 }
 void schema_compat() {
     schema_compat_one(1, "python", false);
@@ -71,39 +75,47 @@ void every_file_authenticated() {
     all.emplace_back(rr::ENVELOPE_FILE);
     all.emplace_back(rr::STRENGTH_FILE);
     for (const auto& name : all) {
-        rr::Directory tmp;
-        const auto path = rr::synthetic_recording(tmp.path);
-        append(path / name, "tamper");
-        rr::rejects([&] { (void)bike::replay::load_legacy_input(path); }, "checksum");
+      rr::Directory const tmp;
+      const auto path = rr::synthetic_recording(tmp.path);
+      append(path / name, "tamper");
+      rr::rejects([&] { (void)bike::replay::load_legacy_input(path); },
+                  "checksum");
     }
 }
 
 // test_manifest_rejects_unlisted_fields_and_paths — six mutations.
 void manifest_mutation(std::string_view mutation) {
-    rr::Directory tmp;
-    const auto path = rr::synthetic_recording(tmp.path);
-    auto manifest = manifest_of(path);
-    if (mutation == "missing") {
-        auto hashes = field(manifest, "file_sha256");
-        auto& object = std::get<Value::Object>(hashes.data);
-        object.erase(std::remove_if(object.begin(), object.end(),
-            [](const auto& pair) { return pair.first == "trace.csv"; }), object.end());
-        set(manifest, "file_sha256", std::move(hashes));
-    } else if (mutation == "extra") {
-        auto hashes = field(manifest, "file_sha256");
-        set(hashes, "other.json", text("0000000000000000000000000000000000000000000000000000000000000000"));
-        set(manifest, "file_sha256", std::move(hashes));
-    } else if (mutation == "traversal") {
-        set(manifest, "joint_strength_file", text("../rider_joint_strength.json"));
-    } else if (mutation == "upper_hash") {
-        auto hashes = field(manifest, "file_sha256");
-        set(hashes, "trace.csv", text("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
-        set(manifest, "file_sha256", std::move(hashes));
-    } else if (mutation == "unknown_top") {
-        set(manifest, "policy_module", text("untrusted"));
-    } else {
-        set(manifest, "schema_version", Value{true});
-    }
+  rr::Directory const tmp;
+  const auto path = rr::synthetic_recording(tmp.path);
+  auto manifest = manifest_of(path);
+  if (mutation == "missing") {
+    auto hashes = field(manifest, "file_sha256");
+    auto &object = std::get<Value::Object>(hashes.data);
+    object.erase(
+        std::ranges::remove_if(
+            object, [](const auto &pair) { return pair.first == "trace.csv"; })
+            .begin(),
+        object.end());
+    set(manifest, "file_sha256", std::move(hashes));
+  } else if (mutation == "extra") {
+    auto hashes = field(manifest, "file_sha256");
+    set(hashes, "other.json",
+        text("000000000000000000000000000000000000000000000000000000000000000"
+             "0"));
+    set(manifest, "file_sha256", std::move(hashes));
+  } else if (mutation == "traversal") {
+    set(manifest, "joint_strength_file", text("../rider_joint_strength.json"));
+  } else if (mutation == "upper_hash") {
+    auto hashes = field(manifest, "file_sha256");
+    set(hashes, "trace.csv",
+        text("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+             "A"));
+    set(manifest, "file_sha256", std::move(hashes));
+  } else if (mutation == "unknown_top") {
+    set(manifest, "policy_module", text("untrusted"));
+  } else {
+    set(manifest, "schema_version", Value{true});
+  }
     write_manifest(path, manifest);
     rr::rejects([&] { (void)bike::replay::load_legacy_input(path); });
 }
@@ -114,46 +126,49 @@ void manifest_mutations() {
 
 // test_schema1_does_not_silently_accept_schema2_checksum_set.
 void schema1_checksum_set() {
-    rr::Directory tmp;
-    const auto path = rr::synthetic_recording(tmp.path, 1, "python");
-    auto manifest = manifest_of(path);
-    auto hashes = field(manifest, "file_sha256");
-    set(hashes, "telemetry.csv", text("0000000000000000000000000000000000000000000000000000000000000000"));
-    set(manifest, "file_sha256", std::move(hashes));
-    write_manifest(path, manifest);
-    rr::rejects([&] { (void)bike::replay::load_legacy_input(path); }, "file set");
+  rr::Directory const tmp;
+  const auto path = rr::synthetic_recording(tmp.path, 1, "python");
+  auto manifest = manifest_of(path);
+  auto hashes = field(manifest, "file_sha256");
+  set(hashes, "telemetry.csv",
+      text("0000000000000000000000000000000000000000000000000000000000000000"));
+  set(manifest, "file_sha256", std::move(hashes));
+  write_manifest(path, manifest);
+  rr::rejects([&] { (void)bike::replay::load_legacy_input(path); }, "file set");
 }
 
 // test_summary_identity_and_referenced_bundles_are_cross_checked.
 void bundle_cross_check(std::string_view mutation) {
-    rr::Directory tmp;
-    const auto path = rr::synthetic_recording(tmp.path);
-    auto summary = bike::io::parse_json(rr::read_file(path / "summary.json"));
-    if (mutation == "missing_bundle") {
-        auto resolved = field(summary, "resolved_config");
-        auto physics = field(resolved, "physics");
-        auto articulated = field(physics, "articulated");
-        set(articulated, "joint_strength_path", Value{});
-        set(physics, "articulated", std::move(articulated));
-        set(resolved, "physics", std::move(physics));
-        set(summary, "resolved_config", std::move(resolved));
-    } else if (mutation == "bundle_digest") {
-        auto resolved = field(summary, "resolved_config");
-        set(resolved, "joint_strength_sha256",
-            text("0000000000000000000000000000000000000000000000000000000000000000"));
-        set(summary, "resolved_config", std::move(resolved));
-    } else if (mutation == "execution") {
-        auto research = field(summary, "research");
-        auto execution = field(research, "execution");
-        set(execution, "extension_sha256",
-            text("0000000000000000000000000000000000000000000000000000000000000000"));
-        set(research, "execution", std::move(execution));
-        set(summary, "research", std::move(research));
-    } else {
-        auto resolved = field(summary, "resolved_config");
-        set(resolved, "physics", Value{Value::Array{}});
-        set(summary, "resolved_config", std::move(resolved));
-    }
+  rr::Directory const tmp;
+  const auto path = rr::synthetic_recording(tmp.path);
+  auto summary = bike::io::parse_json(rr::read_file(path / "summary.json"));
+  if (mutation == "missing_bundle") {
+    auto resolved = field(summary, "resolved_config");
+    auto physics = field(resolved, "physics");
+    auto articulated = field(physics, "articulated");
+    set(articulated, "joint_strength_path", Value{});
+    set(physics, "articulated", std::move(articulated));
+    set(resolved, "physics", std::move(physics));
+    set(summary, "resolved_config", std::move(resolved));
+  } else if (mutation == "bundle_digest") {
+    auto resolved = field(summary, "resolved_config");
+    set(resolved, "joint_strength_sha256",
+        text("000000000000000000000000000000000000000000000000000000000000000"
+             "0"));
+    set(summary, "resolved_config", std::move(resolved));
+  } else if (mutation == "execution") {
+    auto research = field(summary, "research");
+    auto execution = field(research, "execution");
+    set(execution, "extension_sha256",
+        text("000000000000000000000000000000000000000000000000000000000000000"
+             "0"));
+    set(research, "execution", std::move(execution));
+    set(summary, "research", std::move(research));
+  } else {
+    auto resolved = field(summary, "resolved_config");
+    set(resolved, "physics", Value{Value::Array{}});
+    set(summary, "resolved_config", std::move(resolved));
+  }
     rr::write_json(path / "summary.json", summary);
     rr::reseal(path, "summary.json");
     rr::rejects([&] { (void)bike::replay::load_legacy_input(path); });
@@ -166,25 +181,26 @@ void bundle_cross_checks() {
 // test_symlinked_recorded_file_is_rejected — a leaf symlink fails the
 // no-follow regular-file open before its bytes are ever hashed.
 void symlink_rejected() {
-    rr::Directory tmp;
-    const auto path = rr::synthetic_recording(tmp.path);
-    const auto outside = tmp.path / "outside-trace.csv";
-    rr::write_file(outside, rr::read_file(path / "trace.csv"));
-    std::filesystem::remove(path / "trace.csv");
-    std::filesystem::create_symlink(outside, path / "trace.csv");
-    rr::rejects([&] { (void)bike::replay::load_legacy_input(path); });
+  rr::Directory const tmp;
+  const auto path = rr::synthetic_recording(tmp.path);
+  const auto outside = tmp.path / "outside-trace.csv";
+  rr::write_file(outside, rr::read_file(path / "trace.csv"));
+  std::filesystem::remove(path / "trace.csv");
+  std::filesystem::create_symlink(outside, path / "trace.csv");
+  rr::rejects([&] { (void)bike::replay::load_legacy_input(path); });
 }
 
 // test_duplicate_and_nonfinite_json_fields_are_rejected — strict parser:
 // duplicate keys, NaN and out-of-range literals never reach the schema layer.
 void strict_json() {
-    for (const char* payload : {"{\"schema_version\":2,\"schema_version\":1}",
-                                "{\"schema_version\":NaN}", "{\"schema_version\":1e999}"}) {
-        rr::Directory tmp;
-        const auto path = rr::synthetic_recording(tmp.path);
-        rr::write_file(path / "replay.json", payload);
-        rr::rejects([&] { (void)bike::replay::load_legacy_input(path); });
-    }
+  for (const char *payload :
+       {R"({"schema_version":2,"schema_version":1})",
+        "{\"schema_version\":NaN}", "{\"schema_version\":1e999}"}) {
+    rr::Directory const tmp;
+    const auto path = rr::synthetic_recording(tmp.path);
+    rr::write_file(path / "replay.json", payload);
+    rr::rejects([&] { (void)bike::replay::load_legacy_input(path); });
+  }
 }
 
 // test_execution_exact_shape_and_nullability — the legacy 8-field record.
@@ -195,11 +211,14 @@ void execution_shape(std::string_view backend) {
     for (const auto& key : EXECUTION_FIELDS) {
         auto bad = expected;
         auto& object = std::get<Value::Object>(bad.data);
-        object.erase(std::remove_if(object.begin(), object.end(),
-            [&](const auto& pair) { return pair.first == key; }), object.end());
+        object.erase(
+            std::ranges::remove_if(
+                object, [&](const auto &pair) { return pair.first == key; })
+                .begin(),
+            object.end());
         rr::rejects([&] { bike::replay::validate_execution(bad); });
     }
-    const std::pair<std::string, Value> mutations[] = {
+    const std::pair<std::string, Value> mutations[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {"runtime_schema", Value{true}}, {"backend", text("auto")},
         {"python_source_sha256", text("not a digest")}, {"mujoco_version", text("")}};
     for (const auto& [key, value] : mutations) {
@@ -229,11 +248,14 @@ void execution_v2(std::string_view backend) {
     for (const auto& key : expected_keys) {
         auto bad = expected;
         auto& object = std::get<Value::Object>(bad.data);
-        object.erase(std::remove_if(object.begin(), object.end(),
-            [&](const auto& pair) { return pair.first == key; }), object.end());
+        object.erase(
+            std::ranges::remove_if(
+                object, [&](const auto &pair) { return pair.first == key; })
+                .begin(),
+            object.end());
         rr::rejects([&] { bike::replay::validate_execution(bad); });
     }
-    const std::pair<std::string, Value> mutations[] = {
+    const std::pair<std::string, Value> mutations[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {"identity_schema", Value{true}}, {"identity_schema", integer(3)},
         {"runtime_schema", Value{true}}, {"backend", text("auto")},
         {"mujoco_version", text("")}};
@@ -262,7 +284,7 @@ std::string fingerprint(const std::filesystem::path& root) {
     // artifact.native_source_fingerprint: src tracks code files; cmake
     // tracks build scripts (a stray cmake/*.cpp is a probe, not a source).
     std::vector<std::filesystem::path> inputs{root / "CMakeLists.txt"};
-    const std::pair<std::string_view, std::set<std::string>> scopes[] = {
+    const std::pair<std::string_view, std::set<std::string>> scopes[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {"src", {".cpp", ".hpp", ".h", ".in"}}, {"cmake", {".cmake", ".in"}}};
     for (const auto& [directory, extensions] : scopes)
         for (const auto& entry : std::filesystem::recursive_directory_iterator(root / directory)) {
@@ -279,29 +301,35 @@ std::string fingerprint(const std::filesystem::path& root) {
     return bike::io::sha256(std::as_bytes(std::span(manifest.data(), manifest.size())));
 }
 void source_manifest() {
-    rr::Directory tmp;
-    const auto root = tmp.path / "native";
-    std::filesystem::create_directories(root / "src");
-    std::filesystem::create_directories(root / "cmake");
-    const std::pair<std::string, std::string> files[] = {
-        {"CMakeLists.txt", "project(reference)\n"}, {"src/core.cpp", "int value = 1;\n"},
-        {"src/core.hpp", "#pragma once\n"}, {"cmake/config.cmake", "set(VALUE 1)\n"}};
-    for (const auto& [name, payload] : files) rr::write_file(root / name, payload);
-    const auto expected = fingerprint(root);
-    // Build outputs are not source inputs (the Python fixture drops a binary
-    // under build/); the real manifest tree scopes to src/+cmake/+root list.
-    std::filesystem::create_directories(root / "build");
-    rr::write_file(root / "build/bike_native.so", "not a source input");
-    bt::require(fingerprint(root) == expected, "build trees never enter the source manifest");
-    rr::write_file(root / "src/core.hpp", "#pragma once\n// changed\n");
-    bt::require(fingerprint(root) != expected, "header content changes are tracked");
-    // The compiled build identity equals the same algorithm over the real tree.
-    const auto compiled = std::string(runtime::runtime_identity().native_source_sha256);
-    const auto recomputed = fingerprint(rr::repo_root() / "native");
-    if (compiled != recomputed) {
-        std::fprintf(stderr, "compiled=%s recomputed=%s root=%s\n",
-            compiled.c_str(), recomputed.c_str(), (rr::repo_root() / "native").string().c_str());
-    }
+  rr::Directory const tmp;
+  const auto root = tmp.path / "native";
+  std::filesystem::create_directories(root / "src");
+  std::filesystem::create_directories(root / "cmake");
+  const std::pair<std::string, std::string> files[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+      {"CMakeLists.txt", "project(reference)\n"},
+      {"src/core.cpp", "int value = 1;\n"},
+      {"src/core.hpp", "#pragma once\n"},
+      {"cmake/config.cmake", "set(VALUE 1)\n"}};
+  for (const auto &[name, payload] : files)
+    rr::write_file(root / name, payload);
+  const auto expected = fingerprint(root);
+  // Build outputs are not source inputs (the Python fixture drops a binary
+  // under build/); the real manifest tree scopes to src/+cmake/+root list.
+  std::filesystem::create_directories(root / "build");
+  rr::write_file(root / "build/bike_native.so", "not a source input");
+  bt::require(fingerprint(root) == expected,
+              "build trees never enter the source manifest");
+  rr::write_file(root / "src/core.hpp", "#pragma once\n// changed\n");
+  bt::require(fingerprint(root) != expected,
+              "header content changes are tracked");
+  // The compiled build identity equals the same algorithm over the real tree.
+  const auto compiled =
+      std::string(runtime::runtime_identity().native_source_sha256);
+  const auto recomputed = fingerprint(rr::repo_root() / "native");
+  if (compiled != recomputed) {
+    std::println(stderr, "compiled={} recomputed={} root={}", compiled,
+                 recomputed, (rr::repo_root() / "native").string());
+  }
     bt::require(compiled == recomputed,
         "the compiled native_source_sha256 is this manifest over live sources");
 }

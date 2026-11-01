@@ -115,22 +115,28 @@ void out_is_reserved_everywhere() {
 // test_bad_values_and_sections_are_named — unknown sections, empty lists and
 // non-scalar flags name themselves; an empty spec is one default job.
 void bad_values_and_sections_are_named() {
-    auto rejects_named = [](Object root, std::string_view needle) {
-        try { (void)batch::expand_spec(spec(std::move(root))); return false; }
-        catch (const std::invalid_argument& error) {
-            return std::string(error.what()).find(needle) != std::string::npos;
-        }
-    };
-    bt::require(rejects_named({{"junk", obj({})}}, "unknown spec sections"),
-        "unknown spec sections are named");
-    bt::require(rejects_named({{"grid", obj({{"seed", Value{Array{}}}})}}, "grid.seed"),
-        "an empty grid list names grid.seed");
-    bt::require(rejects_named({{"base", obj({{"rider-mass", Value{Array{real(60.), real(80.)}}}})}}, "rider-mass"),
-        "a non-scalar base flag names itself");
-    bt::require(batch::expand_spec(spec({{"job", Value{Array{}}}})).size() == 1,
-        "an empty job list is one default episode");
-    bt::require(batch::expand_spec(spec({})).size() == 1,
-        "an empty spec is one default episode, not an error");
+  auto const rejects_named = [](const Object &root, std::string_view needle) {
+    try {
+      (void)batch::expand_spec(spec(root));
+      return false;
+    } catch (const std::invalid_argument &error) {
+      return std::string(error.what()).find(needle) != std::string::npos;
+    }
+  };
+  bt::require(rejects_named({{"junk", obj({})}}, "unknown spec sections"),
+              "unknown spec sections are named");
+  bt::require(
+      rejects_named({{"grid", obj({{"seed", Value{Array{}}}})}}, "grid.seed"),
+      "an empty grid list names grid.seed");
+  bt::require(
+      rejects_named(
+          {{"base", obj({{"rider-mass", Value{Array{real(60.), real(80.)}}}})}},
+          "rider-mass"),
+      "a non-scalar base flag names itself");
+  bt::require(batch::expand_spec(spec({{"job", Value{Array{}}}})).size() == 1,
+              "an empty job list is one default episode");
+  bt::require(batch::expand_spec(spec({})).size() == 1,
+              "an empty spec is one default episode, not an error");
 }
 
 // test_slug_reflects_overrides — the job id carries index plus overridden keys.
@@ -268,9 +274,9 @@ void explicit_serial_job_count_avoids_discovery_and_reports_threads() {
     bike::platform::ProcessOptions options;
     options.timeout_s = 300.;
     // platform::run inherits this process's environment verbatim.
-    const char* previous = std::getenv("OPENBLAS_NUM_THREADS");
+    const char* previous = std::getenv("OPENBLAS_NUM_THREADS"); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
     const std::string saved = previous ? previous : "";
-    ::setenv("OPENBLAS_NUM_THREADS", "2", 1);
+    ::setenv("OPENBLAS_NUM_THREADS", "2", 1); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
     const auto ran = bike::platform::run({binary.string(), "--spec", spec_path.string(),
         "--out", out.string(), "--jobs", "1"}, tmp, options);
     bt::require(ran.exit_code == 0 || ran.exit_code == 1,
@@ -291,11 +297,11 @@ void explicit_serial_job_count_avoids_discovery_and_reports_threads() {
         "thread_policy echoes OPENBLAS_NUM_THREADS=2");
     // The Python contract asserts the variable is still '2' after the run:
     // batch reports the inherited policy without clobbering it.
-    const char* after = std::getenv("OPENBLAS_NUM_THREADS");
+    const char* after = std::getenv("OPENBLAS_NUM_THREADS"); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
     bt::require(after != nullptr && std::string(after) == "2",
         "the parent environment is untouched");
-    if (previous) ::setenv("OPENBLAS_NUM_THREADS", saved.c_str(), 1);
-    else ::unsetenv("OPENBLAS_NUM_THREADS");
+    if (previous) ::setenv("OPENBLAS_NUM_THREADS", saved.c_str(), 1); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
+    else ::unsetenv("OPENBLAS_NUM_THREADS"); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
 }
 
 // test_actual_two_worker_batch_matches_serial_jobs — the real pool matches

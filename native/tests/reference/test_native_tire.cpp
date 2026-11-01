@@ -41,7 +41,7 @@ tire_row(const Episode &ep, std::size_t k) {
 
 // _tire_cfg(*missing) — the minimal compliant_2d constant-mu section on
 // the pinned bench model.
-[[nodiscard]] std::string tire_cfg_json(std::string_view drop = {},
+[[nodiscard]] std::string tire_cfg_json(std::string_view drop = {}, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                         std::string_view front_drop = {},
                                         std::string_view surface_mode =
                                                 "configured") {
@@ -59,13 +59,13 @@ tire_row(const Episode &ep, std::size_t k) {
                      ? ""
                      : R"("relaxation_length_m":0.2,)";
         if (!s.empty() && s.back() == ',') s.pop_back();
-        s += "}";
+        s += '}';
         return s;
     };
     std::string tire = "{";
     if (drop != "backend") tire += R"("backend":"compliant_2d",)";
     if (drop != "surface_mode")
-        tire += "\"surface_mode\":\"" + std::string(surface_mode) + "\",";
+      tire += R"("surface_mode":")" + std::string(surface_mode) + "\",";
     if (drop != "significant_delta_m")
         tire += R"("significant_delta_m":0.0001,)";
     if (drop != "significance_fraction")
@@ -75,8 +75,8 @@ tire_row(const Episode &ep, std::size_t k) {
     if (drop != "front") tire += "\"front\":" + side(front_drop) + ",";
     if (drop != "rear") tire += "\"rear\":" + side(front_drop) + ",";
     if (tire.back() == ',') tire.pop_back();
-    tire += "}";
-    return "{\"schema\":1,\"tire\":" + tire + "}";
+    tire += '}';
+    return R"({"schema":1,"tire":)" + tire + "}";
 }
 
 [[nodiscard]] nativecfg::WriterConfig cfg(std::string_view drop = {},
@@ -155,13 +155,13 @@ void slide_and_forward(Stepper &st) {
         snapshots(golden, st, tag);
         const auto snaps = st.tire_writer().snapshots();
         std::array<std::vector<double>, 2> loads;
-        std::array<std::unique_ptr<bool[]>, 2> working;
+        std::array<std::unique_ptr<bool[]>, 2> working; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         std::array<TireSideInput, 2> side_input;
         for (int side = 0; side < 2; ++side) {
-            const auto &s = *snaps.at(static_cast<std::size_t>(side));
+            const auto &s = snaps.at(static_cast<std::size_t>(side)).value(); // NOLINT(bugprone-unchecked-optional-access) snap engagement is the fixture contract under test; .value() reports violations loudly
             auto &lds = loads.at(static_cast<std::size_t>(side));
-            auto &wrk = working.at(static_cast<std::size_t>(side)) =
-                    std::make_unique<bool[]>(s.patches.size());
+            auto const &wrk = working.at(static_cast<std::size_t>(side)) =
+                std::make_unique<bool[]>(s.patches.size()); // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
             const std::span<bool> wrk_view = std::views::counted(
                     wrk.get(), static_cast<std::ptrdiff_t>(
                                        s.patches.size()));
@@ -177,7 +177,7 @@ void slide_and_forward(Stepper &st) {
         for (const auto &[name, values] :
              st.resistance_components(side_input[0], side_input[1]))
             vector(golden, values,
-                   name + " via tire_snapshots step " + tag);
+                   name + " via tire_snapshots step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
     }
     golden.done();
 }
@@ -237,18 +237,16 @@ void slide_and_forward(Stepper &st) {
 [[gnu::noinline]] void test_tire_requires_config() {
     std::vector<double> row(22, 0.);
     const auto names = canonical_names();
-    for (auto make : {0, 1}) {
-        std::optional<Stepper> st;
-        if (make == 0)
-            st.emplace(mjb());
-        else
-            st.emplace(mjb(), nativecfg::WriterConfig{});
-        rejects<std::logic_error>([&] { (void)st->tire_qfrc(.00125); });
-        rejects<std::logic_error>(
-                [&] { st->set_tire_state(names, row); });
-        rejects<std::logic_error>([&] { (void)st->tire_state(); });
-        rejects<std::logic_error>(
-                [&] { (void)st->tire_writer().snapshots(); });
+    for (auto const make : {0, 1}) {
+      std::optional<Stepper> st;
+      if (make == 0)
+        st.emplace(mjb());
+      else
+        st.emplace(mjb(), nativecfg::WriterConfig{});
+      rejects<std::logic_error>([&] { (void)st->tire_qfrc(.00125); });
+      rejects<std::logic_error>([&] { st->set_tire_state(names, row); });
+      rejects<std::logic_error>([&] { (void)st->tire_state(); });
+      rejects<std::logic_error>([&] { (void)st->tire_writer().snapshots(); });
     }
 }
 

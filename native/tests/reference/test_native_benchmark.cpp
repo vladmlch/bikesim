@@ -58,6 +58,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -170,7 +171,7 @@ void expect_stderr_any(const BenchResult &result,
 // `actuators` may exceed dofs (motors stack on joints cyclically) — the
 // nu > nv case the actuator->velocity mapping must handle. dofs == 0
 // cannot carry motors.
-[[nodiscard]] std::string chain_xml(int dofs, int actuators, int welded) {
+[[nodiscard]] std::string chain_xml(int dofs, int actuators, int welded) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     std::string bodies;
     for (int i = 0; i < dofs; ++i)
         bodies += std::format(
@@ -185,8 +186,8 @@ void expect_stderr_any(const BenchResult &result,
             i, -1 - i);
     std::string motors;
     for (int i = 0; i < (dofs != 0 ? actuators : 0); ++i)
-        motors += std::format(
-            "<motor name=\"motor{0}\" joint=\"joint{1}\"/>", i, i % dofs);
+      motors += std::format(R"(<motor name="motor{0}" joint="joint{1}"/>)", i,
+                            i % dofs);
     const std::string actuator_xml =
         motors.empty() ? std::string{} : "<actuator>" + motors + "</actuator>";
     return "<mujoco><worldbody>" + bodies + "</worldbody>" + actuator_xml +
@@ -477,8 +478,7 @@ generated_bundle(const std::filesystem::path &root, const mjModel &model) {
                      {.state = std::nullopt,
                       .nonfinite = false,
                       .snapshot_time_zero = true});
-    write_text(root / "current.json",
-               "{\"format\":1,\"bundle\":\"test-bundle\"}");
+    write_text(root / "current.json", R"({"format":1,"bundle":"test-bundle"})");
     return bundle;
 }
 
@@ -552,6 +552,9 @@ void patch_u32(std::string &raw, std::size_t offset, std::uint32_t value) {
     const Value *found = bike::io::find_member(object, key);
     if (found == nullptr)
         report_missing(std::string(path) + "." + std::string(key));
+    // report_missing is [[noreturn]] — the dereference is unreachable on the
+    // null path.
+    // cppcheck-suppress nullPointerRedundantCheck
     return *found;
 }
 
@@ -597,7 +600,7 @@ void patch_u32(std::string &raw, std::size_t offset, std::uint32_t value) {
 // sets and == values; list==list is elementwise; numbers compare by VALUE
 // (int and float spellings are interchangeable); strings/bool/null compare
 // structurally. Bytes/Tagged never appear in native_bench reports.
-[[nodiscard]] bool python_equal(const Value &a, const Value &b) {
+[[nodiscard]] bool python_equal(const Value &a, const Value &b) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     if (const auto *na = std::get_if<Number>(&a.data)) {
         if (const auto *nb = std::get_if<Number>(&b.data))
             return numeric_equal(*na, *nb);
@@ -872,7 +875,7 @@ void test_pointer_to_missing_bundle_is_rejected(const bt::TemporaryDirectory &di
     const auto model = chain_model(2);
     generated_bundle(dir.path() / "artifacts", *model);
     write_text(dir.path() / "artifacts" / "current.json",
-               "{\"format\": 1, \"bundle\": \"deleted-generation\"}");
+               R"({"format": 1, "bundle": "deleted-generation"})");
     const BenchResult result = run_bench(
         {"bare", "--artifacts", (dir.path() / "artifacts").string()});
     expect_exit(result, 1, "pointer to a missing bundle dir");
@@ -885,16 +888,15 @@ void test_pointer_name_cannot_escape_root(const bt::TemporaryDirectory &dir) {
     const auto model = chain_model(2);
     generated_bundle(dir.path() / "artifacts", *model);
     for (const std::string_view hostile : {"../escape", "/abs", "a/b"}) {
-        write_text(dir.path() / "artifacts" / "current.json",
-                   std::format("{{\"format\": 1, \"bundle\": \"{}\"}}",
-                               hostile));
-        const BenchResult result = run_bench(
-            {"bare", "--artifacts", (dir.path() / "artifacts").string()});
-        expect_exit(result, 1,
-                    "hostile bundle name '" + std::string(hostile) + "'");
-        expect_stderr_any(result, {"bundle name"},
-                          "hostile bundle name '" + std::string(hostile) +
-                              "' diagnostic");
+      write_text(dir.path() / "artifacts" / "current.json",
+                 std::format(R"({{"format": 1, "bundle": "{}"}})", hostile));
+      const BenchResult result = run_bench(
+          {"bare", "--artifacts", (dir.path() / "artifacts").string()});
+      expect_exit(result, 1,
+                  "hostile bundle name '" + std::string(hostile) + "'");
+      expect_stderr_any(result, {"bundle name"},
+                        "hostile bundle name '" + std::string(hostile) +
+                            "' diagnostic");
     }
 }
 
@@ -1112,7 +1114,7 @@ void test_payload_checksum_corruption_is_rejected(const bt::TemporaryDirectory &
     const auto bundle = write_bundle(dir.path() / "bundle", *model);
     rewrite_state(bundle, [](std::string_view raw) {
         std::vector<char> patched(raw.begin(), raw.end());
-        patched.back() = static_cast<char>(patched.back() ^ 0xFF);
+        patched.back() = static_cast<char>(patched.back() ^ 0xFF); // NOLINT(bugprone-signed-bitwise) fixed-width literal shift is the fixture contract
         return patched;
     });
     const BenchResult result =
@@ -1361,22 +1363,22 @@ void test_tracked_artifacts_smoke() {
         const char *steps;
         const char *rewind;
     };
-    for (const Smoke smoke : {Smoke{"bare", "10", "5"},
-                              Smoke{"glue", "5", "2"},
-                              Smoke{"heavy", "3", "2"},
-                              Smoke{"operation_mix", "4", "2"}}) {
-        const BenchResult result = run_bench(
-            {smoke.mode, smoke.steps, smoke.rewind, "--artifacts",
-             tracked.string()});
-        const std::string label =
-            std::string("tracked smoke ") + smoke.mode;
-        expect_exit(result, 0, label);
-        bt::require(contains(result.out, "mode=" + std::string(smoke.mode)),
-                    label + " reports its mode");
-        bt::require(contains(result.out, "RTF="),
-                    label + " reports the RTF line");
-        bt::require(!contains(result.out, "nan"),
-                    label + " reports no nan checksum");
+    for (const Smoke smoke :
+         {Smoke{.mode = "bare", .steps = "10", .rewind = "5"},
+          Smoke{.mode = "glue", .steps = "5", .rewind = "2"},
+          Smoke{.mode = "heavy", .steps = "3", .rewind = "2"},
+          Smoke{.mode = "operation_mix", .steps = "4", .rewind = "2"}}) {
+      const BenchResult result =
+          run_bench({smoke.mode, smoke.steps, smoke.rewind, "--artifacts",
+                     tracked.string()});
+      const std::string label = std::string("tracked smoke ") + smoke.mode;
+      expect_exit(result, 0, label);
+      bt::require(contains(result.out, "mode=" + std::string(smoke.mode)),
+                  label + " reports its mode");
+      bt::require(contains(result.out, "RTF="),
+                  label + " reports the RTF line");
+      bt::require(!contains(result.out, "nan"),
+                  label + " reports no nan checksum");
     }
 }
 
@@ -1537,9 +1539,9 @@ void test_matched_workload_python_native_conformance(const bt::TemporaryDirector
             const double pv =
                 report_double(python_value, "python.stage_checksums." + key);
             bt::require(std::isfinite(nv) && std::isfinite(pv),
-                        mode + ": stage_checksums." + key + " is finite");
+                        mode + ": stage_checksums." + key + " is finite"); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             bt::require(isclose(nv, pv),
-                        mode + ": stage_checksums[" + key + "]: " +
+                        mode + ": stage_checksums[" + key + "]: " + // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
                             std::format("{:.17g}", nv) + " vs " +
                             std::format("{:.17g}", pv));
         }
@@ -1583,7 +1585,7 @@ void test_matched_workload_python_native_conformance(const bt::TemporaryDirector
 // into dir.path() and leftovers would mask the missing-member checks.
 template <typename Fn> void with_tmp_path(const char *label, Fn &&fn) {
     const bt::TemporaryDirectory dir(label);
-    fn(dir);
+    std::forward<Fn>(fn)(dir);
 }
 
 void check() {

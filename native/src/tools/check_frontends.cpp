@@ -93,7 +93,7 @@ struct FrontendFlagProbe {
     Array unavailable;
 };
 FrontendFlagProbe probe_frontend_warning_flags(
-    const fs::path &tool, const fs::path &work_directory,
+    const fs::path &tool, const fs::path &work_directory, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     const fs::path &log_directory) {
     const fs::path probe_directory = work_directory / "warning-probe";
     std::error_code ec;

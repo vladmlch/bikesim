@@ -33,7 +33,6 @@
 namespace {
 
 namespace pt = pinned_test;
-namespace rw = rider;
 
 // test_bulk_road_queries_match_two_hundred_scalar_windows — the bulk
 // road_samples must equal the scalar _profile_height/_profile_grade pair on
@@ -144,71 +143,72 @@ void test_bulk_road_queries_match_two_hundred_scalar_windows() {
 }
 
 void test_deferred_unexplained_wrench_is_rejected_at_its_original_interval() {
-    auto plant = pt::pinned();
-    mjModel *m = plant.model.get();
-    mjData *d = plant.data.get();
-    engine::forward(m, d);
-    const int eq = pt::eq_id(m, "connect_foot_front");
-    const int rider_body = pt::int_at(m->eq_obj1id, m->neq, eq);
-    const int bike_body = pt::int_at(m->eq_obj2id, m->neq, eq);
-    std::ranges::fill(pt::mbuf(d->efc_force, d->nefc), 0.);
-    rider::EqualityReactions reactions(m);
-    const auto rows = reactions.rows_of(d, eq);
-    bt::require(rows.size() == 3, "foot connect rows present");
-    const std::array<mjtNum, 3> force{0., 0., 100.};
-    for (std::size_t r = 0; r < 3; ++r)
-        pt::mbuf(d->efc_force, d->nefc)[static_cast<std::size_t>(rows[r])] = force[r];
-    const auto point = pt::world_anchor(m, d, eq, rider_body, 0);
-    const std::vector<double> normal{0., 0., 1.};
-    const auto geometry = rider::prepare_attachment_geometry(
-        m, d, eq, rider_body, bike_body, point, normal, "foot",
-        /*rotational=*/false, 0., std::nullopt);
-    auto bad = geometry;
-    std::ranges::fill(bad.bike_jac.values, 0.);
-    const auto nv = static_cast<rider::lapack_int>(m->nv);
-    rider::LeastSquaresWorkspace workspace(nv,
-                                           std::max<rider::lapack_int>(nv, 6),
-                                           1);
-    std::vector<double> scratch(static_cast<std::size_t>(m->nv), 0.);
-    bt::invalid([&] {
+  auto const plant = pt::pinned();
+  mjModel const *m = plant.model.get();
+  mjData *d = plant.data.get();
+  engine::forward(m, d);
+  const int eq = pt::eq_id(m, "connect_foot_front");
+  const int rider_body = pt::int_at(m->eq_obj1id, m->neq, eq);
+  const int bike_body = pt::int_at(m->eq_obj2id, m->neq, eq);
+  std::ranges::fill(pt::mbuf(d->efc_force, d->nefc), 0.);
+  rider::EqualityReactions reactions(m);
+  const auto rows = reactions.rows_of(d, eq);
+  bt::require(rows.size() == 3, "foot connect rows present");
+  const std::array<mjtNum, 3> force{0., 0., 100.};
+  for (std::size_t r = 0; r < 3; ++r)
+    pt::mbuf(d->efc_force, d->nefc)[static_cast<std::size_t>(rows[r])] =
+        force[r];
+  const auto point = pt::world_anchor(m, d, eq, rider_body, 0);
+  const std::vector<double> normal{0., 0., 1.};
+  const auto geometry = rider::prepare_attachment_geometry(
+      m, d, eq, rider_body, bike_body, point, normal, "foot",
+      /*rotational=*/false, 0., std::nullopt);
+  auto bad = geometry;
+  std::ranges::fill(bad.bike_jac.values, 0.);
+  const auto nv = static_cast<rider::lapack_int>(m->nv);
+  rider::LeastSquaresWorkspace workspace(nv, std::max<rider::lapack_int>(nv, 6),
+                                         1);
+  std::vector<double> scratch(static_cast<std::size_t>(m->nv), 0.);
+  bt::invalid(
+      [&] {
         static_cast<void>(rider::attachment_raw_from_geometry(
             d, reactions, workspace, scratch, bad, /*validate=*/true));
-    });
-    // validate_wrench=False returns the raw for the deferred check.
-    const auto captured = rider::attachment_raw_from_geometry(
-        d, reactions, workspace, scratch, bad, /*validate=*/false);
-    // evaluate_period's twin: PeriodAccounting closes the one-raw period
-    // and the monitor latches the violation at the interval's own
-    // end_time_s.
-    runtime::AccountingConfig config{
-        .timestep_s = .00125,
-        .period_steps = 1,
-        .measurement_decimation = 1,
-        .retention = runtime::RetentionMode::legacy,
-        .battery_enabled = false,
-        .async_telemetry = false,
-        .max_qpos = static_cast<std::size_t>(m->nq),
-        .max_dofs = static_cast<std::size_t>(m->nv),
-        .attachment_budget = {},
-        .columns = {},
-    };
-    runtime::AccountingState state;
-    state.energy.initial_energy_j = 1.;
-    state.energy.initial_battery_j = 0.;
-    state.energy.energy_scale_j = 1.;
-    runtime::PeriodAccounting accounting(config, std::move(state), 1,
-                                         nullptr, nullptr);
-    accounting.push(staged_raw(m, captured));
-    accounting.close_period();
-    const auto &first = accounting.state().monitor.first_failure;
-    bt::require(first.has_value(),
-                "the deferred rejection latches a first failure");
-    bt::require(first->time_s == .00125,
-                "the failure cites the original interval end");
-    bt::require(first->violations ==
-                    std::vector<std::string>{
-                        "foot_front:unobservable_attachment_wrench"},
-                "the violation names the foot attachment");
+      });
+  // validate_wrench=False returns the raw for the deferred check.
+  const auto captured = rider::attachment_raw_from_geometry(
+      d, reactions, workspace, scratch, bad, /*validate=*/false);
+  // evaluate_period's twin: PeriodAccounting closes the one-raw period
+  // and the monitor latches the violation at the interval's own
+  // end_time_s.
+  runtime::AccountingConfig const config{
+      .timestep_s = .00125,
+      .period_steps = 1,
+      .measurement_decimation = 1,
+      .retention = runtime::RetentionMode::legacy,
+      .battery_enabled = false,
+      .async_telemetry = false,
+      .max_qpos = static_cast<std::size_t>(m->nq),
+      .max_dofs = static_cast<std::size_t>(m->nv),
+      .attachment_budget = {},
+      .columns = {},
+  };
+  runtime::AccountingState state;
+  state.energy.initial_energy_j = 1.;
+  state.energy.initial_battery_j = 0.;
+  state.energy.energy_scale_j = 1.;
+  runtime::PeriodAccounting accounting(config, std::move(state), 1, nullptr,
+                                       nullptr);
+  accounting.push(staged_raw(m, captured));
+  accounting.close_period();
+  const auto &first = accounting.state().monitor.first_failure;
+  bt::require(first.has_value(),
+              "the deferred rejection latches a first failure");
+  bt::require(first.value().time_s == .00125, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+              "the failure cites the original interval end");
+  bt::require(
+      first.value().violations == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+          std::vector<std::string>{"foot_front:unobservable_attachment_wrench"},
+      "the violation names the foot attachment");
 }
 
 // test_two_hundred_steps_match_scalar_validation_oracle — the oracle
@@ -219,52 +219,51 @@ void test_deferred_unexplained_wrench_is_rejected_at_its_original_interval() {
 // evaluate_attachments performs it at period close on the same inputs.
 // On a valid wrench both must produce the identical AttachmentSample.
 void test_two_hundred_steps_match_scalar_validation_oracle() {
-    auto plant = pt::pinned();
-    mjModel *m = plant.model.get();
-    mjData *d = plant.data.get();
-    engine::forward(m, d);
-    const int eq = pt::eq_id(m, "connect_foot_front");
-    const int rider_body = pt::int_at(m->eq_obj1id, m->neq, eq);
-    const int bike_body = pt::int_at(m->eq_obj2id, m->neq, eq);
-    rider::EqualityReactions reactions(m);
-    const auto rows = reactions.rows_of(d, eq);
-    bt::require(rows.size() == 3, "foot connect rows present");
-    const std::array<mjtNum, 3> force{20., 0., 100.};
-    for (std::size_t r = 0; r < 3; ++r)
-        pt::mbuf(d->efc_force, d->nefc)[static_cast<std::size_t>(rows[r])] = force[r];
-    const auto point = pt::world_anchor(m, d, eq, rider_body, 0);
-    const std::vector<double> normal{0., 0., 1.};
-    const auto nv = static_cast<rider::lapack_int>(m->nv);
-    rider::LeastSquaresWorkspace workspace(nv,
-                                           std::max<rider::lapack_int>(nv, 6),
-                                           1);
-    std::vector<double> scratch(static_cast<std::size_t>(m->nv), 0.);
-    // The scalar/eager read — validates inline like the monkeypatched
-    // converter.
-    const auto eager = rider::attachment_sample(
-        m, d, reactions, workspace, scratch, eq, rider_body, bike_body,
-        point, normal, "foot", /*rotational=*/false, 0., std::nullopt);
-    // The deferred read — captured at interval start, solved at period
-    // close, identical wrench inputs.
-    const auto geometry = rider::prepare_attachment_geometry(
-        m, d, eq, rider_body, bike_body, point, normal, "foot",
-        /*rotational=*/false, 0., std::nullopt);
-    const auto captured = rider::attachment_raw_from_geometry(
-        d, reactions, workspace, scratch, geometry, /*validate=*/false);
-    runtime::RawStep raw;
-    raw.attachment_raw = {{"foot_front", captured}};
-    const auto deferred = runtime::evaluate_attachments(raw, workspace);
-    bt::require(deferred.size() == 1 && deferred.front().first ==
-                    "foot_front",
-                "the deferred path publishes the foot sample");
-    const auto &sample = deferred.front().second;
-    bt::require(sample.normal_n == eager.normal_n &&
-                    sample.tangent_n == eager.tangent_n &&
-                    sample.moment_nm == eager.moment_nm &&
-                    sample.gap_m == eager.gap_m &&
-                    sample.pull_n == eager.pull_n &&
-                    sample.half_patch_m == eager.half_patch_m,
-                "deferred and scalar reads produce the identical sample");
+  auto const plant = pt::pinned();
+  mjModel const *m = plant.model.get();
+  mjData *d = plant.data.get();
+  engine::forward(m, d);
+  const int eq = pt::eq_id(m, "connect_foot_front");
+  const int rider_body = pt::int_at(m->eq_obj1id, m->neq, eq);
+  const int bike_body = pt::int_at(m->eq_obj2id, m->neq, eq);
+  rider::EqualityReactions const reactions(m);
+  const auto rows = reactions.rows_of(d, eq);
+  bt::require(rows.size() == 3, "foot connect rows present");
+  const std::array<mjtNum, 3> force{20., 0., 100.};
+  for (std::size_t r = 0; r < 3; ++r)
+    pt::mbuf(d->efc_force, d->nefc)[static_cast<std::size_t>(rows[r])] =
+        force[r];
+  const auto point = pt::world_anchor(m, d, eq, rider_body, 0);
+  const std::vector<double> normal{0., 0., 1.};
+  const auto nv = static_cast<rider::lapack_int>(m->nv);
+  rider::LeastSquaresWorkspace workspace(nv, std::max<rider::lapack_int>(nv, 6),
+                                         1);
+  std::vector<double> scratch(static_cast<std::size_t>(m->nv), 0.);
+  // The scalar/eager read — validates inline like the monkeypatched
+  // converter.
+  const auto eager = rider::attachment_sample(
+      m, d, reactions, workspace, scratch, eq, rider_body, bike_body, point,
+      normal, "foot", /*rotational=*/false, 0., std::nullopt);
+  // The deferred read — captured at interval start, solved at period
+  // close, identical wrench inputs.
+  const auto geometry = rider::prepare_attachment_geometry(
+      m, d, eq, rider_body, bike_body, point, normal, "foot",
+      /*rotational=*/false, 0., std::nullopt);
+  const auto captured = rider::attachment_raw_from_geometry(
+      d, reactions, workspace, scratch, geometry, /*validate=*/false);
+  runtime::RawStep raw;
+  raw.attachment_raw = {{"foot_front", captured}};
+  const auto deferred = runtime::evaluate_attachments(raw, workspace);
+  bt::require(deferred.size() == 1 && deferred.front().first == "foot_front",
+              "the deferred path publishes the foot sample");
+  const auto &sample = deferred.front().second;
+  bt::require(sample.normal_n == eager.normal_n &&
+                  sample.tangent_n == eager.tangent_n &&
+                  sample.moment_nm == eager.moment_nm &&
+                  sample.gap_m == eager.gap_m &&
+                  sample.pull_n == eager.pull_n &&
+                  sample.half_patch_m == eager.half_patch_m,
+              "deferred and scalar reads produce the identical sample");
 }
 
 } // namespace

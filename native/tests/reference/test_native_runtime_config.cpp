@@ -50,12 +50,12 @@
 
 namespace {
 NATIVE_DIAG_PUSH
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 namespace cfg = bike::configuration;
 using runtime_reference::expect_invalid;
 using runtime_reference::welded_dir;
-namespace bio = bike::io;
 
 [[nodiscard]] cfg::SimulationPhysicsConfig welded() {
     return cfg::load_physics(
@@ -84,21 +84,21 @@ void require_rejected(const cfg::SimulationPhysicsConfig& config,
 // the member that carries it.
 // ---------------------------------------------------------------------------
 void test_native_capability_uses_fields_not_filename() {
-    cfg::SimulationPhysicsConfig config = welded();
-    const cfg::RiderSpecs rider = articulated_rider();
-    require_supported(config, rider, "the welded profile is supported");
-    // Native divergence, intentional: pedal_attachment 'weld' is an
-    // accepted attachment — the legacy controller paths join the report
-    // and the allocation numeric identity is recorded. The field-path
-    // contract itself is exercised by a member the boundary does reject.
-    cfg::SimulationPhysicsConfig welded_pedal = config;
-    welded_pedal.articulated.pedal_attachment = "weld";
-    require_supported(welded_pedal, rider,
-                      "non-spindle pedal attachment routes to the legacy "
-                      "controller under the native matrix");
-    cfg::SimulationPhysicsConfig bad_surface = config;
-    bad_surface.tires.surface_mode = "configured";
-    require_rejected(bad_surface, rider, "tires.surface_mode");
+  cfg::SimulationPhysicsConfig const config = welded();
+  const cfg::RiderSpecs rider = articulated_rider();
+  require_supported(config, rider, "the welded profile is supported");
+  // Native divergence, intentional: pedal_attachment 'weld' is an
+  // accepted attachment — the legacy controller paths join the report
+  // and the allocation numeric identity is recorded. The field-path
+  // contract itself is exercised by a member the boundary does reject.
+  cfg::SimulationPhysicsConfig welded_pedal = config;
+  welded_pedal.articulated.pedal_attachment = "weld";
+  require_supported(welded_pedal, rider,
+                    "non-spindle pedal attachment routes to the legacy "
+                    "controller under the native matrix");
+  cfg::SimulationPhysicsConfig bad_surface = config;
+  bad_surface.tires.surface_mode = "configured";
+  require_rejected(bad_surface, rider, "tires.surface_mode");
 }
 
 // ---------------------------------------------------------------------------
@@ -301,13 +301,13 @@ void test_native_capability_rejects_tabulated_tire_material() {
     cfg::SimulationPhysicsConfig config = welded();
     const auto& analytic =
         std::get<cfg::TireSpec>(config.tires.front.material);
-    cfg::TabulatedTireSpec table{
-        .deflection_m = {0., .01},
-        .force_n = {0., 1000.},
-        .radial_c_ns_m = analytic.radial_c_ns_m,
-        .pressure_pa_gauge = analytic.pressure_pa_gauge,
-        .provenance = "test",
-        .valid_load_range_n = {100., 500.}};
+    cfg::TabulatedTireSpec const table{.deflection_m = {0., .01},
+                                       .force_n = {0., 1000.},
+                                       .radial_c_ns_m = analytic.radial_c_ns_m,
+                                       .pressure_pa_gauge =
+                                           analytic.pressure_pa_gauge,
+                                       .provenance = "test",
+                                       .valid_load_range_n = {100., 500.}};
     config.tires.front.material = table;
     require_supported(config, articulated_rider(),
                       "a tabulated material is inside the native matrix");

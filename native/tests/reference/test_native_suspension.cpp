@@ -104,11 +104,30 @@ constexpr std::string_view kFile = "test_native_suspension.py";
         double travel_mm, stroke_mm, fork_v, shock_v;
         const char *travel_s, *stroke_s;
     };
-    const std::array probes{
-            Probe{0., 0., 0., 0., "0.0", "0.0"},
-            Probe{61.3, 12.5, 0.0087, -0.31, "61.3", "12.5"},
-            Probe{179.5, 64.9, 2.4, 1.9, "179.5", "64.9"},
-            Probe{0.5, 1., -1.2, -0.9, "0.5", "1.0"}};
+    const std::array probes{Probe{.travel_mm = 0.,
+                                  .stroke_mm = 0.,
+                                  .fork_v = 0.,
+                                  .shock_v = 0.,
+                                  .travel_s = "0.0",
+                                  .stroke_s = "0.0"},
+                            Probe{.travel_mm = 61.3,
+                                  .stroke_mm = 12.5,
+                                  .fork_v = 0.0087,
+                                  .shock_v = -0.31,
+                                  .travel_s = "61.3",
+                                  .stroke_s = "12.5"},
+                            Probe{.travel_mm = 179.5,
+                                  .stroke_mm = 64.9,
+                                  .fork_v = 2.4,
+                                  .shock_v = 1.9,
+                                  .travel_s = "179.5",
+                                  .stroke_s = "64.9"},
+                            Probe{.travel_mm = 0.5,
+                                  .stroke_mm = 1.,
+                                  .fork_v = -1.2,
+                                  .shock_v = -0.9,
+                                  .travel_s = "0.5",
+                                  .stroke_s = "1.0"}};
     const std::vector<double> act(na, 0.);
     for (const auto &probe : probes) {
         std::vector<double> qpos = qpos0;
@@ -151,8 +170,8 @@ constexpr std::string_view kFile = "test_native_suspension.py";
                 io::Value::Object root;
                 root.emplace_back("suspension",
                                   io::Value{io::Value::Object{}});
-                Stepper st(mjb(),
-                           nativecfg::decode(io::Value{std::move(root)}));
+                Stepper const st(mjb(),
+                                 nativecfg::decode(io::Value{std::move(root)}));
             },
             "schema");
     rejects<std::invalid_argument>(
@@ -161,8 +180,8 @@ constexpr std::string_view kFile = "test_native_suspension.py";
                 root.emplace_back("schema", setupvalue::integer(1));
                 root.emplace_back("suspension",
                                   io::Value{io::Value::Object{}});
-                Stepper st(mjb(),
-                           nativecfg::decode(io::Value{std::move(root)}));
+                Stepper const st(mjb(),
+                                 nativecfg::decode(io::Value{std::move(root)}));
             },
             "physics_mode");
 }

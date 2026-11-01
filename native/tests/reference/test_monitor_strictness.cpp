@@ -319,7 +319,7 @@ void reset_enters_new_episode() {
     auto run = std::make_unique<runtime::NativeRideRuntime>(
         runtime::read_bootstrap(dir()));
     const int generation0 = run->snapshot().generation;
-    runtime::RideControl control;
+    runtime::RideControl const control;
     (void)run->advance(3, control, 0., 0., std::nullopt);
     bt::require(run->snapshot().step == 3 && run->snapshot().time_s > 0.,
                 "the runtime commits intervals before reset");
@@ -356,7 +356,7 @@ void headless_tail_failure_preserves_primary_error() {
     // no-output-files leg is adapter plumbing (the run dir is a CLI
     // artifact); the ported evidence is "no transition is fabricated".
     auto env = armed_env(2);
-    runtime::RideControl control;
+    runtime::RideControl const control;
     env->begin_control(control, 0., 0.);
     std::string primary;
     try {
@@ -369,7 +369,7 @@ void headless_tail_failure_preserves_primary_error() {
     bt::require(wire::string(wire::required(status, "reason")) == "simulation_error",
                 "the terminal reason stays simulation_error");
     const auto &error = wire::string(wire::required(status, "error"));
-    bt::require(error.rfind("RuntimeError: ", 0) == 0,
+    bt::require(error.starts_with("RuntimeError: "),
                 "the error keeps the primary exception class prefix");
     const auto &notes = wire::array(wire::required(status, "cleanup_notes"));
     bool trailing_interval = false;
@@ -385,7 +385,7 @@ void headless_tail_failure_preserves_primary_error() {
 
 void research_cleanup_keeps_primary_exception_and_terminal_metadata(bool reference) {
     auto env = reference ? armed_env(std::nullopt) : armed_env(2);
-    runtime::RideControl control;
+    runtime::RideControl const control;
     env->begin_control(control, 0., 0.);
     std::string captured;
     try {
@@ -402,13 +402,13 @@ void research_cleanup_keeps_primary_exception_and_terminal_metadata(bool referen
     const auto &reason = wire::string(wire::required(status, "reason"));
     const auto &error = wire::string(wire::required(status, "error"));
     if (reference) {
-        bt::require(reason == "invalid_controller" &&
-                        error.rfind("InvalidReferenceRun: ", 0) == 0,
-                    "a strict rejection is terminal invalid_controller evidence");
+      bt::require(reason == "invalid_controller" &&
+                      error.starts_with("InvalidReferenceRun: "),
+                  "a strict rejection is terminal invalid_controller evidence");
     } else {
-        bt::require(reason == "simulation_error" &&
-                        error.rfind("RuntimeError: ", 0) == 0,
-                    "an engine failure is terminal simulation_error evidence");
+      bt::require(reason == "simulation_error" &&
+                      error.starts_with("RuntimeError: "),
+                  "an engine failure is terminal simulation_error evidence");
     }
     // The Python __notes__ analogue: cleanup evidence is an owned list
     // (populated whenever a trailing cleanup step itself fails).
@@ -467,12 +467,12 @@ void failed_sample_consumption_is_not_retried() {
 
 void research_rejection_keeps_single_owner_reset_mode_and_saved_failure() {
     auto env = armed_env(std::nullopt); // strict, real weld violation
-    runtime::RideControl control;
+    runtime::RideControl const control;
     try {
         env->begin_control(control, 0., 0.);
         (void)env->advance_control(std::nullopt, std::nullopt);
         bt::require(false, "the strict rejection must propagate");
-    } catch (const runtime::InvalidReferenceRun &) {
+    } catch (const runtime::InvalidReferenceRun &) { // NOLINT(bugprone-empty-catch) the expected rejection is consumed here; falling through is the assertion
     }
     const auto status = env->status();
     bt::require(wire::string(wire::required(status, "reason")) == "invalid_controller",

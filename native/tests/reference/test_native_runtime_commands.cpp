@@ -230,16 +230,16 @@ void test_motor_ceiling_change_matches_python() {
     bt::oracle::Node node(
         std::string(kNode) + "test_motor_ceiling_change_matches_python");
     const auto native = ride();
-    char label[32];
+    char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::int64_t target = 1; target <= 30; ++target) {
         runtime::RideControl command;
         if (target <= 15) command.motor_limit_nm = 40.;
         command.human_torque_nm = 30.;
         static_cast<void>(
             native->advance(target, command, 0., 0., std::nullopt));
-        std::snprintf(label, sizeof(label), "interval %lld",
+        std::snprintf(label, sizeof(label), "interval %lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(target));
-        node.f64(native->snapshot().integration_state, label);
+        node.f64(native->snapshot().integration_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     node.done();
 }
@@ -253,15 +253,15 @@ void test_brake_apply_release_matches_python() {
     const auto native = ride();
     runtime::RideControl command;
     command.human_torque_nm = 25.;
-    char label[32];
+    char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::int64_t target = 1; target <= 24; ++target) {
         const bool braking = target >= 9 && target <= 16;
         static_cast<void>(native->advance(target, command,
                                         braking ? 1. : 0.,
                                         braking ? .5 : 0., std::nullopt));
-        std::snprintf(label, sizeof(label), "interval %lld",
+        std::snprintf(label, sizeof(label), "interval %lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(target));
-        node.f64(native->snapshot().integration_state, label);
+        node.f64(native->snapshot().integration_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     node.done();
 }
@@ -276,7 +276,7 @@ void test_gear_shift_and_coast_resume_match_python() {
     const auto native = ride();
     const std::array<std::pair<std::int64_t, double>, 3> segments{
         {{60, 35.}, {80, 0.}, {120, 35.}}};
-    char label[32];
+    char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     std::int64_t step = 0;
     for (const auto &[target, torque] : segments) {
         runtime::RideControl command;
@@ -286,9 +286,9 @@ void test_gear_shift_and_coast_resume_match_python() {
             static_cast<void>(
                 native->advance(step, command, 0., 0., std::nullopt));
         }
-        std::snprintf(label, sizeof(label), "interval %lld",
+        std::snprintf(label, sizeof(label), "interval %lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(target));
-        node.f64(native->snapshot().integration_state, label);
+        node.f64(native->snapshot().integration_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     node.done();
 }

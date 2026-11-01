@@ -5,6 +5,8 @@
 // never addresses; and the drive-core oracle dispatch refuses kinds outside
 // the closed set or any call on a Stepper with an installed drive writer —
 // before mutating the shared model.
+#include <utility>
+
 #include "drivetrain_reference_support.hpp"
 #include "support/model_fixture.hpp"
 
@@ -40,19 +42,25 @@ constexpr std::string_view contact_xml = R"(<mujoco><option timestep="0.002" gra
 // plus the size/finiteness matrix below; interpreter-side lifetime
 // retention has no native counterpart and stays a documented note.
 void views_are_const_windows() {
-    Stepper stepper = one_slide(); // nq=nv=1, nu=0 — the one-slide fixture.
-    static_assert(std::is_const_v<std::remove_reference_t<decltype(*std::declval<Stepper>().qpos().data())>>,
-        "qpos is a read-only view");
-    const std::array<std::pair<std::span<const double>, std::size_t>, 7> views{{
-        {stepper.qpos(), 1}, {stepper.qvel(), 1}, {stepper.qacc(), 1},
-        {stepper.qfrc_constraint(), 1}, {stepper.ctrl(), 0},
-        {stepper.qfrc_applied(), 1}, {stepper.actuator_force(), 0}}};
-    for (const auto& [view, expected] : views) {
-        static_assert(std::is_same_v<typename decltype(view)::element_type, const double>,
-            "every view exposes const elements");
-        bt::require(view.size() == expected && all_finite(view),
-            "each view is a finite read-only window of the engine's width");
-    }
+  Stepper const stepper = one_slide(); // nq=nv=1, nu=0 — the one-slide fixture.
+  static_assert(std::is_const_v<std::remove_reference_t<
+                    decltype(*std::declval<Stepper>().qpos().data())>>,
+                "qpos is a read-only view");
+  const std::array<std::pair<std::span<const double>, std::size_t>, 7> views{
+      {{stepper.qpos(), 1},
+       {stepper.qvel(), 1},
+       {stepper.qacc(), 1},
+       {stepper.qfrc_constraint(), 1},
+       {stepper.ctrl(), 0},
+       {stepper.qfrc_applied(), 1},
+       {stepper.actuator_force(), 0}}};
+  for (const auto &[view, expected] : views) {
+    static_assert(
+        std::is_same_v<typename decltype(view)::element_type, const double>,
+        "every view exposes const elements");
+    bt::require(view.size() == expected && all_finite(view),
+                "each view is a finite read-only window of the engine's width");
+  }
     // efc_force is the relocatable arena: the port keeps caller-owned
     // copies rather than retained views (see the arena record below).
     const std::vector<double> efc{stepper.efc_force().begin(), stepper.efc_force().end()};
@@ -87,19 +95,23 @@ void live_windows() {
 // the constraint set; a retained copy stays detached while fresh reads
 // follow the current arena.
 void efc_snapshot() {
-    bt::ModelFixture fixture(contact_xml);
-    auto stepper = Stepper(bike::initialization::capture_model_image(*fixture.model).mjb);
-    bt::require(stepper.efc_force().empty(), "no contacts before the first step");
-    for (int i = 0; i < 300 && stepper.efc_force().empty(); ++i) stepper.step();
-    bt::require(!stepper.efc_force().empty(), "contacts populate efc_force");
-    const std::vector<double> snapshot{stepper.efc_force().begin(), stepper.efc_force().end()};
-    bool changed = false;
-    for (int i = 0; i < 200 && !changed; ++i) {
-        stepper.step();
-        const auto current = stepper.efc_force();
-        changed = !std::ranges::equal(std::as_bytes(current),
-            std::as_bytes(std::span<const double>{snapshot}));
-    }
+  bt::ModelFixture const fixture(contact_xml);
+  auto stepper =
+      Stepper(bike::initialization::capture_model_image(*fixture.model).mjb);
+  bt::require(stepper.efc_force().empty(), "no contacts before the first step");
+  for (int i = 0; i < 300 && stepper.efc_force().empty(); ++i)
+    stepper.step();
+  bt::require(!stepper.efc_force().empty(), "contacts populate efc_force");
+  const std::vector<double> snapshot{stepper.efc_force().begin(),
+                                     stepper.efc_force().end()};
+  bool changed = false;
+  for (int i = 0; i < 200 && !changed; ++i) {
+    stepper.step();
+    const auto current = stepper.efc_force();
+    changed =
+        !std::ranges::equal(std::as_bytes(current),
+                            std::as_bytes(std::span<const double>{snapshot}));
+  }
     bt::require(changed, "efc_force arena grows/relocates across the extra steps");
     bt::require(all_finite(snapshot) && all_finite(stepper.efc_force()),
         "retained snapshot and current arena are both finite");
@@ -113,9 +125,9 @@ void prepared_storage() {
     const auto& [jacobian_generation, qpos_generation, jacobian_capacity, qpos_capacity] = baseline;
     bt::require(jacobian_generation >= 1 && qpos_generation >= 1,
         "storage generations count data() identity changes");
-    bt::require(jacobian_capacity >= static_cast<std::uint64_t>(owner->model()->nv) &&
-        qpos_capacity >= static_cast<std::uint64_t>(owner->model()->nv),
-        "prepared capacities cover the model's velocity width");
+    bt::require(std::cmp_greater_equal(jacobian_capacity, owner->model()->nv) &&
+                    std::cmp_greater_equal(qpos_capacity, owner->model()->nv),
+                "prepared capacities cover the model's velocity width");
     for (int i = 0; i < 6; ++i)
         bt::require(dr::storage(*owner) == baseline, "repeated prepares reuse the same storage");
     owner->drive().reset();
@@ -134,7 +146,7 @@ void prepared_storage_none() {
 // _drive_core), expressed on the pure-core faces it delegates to: the kind
 // set is closed, a Stepper with an installed drive writer refuses before
 // any model mutation, and unknown operations reject as argument errors.
-TransmissionSnapshot drive_core(Stepper& owner, std::string_view kind,
+TransmissionSnapshot drive_core(Stepper& owner, std::string_view kind, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     std::string_view operation, double ratio = 34. / 24.) {
     if (kind != "ideal_mid_drive" && kind != "geometric_ideal_mid_drive")
         throw std::invalid_argument(
@@ -206,6 +218,7 @@ void drive_core_writer() {
 }
 } // namespace
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         views_are_const_windows();
         live_windows();

@@ -35,7 +35,12 @@ using runtime::SamplePtr;
 
 const Value& req(const Value::Object& object, std::string_view key) {
     const Value* slot = rt::member(object, key);
-    bt::require(slot != nullptr, "member ." + std::string(key) + " is present");
+    // The guard must be visible in this translation unit: bt::require's
+    // throw lives in the harness TU, so the analyzer cannot prove the
+    // dereference below is unreachable on the null path. The failure mode
+    // is identical — std::runtime_error with the same message.
+    if (slot == nullptr)
+        throw std::runtime_error("member ." + std::string(key) + " is present");
     return *slot;
 }
 const Value& reqv(const Value& value, std::string_view key) {
@@ -87,29 +92,29 @@ void assert_published(const std::filesystem::path& dir) {
 // destination loop suffixes rather than adopting or overwriting, even a
 // pre-existing empty collision.
 [[gnu::noinline]] void exclusive_names_collide() {
-    bt::TemporaryDirectory root("platform-recording-collide");
-    const std::string base =
-        "20260101T000000.000000Z-00000000-0000-4000-8000-000000000001";
-    const auto squatter = root.path() / base;
-    std::filesystem::create_directories(squatter);
-    auto first_capture = rt::synthetic_capture(
-        {rt::sample_row(0, 0., .001)}, rt::SyntheticCapture{});
-    const auto first = rec::finalize(*first_capture, root.path());
-    bt::require(first.directory.filename() == base + "-1",
-        "the squatter is skipped to the first suffix, never adopted");
-    bt::require(std::filesystem::is_empty(squatter),
-        "somebody else's directory is never touched");
-    auto second_capture = rt::synthetic_capture(
-        {rt::sample_row(0, 0., .001)}, rt::SyntheticCapture{});
-    const auto second = rec::finalize(*second_capture, root.path());
-    bt::require(second.directory.filename() == base + "-2",
-        "the second publication takes the next free suffix");
-    for (const auto& dir : {first.directory, second.directory}) {
-        assert_published(dir);
-        const auto saved = rec::open_recording(dir);
-        bt::require(saved->episode_ids() == std::vector<std::int64_t>{0},
-            "each suffixed run reads back its episode");
-    }
+  bt::TemporaryDirectory const root("platform-recording-collide");
+  const std::string base =
+      "20260101T000000.000000Z-00000000-0000-4000-8000-000000000001";
+  const auto squatter = root.path() / base;
+  std::filesystem::create_directories(squatter);
+  auto first_capture = rt::synthetic_capture({rt::sample_row(0, 0., .001)},
+                                             rt::SyntheticCapture{});
+  const auto first = rec::finalize(*first_capture, root.path());
+  bt::require(first.directory.filename() == base + "-1",
+              "the squatter is skipped to the first suffix, never adopted");
+  bt::require(std::filesystem::is_empty(squatter),
+              "somebody else's directory is never touched");
+  auto second_capture = rt::synthetic_capture({rt::sample_row(0, 0., .001)},
+                                              rt::SyntheticCapture{});
+  const auto second = rec::finalize(*second_capture, root.path());
+  bt::require(second.directory.filename() == base + "-2",
+              "the second publication takes the next free suffix");
+  for (const auto &dir : {first.directory, second.directory}) {
+    assert_published(dir);
+    const auto saved = rec::open_recording(dir);
+    bt::require(saved->episode_ids() == std::vector<std::int64_t>{0},
+                "each suffixed run reads back its episode");
+  }
 }
 
 // test_finalization_crash_leaves_no_readable_run — a process dying
@@ -117,19 +122,20 @@ void assert_published(const std::filesystem::path& dir) {
 // reader refuses and an unsealed staging directory carrying its
 // UNSEALED marker.
 [[gnu::noinline]] void crash_leaves_no_readable_run() {
-    bt::TemporaryDirectory root("platform-recording-crash");
-    const auto pid = ::fork();
-    bt::require(pid >= 0, "fork for the crash probe");
-    if (pid == 0) {
-        auto capture = rt::synthetic_capture(
-            {rt::sample_row(0, 0., .001)}, rt::SyntheticCapture{});
-        rec::FinalizeOptions options;
-        options.before_stage = [](std::string_view stage) {
-            if (stage == "manifest_link") ::_exit(111);
-        };
-        (void)rec::finalize(*capture, root.path(), options);
-        ::_exit(112); // publication completed — must never happen
-    }
+  bt::TemporaryDirectory const root("platform-recording-crash");
+  const auto pid = ::fork();
+  bt::require(pid >= 0, "fork for the crash probe");
+  if (pid == 0) {
+    auto capture = rt::synthetic_capture({rt::sample_row(0, 0., .001)},
+                                         rt::SyntheticCapture{});
+    rec::FinalizeOptions options;
+    options.before_stage = [](std::string_view stage) {
+      if (stage == "manifest_link")
+        ::_exit(111);
+    };
+    (void)rec::finalize(*capture, root.path(), options);
+    ::_exit(112); // publication completed — must never happen
+  }
     int status = 0;
     bt::require(::waitpid(pid, &status, 0) == pid && WIFEXITED(status) &&
         WEXITSTATUS(status) == 111, "the child dies inside the manifest link");
@@ -186,13 +192,13 @@ void assert_published(const std::filesystem::path& dir) {
 // euid 0 the mode bits are bypassed, so the probe runs in a child that
 // drops to nobody first (the oracle's setuid twin).
 [[gnu::noinline]] void permission_denied_then_retry() {
-    bt::TemporaryDirectory root("platform-recording-eacces");
-    if (::geteuid() != 0) {
-        bt::require(eacces_probe(root.path()),
-            "EACCES fails closed and the retry publishes exactly once");
-        return;
-    }
-    const auto* account = ::getpwnam("nobody");
+  bt::TemporaryDirectory const root("platform-recording-eacces");
+  if (::geteuid() != 0) {
+    bt::require(eacces_probe(root.path()),
+                "EACCES fails closed and the retry publishes exactly once");
+    return;
+  }
+    const auto* account = ::getpwnam("nobody"); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
     bt::require(account != nullptr, "the nobody account exists for the drop");
     const auto sandbox = root.path() / "unprivileged";
     std::filesystem::create_directories(sandbox);
@@ -218,77 +224,84 @@ void assert_published(const std::filesystem::path& dir) {
 // the honest invalid verdict, schema-2 digests, source assets and the
 // channel tables.
 [[gnu::noinline]] void real_run_publishes_deep_payload() {
-    bt::TemporaryDirectory root("platform-recording-run");
-    const auto physics = rt::violating_physics(root.path() / "physics.toml");
-    const auto args = headless_args(physics, root.path() / "runs", true);
-    bt::require(cli::ride_command(args) == 2,
-        "the violating recipe reports its honest exit code");
-    const auto run_dir = published_run(root.path() / "runs");
-    assert_published(run_dir);
-    const auto saved = rec::open_recording(run_dir);
-    bt::require(saved->episode_ids() == std::vector<std::int64_t>{0},
-        "one sealed episode");
-    const auto meta = saved->metadata();
-    bt::require(rt::as_text(reqv(meta, "backend")) == "native",
-        "the run metadata is the native launch");
-    const auto summary = summary_of(*saved);
-    bt::require(rt::as_text(reqv(reqv(summary, "outcome"), "reason")) ==
-            "duration_reached",
-        "the diagnostic ride reaches the duration");
-    bt::require(!rt::as_bool(reqv(reqv(summary, "model_status"), "model_valid")),
-        "the weld-envelope violation keeps the model invalid");
-    const auto& failure = bike::io::as_array(reqv(summary, "first_failure"),
-        "first_failure");
-    bt::require(failure.size() == 2,
-        "first_failure carries its measured violations");
-    const auto rows = saved->rows(
-        "SELECT min(interval_id) lo, max(interval_id) hi, count(*) n FROM physics");
-    const auto physical = rt::as_integer(reqv(saved->episode(), "physical_rows"));
-    bt::require(physical > 0 &&
-        rt::as_integer(req(rows.at(0), "n")) == physical &&
-        rt::as_integer(req(rows.at(0), "hi")) == physical - 1,
-        "physics rows are the contiguous committed prefix");
-    // The native execution record carries the executable/provider identity
-    // keys (research::physical_configuration_metadata), not the Python
-    // extension's identity_schema shape — the divergence is ledgered.
-    const auto& execution = rt::as_object(reqv(summary, "execution"));
-    bt::require(rt::as_text(req(execution, "backend")) == "native" &&
-        !rt::as_text(req(execution, "numeric_provider")).empty(),
-        "the native execution identity is sealed");
-    for (const char* key : {"execution_identity", "mujoco_library_sha256",
-             "native_source_sha256", "executable_sha256"})
-        bt::require(rt::as_text(req(execution, key)).size() == 64,
-            std::string(key) + " is a 64-hex digest");
-    // Native journals emit "episode_started" for physical rides (the
-    // Python journal names it "episode_start") — a naming divergence the
-    // ledger records; the boundary contract is identical.
-    const auto kinds = event_kinds(*saved);
-    bt::require(!kinds.empty() && kinds.front() == "episode_started",
-        "the journal opens with the episode boundary");
-    std::set<std::string> assets;
-    for (const auto& row : saved->rows("SELECT name FROM assets"))
-        assets.insert(rt::as_text(req(row, "name")));
-    bt::require(assets.count("track.toml") && assets.count("resolved_config.json"),
-        "typed source assets are bundled with the episode");
-    for (const char* table : {"channel_tires", "channel_energy", "channel_control"})
-        bt::require(rt::as_integer(req(
-                saved->rows(std::string("SELECT count(*) n FROM ") + table)
-                    .at(0), "n")) > 0,
-            std::string(table) + " carries rows");
+  bt::TemporaryDirectory const root("platform-recording-run");
+  const auto physics = rt::violating_physics(root.path() / "physics.toml");
+  const auto args = headless_args(physics, root.path() / "runs", true);
+  bt::require(cli::ride_command(args) == 2,
+              "the violating recipe reports its honest exit code");
+  const auto run_dir = published_run(root.path() / "runs");
+  assert_published(run_dir);
+  const auto saved = rec::open_recording(run_dir);
+  bt::require(saved->episode_ids() == std::vector<std::int64_t>{0},
+              "one sealed episode");
+  const auto meta = saved->metadata();
+  bt::require(rt::as_text(reqv(meta, "backend")) == "native",
+              "the run metadata is the native launch");
+  const auto summary = summary_of(*saved);
+  bt::require(rt::as_text(reqv(reqv(summary, "outcome"), "reason")) ==
+                  "duration_reached",
+              "the diagnostic ride reaches the duration");
+  bt::require(!rt::as_bool(reqv(reqv(summary, "model_status"), "model_valid")),
+              "the weld-envelope violation keeps the model invalid");
+  const auto &failure =
+      bike::io::as_array(reqv(summary, "first_failure"), "first_failure");
+  bt::require(failure.size() == 2,
+              "first_failure carries its measured violations");
+  const auto rows = saved->rows("SELECT min(interval_id) lo, max(interval_id) "
+                                "hi, count(*) n FROM physics");
+  const auto physical = rt::as_integer(reqv(saved->episode(), "physical_rows"));
+  bt::require(physical > 0 &&
+                  rt::as_integer(req(rows.at(0), "n")) == physical &&
+                  rt::as_integer(req(rows.at(0), "hi")) == physical - 1,
+              "physics rows are the contiguous committed prefix");
+  // The native execution record carries the executable/provider identity
+  // keys (research::physical_configuration_metadata), not the Python
+  // extension's identity_schema shape — the divergence is ledgered.
+  const auto &execution = rt::as_object(reqv(summary, "execution"));
+  bt::require(rt::as_text(req(execution, "backend")) == "native" &&
+                  !rt::as_text(req(execution, "numeric_provider")).empty(),
+              "the native execution identity is sealed");
+  for (const char *key : {"execution_identity", "mujoco_library_sha256",
+                          "native_source_sha256", "executable_sha256"})
+    bt::require(rt::as_text(req(execution, key)).size() == 64,
+                std::string(key) + " is a 64-hex digest");
+  // Native journals emit "episode_started" for physical rides (the
+  // Python journal names it "episode_start") — a naming divergence the
+  // ledger records; the boundary contract is identical.
+  const auto kinds = event_kinds(*saved);
+  bt::require(!kinds.empty() && kinds.front() == "episode_started",
+              "the journal opens with the episode boundary");
+  std::set<std::string> assets;
+  for (const auto &row : saved->rows("SELECT name FROM assets"))
+    assets.insert(rt::as_text(req(row, "name")));
+  bt::require(assets.count("track.toml") &&
+                  assets.count("resolved_config.json"),
+              "typed source assets are bundled with the episode");
+  for (const char *table :
+       {"channel_tires", "channel_energy", "channel_control"})
+    bt::require(
+        rt::as_integer(req(
+            saved->rows(std::string("SELECT count(*) n FROM ") + table).at(0),
+            "n")) > 0,
+        std::string(table) + " carries rows");
 }
 
 // test_headless_native_record_strict_stop_keeps_invalid_prefix — the
 // strict policy stops inside the duration and publishes the committed
 // prefix under its real invalid outcome.
 [[gnu::noinline]] void strict_stop_keeps_invalid_prefix() {
-    bt::TemporaryDirectory root("platform-recording-strict");
-    const auto physics = rt::violating_physics(root.path() / "physics.toml");
-    const auto args = headless_args(physics, root.path() / "runs", true, "0.01", "strict");
-    // ride_command rethrows the primary strict rejection after sealing and
-    // publishing; the bike-ride wrapper is what maps it to exit 2.
-    std::string primary;
-    try { (void)cli::ride_command(args); }
-    catch (const std::exception& error) { primary = error.what(); }
+  bt::TemporaryDirectory const root("platform-recording-strict");
+  const auto physics = rt::violating_physics(root.path() / "physics.toml");
+  const auto args =
+      headless_args(physics, root.path() / "runs", true, "0.01", "strict");
+  // ride_command rethrows the primary strict rejection after sealing and
+  // publishing; the bike-ride wrapper is what maps it to exit 2.
+  std::string primary;
+  try {
+    (void)cli::ride_command(args);
+  } catch (const std::exception &error) {
+    primary = error.what();
+  }
     bt::require(primary.find("foot_front.normal") != std::string::npos ||
         primary.find("invalid") != std::string::npos,
         "the strict rejection propagates after publishing: " + primary);
@@ -315,28 +328,29 @@ void assert_published(const std::filesystem::path& dir) {
 // test_headless_native_record_off_with_out_writes_nothing — --out is a
 // location, never an opt-in.
 [[gnu::noinline]] void record_off_writes_nothing() {
-    bt::TemporaryDirectory root("platform-recording-off");
-    const auto physics = rt::violating_physics(root.path() / "physics.toml");
-    const auto args = headless_args(physics, root.path() / "runs", false);
-    bt::require(cli::ride_command(args) == 2, "the run still reports the violation");
-    bt::require(!std::filesystem::exists(root.path() / "runs") ||
-        std::filesystem::is_empty(root.path() / "runs"),
-        "no run files exist without --record");
+  bt::TemporaryDirectory const root("platform-recording-off");
+  const auto physics = rt::violating_physics(root.path() / "physics.toml");
+  const auto args = headless_args(physics, root.path() / "runs", false);
+  bt::require(cli::ride_command(args) == 2,
+              "the run still reports the violation");
+  bt::require(!std::filesystem::exists(root.path() / "runs") ||
+                  std::filesystem::is_empty(root.path() / "runs"),
+              "no run files exist without --record");
 }
 
 // test_headless_native_record_under_spaced_unicode_path — publication
 // and read-back survive spaces and non-ASCII in the --out path.
 [[gnu::noinline]] void spaced_unicode_path() {
-    bt::TemporaryDirectory root("platform-recording-unicode");
-    const auto physics = rt::violating_physics(root.path() / "physics.toml");
-    const auto out = root.path() / "runs dir" / "ünïcodé ✓";
-    const auto args = headless_args(physics, out, true);
-    bt::require(cli::ride_command(args) == 2, "the unicode path ride completes");
-    const auto run_dir = published_run(out);
-    const auto saved = rec::open_recording(run_dir);
-    bt::require(saved->episode_ids() == std::vector<std::int64_t>{0} &&
-        rt::as_integer(reqv(saved->episode(), "physical_rows")) > 0,
-        "the unicode-path run reads back");
+  bt::TemporaryDirectory const root("platform-recording-unicode");
+  const auto physics = rt::violating_physics(root.path() / "physics.toml");
+  const auto out = root.path() / "runs dir" / "ünïcodé ✓";
+  const auto args = headless_args(physics, out, true);
+  bt::require(cli::ride_command(args) == 2, "the unicode path ride completes");
+  const auto run_dir = published_run(out);
+  const auto saved = rec::open_recording(run_dir);
+  bt::require(saved->episode_ids() == std::vector<std::int64_t>{0} &&
+                  rt::as_integer(reqv(saved->episode(), "physical_rows")) > 0,
+              "the unicode-path run reads back");
 }
 
 // test_research_native_run_publishes_sealed_recording +
@@ -345,33 +359,35 @@ void assert_published(const std::filesystem::path& dir) {
 // eligible (contract v3, research tables); a failed launch publishes
 // its evidence and is never eligible.
 [[gnu::noinline]] void research_run_sealed_and_failed() {
-    bt::TemporaryDirectory root("platform-recording-research");
-    const auto publication = rr::record_container(root.path());
-    assert_published(publication.directory);
-    const auto saved = rec::open_recording(publication.directory);
-    const auto episode_row = saved->episode();
-    const auto& episode = rt::as_object(episode_row);
-    bt::require(rt::as_integer(req(episode, "replay_contract_version")) == 3 &&
-        rt::as_bool(req(episode, "replay_eligible")) &&
-        rt::as_integer(req(episode, "physical_rows")) > 0,
-        "the completed research episode is checked-replay eligible");
-    for (const char* table : {"commands_requested", "commands_applied",
-             "observations", "transitions"})
-        bt::require(rt::as_integer(req(
-                saved->rows(std::string("SELECT count(*) n FROM ") + table)
-                    .at(0), "n")) > 0,
-            std::string(table) + " carries research evidence");
-    saved->close();
-    const auto failed = rr::record_failed(root.path());
-    const auto rejected = rec::open_recording(failed.directory);
-    const auto failed_row = rejected->episode();
-    const auto& failed_episode = rt::as_object(failed_row);
-    bt::require(!rt::as_bool(req(failed_episode, "replay_eligible")),
-        "the failed launch is published, never replay eligible");
+  bt::TemporaryDirectory const root("platform-recording-research");
+  const auto publication = rr::record_container(root.path());
+  assert_published(publication.directory);
+  const auto saved = rec::open_recording(publication.directory);
+  const auto episode_row = saved->episode();
+  const auto &episode = rt::as_object(episode_row);
+  bt::require(rt::as_integer(req(episode, "replay_contract_version")) == 3 &&
+                  rt::as_bool(req(episode, "replay_eligible")) &&
+                  rt::as_integer(req(episode, "physical_rows")) > 0,
+              "the completed research episode is checked-replay eligible");
+  for (const char *table : {"commands_requested", "commands_applied",
+                            "observations", "transitions"})
+    bt::require(
+        rt::as_integer(req(
+            saved->rows(std::string("SELECT count(*) n FROM ") + table).at(0),
+            "n")) > 0,
+        std::string(table) + " carries research evidence");
+  saved->close();
+  const auto failed = rr::record_failed(root.path());
+  const auto rejected = rec::open_recording(failed.directory);
+  const auto failed_row = rejected->episode();
+  const auto &failed_episode = rt::as_object(failed_row);
+  bt::require(!rt::as_bool(req(failed_episode, "replay_eligible")),
+              "the failed launch is published, never replay eligible");
 }
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         exclusive_names_collide();
         crash_leaves_no_readable_run();

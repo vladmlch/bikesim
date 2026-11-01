@@ -14,6 +14,7 @@
 #include "diag.hpp"
 #include "pneumatic_reference_support.hpp"
 
+#include <algorithm>
 #include <functional>
 
 #include "io/json.hpp"
@@ -44,7 +45,7 @@ inline void text(bt::oracle::Node &golden, std::string_view actual,
                                    std::int64_t actual,
                                    const std::string &label) {
     const auto bits = std::bit_cast<std::uint64_t>(actual);
-    std::array<std::byte, 8> bytes;
+    std::array<std::byte, 8> bytes{};
     for (unsigned shift = 0; shift < 64; shift += 8)
         bytes[shift / 8] = static_cast<std::byte>((bits >> shift) & 0xffu);
     golden.bytes(bytes, "<i8", {}, label);
@@ -79,7 +80,7 @@ fixture_text(const std::filesystem::path &path) {
     const auto bytes = io::read_numpy_bytes(path);
     bt::require(!bytes.empty(),
                 "fixture artifact missing or empty: " + path.string());
-    return {reinterpret_cast<const char *>(bytes.data()), bytes.size()};
+    return {reinterpret_cast<const char *>(bytes.data()), bytes.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
 }
 
 // The shared wire/section payloads the Python capture persists under
@@ -109,10 +110,9 @@ io::Value &member_of(io::Value &v, std::string_view key) {
 }
 void erase(io::Value &v, std::string_view key) {
     auto &object = object_of(v);
-    object.erase(std::remove_if(object.begin(), object.end(),
-                                [&](const auto &m) {
-                                    return m.first == key;
-                                }),
+    object.erase(std::ranges::remove_if(
+                     object, [&](const auto &m) { return m.first == key; })
+                     .begin(),
                  object.end());
 }
 template <class T> void set(io::Value &v, std::string_view key, T next) {
@@ -169,11 +169,11 @@ void test_pneumatic_projection_carries_the_full_section() {
     const auto cfg = nativecfg::decode(wire);
     bt::require(cfg.tire.has_value() && cfg.tire->pneumatic.has_value(),
                 "pneumatic section decoded");
-    const auto &tire = *cfg.tire;
+    const auto &tire = (cfg.tire).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(tire.backend == "pneumatic" &&
                         tire.surface_mode == "track",
                 "backend/surface_mode");
-    const auto &p = *tire.pneumatic;
+    const auto &p = (tire.pneumatic).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     const std::array tier{static_cast<double>(p.n_rays), p.half_angle_deg,
                           p.discretised_brush ? 1. : 0., p.timestep_s};
     vector(golden, tier, "tier");
@@ -194,7 +194,7 @@ void test_pneumatic_profile_matches_the_appliers_road_bitwise() {
     // emit it under both recorded pairs.
     const auto wire = fixture_wire("track");
     const auto cfg = nativecfg::decode(wire);
-    const auto &p = *cfg.tire->pneumatic;
+    const auto &p = (cfg.tire->pneumatic).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     const std::array head{p.profile.x0_m, p.profile.dx_m};
     vector(golden, head, "profile.head");
     vector(golden, p.profile.z_m, "profile.z_m");
@@ -207,10 +207,10 @@ void test_pneumatic_track_mode_keeps_the_surface_map() {
     auto golden =
             node(kFile, "test_pneumatic_track_mode_keeps_the_surface_map");
     const auto cfg = nativecfg::decode(fixture_wire("track"));
-    const auto &tire = *cfg.tire;
+    const auto &tire = (cfg.tire).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(tire.surface_map.has_value(),
                 "track mode keeps the map");
-    text(golden, tire.surface_map->surface.name, "surface_map.surface");
+    text(golden, tire.surface_map.value().surface.name, "surface_map.surface"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     golden.done();
 }
 
@@ -229,7 +229,7 @@ void test_configured_surface_projects_the_resolved_spec() {
                         nullptr,
                 "no surface_map under configured mode");
     const auto cfg = nativecfg::decode(wrap_section(section));
-    const auto &p = *cfg.tire->pneumatic;
+    const auto &p = (cfg.tire->pneumatic).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(p.surface.has_value() && p.surface->name == "asphalt",
                 "resolved asphalt spec");
 }
@@ -239,11 +239,11 @@ void test_configured_surface_projects_through_a_real_sim() {
             node(kFile,
                  "test_configured_surface_projects_through_a_real_sim");
     const auto cfg = nativecfg::decode(fixture_wire("configured_sim"));
-    const auto &p = *cfg.tire->pneumatic;
-    bt::require(!cfg.tire->surface_map.has_value() &&
+    const auto &p = (cfg.tire->pneumatic).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+    bt::require(!cfg.tire.value().surface_map.has_value() && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                         p.surface.has_value(),
                 "configured surface, no map");
-    text(golden, p.surface->name, "surface.name");
+    text(golden, p.surface.value().name, "surface.name"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     golden.done();
 }
 
@@ -256,7 +256,7 @@ void test_named_surface_overrides_the_track_map_on_the_wire() {
                         nullptr,
                 "the track map ships alongside the name");
     const auto cfg = nativecfg::decode(wrap_section(section));
-    text(golden, cfg.tire->pneumatic->surface->name, "surface.name");
+    text(golden, cfg.tire.value().pneumatic->surface->name, "surface.name"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     golden.done();
 }
 
@@ -266,7 +266,7 @@ void test_detailed_tier_projects_its_resolved_parameters() {
                  "test_detailed_tier_projects_its_resolved_parameters");
     const auto section = fixture_wire("detailed", "section.json");
     const auto cfg = nativecfg::decode(wrap_section(section));
-    const auto &p = *cfg.tire->pneumatic;
+    const auto &p = (cfg.tire->pneumatic).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     bt::require(p.tier == "detailed" && p.n_rays == 256 &&
                         p.discretised_brush,
                 "detailed tier row");
@@ -449,7 +449,7 @@ void test_selected_native_parser_accepts_the_pneumatic_wire() {
                  "test_selected_native_parser_accepts_the_pneumatic_wire");
     const auto mjb = fixture_bytes("track", "model.mjb");
     const auto cfg = nativecfg::decode(fixture_wire("track"));
-    Stepper st(std::span<const std::byte>(mjb), cfg);
+    Stepper const st(std::span<const std::byte>(mjb), cfg);
     const auto n = static_cast<std::size_t>(
             golden.f64_input("input.n_rays").at(0));
     const auto &names = st.tire_state_names();
@@ -473,11 +473,11 @@ void parser_reject_case(bt::oracle::Node &golden,
     const auto match = input_text(golden, "input.match");
     mutate(wire);
     rejects<std::exception>(
-            [&] {
-                Stepper st(std::span<const std::byte>(mjb),
+        [&] {
+          Stepper const st(std::span<const std::byte>(mjb),
                            nativecfg::decode(wire));
-            },
-            match);
+        },
+        match);
 }
 
 void test_selected_native_parser_rejects_malformed_pneumatic_wires(

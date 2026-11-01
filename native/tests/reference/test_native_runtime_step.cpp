@@ -20,10 +20,9 @@
 
 namespace {
 
-using runtime_reference::bitwise_equal;
-using runtime_reference::expect_error;
-using runtime_reference::require_bitwise;
 using ft2_reference::consume_tree;
+using runtime_reference::bitwise_equal;
+using runtime_reference::require_bitwise;
 
 constexpr std::string_view kNode =
     "tests/reference/test_native_runtime_step.py::";
@@ -163,15 +162,15 @@ void test_native_step_sequence_matches_python_state() {
         "test_native_step_sequence_matches_python_state");
     const auto native = ride();
     const runtime::RideControl command;
-    char label[32];
+    char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::int64_t target = 1; target <= 30; ++target) {
         const runtime::AdvanceResult result =
             native->advance(target, command, 0., 0., std::nullopt);
         bt::require(result.step == target && result.reason == "target",
                     "committed interval lands on the requested target");
-        std::snprintf(label, sizeof(label), "step %lld",
+        std::snprintf(label, sizeof(label), "step %lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(target));
-        node.f64(native->snapshot().integration_state, label);
+        node.f64(native->snapshot().integration_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     node.done();
 }
@@ -187,7 +186,7 @@ void test_native_force_fold_matches_python_recorded_inputs() {
     const runtime::RideControl command;
     const std::array<std::pair<double, double>, 3> demands{
         {{0., 0.}, {.35, .2}, {1., 1.}}};
-    char label[48];
+    char label[48]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     int fold = 0;
     for (const auto &[front, rear] : demands) {
         const runtime::PhysicalStep::ProbeResult probe =
@@ -199,14 +198,14 @@ void test_native_force_fold_matches_python_recorded_inputs() {
             for (const double value : force) row.emplace_back(value);
             components.emplace_back(name, runtime::Wire{std::move(row)});
         }
-        std::snprintf(label, sizeof(label), "fold.%d.components", fold);
-        consume_tree(node, components, label);
-        std::snprintf(label, sizeof(label), "fold.%d.ctrl", fold);
-        node.f64_close(probe.ctrl, label);
-        const double bounds[2] = {probe.front_brake_bound_nm,
+        std::snprintf(label, sizeof(label), "fold.%d.components", fold); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+        consume_tree(node, components, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), "fold.%d.ctrl", fold); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+        node.f64_close(probe.ctrl, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        const double bounds[2] = {probe.front_brake_bound_nm, // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
                                   probe.rear_brake_bound_nm};
-        std::snprintf(label, sizeof(label), "fold.%d.brake_bounds", fold);
-        node.f64_close(bounds, label);
+        std::snprintf(label, sizeof(label), "fold.%d.brake_bounds", fold); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+        node.f64_close(bounds, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         bt::require(native->snapshot().step == 0,
                     "a probe commits no state");
         const std::vector<double> before =
@@ -228,14 +227,14 @@ void test_native_advance_tracks_python_under_load() {
         std::string(kNode) + "test_native_advance_tracks_python_under_load");
     const auto native = ride();
     const runtime::RideControl command;
-    char label[32];
+    char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::int64_t target = 1; target <= 30; ++target) {
         const double demand = (target >= 11 && target <= 20) ? .6 : 0.;
         static_cast<void>(native->advance(target, command, demand, demand,
                                         std::nullopt));
-        std::snprintf(label, sizeof(label), "interval %lld",
+        std::snprintf(label, sizeof(label), "interval %lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(target));
-        node.f64(native->snapshot().integration_state, label);
+        node.f64(native->snapshot().integration_state, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     node.done();
 }
@@ -248,7 +247,7 @@ void test_sensor_channels_read_sensordata_rows() {
         std::string(kNode) + "test_sensor_channels_read_sensordata_rows");
     const auto native = ride();
     const runtime::RideControl command;
-    char label[64];
+    char label[64]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::int64_t target = 1; target <= 5; ++target) {
         static_cast<void>(
             native->advance(target, command, 0., 0., std::nullopt));
@@ -267,14 +266,14 @@ void test_sensor_channels_read_sensordata_rows() {
             gyro_values.push_back(runtime::sample_wire::number(lane));
         for (const runtime::Wire &lane : accel)
             accel_values.push_back(runtime::sample_wire::number(lane));
-        std::snprintf(label, sizeof(label),
+        std::snprintf(label, sizeof(label), // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       "step %lld frame_gyro_body_rad_s",
                       static_cast<long long>(target));
-        node.f64(gyro_values, label);
-        std::snprintf(label, sizeof(label),
+        node.f64(gyro_values, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       "step %lld frame_specific_force_body_mps2",
                       static_cast<long long>(target));
-        node.f64(accel_values, label);
+        node.f64(accel_values, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     node.done();
 }
@@ -298,7 +297,7 @@ void test_native_intent_lanes_match_python_past_reaction_delay() {
     const runtime::PhysicalStep::ProbeResult probe =
         native->probe_step_inputs(command, 0., 0.);
     consume_tree(node, probe.intent_signals, "intent_signals");
-    const double inclination[1] = {probe.intent_inclination_rad};
+    const double inclination[1] = {probe.intent_inclination_rad}; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     node.f64(inclination, "intent_inclination_rad");
     // The source file's trailing bitwise leg: the force vector lane.
     const auto &force = runtime::sample_wire::array(

@@ -35,7 +35,6 @@ namespace {
 namespace rider = ::rider;
 namespace research = bike::research;
 namespace cfg = bike::configuration;
-namespace init = bike::initialization;
 
 // The live example document — bt::oracle::root() is
 // <repo>/tests/fixtures/golden. The batch's welded physics loads the

@@ -99,9 +99,9 @@ std::vector<double> row_of(const std::vector<double> &flat, std::size_t row,
 
 struct PathSpec {
     std::string name, joint;
-    double stiffness, damping, preload, offset;
-    bool unilateral;
-    int qposadr, dofadr;
+    double stiffness{}, damping{}, preload{}, offset{};
+    bool unilateral{};
+    int qposadr{}, dofadr{};
 };
 
 nativecfg::WriterConfig rf_config(const std::vector<PathSpec> &paths) {
@@ -158,6 +158,7 @@ std::string np_f64(double v) {
 // BuildRequest embeds the full rider/track spec — ~9 KiB of automatic
 // storage, over the Linux -Wframe-larger-than=8192 gate (main carries the
 // same exemption below).
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void rider_forces_sweep(bt::oracle::Node &golden) {
     const std::vector<double> qpos0 = golden.f64_input("input.qpos0");
@@ -197,7 +198,7 @@ void rider_forces_sweep(bt::oracle::Node &golden) {
     }
     const int nv = static_cast<int>(model->nv);
     const int nq = static_cast<int>(model->nq);
-    bt::require(static_cast<int>(qpos0.size()) == nq, "qpos0 width");
+    bt::require(std::cmp_equal(qpos0.size(), nq), "qpos0 width");
     // The rng state replays are frozen inputs; consume them BEFORE the
     // comparison stream like the source records.
     struct RngState {
@@ -208,9 +209,9 @@ void rider_forces_sweep(bt::oracle::Node &golden) {
         const std::string base =
             "input.rng" + std::to_string(j) + ".qpos";
         if (golden.peek_label() != base) break;
-        rng.push_back({golden.f64_input(base),
-                       golden.f64_input("input.rng" + std::to_string(j) +
-                                        ".qvel")});
+        rng.push_back({.qpos = golden.f64_input(base),
+                       .qvel = golden.f64_input("input.rng" +
+                                                std::to_string(j) + ".qvel")});
     }
     Stepper st(std::span<const std::byte>(save_mjb(model.get())),
                rf_config(paths));
@@ -218,11 +219,11 @@ void rider_forces_sweep(bt::oracle::Node &golden) {
     // act = np.zeros(model.na) in the source (empty when na==0).
     const std::vector<double> zeros_a(
         static_cast<std::size_t>(model->na), 0.);
-    auto compare = [&](const std::vector<double> &qpos,
-                       const std::vector<double> &qvel,
-                       const std::string &label) {
-        st.set_state(qpos, qvel, zeros_a, zeros_v, 0.);
-        golden.f64(st.rider_forces_qfrc(), "rider_forces " + label);
+    auto const compare = [&](const std::vector<double> &qpos,
+                             const std::vector<double> &qvel,
+                             const std::string &label) {
+      st.set_state(qpos, qvel, zeros_a, zeros_v, 0.);
+      golden.f64(st.rider_forces_qfrc(), "rider_forces " + label);
     };
     for (const PathSpec &p : paths) {
         const double bound = p.preload + p.offset;
@@ -301,12 +302,12 @@ void test_project_emits_resolved_paths() {
     // source: the live applier's paths carry the resolved offsets and
     // the projected section reads them back. project_writer_config emits
     // offset_m=0, so the same set_pedal_offsets rule patches them in.
-    for (auto &p : config.rider_forces->paths) {
+    for (auto &p : config.rider_forces.value().paths) { // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         if (p.name == "rider_leg_front") p.offset_m = 0.023;
         if (p.name == "rider_leg_rear") p.offset_m = -0.031;
     }
     const std::vector<nativecfg::RiderPathConfig> &paths =
-        config.rider_forces->paths;
+        config.rider_forces.value().paths; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     for (int i = 0;; ++i) {
         const std::string base = "expected.path" + std::to_string(i);
         if (golden.peek_label() != base + ".name") break;
@@ -345,7 +346,7 @@ void test_project_emits_resolved_paths() {
                     static_cast<int>(expected_nv[0]) == model->nv,
                 "expected.nv matches the compiled model");
     // The projected section must drive the native writer.
-    Stepper st(std::span<const std::byte>(save_mjb(model.get())), config);
+    Stepper const st(std::span<const std::byte>(save_mjb(model.get())), config);
     bt::require(st.rider_forces_qfrc().size() ==
                     static_cast<std::size_t>(model->nv),
                 "projected section drives rider_forces_qfrc");
@@ -380,7 +381,7 @@ nativecfg::WriterConfig rf_cfg(
 
 void test_rider_forces_hand_built_smoke() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    Stepper st(bench_mjb(), rf_cfg());
+    Stepper const st(bench_mjb(), rf_cfg());
     const std::vector<double> got = st.rider_forces_qfrc();
     bt::require(got.size() == static_cast<std::size_t>(st.model()->nv),
                 "hand-built qfrc is nv wide");
@@ -420,20 +421,21 @@ void test_rider_forces_missing_key_names_it() {
     // inside construction, so wrap it the same way.
     throws(
         [] {
-            Stepper st(bench_mjb(), nativecfg::decode(bike::io::parse_json(
-                                        R"({"schema":1,"rider_forces":{}})")));
+          Stepper const st(bench_mjb(),
+                           nativecfg::decode(bike::io::parse_json(
+                               R"({"schema":1,"rider_forces":{}})")));
         },
         "paths");
     for (const char *key : {"joint", "stiffness_n_m", "damping_ns_m",
                             "preload_deflection_m", "unilateral",
                             "offset_m"})
-        throws([&] { Stepper st(bench_mjb(), rf_cfg({}, {key})); }, key);
+      throws([&] { Stepper const st(bench_mjb(), rf_cfg({}, {key})); }, key);
     throws(
         [] {
-            Stepper st(
-                bench_mjb(),
-                nativecfg::decode(bike::io::parse_json(
-                    R"({"schema":1,"rider_forces":{"paths":{"joint":"root_x"}}})")));
+          Stepper const st(
+              bench_mjb(),
+              nativecfg::decode(bike::io::parse_json(
+                  R"({"schema":1,"rider_forces":{"paths":{"joint":"root_x"}}})")));
         },
         "paths");
 }
@@ -443,28 +445,28 @@ void test_rider_forces_joint_validation() {
          std::array{std::pair{"no_such_joint", "no joint"},
                     std::pair{"front_wheel_spin", "unlimited slide"},
                     std::pair{"shock_stroke", "unlimited slide"}})
-        throws(
-            [&] {
-                Stepper st(bench_mjb(), rf_cfg(
-                                            {{"joint", bike::io::Value{
-                                                            std::string(joint)}}}));
-            },
-            needle);
+      throws(
+          [&] {
+            Stepper const st(
+                bench_mjb(),
+                rf_cfg({{"joint", bike::io::Value{std::string(joint)}}}));
+          },
+          needle);
 }
 
 // ---- accumulator tests -----------------------------------------------------
 
 // Stepper::total takes a span of owning vectors: stage the ordered
 // components the Python dict's insertion order implies, then fold.
-std::vector<double> total_of(Stepper &st,
+std::vector<double> total_of(Stepper const &st,
                              std::initializer_list<std::vector<double>> comps) {
-    const std::vector<std::vector<double>> owned(comps.begin(), comps.end());
-    return st.total(owned);
+  const std::vector<std::vector<double>> owned(comps.begin(), comps.end());
+  return st.total(owned);
 }
 
 void test_accumulator_order_bitwise() {
     bt::oracle::Node golden(std::string(kFile) + __func__);
-    Stepper st(bench_mjb());
+    const Stepper st(bench_mjb());
     const std::size_t nv = static_cast<std::size_t>(st.model()->nv);
     const std::vector<double> a(nv, 1e20), b(nv, 1.), c(nv, -1e20);
     // (a,b,c) folds to 0 while (a,c,b) folds to 1 — order must matter.
@@ -480,9 +482,9 @@ void test_accumulator_order_bitwise() {
         const auto count =
             static_cast<std::size_t>(golden.f64_input(base + ".count")[0]);
         std::vector<std::vector<double>> comps;
+        comps.reserve(count);
         for (std::size_t i = 0; i < count; ++i)
-            comps.push_back(
-                golden.f64_input(base + ".c" + std::to_string(i)));
+          comps.push_back(golden.f64_input(base + ".c" + std::to_string(i)));
         for (const bool reversed : {false, true}) {
             std::vector<std::vector<double>> order = comps;
             if (reversed) std::ranges::reverse(order);
@@ -529,7 +531,7 @@ void conversion_case(const char *dtype, const char *layout) {
         "test_accumulator_total_accepts_array_conversion[" + dtype + "-" +
         layout + "]";
     bt::oracle::Node golden(node);
-    Stepper st(bench_mjb());
+    const Stepper st(bench_mjb());
     const std::size_t nv = static_cast<std::size_t>(st.model()->nv);
     std::vector<double> values(nv);
     for (std::size_t i = 0; i < nv; ++i) {
@@ -556,7 +558,7 @@ struct OwnedSide {
     std::vector<double> loads;
     // TireSideInput::patch_working is a span<const bool>: vector<bool>'s
     // packed storage cannot back a bool span, so own a raw bool block.
-    std::unique_ptr<bool[]> working;
+    std::unique_ptr<bool[]> working; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     std::size_t working_n = 0;
     double radius = 0.;
     [[nodiscard]] TireSideInput view() const {
@@ -572,7 +574,7 @@ OwnedSide side_input(const TireSnapshot &snapshot) {
     out.radius = snapshot.effective_radius_m;
     out.loads.reserve(snapshot.patches.size());
     const std::size_t n = snapshot.patches.size();
-    out.working = std::make_unique<bool[]>(n);
+    out.working = std::make_unique<bool[]>(n); // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     out.working_n = n;
     for (std::size_t i = 0; i < n; ++i) {
         const TirePatch &p = snapshot.patches[i];
@@ -649,8 +651,8 @@ void test_accumulator_order_golden() {
         const auto snaps = st.tire_writer().snapshots();
         bt::require(snaps[0].has_value() && snaps[1].has_value(),
                     "canonical episode engages both tires");
-        const OwnedSide front = side_input(*snaps[0]);
-        const OwnedSide rear = side_input(*snaps[1]);
+        const OwnedSide front = side_input((snaps[0]).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
+        const OwnedSide rear = side_input((snaps[1]).value()); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         for (auto &[name, qfrc] :
              st.resistance_components(front.view(), rear.view()))
             ported.emplace(name, std::move(qfrc));

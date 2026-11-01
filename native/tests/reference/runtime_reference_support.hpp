@@ -235,7 +235,7 @@ inline void require_bitwise(std::span<const double> actual,
 
 // assert_tree_close at zero tolerance — the native-vs-native wire tree
 // identity: same variant, same order, doubles bitwise.
-[[nodiscard]] inline bool wire_bitwise(const runtime::Wire &a,
+[[nodiscard]] inline bool wire_bitwise(const runtime::Wire &a, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                                        const runtime::Wire &b) {
     if (a.value.index() != b.value.index()) return false;
     switch (a.value.index()) {
@@ -284,7 +284,7 @@ inline void require_wire_bitwise(const runtime::WireObject &a,
 
 // _native_runtime_support.assert_tree_close: unordered object members,
 // positional arrays, strings/bools exact, numbers within atol/rtol 1e-9.
-[[nodiscard]] inline bool tree_close(const runtime::Wire &actual,
+[[nodiscard]] inline bool tree_close(const runtime::Wire &actual, // NOLINT(misc-no-recursion) recursion mirrors the document tree
                                      const runtime::Wire &expected) {
     constexpr double kClose = 1e-9;
     if (const auto *a = std::get_if<double>(&actual.value)) {

@@ -20,17 +20,18 @@ using rr::text;
 // rebuilds identical evidence under the next generation and never reuses
 // command streams.
 void same_backend_restarts() {
-    rr::Directory tmp;
-    const auto path = rr::record_prefix(tmp.path / "native");
-    const auto expected = rr::replay::check(path, 0);
-    bt::require(expected.matched && rr::flag(expected.details, "passed") &&
-        rr::text_of(expected.details, "backend") == "native",
-        "native-produced legacy replay reports the native backend");
-    rr::replay::ReplaySession session(path);
-    (void)session.advance(0.);
-    bt::require(session.pending() && session.snapshot().step == 0,
-        "a zero-budget yield leaves the first control pending");
-    while (!session.advance(std::nullopt, session.snapshot().step + 1)) {}
+  rr::Directory const tmp;
+  const auto path = rr::record_prefix(tmp.path / "native");
+  const auto expected = rr::replay::check(path, 0);
+  bt::require(expected.matched && rr::flag(expected.details, "passed") &&
+                  rr::text_of(expected.details, "backend") == "native",
+              "native-produced legacy replay reports the native backend");
+  rr::replay::ReplaySession session(path);
+  (void)session.advance(0.);
+  bt::require(session.pending() && session.snapshot().step == 0,
+              "a zero-budget yield leaves the first control pending");
+  while (!session.advance(std::nullopt, session.snapshot().step + 1)) {
+  }
     bt::require(rr::equal(session.report(), expected.details),
         "incremental report is the headless certificate");
     const auto final = session.snapshot();
@@ -51,10 +52,11 @@ void same_backend_restarts() {
 // plant exists) and the terminal boundary. A statically linked build cannot
 // spy on the call; the observable certificate carries the gate's result.
 void gate_invoked_with_recorded_identity() {
-    rr::Directory tmp;
-    const auto publication = rr::record_container(tmp.path);
-    rr::replay::ReplaySession session(publication.directory, 0);
-    while (!session.advance()) {}
+  rr::Directory const tmp;
+  const auto publication = rr::record_container(tmp.path);
+  rr::replay::ReplaySession session(publication.directory, 0);
+  while (!session.advance()) {
+  }
     const auto report = session.report();
     bt::require(rr::flag(report, "passed") && rr::text_of(report, "backend") == "native" &&
         rr::count(field(report, "episode_id")) == 0,
@@ -66,15 +68,20 @@ void gate_invoked_with_recorded_identity() {
 // transported recording names the mismatched identity field; the rejection
 // fires in the session constructor before plant/backend/physics exist.
 void foreign_identity() {
-    rr::Directory tmp;
-    const auto publication = rr::record_container(tmp.path);
-    rr::patch_execution(publication.directory, [](const bike::io::Value& execution) {
+  rr::Directory const tmp;
+  const auto publication = rr::record_container(tmp.path);
+  rr::patch_execution(
+      publication.directory, [](const bike::io::Value &execution) {
         auto patched = execution;
         rr::set(patched, "execution_identity",
             text("0000000000000000000000000000000000000000000000000000000000000000"));
-        return patched; });
-    rr::incompatible([&] { rr::replay::ReplaySession session(publication.directory, 0); },
-        "execution_identity");
+        return patched;
+      });
+  rr::incompatible(
+      [&] {
+        rr::replay::ReplaySession const session(publication.directory, 0);
+      },
+      "execution_identity");
 }
 } // namespace
 int main() {

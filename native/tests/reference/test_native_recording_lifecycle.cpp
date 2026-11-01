@@ -65,7 +65,6 @@
 namespace {
 
 using namespace recording_test;
-namespace value = rec::value;
 namespace cli = bike::cli;
 using bike::io::Value;
 
@@ -351,7 +350,7 @@ void test_make_run_capture_rejects_non_native_recording() {
     throws<bike::cli::ArgumentError>(
         [&] { (void)bike::cli::parse_arguments("bike-ride", args); }, "",
         "recording under a non-native backend is rejected");
-    rec::RunCapture disabled(run_metadata("python", "viewer"), false);
+    rec::RunCapture const disabled(run_metadata("python", "viewer"), false);
     bt::require(!disabled.enabled() &&
                 disabled.metadata().backend == "python" &&
                 as_text(member_ref(disabled.metadata().values, "check_policy")) ==
@@ -366,7 +365,7 @@ void test_viewer_journals_two_episodes_and_publishes_once() {
     // sequence; the ported contract is the journal/episode ordering and
     // the once-only publication the pump guarantees — request and applied
     // records keep their receipt order and step identity distinctions.
-    bt::TemporaryDirectory root("lifecycle-two-episodes");
+    bt::TemporaryDirectory const root("lifecycle-two-episodes");
     rec::RunCapture capture(run_metadata(), true);
     {
         rec::EpisodeJournal journal(capture, 0);
@@ -431,7 +430,7 @@ void test_viewer_journals_two_episodes_and_publishes_once() {
                 "receipt and processed steps stay distinct on applied records");
     bt::require(!by_kind.at({1, "quit"})->applied_step,
                 "terminal requests keep no applied step");
-    rec::Recording saved(publication.directory);
+    rec::Recording const saved(publication.directory);
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0, 1}),
                 "the sealed recording carries both episodes");
     sealed_directory(root.path());
@@ -477,14 +476,16 @@ void test_viewer_native_pump_seals_reset_generations() {
     const auto rig = welded_runtime("full");
     advance(*rig->runtime, 2);
     (void)rig->runtime->advance(4, runtime::RideControl{}, .4, .4, std::nullopt);
-    auto first_episode = std::make_shared<runtime::OwnedNativeEpisode>(rig->runtime->seal_episode());
+    auto const first_episode = std::make_shared<runtime::OwnedNativeEpisode>(
+        rig->runtime->seal_episode());
     bt::require(first_episode->generation == 1, "generation 1 seals first");
     rig->runtime->reset();
     (void)rig->runtime->advance(2, runtime::RideControl{}, .4, .4, std::nullopt);
     (void)rig->runtime->advance(4, runtime::RideControl{}, 0., 0., std::nullopt);
-    auto second_episode = std::make_shared<runtime::OwnedNativeEpisode>(rig->runtime->seal_episode());
+    auto const second_episode = std::make_shared<runtime::OwnedNativeEpisode>(
+        rig->runtime->seal_episode());
     bt::require(second_episode->generation == 2, "the reset generation seals separately");
-    bt::TemporaryDirectory root("lifecycle-reset-generations");
+    bt::TemporaryDirectory const root("lifecycle-reset-generations");
     rec::RunCapture capture(run_metadata(), true);
     {
         rec::EpisodeJournal journal(capture, 0);
@@ -518,7 +519,7 @@ void test_viewer_native_pump_seals_reset_generations() {
         capture.add_episode(std::move(evidence));
     }
     const auto publication = rec::finalize(capture, root.path());
-    rec::Recording saved(publication.directory);
+    rec::Recording const saved(publication.directory);
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0, 1}),
                 "both generations publish as separate episodes");
     const auto ep0 = kinds(capture.events(), 0), ep1 = kinds(capture.events(), 1);
@@ -548,45 +549,48 @@ void test_viewer_native_pump_seals_reset_generations() {
 std::shared_ptr<const rec::EpisodeEvidence>
 evidence_for(runtime::OwnedNativeEpisode &episode, std::int64_t episode_id,
              std::string_view reason) {
-    auto owned = std::make_shared<runtime::OwnedNativeEpisode>(std::move(episode));
-    auto evidence = std::make_shared<rec::EpisodeEvidence>();
-    evidence->episode_id = episode_id;
-    evidence->generation = owned->generation;
-    evidence->physical = make_source(owned);
-    evidence->summary = Value{Value::Object{
-        {"outcome", Value{Value::Object{{"reason", text(std::string(reason))}}}}}};
-    return evidence;
+  auto const owned =
+      std::make_shared<runtime::OwnedNativeEpisode>(std::move(episode));
+  auto evidence = std::make_shared<rec::EpisodeEvidence>();
+  evidence->episode_id = episode_id;
+  evidence->generation = owned->generation;
+  evidence->physical = make_source(owned);
+  evidence->summary = Value{Value::Object{
+      {"outcome", Value{Value::Object{{"reason", text(reason)}}}}}};
+  return evidence;
 }
 
 void test_viewer_second_ctrl_c_during_cleanup_seal_still_publishes() {
-    bt::TemporaryDirectory root("lifecycle-deferred-seal");
-    rec::RunCapture capture(run_metadata(), true);
-    bool rethrow = false;
-    {
-        bike::platform::InterruptShield shield;
-        rec::EpisodeJournal journal(capture, 0);
-        (void)journal.emit("episode_start", .1, 0);
-        // The shielded seal: owned evidence then derived journal events.
-        auto episode = make_episode({brake_row(0, true, .4), brake_row(1, false, .4)});
-        journal.emit_all(rec::derived_events(episode, 0, journal.next_id(), .2));
-        capture.add_episode(evidence_for(episode, 0, "operator_stop"));
-        // The injected second Ctrl-C lands inside the shielded seal: the
-        // journal is still open, so the deferred interrupt is journaled
-        // (physical_frontend._journal_deferred; the native ride frontend
-        // emits the same kind through research::ResearchRun::finish).
-        shield.note();
-        (void)journal.emit("operator_stop_deferred", .3, 0);
-        const auto publication = rec::finalize(capture, root.path());
-        bt::require(std::filesystem::exists(publication.directory / "manifest.json"),
-                    "the shielded publication still seals");
-        rethrow = shield.deferred() > 0;
-    }
+  bt::TemporaryDirectory const root("lifecycle-deferred-seal");
+  rec::RunCapture capture(run_metadata(), true);
+  bool rethrow = false;
+  {
+    bike::platform::InterruptShield shield;
+    rec::EpisodeJournal journal(capture, 0);
+    (void)journal.emit("episode_start", .1, 0);
+    // The shielded seal: owned evidence then derived journal events.
+    auto episode =
+        make_episode({brake_row(0, true, .4), brake_row(1, false, .4)});
+    journal.emit_all(rec::derived_events(episode, 0, journal.next_id(), .2));
+    capture.add_episode(evidence_for(episode, 0, "operator_stop"));
+    // The injected second Ctrl-C lands inside the shielded seal: the
+    // journal is still open, so the deferred interrupt is journaled
+    // (physical_frontend._journal_deferred; the native ride frontend
+    // emits the same kind through research::ResearchRun::finish).
+    shield.note();
+    (void)journal.emit("operator_stop_deferred", .3, 0);
+    const auto publication = rec::finalize(capture, root.path());
+    bt::require(
+        std::filesystem::exists(publication.directory / "manifest.json"),
+        "the shielded publication still seals");
+    rethrow = shield.deferred() > 0;
+  }
     bt::require(rethrow, "the deferred interrupt is honored after the section");
     const auto &events = capture.events();
     bt::require(kinds(events, 0) == std::vector<std::string>(
                     {"episode_start", "derived_transition", "operator_stop_deferred"}),
                 "the deferred interrupt is journaled before publication");
-    rec::Recording saved(sealed_directory(root.path()));
+    rec::Recording const saved(sealed_directory(root.path()));
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}) &&
                 physical_rows_of(saved, 0) == 2 &&
                 std::filesystem::exists(saved.path() / "run.duckdb"),
@@ -619,7 +623,7 @@ void test_viewer_second_ctrl_c_during_cleanup_finalize_still_publishes() {
                 "the publication still committed");
     bt::require(kinds(capture.events(), 0) == std::vector<std::string>({"episode_start"}),
                 "a deferred interrupt inside finalize is not journaled");
-    rec::Recording saved(sealed_directory(root.path()));
+    rec::Recording const saved(sealed_directory(root.path()));
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}) &&
                 std::filesystem::exists(saved.path() / "run.duckdb"),
                 "the sealed recording reads back");
@@ -629,7 +633,7 @@ void test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops() {
     // Deferred before the finalize call inside the shielded section: the
     // interrupt is journaled (the journal is still open), then publication
     // commits and the interrupt is honored — an operator-stop exit.
-    bt::TemporaryDirectory root("lifecycle-deferred-normal");
+    bt::TemporaryDirectory const root("lifecycle-deferred-normal");
     rec::RunCapture capture(run_metadata(), true);
     bool rethrow = false;
     {
@@ -650,7 +654,7 @@ void test_viewer_ctrl_c_during_normal_finalize_publishes_then_stops() {
     bt::require(kinds(capture.events(), 0) == std::vector<std::string>(
                     {"episode_start", "derived_transition", "operator_stop_deferred"}),
                 "the pre-finalize deferred interrupt is journaled");
-    rec::Recording saved(sealed_directory(root.path()));
+    rec::Recording const saved(sealed_directory(root.path()));
     bt::require(sealed_kinds(saved, 0) == std::vector<std::string>(
                     {"episode_start", "derived_transition", "operator_stop_deferred"}),
                 "the sealed journal carries the deferred event");
@@ -684,7 +688,7 @@ void test_viewer_ctrl_c_adds_no_control_and_still_finalizes() {
     // KeyboardInterrupt during advance seals the committed prefix as
     // operator_stop and finalizes; only lifecycle + derived facts are
     // journaled — no control kinds.
-    bt::TemporaryDirectory root("lifecycle-ctrlc-prefix");
+    bt::TemporaryDirectory const root("lifecycle-ctrlc-prefix");
     rec::RunCapture capture(run_metadata(), true);
     bool rethrow = false;
     {
@@ -712,7 +716,7 @@ void test_viewer_simulation_error_seals_prefix_and_reraises() {
     // A primary runtime_error during advance: the committed prefix seals
     // as simulation_error, publication commits, and the ORIGINAL failure
     // rethrows — not a seal or publish error.
-    bt::TemporaryDirectory root("lifecycle-simulation-error");
+    bt::TemporaryDirectory const root("lifecycle-simulation-error");
     const auto rig = welded_runtime("full");
     advance(*rig->runtime, 6);
     rig->runtime->test_fail_at_step(6);
@@ -726,7 +730,8 @@ void test_viewer_simulation_error_seals_prefix_and_reraises() {
         rec::EpisodeJournal journal(capture, 0);
         (void)journal.emit("episode_start", .1, 0);
     }
-    auto episode = std::make_shared<runtime::OwnedNativeEpisode>(rig->runtime->seal_episode());
+    auto const episode = std::make_shared<runtime::OwnedNativeEpisode>(
+        rig->runtime->seal_episode());
     auto evidence = std::make_shared<rec::EpisodeEvidence>();
     evidence->episode_id = 0; evidence->generation = episode->generation;
     evidence->physical = rec::make_physical_source(
@@ -766,12 +771,12 @@ void test_headless_records_seals_and_finalizes_once() {
     // at the first reference checkpoint (welded feet do real constraint
     // work), so the honest exit is 2 with reason duration_reached — the
     // seal/publish contract the oracle fakes covers is identical.
-    bt::TemporaryDirectory root("lifecycle-headless-ok");
+    bt::TemporaryDirectory const root("lifecycle-headless-ok");
     const auto physics = repo_file("examples/research/viewer_physics_welded.toml");
     const auto args = headless_args(physics, root.path(), true);
     const int code = bike::cli::ride_command(args);
     bt::require(code == 2, "the welded marker exits 2 after duration_reached");
-    rec::Recording saved(sealed_directory(root.path()));
+    rec::Recording const saved(sealed_directory(root.path()));
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}),
                 "one episode published");
     bt::require(physical_rows_of(saved, 0) > 0,
@@ -795,12 +800,12 @@ void test_headless_native_run_records_one_episode() {
     // publishing its evidence. The oracle's 'model_first_failure' measured
     // event is frontend emission; natively the sticky failure rides on the
     // episode summary and channel-derived model-status transitions.
-    bt::TemporaryDirectory root("lifecycle-headless-violation");
+    bt::TemporaryDirectory const root("lifecycle-headless-violation");
     const auto physics = violating_physics(root.path() / "physics.toml");
     const auto args = headless_args(physics, root.path(), true);
     const int code = bike::cli::ride_command(args);
     bt::require(code == 2, "the violating run reports the model-check outcome");
-    rec::Recording saved(sealed_directory(root.path()));
+    rec::Recording const saved(sealed_directory(root.path()));
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}),
                 "one episode published");
     bt::require(physical_rows_of(saved, 0) > 0,
@@ -831,7 +836,7 @@ void test_headless_native_run_records_one_episode() {
 void test_headless_off_writes_no_artifact_files() {
     // Without --record the run writes NOTHING under --out — not even an
     // empty file (the oracle asserts rglob('*') == []).
-    bt::TemporaryDirectory root("lifecycle-headless-off");
+    bt::TemporaryDirectory const root("lifecycle-headless-off");
     const auto out = root.path() / "out";
     std::filesystem::create_directories(out);
     const auto physics = violating_physics(root.path() / "physics.toml");
@@ -845,14 +850,15 @@ void test_headless_off_writes_no_artifact_files() {
 void test_headless_zero_step_failure_keeps_owned_episode() {
     // An initialization-time driver failure seals the committed prefix —
     // zero rows — into its own episode and still publishes it (R03/R16).
-    bt::TemporaryDirectory root("lifecycle-zero-step");
+    bt::TemporaryDirectory const root("lifecycle-zero-step");
     const auto rig = welded_runtime("full");
     rig->runtime->test_fail_at_step(0);
     bool failed = false;
     try { (void)rig->runtime->advance(4, runtime::RideControl{}, 0., 0., std::nullopt); }
     catch (const std::exception &) { failed = true; }
     bt::require(failed, "the zero-step failure propagates through advance");
-    auto episode = std::make_shared<runtime::OwnedNativeEpisode>(rig->runtime->seal_episode());
+    auto const episode = std::make_shared<runtime::OwnedNativeEpisode>(
+        rig->runtime->seal_episode());
     bt::require(episode->samples.empty(),
                 "the zero-step episode seals with an empty prefix");
     rec::RunCapture capture(run_metadata(), true);
@@ -870,7 +876,7 @@ void test_headless_zero_step_failure_keeps_owned_episode() {
     const auto publication = rec::finalize(capture, root.path());
     bt::require(std::filesystem::exists(publication.directory / "manifest.json"),
                 "the zero-step episode publishes");
-    rec::Recording saved(publication.directory);
+    rec::Recording const saved(publication.directory);
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}) &&
                 physical_rows_of(saved, 0) == 0,
                 "the sealed episode reads back with zero physical rows");
@@ -879,7 +885,7 @@ void test_headless_zero_step_failure_keeps_owned_episode() {
 void test_headless_success_with_failed_publication_is_nonzero() {
     // A clean recorded run whose finalize fails exits nonzero: physical_run
     // rethrows the publication failure through ride_command.
-    bt::TemporaryDirectory root("lifecycle-publish-fail");
+    bt::TemporaryDirectory const root("lifecycle-publish-fail");
     const auto blocker = root.path() / "blocker";
     { std::ofstream file(blocker); file << "occupied"; }
     const auto physics = repo_file("examples/research/viewer_physics_welded.toml");
@@ -903,7 +909,8 @@ void test_headless_publish_failure_preserves_primary_and_evidence() {
     catch (...) { primary = std::current_exception(); }
     bt::require(primary != nullptr, "the primary failure is captured");
     rec::RunCapture capture(run_metadata(), true);
-    auto episode = std::make_shared<runtime::OwnedNativeEpisode>(rig->runtime->seal_episode());
+    auto const episode = std::make_shared<runtime::OwnedNativeEpisode>(
+        rig->runtime->seal_episode());
     auto evidence = std::make_shared<rec::EpisodeEvidence>();
     evidence->episode_id = 0; evidence->generation = episode->generation;
     evidence->physical = rec::make_physical_source(
@@ -934,7 +941,7 @@ void test_headless_publish_failure_preserves_primary_and_evidence() {
 void test_headless_second_ctrl_c_during_seal_journals_and_still_publishes() {
     // The headless variant of the seal-time deferred interrupt: journaled
     // while the journal is still open, then publication commits.
-    bt::TemporaryDirectory root("lifecycle-headless-deferred-seal");
+    bt::TemporaryDirectory const root("lifecycle-headless-deferred-seal");
     rec::RunCapture capture(run_metadata("native", "physical_headless"), true);
     bool rethrow = false;
     {
@@ -978,7 +985,7 @@ void test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes() {
         "the deferred interrupt re-raises after sealing");
     bt::require(kinds(capture.events(), 0) == std::vector<std::string>({"episode_started"}),
                 "a deferred interrupt inside finalize is not journaled");
-    rec::Recording saved(sealed_directory(root.path()));
+    rec::Recording const saved(sealed_directory(root.path()));
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}),
                 "the sealed recording reads back");
 }
@@ -987,6 +994,7 @@ void test_headless_second_ctrl_c_during_finalize_is_noted_and_publishes() {
 
 // The dispatch lambda's frame aggregates the inlined test locals across the
 // 26 ports; tests are the leaf of the call graph so the bound is advisory.
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {

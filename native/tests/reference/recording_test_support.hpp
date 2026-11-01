@@ -58,12 +58,25 @@ using rec::value::text;
 // The small planar joint set of support.synthetic_joints() (see
 // test_native_encode_columns.cpp, which shares these fixtures).
 inline const std::vector<rec::JointCoords> &synthetic_joints() {
-    static const std::vector<rec::JointCoords> joints = {
-        {"root_x", "slide", 0, 0}, {"root_z", "slide", 1, 1},
-        {"root_pitch", "hinge", 2, 2}, {"front_wheel_spin", "hinge", 3, 3},
-        {"rear_wheel_spin", "hinge", 4, 4}, {"crank_spin", "hinge", 5, 5},
-        {"fork_slide", "slide", 6, 6}, {"shock_slide", "slide", 7, 7}};
-    return joints;
+  static const std::vector<rec::JointCoords> joints = {
+      {.name = "root_x", .joint_type = "slide", .qposadr = 0, .dofadr = 0},
+      {.name = "root_z", .joint_type = "slide", .qposadr = 1, .dofadr = 1},
+      {.name = "root_pitch", .joint_type = "hinge", .qposadr = 2, .dofadr = 2},
+      {.name = "front_wheel_spin",
+       .joint_type = "hinge",
+       .qposadr = 3,
+       .dofadr = 3},
+      {.name = "rear_wheel_spin",
+       .joint_type = "hinge",
+       .qposadr = 4,
+       .dofadr = 4},
+      {.name = "crank_spin", .joint_type = "hinge", .qposadr = 5, .dofadr = 5},
+      {.name = "fork_slide", .joint_type = "slide", .qposadr = 6, .dofadr = 6},
+      {.name = "shock_slide",
+       .joint_type = "slide",
+       .qposadr = 7,
+       .dofadr = 7}};
+  return joints;
 }
 
 inline const rec::Catalog &synthetic_catalog() {
@@ -76,7 +89,7 @@ inline const rec::Catalog &synthetic_catalog() {
 // _recording_support.sample_row parameter surface (start/dt/qpos/qvel/
 // forces/powers/channels) — forces and powers_w are per-component maps
 // the forces emitter explodes into long rows.
-inline SamplePtr sample_row(std::int64_t interval_id, double start_s,
+inline SamplePtr sample_row(std::int64_t interval_id, double start_s, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                             double dt_s = .00125,
                             std::vector<double> qpos = {},
                             std::vector<double> qvel = {},
@@ -92,7 +105,7 @@ inline SamplePtr sample_row(std::int64_t interval_id, double start_s,
     sample->forces = std::move(forces);
     sample->powers_w = std::move(powers_w);
     sample->channels = std::move(channels);
-    return SamplePtr(std::move(sample));
+    return {std::move(sample)};
 }
 
 inline runtime::OwnedNativeEpisode make_episode(std::vector<SamplePtr> rows,
@@ -196,7 +209,7 @@ inline WireObject storable_channels(bool contact, double brake) {
 // source_time_s) are authored on the base row and removed per test.
 // ``energy_over`` merges into the ``energy`` member map; ``other_over``
 // merges at the channel-root level (the oracle's ``**overrides`` split).
-inline WireObject energy_channels(const WireObject &energy_over = {},
+inline WireObject energy_channels(const WireObject &energy_over = {}, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                   const WireObject &other_over = {}) {
     WireObject energy{
             {"mechanical_energy_j", Wire{12.5}},
@@ -261,19 +274,24 @@ inline rec::RunMetadata run_metadata(std::string backend = "native",
     metadata.run_uuid = "00000000-0000-4000-8000-000000000001";
     metadata.started_utc = "2026-01-01T00:00:00+00:00";
     metadata.backend = std::move(backend);
+    // Read the check-policy decision before mode moves into metadata.mode —
+    // a moved-from string compares unspecified and would freeze "off" into
+    // "strict".
+    const std::string check_policy =
+        mode == "off" ? "diagnostic" : "strict";
     metadata.mode = std::move(mode);
     metadata.values = Value{Value::Object{
-        {"check_policy", text(mode == "off" ? "diagnostic" : "strict")},
+        {"check_policy", text(check_policy)},
         {"drive_mode", text("articulated_effort")},
         {"configuration_sha256", text(std::string(64, '0'))}}};
     metadata.wall_origin_s = 1.5;
     return metadata;
 }
 
-inline rec::InputEvent input_event(std::int64_t episode_id,
+inline rec::InputEvent input_event(std::int64_t episode_id, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                    std::int64_t event_id,
                                    std::string kind = "episode_start",
-                                   double wall_s = 0.,
+                                   double wall_s = 0., // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                    std::int64_t step = 0,
                                    Value values = Value{Value::Object{}}) {
     rec::InputEvent event;
@@ -301,7 +319,7 @@ make_source(std::shared_ptr<const runtime::OwnedNativeEpisode> episode,
 // storage-contract evidence: summary always carries the reviewed outcome /
 // model_status envelope; assets stay empty unless a test stages them.
 inline std::shared_ptr<const rec::EpisodeEvidence>
-make_evidence(std::int64_t episode_id, int generation = 1,
+make_evidence(std::int64_t episode_id, int generation = 1, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
               std::vector<SamplePtr> rows = {},
               Value summary = Value{Value::Object{}},
               const rec::Catalog &catalog = synthetic_catalog(),
@@ -381,7 +399,7 @@ inline SamplePtr with_forces(const runtime::PhysicalSampleData &row) {
     sample->forces = std::move(qfrc);
     sample->powers_w = std::move(powers);
     sw::set(sample->channels, "component_work_j", Wire{std::move(work)});
-    return SamplePtr(std::move(sample));
+    return {std::move(sample)};
 }
 
 // _recording_support._forwarded(rows): all but the closing interval forward
@@ -430,34 +448,40 @@ struct SyntheticCapture {
 };
 
 inline std::unique_ptr<rec::RunCapture>
-synthetic_capture(std::vector<SamplePtr> rows = {}, SyntheticCapture o = {}) {
-    auto capture = std::make_unique<rec::RunCapture>(std::move(o.metadata),
-                                                   o.enabled);
-    std::vector<std::vector<SamplePtr>> per_episode;
-    if (o.value_cases) per_episode = {value_case_rows()};
-    else if (!o.episodes.empty()) per_episode = std::move(o.episodes);
-    else for (int i = 0; i < o.episode_count; ++i)
-        per_episode.push_back(rows);
-    for (std::size_t index = 0; index < per_episode.size(); ++index) {
-        std::vector<SamplePtr> materialized;
-        materialized.reserve(per_episode[index].size());
-        for (const auto &ptr : per_episode[index]) {
-            auto sample = std::make_shared<runtime::PhysicalSampleData>(*ptr);
-            sw::merge(sample->channels, WireObject{o.channels});
-            materialized.push_back(
-                o.forces ? with_forces(*sample) : SamplePtr(std::move(sample)));
-        }
-        if (o.forwarded) materialized = forwarded(materialized);
-        Value episode_summary = index < o.summaries.size()
-            ? o.summaries[index] : o.summary;
-        capture->add_episode(make_evidence(
-            static_cast<std::int64_t>(index), static_cast<int>(index),
-            std::move(materialized), std::move(episode_summary),
-            o.catalog ? *o.catalog : synthetic_catalog(),
-            std::vector<rec::Asset>{o.assets}));
+synthetic_capture(const std::vector<SamplePtr> &rows = {},
+                  SyntheticCapture o = {}) {
+  auto capture =
+      std::make_unique<rec::RunCapture>(std::move(o.metadata), o.enabled);
+  std::vector<std::vector<SamplePtr>> per_episode;
+  if (o.value_cases)
+    per_episode = {value_case_rows()};
+  else if (!o.episodes.empty())
+    per_episode = std::move(o.episodes);
+  else
+    for (int i = 0; i < o.episode_count; ++i)
+      per_episode.push_back(rows);
+  for (std::size_t index = 0; index < per_episode.size(); ++index) {
+    std::vector<SamplePtr> materialized;
+    materialized.reserve(per_episode[index].size());
+    for (const auto &ptr : per_episode[index]) {
+      auto sample = std::make_shared<runtime::PhysicalSampleData>(*ptr);
+      sw::merge(sample->channels, WireObject{o.channels});
+      materialized.push_back(o.forces ? with_forces(*sample)
+                                      : SamplePtr(std::move(sample)));
     }
-    for (auto &event : o.events) capture->event(std::move(event));
-    return capture;
+    if (o.forwarded)
+      materialized = forwarded(materialized);
+    Value episode_summary =
+        index < o.summaries.size() ? o.summaries[index] : o.summary;
+    capture->add_episode(
+        make_evidence(static_cast<std::int64_t>(index), static_cast<int>(index),
+                      std::move(materialized), std::move(episode_summary),
+                      o.catalog ? *o.catalog : synthetic_catalog(),
+                      std::vector<rec::Asset>{o.assets}));
+  }
+  for (auto &event : o.events)
+    capture->event(std::move(event));
+  return capture;
 }
 
 // open_recording for the RAII-less container owner Recording returns.
@@ -470,13 +494,13 @@ sealed(const std::filesystem::path &path) { return rec::open_recording(path); }
 inline void mutate_database(const std::filesystem::path &recording,
                             std::string_view sql) {
     {
-        rec::Database database(recording / "run.duckdb");
-        database.connection().execute(sql);
-        database.connection().execute("CHECKPOINT");
+      rec::Database const database(recording / "run.duckdb");
+      database.connection().execute(sql);
+      database.connection().execute("CHECKPOINT");
     }
-    auto manifest = io::parse_recording_json(
-        bt::text(recording / "manifest.json"));
-    auto *hashes = const_cast<Value *>(
+    auto const manifest =
+        io::parse_recording_json(bt::text(recording / "manifest.json"));
+    auto *hashes = const_cast<Value *>( // NOLINT(cppcoreguidelines-pro-type-const-cast) mutable write through the const lookup view mirrors the oracle's in-place mutation
         rec::detail::find(manifest, "file_sha256"));
     bt::require(hashes != nullptr, "manifest owns file_sha256");
     rec::detail::set(*hashes, "run.duckdb",
@@ -498,7 +522,7 @@ struct WeldedRuntime {
 };
 
 inline void replace_config_key(std::string &text, std::string_view key,
-                               std::string_view from, std::string_view to) {
+                               std::string_view from, std::string_view to) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
     const std::string needle = "\"" + std::string(key) + "\": " + std::string(from);
     const auto at = text.find(needle);
     bt::require(at != std::string::npos, "config key " + std::string(key) + " present");

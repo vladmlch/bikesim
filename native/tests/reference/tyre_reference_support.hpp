@@ -64,7 +64,7 @@ namespace io = bike::io;
 // ---------------------------------------------------------------------
 
 [[nodiscard]] inline bt::oracle::Node node(std::string_view file,
-                                           std::string_view function,
+                                           std::string_view function, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                            std::string_view parameters = {}) {
     std::string name = "tests/reference/" + std::string(file) + "::" +
                        std::string(function);
@@ -251,7 +251,7 @@ fixture_bytes(const std::filesystem::path &path) {
 [[nodiscard]] inline std::string
 fixture_text(const std::filesystem::path &path) {
     const auto bytes = fixture_bytes(path);
-    return {reinterpret_cast<const char *>(bytes.data()), bytes.size()};
+    return {reinterpret_cast<const char *>(bytes.data()), bytes.size()}; // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
 }
 
 [[nodiscard]] inline nativecfg::WriterConfig
@@ -343,29 +343,29 @@ inline void snapshots(bt::oracle::Node &golden, const Stepper &st,
         bt::require(snap.has_value(),
                     std::string(sides.at(static_cast<std::size_t>(side))) +
                             " snapshot present");
-        const auto &s = *snap;
+        const auto &s = (snap).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         const std::string base = std::string(
                 sides.at(static_cast<std::size_t>(side)));
-        count(golden, s.interval_id, base + ".interval_id step " + tag);
-        text(golden, s.backend, base + ".backend step " + tag);
+        count(golden, s.interval_id, base + ".interval_id step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+        text(golden, s.backend, base + ".backend step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         boolean(golden, s.geometric_contact,
-                base + ".geometric_contact step " + tag);
-        scalar(golden, s.time_s, base + ".time_s step " + tag);
+                base + ".geometric_contact step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+        scalar(golden, s.time_s, base + ".time_s step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         scalar(golden, s.effective_radius_m,
-               base + ".effective_radius_m step " + tag);
+               base + ".effective_radius_m step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         count(golden, static_cast<std::int64_t>(s.patches.size()),
-              base + ".patches step " + tag);
+              base + ".patches step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         for (std::size_t i = 0; i < s.patches.size(); ++i) {
             const auto &p = s.patches[i];
             const std::string pbase =
                     base + ".patches[" + std::to_string(i) + "]";
             boolean(golden, p.working_surface,
-                    pbase + ".working_surface step " + tag);
+                    pbase + ".working_surface step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             scalar(golden, p.normal_load_n,
-                   pbase + ".normal_load_n step " + tag);
+                   pbase + ".normal_load_n step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
             scalar(golden, p.tangent_force_n,
-                   pbase + ".tangent_force_n step " + tag);
-            scalar(golden, p.slip_mps, pbase + ".slip_mps step " + tag);
+                   pbase + ".tangent_force_n step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+            scalar(golden, p.slip_mps, pbase + ".slip_mps step " + tag); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
         }
     }
 }
@@ -388,7 +388,7 @@ inline void distributed_diagnostics(bt::oracle::Node &golden,
         bt::require(slot.has_value(),
                     std::string(sides.at(static_cast<std::size_t>(side))) +
                             " diagnostics present");
-        const auto &d = *slot;
+        const auto &d = (slot).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
         const auto at = [&](std::string_view key) {
             return std::string(
                            sides.at(static_cast<std::size_t>(side))) +

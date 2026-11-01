@@ -33,6 +33,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -222,11 +223,9 @@ void test_accounting_all_intervals_is_independent_of_record_decimation() {
                     every_rows.samples.size() == 81,
                 "accounting intervals are decimation-independent");
     for (std::size_t i = 0; i < 81; ++i) {
-        bt::require(every_rows.samples[i]->interval_id ==
-                            static_cast<std::int64_t>(i) &&
-                        decimated_rows.samples[i]->interval_id ==
-                            static_cast<std::int64_t>(i),
-                    "all 81 interval ids publish under either cadence");
+      bt::require(std::cmp_equal(every_rows.samples[i]->interval_id, i) &&
+                      std::cmp_equal(decimated_rows.samples[i]->interval_id, i),
+                  "all 81 interval ids publish under either cadence");
     }
     const runtime::SampleColumns every_columns = every->recorded_columns();
     const runtime::SampleColumns decimated_columns = decimated->recorded_columns();
@@ -252,14 +251,14 @@ constexpr std::string_view kNode =
 void consume_rows(bt::oracle::Node &node,
                   const std::vector<runtime::SamplePtr> &samples,
                   std::int64_t first = 0) {
-    char label[32];
+    char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t index = 0; index < samples.size(); ++index) {
         const auto &sample = samples[index];
         bt::require(sample->interval_id == first +
                             static_cast<std::int64_t>(index),
                     "rows publish contiguous interval ids");
-        std::snprintf(label, sizeof(label), "row.%08zu", index);
-        ft2_reference::consume_tree(node, sample->as_wire(), label);
+        std::snprintf(label, sizeof(label), "row.%08zu", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+        ft2_reference::consume_tree(node, sample->as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
 }
 
@@ -381,7 +380,7 @@ void test_one_second_800_interval_golden_episode_all_channels() {
         node, sw::required(history, "work_j"), "history.work_j");
     ft2_reference::consume_tree(
         node, sw::required(history, "airtime_s"), "history.airtime_s");
-    const double duration[1] = {sw::number(sw::required(history, "duration_s"))};
+    const double duration[1] = {sw::number(sw::required(history, "duration_s"))}; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     node.f64_close(duration, "history.duration_s");
     native->close();
     node.done();

@@ -55,7 +55,7 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
         {0., 85.}, {120., 85.}, {120.1, 47.7}, {180., 0.}};
     bt::require(assist.torque_curve.has_value(),
                 "the profile resolves a torque curve");
-    bt::require(*assist.torque_curve == expected,
+    bt::require((assist.torque_curve).value() == expected, // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                 "the declared torque envelope is ((0,85),(120,85),"
                 "(120.1,47.7),(180,0))");
     bt::require(assist.engage_torque_nm == 4.,

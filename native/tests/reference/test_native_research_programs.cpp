@@ -8,6 +8,8 @@
 // research_control_from_wire — the same decode family the binding's
 // research_program_at runs (parse_intent_control is nanobind-only; the wire
 // decoder below is its field-set twin).
+#include <cstddef>
+
 #include "research_reference_support.hpp"
 #include "support/golden.hpp"
 
@@ -129,7 +131,7 @@ void test_program_knots_optional_fields_and_association(
     const std::array<double, 10> times{
         -.01, 0., .004, .0123, .021, .035, .071, 1., below, above};
     std::vector<double> rows;
-    rows.reserve(10 * 18);
+    rows.reserve(static_cast<std::size_t>(10 * 18));
     for (const double time_s : times) {
         const auto result = programs.apply(command, time_s);
         flatten_result(result, programs.demand_at(time_s), rows);
@@ -158,10 +160,12 @@ void test_no_program_preserves_none_and_explicit_zero() {
                 "an empty program preserves an empty command");
     // RideControl(0., 0., 0., 0., RiderPosture(), False) — every field
     // explicit, including the zero values.
-    runtime::RideControl full{.motor_torque_nm = 0., .motor_limit_nm = 0.,
-                              .human_torque_nm = 0., .crank_target_rate_rad_s = 0.,
-                              .posture = rider::RiderPosture{},
-                              .rider_enabled = false};
+    runtime::RideControl const full{.motor_torque_nm = 0.,
+                                    .motor_limit_nm = 0.,
+                                    .human_torque_nm = 0.,
+                                    .crank_target_rate_rad_s = 0.,
+                                    .posture = rider::RiderPosture{},
+                                    .rider_enabled = false};
     const auto kept = programs.apply(full, 0.);
     bt::require(kept.motor_torque_nm == 0. && kept.motor_limit_nm == 0. &&
                     kept.human_torque_nm == 0. && kept.crank_target_rate_rad_s == 0. &&

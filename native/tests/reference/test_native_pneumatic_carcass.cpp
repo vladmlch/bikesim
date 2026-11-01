@@ -373,26 +373,36 @@ void test_carcass_invalid_inputs_bitwise_atomicity(std::int64_t n_rays) {
     // (dt_s, omega_radps, speed_mps, delta variant) rows in oracle
     // check order: dt invalid first, then non-finite omega/speed, then
     // delta shape/content.
-    enum class DeltaKind { none, nan, neg, short_ };
-    const struct {
+    enum class DeltaKind : std::uint8_t { none, nan, neg, short_ };
+    const struct { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         double dt, omega, speed;
         DeltaKind delta;
     } bad_cases[] = {
-            {0.0, 4.0, 1.0, DeltaKind::none},
-            {-0.002, 4.0, 1.0, DeltaKind::none},
-            {std::numeric_limits<double>::quiet_NaN(), 4.0, 1.0,
-             DeltaKind::none},
-            {std::numeric_limits<double>::infinity(), 4.0, 1.0,
-             DeltaKind::none},
-            {0.002, std::numeric_limits<double>::quiet_NaN(), 1.0,
-             DeltaKind::none},
-            {0.002, std::numeric_limits<double>::infinity(), 1.0,
-             DeltaKind::none},
-            {0.002, 4.0, -std::numeric_limits<double>::infinity(),
-             DeltaKind::none},
-            {0.002, 4.0, 1.0, DeltaKind::short_},
-            {0.002, 4.0, 1.0, DeltaKind::nan},
-            {0.002, 4.0, 1.0, DeltaKind::neg},
+        {.dt = 0.0, .omega = 4.0, .speed = 1.0, .delta = DeltaKind::none},
+        {.dt = -0.002, .omega = 4.0, .speed = 1.0, .delta = DeltaKind::none},
+        {.dt = std::numeric_limits<double>::quiet_NaN(),
+         .omega = 4.0,
+         .speed = 1.0,
+         .delta = DeltaKind::none},
+        {.dt = std::numeric_limits<double>::infinity(),
+         .omega = 4.0,
+         .speed = 1.0,
+         .delta = DeltaKind::none},
+        {.dt = 0.002,
+         .omega = std::numeric_limits<double>::quiet_NaN(),
+         .speed = 1.0,
+         .delta = DeltaKind::none},
+        {.dt = 0.002,
+         .omega = std::numeric_limits<double>::infinity(),
+         .speed = 1.0,
+         .delta = DeltaKind::none},
+        {.dt = 0.002,
+         .omega = 4.0,
+         .speed = -std::numeric_limits<double>::infinity(),
+         .delta = DeltaKind::none},
+        {.dt = 0.002, .omega = 4.0, .speed = 1.0, .delta = DeltaKind::short_},
+        {.dt = 0.002, .omega = 4.0, .speed = 1.0, .delta = DeltaKind::nan},
+        {.dt = 0.002, .omega = 4.0, .speed = 1.0, .delta = DeltaKind::neg},
     };
     for (const auto &bad : bad_cases) {
         auto o_hits = hits;
@@ -521,9 +531,8 @@ void test_carcass_advance_unloaded_validation() {
 // rejected at construction (the state-dict intake funnels into the
 // same CarcassState ctor).
 void test_carcass_state_construction_validation() {
-    rejects<std::invalid_argument>(
-            [] { biketyre::CarcassState narrow(2); },
-            "at least 3 rays");
+  rejects<std::invalid_argument>([] { biketyre::CarcassState const narrow(2); },
+                                 "at least 3 rays");
 }
 
 // test_carcass_first_step_initialized_branch — the first evaluate on a

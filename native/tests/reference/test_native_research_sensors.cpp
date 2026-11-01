@@ -254,7 +254,7 @@ void test_invalid_operations_and_exhaustion_preserve_state() {
 // always builds a fresh seeded tape).
 [[nodiscard]] runtime::SensorPipeline pipeline_copy(const runtime::SensorConfig &config,
                                                     runtime::NoiseTape tape) {
-    return runtime::SensorPipeline(config, std::move(tape));
+  return {config, std::move(tape)};
 }
 
 // tests/reference/test_native_research_sensors.py::
@@ -284,6 +284,7 @@ void test_native_owns_noise_and_validates_empty_shape() {
 } // namespace
 
 int main() {
+    // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         for (const auto &[suffix, imu, dropout, latency] : {
             std::tuple{"[False-0.0-0.0]", false, 0., 0.},

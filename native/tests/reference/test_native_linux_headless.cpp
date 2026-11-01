@@ -54,7 +54,7 @@ void scrub_display_environment() {
                              "XDG_SESSION_TYPE", "MUJOCO_GL", "PYOPENGL_PLATFORM",
                              "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH",
                              "DYLD_FALLBACK_LIBRARY_PATH"})
-        ::unsetenv(name);
+        ::unsetenv(name); // NOLINT(concurrency-mt-unsafe) test environment mutation runs single-threaded by construction
 }
 
 [[nodiscard]] const Value& reqv(const Value& row, const char* name) {
@@ -109,7 +109,7 @@ void scrub_display_environment() {
 // not leave an output payload behind.
 [[gnu::noinline]] void driver_steps_without_display() {
     scrub_display_environment();
-    bt::TemporaryDirectory root("linux-headless-driver");
+    bt::TemporaryDirectory const root("linux-headless-driver");
     const auto physics = staged_physics(root.path());
     const auto out = root.path() / "out";
     const auto result = ride(physics, root.path(), "0.005", "diagnostic", out);
@@ -134,7 +134,7 @@ void scrub_display_environment() {
 // test_native_platform_recording.cpp).
 [[gnu::noinline]] void cli_outcome_retained_without_display() {
     scrub_display_environment();
-    bt::TemporaryDirectory root("linux-headless-outcome");
+    bt::TemporaryDirectory const root("linux-headless-outcome");
     const auto physics = rt::violating_physics(root.path() / "violating.toml");
 
     const auto strict = ride(physics, root.path(), "0.04", "strict",

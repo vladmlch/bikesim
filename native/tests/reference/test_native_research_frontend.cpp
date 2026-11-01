@@ -13,9 +13,9 @@ namespace sw = runtime::sample_wire;
 //   test_native_partial_ticks_latch_policy_until_external_boundary
 void test_native_partial_ticks_latch_policy_until_external_boundary() {
     auto env = environment();
-    auto *const environment_ptr = env.get();
+    auto const *const environment_ptr = env.get();
     auto counting = std::make_unique<CountingPolicy>();
-    auto *const policy = counting.get();
+    auto const *const policy = counting.get();
     research::PolicySession session(std::move(env), std::move(counting));
     // advance_playback(session, 1): one bounded slice — begin the window,
     // deliver at most to step 1 and keep the pending latch.

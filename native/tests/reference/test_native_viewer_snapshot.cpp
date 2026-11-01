@@ -43,11 +43,11 @@ namespace rd = bike::recording::detail;
 namespace sw = runtime::sample_wire;
 
 [[nodiscard]] std::string rr_read_bytes(const std::filesystem::path &path) {
-    std::ifstream stream(path, std::ios::binary);
-    bt::require(stream.good(), "golden file is readable: " + path.string());
-    std::ostringstream contents;
-    contents << stream.rdbuf();
-    return contents.str();
+  std::ifstream const stream(path, std::ios::binary);
+  bt::require(stream.good(), "golden file is readable: " + path.string());
+  std::ostringstream contents;
+  contents << stream.rdbuf();
+  return contents.str();
 }
 
 constexpr std::string_view kNode =
@@ -67,7 +67,7 @@ void preview_owned() {
         std::string(kNode) +
         "test_native_preview_matches_reference_and_is_owned");
     const auto env = ft2_reference::research("research_flat");
-    char label[40];
+    char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t iteration = 0; iteration < 3; ++iteration) {
         const auto frame = env->render_frame();
         bt::require(finite_state(frame.state.integration_state),
@@ -110,8 +110,9 @@ void preview_owned() {
                     ft2_reference::flatten_into(runtime::Wire{row}, "",
                                                 leaves);
                     std::vector<std::string> order;
+                    order.reserve(leaves.numeric.size());
                     for (const auto &[p, v] : leaves.numeric)
-                        order.push_back(p);
+                      order.push_back(p);
                     const auto bytes =
                         std::as_bytes(std::span<const char>(payload));
                     for (const auto *field :
@@ -126,7 +127,7 @@ void preview_owned() {
                             std::size_t>(found - order.begin());
                         const auto chunk = bytes.subspan(
                             offset + position * 8, 8);
-                        std::array<std::byte, 8> raw;
+                        std::array<std::byte, 8> raw{};
                         std::ranges::copy(chunk, raw.begin());
                         const double recorded = std::bit_cast<double>(raw);
                         bt::require(
@@ -137,16 +138,16 @@ void preview_owned() {
                     }
                 }
         }
-        std::snprintf(label, sizeof(label), "preview.%zu.row", iteration);
-        ft2_reference::consume_tree(node, row, label);
-        std::snprintf(label, sizeof(label), "preview.%zu.endpoint",
+        std::snprintf(label, sizeof(label), "preview.%zu.row", iteration); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
+        ft2_reference::consume_tree(node, row, label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), "preview.%zu.endpoint", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       iteration);
         ft2_reference::consume_tree(
-            node, sw::required(view, "endpoint"), label);
-        std::snprintf(label, sizeof(label), "preview.%zu.transition",
+            node, sw::required(view, "endpoint"), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+        std::snprintf(label, sizeof(label), "preview.%zu.transition", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       iteration);
         ft2_reference::consume_tree(
-            node, step(*env, motor_control(0.)).as_wire(), label);
+            node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
     }
     const auto frame = env->render_frame();
     const auto expected = frame.state.integration_state;
@@ -206,7 +207,7 @@ void target_slice() {
     const auto completed = env->advance_control(std::nullopt, std::nullopt);
     bt::require(completed.has_value(),
                 "the unbounded advance completes the pending window");
-    ft2_reference::consume_tree(node, completed->as_wire(),
+    ft2_reference::consume_tree(node, completed.value().as_wire(), // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
                                 "advance.transition");
     env->acknowledge_control();
     bt::require(env->commands_requested().size() == 1 &&

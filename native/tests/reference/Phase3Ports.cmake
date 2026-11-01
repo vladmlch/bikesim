@@ -535,6 +535,19 @@ bike_add_reference_test(native_viewer_snapshot ENGINE
   SOURCES test_native_viewer_snapshot.cpp LIBRARIES bike_replay bike_recording bike_app
   LABELS t53 replay)
 
+# research_reference_support.cpp is the CountingPolicy vtable anchor — its
+# out-of-line destructor is the key function -Wweak-vtables needs. Seven
+# research targets consume it; the ODR sweep compiles every
+# compile-database entry once before a combined relocatable link, so
+# per-target duplicate compiles collide on the emitted
+# typeinfo/vtable/destructor symbols (the bike_test_allocation_faults
+# comment documents the same constraint). One OBJECT library = one compile
+# entry; each executable gets the same object through
+# $<TARGET_OBJECTS:...> exactly like a listed source.
+add_library(bike_test_research_reference OBJECT research_reference_support.cpp)
+bike_startup_target_policy(bike_test_research_reference "${CMAKE_SOURCE_DIR}/native")
+target_link_libraries(bike_test_research_reference PUBLIC bike_migration_test)
+
 # 3.33a T53 research batch — the NativeResearchRuntime external-boundary,
 # capture-cursor, failure/reset, PolicySession lifecycle, program
 # interpolation, legacy-export publication and sensor-delivery contracts
@@ -547,25 +560,29 @@ bike_add_reference_test(native_research_capture ENGINE
   SOURCES test_native_research_capture.cpp LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_environment ENGINE
-  SOURCES test_native_research_environment.cpp research_reference_support.cpp
+  SOURCES test_native_research_environment.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_failures ENGINE
   SOURCES test_native_research_failures.cpp LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_frontend ENGINE
-  SOURCES test_native_research_frontend.cpp research_reference_support.cpp
+  SOURCES test_native_research_frontend.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_policy ENGINE
-  SOURCES test_native_research_policy.cpp research_reference_support.cpp
+  SOURCES test_native_research_policy.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_programs ENGINE
   SOURCES test_native_research_programs.cpp LIBRARIES bike_app
   LABELS t53 research golden)
 bike_add_reference_test(native_research_recording ENGINE
-  SOURCES test_native_research_recording.cpp research_reference_support.cpp
+  SOURCES test_native_research_recording.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app bike_replay bike_recording
   LABELS t53 research)
 bike_add_reference_test(native_research_sensors ENGINE
@@ -581,15 +598,18 @@ bike_add_reference_test(native_research_sensors ENGINE
 # isolated child processes); and the bike-research-sweep fan-out
 # (test_research_sweep.py, driven against the bike-research-sweep artifact).
 bike_add_reference_test(native_research_capture_contracts ENGINE
-  SOURCES test_research_capture.cpp research_reference_support.cpp
+  SOURCES test_research_capture.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app bike_cli
   LABELS t53 research)
 bike_add_reference_test(native_research_frontend_contracts ENGINE
-  SOURCES test_research_frontend.cpp research_reference_support.cpp
+  SOURCES test_research_frontend.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app
   LABELS t53 research)
 bike_add_reference_test(native_research_recording_lifecycle ENGINE
-  SOURCES test_research_recording_lifecycle.cpp research_reference_support.cpp
+  SOURCES test_research_recording_lifecycle.cpp
+    $<TARGET_OBJECTS:bike_test_research_reference>
   LIBRARIES bike_app bike_cli bike_platform
   LABELS t53 research)
 bike_add_reference_test(native_research_sweep ENGINE

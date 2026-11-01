@@ -108,7 +108,10 @@ bool approx(double actual, double expected) {
     // the C++ equivalent is const-correctness — assigning to a const
     // RiderKinematicState fails to compile, so the freeze is checked here
     // by observing that only owned copies ever mutate.
-    const RiderKinematicState frozen = state;
+    // The owned copy IS the contract: the comment above explains the
+    // freeze is observed because only owned snapshots can mutate, so a
+    // reference would make the bt::require below tautological.
+    const RiderKinematicState frozen = state; // NOLINT(performance-unnecessary-copy-initialization) owned copy is the contract per the comment above
     bt::require(frozen.rider_time_s == state.rider_time_s,
                 "the frozen snapshot value is stable");
 }
@@ -121,7 +124,10 @@ bool approx(double actual, double expected) {
         rig.model.get(), rig.data.get(), vertices(), wheels, 0.);
     const auto forces = model_access::mutable_buffer(
         rig.data->efc_force, rig.data->nefc, "efc_force");
-    for (std::size_t i = 0; i < forces.size(); ++i) forces[i] = 1e6;
+    // A range-for over the span would bind a `double` copy and the write
+    // would not reach the buffer; indexed assignment through forces[] is
+    // the load-bearing idiom here.
+    for (std::size_t i = 0; i < forces.size(); ++i) forces[i] = 1e6; // NOLINT(modernize-loop-convert) indexed write must reach the buffer
     const auto constraint = model_access::mutable_buffer(
         rig.data->qfrc_constraint, rig.model->nv, "qfrc_constraint");
     const auto applied = model_access::mutable_buffer(
@@ -176,9 +182,12 @@ bool approx(double actual, double expected) {
     // carries the same disclosed position).
     const auto only = runtime::road_samples(vertices(), wheels, 0.);
     std::vector<double> only_x;
-    for (const auto &s : only) only_x.push_back(s.x_m);
+    only_x.reserve(only.size());
+    for (const auto &s : only)
+      only_x.push_back(s.x_m);
     std::ranges::sort(only_x);
-    only_x.erase(std::unique(only_x.begin(), only_x.end()), only_x.end());
+    const auto tail = std::ranges::unique(only_x);
+    only_x.erase(tail.begin(), tail.end());
     bt::require(only_x == std::vector<double>{.2, 1.2},
                 "zero lookahead discloses only the wheel positions");
     bool rejected = false;
@@ -195,7 +204,7 @@ bool approx(double actual, double expected) {
     // tests/reference/test_rider_information_boundary.py::test_sensor_observation_contract_unchanged
     // The Python dataclass field order is the wire order in the native
     // codec; the emitted key sequence is the observable contract.
-    runtime::SensorObservation observation;
+    runtime::SensorObservation const observation;
     const auto wire = observation.as_wire();
     const std::array<std::string_view, 10> keys{
         "time_s", "source_time_s", "valid", "specific_force_body_mps2",

@@ -38,7 +38,7 @@ bool equal(const std::vector<double> &a, const std::vector<double> &b) {
 // at step 0 and after a committed advance.
 void test_existing_preview_and_hud_remain_equal() {
     auto rig = welded_runtime();
-    view::InputState input;
+    view::InputState const input;
     const auto frame = rig->runtime->render_frame();
     const auto columns = view::physical_columns(frame, std::nullopt);
     bt::require(!columns.empty(),
@@ -62,8 +62,8 @@ void test_existing_preview_and_hud_remain_equal() {
     const auto live_columns = view::physical_columns(live1, std::nullopt);
     bt::require(live_columns.size() > columns.size(),
                 "a sampled frame carries the full column schema");
-    const auto live_line = view::hud_line(live1, input, std::nullopt,
-                                          view::Mode::physical);
+    [[maybe_unused]] const auto live_line =
+        view::hud_line(live1, input, std::nullopt, view::Mode::physical);
     recording_test::advance(*rig->runtime, 400);
     const auto frame2 = rig->runtime->render_frame();
     const auto columns2 = view::physical_columns(frame2, std::nullopt);

@@ -1,51 +1,18 @@
-.venv/
-__pycache__/
-.pytest_cache/
 results/
-*.pyc
-# Generated outputs
 *.png
-output/plots/*.png
-output/models/*.xml
-output/divergence_*.json
-output/divergence_*.toml
-# output/ is scratch space for run artifacts (telemetry.csv, intervals.jsonl,
-# generation dirs) — bulk data stays local; only top-level *.md notes are tracked
-output/*
-!output/*.md
 MUJOCO_LOG.TXT
 
 # Offline bundles (built artifacts — published as GitHub Releases)
 bike-sim-offline-*
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-dist/
 build/
 # Non-default native build trees (native/build-linux-*, sanitizer dirs, ...)
 native/build-*/
-.venv/
-.pytest_cache/
 
 # Explicitly acquired native dependency SDKs + archives for the standalone
 # build (native/dependencies.lock.json records their verified hashes).
 .deps/
-
-# MuJoCo generated legacy
-bike_model.xml
-bike_playground*.xml
-coordinates.json
-
-# Generated native-bench state bundles — regenerable via
-# `uv run python tools/proto_native_bench/dump_model.py`. The tracked fixture
-# is artifacts/fixture-v2/ + artifacts/current.json (plus artifacts/model.mjb,
-# the shared compiled model other suites load); auto-named v2-* dirs and
-# ad-hoc sim output stay untracked.
-tools/proto_native_bench/artifacts/v2-*/
-tools/proto_native_bench/artifacts/run*/
+.deps
 
 # Tooling / IDE
 .idea/

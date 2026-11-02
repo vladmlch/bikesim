@@ -74,7 +74,7 @@ std::string generate_mjcf(const BuildRequest& request) {
             if(context.physics->articulated.joint_envelope_path) envelopes=configuration::load_joint_envelopes(*context.physics->articulated.joint_envelope_path);
             build_articulated_rider(world,*context.articulated,split_paired_arm_masses(segment_masses(context.rider.mass_kg,context.rider.helmet_mass_kg)),
                 envelopes?&*envelopes:nullptr,context.physics->articulated.pedal_attachment=="spindle");
-            add_rider_actuators(root,context.physics->articulated);
+            add_rider_actuators(root);
             finish_rider_attachments(root,context);
         }
         finalize_geometric_transmission(root,*context.physics);

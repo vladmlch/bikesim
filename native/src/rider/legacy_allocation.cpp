@@ -62,7 +62,6 @@ ResponseAllocation LegacyController::allocate_uncoupled(const mjData& data,
     const auto qfrc_bias=model_access::readonly_buffer(data.qfrc_bias,m.nv,"qfrc_bias");
     for(std::size_t j=0;j<bike_dofs_.size();++j)qbase[j]=qacc[static_cast<std::size_t>(bike_dofs_[j])];
     auto passive=c_.envelope_forces(&data).first;
-    for(const auto& joint:c_.joints_)passive[static_cast<std::size_t>(joint.dof_adr)]-=cfg.passive_damping_nms_rad()*qvel[static_cast<std::size_t>(joint.dof_adr)];
     for(std::size_t i=0;i<nr;++i){const auto dof=static_cast<std::size_t>(rider_dofs_[i]);bias[i]=qfrc_bias[dof];known[i]=passive[dof];for(std::size_t j=0;j<nr;++j)mr.values[i*nr+j]=mass.values[dof*nv+static_cast<std::size_t>(rider_dofs_[j])];for(std::size_t j=0;j<bike_dofs_.size();++j)bias[i]+=mass.values[dof*nv+static_cast<std::size_t>(bike_dofs_[j])]*qbase[j];}
     for(std::size_t i=0;i<nt;++i){const int dof=c_.joints_[i].dof_adr;const auto found=std::ranges::find(rider_dofs_,dof);if(found==rider_dofs_.end())throw std::invalid_argument("rider actuator outside rider DOFs");act.values[static_cast<std::size_t>(found-rider_dofs_.begin())*nt+i]=1.;speed[i]=qvel[static_cast<std::size_t>(dof)];if(request.lower_torque_nm[i]>request.upper_torque_nm[i])throw std::invalid_argument("empty rider actuator bounds");}
     auto inequalities=d::zeros(0,nz);Vector rhs;

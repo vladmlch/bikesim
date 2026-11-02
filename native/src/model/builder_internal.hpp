@@ -69,7 +69,7 @@ void finish_physical_topology(Element& root,const BuildContext& context);
 void finalize_geometric_transmission(Element& root,const configuration::SimulationPhysicsConfig& physics);
 void build_articulated_rider(Element& world,const ArticulatedPose& pose,const SegmentMasses& masses,
                              const configuration::JointEnvelopeMap* envelopes,bool lock_ankles);
-void add_rider_actuators(Element& root,const configuration::ArticulatedConfig& config);
+void add_rider_actuators(Element& root);
 void add_saddle_pin(Element& root,double solref);
 void finish_rider_attachments(Element& root,const BuildContext& context);
 } // namespace bike::model::detail

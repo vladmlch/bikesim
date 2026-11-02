@@ -1,5 +1,14 @@
 {
     "mcpServers": {
+        "colab-mcp": {
+            "type": "stdio",
+            "command": "uvx",
+            "args": ["git+https://github.com/googlecolab/colab-mcp"],
+            "env": {
+                "COLAB_AUTHUSER": "9"
+            },
+            "timeout": 30000
+        },
         "bike_kinematics": {
             "type": "stdio",
             "command": "uv",

@@ -1,13 +1,14 @@
 {
   "mcpServers": {
-    "idea": {
-      "disabled": true,
-      "url": "http://127.0.0.1:64342/stream",
-      "type": "http"
-    },
-    "mcp-steroid": {
-      "url": "http://localhost:6315/mcp",
-      "type": "http"
+    "colab-mcp": {
+      "command": "uvx",
+      "args": [
+        "git+https://github.com/googlecolab/colab-mcp"
+      ],
+      "env": {
+        "COLAB_AUTHUSER": "9"
+      },
+      "timeout": 30000
     }
   }
 }

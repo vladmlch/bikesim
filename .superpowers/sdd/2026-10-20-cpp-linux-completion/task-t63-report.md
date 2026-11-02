@@ -68,11 +68,25 @@ attempted.
 
 ## Final clean-tree gate
 
-Recorded in `migration/final-closure.json` → `verification`; the gate row
-is filled by the release run at this commit:
+`bash tools/run_tests.sh native` — **exit 0** on the clean-tree release
+run: configure + 762-target build + every produced sweep clean
+(frontends / tidy / cppcheck / odr / scripts / headers /
+diagnostic-controls / context / contracts; analyzer report-only) +
+`ctest -LE 'slow|audit|package'` **182/182 pass** including
+`migration_T63`. Recorded in `migration/final-closure.json` →
+`verification`.
 
-- `bash tools/run_tests.sh native` — configure + build + produced sweeps
-  + `ctest -LE 'slow|audit|package'` including `migration_T63`.
+Four gate-hardening commits (`ce35544d`, `573be889`, `f5bbe945`,
+`aa30c602`) cleared findings the gate itself exposed — two GCC `-Werror`
+diagnostics, a `modernize-raw-string-literal` tidy warning, the contracts
+sweep still demanding the deleted `tests/reference` Python tree
+(`selected_artifact_assertions` now `not-applicable`, mirroring the
+`loader_provenance` convention), a segfault in `native_contract_tests`
+from an explicit `std::array<TestCase,46>` that outlived the removed
+case (now `std::to_array` — the size cannot go stale), the stale
+46-name loader-contracts list, and `replay_manifest_v2` hashing the
+retired `native/CMakeLists.txt` into the source manifest.
+
 - `cmake --install` / `cpack` TGZ pair + `package_smoke` + audit negative
   controls — package contents carry no `.py*`/interpreter surface.
 

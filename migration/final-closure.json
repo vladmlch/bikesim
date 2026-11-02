@@ -6,7 +6,8 @@
  "commits": {
   "preparation": "acc15a8d \u2014 retire the interpreter build, binding and packaging surface",
   "deletion": "3d84cf040fb3b4614b4b18d8d854eed10e45ad1b \u2014 delete the first-party Python ledger (519 files)",
-  "closure": "this commit \u2014 ledger rewrite, final closure, report"
+  "closure": "d384d203 \u2014 ledger rewrite, final closure, report",
+  "gate_hardening": "ce35544d, 573be889, f5bbe945, aa30c602 \u2014 clear the findings the final gate exposed (GCC -Werror diagnostics, tidy raw-string literal, contracts sweep on the deleted tests/reference tree, contract-case array-size segfault, stale loader-contracts case list, replay manifest root file)"
  },
  "ledger": {
   "path": "migration/python-removal.json",
@@ -87,7 +88,7 @@
  ],
  "retained_evidence": "immutable fixtures, goldens and migration records stay tracked as data; no interpreter executes them",
  "verification": {
-  "native_gate": "bash tools/run_tests.sh native",
+  "native_gate": "bash tools/run_tests.sh native \u2014 exit 0 on the final clean-tree run: configure + 762-target build + all produced sweeps (frontends/tidy/cppcheck/odr/scripts/headers/diagnostic-controls/context/contracts; analyzer report-only) + ctest -LE 'slow|audit|package' 182/182 pass",
   "items": {
    "configure_build": "cmake --preset release && cmake --build --preset release \u2014 762 targets, green",
    "source_audit": "bike-python-audit --mode source \u2014 519 deleted absent, 29 exempt present, exit 0",

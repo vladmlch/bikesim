@@ -2633,16 +2633,17 @@
       "line": 17,
       "end_line": 22,
       "owner_task": "T52",
-      "native_test_id": "reference.coupled_rider_task::test_passive_damping_defaults_to_the_legacy_gain_coupling",
-      "native_source": "native/tests/reference/test_coupled_rider_task.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [
         "tests/reference/test_coupled_rider_task.py::test_passive_damping_defaults_to_the_legacy_gain_coupling"
       ],
       "assertions_capture": "2026-10-26: measured - pytest collected 1 node(s); oracle green darwin-arm64",
-      "comparison_class": "contract",
-      "disposition": "port",
+      "comparison_class": "python-only",
+      "disposition": "drop",
       "evidence": [
-        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending"
+        "2026-10-26 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.coupled_rider_task green darwin-arm64; linux-aarch64 qualification pending",
+        "2026-11-02 passive-damping removal: native twin dropped — the exercised knob (joint_passive_damping_nms_rad and its nullopt→joint_kd fallback) is removed from the schema per spec Q13 (passive damping fixed at 0); no surviving arithmetic to pin."
       ]
     },
     {
@@ -2719,7 +2720,8 @@
         "2026-10-26 3.15 lane/c linux qualification: reference.coupled_rider_task FAILS on linux-aarch64 at this record \u2014 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive after the 1.5s native episode; the first require 'positive > 20 W' passed). Oracle-side pytest green on the same linux container (894s) and the native binary is green on darwin-arm64 (1199s), so this is a native-side platform drift in the episode, plausibly the same delivered-power parity family as the two deferred records. Remains planned; binary stays red on linux until fixed.",
         "2026-10-27 3.15 lane/c fix-round: re-ran post-F4 (61c97189) on linux-aarch64 \u2014 still RED: 'tissue damping stays a small fraction of muscle power' (passive >= 0.3*positive on the 1.5 s native episode). F4 closed the weld-allocator stale-efc arena; this linux-only episode drift is a distinct defect in the delivered-power parity family, not the sequencing gap F4 fixed. Stays planned; oracle-side green darwin-arm64 + linux-aarch64 (894 s); native green darwin-arm64.",
         "2026-10-31 tail5 lane/h2: reference.coupled_rider_task is now RED on darwin-arm64 at HEAD too (1226 s) \u2014 'tissue damping stays a small fraction of muscle power' (the record's own passive >= 0.3*positive gate; the binary's other legs passed). Pre-existing at the merge tip: this lane's edits touch no coupled/physics source, and darwin was last-known-green on lane/c 2026-10-26 (1199 s) \u2014 a physics change merged since then drifted the 1.5 s episode past the contract on darwin, matching the linux-aarch64 failure signature (same assertion). linux-aarch64 re-qualification additionally could not run \u2014 Docker intentionally stopped by the coordinator's plan change (tools/linux/container.sh guard; darwin-only wave). Stays planned \u2014 now red on both platforms; owns a real delivered-power parity investigation, not a test defect.",
-        "2026-10-31 user ruling: documented baseline exception \u2014 'tissue damping stays a small fraction of muscle power' red on both engines (reference.coupled_rider_task red darwin-arm64 at HEAD, 1226s); passive-damping share is a physics/contract question, not a port gap \u2014 stays planned, enumerated in the Phase-4 baseline-exception list."
+        "2026-10-31 user ruling: documented baseline exception \u2014 'tissue damping stays a small fraction of muscle power' red on both engines (reference.coupled_rider_task red darwin-arm64 at HEAD, 1226s); passive-damping share is a physics/contract question, not a port gap \u2014 stays planned, enumerated in the Phase-4 baseline-exception list.",
+        "2026-11-02 passive-damping removal: the knob the oracle's passive-power lane measured is deleted (spec Q13) \u2014 the R5-family passive_power drift this record tracked is moot. The native twin is repurposed to the kept rider_passive_damping channel (engine qfrc_passive at rider DOFs) folded against qvel; disposition stays planned pending oracle-record disposition."
       ]
     },
     {
@@ -4111,7 +4113,7 @@
       "line": 203,
       "end_line": 216,
       "owner_task": "T52",
-      "native_test_id": "reference.joint_strength::test_actuators_are_pure_motors_with_dof_damping",
+      "native_test_id": "reference.joint_strength::test_actuators_are_pure_motors_without_dof_damping",
       "native_source": "native/tests/reference/test_joint_strength.cpp",
       "collected_node_ids": [
         "tests/reference/test_joint_strength.py::test_actuators_are_pure_motors_with_dof_damping"
@@ -4120,7 +4122,8 @@
       "comparison_class": "contract",
       "disposition": "port",
       "evidence": [
-        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending"
+        "2026-10-27 3.15 lane/c: ported; oracle green darwin-arm64; CTest reference.joint_strength green darwin-arm64 (408 checks); linux-aarch64 qualification pending",
+        "2026-11-02 passive-damping removal: native twin renamed to test_actuators_are_pure_motors_without_dof_damping — spec Q13 removed the dof-damping knob, so the assertion is now dof_damping == 0 at rider DOFs (no damping attribute)."
       ]
     },
     {
@@ -24438,20 +24441,17 @@
       "line": 248,
       "end_line": 278,
       "owner_task": "T52",
-      "native_test_id": "reference.native_spindle_controller::test_spindle_activation_and_passive_damping_match_python",
-      "native_source": "native/tests/reference/test_native_spindle_controller.cpp",
+      "native_test_id": null,
+      "native_source": null,
       "collected_node_ids": [
         "tests/reference/test_native_spindle_controller.py::test_spindle_activation_and_passive_damping_match_python"
       ],
       "assertions_capture": "2026-10-27: measured \u2014 pytest collected 1 node(s); oracle green darwin-arm64 + linux-aarch64",
-      "comparison_class": "tolerance-oracle",
-      "disposition": "golden",
+      "comparison_class": "python-only",
+      "disposition": "drop",
       "evidence": [
-        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)"
-      ],
-      "golden_platforms": [
-        "darwin-arm64",
-        "linux-aarch64"
+        "2026-10-27 lane/e F5: ported to native/tests/reference/test_native_spindle_controller.cpp (reference.native_spindle_controller); oracle green darwin-arm64 + linux-aarch64; CTest green both platforms (darwin build/native-release, linux /build/root-ref #130)",
+        "2026-11-02 passive-damping removal: native twin dropped — the oracle node was captured at joint_passive_damping_nms_rad = 2.5 and its pinned torques/state embed the passive term spec Q13 removed; surviving assertions pin no oracle arithmetic. The recorded golden node files remain on disk unexercised (historical fixture, not regenerated)."
       ]
     },
     {

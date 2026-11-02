@@ -4,14 +4,18 @@
 // asserted exactly like the oracle's attribute reads.
 #include "support/migration_test.hpp"
 #include "support/golden.hpp"
+#include "support/temporary_directory.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/physical_config.hpp"
 #include <array>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <optional>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
@@ -98,9 +102,37 @@ void test_rider_numbers() {
                     articulated.saddle_attachment == "pin" &&
                     articulated.grip_attachment == "connect",
                 "the pinned plant attachments are spindle/pin/connect");
-    bt::require(articulated.joint_passive_damping_nms_rad.has_value() &&
-                    *articulated.joint_passive_damping_nms_rad == 0.,
-                "passive hinge damping is zeroed");
+    // Spec Q13: joint_passive_damping_nms_rad is removed from the schema —
+    // "passive hinge damping is zeroed" is now enforced at parse time: a
+    // document that still carries the key fails to load rather than
+    // resolving a nonzero hinge damping.
+    {
+        const std::string source = bt::text(repo_file(
+            "examples/research/viewer_physics_welded.toml"));
+        const std::string table = "[articulated]";
+        const auto anchor = source.find(table);
+        bt::require(anchor != std::string::npos,
+                    "the welded document keeps an [articulated] table");
+        std::string injected(source);
+        injected.insert(anchor + table.size(),
+                        "\njoint_passive_damping_nms_rad = 0.0");
+        const bt::TemporaryDirectory dir("welded-legacy-key");
+        const auto path = dir.path() / "physics.toml";
+        { std::ofstream out(path); out << injected; }
+        bool threw = false;
+        try {
+            (void)cfg::load_physics(path);
+        } catch (const std::invalid_argument &failure) {
+            threw = true;
+            bt::require(
+                std::string_view(failure.what()).find(
+                    "joint_passive_damping_nms_rad") !=
+                    std::string_view::npos,
+                "the load rejection names the removed key");
+        }
+        bt::require(threw,
+                    "the schema rejects joint_passive_damping_nms_rad");
+    }
 }
 
 } // namespace

@@ -1,7 +1,9 @@
-// Ports all five source test functions in
+// Ports the surviving source test functions in
 // tests/reference/test_coupled_rider_task.py — the opt-in coupled task
 // control for the fully welded rider: crank torque as the allocator's task
-// coordinate and tissue damping declared apart from the muscle gain.
+// coordinate. The tissue-damping knob the source suite declared apart from
+// the muscle gain is removed (spec Q13, 2026-10-04): passive joint damping
+// is 0 in the closed-form plant.
 //
 // ArticulatedConfig(coupled_task_control=1) is a compile-time type
 // rejection in the bool signature (the Python bool-field validator rejects
@@ -19,6 +21,7 @@
 #include <cstdio>
 #include <print>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -36,8 +39,9 @@ bike::terrain::TrackSpec probe_track() {
 }
 
 // _environment's physics rewrite: weld pedal/saddle/grip (post_init
-// normalizes the weld grip to the compiled connect equality), 0.5 N.m.s/rad
-// tissue damping, and the opt-in coupled task control.
+// normalizes the weld grip to the compiled connect equality) and the opt-in
+// coupled task control. The oracle's 0.5 N.m.s/rad tissue-damping rewrite
+// has no surviving config key — spec Q13 fixes passive damping at 0.
 std::unique_ptr<rr::EnvRig> coupled_rig() {
     return rr::pinned_rig(
         [](cfg::SimulationPhysicsConfig &physics) {
@@ -45,7 +49,6 @@ std::unique_ptr<rr::EnvRig> coupled_rig() {
             a.pedal_attachment = "weld";
             a.saddle_attachment = "weld";
             a.grip_attachment = "weld";
-            a.joint_passive_damping_nms_rad = .5;
             a.coupled_task_control = true;
         },
         probe_track());
@@ -55,21 +58,11 @@ double time_s(const rr::EnvRig &rig) {
     return rig.stepper->data()->time;
 }
 
-[[gnu::noinline]] void
-test_passive_damping_defaults_to_the_legacy_gain_coupling() {
-    // tests/reference/test_coupled_rider_task.py::test_passive_damping_defaults_to_the_legacy_gain_coupling
-    const cfg::ArticulatedConfig base;
-    bt::require(base.passive_damping_nms_rad() == base.joint_kd_nms_rad,
-                "nullopt keeps the dof damping == joint_kd coupling");
-    cfg::ArticulatedConfig explicit_gain;
-    explicit_gain.joint_passive_damping_nms_rad = .5;
-    cfg::detail::post_init(explicit_gain);
-    bt::require(explicit_gain.passive_damping_nms_rad() == .5,
-                "an explicit damping value is its own");
-    cfg::ArticulatedConfig negative;
-    negative.joint_passive_damping_nms_rad = -1.;
-    rr::expect_invalid([&] { cfg::detail::post_init(negative); }, "");
-}
+// tests/reference/test_coupled_rider_task.py::test_passive_damping_defaults_to_the_legacy_gain_coupling
+// is dropped, not ported: the knob it exercised
+// (joint_passive_damping_nms_rad and the nullopt → joint_kd fallback) is
+// removed from the schema outright — spec Q13 fixes passive damping at 0,
+// so there is no coupling default left to pin.
 
 [[gnu::noinline]] void test_coupled_task_control_is_opt_in() {
     // tests/reference/test_coupled_rider_task.py::test_coupled_task_control_is_opt_in
@@ -161,21 +154,38 @@ test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step() {
                 "at least twenty completed periods were compared");
 }
 
+const std::vector<double> &component_row(const ::runtime::RawStep &raw,
+                                         const std::string &name) {
+    for (const auto &[row_name, row] : raw.components)
+        if (row_name == name) return row;
+    bt::require(false, "force row present: " + name);
+    std::unreachable();
+}
+
 [[gnu::noinline]] void
 test_tissue_damping_does_not_eat_the_muscle_budget() {
     // tests/reference/test_coupled_rider_task.py::test_tissue_damping_does_not_eat_the_muscle_budget
+    // Post-Q13 there is no tissue-damping gain: the passive lane is the
+    // kept rider_passive_damping force component — the engine's
+    // qfrc_passive at rider DOFs — whose power fold must stay a small
+    // fraction of muscle power on the welded ride.
     auto rig = coupled_rig();
     auto &physical = *rig->physical;
     double positive_sum = 0., passive_sum = 0.;
     std::size_t count = 0;
     while (time_s(*rig) < 1.5) {
-        (void)rr::advance_env_steps(physical, 1);
+        const auto raw = rr::advance_env_steps(physical, 1);
         if (time_s(*rig) < .5)
             continue;
         const auto &effort =
             physical.rider_control().state().effort_diagnostics;
+        const auto &passive_row = component_row(raw,
+                                                "rider_passive_damping");
+        double passive_power = 0.;
+        for (std::size_t i = 0; i < passive_row.size(); ++i)
+            passive_power += passive_row[i] * raw.qvel[i];
         positive_sum += effort.positive_power_w;
-        passive_sum += -effort.passive_power_w;
+        passive_sum += -passive_power;
         ++count;
     }
     const double positive = positive_sum / static_cast<double>(count);
@@ -183,13 +193,13 @@ test_tissue_damping_does_not_eat_the_muscle_budget() {
     bt::require(positive > 20.,
                 "pedalling sustains a meaningful positive power");
     bt::require(passive < .3 * positive,
-                "tissue damping stays a small fraction of muscle power");
+                "engine passive power at rider DOFs stays a small "
+                "fraction of muscle power");
 }
 } // namespace
 
 int main() {
     return bt::run([] {
-        test_passive_damping_defaults_to_the_legacy_gain_coupling();
         test_coupled_task_control_is_opt_in();
         test_crank_task_coordinate_is_appended_and_weighted();
         test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step();

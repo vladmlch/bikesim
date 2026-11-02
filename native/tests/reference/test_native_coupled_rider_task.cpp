@@ -66,10 +66,11 @@ std::unique_ptr<WeldedRig> coupled_rig() {
     physics.articulated.pedal_attachment = "weld";
     physics.articulated.saddle_attachment = "weld";
     physics.articulated.grip_attachment = "weld";
-    // The coupled-task contract pair the oracle test's in-place rewrite
-    // carries (test_coupled_rider_task.py::_environment).
+    // The coupled-task contract the oracle test's in-place rewrite carries
+    // (test_coupled_rider_task.py::_environment). The rewrite's
+    // joint_passive_damping_nms_rad leg is gone — spec Q13 fixes passive
+    // damping at 0 and the schema no longer declares the key.
     physics.articulated.coupled_task_control = true;
-    physics.articulated.joint_passive_damping_nms_rad = .5;
     cfg::post_init(physics);
     const auto resolved_rider = bike::model::resolve_rider(
         model.rider ? bike::model::RiderArg{*model.rider}

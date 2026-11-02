@@ -1101,8 +1101,6 @@ welded_attachments(const mjModel &model) {
     mj_fullM(model, data, full.data());
     const auto qfrc_bias = model_access::readonly_buffer(
         data->qfrc_bias, model->nv, "qfrc_bias");
-    const auto qvel_now = model_access::readonly_buffer(
-        data->qvel, model->nv, "qvel");
     Vector bias(rd.size(), 0.);
     for (std::size_t i = 0; i < rd.size(); ++i) {
         bias[i] = qfrc_bias[static_cast<std::size_t>(rd[i])];
@@ -1136,13 +1134,14 @@ welded_attachments(const mjModel &model) {
     }
     const auto [envelope, stored] = controller.envelope_forces(data);
     (void)stored;
+    // The QP known-forces lane carries no passive term: spec Q13 removed
+    // the -kd*qvel damping contribution, so known[] is the joint envelope
+    // alone.
     Vector known = envelope;
-    const double damping = controller.config().passive_damping_nms_rad();
     std::size_t index = 0;
     Vector b_torque(nv, 0.);
     for (const auto &entry : controller.joints()) {
         const auto dof = static_cast<std::size_t>(entry.dof_adr);
-        known[dof] -= damping * qvel_now[dof];
         b_torque[dof] += tau[index++];
     }
     for (std::size_t r = 0; r < rd.size(); ++r) {

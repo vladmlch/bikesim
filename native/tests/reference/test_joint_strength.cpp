@@ -437,8 +437,10 @@ bike::terrain::TrackSpec probe_track_30() {
 }
 
 [[gnu::noinline]] void
-test_actuators_are_pure_motors_with_dof_damping() {
+test_actuators_are_pure_motors_without_dof_damping() {
     // tests/reference/test_joint_strength.py::test_actuators_are_pure_motors_with_dof_damping
+    // Repurposed post-Q13: the dof-damping knob is removed — rider hinges
+    // must be pure motors carrying NO dof damping attribute at all.
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &physical = *rig->physical;
     const auto &controller = physical.rider_control();
@@ -476,9 +478,8 @@ test_actuators_are_pure_motors_with_dof_damping() {
                 j.name + ": no affine bias — actuator_force is purely "
                          "the commanded muscle torque");
         bt::require(
-            rr::approx(damping[static_cast<std::size_t>(j.dof_adr)],
-                       controller.config().passive_damping_nms_rad()),
-            j.name + ": dof damping carries the tissue term");
+            rr::approx(damping[static_cast<std::size_t>(j.dof_adr)], 0.),
+            j.name + ": the dof carries no damping attribute");
     }
 }
 
@@ -516,9 +517,9 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
     bt::require(diagnostics.strength_violations.has_value() &&
                     diagnostics.strength_violations->empty(),
                 "no strength violation is reported");
-    bt::require(diagnostics.passive_power_w <= 1e-9,
-                "tissue damping can only remove power");
-    const double kd = controller.config().passive_damping_nms_rad();
+    // Spec Q13: no tissue-damping diagnostic survives — the kept
+    // rider_passive_damping row is the engine's raw qfrc_passive at rider
+    // DOFs, and engine_passive must keep excluding it exactly.
     const auto passive_row =
         component_row(last, "rider_passive_damping");
     const auto engine_row = component_row(last, "engine_passive");
@@ -535,17 +536,11 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
                         rr::approx(*terms->solved_active_nm, act_row[dof]),
                     j.name + ": solved active torque is the actuator row");
         bt::require(
-            terms->solved_passive_nm.has_value() &&
-                rr::approx(*terms->solved_passive_nm, passive_row[dof]),
-            j.name + ": solved passive torque is the damping row");
-        bt::require(terms->solved_passive_nm.has_value() &&
-                        rr::approx(*terms->solved_passive_nm,
-                                   -kd * last.qvel[dof]),
-                    j.name + ": tissue damping is -kd*qvel at the "
-                              "incoming velocity");
+            rr::approx(passive_row[dof], last.qfrc_passive[dof]),
+            j.name + ": the channel is raw qfrc_passive at the rider DOF");
         bt::require(rr::approx(engine_row[dof], 0., 1e-6, 1e-9),
                     j.name + ": engine_passive never double-counts the "
-                              "dof damping");
+                              "rider passive row");
     }
 }
 
@@ -628,7 +623,7 @@ int main() {
         test_profile_rejects_incomplete_or_alien_coverage();
         test_curve_knots_must_cover_the_used_anatomical_range();
         test_strength_coordinates_agree_with_the_joint_envelope();
-        test_actuators_are_pure_motors_with_dof_damping();
+        test_actuators_are_pure_motors_without_dof_damping();
         test_stepped_effort_respects_strength_and_the_power_budget();
         test_directional_capacity_bounds_the_commanded_torque();
         test_leg_curves_span_a_120_rpm_pedalling_envelope();

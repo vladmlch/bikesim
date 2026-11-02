@@ -64,16 +64,7 @@ std::string terrain_digest(const runtime::TruthGeometry& geometry) {
     return io::sha256(bytes);
 }
 std::string configuration_digest(const Value& resolved) {
-    auto hashable = resolved;
-    auto physics = field(hashable, "physics");
-    auto articulated = field(physics, "articulated");
-    for (auto key : {"joint_envelope", "joint_strength"}) {
-        const auto* digest = find(resolved, std::string(key) + "_sha256");
-        set(articulated, std::string(key) + "_path", digest ? *digest : Value{});
-    }
-    set(physics, "articulated", std::move(articulated));
-    set(hashable, "physics", std::move(physics));
-    const auto json = io::canonical_json(hashable);
+    const auto json = io::canonical_json(configuration_digest_document(resolved));
     return io::sha256(std::as_bytes(std::span{json.data(), json.size()}));
 }
 runtime::ResearchAsset asset(std::string name, std::string media_type, std::vector<std::byte> content) {
@@ -85,6 +76,20 @@ runtime::ResearchAsset text_asset(std::string name, std::string media_type, std:
     return asset(std::move(name), std::move(media_type), std::vector<std::byte>(bytes.begin(), bytes.end()));
 }
 } // namespace
+
+io::Value configuration_digest_document(const io::Value& resolved) {
+    using namespace runtime::setupvalue;
+    auto hashable = resolved;
+    auto physics = field(hashable, "physics");
+    auto articulated = field(physics, "articulated");
+    for (auto key : {"joint_envelope", "joint_strength"}) {
+        const auto* digest = find(resolved, std::string(key) + "_sha256");
+        set(articulated, std::string(key) + "_path", digest ? *digest : Value{});
+    }
+    set(physics, "articulated", std::move(articulated));
+    set(hashable, "physics", std::move(physics));
+    return hashable;
+}
 
 io::Value wire_value(const runtime::Wire& wire) {
     return std::visit([](const auto& value) -> Value {

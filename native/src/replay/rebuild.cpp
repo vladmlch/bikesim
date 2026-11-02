@@ -6,6 +6,7 @@
 #include "../platform/files.hpp"
 #include "../platform/provenance.hpp"
 #include "../runtime/provenance.hpp"
+#include "../research/evidence.hpp"
 #include "../terrain/trackfile.hpp"
 #include "../rider/allocation.hpp"
 #include <algorithm>
@@ -83,11 +84,15 @@ void drop_removed_passive_damping(Value& articulated) {
             "recorded nonzero damping cannot be replayed — the mechanism no longer exists");
     (void)pop(object, "joint_passive_damping_nms_rad");
 }
+// Semantic-equality form: the recorded-form digest document (shared with
+// the write side via research::configuration_digest_document) with the
+// removed inert knob stripped. The strip throws on a nonzero recorded value
+// before any equality comparison can run.
 Value configuration_hashable(Value resolved) {
-    auto physics = field(resolved, "physics"), articulated = field(physics, "articulated");
+    auto hashable = research::configuration_digest_document(resolved);
+    auto physics = field(hashable, "physics"), articulated = field(physics, "articulated");
     drop_removed_passive_damping(articulated);
-    for (auto key : {"joint_envelope", "joint_strength"}) set(articulated, std::string(key) + "_path", maybe(resolved, std::string(key) + "_sha256"));
-    set(physics, "articulated", std::move(articulated)); set(resolved, "physics", std::move(physics)); return resolved;
+    set(physics, "articulated", std::move(articulated)); set(hashable, "physics", std::move(physics)); return hashable;
 }
 } // namespace
 FixedAssets::FixedAssets(const ReplayInput& input) {
@@ -179,7 +184,11 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
     const auto actual_hashable = configuration_hashable(reconstructed), expected_hashable = configuration_hashable(expected);
     const auto actual_json = io::canonical_json(actual_hashable);
     const auto expected_json = io::canonical_json(expected_hashable);
-    if (actual_json != expected_json || io::sha256(std::as_bytes(std::span(expected_json.data(), expected_json.size()))) != string(field(input.summary, "configuration_sha256")))
+    // The recorded digest covers the recorded document — path->sha256 swaps
+    // without the removed-knob strip — so hash the recorded form of
+    // `expected`, not the stripped hashable form used for equality.
+    const auto recorded_json = io::canonical_json(research::configuration_digest_document(expected));
+    if (actual_json != expected_json || io::sha256(std::as_bytes(std::span(recorded_json.data(), recorded_json.size()))) != string(field(input.summary, "configuration_sha256")))
         throw IncompatibleExecution("reconstructed configuration differs from the recorded recipe");
     if (string(field(prepared.metadata, "terrain_sha256")) != string(field(input.summary, "terrain_sha256")))
         throw IncompatibleExecution("reconstructed terrain differs from the recorded compiled road");

@@ -192,20 +192,23 @@ std::set<std::string> validate_container_schema(const Connection& c) {
         io::recording_json(value::require(meta.front(), "run_id")) != io::recording_json(value::require(runs.front(), "run_id")) ||
         io::as_string(value::require(meta.front(), "codec"), "codec") != "bike_recording.json.v1") throw std::invalid_argument("invalid recording identity/schema");
     for (const auto& spec : all_tables()) {
-        // legacy recordings: fields removed from the catalog may persist
-        // as recorded columns (value + _present) and as struct children
-        // inside recorded type spellings; normalize the recorded side by
-        // the legacy set — the spec side stays strict.
+        // legacy recordings: fields removed from channel_rider may persist
+        // as recorded columns (value + _present + parent masks), and the
+        // removed rider_control struct children inside that column's
+        // recorded type spelling; normalize the recorded side by the legacy
+        // set, scoped to channel_rider — the spec side stays strict.
         std::vector<std::pair<std::string, std::string>> columns;
         for (const auto& column : c.query("DESCRIBE " + quote(spec.name))) {
             const auto name = io::as_string(value::require(column, "column_name"), "column_name");
-            const auto legacy_column = std::ranges::any_of(kLegacyFields, [&](std::string_view field) {
-                return is_legacy_column(name, field);
-            });
+            const auto legacy_column = spec.name == "channel_rider" &&
+                std::ranges::any_of(kLegacyFields, [&](std::string_view field) {
+                    return is_legacy_column(name, field);
+                });
             if (legacy_column) continue;
             auto type = normalize(io::as_string(value::require(column, "column_type"), "column_type"));
-            for (const auto& member : legacy_normalized_members())
-                type = erase_normalized_member(std::move(type), member);
+            if (spec.name == "channel_rider" && name == "rider_control")
+                for (const auto& member : legacy_normalized_members())
+                    type = erase_normalized_member(std::move(type), member);
             columns.emplace_back(name, std::move(type));
         }
         const auto types = column_types(spec);
@@ -229,13 +232,15 @@ void validate_declared_catalog(Connection const& c) {
         const auto first = io::as_string(a[0], "table").compare(io::as_string(b[0], "table"));
         return first < 0 || (first == 0 && io::as_string(a[1], "field") < io::as_string(b[1], "field"));
     });
-    // The spec dtype text is compared through the same normalization the
-    // recorded side gets (normalize() plus the legacy member strip).
+    // The spec dtype text is compared through the same normalize() the
+    // recorded side gets; the recorded side additionally strips the legacy
+    // members from channel_rider.rider_control.
     for (auto& row : declared)
         row[2] = value::text(normalize(io::as_string(row[2], "dtype")));
     // legacy recordings: rows for removed channel_rider fields are
-    // dropped; dtype/definition_json of surviving rows are normalized by
-    // the legacy struct-child set before the strict row comparison.
+    // dropped; dtype/definition_json of the channel_rider.rider_control row
+    // are normalized by the legacy struct-child set before the strict row
+    // comparison.
     std::vector<Value::Array> catalog;
     for (const auto& row : c.query("SELECT * FROM field_catalog ORDER BY table_name,field_name")) {
         const auto table = io::as_string(value::require(row, "table_name"), "table_name");
@@ -245,17 +250,20 @@ void validate_declared_catalog(Connection const& c) {
                 return is_legacy_column(field_name, name);
             });
         if (legacy_row) continue;
+        const bool legacy_struct = table == "channel_rider" && field_name == "rider_control";
         Value::Array normalized;
         for (const auto& [name, v] : row) {
             if (name == "dtype") {
                 auto type = normalize(io::as_string(v, "dtype"));
-                for (const auto& member : legacy_normalized_members())
-                    type = erase_normalized_member(std::move(type), member);
+                if (legacy_struct)
+                    for (const auto& member : legacy_normalized_members())
+                        type = erase_normalized_member(std::move(type), member);
                 normalized.push_back(value::text(std::move(type)));
-            } else if (name == "definition_json")
-                normalized.push_back(value::text(io::recording_json(
-                    strip_legacy_children(io::parse_json(io::as_string(v, "definition_json"))))));
-            else normalized.push_back(v);
+            } else if (name == "definition_json") {
+                auto definition = io::parse_json(io::as_string(v, "definition_json"));
+                if (legacy_struct) definition = strip_legacy_children(std::move(definition));
+                normalized.push_back(value::text(io::recording_json(definition)));
+            } else normalized.push_back(v);
         }
         catalog.push_back(std::move(normalized));
     }

@@ -232,11 +232,14 @@ void validate_declared_catalog(Connection const& c) {
         const auto first = io::as_string(a[0], "table").compare(io::as_string(b[0], "table"));
         return first < 0 || (first == 0 && io::as_string(a[1], "field") < io::as_string(b[1], "field"));
     });
-    // The spec dtype text is compared through the same normalize() the
-    // recorded side gets; the recorded side additionally strips the legacy
-    // members from channel_rider.rider_control.
+    // Declared dtype text compares byte-exact, except the
+    // channel_rider.rider_control row: the recorded side normalizes that
+    // one row to strip legacy struct children (see below), so the spec
+    // side is normalized the same way to keep the comparison meaningful.
     for (auto& row : declared)
-        row[2] = value::text(normalize(io::as_string(row[2], "dtype")));
+        if (io::as_string(row[0], "table") == "channel_rider" &&
+            io::as_string(row[1], "field") == "rider_control")
+            row[2] = value::text(normalize(io::as_string(row[2], "dtype")));
     // legacy recordings: rows for removed channel_rider fields are
     // dropped; dtype/definition_json of the channel_rider.rider_control row
     // are normalized by the legacy struct-child set before the strict row
@@ -253,11 +256,13 @@ void validate_declared_catalog(Connection const& c) {
         const bool legacy_struct = table == "channel_rider" && field_name == "rider_control";
         Value::Array normalized;
         for (const auto& [name, v] : row) {
-            if (name == "dtype") {
+            // Only the channel_rider.rider_control dtype carries legacy
+            // struct children worth normalizing out; every other row
+            // compares byte-exact.
+            if (name == "dtype" && legacy_struct) {
                 auto type = normalize(io::as_string(v, "dtype"));
-                if (legacy_struct)
-                    for (const auto& member : legacy_normalized_members())
-                        type = erase_normalized_member(std::move(type), member);
+                for (const auto& member : legacy_normalized_members())
+                    type = erase_normalized_member(std::move(type), member);
                 normalized.push_back(value::text(std::move(type)));
             } else if (name == "definition_json") {
                 auto definition = io::parse_json(io::as_string(v, "definition_json"));

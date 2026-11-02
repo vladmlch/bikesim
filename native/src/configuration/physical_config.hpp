@@ -387,9 +387,6 @@ struct ArticulatedConfig {
     double arm_reach_fraction = .92;
     double joint_kp_nm_rad = 600.;
     double joint_kd_nms_rad = 15.;
-    // Passive tissue damping of the rider hinges; nullopt keeps the legacy
-    // coupling to the controller derivative gain joint_kd_nms_rad.
-    std::optional<double> joint_passive_damping_nms_rad;
     // Fully coupled rider (pelvis, soles and hands welded).
     bool coupled_task_control = false;
     double joint_limit_nm = 100.;
@@ -474,10 +471,6 @@ struct ArticulatedConfig {
     }
     [[nodiscard]] double delivered_joint_budget_w() const {
         return delivered_joint_power_budget_w.value_or(joint_power_limit_w);
-    }
-    // ArticulatedConfig.passive_damping_nms_rad (resolved hinge damping).
-    [[nodiscard]] double passive_damping_nms_rad() const {
-        return joint_passive_damping_nms_rad.value_or(joint_kd_nms_rad);
     }
 };
 
@@ -879,9 +872,6 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, arm_reach_fraction),
     REAL(ArticulatedConfig, joint_kp_nm_rad),
     REAL(ArticulatedConfig, joint_kd_nms_rad),
-    {.name="joint_passive_damping_nms_rad", .type="float | None", .kind=FieldKind::OptionalReal,
-     .offset=offsetof(ArticulatedConfig, joint_passive_damping_nms_rad), .required=false, .factory="",
-     .nested=nullptr, .nested2=nullptr},
     BOOL(ArticulatedConfig, coupled_task_control),
     REAL(ArticulatedConfig, joint_limit_nm),
     REAL(ArticulatedConfig, joint_speed_limit_rad_s),

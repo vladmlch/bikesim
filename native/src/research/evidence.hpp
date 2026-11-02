@@ -11,6 +11,11 @@ struct EnergyQuality {
 [[nodiscard]] std::vector<std::string> model_violations(const runtime::PhysicalSampleData&,
     double maximum_compression_fraction = .15, double maximum_linkage_error_m = .002);
 [[nodiscard]] io::Value wire_value(const runtime::Wire&);
+// The recorded-form resolved_config: the document the write-side
+// configuration_sha256 digest covers — joint asset paths replaced by their
+// recorded *_sha256 values, nothing else removed. Replay verification hashes
+// this same form so legacy documents with now-removed keys still match.
+[[nodiscard]] io::Value configuration_digest_document(const io::Value& resolved_config);
 // The physical identity is common to an ordinary ride and a research
 // episode. An omitted seed remains null; a present seed keeps all digits.
 [[nodiscard]] io::Value physical_configuration_metadata(const initialization::SetupRequest&,

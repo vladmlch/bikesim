@@ -63,10 +63,8 @@ WireObject terms_wire(const rider::NamedEntries<rider::JointTerms> &terms) {
         optional("hip_posture_nm", t.hip_posture_nm);
         optional("active_request_nm", t.active_request_nm);
         optional("active_delivered_nm", t.active_delivered_nm);
-        optional("passive_damping_nm", t.passive_damping_nm);
         optional("solved_force_nm", t.solved_force_nm);
         optional("solved_active_nm", t.solved_active_nm);
-        optional("solved_passive_nm", t.solved_passive_nm);
         result.emplace_back(name, Wire(std::move(fields)));
     }
     return result;
@@ -307,22 +305,19 @@ EffortObservation observe_effort_impl(const RawStep &raw,
     auto &d = result.diagnostics;
     const auto &config = controller.config();
     rider::NamedEntries<double> delivered, joint_positive;
-    std::vector<double> positive, passive;
+    std::vector<double> positive;
     std::vector<std::string> power_errors, speed_errors;
     delivered.reserve(controller.joints().size());
     joint_positive.reserve(controller.joints().size());
     positive.reserve(controller.joints().size());
-    passive.reserve(controller.joints().size());
     for (const auto &joint : controller.joints()) {
         const auto dof = static_cast<std::size_t>(joint.dof_adr);
         const double active = raw.actuator_force.at(static_cast<std::size_t>(joint.actuator_id));
         const double speed = raw.qvel.at(dof);
-        const double damping = raw.qfrc_passive.at(dof);
         const double power = std::max(active * speed, 0.);
         delivered.emplace_back(joint.name, active);
         joint_positive.emplace_back(joint.name, power);
         positive.push_back(power);
-        passive.push_back(damping * speed);
         if (power > config.delivered_joint_budget_w() + 1e-9) power_errors.push_back(joint.name);
         if (std::abs(speed) > config.joint_speed_limit_rad_s + 1e-9) speed_errors.push_back(joint.name);
         const auto terms = std::ranges::find_if(result.terms, [&](const auto &entry) {
@@ -331,7 +326,6 @@ EffortObservation observe_effort_impl(const RawStep &raw,
         if (terms == result.terms.end()) throw std::invalid_argument("rider interval is missing joint terms");
         terms->second.solved_force_nm = active;
         terms->second.solved_active_nm = active;
-        terms->second.solved_passive_nm = damping;
     }
     const auto strength_errors = controller.strength_violations(delivered, raw.qpos, raw.qvel);
     d.active_delivered_nm = delivered;
@@ -339,9 +333,7 @@ EffortObservation observe_effort_impl(const RawStep &raw,
     d.joint_power_violations = power_errors;
     d.joint_speed_violations = speed_errors;
     d.positive_power_w = numpy_sum(positive);
-    d.passive_power_w = numpy_sum(passive);
     d.positive_work_step_j = d.positive_power_w * dt_s;
-    d.passive_work_step_j = d.passive_power_w * dt_s;
     d.strength_violations = strength_errors;
     // F1: the delivery verdict reads the re-banded monitor budget, falling
     // back to the capability cap when no re-band is declared.
@@ -355,9 +347,7 @@ EffortObservation observe_effort_impl(const RawStep &raw,
     set(result.channels, "rider_joint_power_violations", strings(power_errors));
     set(result.channels, "rider_joint_speed_violations", strings(speed_errors));
     set(result.channels, "rider_positive_power_w", Wire(d.positive_power_w));
-    set(result.channels, "rider_passive_power_w", Wire(d.passive_power_w));
     set(result.channels, "rider_positive_work_step_j", Wire(*d.positive_work_step_j));
-    set(result.channels, "rider_passive_work_step_j", Wire(*d.passive_work_step_j));
     set(result.channels, "rider_strength_violations", strings(strength_errors));
     set(result.channels, "rider_effort_budget_exceeded", Wire(d.budget_exceeded));
     set(result.channels, "rider_effort_observation", Wire(d.observation));

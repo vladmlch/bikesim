@@ -768,9 +768,6 @@ void post_init(ArticulatedConfig &config) {
         scalar(config.*member, name, std::nullopt, true);
     if (config.saddle_reserve_weight_fraction > 1.)
         fail("saddle reserve fraction must not exceed one");
-    if (config.joint_passive_damping_nms_rad)
-        scalar(*config.joint_passive_damping_nms_rad,
-               "joint_passive_damping_nms_rad", 0.);
     // Weld normal bounds may be negative (tension retention), matching the
     // Python post-init skip; the delivered budgets are nonnegative when set.
     if (config.delivered_positive_power_budget_w)

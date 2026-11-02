@@ -196,7 +196,8 @@ struct EnvRig {
 [[nodiscard]] inline std::unique_ptr<EnvRig>
 pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
                &physics_overrides = {},
-           std::optional<bike::terrain::TrackSpec> track = std::nullopt) {
+           std::optional<bike::terrain::TrackSpec> track = std::nullopt,
+           bool braked_relaxation = true) {
     auto rig = std::make_unique<EnvRig>();
     rig->request = std::unique_ptr<init::SetupRequest>{new init::SetupRequest(
         init::read_setup_request(bt::fixture("requests/welded_flat.toml"),
@@ -312,8 +313,37 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
     // relaxation (initialize_pose + damped stepping + trust-region refine),
     // not a bare pose. Records that read tire loads, intent signals, or
     // launch dynamics depend on the wheels actually carrying weight at t=0.
-    const auto settled = init::settle_context(context);
-    (void)settled;
+    if (braked_relaxation) {
+        const auto settled = init::settle_context(context);
+        (void)settled;
+    } else {
+        // Spec Q13: the 64000-step braked relaxation used dof damping for
+        // ankle-oscillation dissipation — at damping 0 the all-welded plant
+        // cannot converge, a real finding of the knob's removal. The light
+        // init path mirrors test_native_coupled_rider_task.cpp's rig:
+        // initialize_pose + recorded residual + finalize, no relaxation.
+        init::initialize_pose(context);
+        init::EquilibriumResult result;
+        result.residual_qacc = init::acceleration_residual(context);
+        const auto settled_qpos = rig->stepper->qpos();
+        result.fork_travel_mm =
+            1000. * settled_qpos[static_cast<std::size_t>(
+                rig->stepper->suspension().fork_qposadr())];
+        result.shock_stroke_mm =
+            1000. * settled_qpos[static_cast<std::size_t>(
+                rig->stepper->suspension().shock_qposadr())];
+        result.rear_travel_mm =
+            context.rear_travel_from_shock_mm(result.shock_stroke_mm);
+        result.root_z_m = settled_qpos[static_cast<std::size_t>(
+            init::joint_address(context, "root_z").qpos)];
+        result.pitch_rad = settled_qpos[static_cast<std::size_t>(
+            init::joint_address(context, "root_pitch").qpos)];
+        result.initial_crank_phase_rad = physics.drive.crank_phase_rad;
+        result.settled_crank_phase_rad =
+            settled_qpos[static_cast<std::size_t>(
+                init::joint_address(context, "crank_spin").qpos)];
+        context.equilibrium = result;
+    }
     init::finalize_initial_state(context, *rig->config);
     context.initializing = false;
     return rig;

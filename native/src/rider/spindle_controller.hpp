@@ -78,7 +78,6 @@ struct SpindleConfig {
     // command. nullopt falls back to the capability bound bitwise.
     std::optional<double> delivered_positive_power_budget_w;
     std::optional<double> delivered_joint_power_budget_w;
-    std::optional<double> joint_passive_damping_nms_rad;
     double activation_tau_s = 0.;
     double pedal_torque_ripple = 0.;
     double return_foot_preload_n = 0.;
@@ -104,9 +103,6 @@ struct SpindleConfig {
     // is requested. The original spindle/pin/connect arithmetic is unchanged.
     std::optional<bike::configuration::ArticulatedConfig> legacy;
 
-    [[nodiscard]] double passive_damping_nms_rad() const {
-        return joint_passive_damping_nms_rad.value_or(joint_kd_nms_rad);
-    }
     // physical_config.py delivered_*_budget_w properties: the effective
     // monitor bound falls back to the declared capability cap.
     [[nodiscard]] std::optional<double> delivered_positive_budget_w() const {
@@ -144,10 +140,8 @@ struct JointTerms {
     bool saturated = false;
     std::optional<double> active_request_nm;
     std::optional<double> active_delivered_nm;
-    std::optional<double> passive_damping_nm;
     std::optional<double> solved_force_nm;
     std::optional<double> solved_active_nm;
-    std::optional<double> solved_passive_nm;
     std::optional<double> support_nm;
     std::optional<double> tracking_nm;
     std::optional<double> hip_posture_nm;
@@ -161,7 +155,6 @@ struct EffortDiagnostics {
     NamedEntries<double> active_request_nm;
     NamedEntries<double> active_delivered_nm;
     double positive_power_w = 0.;
-    double passive_power_w = 0.;
     bool activation_saturated = false;
     std::vector<std::string> strength_limited;
     bool budget_exceeded = false;
@@ -171,7 +164,6 @@ struct EffortDiagnostics {
     std::optional<std::vector<std::string>> joint_power_violations;
     std::optional<std::vector<std::string>> joint_speed_violations;
     std::optional<double> positive_work_step_j;
-    std::optional<double> passive_work_step_j;
     std::optional<std::vector<std::string>> strength_violations;
     bool budget_present = true;
     bool power_limit_present = true;

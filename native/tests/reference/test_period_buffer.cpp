@@ -483,6 +483,48 @@ const runtime::WireObject *channel_object(const runtime::SamplePtr &sample,
     return wire ? &sw::object(*wire) : nullptr;
 }
 
+// Named set removed by spec Q13 (joint_passive_damping mechanism):
+// recorded goldens still carry these channel/field names; the port no
+// longer emits them. rider_passive_damping stays untouched.
+bool removed_passive_name(std::string_view field) {
+    for (const std::string_view removed :
+         {"passive_damping_nm", "solved_passive_nm",
+          "rider_passive_power_w", "rider_passive_work_step_j"})
+        if (field.find(removed) != std::string_view::npos) return true;
+    return false;
+}
+
+// Recorded-side normalization for frozen JSON documents (violation lists,
+// channel-key inventories): drop string elements naming a removed member,
+// recursively. The golden is never regenerated.
+void strip_removed_strings(bike::io::Value &value) {
+    if (auto *array =
+            std::get_if<bike::io::Value::Array>(&value.data)) {
+        std::erase_if(*array, [](const bike::io::Value &element) {
+            const auto *text = std::get_if<std::string>(&element.data);
+            return text != nullptr && removed_passive_name(*text);
+        });
+        for (auto &element : *array) strip_removed_strings(element);
+    } else if (auto *object =
+                   std::get_if<bike::io::Value::Object>(&value.data)) {
+        for (auto &[name, child] : *object) strip_removed_strings(child);
+    }
+}
+
+// Consume a recorded "|u1" canonical-JSON entry, drop its removed-name
+// strings, and byte-compare the remainder to the actual canonical text.
+void normalized_doc_compare(bt_oracle::Node &node, std::string_view label,
+                            std::string_view actual_json) {
+    const auto recorded = node.bytes_input(label);
+    auto doc = bike::io::parse_json(
+        std::string{reinterpret_cast<const char *>(recorded.data()),
+                    recorded.size()});
+    strip_removed_strings(doc);
+    bt::require(bike::io::canonical_json(doc) == actual_json,
+                std::string{label} + ": recorded document differs beyond "
+                                    "the removed passive-damping names");
+}
+
 std::vector<std::string> channel_violations(const runtime::SamplePtr &sample) {
     const auto *wire = sw::find(sample->channels, "attachment_violations");
     std::vector<std::string> out;
@@ -567,13 +609,89 @@ void test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms() {
     }
     const auto keys_json = bike::io::canonical_json(
         bike::research::wire_value(runtime::Wire{std::move(keys)}));
-    const auto keys_bytes = std::as_bytes(std::span(keys_json));
-    const std::array<std::size_t, 1> keys_shape{keys_bytes.size()};
-    node.bytes(keys_bytes, "|u1", keys_shape, "expected/rider_control_keys");
-    const std::array<std::size_t, 1> num_shape{numbers.size()};
-    const std::array<std::size_t, 1> flag_shape{flags.size()};
-    node.f64_close(numbers, num_shape, "expected/rider_control_num");
-    node.f64(flags, flag_shape, "expected/rider_control_bool");
+    // Consume the frozen entries in recorded order. The recorded key
+    // inventories still list the removed passive-damping fields
+    // (passive_damping_nm / solved_passive_nm, spec Q13), and those names
+    // also index positions inside the recorded num/bool streams — the
+    // keys doc pins each dropped value position NAME-VERIFIED; the
+    // goldens are never regenerated.
+    const auto recorded_keys =
+        node.bytes_input("expected/rider_control_keys");
+    const auto recorded_num =
+        node.f64_close_input("expected/rider_control_num");
+    const auto recorded_bool =
+        node.f64_input("expected/rider_control_bool");
+    const auto keys_doc = bike::io::parse_json(
+        std::string{reinterpret_cast<const char *>(recorded_keys.data()),
+                    recorded_keys.size()});
+    const auto &elements =
+        std::get<bike::io::Value::Array>(keys_doc.data);
+    bike::io::Value::Array filtered;
+    std::size_t r_num = 0, r_bool = 0, a_num = 0, a_bool = 0;
+    for (const auto &element : elements) {
+        const auto &object =
+            std::get<bike::io::Value::Object>(element.data);
+        bike::io::Value::Object filtered_object;
+        for (const auto &[kind, joint_map] : object) {
+            bike::io::Value::Object filtered_joints;
+            for (const auto &[joint, names] :
+                 std::get<bike::io::Value::Object>(joint_map.data)) {
+                bike::io::Value::Array kept_names;
+                for (const auto &name :
+                     std::get<bike::io::Value::Array>(names.data)) {
+                    const auto &field = std::get<std::string>(name.data);
+                    if (removed_passive_name(field)) {
+                        if (kind == "num") ++r_num; else ++r_bool;
+                        continue;
+                    }
+                    kept_names.push_back(name);
+                    if (kind == "num") {
+                        bt::require(r_num < recorded_num.values.size() &&
+                                        a_num < numbers.size(),
+                                    "rider_control_num stream overflow");
+                        const double expected =
+                            recorded_num.values[r_num++];
+                        const double actual_value = numbers[a_num++];
+                        const bool equal =
+                            actual_value == expected ||
+                            (std::isnan(actual_value) &&
+                             std::isnan(expected)) ||
+                            (std::isfinite(actual_value) &&
+                             std::isfinite(expected) &&
+                             std::abs(actual_value - expected) <=
+                                 recorded_num.atol +
+                                     recorded_num.rtol * std::abs(expected));
+                        bt::require(equal,
+                                    "rider_control_num: removed-key "
+                                    "normalized value differs");
+                    } else {
+                        bt::require(r_bool < recorded_bool.size() &&
+                                        a_bool < flags.size(),
+                                    "rider_control_bool stream overflow");
+                        bt::require(flags[a_bool++] ==
+                                        recorded_bool[r_bool++],
+                                    "rider_control_bool: removed-key "
+                                    "normalized flag differs");
+                    }
+                }
+                filtered_joints.emplace_back(joint,
+                                             bike::io::Value{kept_names});
+            }
+            filtered_object.emplace_back(
+                kind, bike::io::Value{filtered_joints});
+        }
+        filtered.emplace_back(bike::io::Value{filtered_object});
+    }
+    bt::require(r_num == recorded_num.values.size() &&
+                    a_num == numbers.size() &&
+                    r_bool == recorded_bool.size() &&
+                    a_bool == flags.size(),
+                "removed-key normalization must consume both streams "
+                "completely");
+    bt::require(bike::io::canonical_json(
+                    bike::io::Value{std::move(filtered)}) == keys_json,
+                "rider_control_keys: key inventory differs beyond the "
+                "removed passive-damping fields");
     node.done();
 }
 
@@ -627,18 +745,14 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
     node.f64_close(qvel, qvel_shape, "expected/qvel");
     node.f64_close(energy, energy_shape, "expected/energy");
     node.f64_close(power, power_shape, "expected/rider_positive_power_w");
-    const auto violations_bytes = std::as_bytes(std::span(violations_json));
-    const std::array<std::size_t, 1> violations_shape{violations_bytes.size()};
-    node.bytes(violations_bytes, "|u1", violations_shape,
-               "expected/attachment_violations");
+    normalized_doc_compare(node, "expected/attachment_violations",
+                           violations_json);
     const std::vector<double> failure_time =
         failure ? std::vector<double>{failure->time_s} : std::vector<double>{};
     const std::array<std::size_t, 1> failure_shape{failure_time.size()};
     node.f64(failure_time, failure_shape, "monitor/first_failure_time_s");
-    const auto failure_bytes = std::as_bytes(std::span(failure_json));
-    const std::array<std::size_t, 1> failure_json_shape{failure_bytes.size()};
-    node.bytes(failure_bytes, "|u1", failure_json_shape,
-               "monitor/first_failure_violations");
+    normalized_doc_compare(node, "monitor/first_failure_violations",
+                           failure_json);
     // The decimated phase: a fresh runtime is the native equivalent of
     // env.reset() + set_measurement_decimation(80) — the measurement
     // cadence is a construction-time property of the bootstrap.
@@ -656,9 +770,7 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
     std::ranges::sort(last_keys);
     const auto keys_json = bike::io::canonical_json(
         bike::research::wire_value(sw::strings(last_keys)));
-    const auto keys_bytes = std::as_bytes(std::span(keys_json));
-    const std::array<std::size_t, 1> keys_shape{keys_bytes.size()};
-    node.bytes(keys_bytes, "|u1", keys_shape, "decimated/last_channel_keys");
+    normalized_doc_compare(node, "decimated/last_channel_keys", keys_json);
     std::set<std::int64_t> full_ids;
     for (const auto &sample : decimated)
         if (channel_object(sample, "rider_control") != nullptr)

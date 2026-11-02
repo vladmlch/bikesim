@@ -283,8 +283,10 @@ namespace {
                    keys("command_nm", "posture_nm",
                         "pedaling_nm", "saturated"),
                    keys("requested_nm", "active_request_nm", "active_delivered_nm",
-                        "passive_damping_nm", "solved_force_nm",
-                        "solved_active_nm", "solved_passive_nm", "support_nm", "tracking_nm", "hip_posture_nm"));
+                        "passive_damping_nm", // legacy recordings
+                        "solved_force_nm", "solved_active_nm",
+                        "solved_passive_nm", // legacy recordings
+                        "support_nm", "tracking_nm", "hip_posture_nm"));
         JointTerms out;
         out.requested_present = d.contains("requested_nm");
         if (out.requested_present) out.requested_nm = d["requested_nm"].finite_real(path);
@@ -299,10 +301,8 @@ namespace {
         };
         out.active_request_nm = optional("active_request_nm");
         out.active_delivered_nm = optional("active_delivered_nm");
-        out.passive_damping_nm = optional("passive_damping_nm");
         out.solved_force_nm = optional("solved_force_nm");
         out.solved_active_nm = optional("solved_active_nm");
-        out.solved_passive_nm = optional("solved_passive_nm");
         out.support_nm = optional("support_nm");
         out.tracking_nm = optional("tracking_nm");
         out.hip_posture_nm = optional("hip_posture_nm");
@@ -488,13 +488,15 @@ namespace {
 
     constexpr auto kEffortRequiredKeys = keys(
         "rider_active_request_nm", "rider_active_delivered_nm",
-        "rider_positive_power_w", "rider_passive_power_w",
+        "rider_positive_power_w",
         "rider_activation_saturated", "rider_strength_limited");
     constexpr auto kEffortOptionalKeys = keys(
         "rider_effort_budget_exceeded", "rider_active_positive_power_limit_w", "rider_effort_observation",
         "rider_joint_positive_power_w", "rider_joint_power_violations",
         "rider_joint_speed_violations", "rider_positive_work_step_j",
-        "rider_passive_work_step_j", "rider_strength_violations");
+        "rider_passive_power_w",     // legacy recordings
+        "rider_passive_work_step_j", // legacy recordings
+        "rider_strength_violations");
 
     void decode_effort_solved_fields(const Dict &d, std::string_view path,
                                      EffortDiagnostics &out) {
@@ -510,9 +512,6 @@ namespace {
         if (d.contains("rider_positive_work_step_j"))
             out.positive_work_step_j =
                 d["rider_positive_work_step_j"].finite_real(path);
-        if (d.contains("rider_passive_work_step_j"))
-            out.passive_work_step_j =
-                d["rider_passive_work_step_j"].finite_real(path);
         if (d.contains("rider_strength_violations"))
             out.strength_violations = decode_name_list(
                 d["rider_strength_violations"], path);
@@ -531,7 +530,6 @@ namespace {
         out.active_delivered_nm =
             decode_named_reals_node(d["rider_active_delivered_nm"], path);
         out.positive_power_w = d["rider_positive_power_w"].finite_real(path);
-        out.passive_power_w = d["rider_passive_power_w"].finite_real(path);
         out.activation_saturated =
             d["rider_activation_saturated"].boolean(path);
         out.strength_limited =
@@ -625,8 +623,6 @@ namespace {
                              diagnostics.active_delivered_nm));
         out.emplace_back("rider_positive_power_w",
                          real_value(diagnostics.positive_power_w));
-        out.emplace_back("rider_passive_power_w",
-                         real_value(diagnostics.passive_power_w));
         out.emplace_back("rider_activation_saturated",
                          bio::Value{diagnostics.activation_saturated});
         out.emplace_back("rider_strength_limited",
@@ -652,9 +648,6 @@ namespace {
         if (diagnostics.positive_work_step_j.has_value())
             out.emplace_back("rider_positive_work_step_j",
                              real_value(*diagnostics.positive_work_step_j));
-        if (diagnostics.passive_work_step_j.has_value())
-            out.emplace_back("rider_passive_work_step_j",
-                             real_value(*diagnostics.passive_work_step_j));
         if (diagnostics.strength_violations.has_value())
             out.emplace_back("rider_strength_violations",
                              names_value(*diagnostics.strength_violations));
@@ -719,18 +712,12 @@ namespace {
             if (term.active_delivered_nm.has_value())
                 entry.emplace_back("active_delivered_nm",
                                    real_value(*term.active_delivered_nm));
-            if (term.passive_damping_nm.has_value())
-                entry.emplace_back("passive_damping_nm",
-                                   real_value(*term.passive_damping_nm));
             if (term.solved_force_nm.has_value())
                 entry.emplace_back("solved_force_nm",
                                    real_value(*term.solved_force_nm));
             if (term.solved_active_nm.has_value())
                 entry.emplace_back("solved_active_nm",
                                    real_value(*term.solved_active_nm));
-            if (term.solved_passive_nm.has_value())
-                entry.emplace_back("solved_passive_nm",
-                                   real_value(*term.solved_passive_nm));
             if (term.support_nm) entry.emplace_back("support_nm",real_value(*term.support_nm));
             if (term.tracking_nm) entry.emplace_back("tracking_nm",real_value(*term.tracking_nm));
             if (term.hip_posture_nm) entry.emplace_back("hip_posture_nm",real_value(*term.hip_posture_nm));
@@ -754,7 +741,7 @@ namespace {
         "grip_release_distance_m", "joint_envelope_path",
         "joint_envelope_soft_k_nm_rad", "joint_envelope_soft_margin_rad",
         "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
-        "joint_passive_damping_nms_rad", "joint_power_limit_w",
+        "joint_power_limit_w",
         "joint_speed_limit_rad_s", "joint_strength_path",
         "leg_track_damping_nms_rad", "link_max_gap_m",
         "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
@@ -775,6 +762,11 @@ namespace {
         "weld_saddle_shear_n", "weld_servo_gain", "weld_servo_limit_nm",
         "strength", "strength_coordinates",
         "envelopes");
+
+    // Accepted-but-ignored keys: config envelopes written before the
+    // passive joint-damping removal still carry the knob.
+    constexpr auto kConfigOptionalKeys = keys(
+        "joint_passive_damping_nms_rad"); // legacy recordings
 
     constexpr std::array kUnmodeledScalarKeys{
         "pedal_support_fraction", "bar_support_fraction",
@@ -847,8 +839,6 @@ namespace {
             d["delivered_positive_power_budget_w"].optional_real(path);
         config.delivered_joint_power_budget_w =
             d["delivered_joint_power_budget_w"].optional_real(path);
-        config.joint_passive_damping_nms_rad =
-            d["joint_passive_damping_nms_rad"].optional_real(path);
         config.activation_tau_s = d["activation_tau_s"].finite_real(path);
     }
 
@@ -1962,7 +1952,26 @@ bio::Value encode_sole_goal(const SoleGoalDiagnostics &goal) {
 SpindleConfig decode_spindle_config(const bio::Value &value) {
     const std::string path = "config.rider_controller";
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, kConfigRequiredKeys);
+    ncd::exact(d, kConfigRequiredKeys, kConfigOptionalKeys);
+    // legacy recordings: the removed knob is accepted only when the
+    // recorded value is inert — a recorded 0.0 left zero hinge damping.
+    // A recorded null is never inert in this payload: rider_controller
+    // documents exist only when an articulated rider ran, so the unset
+    // knob resolved through the nullopt -> joint_kd_nms_rad fallback
+    // (~15 Nms/rad) on live hinges — the same ruling
+    // replay/rebuild.cpp's drop_removed_passive_damping makes for
+    // recorded_rider_hinges. A non-inert recorded value cannot be
+    // silently dropped — it would bless a different reconstruction.
+    if (d.contains("joint_passive_damping_nms_rad")) {
+        const VNode recorded = d["joint_passive_damping_nms_rad"];
+        if (recorded.is_none())
+            invalid(std::string(path) + ".joint_passive_damping_nms_rad",
+                    "recorded null resolved to joint_kd_nms_rad fallback "
+                    "damping on the articulated rider");
+        else if (recorded.finite_real(path) != 0.)
+            invalid(std::string(path) + ".joint_passive_damping_nms_rad",
+                    "removed config knob carries a nonzero recorded value");
+    }
     SpindleConfig config;
     decode_actuation_scalars(d, path, config);
     decode_geometry_scalars(d, path, config);
@@ -1977,7 +1986,8 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
         d["coupled_task_control"].boolean(path)) {
         bio::Value::Object members;
         for (const auto& [key, member] : std::get<bio::Value::Object>(value.data))
-            if (key != "strength" && key != "strength_coordinates" && key != "envelopes")
+            if (key != "strength" && key != "strength_coordinates" && key != "envelopes" &&
+                key != "joint_passive_damping_nms_rad") // legacy recordings: inert-only, gated above
                 members.emplace_back(key,member);
         config.legacy = decode_articulated_config(bio::Value{std::move(members)});
     }

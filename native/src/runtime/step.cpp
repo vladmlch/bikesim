@@ -781,8 +781,6 @@ WireObject wire_effort(const rider::EffortDiagnostics &d) {
                      Wire(wire_named_reals(d.active_delivered_nm)));
     out.emplace_back("rider_positive_power_w",
                      Wire(d.positive_power_w));
-    out.emplace_back("rider_passive_power_w",
-                     Wire(d.passive_power_w));
     out.emplace_back("rider_activation_saturated",
                      Wire(d.activation_saturated));
     out.emplace_back("rider_strength_limited",
@@ -809,9 +807,6 @@ WireObject wire_effort(const rider::EffortDiagnostics &d) {
     if (d.positive_work_step_j.has_value())
         out.emplace_back("rider_positive_work_step_j",
                          Wire(*d.positive_work_step_j));
-    if (d.passive_work_step_j.has_value())
-        out.emplace_back("rider_passive_work_step_j",
-                         Wire(*d.passive_work_step_j));
     if (d.strength_violations.has_value())
         out.emplace_back("rider_strength_violations",
                          Wire(wire_names(*d.strength_violations)));

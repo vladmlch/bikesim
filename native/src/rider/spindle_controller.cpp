@@ -991,12 +991,9 @@ SpindleController::finalize_effort(mjData *data,
         data->qpos, model_->nq, "qpos");
     const auto qvel = model_access::readonly_buffer(
         data->qvel, model_->nv, "qvel");
-    std::vector<double> speeds(n), passive(n), target(torques.begin(),
-                                                      torques.end());
-    for (std::size_t i = 0; i < n; ++i) {
+    std::vector<double> speeds(n), target(torques.begin(), torques.end());
+    for (std::size_t i = 0; i < n; ++i)
         speeds[i] = qvel[static_cast<std::size_t>(joints_[i].dof_adr)];
-        passive[i] = -config_.passive_damping_nms_rad() * speeds[i];
-    }
     const bool enabled = config_.activation_tau_s > 0. ||
                          config_.active_positive_power_limit_w.has_value() ||
                          config_.has_strength;
@@ -1049,15 +1046,12 @@ SpindleController::finalize_effort(mjData *data,
         }
     }
     // rider_effort.py:70-71 — positive power is np.max(...).sum(), i.e.
-    // numpy's pairwise reduction over all joints; passive power is
-    // passive @ speeds, a BLAS ddot — neither is a sequential fold.
+    // numpy's pairwise reduction over all joints, not a sequential fold.
     std::vector<double> positive_terms(n);
     for (std::size_t i = 0; i < n; ++i)
         positive_terms[i] = std::max(result[i] * speeds[i], 0.);
     const double positive_power =
         numeric::numpy_sum(positive_terms);
-    const double passive_power = blas::ddot(
-        static_cast<int>(n), passive.data(), 1, speeds.data(), 1);
     bool saturated = false;
     for (std::size_t i = 0; i < n && !saturated; ++i)
         saturated = !isclose(result[i], excitation[i], 1e-10, 1e-10);
@@ -1070,7 +1064,6 @@ SpindleController::finalize_effort(mjData *data,
             joints_[i].name, result[i]);
     }
     effort_diagnostics_.positive_power_w = positive_power;
-    effort_diagnostics_.passive_power_w = passive_power;
     effort_diagnostics_.activation_saturated = saturated;
     effort_diagnostics_.strength_limited = limited_names;
     effort_diagnostics_.budget_exceeded = false;
@@ -1084,7 +1077,6 @@ SpindleController::finalize_effort(mjData *data,
         auto &terms = named_at(last_terms_, joints_[i].name);
         terms.active_request_nm = excitation[i];
         terms.active_delivered_nm = result[i];
-        terms.passive_damping_nm = passive[i];
         terms.command_nm = result[i];
     }
     return result;
@@ -1451,8 +1443,8 @@ void SpindleController::write(
             clipped * speed > 0.)
             clipped = 0.;
         // The actuator is a pure motor: ctrl is the muscle torque itself.
-        // Passive damping lives on the DOF, so a disabled command removes
-        // only active force; tissue damping still acts physically.
+        // A disabled command removes only active force; any engine passive
+        // force still acts physically on the DOF.
         ctrl[static_cast<std::size_t>(joint.actuator_id)] =
             command_enabled_ ? clipped : 0.;
     }
@@ -1469,16 +1461,10 @@ EffortDiagnostics SpindleController::solved_effort(
         incoming_velocity.size() != static_cast<std::size_t>(model_->nv))
         throw std::invalid_argument("solved_effort state width mismatch");
     NamedEntries<double> active;
-    double passive_power = 0., positive = 0.;
+    double positive = 0.;
     const auto actuator_force = model_access::readonly_buffer(
         data->actuator_force, model_->nu, "actuator_force");
-    const auto qfrc_passive = model_access::readonly_buffer(
-        data->qfrc_passive, model_->nv, "qfrc_passive");
     for (const auto &joint : joints_) {
-        // actuator_force is pure muscle torque now; passive tissue damping
-        // is the DOF damping row of qfrc_passive at the solved state.
-        const double damping =
-            qfrc_passive[static_cast<std::size_t>(joint.dof_adr)];
         const double delivered =
             actuator_force[static_cast<std::size_t>(joint.actuator_id)];
         active.emplace_back(joint.name, delivered);
@@ -1486,13 +1472,9 @@ EffortDiagnostics SpindleController::solved_effort(
             delivered * incoming_velocity[static_cast<std::size_t>(
                               joint.dof_adr)],
             0.);
-        passive_power +=
-            damping *
-            incoming_velocity[static_cast<std::size_t>(joint.dof_adr)];
         auto &terms = named_at(last_terms_, joint.name);
         terms.solved_force_nm = delivered;
         terms.solved_active_nm = delivered;
-        terms.solved_passive_nm = damping;
     }
     const auto violations = strength_violations(active, incoming_qpos,
                                                 incoming_velocity);
@@ -1519,9 +1501,7 @@ EffortDiagnostics SpindleController::solved_effort(
     effort_diagnostics_.joint_speed_violations = speed_violations;
     effort_diagnostics_.active_delivered_nm = active;
     effort_diagnostics_.positive_power_w = positive;
-    effort_diagnostics_.passive_power_w = passive_power;
     effort_diagnostics_.positive_work_step_j = positive * dt_s;
-    effort_diagnostics_.passive_work_step_j = passive_power * dt_s;
     effort_diagnostics_.strength_violations = violations;
     effort_diagnostics_.budget_present = true;
     effort_diagnostics_.observation_present = true;

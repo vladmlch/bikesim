@@ -62,7 +62,7 @@ Value diagnostic_row(const runtime::PhysicalSampleData& sample) {
     const auto c=research::wire_value(runtime::Wire{sample.channels});Object row{{"interval_id",value::integer(sample.interval_id)},{"time_s",value::real(sample.time_s)},{"end_time_s",value::real(sample.end_time_s)}};
     for(const auto& [target,source]:std::array<std::pair<const char*,const char*>,7>{{{"drive","drive"},{"rider","rider"},{"support","rider_support_targets"},{"joint_terms","rider_control"},{"ik_saturation","rider_ik_saturation"},{"tires","tires"},{"energy","energy"}}})row.emplace_back(target,get(c,source));
     for(const char* name:{"control","model_status","rider_intent","suspension","mass"})row.emplace_back(name,optional(c,name,empty_object()));
-    for(const auto& [key,x]:io::as_object(c,"channels")){if(key.starts_with("rider_active")||key=="rider_positive_power_w"||key=="rider_activation_saturated"||key=="rider_passive_power_w"||key=="rider_effort_budget_exceeded")row.emplace_back(key,x);}return Value{std::move(row)};
+    for(const auto& [key,x]:io::as_object(c,"channels")){if(key.starts_with("rider_active")||key=="rider_positive_power_w"||key=="rider_activation_saturated"||key=="rider_effort_budget_exceeded")row.emplace_back(key,x);}return Value{std::move(row)};
 }
 Value interval_row(const runtime::PhysicalSampleData& sample,const runtime::TruthGeometry& geometry,runtime::WheelieTracker& tracker) {
     const auto c=research::wire_value(runtime::Wire{sample.channels});const auto truth=runtime::research_truth(sample,geometry);tracker.update(truth,sample.dt_s());const auto quality=research::energy_quality(runtime::sample_wire::object(runtime::sample_wire::required(sample.channels,"energy")));

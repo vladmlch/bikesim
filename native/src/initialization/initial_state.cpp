@@ -45,7 +45,7 @@ bio::Value optional(std::optional<double> value){return value?real(*value):bio::
 double height(std::span<const std::array<double,2>> vertices,double x){if(x<=vertices.front()[0])return vertices.front()[1];if(x>=vertices.back()[0])return vertices.back()[1];const auto it=std::ranges::lower_bound(vertices,x,{},[](const auto& a){return a[0];});const auto i=static_cast<std::size_t>(std::ranges::distance(vertices.begin(),it))-1;return biketyre::np_interp(x,std::array{vertices[i][0],vertices[i+1][0]},std::array{vertices[i][1],vertices[i+1][1]});}
 void guard(const SetupContext& context){if(context.physical.step()!=0||context.stepper.time()!=0.)throw std::invalid_argument("physical initial states may only be transferred before the first step");}
 
-std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt){
+std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_damping=false){
     bio::Value physics=plain(configuration::to_value(context.physics));auto& config=std::get<bio::Value::Object>(physics.data);
     if(station_count){auto tires=field(config,"tires");auto distributed=field(std::get<bio::Value::Object>(tires.data),"distributed");put(std::get<bio::Value::Object>(distributed.data),"station_count",integer(*station_count));put(std::get<bio::Value::Object>(tires.data),"distributed",std::move(distributed));put(config,"tires",std::move(tires));}
     std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s";});
@@ -53,6 +53,12 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // the file CONTENT below so a stored transfer validates from any checkout.
     auto articulated=field(config,"articulated");auto& section=std::get<bio::Value::Object>(articulated.data);
     for(std::string_view const key:{"joint_envelope_path","joint_strength_path"})if(std::erase_if(section,[key](const auto& p){return p.first==key;})!=1)throw std::invalid_argument("initial-state contract physics is missing articulated."+std::string(key));
+    // legacy artifacts: pre-removal FieldDecl order placed
+    // joint_passive_damping_nms_rad between joint_kd_nms_rad and
+    // coupled_task_control; re-inject it pinned to 0.0, the only inert value
+    // recorded payloads carried (canonical_json sorts keys, so the position
+    // documents intent rather than changing the hash input).
+    if(legacy_damping){const auto it=std::ranges::find_if(section,[](const auto& p){return p.first=="joint_kd_nms_rad";});if(it==section.end())throw std::invalid_argument("initial-state contract physics is missing articulated.joint_kd_nms_rad");section.insert(std::next(it),{"joint_passive_damping_nms_rad",real(0.)});}
     put(config,"articulated",std::move(articulated));
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
@@ -91,7 +97,11 @@ std::optional<double> optional_real(const bio::Value& value,std::string_view nam
 bio::Value equilibrium_value(const EquilibriumResult& r){return bio::Value{bio::Value::Object{{"fork_travel_mm",real(r.fork_travel_mm)},{"shock_stroke_mm",real(r.shock_stroke_mm)},{"rear_travel_mm",real(r.rear_travel_mm)},{"root_z_m",real(r.root_z_m)},{"pitch_rad",real(r.pitch_rad)},{"steps",integer(r.steps)},{"residual_qacc",real(r.residual_qacc)},{"cache_hit",bio::Value{r.cache_hit}},{"initial_crank_phase_rad",real(r.initial_crank_phase_rad)},{"settled_crank_phase_rad",real(r.settled_crank_phase_rad)}}};}
 EquilibriumResult equilibrium(const bio::Value& value){const auto& o=bio::as_object(value,"equilibrium");EquilibriumResult r;r.fork_travel_mm=bio::as_double(field(o,"fork_travel_mm"),"fork travel");r.shock_stroke_mm=bio::as_double(field(o,"shock_stroke_mm"),"shock stroke");r.rear_travel_mm=bio::as_double(field(o,"rear_travel_mm"),"rear travel");r.root_z_m=bio::as_double(field(o,"root_z_m"),"root z");r.pitch_rad=bio::as_double(field(o,"pitch_rad"),"pitch");r.steps=bio::as_int64(field(o,"steps"),"steps");r.residual_qacc=bio::as_double(field(o,"residual_qacc"),"residual");if(r.steps<=0||r.residual_qacc<0.)throw std::invalid_argument("invalid transferred equilibrium evidence");if(const auto* p=bio::find_member(o,"initial_crank_phase_rad"))r.initial_crank_phase_rad=bio::as_double(*p,"crank phase");if(const auto* p=bio::find_member(o,"settled_crank_phase_rad"))r.settled_crank_phase_rad=bio::as_double(*p,"settled crank phase");return r;}
 void validated(const SetupContext& context,const bio::Value::Object& p){
-    guard(context);if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||bio::as_string(field(p,"contract_sha256"),"contract_sha256")!=contract(context))throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
+    guard(context);const auto stored_sha=bio::as_string(field(p,"contract_sha256"),"contract_sha256");
+    // legacy artifacts: the contract over the pre-removal serialization
+    // (joint_passive_damping_nms_rad present as 0.0) is also accepted; any
+    // other divergence — including a nonzero recorded value — fails closed.
+    if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||(stored_sha!=contract(context)&&stored_sha!=contract(context,std::nullopt,true)))throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
     (void)vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());(void)vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
     const auto x=vector(field(p,"road_x"),"road_x"),z=vector(field(p,"road_z"),"road_z",x.size());if(x.empty()||x.size()>1048576)throw std::invalid_argument("invalid initial support road");
     for(std::size_t i=0;i<x.size();++i)if((i>0&&x[i]<=x[i-1])||std::abs(height(context.physical.terrain_vertices(),x[i])-z[i])>2e-7)throw std::invalid_argument("initial support road differs; solve an independent equilibrium");

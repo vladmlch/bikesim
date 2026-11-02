@@ -230,7 +230,6 @@ cfg::SimulationPhysicsConfig welded_profile() {
     shifting.cadence_smoothing_tau_s = 0.35;
     shifting.upshift_slip_limit_mps = 0.5;
     auto& articulated = c.articulated;
-    articulated.joint_passive_damping_nms_rad = 0.0;
     articulated.activation_tau_s = 0.025;
     articulated.balance_floor_kmh = 4.0;
     articulated.balance_dwell_s = 0.5;
@@ -718,7 +717,8 @@ void test_schema() {
     const Value& drive = member(fields[7], "fields", "fields.drive");
     bt::require(io::as_array(drive, "fields.drive.fields").size() == 22,
                 "drive field count");
-    bt::require(fields_named(fields[9], "articulated").size() == 70,
+    // 69 = 70 minus joint_passive_damping_nms_rad (spec Q13 removal).
+    bt::require(fields_named(fields[9], "articulated").size() == 69,
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 19,
                 "seated_climb field count");
@@ -950,7 +950,6 @@ void test_validation() {
         cfg::SimulationPhysicsConfig config = welded_profile();
         config.articulated.grip_pair_force_limit_n = std::nullopt;
         config.articulated.active_positive_power_limit_w = std::nullopt;
-        config.articulated.joint_passive_damping_nms_rad = std::nullopt;
         cfg::validate(config);
     }
 

@@ -112,7 +112,6 @@ cadence_smoothing_tau_s = 0.35
 upshift_slip_limit_mps = 0.5
 
 [articulated]
-joint_passive_damping_nms_rad = 0.0
 balance_floor_kmh = 4.0
 balance_dwell_s = 0.5
 balance_grace_s = 3.0

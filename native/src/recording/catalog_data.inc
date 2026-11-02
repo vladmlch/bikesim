@@ -5535,8 +5535,6 @@ R"CATALOG(              "children": [],
         "rider_joint_speed_violations",
         "rider_joint_torques",
         "rider_lean_limit_rad",
-        "rider_passive_power_w",
-        "rider_passive_work_step_j",
         "rider_positive_power_w",
         "rider_positive_work_step_j",
         "rider_strength_limited",
@@ -6625,25 +6623,6 @@ R"CATALOG(        }
             {
               "frame": "n/a",
               "path": [
-                "passive_damping_nm"
-              ],
-              "aliases": [],
-              "shape": null,
-              "axes": null,
-              "except_keys": [],
-              "children": [],
-              "key": "passive_damping_nm",
-              "dtype": "double",
-              "unit": "N·m",
-              "phase": "control_period",
-              "optional": true,
-              "measurement": "solved",
-              "source": "src/bike_sim/sim/ride/rider_effort.py::finalize_effort",
-              "description": "passive tissue damping torque at this joint"
-            },
-            {
-              "frame": "n/a",
-              "path": [
                 "solved_force_nm"
               ],
               "aliases": [],
@@ -6678,25 +6657,6 @@ R"CATALOG(        }
               "measurement": "solved",
               "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
               "description": "solved active muscle torque"
-            },
-            {
-              "frame": "n/a",
-              "path": [
-                "solved_passive_nm"
-              ],
-              "aliases": [],
-              "shape": null,
-              "axes": null,
-              "except_keys": [],
-              "children": [],
-              "key": "solved_passive_nm",
-              "dtype": "double",
-              "unit": "N·m",
-              "phase": "interval",
-              "optional": true,
-              "measurement": "solved",
-              "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
-              "description": "solved passive tissue damping torque"
             }
           ],
           "key": "rider_control",
@@ -8094,25 +8054,6 @@ R"CATALOG(                      "source": "src/bike_sim/sim/ride/rider_control.p
         {
           "frame": "n/a",
           "path": [
-            "rider_passive_power_w"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "rider_passive_power_w",
-          "dtype": "double",
-          "unit": "W",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/period_buffer.py::_effort_observations",
-          "description": "passive tissue damping power"
-        },
-        {
-          "frame": "n/a",
-          "path": [
             "rider_positive_work_step_j"
           ],
           "aliases": [],
@@ -8128,25 +8069,6 @@ R"CATALOG(                      "source": "src/bike_sim/sim/ride/rider_control.p
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/period_buffer.py::_effort_observations",
           "description": "positive muscle work of this interval"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "rider_passive_work_step_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "rider_passive_work_step_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/period_buffer.py::_effort_observations",
-          "description": "passive damping work of this interval"
         },
         {
           "frame": "n/a",

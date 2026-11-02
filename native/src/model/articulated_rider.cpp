@@ -61,12 +61,11 @@ void build_articulated_rider(Element& world,const ArticulatedPose& pose,const Se
         site(foot,"site_rider_sole_"+side,vec17(add(sub(pedal,ankle),{0.,0.,.008})),".004");
     }
 }
-void add_rider_actuators(Element& root,const configuration::ArticulatedConfig& cfg) {
+void add_rider_actuators(Element& root) {
     auto& actuators=block(root,"actuator");
     for(auto const* owner:root.descendants("body")) for(auto* value:owner->direct("joint")) {
         const auto name=value->get("name");
         if(name.starts_with("rider_") && !name.starts_with("rider_root_")) {
-            value->set("damping",g(cfg.passive_damping_nms_rad()));
             actuators.add("motor",{{"name","act_"+name},{"joint",name},{"gear","1"},{"ctrllimited","false"},{"forcelimited","false"}});
         }
     }

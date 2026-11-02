@@ -130,6 +130,32 @@ void checksum_before_plant() {
       },
       "checksum");
 }
+
+// test_removed_passive_damping_gate — the recorded 0.0 for the removed
+// joint_passive_damping_nms_rad knob is always inert and replays, but a
+// recorded null is inert only on rider-less configs: on an articulated
+// rider the unset knob resolved through the joint_kd_nms_rad fallback, so
+// the legacy-bundle rebuild refuses it like a nonzero value.
+void removed_passive_damping_gate() {
+    auto input = rr::replay::load_legacy_input(bt::fixture("replay/legacy_v2"));
+    {
+        rr::replay::FixedAssets assets(input);
+        bt::require(
+            static_cast<bool>(rr::replay::request_from_input(input, assets)),
+            "the recorded 0.0 damping stays inert on the articulated rider");
+    }
+    auto resolved = field(input.summary, "resolved_config");
+    auto physics = field(resolved, "physics");
+    auto articulated = field(physics, "articulated");
+    rr::set(articulated, "joint_passive_damping_nms_rad", rr::io::Value{});
+    rr::set(physics, "articulated", std::move(articulated));
+    rr::set(resolved, "physics", std::move(physics));
+    rr::set(input.summary, "resolved_config", std::move(resolved));
+    rr::replay::FixedAssets assets(input);
+    rr::incompatible(
+        [&] { (void)rr::replay::request_from_input(input, assets); },
+        "joint_passive_damping_nms_rad");
+}
 } // namespace
 int main() {
     return bt::run([] {
@@ -139,5 +165,6 @@ int main() {
         policy_never_loaded();
         final_state_boundary();
         checksum_before_plant();
+        removed_passive_damping_gate();
     });
 }

@@ -387,7 +387,9 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
         bt::require(bio::canonical_json(rider::encode_spindle_state(
                                           probe->state())) == probe_state_before,
                     "observing an interval is not a control tick");
-        // assert_tree_close(actual['effort'], expected) — the 11-key fold.
+        // assert_tree_close(actual['effort'], expected) — the 9-key fold
+        // (the rider_passive_power_w / rider_passive_work_step_j channels
+        // are removed with the damping mechanism, spec Q13).
         runtime::WireObject expected_channels;
         const auto named = [](const rider::NamedEntries<double> &entries) {
             runtime::WireObject object;
@@ -411,12 +413,8 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
                                        names(*expected.joint_speed_violations));
         expected_channels.emplace_back("rider_positive_power_w",
                                        runtime::Wire(expected.positive_power_w));
-        expected_channels.emplace_back("rider_passive_power_w",
-                                       runtime::Wire(expected.passive_power_w));
         expected_channels.emplace_back(
             "rider_positive_work_step_j", runtime::Wire(*expected.positive_work_step_j));
-        expected_channels.emplace_back(
-            "rider_passive_work_step_j", runtime::Wire(*expected.passive_work_step_j));
         expected_channels.emplace_back("rider_strength_violations",
                                        names(*expected.strength_violations));
         expected_channels.emplace_back("rider_effort_budget_exceeded",

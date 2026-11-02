@@ -1464,8 +1464,11 @@ for (const auto &entry : entries) expected.push_back(entry.source);
 
 namespace {
 
-// Mirrors _SUPPORT_TEST_MODULES in tools/check_native_contracts.py: support
-// modules that are not extension tests, exempt from the loader rule.
+// Historically mirrored _SUPPORT_TEST_MODULES in the removed
+// tools/check_native_contracts.py oracle: support modules that are not
+// extension tests, exempt from the loader rule. Still consulted by
+// validate_test_loaders when a fixture repository plants test_native_*.py
+// probes.
 constexpr std::array<std::string_view, 4> kSupportTestModules{
     "test_native_check_tools.py",
     "test_native_contract_checks.py",
@@ -1944,9 +1947,17 @@ Value validate_test_loaders(const fs::path &repo_root) {
         }
     }
     std::ranges::sort(test_files);
+    // T63 removed the Python reference-test tree, so on the real source root
+    // there is nothing to police: report not-applicable like the absent
+    // bike_native extension above. Fixture repositories that still plant
+    // test_native_*.py probes keep the oracle's loader validation below.
     if (test_files.empty())
-        throw ContractError("no native extension tests found under " +
-                            reference_root.string());
+        return vobj({
+            {"status", vstr("not-applicable")},
+            {"detail",
+             vstr("no test_native_*.py under " + reference_root.string() +
+                  " in the Python-free source tree")},
+        });
     std::vector<std::string> violations;
     for (const fs::path &path: test_files) {
         std::ifstream const stream(path, std::ios::binary);
@@ -1992,6 +2003,7 @@ Value validate_test_loaders(const fs::path &repo_root) {
     for (const auto &path: test_files)
         module_names.push_back(vstr(path.filename().string()));
     return vobj({
+        {"status", vstr("passed")},
         {"module_count",
          vint(static_cast<std::int64_t>(test_files.size()))},
         {"modules", varr(std::move(module_names))},
@@ -2667,16 +2679,8 @@ int run_contracts(const fs::path &build,
                               std::make_move_iterator(extra.end()));
                 checks.emplace_back("analysis_policy", vobj(std::move(fields)));
             }
-            {
-                Object fields = {{"status", vstr("passed")}};
-                Object extra =
-                    std::get<Object>(validate_test_loaders(repo_root).data);
-                fields.insert(fields.end(),
-                              std::make_move_iterator(extra.begin()),
-                              std::make_move_iterator(extra.end()));
-                checks.emplace_back("selected_artifact_assertions",
-                                    vobj(std::move(fields)));
-            }
+            checks.emplace_back("selected_artifact_assertions",
+                                validate_test_loaders(repo_root));
         }();
         [&]() {
             {

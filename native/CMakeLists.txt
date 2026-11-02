@@ -538,6 +538,111 @@ if(BUILD_TESTING)
   add_test(NAME native_bench_heavy
     COMMAND native_bench heavy 6 3
             --artifacts "${_native_bench_dir}/artifacts")
+
+  # Standalone GPU unit test executables (native/tests/gpu/).
+  # Note: test_gpu_tire.cpp, test_gpu_drivetrain_resistance.cpp, and
+  # test_gpu_rider.cpp directly #include src/tyre/station.cpp,
+  # src/drivetrain/freehub.cpp, and src/rider/spindle_math.cpp respectively,
+  # so they compile standalone without linking bike_native_contract_core or
+  # bike_rider_math (avoiding duplicate symbol definitions).
+  # Repository root for the GPU tests' model lookup (BIKE_REPO_ROOT). This block
+  # is evaluated by the legacy native graph (cmake -S native), where
+  # PROJECT_SOURCE_DIR and CMAKE_SOURCE_DIR both name native/; the repository
+  # root is therefore the parent of this file's directory.
+  get_filename_component(_bike_gpu_repo_root "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
+  if(_bike_gpu_repo_root MATCHES "[\"\\\\]")
+    message(FATAL_ERROR
+      "GPU test repository root cannot contain quotes or backslashes: ${_bike_gpu_repo_root}")
+  endif()
+  # A quoted string compile definition is refused by BikeCheckContext.cmake (target
+  # properties are embedded verbatim in the check-context JSON), so BIKE_REPO_ROOT
+  # is supplied as a string macro through a generated forced-include header.
+  set(_bike_gpu_config_header "${CMAKE_BINARY_DIR}/gpu_tests/bike_gpu_test_config.h")
+  file(CONFIGURE OUTPUT "${_bike_gpu_config_header}"
+    CONTENT "#pragma once\n#define BIKE_REPO_ROOT \"${_bike_gpu_repo_root}\"\n")
+
+  function(bike_add_gpu_test target_name)
+    add_executable(${target_name} ${ARGN})
+    target_compile_features(${target_name} PRIVATE cxx_std_20)
+    set_target_properties(${target_name} PROPERTIES
+      CXX_STANDARD 23
+      CXX_STANDARD_REQUIRED ON
+      CXX_EXTENSIONS OFF)
+    if(BIKE_POLICY_COMPILE_DEFINITIONS)
+      target_compile_definitions(${target_name} PRIVATE ${BIKE_POLICY_COMPILE_DEFINITIONS})
+    endif()
+    target_compile_options(${target_name} PRIVATE
+      -include "${_bike_gpu_config_header}")
+    target_include_directories(${target_name} PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu"
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
+      ${BIKE_MUJOCO_COMPAT_INCLUDE}
+      "${MJ_DIR}/include"
+    )
+    add_test(NAME ${target_name} COMMAND ${target_name})
+    set_tests_properties(${target_name} PROPERTIES LABELS "gpu;unit")
+  endfunction()
+
+  bike_add_gpu_test(bike_test_gpu_suspension tests/gpu/test_gpu_suspension.cpp)
+  bike_add_gpu_test(bike_test_gpu_tire tests/gpu/test_gpu_tire.cpp)
+  bike_add_gpu_test(bike_test_gpu_drivetrain_resistance tests/gpu/test_gpu_drivetrain_resistance.cpp)
+  bike_add_gpu_test(bike_test_gpu_rider tests/gpu/test_gpu_rider.cpp)
+  bike_add_gpu_test(bike_test_gpu_batch_step tests/gpu/test_gpu_batch_step.cpp)
+
+  # Model-asset and model-geometry tests call MuJoCo directly (mj_loadXML,
+  # mj_kinematics, mj_applyFT) and nothing else from the engine image. They take
+  # the narrow linkage: the imported Bike::MuJoCo target (image + headers, with
+  # the ASan compat include) and the Darwin install-name rewrite. bike_link_engine
+  # is not used because it additionally links ${CMAKE_DL_LIBS} for dladdr callers,
+  # which these tests are not.
+  bike_add_gpu_test(bike_test_gpu_model_geometry tests/gpu/test_gpu_model_geometry.cpp)
+  bike_add_gpu_test(bike_test_gpu_model_assets tests/gpu/test_gpu_model_assets.cpp)
+  foreach(_gpu_mujoco_test IN ITEMS bike_test_gpu_model_geometry bike_test_gpu_model_assets)
+    target_link_libraries(${_gpu_mujoco_test} PRIVATE Bike::MuJoCo)
+    bike_fix_mujoco_install_name(${_gpu_mujoco_test})
+  endforeach()
+
+  set(_gpu_runner_sources
+    tests/gpu/test_gpu_batch_runners.cpp
+    src/gpu/cpu_batch_runner.cpp)
+  if(APPLE)
+    # The Metal runner is Objective-C++, outside the C++-family TU set the
+    # check-context manifest carries (BikeCheckContext.cmake filters first-party
+    # sources to .cpp/.cc/.cxx/.C). It compiles in its own OBJECT library with
+    # EXPORT_COMPILE_COMMANDS OFF so it never reaches compile_commands.json —
+    # the frontends sweep requires the database to match the manifest exactly —
+    # while the clang-tidy/analyzer/cppcheck sweeps cannot process ObjC++.
+    add_library(bike_gpu_metal_runner_obj OBJECT src/gpu/metal_batch_runner.mm)
+    set_source_files_properties(src/gpu/metal_batch_runner.mm PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20;-DBIKE_METAL_OMIT_CUDA_KERNELS_TU=1")
+    set_target_properties(bike_gpu_metal_runner_obj PROPERTIES
+      EXPORT_COMPILE_COMMANDS OFF
+      CXX_STANDARD 23
+      CXX_STANDARD_REQUIRED ON
+      CXX_EXTENSIONS OFF)
+    if(BIKE_POLICY_COMPILE_DEFINITIONS)
+      target_compile_definitions(bike_gpu_metal_runner_obj PRIVATE ${BIKE_POLICY_COMPILE_DEFINITIONS})
+    endif()
+    target_compile_options(bike_gpu_metal_runner_obj PRIVATE
+      -include "${_bike_gpu_config_header}")
+    target_include_directories(bike_gpu_metal_runner_obj PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu"
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
+      ${BIKE_MUJOCO_COMPAT_INCLUDE}
+      "${MJ_DIR}/include")
+    list(APPEND _gpu_runner_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_test(bike_test_gpu_batch_runners ${_gpu_runner_sources})
+  target_link_libraries(bike_test_gpu_batch_runners PRIVATE Threads::Threads)
+  bike_link_engine(bike_test_gpu_batch_runners)
+  bike_fix_mujoco_install_name(bike_test_gpu_batch_runners)
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_batch_runners PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
 endif()
 
 # Startup graph (T16–T25) and the physics/research/recording applications.

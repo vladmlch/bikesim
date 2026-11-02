@@ -35,6 +35,11 @@ try:
         compile_cuda_writers,
         resolve_gpu_model_indices,
     )
+    from tools.colab_gpu.model_assets import (
+        extract_heightfield_1d,
+        load_captured_initial_state,
+        load_model_with_assets,
+    )
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from build_cuda_writers import (  # type: ignore[no-redef]
@@ -45,13 +50,21 @@ except ImportError:
         compile_cuda_writers,
         resolve_gpu_model_indices,
     )
+    from model_assets import (  # type: ignore[no-redef]
+        extract_heightfield_1d,
+        load_captured_initial_state,
+        load_model_with_assets,
+    )
 
 try:
     import mujoco
+except Exception:  # pragma: no cover
+    mujoco = None  # type: ignore[assignment]
+
+try:
     import mujoco_warp as mjwarp
     import warp as wp
-except ImportError:  # pragma: no cover - imported on CUDA/Colab runtime
-    mujoco = None  # type: ignore[assignment]
+except Exception:  # pragma: no cover - imported on CUDA/Colab runtime
     mjwarp = None  # type: ignore[assignment]
     wp = None  # type: ignore[assignment]
 
@@ -103,41 +116,38 @@ def _allocate_and_copy_device_bytes(raw_bytes: bytes, device: str = "cuda:0") ->
     return dev_wp
 
 
+class _HostHeightfieldArray(np.ndarray):
+    """Host float32 array that also exposes `.numpy()` and `.ptr` when Warp is unavailable."""
+
+    def numpy(self) -> np.ndarray:
+        return np.asarray(self)
+
+    @property
+    def ptr(self) -> int:
+        return int(self.ctypes.data)
+
+
 def _extract_heightfield_1d(
     m: Any,
     device: str = "cuda:0",
 ) -> tuple[Any, int, float, float]:
-    """Extract the 1D terrain elevation slice from `MjModel` and upload it to GPU memory."""
-    if getattr(m, "nhfield", 0) > 0:
-        ncol = int(m.hfield_ncol[0])
-        size_x_half = float(m.hfield_size[0, 0])
-        scale_z = float(m.hfield_size[0, 2])
-        hf_x_min = 0.0
-        z_offset = 0.0
-        for g_id in range(int(getattr(m, "ngeom", 0))):
-            if int(m.geom_type[g_id]) == int(mujoco.mjtGeom.mjGEOM_HFIELD):
-                hf_x_min = float(m.geom_pos[g_id, 0]) - size_x_half
-                z_offset = float(m.geom_pos[g_id, 2])
-                break
-        raw_row = (
-            np.asarray(m.hfield_data[:ncol], dtype=np.float32) * np.float32(scale_z)
-            + np.float32(z_offset)
-        )
-        total_length_x = 2.0 * size_x_half if size_x_half > 0.0 else float(ncol - 1) * 0.005
-        hf_dx = total_length_x / float(max(ncol - 1, 1))
-    else:
-        ncol = 4000
-        hf_dx = 0.005
-        hf_x_min = 0.0
-        x_coords = np.arange(ncol, dtype=np.float32) * np.float32(hf_dx)
-        raw_row = (
-            0.015 * np.sin(2.5 * x_coords)
-            + 0.008 * np.sin(9.0 * x_coords)
-            + 0.004 * np.cos(21.0 * x_coords)
-        ).astype(np.float32)
+    """Extract the 1D terrain elevation slice from `MjModel` and upload it to GPU memory.
 
-    d_hf_heights = wp.array(np.ascontiguousarray(raw_row, dtype=np.float32), dtype=wp.float32, device=device)
-    return d_hf_heights, int(ncol), float(hf_x_min), float(hf_dx)
+    `m` must come from `model_assets.load_model_with_assets` so `hfield_data` is populated.
+    """
+    raw_row_f32, hf_x_min, hf_dx = extract_heightfield_1d(m)
+    ncol = int(raw_row_f32.size)
+    if wp is None:
+        return raw_row_f32.view(_HostHeightfieldArray), ncol, hf_x_min, hf_dx
+
+    target_device = device
+    if target_device.startswith("cuda") and not wp.is_cuda_available():
+        try:
+            target_device = str(wp.get_device())
+        except Exception:
+            target_device = "cpu"
+    d_hf_heights = wp.array(raw_row_f32, dtype=wp.float32, device=target_device)
+    return d_hf_heights, ncol, hf_x_min, hf_dx
 
 
 def _resolve_tendon_range_binding(m_wp: Any, nworld: int) -> tuple[int, int]:
@@ -156,81 +166,21 @@ def _resolve_tendon_range_binding(m_wp: Any, nworld: int) -> tuple[int, int]:
     return 0, 0
 
 
-_SETTLED_QPOS0: tuple[float, ...] = (
-    2.0163204663006615,
-    -0.05357401639909831,
-    0.004284780880975736,
-    0.060060019575332066,
-    -0.00010761676353484251,
-    -0.00010761678414200608,
-    0.05987889648695992,
-    0.021245897379749926,
-    0.12725704340599134,
-    -0.06889657594618108,
-    0.025439328588473524,
-    0.22395495463507642,
-    -0.18923705383804443,
-    0.01470640089285262,
-    2.0283590907841074,
-    -0.05351113740715276,
-    0.1493965439850205,
-    -0.14185170640949385,
-    0.08528710301997564,
-    -0.14365190627622126,
-    0.08528710301997607,
-    -0.14365190627622199,
-    -0.11940117644925781,
-    -0.020246245278860982,
-    -0.15553302755866683,
-    0.03599510121499223,
-)
+def _prepare_initial_qpos_qvel(m: Any, xml_path: Path | str) -> tuple[np.ndarray, np.ndarray]:
+    """Return the captured initial `(qpos0, qvel0)` for `m` from `captured_bootstrap.json`.
 
-_SETTLED_QVEL0: tuple[float, ...] = (
-    0.05801761406260024,
-    -0.02434270696902437,
-    0.09131975316303595,
-    1.1072967848667608,
-    -0.16297306446955506,
-    -0.16297306446951973,
-    0.0813597266915952,
-    0.08118260076454009,
-    -0.051013560249722076,
-    0.02620219528909801,
-    0.45931837864051583,
-    -0.08781622504775156,
-    0.07560567276947935,
-    -0.006060887475190563,
-    0.019576748171044888,
-    0.0063482260239148105,
-    -1.7666562179517296,
-    1.6702495436871208,
-    -1.548304405566199,
-    2.923274710289271,
-    -1.5483044055659094,
-    2.923274710288845,
-    2.3325064033150946,
-    -0.8498340111344352,
-    1.3470393158296798,
-    0.5931204424545525,
-)
+    `xml_path` must be the model XML that `m` was loaded from. Errors (missing capture,
+    nq/nv mismatch) propagate; there is no fallback state.
+    """
+    return load_captured_initial_state(xml_path, int(m.nq), int(m.nv))
 
 
-def _prepare_initial_mjdata(m: Any) -> Any:
-    """Create and settle an initial `mujoco.MjData` state on the terrain surface."""
+def _prepare_initial_mjdata(m: Any, xml_path: Path | str) -> Any:
+    """Create an initial `mujoco.MjData` at the captured state and run forward kinematics."""
     d = mujoco.MjData(m)
-    if d.qpos.size == len(_SETTLED_QPOS0) and d.qvel.size == len(_SETTLED_QVEL0):
-        d.qpos[:] = np.asarray(_SETTLED_QPOS0, dtype=np.float64)
-        d.qvel[:] = np.asarray(_SETTLED_QVEL0, dtype=np.float64)
-        v_fwd = 5.0
-        d.qvel[0] = v_fwd
-        d.qvel[7] = v_fwd / 0.369
-        d.qvel[10] = v_fwd / 0.348
-        d.qvel[3] = d.qvel[10] * (32.0 / 36.0)
-    else:
-        if d.qpos.size >= 2:
-            d.qpos[0] = 2.0
-        if d.qvel.size >= 1:
-            d.qvel[0] = 5.0
+    qpos0, qvel0 = _prepare_initial_qpos_qvel(m, xml_path)
+    d.qpos[:] = qpos0
+    d.qvel[:] = qvel0
     mujoco.mj_forward(m, d)
     return d
 
@@ -293,6 +243,31 @@ def generate_parameter_sweep_scales(
     }
 
 
+def run_mjwarp_point(
+    xml_path: Path | str = DEFAULT_MODEL_XML,
+    nworld: int = 2048,
+    n_steps: int = 1000,
+    warmup_steps: int = 25,
+    seed: int = 42,
+    peak_sample_stride: int = 25,
+    lib: ctypes.CDLL | None = None,
+    device: str = "cuda:0",
+) -> dict[str, Any]:
+    """Run a single mujoco_warp batch benchmark point after loading `MjModel` + `hfield_data.bin`."""
+    resolved_xml = Path(xml_path)
+    _ = load_model_with_assets(resolved_xml)
+    return run_parameter_sweep(
+        model_xml_path=resolved_xml,
+        nworld=nworld,
+        n_steps=n_steps,
+        warmup_steps=warmup_steps,
+        seed=seed,
+        peak_sample_stride=peak_sample_stride,
+        lib=lib,
+        device=device,
+    )
+
+
 def run_parameter_sweep(
     model_xml_path: Path = DEFAULT_MODEL_XML,
     nworld: int = 2048,
@@ -308,8 +283,8 @@ def run_parameter_sweep(
     if lib is None:
         lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
 
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
-    d0 = _prepare_initial_mjdata(m)
+    m = load_model_with_assets(model_xml_path)
+    d0 = _prepare_initial_mjdata(m, model_xml_path)
     dt_s = float(m.opt.timestep)
 
     # 1. Build host byte buffers for GpuModelIndices and heterogeneous GpuWorldConfig[nworld]
@@ -336,6 +311,9 @@ def run_parameter_sweep(
 
     # 3. Upload model & batched data to mujoco_warp and initialize states
     m_wp = mjwarp.put_model(m)
+    if m.ntendon > 0 and hasattr(m_wp, "tendon_range"):
+        tr_np = np.tile(m.tendon_range.astype(np.float32)[None, :, :], (nworld, 1, 1))
+        m_wp.tendon_range = wp.array(tr_np, dtype=wp.vec2f, device=device)
     d_b = mjwarp.put_data(m, d0, nworld=nworld)
     mjwarp.forward(m_wp, d_b)
 
@@ -527,8 +505,8 @@ def run_3d_tire_ray_scaling_benchmark(
     if lib is None:
         lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
 
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
-    d0 = _prepare_initial_mjdata(m)
+    m = load_model_with_assets(model_xml_path)
+    d0 = _prepare_initial_mjdata(m, model_xml_path)
     dt_s = float(m.opt.timestep)
 
     idx_bytes = resolve_gpu_model_indices(m)
@@ -537,6 +515,9 @@ def run_3d_tire_ray_scaling_benchmark(
     sizeof_state = int(lib.bike_gpu_sizeof_world_state())
 
     m_wp = mjwarp.put_model(m)
+    if m.ntendon > 0 and hasattr(m_wp, "tendon_range"):
+        tr_np = np.tile(m.tendon_range.astype(np.float32)[None, :, :], (nworld, 1, 1))
+        m_wp.tendon_range = wp.array(tr_np, dtype=wp.vec2f, device=device)
     cuda_stream = wp.get_stream().cuda_stream
     tendon_range_ptr, tendon_range_stride = _resolve_tendon_range_binding(m_wp, nworld)
 

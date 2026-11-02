@@ -34,13 +34,16 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_WARP_CACHE_DIR = REPO_ROOT / "build" / "warp_cache"
 
 try:
+    import mujoco
+except Exception:  # pragma: no cover
+    mujoco = None  # type: ignore[assignment]
+
+try:
     import warp_metal  # noqa: F401
     import warp as wp
-    import mujoco
     import mujoco_warp as mjwarp
-except ImportError:  # pragma: no cover
+except Exception:  # pragma: no cover
     wp = None  # type: ignore[assignment]
-    mujoco = None  # type: ignore[assignment]
     mjwarp = None  # type: ignore[assignment]
 
 try:
@@ -51,6 +54,7 @@ try:
         resolve_gpu_model_indices,
     )
     from tools.colab_gpu.metal_hybrid_sweep import compile_metal_batch_runner
+    from tools.colab_gpu.model_assets import load_model_with_assets
     from tools.colab_gpu.mjwarp_batch_sweep import (
         DEFAULT_MODEL_XML,
         TIRE_RAY_SCALING_TIERS,
@@ -70,6 +74,7 @@ except ImportError:
         resolve_gpu_model_indices,
     )
     from metal_hybrid_sweep import compile_metal_batch_runner  # type: ignore[no-redef]
+    from model_assets import load_model_with_assets  # type: ignore[no-redef]
     from mjwarp_batch_sweep import (  # type: ignore[no-redef]
         DEFAULT_MODEL_XML,
         TIRE_RAY_SCALING_TIERS,
@@ -291,8 +296,8 @@ def run_mjwarp_metal_parameter_sweep(
     if wm_rt is None:
         wm_rt = WarpMetalWritersRuntime(lib)
 
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
-    d0 = _prepare_initial_mjdata(m)
+    m = load_model_with_assets(model_xml_path)
+    d0 = _prepare_initial_mjdata(m, model_xml_path)
     dt_s = float(m.opt.timestep)
 
     idx_bytes = resolve_gpu_model_indices(m)
@@ -316,6 +321,10 @@ def run_mjwarp_metal_parameter_sweep(
     d_hf_heights, hf_num_samples, hf_x_min, hf_dx = _extract_heightfield_1d(m, device=device)
 
     m_wp = mjwarp.put_model(m)
+    if m.ntendon > 0 and hasattr(m_wp, "tendon_range"):
+        tr_np = np.tile(m.tendon_range.astype(np.float32)[None, :, :], (nworld, 1, 1))
+        tendon_range_batch = tr_np.reshape(nworld, -1)
+        m_wp.tendon_range = wp.array(tr_np, dtype=wp.vec2f, device=device)
     d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=nconmax, njmax=njmax)
     mjwarp.forward(m_wp, d_b)
     tendon_range_ptr, tendon_range_stride = _resolve_tendon_range_binding(m_wp, nworld)
@@ -544,8 +553,8 @@ def run_mjwarp_metal_3d_tire_ray_scaling_benchmark(
     if wm_rt is None:
         wm_rt = WarpMetalWritersRuntime(lib)
 
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
-    d0 = _prepare_initial_mjdata(m)
+    m = load_model_with_assets(model_xml_path)
+    d0 = _prepare_initial_mjdata(m, model_xml_path)
     dt_s = float(m.opt.timestep)
 
     idx_bytes = resolve_gpu_model_indices(m)
@@ -554,6 +563,10 @@ def run_mjwarp_metal_3d_tire_ray_scaling_benchmark(
     sizeof_state = int(lib.bike_gpu_sizeof_world_state())
 
     m_wp = mjwarp.put_model(m)
+    if m.ntendon > 0 and hasattr(m_wp, "tendon_range"):
+        tr_np = np.tile(m.tendon_range.astype(np.float32)[None, :, :], (nworld, 1, 1))
+        tendon_range_batch = tr_np.reshape(nworld, -1)
+        m_wp.tendon_range = wp.array(tr_np, dtype=wp.vec2f, device=device)
     tendon_range_ptr, tendon_range_stride = _resolve_tendon_range_binding(m_wp, nworld)
 
     tier_results: list[dict[str, Any]] = []

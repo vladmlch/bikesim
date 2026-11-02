@@ -4,7 +4,21 @@
 
 #include "common.hpp"
 
+#if !defined(__METAL_VERSION__) && !defined(__CUDA_ARCH__)
+#include <numbers>
+#endif
+
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel: MSL has no std::span/std::array and address-space-qualified raw pointers are the device ABI; positional float signatures mirror the CUDA/MSL kernels. Register: docs/TESTING.md GPU kernel row.
+BIKE_GPU_SHARED_CODE_BEGIN
+
 namespace bike::gpu {
+
+BIKE_CONSTEXPR float kPsiToPa = 6894.757293168f;
+#if !defined(__METAL_VERSION__) && !defined(__CUDA_ARCH__)
+BIKE_CONSTEXPR float kPi = std::numbers::pi_v<float>;
+#else
+BIKE_CONSTEXPR float kPi = 3.14159265358979323846f;
+#endif
 
 struct GpuAirSpringParams {
     float stanchion_inner_diam_mm = 24.0f;
@@ -80,10 +94,7 @@ struct GpuSuspensionOutput {
 };
 
 // Polytropic dual-chamber air spring axial force (ported from writers/suspension.cpp::air_axial_force).
-BIKE_HD float gpu_air_axial_force(const GpuAirSpringParams &air, float travel_mm) noexcept {
-    constexpr float kPsiToPa = 6894.757293168f;
-    constexpr float kPi = 3.14159265358979323846f;
-
+BIKE_HD float gpu_air_axial_force(const BIKE_THREAD GpuAirSpringParams &air, float travel_mm) noexcept {
     const int tokens = air.num_tokens < 0
         ? 0
         : (air.num_tokens > air.max_tokens ? air.max_tokens : air.num_tokens);
@@ -113,7 +124,7 @@ BIKE_HD float gpu_air_axial_force(const GpuAirSpringParams &air, float travel_mm
 }
 
 // Base digressive LSC/HSC compression and rebound damper (ported from writers/suspension.cpp::base_damping).
-BIKE_HD float gpu_shock_damper_force(const GpuDamperParams &d, float stroke_vel_mps) noexcept {
+BIKE_HD float gpu_shock_damper_force(const BIKE_THREAD GpuDamperParams &d, float stroke_vel_mps) noexcept {
     const int max_lsc = d.max_lsc > 0 ? d.max_lsc : 1;
     const int max_hsc = d.max_hsc > 0 ? d.max_hsc : 1;
     const int max_reb = d.max_reb > 0 ? d.max_reb : 1;
@@ -154,7 +165,7 @@ BIKE_HD float gpu_shock_damper_force(const GpuDamperParams &d, float stroke_vel_
 // Charger3 fork damper with position-sensitive hydraulic bottom-out (HBO)
 // (ported from writers/suspension.cpp::charger3_damping_force).
 BIKE_HD float gpu_fork_damper_force(
-    const GpuForkDamperParams &d,
+    const BIKE_THREAD GpuForkDamperParams &d,
     float compression_vel_mps,
     float travel_mm
 ) noexcept {
@@ -174,7 +185,7 @@ BIKE_HD float gpu_fork_damper_force(
 }
 
 // Linear coil spring with preload (ported from writers/suspension.cpp::coil_spring_force).
-BIKE_HD float gpu_shock_coil_force(const GpuCoilShockParams &coil, float stroke_mm) noexcept {
+BIKE_HD float gpu_shock_coil_force(const BIKE_THREAD GpuCoilShockParams &coil, float stroke_mm) noexcept {
     const float compression_mm = gpu_max(0.0f, stroke_mm + coil.preload_mm);
     return coil.spring_rate_n_mm * compression_mm;
 }
@@ -182,7 +193,7 @@ BIKE_HD float gpu_shock_coil_force(const GpuCoilShockParams &coil, float stroke_
 // Elastomer bottom-out bumper with linear + quadratic stiffness
 // (ported from writers/suspension.cpp::coil_bumper_force).
 BIKE_HD float gpu_shock_bumper_force(
-    const GpuCoilShockParams &coil,
+    const BIKE_THREAD GpuCoilShockParams &coil,
     float stroke_mm,
     [[maybe_unused]] float stroke_vel_mps
 ) noexcept {
@@ -204,7 +215,7 @@ BIKE_HD float gpu_top_out_force(float travel_m, float vel_mps, float k_n_m, floa
 }
 
 // Initializes static sag preload forces from fork air and shock coil parameters.
-BIKE_HD void gpu_init_suspension_preloads(GpuSuspensionParams &p) noexcept {
+BIKE_HD void gpu_init_suspension_preloads(BIKE_THREAD GpuSuspensionParams &p) noexcept {
     const float fork_sag_mm = p.fork_air.wheel_travel_mm * p.fork_air.sag_fraction;
     p.fork_preload_n = gpu_air_axial_force(p.fork_air, fork_sag_mm);
 
@@ -214,7 +225,7 @@ BIKE_HD void gpu_init_suspension_preloads(GpuSuspensionParams &p) noexcept {
 
 // Evaluates all fork and rear shock force components at the given slide joint states.
 BIKE_HD GpuSuspensionOutput gpu_compute_suspension(
-    const GpuSuspensionParams &p,
+    const BIKE_THREAD GpuSuspensionParams &p,
     float fork_qpos_m,
     float fork_qvel_mps,
     float shock_qpos_m,
@@ -250,18 +261,18 @@ BIKE_HD GpuSuspensionOutput gpu_compute_suspension(
     return out;
 }
 
-// Computes suspension forces for one world and accumulates them into qfrc_world.
+// Computes suspension forces for one world and accumulates them into qfrc.
 BIKE_HD GpuSuspensionOutput gpu_write_suspension_qfrc(
-    const GpuSuspensionParams &p,
-    const GpuModelIndices &idx,
-    const float *qpos_world,
-    const float *qvel_world,
-    float *qfrc_world
+    const BIKE_THREAD GpuSuspensionParams &p,
+    const BIKE_THREAD GpuModelIndices &idx,
+    const BIKE_THREAD float *qpos,
+    const BIKE_THREAD float *qvel,
+    BIKE_THREAD float *qfrc
 ) noexcept {
-    const float fork_qpos_m = qpos_world[idx.fork_travel_qpos];
-    const float fork_qvel_mps = qvel_world[idx.fork_travel_dof];
-    const float shock_qpos_m = qpos_world[idx.shock_stroke_qpos];
-    const float shock_qvel_mps = qvel_world[idx.shock_stroke_dof];
+    const float fork_qpos_m = (idx.fork_travel_qpos >= 0) ? qpos[idx.fork_travel_qpos] : 0.0f;
+    const float fork_qvel_mps = (idx.fork_travel_dof >= 0) ? qvel[idx.fork_travel_dof] : 0.0f;
+    const float shock_qpos_m = (idx.shock_stroke_qpos >= 0) ? qpos[idx.shock_stroke_qpos] : 0.0f;
+    const float shock_qvel_mps = (idx.shock_stroke_dof >= 0) ? qvel[idx.shock_stroke_dof] : 0.0f;
 
     const GpuSuspensionOutput out = gpu_compute_suspension(
         p,
@@ -271,9 +282,16 @@ BIKE_HD GpuSuspensionOutput gpu_write_suspension_qfrc(
         shock_qvel_mps
     );
 
-    qfrc_world[idx.fork_travel_dof] += out.total_fork_force_n;
-    qfrc_world[idx.shock_stroke_dof] += out.total_shock_force_n;
+    if (idx.fork_travel_dof >= 0) {
+        qfrc[idx.fork_travel_dof] += out.total_fork_force_n;
+    }
+    if (idx.shock_stroke_dof >= 0) {
+        qfrc[idx.shock_stroke_dof] += out.total_shock_force_n;
+    }
     return out;
 }
 
 } // namespace bike::gpu
+
+BIKE_GPU_SHARED_CODE_END
+// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters)

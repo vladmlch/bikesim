@@ -203,8 +203,7 @@ void planned_torque_is_the_solved_weld_torque() {
     auto rig = coupled_rig();
     rcfg::PhysicalStep &physical = *rig->physical;
     const auto &clock = physical.control_clock();
-    const std::int64_t steps = static_cast<std::int64_t>(
-        std::llround(.6 / clock.timestep_s));
+    const std::int64_t steps = std::llround(.6 / clock.timestep_s);
     int checked = 0;
     for (std::int64_t step = 0; step < steps; ++step) {
         const bool tick = clock.is_tick(physical.step());

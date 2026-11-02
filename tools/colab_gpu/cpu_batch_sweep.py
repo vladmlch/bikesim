@@ -21,7 +21,6 @@ from pathlib import Path
 import platform
 import subprocess
 import sys
-import tempfile
 from typing import Any
 
 import mujoco
@@ -34,11 +33,14 @@ try:
         configure_cuda_writers_cdll,
         resolve_gpu_model_indices,
     )
+    from tools.colab_gpu.model_assets import (
+        extract_heightfield_1d,
+        load_captured_initial_state,
+        load_model_with_assets,
+    )
     from tools.colab_gpu.mjwarp_batch_sweep import (
         DEFAULT_MODEL_XML,
         TIRE_RAY_SCALING_TIERS,
-        _SETTLED_QPOS0,
-        _SETTLED_QVEL0,
         _summarize_distribution,
         generate_parameter_sweep_scales,
     )
@@ -50,14 +52,19 @@ except ImportError:
         configure_cuda_writers_cdll,
         resolve_gpu_model_indices,
     )
+    from model_assets import (  # type: ignore[no-redef]
+        extract_heightfield_1d,
+        load_captured_initial_state,
+        load_model_with_assets,
+    )
     from mjwarp_batch_sweep import (  # type: ignore[no-redef]
         DEFAULT_MODEL_XML,
         TIRE_RAY_SCALING_TIERS,
-        _SETTLED_QPOS0,
-        _SETTLED_QVEL0,
         _summarize_distribution,
         generate_parameter_sweep_scales,
     )
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _find_mujoco_wheel_lib_and_include() -> tuple[Path, Path]:
@@ -160,54 +167,27 @@ def compile_cpu_batch_runner(
     return lib
 
 
-def _extract_host_heightfield_1d(m: Any) -> tuple[np.ndarray, int, float, float]:
-    if getattr(m, "nhfield", 0) > 0:
-        ncol = int(m.hfield_ncol[0])
-        size_x_half = float(m.hfield_size[0, 0])
-        scale_z = float(m.hfield_size[0, 2])
-        hf_x_min = 0.0
-        z_offset = 0.0
-        for g_id in range(int(getattr(m, "ngeom", 0))):
-            if int(m.geom_type[g_id]) == int(mujoco.mjtGeom.mjGEOM_HFIELD):
-                hf_x_min = float(m.geom_pos[g_id, 0]) - size_x_half
-                z_offset = float(m.geom_pos[g_id, 2])
-                break
-        raw_row = (
-            np.asarray(m.hfield_data[:ncol], dtype=np.float32) * np.float32(scale_z)
-            + np.float32(z_offset)
-        )
-        total_length_x = 2.0 * size_x_half if size_x_half > 0.0 else float(ncol - 1) * 0.005
-        hf_dx = total_length_x / float(max(ncol - 1, 1))
-    else:
-        ncol = 4000
-        hf_dx = 0.005
-        hf_x_min = 0.0
-        x_coords = np.arange(ncol, dtype=np.float32) * np.float32(hf_dx)
-        raw_row = (
-            0.015 * np.sin(2.5 * x_coords)
-            + 0.008 * np.sin(9.0 * x_coords)
-            + 0.004 * np.cos(21.0 * x_coords)
-        ).astype(np.float32)
-
-    return np.ascontiguousarray(raw_row, dtype=np.float32), int(ncol), float(hf_x_min), float(hf_dx)
-
-
-def _prepare_initial_qpos_qvel(m: Any) -> tuple[np.ndarray, np.ndarray]:
-    qpos0 = np.zeros(int(m.nq), dtype=np.float64)
-    qvel0 = np.zeros(int(m.nv), dtype=np.float64)
-    if qpos0.size == len(_SETTLED_QPOS0):
-        qpos0[:] = np.asarray(_SETTLED_QPOS0, dtype=np.float64)
-        v_fwd = 3.5
-        qvel0[0] = v_fwd
-        qvel0[7] = v_fwd / 0.369
-        qvel0[10] = v_fwd / 0.348
-        qvel0[3] = qvel0[10] * (32.0 / 36.0)
-    else:
-        if qpos0.size >= 2:
-            qpos0[0] = 2.0
-        if qvel0.size >= 1:
-            qvel0[0] = 3.5
-    return np.ascontiguousarray(qpos0, dtype=np.float64), np.ascontiguousarray(qvel0, dtype=np.float64)
+def run_cpu_point(
+    xml_path: Path | str = DEFAULT_MODEL_XML,
+    nworld: int = 2048,
+    n_steps: int = 1000,
+    num_threads: int = 0,
+    num_stations: int = 32,
+    num_lateral_ribs: int = 1,
+    lib: ctypes.CDLL | None = None,
+) -> dict[str, Any]:
+    """Run a single CPU batch benchmark point after loading `MjModel` + `hfield_data.bin`."""
+    resolved_xml = Path(xml_path) if xml_path is not None else DEFAULT_MODEL_XML
+    _ = load_model_with_assets(resolved_xml)
+    return run_cpu_parameter_sweep(
+        model_xml_path=resolved_xml,
+        nworld=nworld,
+        n_steps=n_steps,
+        num_threads=num_threads,
+        num_stations=num_stations,
+        num_lateral_ribs=num_lateral_ribs,
+        lib=lib,
+    )
 
 
 def run_cpu_parameter_sweep(
@@ -223,16 +203,18 @@ def run_cpu_parameter_sweep(
     if lib is None:
         lib = compile_cpu_batch_runner()
 
-    model_xml_path = Path(model_xml_path).resolve()
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
+    resolved_xml = Path(model_xml_path) if model_xml_path is not None else DEFAULT_MODEL_XML
+    model_xml_path = resolved_xml.resolve()
+    m = load_model_with_assets(model_xml_path)
     dt_us = float(m.opt.timestep) * 1e6
     hw_threads = os.cpu_count() or 1
     used_threads = num_threads if num_threads > 0 else hw_threads
 
     idx_bytes = resolve_gpu_model_indices(m)
     idx_buf = ctypes.create_string_buffer(idx_bytes)
-    hf_arr, hf_ncol, hf_x_min, hf_dx = _extract_host_heightfield_1d(m)
-    init_qpos, init_qvel = _prepare_initial_qpos_qvel(m)
+    hf_arr, hf_x_min, hf_dx = extract_heightfield_1d(m)
+    hf_ncol = int(hf_arr.size)
+    init_qpos, init_qvel = load_captured_initial_state(model_xml_path, int(m.nq), int(m.nv))
 
     scales = generate_parameter_sweep_scales(nworld=nworld, seed=42)
     configs_bytes = build_sweep_configs_bytes(
@@ -315,16 +297,18 @@ def run_cpu_3d_tire_ray_scaling_benchmark(
     if lib is None:
         lib = compile_cpu_batch_runner()
 
-    model_xml_path = Path(model_xml_path).resolve()
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
+    resolved_xml = Path(model_xml_path) if model_xml_path is not None else DEFAULT_MODEL_XML
+    model_xml_path = resolved_xml.resolve()
+    m = load_model_with_assets(model_xml_path)
     dt_us = float(m.opt.timestep) * 1e6
     hw_threads = os.cpu_count() or 1
     used_threads = num_threads if num_threads > 0 else hw_threads
 
     idx_bytes = resolve_gpu_model_indices(m)
     idx_buf = ctypes.create_string_buffer(idx_bytes)
-    hf_arr, hf_ncol, hf_x_min, hf_dx = _extract_host_heightfield_1d(m)
-    init_qpos, init_qvel = _prepare_initial_qpos_qvel(m)
+    hf_arr, hf_x_min, hf_dx = extract_heightfield_1d(m)
+    hf_ncol = int(hf_arr.size)
+    init_qpos, init_qvel = load_captured_initial_state(model_xml_path, int(m.nq), int(m.nv))
 
     tiers_report: dict[str, Any] = {}
     for tier in TIRE_RAY_SCALING_TIERS:
@@ -414,7 +398,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Run multi-threaded C++ CPU parameter sweep and 3D tire ray scaling benchmarks."
     )
-    parser.add_argument("--model-xml", type=Path, default=DEFAULT_MODEL_XML)
+    parser.add_argument(
+        "--model-xml",
+        "--xml-path",
+        dest="model_xml",
+        type=Path,
+        default=None,
+    )
     parser.add_argument("--nworld", type=int, default=2048)
     parser.add_argument("--n-steps", type=int, default=1000)
     parser.add_argument("--ray-steps", type=int, default=500)
@@ -428,16 +418,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json-out", type=Path, default=None)
     args = parser.parse_args(argv)
 
+    model_xml = args.model_xml if args.model_xml is not None else DEFAULT_MODEL_XML
     lib = compile_cpu_batch_runner(out_so_path=args.out_so)
     sweep_report = run_cpu_parameter_sweep(
-        model_xml_path=args.model_xml,
+        model_xml_path=model_xml,
         nworld=args.nworld,
         n_steps=args.n_steps,
         num_threads=args.num_threads,
         lib=lib,
     )
     ray_report = run_cpu_3d_tire_ray_scaling_benchmark(
-        model_xml_path=args.model_xml,
+        model_xml_path=model_xml,
         nworld=args.nworld,
         n_steps=args.ray_steps,
         num_threads=args.num_threads,

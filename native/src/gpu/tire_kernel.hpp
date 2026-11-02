@@ -4,10 +4,13 @@
 
 #include "common.hpp"
 
+// NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel: MSL has no std::span/std::array and address-space-qualified raw pointers are the device ABI; positional float signatures mirror the CUDA/MSL kernels. Register: docs/TESTING.md GPU kernel row.
+BIKE_GPU_SHARED_CODE_BEGIN
+
 namespace bike::gpu {
 
-inline constexpr float kTwoPi = 6.28318530717958647692f;
-inline constexpr float kMaxRibCrownAngleRad = 1.04719755119659774615f; // pi / 3
+BIKE_CONSTEXPR float kTwoPi = 6.28318530717958647692f;
+BIKE_CONSTEXPR float kMaxRibCrownAngleRad = 1.04719755119659774615f; // pi / 3
 
 struct GpuHingeDensity {
     int num_knots = 3;
@@ -34,7 +37,7 @@ struct GpuTireParams {
 };
 
 struct GpuHeightfield1D {
-    const float *heights_m = nullptr;
+    const BIKE_DEVICE float *heights_m = nullptr;
     int num_samples = 0;
     float x_min_m = 0.0f;
     float dx_m = 1.0f;
@@ -52,13 +55,15 @@ struct GpuWheelContactOutput {
     float normal_load_n = 0.0f;
     float effective_radius_m = 0.0f;
     int active_stations = 0;
+    float contact_x_m = 0.0f;
+    float contact_z_m = 0.0f;
 };
 
 // Mirrors biketyre::station_density in native/src/tyre/station.cpp:52-73 verbatim.
 // Returns GpuVec2{elastic_force, elastic_energy}.
 BIKE_HD GpuVec2 gpu_station_density(
     float delta_m,
-    const GpuHingeDensity &d
+    const BIKE_THREAD GpuHingeDensity &d
 ) noexcept {
     float force = 0.0f;
     float energy = 0.0f;
@@ -70,7 +75,7 @@ BIKE_HD GpuVec2 gpu_station_density(
         force += d.stiffness_n_m[i] * x;
         energy += d.stiffness_n_m[i] * x * x;
     }
-    return {force, 0.5f * energy};
+    return GpuVec2{.x = force, .y = 0.5f * energy};
 }
 
 // Mirrors biketyre::station_response in native/src/tyre/station.cpp:78-95 verbatim.
@@ -79,26 +84,36 @@ BIKE_HD GpuVec2 gpu_station_response(
     float delta_m,
     float rate_mps,
     float weight,
-    const GpuHingeDensity &d
+    const BIKE_THREAD GpuHingeDensity &d
 ) noexcept {
     const GpuVec2 dens = gpu_station_density(delta_m, d);
     const float force = delta_m > 0.0f
         ? gpu_max(0.0f, dens.x + d.damping_ns_m * rate_mps)
         : 0.0f;
-    return {weight * force, weight * dens.y};
+    return GpuVec2{.x = weight * force, .y = weight * dens.y};
+}
+
+// Inline alias matching station law naming conventions
+BIKE_HD GpuVec2 gpu_tire_station_response(
+    float delta_m,
+    float rate_mps,
+    float weight,
+    const BIKE_THREAD GpuHingeDensity &d
+) noexcept {
+    return gpu_station_response(delta_m, rate_mps, weight, d);
 }
 
 // Samples a 1D heightfield via clamped linear interpolation and returns
 // GpuVec3{height_z, normal_x, normal_z} with unit normal (-dh/dx, 1) / sqrt(1 + (dh/dx)^2).
 BIKE_HD GpuVec3 gpu_sample_heightfield_1d(
-    const GpuHeightfield1D &hf,
+    const BIKE_THREAD GpuHeightfield1D &hf,
     float x_m
 ) noexcept {
     if (hf.heights_m == nullptr || hf.num_samples <= 0) {
-        return {0.0f, 0.0f, 1.0f};
+        return GpuVec3{.x = 0.0f, .y = 0.0f, .z = 1.0f};
     }
     if (hf.num_samples == 1) {
-        return {hf.heights_m[0], 0.0f, 1.0f};
+        return GpuVec3{.x = hf.heights_m[0], .y = 0.0f, .z = 1.0f};
     }
     const float inv_dx = hf.inv_dx_m > 0.0f
         ? hf.inv_dx_m
@@ -120,12 +135,177 @@ BIKE_HD GpuVec3 gpu_sample_heightfield_1d(
     const float inv_norm = 1.0f / gpu_sqrt(1.0f + dh_dx * dh_dx);
     const float normal_x = -dh_dx * inv_norm;
     const float normal_z = inv_norm;
-    return {height_z, normal_x, normal_z};
+    return GpuVec3{.x = height_z, .y = normal_x, .z = normal_z};
 }
 
 // Evaluates distributed tire contact over num_stations (and optional num_lateral_ribs
 // for 3D carcass ray scaling), updates tangential bristle state when num_lateral_ribs == 1,
-// and accumulates world forces, spin torque, normal load, and load-weighted effective radius.
+// Per-ray accumulator shared between sequential host/CUDA evaluation and Metal SIMD32 reduction.
+struct GpuWheelRayAccum {
+    float fx_world_n = 0.0f;
+    float fz_world_n = 0.0f;
+    float spin_torque_nm = 0.0f;
+    float normal_load_n = 0.0f;
+    int active_stations = 0;
+    float weighted_drop_terms = 0.0f;
+    float weighted_drop_weights = 0.0f;
+    float unweighted_drop_terms = 0.0f;
+    int unweighted_drop_count = 0;
+    float weighted_cx = 0.0f;
+    float weighted_cz = 0.0f;
+    float unweighted_cx = 0.0f;
+    float unweighted_cz = 0.0f;
+};
+
+// Evaluates a single (s, rib) tire ray and accumulates into `acc`.
+BIKE_HD void gpu_evaluate_wheel_contact_ray(
+    int s,
+    int rib,
+    int n_stations,
+    int n_ribs,
+    float rib_weight,
+    float safe_dt,
+    float sigma,
+    float wheel_x_m,
+    float wheel_z_m,
+    float wheel_vx_mps,
+    float wheel_vz_mps,
+    float wheel_omega_rad_s,
+    const BIKE_THREAD GpuTireParams &params,
+    const BIKE_THREAD GpuHeightfield1D &hf,
+    BIKE_THREAD float *bristle_x_io,
+    BIKE_THREAD GpuWheelRayAccum &acc
+) noexcept {
+    const float theta = kTwoPi * static_cast<float>(s) / static_cast<float>(n_stations);
+    const float cos_theta = gpu_cos(theta);
+    const float sin_theta = gpu_sin(theta);
+
+    float r_rib = params.nominal_radius_m;
+    if (n_ribs > 1) {
+        const float u_lat = (2.0f * static_cast<float>(rib) /
+                             static_cast<float>(n_ribs - 1)) - 1.0f;
+        const float psi = u_lat * kMaxRibCrownAngleRad;
+        r_rib = params.nominal_radius_m -
+                params.section_radius_m * (1.0f - gpu_cos(psi));
+    }
+
+    const float rx = r_rib * cos_theta;
+    const float rz = r_rib * sin_theta;
+    const float pt_x = wheel_x_m + rx;
+    const float pt_z = wheel_z_m + rz;
+
+    const GpuVec3 surf = gpu_sample_heightfield_1d(hf, pt_x);
+    const float terrain_z = surf.x;
+    const float nx = surf.y;
+    const float nz = surf.z;
+
+    // Signed vertical penetration projected onto the surface normal.
+    const float delta_m = (terrain_z - pt_z) * nz;
+    if (delta_m <= 0.0f) {
+        if (bristle_x_io != nullptr) {
+            *bristle_x_io = 0.0f;
+        }
+        return;
+    }
+
+    // Station point world velocity: v_center + omega_y x r_station
+    // In X-Z plane with +Y spin axis: v_x = vx + omega * rz, v_z = vz - omega * rx
+    const float vx_pt = wheel_vx_mps + wheel_omega_rad_s * rz;
+    const float vz_pt = wheel_vz_mps - wheel_omega_rad_s * rx;
+
+    // Penetration rate = -(v_pt . n)
+    const float rate_mps = -(vx_pt * nx + vz_pt * nz);
+    const GpuVec2 resp = gpu_station_response(
+        delta_m, rate_mps, rib_weight, params.density);
+    const float normal_force = resp.x;
+
+    // Forward unit tangent in X-Z plane: t = (nz, -nx)
+    const float tx = nz;
+    const float tz = -nx;
+    const float v_slip = vx_pt * tx + vz_pt * tz;
+    const float v_trans = gpu_abs(wheel_vx_mps * tx + wheel_vz_mps * tz);
+
+    const float xi_prev = (bristle_x_io != nullptr) ? *bristle_x_io : 0.0f;
+
+    const float decay = 1.0f / (1.0f + (v_trans * safe_dt) / sigma);
+    float xi_new = (xi_prev - v_slip * safe_dt) * decay;
+
+    const float k_station = params.bristle_kx_n_m * rib_weight;
+    const float c_station = params.bristle_cx_ns_m * rib_weight;
+    const float ft_raw = k_station * xi_new - c_station * v_slip;
+
+    const float slip_blend = gpu_min(gpu_abs(v_slip) / 0.5f, 1.0f);
+    const float mu_eff = params.mu_kinetic +
+        (params.mu_static - params.mu_kinetic) * (1.0f - slip_blend);
+    const float max_ft = gpu_max(0.0f, mu_eff * normal_force);
+    const float tangent_force = gpu_clamp(ft_raw, -max_ft, max_ft);
+
+    if (k_station > 1e-8f) {
+        const float max_xi = max_ft / k_station;
+        xi_new = gpu_clamp(xi_new, -max_xi, max_xi);
+    }
+    if (bristle_x_io != nullptr) {
+        *bristle_x_io = xi_new;
+    }
+
+    const float fx_station = normal_force * nx + tangent_force * tx;
+    const float fz_station = normal_force * nz + tangent_force * tz;
+
+    acc.fx_world_n += fx_station;
+    acc.fz_world_n += fz_station;
+    acc.spin_torque_nm += rz * fx_station - rx * fz_station;
+    acc.normal_load_n += normal_force;
+    acc.active_stations += 1;
+
+    // Load-weighted radial drop matching effective_radius in distributed_tire.cpp:135-155
+    const float drop = -(rx * nx + rz * nz);
+    if (normal_force > 0.0f) {
+        acc.weighted_drop_terms += normal_force * drop;
+        acc.weighted_drop_weights += normal_force;
+        acc.weighted_cx += normal_force * pt_x;
+        acc.weighted_cz += normal_force * pt_z;
+    }
+    acc.unweighted_drop_terms += drop;
+    acc.unweighted_cx += pt_x;
+    acc.unweighted_cz += pt_z;
+    acc.unweighted_drop_count += 1;
+}
+
+// Finalizes a GpuWheelRayAccum into GpuWheelContactOutput.
+BIKE_HD GpuWheelContactOutput gpu_finalize_wheel_contact_accum(
+    float wheel_x_m,
+    float wheel_z_m,
+    float nominal_radius_m,
+    const BIKE_THREAD GpuWheelRayAccum &acc
+) noexcept {
+    GpuWheelContactOutput out{};
+    out.fx_world_n = acc.fx_world_n;
+    out.fz_world_n = acc.fz_world_n;
+    out.spin_torque_nm = acc.spin_torque_nm;
+    out.normal_load_n = acc.normal_load_n;
+    out.active_stations = acc.active_stations;
+    out.contact_x_m = wheel_x_m;
+    out.contact_z_m = wheel_z_m - nominal_radius_m;
+
+    if (acc.active_stations > 0) {
+        if (acc.weighted_drop_weights > 0.0f) {
+            out.effective_radius_m = gpu_max(
+                0.0f, acc.weighted_drop_terms / acc.weighted_drop_weights);
+            out.contact_x_m = acc.weighted_cx / acc.weighted_drop_weights;
+            out.contact_z_m = acc.weighted_cz / acc.weighted_drop_weights;
+        } else if (acc.unweighted_drop_count > 0) {
+            const float inv_cnt = 1.0f / static_cast<float>(acc.unweighted_drop_count);
+            out.effective_radius_m = gpu_max(0.0f, acc.unweighted_drop_terms * inv_cnt);
+            out.contact_x_m = acc.unweighted_cx * inv_cnt;
+            out.contact_z_m = acc.unweighted_cz * inv_cnt;
+        }
+    }
+    return out;
+}
+
+// Evaluates distributed tire contact over `num_stations x num_lateral_ribs` 3D crown rays,
+// updates per-station LuGre bristle state (when `num_lateral_ribs == 1` and `station_state != nullptr`),
+// and accumulates world forces, spin torque, normal load, load-weighted effective radius, and contact center.
 BIKE_HD GpuWheelContactOutput gpu_evaluate_wheel_contact(
     float wheel_x_m,
     float wheel_z_m,
@@ -133,11 +313,10 @@ BIKE_HD GpuWheelContactOutput gpu_evaluate_wheel_contact(
     float wheel_vz_mps,
     float wheel_omega_rad_s,
     float dt_s,
-    const GpuTireParams &params,
-    const GpuHeightfield1D &hf,
-    GpuWheelStationState *station_state = nullptr
+    const BIKE_THREAD GpuTireParams &params,
+    const BIKE_THREAD GpuHeightfield1D &hf,
+    BIKE_THREAD GpuWheelStationState *station_state = nullptr
 ) noexcept {
-    GpuWheelContactOutput out{};
     const int n_stations = params.num_stations > 0 ? params.num_stations : 32;
     const int n_ribs = params.num_lateral_ribs > 0 ? params.num_lateral_ribs : 1;
     const float station_weight = kTwoPi / static_cast<float>(n_stations);
@@ -145,117 +324,21 @@ BIKE_HD GpuWheelContactOutput gpu_evaluate_wheel_contact(
     const float safe_dt = gpu_max(dt_s, 0.0f);
     const float sigma = gpu_max(params.relaxation_length_m, 1e-4f);
 
-    float weighted_drop_terms = 0.0f;
-    float weighted_drop_weights = 0.0f;
-    float unweighted_drop_terms = 0.0f;
-    int unweighted_drop_count = 0;
-
+    GpuWheelRayAccum acc{};
     for (int s = 0; s < n_stations; ++s) {
-        const float theta = kTwoPi * static_cast<float>(s) / static_cast<float>(n_stations);
-        const float cos_theta = gpu_cos(theta);
-        const float sin_theta = gpu_sin(theta);
-
         for (int rib = 0; rib < n_ribs; ++rib) {
-            float r_rib = params.nominal_radius_m;
-            if (n_ribs > 1) {
-                const float u_lat = (2.0f * static_cast<float>(rib) /
-                                     static_cast<float>(n_ribs - 1)) - 1.0f;
-                const float psi = u_lat * kMaxRibCrownAngleRad;
-                r_rib = params.nominal_radius_m -
-                        params.section_radius_m * (1.0f - gpu_cos(psi));
-            }
-
-            const float rx = r_rib * cos_theta;
-            const float rz = r_rib * sin_theta;
-            const float pt_x = wheel_x_m + rx;
-            const float pt_z = wheel_z_m + rz;
-
-            const GpuVec3 surf = gpu_sample_heightfield_1d(hf, pt_x);
-            const float terrain_z = surf.x;
-            const float nx = surf.y;
-            const float nz = surf.z;
-
-            // Signed vertical penetration projected onto the surface normal.
-            const float delta_m = (terrain_z - pt_z) * nz;
-            if (delta_m <= 0.0f) {
-                if (n_ribs == 1 && s < kMaxTreadStations && station_state != nullptr) {
-                    station_state->bristle_x[s] = 0.0f;
-                }
-                continue;
-            }
-
-            // Station point world velocity: v_center + omega_y x r_station
-            // In X-Z plane with +Y spin axis: v_x = vx + omega * rz, v_z = vz - omega * rx
-            const float vx_pt = wheel_vx_mps + wheel_omega_rad_s * rz;
-            const float vz_pt = wheel_vz_mps - wheel_omega_rad_s * rx;
-
-            // Penetration rate = -(v_pt . n)
-            const float rate_mps = -(vx_pt * nx + vz_pt * nz);
-            const GpuVec2 resp = gpu_station_response(
-                delta_m, rate_mps, rib_weight, params.density);
-            const float normal_force = resp.x;
-
-            // Forward unit tangent in X-Z plane: t = (nz, -nx)
-            const float tx = nz;
-            const float tz = -nx;
-            const float v_slip = vx_pt * tx + vz_pt * tz;
-            const float v_trans = gpu_abs(wheel_vx_mps * tx + wheel_vz_mps * tz);
-
-            float xi_prev = 0.0f;
-            if (n_ribs == 1 && s < kMaxTreadStations && station_state != nullptr) {
-                xi_prev = station_state->bristle_x[s];
-            }
-
-            const float decay = 1.0f / (1.0f + (v_trans * safe_dt) / sigma);
-            float xi_new = (xi_prev - v_slip * safe_dt) * decay;
-
-            const float k_station = params.bristle_kx_n_m * rib_weight;
-            const float c_station = params.bristle_cx_ns_m * rib_weight;
-            const float ft_raw = k_station * xi_new - c_station * v_slip;
-
-            const float slip_blend = gpu_min(gpu_abs(v_slip) / 0.5f, 1.0f);
-            const float mu_eff = params.mu_kinetic +
-                (params.mu_static - params.mu_kinetic) * (1.0f - slip_blend);
-            const float max_ft = gpu_max(0.0f, mu_eff * normal_force);
-            const float tangent_force = gpu_clamp(ft_raw, -max_ft, max_ft);
-
-            if (k_station > 1e-8f) {
-                const float max_xi = max_ft / k_station;
-                xi_new = gpu_clamp(xi_new, -max_xi, max_xi);
-            }
-            if (n_ribs == 1 && s < kMaxTreadStations && station_state != nullptr) {
-                station_state->bristle_x[s] = xi_new;
-            }
-
-            const float fx_station = normal_force * nx + tangent_force * tx;
-            const float fz_station = normal_force * nz + tangent_force * tz;
-
-            out.fx_world_n += fx_station;
-            out.fz_world_n += fz_station;
-            out.spin_torque_nm += rz * fx_station - rx * fz_station;
-            out.normal_load_n += normal_force;
-            out.active_stations += 1;
-
-            // Load-weighted radial drop matching effective_radius in distributed_tire.cpp:135-155
-            const float drop = -(rx * nx + rz * nz);
-            if (normal_force > 0.0f) {
-                weighted_drop_terms += normal_force * drop;
-                weighted_drop_weights += normal_force;
-            }
-            unweighted_drop_terms += drop;
-            unweighted_drop_count += 1;
+            BIKE_THREAD float *bristle_ptr =
+                (n_ribs == 1 && s < kMaxTreadStations && station_state != nullptr)
+                    ? &station_state->bristle_x[s]
+                    : nullptr;
+            gpu_evaluate_wheel_contact_ray(
+                s, rib, n_stations, n_ribs, rib_weight, safe_dt, sigma,
+                wheel_x_m, wheel_z_m, wheel_vx_mps, wheel_vz_mps, wheel_omega_rad_s,
+                params, hf, bristle_ptr, acc);
         }
     }
-
-    if (out.active_stations > 0) {
-        if (weighted_drop_weights > 0.0f) {
-            out.effective_radius_m = gpu_max(0.0f, weighted_drop_terms / weighted_drop_weights);
-        } else if (unweighted_drop_count > 0) {
-            out.effective_radius_m = gpu_max(
-                0.0f, unweighted_drop_terms / static_cast<float>(unweighted_drop_count));
-        }
-    }
-    return out;
+    return gpu_finalize_wheel_contact_accum(
+        wheel_x_m, wheel_z_m, params.nominal_radius_m, acc);
 }
 
 // Overload with (params, hf, station_state, dt_s) parameter ordering for caller convenience.
@@ -265,9 +348,9 @@ BIKE_HD GpuWheelContactOutput gpu_evaluate_wheel_contact(
     float wheel_vx_mps,
     float wheel_vz_mps,
     float wheel_omega_rad_s,
-    const GpuTireParams &params,
-    const GpuHeightfield1D &hf,
-    GpuWheelStationState *station_state = nullptr,
+    const BIKE_THREAD GpuTireParams &params,
+    const BIKE_THREAD GpuHeightfield1D &hf,
+    BIKE_THREAD GpuWheelStationState *station_state = nullptr,
     float dt_s = 0.001f
 ) noexcept {
     return gpu_evaluate_wheel_contact(
@@ -283,8 +366,81 @@ BIKE_HD GpuWheelContactOutput gpu_evaluate_wheel_contact(
     );
 }
 
+// Projects front or rear wheel contact force and spin torque into qfrc_world.
+// When is_front_wheel is true, projects into root DOFs and fork_travel_dof via project_front_wheel_force_to_qfrc.
+// When is_front_wheel is false, projects into root DOFs, main_pivot_dof, and horst_pivot_dof via project_rear_wheel_force_to_qfrc.
+// Without xpos_world (default nullptr) the fork axis and pivot anchors use the rest chain (root_pitch = main_pivot = 0),
+// which is exact only at rest. Callers at other poses must pass xpos_world.
+BIKE_HD void gpu_write_wheel_qfrc(
+    bool is_front_wheel,
+    float com_x_m,
+    float com_z_m,
+    const BIKE_THREAD GpuWheelContactOutput &out,
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_THREAD float *qfrc_world,
+    const BIKE_THREAD float *xpos_world = nullptr
+) noexcept {
+    if (qfrc_world == nullptr) {
+        return;
+    }
+    if (is_front_wheel) {
+        project_front_wheel_force_to_qfrc(
+            idx,
+            xpos_world,
+            com_x_m,
+            com_z_m,
+            out.contact_x_m,
+            out.contact_z_m,
+            out.fx_world_n,
+            out.fz_world_n,
+            qfrc_world
+        );
+        if (idx.front_wheel_spin_dof >= 0) {
+            qfrc_world[idx.front_wheel_spin_dof] += out.spin_torque_nm;
+        }
+    } else {
+        project_rear_wheel_force_to_qfrc(
+            idx,
+            xpos_world,
+            com_x_m,
+            com_z_m,
+            out.contact_x_m,
+            out.contact_z_m,
+            out.fx_world_n,
+            out.fz_world_n,
+            qfrc_world
+        );
+        if (idx.rear_wheel_spin_dof >= 0) {
+            qfrc_world[idx.rear_wheel_spin_dof] += out.spin_torque_nm;
+        }
+    }
+}
+
+// Convenience overload for callers specifying explicit wheel coordinates (wheel_x_m, wheel_z_m).
+BIKE_HD void gpu_write_wheel_qfrc(
+    bool is_front_wheel,
+    float com_x_m,
+    float com_z_m,
+    float wheel_x_m,
+    float wheel_z_m,
+    const BIKE_THREAD GpuWheelContactOutput &out,
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_THREAD float *qfrc_world,
+    const BIKE_THREAD float *xpos_world = nullptr
+) noexcept {
+    GpuWheelContactOutput contact = out;
+    if (contact.contact_x_m == 0.0f && contact.contact_z_m == 0.0f) {
+        contact.contact_x_m = wheel_x_m;
+        contact.contact_z_m = wheel_z_m;
+    }
+    gpu_write_wheel_qfrc(is_front_wheel, com_x_m, com_z_m, contact, idx, qfrc_world, xpos_world);
+}
+
 // Evaluates front and rear wheels and projects their forces onto qfrc_world
-// (root_x_dof, root_z_dof, root_pitch_dof, front_wheel_spin_dof, rear_wheel_spin_dof).
+// (root_x_dof, root_z_dof, root_pitch_dof, front_wheel_spin_dof, rear_wheel_spin_dof,
+// and front fork / rear suspension pivot DOFs when xpos_world is provided).
+// Without xpos_world the fork axis and pivot anchors use the rest chain (root_pitch = main_pivot = 0),
+// which is exact only at rest. Callers at other poses must use the xpos overload below.
 BIKE_HD void gpu_write_both_wheels_qfrc(
     float com_x_m,
     float com_z_m,
@@ -299,15 +455,16 @@ BIKE_HD void gpu_write_both_wheels_qfrc(
     float rear_vz_mps,
     float rear_omega_rad_s,
     float dt_s,
-    const GpuTireParams &front_params,
-    const GpuTireParams &rear_params,
-    const GpuHeightfield1D &hf,
-    const GpuModelIndices &idx,
-    GpuWheelStationState *front_state,
-    GpuWheelStationState *rear_state,
-    float *qfrc_world,
-    GpuWheelContactOutput *front_out_opt = nullptr,
-    GpuWheelContactOutput *rear_out_opt = nullptr
+    const BIKE_THREAD GpuTireParams &front_params,
+    const BIKE_THREAD GpuTireParams &rear_params,
+    const BIKE_THREAD GpuHeightfield1D &hf,
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_THREAD GpuWheelStationState *front_state,
+    BIKE_THREAD GpuWheelStationState *rear_state,
+    BIKE_THREAD float *qfrc_world,
+    BIKE_THREAD GpuWheelContactOutput *front_out_opt = nullptr,
+    BIKE_THREAD GpuWheelContactOutput *rear_out_opt = nullptr,
+    const BIKE_THREAD float *xpos_world = nullptr
 ) noexcept {
     const GpuWheelContactOutput front_out = gpu_evaluate_wheel_contact(
         front_x_m,
@@ -333,28 +490,10 @@ BIKE_HD void gpu_write_both_wheels_qfrc(
     );
 
     if (qfrc_world != nullptr) {
-        project_planar_force_to_root(
-            front_out.fx_world_n,
-            front_out.fz_world_n,
-            front_x_m,
-            front_z_m,
-            com_x_m,
-            com_z_m,
-            idx,
-            qfrc_world
-        );
-        project_planar_force_to_root(
-            rear_out.fx_world_n,
-            rear_out.fz_world_n,
-            rear_x_m,
-            rear_z_m,
-            com_x_m,
-            com_z_m,
-            idx,
-            qfrc_world
-        );
-        qfrc_world[idx.front_wheel_spin_dof] += front_out.spin_torque_nm;
-        qfrc_world[idx.rear_wheel_spin_dof] += rear_out.spin_torque_nm;
+        gpu_write_wheel_qfrc(
+            true, com_x_m, com_z_m, front_out, idx, qfrc_world, xpos_world);
+        gpu_write_wheel_qfrc(
+            false, com_x_m, com_z_m, rear_out, idx, qfrc_world, xpos_world);
     }
 
     if (front_out_opt != nullptr) {
@@ -366,52 +505,70 @@ BIKE_HD void gpu_write_both_wheels_qfrc(
 }
 
 // Overload accepting body xpos [nbody * 3] and generalized velocity qvel [nv] arrays.
+// xpos must be non-null: it is dereferenced unconditionally below.
 BIKE_HD void gpu_write_both_wheels_qfrc(
-    const float *xpos,
-    const float *qvel,
+    const BIKE_THREAD float *xpos,
+    const BIKE_THREAD float *qvel,
     float dt_s,
-    const GpuTireParams &front_params,
-    const GpuTireParams &rear_params,
-    const GpuHeightfield1D &hf,
-    const GpuModelIndices &idx,
-    GpuWheelStationState *front_state,
-    GpuWheelStationState *rear_state,
-    float *qfrc_world,
-    GpuWheelContactOutput *front_out_opt = nullptr,
-    GpuWheelContactOutput *rear_out_opt = nullptr
+    const BIKE_THREAD GpuTireParams &front_params,
+    const BIKE_THREAD GpuTireParams &rear_params,
+    const BIKE_THREAD GpuHeightfield1D &hf,
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_THREAD GpuWheelStationState *front_state,
+    BIKE_THREAD GpuWheelStationState *rear_state,
+    BIKE_THREAD float *qfrc_world,
+    BIKE_THREAD GpuWheelContactOutput *front_out_opt = nullptr,
+    BIKE_THREAD GpuWheelContactOutput *rear_out_opt = nullptr
 ) noexcept {
-    const float com_x = xpos[3 * idx.frame_bid + 0];
-    const float com_z = xpos[3 * idx.frame_bid + 2];
-    const float front_x = xpos[3 * idx.front_wheel_bid + 0];
-    const float front_z = xpos[3 * idx.front_wheel_bid + 2];
-    const float rear_x = xpos[3 * idx.rear_wheel_bid + 0];
-    const float rear_z = xpos[3 * idx.rear_wheel_bid + 2];
+    const float com_x = xpos[3 * idx.frame_body + 0];
+    const float com_z = xpos[3 * idx.frame_body + 2];
+    const float fw_x = xpos[3 * idx.front_wheel_body + 0];
+    const float fw_z = xpos[3 * idx.front_wheel_body + 2];
+    const float rw_x = xpos[3 * idx.rear_wheel_body + 0];
+    const float rw_z = xpos[3 * idx.rear_wheel_body + 2];
 
     const float root_vx = qvel[idx.root_x_dof];
     const float root_vz = qvel[idx.root_z_dof];
     const float pitch_rate = qvel[idx.root_pitch_dof];
 
-    const float front_vx = root_vx + pitch_rate * (front_z - com_z);
-    const float front_vz = root_vz - pitch_rate * (front_x - com_x);
-    const float front_omega = pitch_rate + qvel[idx.front_wheel_spin_dof];
+    const float v_fork = (idx.fork_travel_dof >= 0) ? qvel[idx.fork_travel_dof] : 0.0f;
+    const GpuVec2 e_fork = gpu_fork_axis_world(idx, xpos, 0.0f);
+    const float fw_vx = root_vx + pitch_rate * (fw_z - com_z) + e_fork.x * v_fork;
+    const float fw_vz = root_vz - pitch_rate * (fw_x - com_x) + e_fork.y * v_fork;
+    const float fw_omega = pitch_rate + (idx.front_wheel_spin_dof >= 0 ? qvel[idx.front_wheel_spin_dof] : 0.0f);
 
-    const float rear_vx = root_vx + pitch_rate * (rear_z - com_z);
-    const float rear_vz = root_vz - pitch_rate * (rear_x - com_x);
-    const float rear_omega = pitch_rate + qvel[idx.rear_wheel_spin_dof];
+    const float v_main = (idx.main_pivot_dof >= 0) ? qvel[idx.main_pivot_dof] : 0.0f;
+    const float v_horst = (idx.horst_pivot_dof >= 0) ? qvel[idx.horst_pivot_dof] : 0.0f;
+    // xpos is read unconditionally here, so the anchor fallbacks run only when a pivot body is at world
+    // x = z = 0 (within 1e-6). No qpos is available in this overload, so root_pitch and main_pivot are
+    // taken at the rest pose (0); the fallback is exact only at rest.
+    const GpuVec2 a_main = gpu_rear_pivot_anchor_world(
+        idx.chainstay_body, xpos, com_x, com_z, kMainPivotLocalDxM, kMainPivotLocalDzM);
+    const GpuVec2 a_horst = gpu_horst_pivot_anchor_world(
+        idx.seatstay_body, xpos, com_x, com_z, 0.0f, 0.0f);
+    const float rw_vx = root_vx
+        + pitch_rate * (rw_z - com_z)
+        + v_main * (rw_z - a_main.y)
+        + v_horst * (rw_z - a_horst.y);
+    const float rw_vz = root_vz
+        - pitch_rate * (rw_x - com_x)
+        - v_main * (rw_x - a_main.x)
+        - v_horst * (rw_x - a_horst.x);
+    const float rw_omega = pitch_rate + v_main + v_horst + (idx.rear_wheel_spin_dof >= 0 ? qvel[idx.rear_wheel_spin_dof] : 0.0f);
 
     gpu_write_both_wheels_qfrc(
         com_x,
         com_z,
-        front_x,
-        front_z,
-        front_vx,
-        front_vz,
-        front_omega,
-        rear_x,
-        rear_z,
-        rear_vx,
-        rear_vz,
-        rear_omega,
+        fw_x,
+        fw_z,
+        fw_vx,
+        fw_vz,
+        fw_omega,
+        rw_x,
+        rw_z,
+        rw_vx,
+        rw_vz,
+        rw_omega,
         dt_s,
         front_params,
         rear_params,
@@ -421,8 +578,12 @@ BIKE_HD void gpu_write_both_wheels_qfrc(
         rear_state,
         qfrc_world,
         front_out_opt,
-        rear_out_opt
+        rear_out_opt,
+        xpos
     );
 }
 
 } // namespace bike::gpu
+
+BIKE_GPU_SHARED_CODE_END
+// NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters)

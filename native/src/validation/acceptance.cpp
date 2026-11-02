@@ -19,8 +19,8 @@ bool all_flags(const Value& object) {
 }
 int integer_order(std::string a,std::string b) {
     const bool na=a.starts_with('-'),nb=b.starts_with('-');
-    if(na)a.erase(a.begin());if(nb)b.erase(b.begin());
-    if(a=="0"&&b=="0")return 0;if(na!=nb)return na?-1:1;
+    if(na){a.erase(a.begin());}if(nb)b.erase(b.begin());
+    if(a=="0"&&b=="0"){return 0;}if(na!=nb)return na?-1:1;
     const auto as=a.size(); const auto bs=b.size();
     int const result=as<bs?-1:as>bs?1:a<b?-1:a>b?1:0;
     return na?-result:result;
@@ -39,7 +39,7 @@ int scalar_order(const Value& a,const Value& b) {
 struct PairOrder {
     bool operator()(const Value& a,const Value& b)const{
         const auto& x=io::as_array(a,"pair key");const auto& y=io::as_array(b,"pair key");
-        for(std::size_t i=0;i<3;++i)if(const int order=scalar_order(x[i],y[i]);order)return order<0;return false;
+        for(std::size_t i=0;i<3;++i){if(const int order=scalar_order(x[i],y[i]);order)return order<0;}return false;
     }
 };
 } // namespace

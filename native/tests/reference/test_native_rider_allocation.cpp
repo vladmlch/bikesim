@@ -901,9 +901,9 @@ rcfg::RideControl idle_control() {
 // count * round(.01 / timestep_s) interval advances.
 rcfg::RawStep advance_env_steps(rcfg::PhysicalStep &physical,
                                 std::int64_t count) {
-    const auto per = static_cast<std::int64_t>(std::llround(
+    const std::int64_t per = std::llround(
         bike::research::ExperimentConfig{}.control_period_s /
-        physical.control_clock().timestep_s));
+        physical.control_clock().timestep_s);
     rcfg::RawStep last;
     for (std::int64_t i = 0; i < count * per; ++i)
         last = physical.advance_physics(1., 1., std::nullopt,
@@ -1054,8 +1054,7 @@ welded_attachments(const mjModel &model) {
     const Vector qvel = channel_array(allocation, "solution_qvel");
     const double solved_time = channel_real(allocation, "solution_time_s");
     auto &clock = rig->physical->control_clock();
-    const auto step = static_cast<std::int64_t>(
-        std::llround(solved_time / clock.timestep_s));
+    const std::int64_t step = std::llround(solved_time / clock.timestep_s);
     bt::require(clock.is_tick(step),
                 "the solved command landed on a control tick");
     bt::require(step == last.interval_id -

@@ -29,7 +29,7 @@ constexpr std::array<std::string_view,7> fidelity_cases{"static_sag","motor_ramp
 double case_duration(std::string_view name){if(name=="static_sag")return .25;if(name=="motor_ramp_grade")return 5.;if(name=="bump_coast"||name=="step_4cm")return 2.;if(name=="crest_coast")return 3.;if(name=="recontact")return 1.;if(name=="coast_resume")return 8.;throw std::invalid_argument("unknown fidelity case");}
 terrain::TrackSpec case_track(std::string_view name) {
     if(std::ranges::find(fidelity_cases,name)==fidelity_cases.end())throw std::invalid_argument("unknown fidelity case");
-    terrain::TrackSpec track{.name=std::string(name),.length_m=20.}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+    terrain::TrackSpec track{.name=std::string(name),.length_m=20.,.obstacles={},.description={},.grade_profile={},.surface_sections={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     if(name=="motor_ramp_grade")track.grade_profile=terrain::GradeProfile{{{0.,.05},{20.,.05}}};
     else if(name=="bump_coast")track.obstacles.push_back({.shape=terrain::Bump{.start_m=4.,.height_m=.02,.bump_length_m=.4}});
     else if(name=="crest_coast")track.obstacles.push_back({.shape=terrain::Bump{.start_m=4.,.height_m=.12,.bump_length_m=1.5}});
@@ -78,8 +78,9 @@ Value run_fidelity_case(Simulation& sim,std::string_view name,std::string_view s
     const auto geometry=RuntimeRigAccess::truth_geometry(*sim.runtime);runtime::WheelieTracker tracker;Array rows;const auto start=Clock::now();std::string termination="duration_completed";bool stop=false;
     const auto drain=[&]{const auto batch=sim.runtime->prepare_samples();for(const auto& sample:batch.samples){auto row=interval_row(*sample,geometry,tracker);
         if(!flag(get(row,"model_status"),"numerically_valid")){termination="numerical_quality";stop=true;}
-        else if(!flag(get(row,"model_status"),"model_valid")){termination="model_invalid";stop=true;}rows.push_back(std::move(row));}sim.runtime->acknowledge_samples(batch);};
-    try{for(std::size_t i=0;i<count&&!stop;++i){const auto current=sim.runtime->snapshot();auto const control=name=="coast_resume"?resume_schedule(current.time_s):runtime::RideControl{.motor_torque_nm=0.,.human_torque_nm=0.}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+        else if(!flag(get(row,"model_status"),"model_valid")){termination="model_invalid";stop=true;}
+        rows.push_back(std::move(row));}sim.runtime->acknowledge_samples(batch);};
+    try{for(std::size_t i=0;i<count&&!stop;++i){const auto current=sim.runtime->snapshot();auto const control=name=="coast_resume"?resume_schedule(current.time_s):runtime::RideControl{.motor_torque_nm=0.,.motor_limit_nm={},.human_torque_nm=0.,.crank_target_rate_rad_s={},.posture={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
         const double brake=name=="static_sag"?1.:0.;const auto result=sim.runtime->advance(current.step+1,control,brake,brake,{});drain();if(result.outcome){termination="crash";stop=true;}}sim.runtime->flush();drain();}
     catch(const std::exception& e){termination="numerical_failure";set(report,"error",value::text(e.what()));try{sim.runtime->flush();drain();}catch(const std::exception& cleanup){set(report,"cleanup_error",value::text(cleanup.what()));}}
     set(report,"termination",value::text(termination));set(report,"wall_time_s",value::real(elapsed(start)));set(report,"rows",Value{rows});
@@ -105,12 +106,12 @@ Value axes_summary(const Array& comparisons,bool require_nonempty=true) {
         Value item{Object{{"case",value::text(name)},{"dt_s",value::real(dt)},{"dx_m",value::real(dx)},{"station_count",value::integer(n)},{"axis",value::text(axis)},{"file",value::text(file)}}};const auto start=Clock::now();
         try{if(!initial)throw std::invalid_argument("shared candidate initialization failed");auto seed=n==static_cast<int>(anchor[2])?*initial:projected.at(n);
             auto sim=make_fidelity(name,dt,dx,n,backend,transmission,profile,std::move(seed));auto const result=run_fidelity_case(*sim,name,initial->sha256());write_report(out/file,result);
-            for(const char* field:{"metrics","termination","metadata","equilibrium"})set(item,field,get(result,field));set(item,"runtime_s",get(result,"wall_time_s"));}
+            for(const char* field:{"metrics","termination","metadata","equilibrium"}){set(item,field,get(result,field));}set(item,"runtime_s",get(result,"wall_time_s"));}
         catch(const std::exception& e){set(item,"metrics",Value{});set(item,"termination",value::text("initialization_failure"));set(item,"error",value::text(e.what()));}
         set(item,"total_wall_time_s",value::real(elapsed(start)));lookup.emplace(key,item);series.push_back(std::move(item));set(report,"series",Value{series});write_report(out/"report.json",report);}
     std::vector<std::pair<std::string,std::vector<Key>>> groups;std::vector<Key> keys;
-    for(double dt:numbers(times,"times"))keys.emplace_back(dt,anchor[1],static_cast<int>(anchor[2]));groups.emplace_back("time",std::move(keys));keys.clear();
-    for(double dx:numbers(roads,"roads"))keys.emplace_back(anchor[0],dx,static_cast<int>(anchor[2]));groups.emplace_back("road",std::move(keys));
+    for(double dt:numbers(times,"times")){keys.emplace_back(dt,anchor[1],static_cast<int>(anchor[2]));}groups.emplace_back("time",std::move(keys));keys.clear();
+    for(double dx:numbers(roads,"roads")){keys.emplace_back(anchor[0],dx,static_cast<int>(anchor[2]));}groups.emplace_back("road",std::move(keys));
     if(include){keys.clear();for(const auto& n:io::as_array(stations,"stations"))keys.emplace_back(anchor[0],anchor[1],static_cast<int>(io::as_int64(n,"n")));groups.emplace_back("stations",std::move(keys));}
     for(const auto& [axis,entries]:groups)for(std::size_t i=0;i<entries.size();++i)for(std::size_t j=i+1;j<entries.size();++j){const auto& a=lookup.at(entries[i]);const auto& b=lookup.at(entries[j]);
         Value comparison{Object{{"case",value::text(name)},{"axis",value::text(axis)},{"coarse",get(a,"file")},{"reference",get(b,"file")},{"finest_pair",Value{i==entries.size()-2&&j==entries.size()-1}}}};
@@ -151,21 +152,23 @@ Value fidelity_sweep(const Value& config,const std::filesystem::path& root) {
 namespace {
 terrain::TrackSpec scenario_track(const Value& item,const std::filesystem::path& root) {
     const auto name=text(item,"name");if(name=="extreme_100m")return terrain::load_track(root/"examples/research/rough_uphill_extreme.toml");
-    terrain::TrackSpec track{.name=name,.length_m=20.}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+    terrain::TrackSpec track{.name=name,.length_m=20.,.obstacles={},.description={},.grade_profile={},.surface_sections={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     if(find(item,"grade"))track.grade_profile=terrain::GradeProfile{{{0.,real(item,"grade")},{20.,real(item,"grade")}}};
     else if(name=="bump")track.obstacles={{.shape=terrain::Bump{.start_m=4.,.height_m=.02,.bump_length_m=.4}}};
     else if(name=="crest")track.obstacles={{.shape=terrain::Bump{.start_m=4.,.height_m=.12,.bump_length_m=1.5}}};
     else if(name.starts_with("step_"))track.obstacles={{.shape=terrain::SquareEdge{.start_m=4.,.height_m=name=="step_4cm"?.04:.06,.ledge_length_m=1.}}};
-    else if(name=="two_support")track.obstacles={{.shape=terrain::Bump{.start_m=4.,.height_m=.03,.bump_length_m=.05}},{.shape=terrain::Bump{.start_m=4.26,.height_m=.03,.bump_length_m=.05}}};return track;
+    else if(name=="two_support"){track.obstacles={{.shape=terrain::Bump{.start_m=4.,.height_m=.03,.bump_length_m=.05}},{.shape=terrain::Bump{.start_m=4.26,.height_m=.03,.bump_length_m=.05}}};}
+    return track;
 }
 runtime::RideControl scenario_control(const Value& item,double t) {
     const auto name=text(item,"name");if(name=="coast_resume")return resume_schedule(t);
     double torque=t<1.?0.:40.*std::min(1.,t-1.);if(name=="bump"||name=="crest"||name=="step_4cm"||name=="step_6cm"||name=="two_support"||name=="recontact")torque=0.;
-    runtime::RideControl control{.motor_torque_nm=torque,.human_torque_nm=0.}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
+    runtime::RideControl control{.motor_torque_nm=torque,.motor_limit_nm={},.human_torque_nm=0.,.crank_target_rate_rad_s={},.posture={}}; // NOLINT(clang-diagnostic-missing-designated-field-initializers) unlisted fields keep their declared defaults.
     if(const auto* requested=find(item,"posture")){const auto p=io::as_string(*requested,"posture");::rider::RiderPosture posture;
         if(p=="standing"){posture.torso_lean_rad=.08;posture.pelvis_offset_m=spindle::Vec2{0.,.16};posture.use_saddle=false;}
         else if(p=="forward"){posture.torso_lean_rad=.2;posture.pelvis_offset_m=spindle::Vec2{.08,.02};}
-        else if(p=="rearward"){posture.torso_lean_rad=-.1;posture.pelvis_offset_m=spindle::Vec2{-.08,.02};}control.posture=posture;}return control;
+        else if(p=="rearward"){posture.torso_lean_rad=-.1;posture.pelvis_offset_m=spindle::Vec2{-.08,.02};}
+        control.posture=posture;}return control;
 }
 // The frame budget keeps the resolve/request temporaries inside the
 // model builder and one scenario execution per helper frame; noinline
@@ -214,7 +217,7 @@ runtime::RideControl scenario_control(const Value& item,double t) {
 }
 Array contact_fits(const configuration::HingeDensity& density){
     const auto depths=geometry::detail::np_linspace(.001,.012,12);std::vector<double> linear;linear.reserve(depths.size());
-for(double const x:depths)linear.push_back(130000.*x);Array fits;
+for(double const x:depths){linear.push_back(130000.*x);}Array fits;
     const std::array<std::pair<std::string,std::vector<double>>,2> targets{{{"synthetic-original-linear-radial-130000",linear},{"synthetic-density-identifiability",numerics::flat_load(depths,.37,density,1024).force}}};
     for(const auto& [name,loads]:targets){const auto fit=numerics::fit_density(depths,loads,.37,name);
         fits.push_back(Value{Object{{"dataset_id",value::text(fit.dataset_id)},{"calibration_status",value::text(fit.calibration_status)},{"radius_m",value::real(fit.radius_m)},
@@ -257,7 +260,7 @@ Value reference_matrix(const Value& config,const std::filesystem::path& root) {
     const auto profile=root/text(config,"physics_profile","examples/research/plant_reference_open_loop.toml"),out=root/text(config,"output","results/reference-matrix");
     const auto base=configuration::load_physics(profile);std::filesystem::create_directories(out);const auto all=scenario_definitions();Array items=io::as_array(all,"scenarios");
     if(const auto* choice=find(config,"names")){const auto names=strings(*choice,"names");std::set<std::string> known;for(const auto& item:items)known.insert(text(item,"name"));
-        if(names.empty())throw std::invalid_argument("unknown/empty reference scenario selection");for(const auto& name:names)if(!known.contains(name))throw std::invalid_argument("unknown/empty reference scenario selection");
+        if(names.empty()){throw std::invalid_argument("unknown/empty reference scenario selection");}for(const auto& name:names)if(!known.contains(name))throw std::invalid_argument("unknown/empty reference scenario selection");
         std::erase_if(items,[&](const auto& item){return std::ranges::find(names,text(item,"name"))==names.end();});}
     Value summary{Object{{"schema_version",value::integer(1)},{"source_sha256",value::text(source_fingerprint(root/"native/src"))},{"environment",environment_contract(root)},
         {"physics_profile",value::text(profile.string())},{"scenarios",Value{Array{}}},{"release_status",value::text("parameterized_unvalidated")}}};

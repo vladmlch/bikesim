@@ -35,10 +35,11 @@ try:
         configure_cuda_writers_cdll,
         resolve_gpu_model_indices,
     )
-    from tools.colab_gpu.cpu_batch_sweep import (
-        _extract_host_heightfield_1d,
-        _find_mujoco_wheel_lib_and_include,
-        _prepare_initial_qpos_qvel,
+    from tools.colab_gpu.cpu_batch_sweep import _find_mujoco_wheel_lib_and_include
+    from tools.colab_gpu.model_assets import (
+        extract_heightfield_1d,
+        load_captured_initial_state,
+        load_model_with_assets,
     )
     from tools.colab_gpu.mjwarp_batch_sweep import (
         DEFAULT_MODEL_XML,
@@ -54,10 +55,11 @@ except ImportError:
         configure_cuda_writers_cdll,
         resolve_gpu_model_indices,
     )
-    from cpu_batch_sweep import (  # type: ignore[no-redef]
-        _extract_host_heightfield_1d,
-        _find_mujoco_wheel_lib_and_include,
-        _prepare_initial_qpos_qvel,
+    from cpu_batch_sweep import _find_mujoco_wheel_lib_and_include  # type: ignore[no-redef]
+    from model_assets import (  # type: ignore[no-redef]
+        extract_heightfield_1d,
+        load_captured_initial_state,
+        load_model_with_assets,
     )
     from mjwarp_batch_sweep import (  # type: ignore[no-redef]
         DEFAULT_MODEL_XML,
@@ -153,7 +155,7 @@ def compile_metal_batch_runner(
         ctypes.c_void_p,
         ctypes.c_void_p,
     ]
-    lib.bike_metal_launch_init_states.restype = None
+    lib.bike_metal_launch_init_states.restype = ctypes.c_int
 
     lib.bike_metal_launch_writers.argtypes = [
         ctypes.c_int,
@@ -174,7 +176,7 @@ def compile_metal_batch_runner(
         ctypes.c_void_p,
         ctypes.c_int,
     ]
-    lib.bike_metal_launch_writers.restype = None
+    lib.bike_metal_launch_writers.restype = ctypes.c_int
 
     lib.bike_metal_benchmark_writers_only.argtypes = [
         ctypes.c_int,
@@ -234,7 +236,7 @@ def run_metal_hybrid_parameter_sweep(
         lib = compile_metal_batch_runner()
 
     model_xml_path = Path(model_xml_path).resolve()
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
+    m = load_model_with_assets(model_xml_path)
     dt_us = float(m.opt.timestep) * 1e6
     hw_threads = os.cpu_count() or 1
     used_threads = num_threads if num_threads > 0 else hw_threads
@@ -242,8 +244,9 @@ def run_metal_hybrid_parameter_sweep(
 
     idx_bytes = resolve_gpu_model_indices(m)
     idx_buf = ctypes.create_string_buffer(idx_bytes)
-    hf_arr, hf_ncol, hf_x_min, hf_dx = _extract_host_heightfield_1d(m)
-    init_qpos, init_qvel = _prepare_initial_qpos_qvel(m)
+    hf_arr, hf_x_min, hf_dx = extract_heightfield_1d(m)
+    hf_ncol = int(hf_arr.size)
+    init_qpos, init_qvel = load_captured_initial_state(model_xml_path, int(m.nq), int(m.nv))
 
     scales = generate_parameter_sweep_scales(nworld=nworld, seed=42)
     configs_bytes = build_sweep_configs_bytes(
@@ -328,7 +331,7 @@ def run_metal_hybrid_3d_tire_ray_scaling_benchmark(
         lib = compile_metal_batch_runner()
 
     model_xml_path = Path(model_xml_path).resolve()
-    m = mujoco.MjModel.from_xml_path(str(model_xml_path))
+    m = load_model_with_assets(model_xml_path)
     dt_s = float(m.opt.timestep)
     dt_us = dt_s * 1e6
     hw_threads = os.cpu_count() or 1
@@ -337,8 +340,9 @@ def run_metal_hybrid_3d_tire_ray_scaling_benchmark(
 
     idx_bytes = resolve_gpu_model_indices(m)
     idx_buf = ctypes.create_string_buffer(idx_bytes)
-    hf_arr, hf_ncol, hf_x_min, hf_dx = _extract_host_heightfield_1d(m)
-    init_qpos, init_qvel = _prepare_initial_qpos_qvel(m)
+    hf_arr, hf_x_min, hf_dx = extract_heightfield_1d(m)
+    hf_ncol = int(hf_arr.size)
+    init_qpos, init_qvel = load_captured_initial_state(model_xml_path, int(m.nq), int(m.nv))
 
     tiers_report: dict[str, Any] = {}
     for tier in TIRE_RAY_SCALING_TIERS:
@@ -358,7 +362,7 @@ def run_metal_hybrid_3d_tire_ray_scaling_benchmark(
         # Measure pure Metal GPU writers kernel timings (single CB vs per-step CB)
         single_cb_ms_c = ctypes.c_double(0.0)
         per_step_cb_ms_c = ctypes.c_double(0.0)
-        lib.bike_metal_benchmark_writers_only(
+        rc = lib.bike_metal_benchmark_writers_only(
             int(nworld),
             int(n_steps),
             ctypes.c_float(dt_s),
@@ -372,6 +376,8 @@ def run_metal_hybrid_3d_tire_ray_scaling_benchmark(
             ctypes.byref(single_cb_ms_c),
             ctypes.byref(per_step_cb_ms_c),
         )
+        if rc != 0:
+            raise RuntimeError(f"bike_metal_benchmark_writers_only failed with code {rc}")
         total_world_steps = float(nworld) * float(n_steps)
         writers_single_cb_us = (float(single_cb_ms_c.value) * 1000.0) / total_world_steps
         writers_per_step_cb_us = (float(per_step_cb_ms_c.value) * 1000.0) / total_world_steps

@@ -333,9 +333,9 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
 
 inline rcfg::RawStep advance_env_steps(rcfg::PhysicalStep &physical,
                                      std::int64_t count) {
-    const auto per = static_cast<std::int64_t>(std::llround(
+    const std::int64_t per = std::llround(
         bike::research::ExperimentConfig{}.control_period_s /
-        physical.control_clock().timestep_s));
+        physical.control_clock().timestep_s);
     rcfg::RawStep last;
     for (std::int64_t i = 0; i < count * per; ++i)
         // env.step defaults: front/rear brake demand 0 (research

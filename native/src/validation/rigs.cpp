@@ -20,7 +20,7 @@ std::string xml_number(double x) {
     scalar(x,"XML number");std::array<char,64> buffer{};
     const auto chars=std::span{buffer};
     const auto [end,error]=std::to_chars(std::to_address(chars.begin()),std::to_address(chars.end()),x,std::chars_format::general,17);
-    if(error!=std::errc{})throw std::runtime_error("XML number formatting failed");return {buffer.data(),end};
+    if(error!=std::errc{}){throw std::runtime_error("XML number formatting failed");}return {buffer.data(),end};
 }
 double vector_dot(std::span<const double> a,std::span<const double> b) {
     if(a.size()!=b.size()||a.size()>static_cast<std::size_t>(std::numeric_limits<int>::max()))throw std::invalid_argument("rig dot shape mismatch");
@@ -110,7 +110,7 @@ Value contact_event_rig(double dt){
     const std::span<mjtNum> qpos=model_access::mutable_buffer(d->qpos,m->nq,"qpos"),qvel=model_access::mutable_buffer(d->qvel,m->nv,"qvel"),qfrc_applied=model_access::mutable_buffer(d->qfrc_applied,m->nv,"qfrc_applied");
     qpos[0]=.01;qvel[0]=-1.;std::optional<double> event;
     for(std::size_t i=0,n=steps(.03,dt);i<n;++i){const auto force=contactlaw::normal_contact(-qpos[0],-qvel[0],130000.,800.).first;if(force>0.&&!event)event=d->time;qfrc_applied[0]=force;engine::step(m,d);}
-    if(!event)throw std::runtime_error("wheel never contacted the stand");return metrics({{"contact_time_s",*event},{"analytic_contact_time_s",.01},{"event_error_s",std::abs(*event-.01)}}); // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
+    if(!event){throw std::runtime_error("wheel never contacted the stand");}return metrics({{"contact_time_s",*event},{"analytic_contact_time_s",.01},{"event_error_s",std::abs(*event-.01)}}); // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
 }
 double quasistatic_front_load(double mass,double wheelbase,double x,double h,double slope,double accel,double gravity){
     for(double const v:{mass,wheelbase,x,h,slope,accel,gravity})scalar(v,"load transfer input");
@@ -134,7 +134,7 @@ RigResult load_transfer_rig(double dt,double slope,double x,double h){ // NOLINT
         for(std::size_t side=0;side<2;++side){std::array<double,3> p{},displacement{},arm{};for(std::size_t a=0;a<3;++a)p[a]=site_xpos[3*static_cast<std::size_t>(sites[side])+a];
             mj_jac(m,d,jacobian.data(),nullptr,p.data(),body);const auto velocity=matvec(jacobian,qvel);
             const double force=contactlaw::normal_contact(-vector_dot(p,normal),-vector_dot(velocity,normal),k,c).first;
-            for(std::size_t a=0;a<3;++a)displacement[a]=p[a]-anchors[side][a];const double shear=vector_dot(displacement,tangent);
+            for(std::size_t a=0;a<3;++a){displacement[a]=p[a]-anchors[side][a];}const double shear=vector_dot(displacement,tangent);
             const double tangential=std::clamp(-kt*shear-ct*vector_dot(velocity,tangent),-force,force);
             for(std::size_t a=0;a<3;++a){forces[side][a]=force*normal[a]+tangential*tangent[a];arm[a]=p[a]-xipos[3*static_cast<std::size_t>(body)+a];}
             add_transpose(qfrc_applied,jacobian,forces[side]);last[side]=force;const auto torque=cross(arm,forces[side]);for(std::size_t a=0;a<3;++a)moment[a]+=torque[a];}
@@ -155,7 +155,7 @@ RigResult shaft_ratio_rig(double dt,double ratio,bool overrun){
     const double torque=overrun?0.:20.;if(overrun)qvel[1]=20.;double boundary=ratio*qpos[0]-qpos[1];tendon_range[1]=boundary;double power_error=0.,reaction_peak=0.;std::array<double,3> tail{};std::size_t tail_count=0;
     for(std::size_t i=0;i<count;++i){boundary=std::min(boundary,ratio*qpos[0]-qpos[1]);scalar(boundary,"transmission boundary");tendon_range[1]=boundary;const std::array velocity{qvel[0],qvel[1]};ctrl[0]=torque;engine::step(m,d);std::array<double,2> reaction{};std::vector<double> multipliers(static_cast<std::size_t>(d->nefc));bool selected=false;
         const std::span<const int> efc_type=model_access::readonly_buffer(d->efc_type,d->nefc,"efc_type"),efc_id=model_access::readonly_buffer(d->efc_id,d->nefc,"efc_id");const std::span<const mjtNum> efc_force=model_access::readonly_buffer(d->efc_force,d->nefc,"efc_force");
-        for(std::size_t row=0;row<efc_type.size();++row)if(efc_type[row]==mjCNSTR_LIMIT_TENDON&&efc_id[row]==0){multipliers[row]=efc_force[row];selected=true;}if(selected)engine::mul_jac_t_vec(m,d,reaction.data(),multipliers.data());
+        for(std::size_t row=0;row<efc_type.size();++row){if(efc_type[row]==mjCNSTR_LIMIT_TENDON&&efc_id[row]==0){multipliers[row]=efc_force[row];selected=true;}}if(selected)engine::mul_jac_t_vec(m,d,reaction.data(),multipliers.data());
         power_error=std::max(power_error,std::abs(actuator_force[0]*velocity[0]-vector_dot(qfrc_actuator.first(2),velocity)));reaction_peak=std::max(reaction_peak,vector_norm(reaction));
         if(i>=count/2){tail[0]+=qacc[0];tail[1]+=qacc[1];tail[2]+=qfrc_actuator[0];++tail_count;}}
     for(double& x:tail)x/=static_cast<double>(tail_count);
@@ -199,7 +199,7 @@ std::pair<Value,Value> run_stand(WheelStand& s,double load,double duration){ // 
         loss+=tire.brush_loss_step_j()+tire.radial_dissipation_power_w()*dt;std::ranges::copy(force,qfrc_applied.begin());qfrc_applied[1]-=load;
         engine::step(m,d);engine::forward(m,d);native=std::max(native,static_cast<mjtSize>(d->ncon));
         const double current=kinetic(m,d)+tire.stored_energy(d)+load*qpos[1];residual=current-initial+loss;maximum=std::max(maximum,std::abs(residual));
-        for(double const v:qpos)scalar(v,"stand coordinates");for(double const v:qvel)scalar(v,"stand velocities");}
+        for(double const v:qpos){scalar(v,"stand coordinates");}for(double const v:qvel)scalar(v,"stand velocities");}
     return {Value{std::move(rows)},metrics({{"energy_residual_j",residual},{"energy_residual_ratio",std::abs(residual)/(scale+loss)},
         {"max_energy_residual_j",maximum},{"dissipation_j",loss},{"native_wheel_contact_count",static_cast<double>(native)},{"final_speed_mps",qvel[0]}})};
 }
@@ -218,7 +218,8 @@ std::vector<std::array<double,2>> contact_case_vertices(std::string_view name,do
     positive(dx,"road mesh spacing");const double intervals=std::nearbyint(4./dx);if(intervals<1.||intervals>10000000.)throw std::invalid_argument("stand mesh extent outside supported range");
     std::vector<std::array<double,2>> vertices;for(double const x:geometry::detail::np_linspace(-2.,2.,static_cast<std::size_t>(intervals)+1)){
         double y=0.;if(name=="step")y=x>=0.?.04:0.;else if(name=="two_support")y=.03*std::exp(-std::pow((x+.13)/.025,2.))+.03*std::exp(-std::pow((x-.13)/.025,2.));
-        else if(name=="edge_unload")y=x<0.?.04:0.;else if(name=="recontact")y=x>=0.&&x<.2?-.05:0.;else if(name=="bump")y=.02*std::exp(-std::pow(x/.08,2.));else if(name=="incline")y=.1*x;else throw std::invalid_argument("unknown distributed contact stand");vertices.push_back({x,y});}
+        else if(name=="edge_unload")y=x<0.?.04:0.;else if(name=="recontact")y=x>=0.&&x<.2?-.05:0.;else if(name=="bump")y=.02*std::exp(-std::pow(x/.08,2.));else if(name=="incline")y=.1*x;else{throw std::invalid_argument("unknown distributed contact stand");}
+        vertices.push_back({x,y});}
     return vertices;
 }
 std::pair<Value,Value> distributed_road_trace(double dt,int n,double dx,std::string_view name,double duration){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
@@ -232,10 +233,10 @@ std::pair<Value,Value> distributed_road_trace(double dt,int n,double dx,std::str
 }
 RigResult distributed_step_rig(double dt,int n,double dx){auto result=distributed_road_trace(dt,n,dx);return {.metrics=std::move(result.second),.bounds=bounds({{"native_wheel_contact_count",0.,0.},{"energy_residual_ratio",0.,.05},{"max_patch_count",2.,std::numeric_limits<double>::infinity()}})};}
 RigResult distributed_incline_rig(double dt,int n,double degrees){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    if(!std::isfinite(degrees)||std::abs(degrees)>35.)throw std::invalid_argument("incline fixture angle range is +/-35 degrees");const auto count=steps(.05,dt);
+    if(!std::isfinite(degrees)||std::abs(degrees)>35.){throw std::invalid_argument("incline fixture angle range is +/-35 degrees");}const auto count=steps(.05,dt);
     const double angle=degrees*(std::numbers::pi/180.),sn=std::sin(angle),cs=std::cos(angle),weight=20.*9.81;
     const auto xs=geometry::detail::np_linspace(-2.,2.,801);std::vector<double> y;y.reserve(xs.size());
-for(double const x:xs)y.push_back(x*std::tan(angle));const double low=*std::ranges::min_element(y),scale=std::max(.01,*std::ranges::max_element(y)-low);
+for(double const x:xs){y.push_back(x*std::tan(angle));}const double low=*std::ranges::min_element(y),scale=std::max(.01,*std::ranges::max_element(y)-low);
     Stand const s("<mujoco>"+option(dt,"0 0 -9.81")+R"(<asset><hfield name="road" nrow="2" ncol="801" size="2 1 )"+xml_number(scale)+R"( .2"/></asset><worldbody><geom name="terrain" type="hfield" hfield="road" pos="0 0 )"+xml_number(low)+R"(" contype="0" conaffinity="0"/><body name="front_wheel" pos=")"+xml_number(-sn*.37)+" 0 "+xml_number(cs*.37)+R"("><joint name="normal_slide" type="slide" axis=")"+xml_number(-sn)+" 0 "+xml_number(cs)+R"("/><inertial mass="20" pos="0 0 0" diaginertia="1 1 1"/><geom name="geom_front_contact" type="sphere" size=".37" mass="0" contype="0" conaffinity="0"/></body><body name="rear_wheel" pos="0 0 5"><geom name="geom_rear_contact" type="sphere" size=".37" contype="0" conaffinity="0"/></body></worldbody></mujoco>)");
     auto* m=s.model.get();auto* d=s.data.get();const std::span<float> hfield=model_access::mutable_buffer(m->hfield_data,m->nhfielddata,"hfield_data");for(std::size_t row=0;row<2;++row)for(std::size_t i=0;i<y.size();++i)hfield[row*y.size()+i]=static_cast<float>((y[i]-low)/scale);engine::forward(m,d);
     DistributedTireWriter tire(m,d,distributed_config(n));const std::span<mjtNum> qpos=model_access::mutable_buffer(d->qpos,m->nq,"qpos"),qfrc_applied=model_access::mutable_buffer(d->qfrc_applied,m->nv,"qfrc_applied");const std::span<const mjtNum> qvel=model_access::readonly_buffer(d->qvel,m->nv,"qvel");const auto balance=[&](double depth){qpos[0]=-depth;engine::forward(m,d);return tire.probe_qfrc(d,dt)[0]-weight*cs;};
@@ -262,7 +263,7 @@ Value contact_matrix(const Value& config){
         }});
     };
     for(double const dt:dts)for(double const count:counts){if(count<16.||count>512.||std::trunc(count)!=count)throw std::invalid_argument("station counts must be integers in 16..512");const int n=static_cast<int>(count);
-        for(double const load:loads)add("flat",dt,n,"load_n",load,distributed_flat_rig(dt,n,load));for(double const dx:dxs)add("step",dt,n,"terrain_dx_m",dx,distributed_step_rig(dt,n,dx));const double angle=real(config,"incline_angle_deg",15.);add("incline",dt,n,"angle_deg",angle,distributed_incline_rig(dt,n,angle));}
+        for(double const load:loads){add("flat",dt,n,"load_n",load,distributed_flat_rig(dt,n,load));}for(double const dx:dxs){add("step",dt,n,"terrain_dx_m",dx,distributed_step_rig(dt,n,dx));}const double angle=real(config,"incline_angle_deg",15.);add("incline",dt,n,"angle_deg",angle,distributed_incline_rig(dt,n,angle));}
     return Value{std::move(rows)};
 }
 } // namespace bike::validation

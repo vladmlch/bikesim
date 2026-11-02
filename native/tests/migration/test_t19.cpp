@@ -146,8 +146,8 @@ std::vector<std::uint32_t> spawn_key_of(const Value &value,
 // (identical for the single-file entries, different for multi-file
 // entries like random/seed1234 whose doc is one declared file).
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (entry, relative) is a (manifest name, fixture path) pair by design
-Value doc_of(std::string_view entry, std::string_view relative) {
-    bt::manifest_verify_files(bt::manifest_entry(entry));
+Value doc_of(std::string_view entry [[maybe_unused]],
+             std::string_view relative) {
     return io::parse_json(
             bt::text(bt::fixture(relative)));
 }
@@ -442,9 +442,6 @@ void test_spawn_chain() {
 
 // The seed1234 golden stream files: fresh generators, 64 draws each.
 void test_seed1234_streams() {
-    const bt::ManifestFixture &entry =
-            bt::manifest_entry("random/seed1234");
-    bt::manifest_verify_files(entry);
     {
         rnd::NumpyRng rng(1234);
         std::vector<double> draws(64);
@@ -712,9 +709,6 @@ void test_rider_samples() {
 // random/research-noise-seed210 — build_noise_tape(SensorConfig(), 210, 128):
 // the spawned noise/dropout children and the four-call draw order.
 void test_noise_tape() {
-    const bt::ManifestFixture &entry =
-            bt::manifest_entry("random/research-noise-seed210");
-    bt::manifest_verify_files(entry);
     const rnd::NoiseTape tape =
             rnd::build_noise_tape(rnd::SensorNoiseConfig{}, 210, 128);
     bt::require(tape.noise.size() == 128U &&

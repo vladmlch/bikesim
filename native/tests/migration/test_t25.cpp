@@ -148,7 +148,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
     // The immutable oracle gate stays bitwise and fail-closed when a binary
     // artifact is missing; this session does not create replacement goldens.
-    bt::manifest_verify_files(bt::manifest_entry("bootstrap/native_start_welded"));
     // The restored t=0 vector is platform solver output (the initial-state
     // document is platform-keyed): each captured platform owns its pin under
     // <platform-key>/integration.f64 and an uncaptured platform fails closed

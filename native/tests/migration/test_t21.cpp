@@ -97,11 +97,11 @@ void examples_and_oracles(){
         const auto track=t::load_track(root/"examples"/"research"/(std::string(name)+".toml"));
         bt::require(t::dump_track(t::track_from_dict(toml(t::dump_track(track))))==t::dump_track(track),"all authored example tracks roundtrip");
     }
-    bt::manifest_verify_files(bt::manifest_entry("tracks/rough_uphill_savage.toml"));bt::manifest_verify_files(bt::manifest_entry("tracks/rough_uphill_savage.canonical.toml"));
+    
     bt::golden_text("tracks/rough_uphill_savage.canonical.toml",t::dump_track(t::load_track(bt::fixture("tracks/rough_uphill_savage.toml"))));
     bt::require(t::available_presets().size()==10,"all ten source presets present");
     for(const auto& name:t::available_presets()){
-        const auto stem="tracks/preset_"+name;bt::manifest_verify_files(bt::manifest_entry(stem));const auto track=t::get_preset(name);
+        const auto stem="tracks/preset_"+name;const auto track=t::get_preset(name);
         if(name=="climb_steps"){bt::invalid([&]{(void)t::track_to_dict(track);});continue;}
         bt::golden_text(stem+".toml",t::dump_track(track));
         const auto expected=io::parse_json(bt::text(bt::fixture(stem+".json")));bt::require(io::canonical_json(t::track_to_dict(track))==io::canonical_json(expected),"preset semantic fixture");

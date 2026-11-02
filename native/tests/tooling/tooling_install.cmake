@@ -1,38 +1,24 @@
-# migration_T336r_portability — install/dev tooling contracts (batch 3.36r).
-#
-# Ports the re-assertable cases of
-#   tests/portability/test_install_modes.py   and
-#   tests/portability/test_dev_commands.py.
-#
-# The dev.py driver (uv/venv bootstrap, doctor report, subprocess/env
-# plumbing) and the Python extension loader (bike_sim.native.artifact,
-# tests/reference/native_loader) are internal to the removed tools and are
-# dropped against their named native successors (see the ledger evidence);
-# the records below are the ones whose *observable contract* survives
-# natively:
+# tooling_install — install/dev tooling contracts.
 #
 #   * the supported configuration set is the declared CMakePresets.json
 #     configurePresets list — any other name is rejected by CMake before a
 #     single configure step runs, with the supported set named in the
-#     diagnostic (test_unsupported_config_is_rejected).
+#     diagnostic.
 #   * a copied/relocated build tree is rejected at configure time — CMake's
-#     own cache-directory guard replaces dev.py's _check_build_cache
-#     (test_copied_build_cache_is_rejected_before_build_process).
+#     own cache-directory guard.
 #   * a sanitizer lane recorded enabled without its resolved runtime is
-#     rejected by the produced context validator — the same fail-closed
-#     rule dev._doctor_probe_environment enforced on the selected runtime
-#     (test_doctor_rejects_missing_selected_sanitizer_before_probe).
+#     rejected by the produced context validator — a fail-closed rule on
+#     the selected runtime.
 #
 # Required -D inputs: REPO_ROOT, SCRATCH_DIR, CHECKS_BINARY, BUILD_DIR.
 # BUILD_DIR must point at a configured build that emits
 # native_check_context.json (schema 2).
 #
-# One case per pytest function; a case records a failure line when the
-# outcome differs, exactly like the Python assertions it replaces.
+# A case records a failure line when the outcome differs from the contract.
 
 foreach(_required REPO_ROOT SCRATCH_DIR CHECKS_BINARY BUILD_DIR)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
-    message(FATAL_ERROR "migration_T336r_portability requires -D${_required}")
+    message(FATAL_ERROR "tooling_install requires -D${_required}")
   endif()
 endforeach()
 
@@ -98,7 +84,7 @@ endfunction()
 
 # _expect_squashed_t336r(case haystack needle) — whitespace-collapsed match:
 # CMake wraps long FATAL_ERROR/diagnostic text at ~80 columns, so message
-# needles must compare on words, not lines (same rule as migration_T53).
+# needles must compare on words, not lines (same rule as tooling_platform).
 function(_expect_squashed_t336r case haystack needle)
   string(REGEX REPLACE "[ \t\r\n]+" " " _h "${haystack}")
   string(REGEX REPLACE "[ \t\r\n]+" " " _n "${needle}")
@@ -188,7 +174,7 @@ endif()
 # composing a probe environment. The produced context validator carries
 # the same fail-closed rule: a sanitizer lane may never be enabled without
 # its recorded, resolved runtime file. Drive the real emitted context
-# (mutated on a copy, the migration_T56 convention) through
+# (mutated on a copy, the tooling_checks convention) through
 # bike-native-checks --kind context.
 set(_c "sanitizer_enabled_without_runtime_is_rejected")
 math(EXPR _case_count "${_case_count} + 1")
@@ -226,10 +212,10 @@ endif()
 get_property(_skipped GLOBAL PROPERTY _t336r_skips)
 get_property(_failures GLOBAL PROPERTY _t336r_failures)
 if(NOT _skipped STREQUAL "")
-  message(STATUS "migration_T336r_portability skips:${_skipped}")
+  message(STATUS "tooling_install skips:${_skipped}")
 endif()
 if(NOT _failures STREQUAL "")
   message(FATAL_ERROR
-    "migration_T336r_portability failed (${_case_count} cases):${_failures}")
+    "tooling_install failed (${_case_count} cases):${_failures}")
 endif()
-message(STATUS "migration_T336r_portability passed (${_case_count} cases)")
+message(STATUS "tooling_install passed (${_case_count} cases)")

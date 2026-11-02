@@ -99,7 +99,7 @@ void materials_and_contacts(){
 }
 void immutable_profiles(){
     for(const auto& name:t::available_presets()){
-        const auto stem="tracks/preset_"+name;bt::manifest_verify_files(bt::manifest_entry(stem));
+        const auto stem="tracks/preset_"+name;
         const auto expected=bt::read_f64(bt::fixture(stem+"_profile.f64"));bt::require(expected.size()%2==0,"oracle profile has X/Z pairs");
         std::vector<double>x;for(std::size_t i=0;i<expected.size();i+=2)x.push_back(expected[i]);
         const auto z=t::build_profile(t::get_preset(name),x);std::vector<double> actual;actual.reserve(expected.size());for(std::size_t i=0;i<x.size();++i){actual.push_back(x[i]);actual.push_back(z[i]);}

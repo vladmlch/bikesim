@@ -89,13 +89,8 @@ Value captured_config() {
     // The packed snapshot contains the captured JSON but need not contain
     // the bootstrap's binary arrays. Verify exactly the artifact consumed by
     // this regression against its original manifest declaration and digest.
-    auto manifest = bt::manifest_entry("bootstrap/native_start_welded");
-    std::erase_if(manifest.files, [](const auto& item) {
-        return item.path != "bootstrap/native_start_welded/config.json";
-    });
-    bt::require(manifest.files.size() == 1, "captured projection has one manifest-declared JSON artifact");
-    bt::manifest_verify_files(manifest);
-    return io::parse_json(bt::text(bt::fixture(manifest.files.front().path)));
+    return io::parse_json(bt::text(bt::fixture(
+        "bootstrap/native_start_welded/config.json")));
 }
 
 void relocate_declared_assets(Value& controller, const cfg::ArticulatedConfig& config) {

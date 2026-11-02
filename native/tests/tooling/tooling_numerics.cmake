@@ -1,33 +1,22 @@
-# migration_T53_numerics — BikeNumerics.cmake record/provider/ABI contracts.
+# tooling_numerics — BikeNumerics.cmake record/provider/ABI contracts.
 #
-# Batch 3.36b ports tests/portability/test_numerics_discovery.py. The file's
-# subject is the numerics discovery contract: the committed record
-# (native/numerics.lock.json), the integer-width profile, the provider-export
-# spellings, the provider identity/path/sha256 rules, the libc family check,
-# and the RECORD_ONLY consumption mode of BikeNumerics.cmake — all
-# checked through scratch configures that include the real module, plus file
-# invariants asserted directly against the committed lock. The LIVE-lane
-# cases died with the probe document at T63 (Section 3 was removed with the
-# interpreter-probe path).
+# The file's subject is the numerics discovery contract: the committed
+# record (native/numerics.lock.json), the integer-width profile, the
+# provider-export spellings, the provider identity/path/sha256 rules, the
+# libc family check, and the RECORD_ONLY consumption mode of
+# BikeNumerics.cmake — all checked through scratch configures that include
+# the real module, plus file invariants asserted directly against the
+# committed lock.
 #
-# A dedicated fixture (not part of migration_T53_portability): the subject is
+# A dedicated fixture (not part of tooling_platform): the subject is
 # exclusively BikeNumerics.cmake/numerics-record contracts, while
-# migration_T53_portability covers platform/policy/root-configure tooling.
-# The tranche-1 fixture also lives on lane/c, not this lane, so there is
-# nothing here to extend.
-#
-# Python-side functions whose semantics stay interpreter-only (the
-# validate_numerics live-evidence checks — threading, numpy_imports,
-# provider_config, threading counts — plus require_same_library, the
-# record writer/checker, the probe orchestration and the CLI plumbing)
-# are dropped: they die with the interpreter at T63, and their committed
-# contracts are exactly what the cases below exercise.
+# tooling_platform covers platform/policy/root-configure tooling.
 #
 # Required -D inputs: REPO_ROOT, SCRATCH_DIR.
 
 foreach(_required REPO_ROOT SCRATCH_DIR)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
-    message(FATAL_ERROR "migration_T53_numerics requires -D${_required}")
+    message(FATAL_ERROR "tooling_numerics requires -D${_required}")
   endif()
 endforeach()
 
@@ -1242,10 +1231,10 @@ _expect_squashed(${_c} "${${_c}_out}" "numerics provider path is not absolute")
 get_property(_skipped GLOBAL PROPERTY _t53n_skips)
 get_property(_failures GLOBAL PROPERTY _t53n_failures)
 if(NOT _skipped STREQUAL "")
-  message(STATUS "migration_T53_numerics skips:${_skipped}")
+  message(STATUS "tooling_numerics skips:${_skipped}")
 endif()
 if(NOT _failures STREQUAL "")
   message(FATAL_ERROR
-    "migration_T53_numerics failed (${_case_count} cases):${_failures}")
+    "tooling_numerics failed (${_case_count} cases):${_failures}")
 endif()
-message(STATUS "migration_T53_numerics passed (${_case_count} cases)")
+message(STATUS "tooling_numerics passed (${_case_count} cases)")

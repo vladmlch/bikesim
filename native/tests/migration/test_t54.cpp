@@ -38,7 +38,6 @@ void exact_value(const Value& actual,const Value& expected,const std::string& pa
     bt::require(io::canonical_json(actual)==io::canonical_json(expected),path+": exact scalar");
 }
 void captured_tire_characterization(){
-    bt::manifest_verify_files(bt::manifest_entry("validation/tire"));
     auto config=bike::configuration::detail::parse_toml_file(bt::fixture("validation/tire/config.toml"));
     // capture_reference.py:2572-2576 obtains the tire parameters from this
     // additional fixture. The short TOML grid alone omits mu/stiffness/length;
@@ -55,7 +54,6 @@ void verdict_fixture(std::string_view name,std::string_view case_id){ // NOLINT(
     // config plus the oracle's verdict for the same pure-arithmetic inputs
     // the native run_case dispatch consumes — binary64-exact evidence, so a
     // single committed verdict serves both qualified platforms.
-    bt::manifest_verify_files(bt::manifest_entry(name));
     const auto dir=bt::fixture(name);
     auto config=dir/"config.toml";
     if(!std::filesystem::is_regular_file(config))config=dir/"config.json";

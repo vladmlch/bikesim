@@ -78,33 +78,7 @@ if(BUILD_TESTING)
     "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
     "-DBINARY_PACKAGE=${_package_binary_file_name}"
     "-DSOURCE_PACKAGE=${CPACK_SOURCE_PACKAGE_FILE_NAME}"
-    "-DAUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
-    "-DAUDIT_POLICY=${CMAKE_SOURCE_DIR}/migration/no-python-policy.json"
     "-DCONFIG=$<CONFIG>"
     -P "${CMAKE_SOURCE_DIR}/native/tests/package/package_smoke.cmake")
   set_tests_properties(package_smoke PROPERTIES LABELS "package" RUN_SERIAL TRUE TIMEOUT 600)
-
-  # T62 (completion-plan Task 4.04): the installed tree's Python audit is a
-  # positive gate on its own (no_python) and carries per-class negative
-  # controls proving the audit detects every injected artifact, including a
-  # stub-libpython-linked binary that needs no real CPython. Both run CPack
-  # into their own scratch, so they serialise against package_smoke.
-  add_test(NAME no_python COMMAND "${CMAKE_COMMAND}"
-    "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
-    "-DBINARY_PACKAGE=${_package_binary_file_name}"
-    "-DAUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
-    "-DAUDIT_POLICY=${CMAKE_SOURCE_DIR}/migration/no-python-policy.json"
-    "-DCONFIG=$<CONFIG>"
-    -P "${CMAKE_SOURCE_DIR}/native/tests/package/no_python.cmake")
-  set_tests_properties(no_python PROPERTIES LABELS "audit;package" RUN_SERIAL TRUE TIMEOUT 600)
-
-  add_test(NAME audit_negative_controls COMMAND "${CMAKE_COMMAND}"
-    "-DBUILD_DIR=${CMAKE_BINARY_DIR}"
-    "-DBINARY_PACKAGE=${_package_binary_file_name}"
-    "-DAUDIT_BINARY=$<TARGET_FILE:bike-python-audit>"
-    "-DAUDIT_POLICY=${CMAKE_SOURCE_DIR}/migration/no-python-policy.json"
-    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    "-DCONFIG=$<CONFIG>"
-    -P "${CMAKE_SOURCE_DIR}/native/tests/package/audit_negative_controls.cmake")
-  set_tests_properties(audit_negative_controls PROPERTIES LABELS "audit;package" RUN_SERIAL TRUE TIMEOUT 900)
 endif()

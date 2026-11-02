@@ -5,13 +5,13 @@
 # Profiles (<build> is the preset's binaryDir: build/<preset>; release keeps
 # build/native-release, Task 3.41):
 #   quick  = cmake --workflow --preset <preset>
-#            (the preset's test step excludes the slow|audit|package labels)
+#            (the preset's test step excludes the slow|package labels)
 #   native = cmake --preset <preset> && cmake --build --preset <preset>,
 #            then tools/run_native_checks.sh <build> (every produced sweep
 #            plus the contracts kind), then
-#            ctest --test-dir <build> -LE 'slow|audit|package'
+#            ctest --test-dir <build> -LE 'slow|package'
 #   full   = native, then the explicit label gates
-#            ctest -L slow / -L audit / -L package, each --no-tests=error so
+#            ctest -L slow / -L package, each --no-tests=error so
 #            an absent registration fails instead of passing silently.
 #
 # `native asan` runs the same stages on build/asan: sanitizer runtimes come
@@ -46,11 +46,11 @@ usage() {
 Usage: bash tools/run_tests.sh [quick|native|full] [preset]
 
   quick   Configure, build and test the selected preset in one workflow run;
-          its test step excludes the slow, audit and package label gates.
+          its test step excludes the slow and package label gates.
   native  Configure and build the selected preset, run every produced native
           sweep plus the structural contracts check, then CTest without the
-          slow, audit and package labels.
-  full    The native profile, then the explicit slow, audit and package
+          slow and package labels.
+  full    The native profile, then the explicit slow and package
           label gates (--no-tests=error, so an absent registration fails).
   -h, --help  Show this help.
 
@@ -95,7 +95,7 @@ if [[ "$preset" == release ]]; then
 fi
 
 # Darwin allocator debugging wraps only the ordinary `ctest -LE
-# 'slow|audit|package'` invocation — wherever a profile runs it — in a
+# 'slow|package'` invocation — wherever a profile runs it — in a
 # subshell. Never exported on Linux, and never around `ctest -L slow`,
 # which contains realtime measurements (Task 3.10).
 run_ordinary_leg() {
@@ -115,14 +115,14 @@ run_native_gate() {
   printf 'selected native build: %s\n' "$build_dir"
   export NATIVE_TEST_BUILD_PATH="$build_dir"
   bash "$REPO_ROOT/tools/run_native_checks.sh" "$build_dir"
-  run_ordinary_leg ctest --test-dir "$build_dir" -LE 'slow|audit|package' \
+  run_ordinary_leg ctest --test-dir "$build_dir" -LE 'slow|package' \
     -j8 --no-tests=error --output-on-failure \
     --output-junit "$build_dir/Testing/junit.xml"
 }
 
 case "$profile" in
   quick)
-    # The workflow's test step is the ordinary `ctest -LE 'slow|audit|package'`
+    # The workflow's test step is the ordinary `ctest -LE 'slow|package'`
     # leg, so the same Darwin allocator debugging wraps the whole invocation;
     # the configure/build steps ignore the variables.
     run_ordinary_leg cmake --workflow --preset "$preset"
@@ -132,7 +132,7 @@ case "$profile" in
     ;;
   full)
     run_native_gate
-    for label in slow audit package; do
+    for label in slow package; do
       ctest --test-dir "$build_dir" -L "$label" --no-tests=error \
         --output-on-failure
     done

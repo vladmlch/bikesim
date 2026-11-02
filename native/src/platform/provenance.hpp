@@ -50,7 +50,6 @@ struct BuildIdentity {
     std::string platform;        // OS + architecture
     std::string build_type;      // CMake configuration
     std::string dependency_lock_sha256; // checked lock file (T03)
-    std::string source_manifest_sha256; // first-party source manifest (T00)
     // ---- adapter/packaging axis (NOT part of execution identity) --------
     bool python_bindings = false;
     bool gui = false;

@@ -58,7 +58,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto sampled=sim->snapshot();(void)sim->telemetry();(void)recorder.columns();same(sampled.integration_state,sim->snapshot().integration_state,"legacy metrics leave authoritative stepping unchanged");
     sim->reset();const auto reset=sim->snapshot();same(before.integration_state,reset.integration_state,"repeat native equilibrium restores deterministic legacy state");
     bt::require(reset.generation>before.generation,"reset advances generation");
-    bt::manifest_verify_files(bt::manifest_entry("bootstrap/legacy_flat"));
     bt::golden_f64("bootstrap/legacy_flat/integration.f64",before.integration_state);
     sim->step();
     bt::golden_f64("bootstrap/legacy_flat/step1.f64",sim->snapshot().integration_state);

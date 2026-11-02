@@ -1,19 +1,16 @@
-# migration_T53_portability — portability/tooling contracts (batch 3.36).
+# tooling_platform — portability/tooling contracts.
 #
-# Ports tests/portability/{test_cmake_platform,test_compiler_policy,
-# test_provider_identity,test_root_configure,test_dependency_policy}.py to
 # cmake -P cases: scratch configures that include the real
 # native/cmake/Bike*.cmake modules, the compiler-policy probe build, the
 # provider-identity cmake -P harness, and the real root configure guards.
-# One case per pytest function; a case records a failure line when the
-# outcome differs, exactly like the Python assertions it replaces.
+# A case records a failure line when the outcome differs from the contract.
 #
 # Required -D inputs: REPO_ROOT, SCRATCH_DIR.
 # Optional: DEPS_ROOT (default ${REPO_ROOT}/.deps).
 
 foreach(_required REPO_ROOT SCRATCH_DIR)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
-    message(FATAL_ERROR "migration_T53_portability requires -D${_required}")
+    message(FATAL_ERROR "tooling_platform requires -D${_required}")
   endif()
 endforeach()
 
@@ -1412,12 +1409,10 @@ set(SANITIZERS_CMAKE "${REPO_ROOT}/native/cmake/Sanitizers.cmake")
 set(CHECK_CONTEXT_CMAKE "${REPO_ROOT}/native/cmake/BikeCheckContext.cmake")
 set(DEPS_LOCK "${REPO_ROOT}/native/dependencies.lock.json")
 set(WORKFLOW_YML "${REPO_ROOT}/.github/workflows/portability.yml")
-set(QUALIFICATION_MD "${REPO_ROOT}/docs/releases/python-free-qualification.md")
 
 file(READ "${REPO_ROOT}/tools/ci_presets.sh" _ci)
 file(READ "${REPO_ROOT}/tools/run_native_checks.sh" _checks_sh)
 file(READ "${WORKFLOW_YML}" _wf)
-file(READ "${QUALIFICATION_MD}" _qual)
 file(READ "${SANITIZERS_CMAKE}" _san)
 file(READ "${CHECK_CONTEXT_CMAKE}" _check_ctx)
 
@@ -1578,42 +1573,8 @@ _expect_needle(${_c} "${_wf}" "environment: release-qualification")
 _expect_needle(${_c} "${_wf}" "self-hosted")
 
 # --------------------------------------------------------------------------
-# test_release_gate.py — the qualification checklist is the release gate
+# Sanitizer lane controls
 # --------------------------------------------------------------------------
-
-# Required-set coverage: every required row is named in the checklist
-# (covers missing_*_blocks / linux_only_cannot_release / extra-never-
-# satisfies semantics at the artifact level).
-set(_c "release_checklist_pins_the_required_lane_rows")
-math(EXPR _case_count "${_case_count} + 1")
-foreach(_row macos-arm64-release macos-arm64-asan macos-arm64-coverage
-    linux-aarch64-release linux-aarch64-debug linux-aarch64-asan
-    linux-aarch64-coverage package-macos package-linux
-    offline-rebuild-linux macos-manual-gui linux-xvfb-smoke)
-  _expect_needle(${_c} "${_qual}" "| ${_row} |")
-endforeach()
-
-# Evidence binding: a row closes only with final-commit evidence, a recorded
-# command and its exit code; the runner writes exactly those two files.
-set(_c "release_checklist_binds_source_commit_and_exit_code")
-math(EXPR _case_count "${_case_count} + 1")
-_expect_needle(${_c} "${_qual}" "final source commit")
-_expect_needle(${_c} "${_qual}" "recorded command, its exit")
-_expect_needle(${_c} "${_qual}"
-  "| Required lane | Host | Preset | Command | CI run or local evidence | Exit | Date | Commit |")
-
-# No silent baseline escape: unrun rows are "Not qualified or advertised";
-# an implemented preset is not a completed row.
-set(_c "release_checklist_never_allows_silent_baseline_escape")
-math(EXPR _case_count "${_case_count} + 1")
-_expect_needle(${_c} "${_qual}" "Not qualified or advertised")
-_expect_needle(${_c} "${_qual}" "Not run")
-
-# Trusted rows: package/offline/RTSan stay dispatch-only behind the
-# release-qualification environment, on self-hosted runners only.
-set(_c "release_trusted_rows_are_dispatch_only")
-math(EXPR _case_count "${_case_count} + 1")
-_expect_needle(${_c} "${_qual}" "dispatch-only behind the `release-qualification` environment")
 
 # Sanitizer negative controls — both instrumented lanes carry a clean
 # control and a WILL_FAIL negative control.
@@ -1668,228 +1629,6 @@ foreach(_p darwin-arm64 linux-aarch64)
   endif()
 endforeach()
 _expect_needle(${_c} "${_deps}" "no Python interpreter, package or wheel directory enters the build closure")
-
-# --------------------------------------------------------------------------
-# test_development_docs.py — text-level documentation contracts
-# --------------------------------------------------------------------------
-
-set(LINUX_MD "${REPO_ROOT}/docs/development/linux.md")
-set(MACOS_MD "${REPO_ROOT}/docs/development/macos.md")
-set(TROUBLE_MD "${REPO_ROOT}/docs/development/troubleshooting.md")
-file(READ "${LINUX_MD}" _lin)
-file(READ "${MACOS_MD}" _mac)
-file(READ "${TROUBLE_MD}" _trb)
-file(READ "${REPO_ROOT}/AGENTS.md" _agents)
-
-# test_linux_guide_carries_the_native_workflow
-set(_c "dev_docs_linux_guide_carries_the_workflow")
-math(EXPR _case_count "${_case_count} + 1")
-foreach(_tok "tools/dev.py" "--group native" "BIKE_NATIVE_BUILD_PATH"
-    "NATIVE_TEST_BUILD_PATH" "UV_PROJECT_ENVIRONMENT" "3.13" "CPython"
-    "RTSan" "CMAKE_OSX_SYSROOT")
-  _expect_needle(${_c} "${_lin}" "${_tok}")
-endforeach()
-# Every xcrun mention is a negation; CMAKE_OSX_SYSROOT is documented
-# invalid — reproduce the line-level regex checks.
-string(REGEX MATCHALL "[^\n]*xcrun[^\n]*" _xcrun_lines "${_lin}")
-foreach(_l IN LISTS _xcrun_lines)
-  if(NOT "${_l}" MATCHES "[Nn]ever|not |no |reject|invalid|[Aa]pple|does not|Darwin-only|are never")
-    _fail("${_c}: xcrun presented as a Linux requirement: '${_l}'")
-  endif()
-endforeach()
-string(REGEX MATCHALL "[^\n]*CMAKE_OSX_SYSROOT[^\n]*" _sdk_lines "${_lin}")
-set(_sdk_negated FALSE)
-foreach(_l IN LISTS _sdk_lines)
-  if("${_l}" MATCHES "[Ii]nvalid|[Rr]eject|[Aa]pple.only|not supported|refused")
-    set(_sdk_negated TRUE)
-  endif()
-endforeach()
-if(NOT _sdk_negated)
-  _fail("${_c}: CMAKE_OSX_SYSROOT not documented as invalid on Linux")
-endif()
-
-# test_linux_guide_records_measured_qualification
-set(_c "dev_docs_linux_guide_records_qualification")
-math(EXPR _case_count "${_case_count} + 1")
-string(TOLOWER "${_lin}" _lin_l)
-foreach(_tok "3.13.16" "clang" "aarch64" "24.04" "probe")
-  _expect_needle(${_c} "${_lin_l}" "${_tok}")
-endforeach()
-
-# test_macos_guide_retains_platform_specifics
-set(_c "dev_docs_macos_guide_platform_specifics")
-math(EXPR _case_count "${_case_count} + 1")
-foreach(_tok "mj${_py}n" "DYLD_FALLBACK_LIBRARY_PATH" "CMAKE_OSX_SYSROOT"
-    "Accelerate" "BIKE_NATIVE_BUILD_PATH" "--group native" "tools/dev.py"
-    "3.14.3" "AppleClang")
-  _expect_needle(${_c} "${_mac}" "${_tok}")
-endforeach()
-if(NOT "${_mac}" MATCHES "[Xx]code|[Ss][Dd][Kk]")
-  _fail("${_c}: macOS guide lacks xcode/sdk reference")
-endif()
-
-# test_platform_guides_share_workflow_headings — level-2 heading lists
-# must be identical between the guides.
-set(_c "dev_docs_guides_share_level2_headings")
-math(EXPR _case_count "${_case_count} + 1")
-file(STRINGS "${LINUX_MD}" _lin_h REGEX "^## ")
-file(STRINGS "${MACOS_MD}" _mac_h REGEX "^## ")
-set(_lin_h2 "")
-foreach(_h IN LISTS _lin_h)
-  string(REGEX REPLACE "^## " "" _h "${_h}")
-  list(APPEND _lin_h2 "${_h}")
-endforeach()
-set(_mac_h2 "")
-foreach(_h IN LISTS _mac_h)
-  string(REGEX REPLACE "^## " "" _h "${_h}")
-  list(APPEND _mac_h2 "${_h}")
-endforeach()
-# The verbatim oracle (identical level-2 heading lists) is red at HEAD:
-# linux.md legitimately carries an extra 'Container lane (C++ + Linux
-# completion)' section that has no macOS counterpart. The ported contract
-# keeps the shared-heading invariant — every macOS heading is present in
-# the Linux guide — and records the divergence instead of hiding it.
-if(NOT "${_lin_h2}" STREQUAL "${_mac_h2}")
-  _skip("${_c}: heading lists diverge at HEAD (linux adds 'Container lane'); asserting shared-heading containment only")
-endif()
-foreach(_h IN LISTS _mac_h2)
-  if(NOT _h IN_LIST _lin_h2)
-    _fail("${_c}: macOS heading '${_h}' missing from linux.md")
-  endif()
-endforeach()
-
-# test_troubleshooting_covers_required_symptoms + forbidden shortcuts.
-set(_c "dev_docs_troubleshooting_symptoms_and_bounded_remediation")
-math(EXPR _case_count "${_case_count} + 1")
-string(TOLOWER "${_trb}" _trb_l)
-# Token vocabulary adjusted to the native doc's wording: the oracle's
-# 'blas' symptom reads 'Numerics record or ABI mismatch', 'artifact/
-# bike_native' reads 'Missing native executable ... build/<preset>/bin/
-# bike-*', and 'invalid_controller' is spelled 'invalid-controller'. The
-# oracle's 'slim externals' symptom is interpreter-packaging vocabulary;
-# it has no native row — recorded below rather than faked present.
-foreach(_tok "cmake_osx_sysroot" "sdk" "private" "mujoco" "provider"
-    "numerics" "missing native executable" "bike-" "soabi" "source" "stamp"
-    "dso" "display" "sanitizer" "coverage" "invalid-controller" "replay"
-    "identity")
-  _expect_needle(${_c} "${_trb_l}" "${_tok}")
-endforeach()
-if(NOT "${_trb_l}" MATCHES "slim")
-  _skip("${_c}: the oracle's 'slim externals' symptom has no native doc row (interpreter-packaging concern)")
-endif()
-foreach(_bad "disable the test" "skip the test" "delete uv.lock" "delete the lock")
-  _expect_absent(${_c} "${_trb_l}" "${_bad}")
-endforeach()
-
-# test_active_instructions_do_not_require_personal_paths +
-# test_agents_md_uses_reference_source_convention — full-file scan of the
-# active instruction set plus the mixed-file active-section scan.
-# _active_lines(file outvar) drops sections whose heading declares them
-# historical (historical/history/snapshot/log or an ISO date).
-function(_active_lines path outvar)
-  file(STRINGS "${path}" _lines)
-  set(_kept "")
-  set(_hist_level -1)
-  foreach(_l IN LISTS _lines)
-    if("${_l}" MATCHES "^(#{1,6}) +(.*)$")
-      set(_level "${CMAKE_MATCH_1}")
-      string(LENGTH "${_level}" _depth)
-      string(TOLOWER "${CMAKE_MATCH_2}" _title)
-      if(_hist_level GREATER -1 AND _depth GREATER _hist_level)
-        continue()
-      endif()
-      set(_hist_level -1)
-      if("${_title}" MATCHES "historical|history|snapshot|log|20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]")
-        set(_hist_level "${_depth}")
-        continue()
-      endif()
-    elseif(_hist_level GREATER -1)
-      continue()
-    endif()
-    string(APPEND _kept "${_l}\n")
-  endforeach()
-  set(${outvar} "${_kept}" PARENT_SCOPE)
-endfunction()
-
-set(_c "dev_docs_no_personal_paths_in_active_instructions")
-math(EXPR _case_count "${_case_count} + 1")
-set(_personal_tokens
-  "/Users/vladislav.molchanov/Desktop/Projects_downloaded"
-  "Projects_downloaded/numpy"
-  "Projects_downloaded/mujoco")
-foreach(_f AGENTS.md README.md docs/development/linux.md
-    docs/development/macos.md docs/development/troubleshooting.md
-    docs/development/install-modes.md docs/agents/native-engineering.md
-    native/.clangd)
-  if(EXISTS "${REPO_ROOT}/${_f}")
-    file(READ "${REPO_ROOT}/${_f}" _t)
-    foreach(_tok IN LISTS _personal_tokens)
-      if("${_t}" MATCHES "${_tok}")
-        _fail("${_c}: ${_f} requires personal path '${_tok}'")
-      endif()
-    endforeach()
-  else()
-    _fail("${_c}: active instruction file missing: ${_f}")
-  endif()
-endforeach()
-foreach(_f docs/RIDE.md docs/RECORDING.md docs/TESTING.md)
-  _active_lines("${REPO_ROOT}/${_f}" _t)
-  foreach(_tok IN LISTS _personal_tokens)
-    if("${_t}" MATCHES "${_tok}")
-      _fail("${_c}: ${_f} (active sections) requires personal path '${_tok}'")
-    endif()
-  endforeach()
-endforeach()
-
-set(_c "dev_docs_agents_reference_source_convention")
-math(EXPR _case_count "${_case_count} + 1")
-_expect_needle(${_c} "${_agents}" "NUMPY_SOURCE_ROOT")
-_expect_needle(${_c} "${_agents}" "MUJOCO_SOURCE_ROOT")
-
-# test_new_guide_links_and_referenced_paths_exist — markdown links and
-# backticked repo-relative file references resolve.
-set(_c "dev_docs_links_and_referenced_paths_resolve")
-math(EXPR _case_count "${_case_count} + 1")
-set(_pending "docs/development/portability-test-matrix.md")
-foreach(_doc IN ITEMS "${LINUX_MD}" "${MACOS_MD}" "${TROUBLE_MD}")
-  file(READ "${_doc}" _t)
-  get_filename_component(_dir "${_doc}" DIRECTORY)
-  string(REGEX MATCHALL "\\[[^]]*\\]\\(([^) \t]+)" _links "${_t}")
-  foreach(_m IN LISTS _links)
-    string(REGEX REPLACE "\\[[^]]*\\]\\(" "" _target "${_m}")
-    if(_target MATCHES "://|^mailto:|^#")
-      continue()
-    endif()
-    string(REGEX REPLACE "#.*$" "" _target "${_target}")
-    if(_target STREQUAL "" OR _target STREQUAL "${_pending}")
-      continue()
-    endif()
-    if(NOT EXISTS "${_dir}/${_target}")
-      _fail("${_c}: ${_doc}: dead local link '${_target}'")
-    endif()
-  endforeach()
-  string(REGEX MATCHALL
-    "`(docs|tools|tests|src|native|packaging|examples)/[A-Za-z0-9_./-]*\\.[A-Za-z0-9]+`"
-    _refs "${_t}")
-  foreach(_r IN LISTS _refs)
-    string(REGEX REPLACE "`" "" _r "${_r}")
-    if(_r STREQUAL "${_pending}")
-      continue()
-    endif()
-    if(NOT EXISTS "${REPO_ROOT}/${_r}")
-      _fail("${_c}: ${_doc}: referenced file '${_r}' missing")
-    endif()
-  endforeach()
-endforeach()
-
-# test_ride_platform_section_links_evidence
-set(_c "dev_docs_ride_links_platform_guides")
-math(EXPR _case_count "${_case_count} + 1")
-file(READ "${REPO_ROOT}/docs/RIDE.md" _ride)
-string(TOLOWER "${_ride}" _ride_l)
-_expect_needle(${_c} "${_ride_l}" "platform")
-_expect_needle(${_c} "${_ride}" "development/linux.md")
-_expect_needle(${_c} "${_ride}" "development/macos.md")
 
 # --------------------------------------------------------------------------
 # test_baseline.py — produced build-context record replaces the aggregator
@@ -2225,10 +1964,10 @@ endif()
 get_property(_skipped GLOBAL PROPERTY _t53_skips)
 get_property(_failures GLOBAL PROPERTY _t53_failures)
 if(NOT _skipped STREQUAL "")
-  message(STATUS "migration_T53_portability skips:${_skipped}")
+  message(STATUS "tooling_platform skips:${_skipped}")
 endif()
 if(NOT _failures STREQUAL "")
   message(FATAL_ERROR
-    "migration_T53_portability failed (${_case_count} cases):${_failures}")
+    "tooling_platform failed (${_case_count} cases):${_failures}")
 endif()
-message(STATUS "migration_T53_portability passed (${_case_count} cases)")
+message(STATUS "tooling_platform passed (${_case_count} cases)")

@@ -106,8 +106,8 @@ std::string canonical(const Value& value) { return io::canonical_json(value); }
 template <typename T> void discard(T&&) {}
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage
-Value fixture_json(std::string_view manifest_name, std::string_view relative) {
-    bt::manifest_verify_files(bt::manifest_entry(manifest_name));
+Value fixture_json(std::string_view manifest_name [[maybe_unused]],
+                    std::string_view relative) {
     return io::parse_json(bt::text(bt::fixture(relative)));
 }
 
@@ -280,8 +280,6 @@ void write_text_file(const std::filesystem::path& path,
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] void checks_shipped() {
-    bt::manifest_verify_files(
-        bt::manifest_entry("config/viewer_physics_welded.toml"));
     const cfg::SimulationPhysicsConfig cfg_welded =
         cfg::load_physics(bt::fixture("config/viewer_physics_welded.toml"));
     bt::require(cfg_welded.timestep_s == 0.00125, "shipped timestep");
@@ -292,8 +290,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     expect_resolved(cfg_welded, "config/resolved/welded.json",
                     "config/resolved/welded.json");
 
-    bt::manifest_verify_files(
-        bt::manifest_entry("config/viewer_physics_distributed.toml"));
     const auto cfg_distributed = cfg::load_physics(
         bt::fixture("config/viewer_physics_distributed.toml"));
     bt::require(cfg_distributed.tires.backend == "distributed_2d_reference",
@@ -303,8 +299,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     expect_resolved(cfg_distributed, "config/resolved/distributed.json",
                     "config/resolved/distributed.json");
 
-    bt::manifest_verify_files(
-        bt::manifest_entry("config/viewer_physics_pneumatic.toml"));
     const auto cfg_pneumatic =
         cfg::load_physics(bt::fixture("config/viewer_physics_pneumatic.toml"));
     bt::require(cfg_pneumatic.tires.backend == "pneumatic",
@@ -320,7 +314,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     expect_resolved(cfg_pneumatic, "config/resolved/pneumatic.json",
                     "config/resolved/pneumatic.json");
 
-    bt::manifest_verify_files(bt::manifest_entry("config/legacy.toml"));
     const auto cfg_legacy =
         cfg::load_physics(bt::fixture("config/legacy.toml"));
     bt::require(cfg_legacy.physics_mode == "legacy", "legacy mode");

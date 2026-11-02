@@ -406,8 +406,6 @@ void checks_provenance() {
 #endif
     bt::require(hex64(identity.dependency_lock_sha256),
                 "dependency lock hash recorded");
-    bt::require(hex64(identity.source_manifest_sha256),
-                "source manifest hash recorded");
 #if defined(__APPLE__)
     bt::require(!identity.sdk.empty(), "SDK identity recorded");
 #endif

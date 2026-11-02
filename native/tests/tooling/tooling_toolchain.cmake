@@ -1,37 +1,24 @@
-# migration_T336_portability — portability tooling contracts (batch 3.36t2a).
-#
-# Ports the re-assertable cases of
-#   tests/portability/test_native_toolchain.py   (inspect_tool + real
-#     negative-compile controls) and
-#   tests/portability/test_native_runtime.py     (sanitizer-runtime
-#     resolution invariants + the mutual-exclusion fail-closed rule).
-#
-# The Python helpers behind the remaining records of those two files are
-# internal to the removed tools and are dropped against their named native
-# successors (see the ledger evidence); the records below are the ones whose
-# *observable contract* survives natively:
+# tooling_toolchain — portability tooling contracts.
 #
 #   * --inspect-tool PATH emits the schema-1 inspection record and rejects
-#     non-tools / silent / wrong-family drivers with the oracle's wording.
+#     non-tools / silent / wrong-family drivers.
 #   * real negative-compile controls still produce their real diagnostics
 #     (warning, header self-sufficiency, invalid-source) and the stdlib
 #     hardening OOB control still traps.
 #   * native_check_context.json records the sanitizer lane's resolved,
 #     absolute, platform-correct runtime and the coherent requested/
-#     supported/enabled state the Python preload resolver used to gate on.
-#   * NATIVE_SANITIZE+NATIVE_RTSAN is a configure-time FATAL_ERROR, the same
-#     mutual-exclusion rule the removed env composer enforced.
+#     supported/enabled state.
+#   * NATIVE_SANITIZE+NATIVE_RTSAN is a configure-time FATAL_ERROR.
 #
 # Required -D inputs: REPO_ROOT, SCRATCH_DIR, CHECKS_BINARY, BUILD_DIR.
 # BUILD_DIR must point at a configured build that emits
 # native_check_context.json (schema 2).
 #
-# One case per pytest function; a case records a failure line when the
-# outcome differs, exactly like the Python assertions it replaces.
+# A case records a failure line when the outcome differs from the contract.
 
 foreach(_required REPO_ROOT SCRATCH_DIR CHECKS_BINARY BUILD_DIR)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
-    message(FATAL_ERROR "migration_T336_portability requires -D${_required}")
+    message(FATAL_ERROR "tooling_toolchain requires -D${_required}")
   endif()
 endforeach()
 
@@ -120,7 +107,7 @@ endfunction()
 
 # _expect_squashed_t336(case haystack needle) — whitespace-collapsed match:
 # CMake wraps long FATAL_ERROR/diagnostic text at ~80 columns, so message
-# needles must compare on words, not lines (same rule as migration_T53).
+# needles must compare on words, not lines (same rule as tooling_platform).
 function(_expect_squashed_t336 case haystack needle)
   string(REGEX REPLACE "[ \t\r\n]+" " " _h "${haystack}")
   string(REGEX REPLACE "[ \t\r\n]+" " " _n "${needle}")
@@ -620,10 +607,10 @@ _expect_squashed_t336(${_c} "${${_c}_out}" "mutually exclusive")
 get_property(_skipped GLOBAL PROPERTY _t336_skips)
 get_property(_failures GLOBAL PROPERTY _t336_failures)
 if(NOT _skipped STREQUAL "")
-  message(STATUS "migration_T336_portability skips:${_skipped}")
+  message(STATUS "tooling_toolchain skips:${_skipped}")
 endif()
 if(NOT _failures STREQUAL "")
   message(FATAL_ERROR
-    "migration_T336_portability failed (${_case_count} cases):${_failures}")
+    "tooling_toolchain failed (${_case_count} cases):${_failures}")
 endif()
-message(STATUS "migration_T336_portability passed (${_case_count} cases)")
+message(STATUS "tooling_toolchain passed (${_case_count} cases)")

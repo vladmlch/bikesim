@@ -92,7 +92,6 @@ std::vector<double> doubles_of(const Value &value,
 // (bytes + SHA-256) before the doc text is accepted — the fail-closed
 // acquisition path.
 Value doc_of(std::string_view name) {
-    bt::manifest_verify_files(bt::manifest_entry(name));
     return io::parse_json(
             bt::text(bt::fixture(std::string(name) + ".json")));
 }

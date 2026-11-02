@@ -110,7 +110,6 @@ BuildIdentity build_identity() {
     identity.platform = &identity::platform[0];
     identity.build_type = &identity::build_type[0];
     identity.dependency_lock_sha256 = &identity::dependency_lock_sha256[0];
-    identity.source_manifest_sha256 = &identity::source_manifest_sha256[0];
     identity.python_bindings = identity::python_bindings;
     identity.gui = identity::gui;
     // The produced artifact's own bytes — hashed after open through the
@@ -129,8 +128,7 @@ std::string execution_identity() {
         "\nsdk=" + &identity::sdk[0] +
         "\nplatform=" + &identity::platform[0] +
         "\nbuild_type=" + &identity::build_type[0] +
-        "\nlock=" + &identity::dependency_lock_sha256[0] +
-        "\nsources=" + &identity::source_manifest_sha256[0] + "\n";
+        "\nlock=" + &identity::dependency_lock_sha256[0] + "\n";
     return io::sha256(std::as_bytes(std::span(canonical)));
 }
 

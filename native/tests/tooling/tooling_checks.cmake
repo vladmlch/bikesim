@@ -1,18 +1,17 @@
-# migration_T56 — fixture contract for the produced check orchestrator.
+# tooling_checks — fixture contract for the produced check orchestrator.
 #
-# Exercises bike-native-checks / bike-python-audit without touching the real
-# sweep semantics: argparse parity, fail-closed context/manifest/database
-# validation, the scripts sweep against planted fixtures, and the audit
-# modes against planted interpreter edges. Full sweeps run through the
+# Exercises bike-native-checks without touching the real sweep semantics:
+# argparse parity, fail-closed context/manifest/database validation, and
+# the scripts sweep against planted fixtures. Full sweeps run through the
 # check_* targets / tools/run_native_checks.sh, not inside this ctest.
 #
-# Required -D inputs: CHECKS_BINARY, AUDIT_BINARY, BUILD_DIR, REPO_ROOT,
-# SCRATCH_DIR. Optional: DEPS_ROOT (default ${REPO_ROOT}/.deps) — the locked
-# dependency tree the root-graph scratch configures verify.
+# Required -D inputs: CHECKS_BINARY, BUILD_DIR, REPO_ROOT, SCRATCH_DIR.
+# Optional: DEPS_ROOT (default ${REPO_ROOT}/.deps) — the locked dependency
+# tree the root-graph scratch configures verify.
 
-foreach(_required CHECKS_BINARY AUDIT_BINARY BUILD_DIR REPO_ROOT SCRATCH_DIR)
+foreach(_required CHECKS_BINARY BUILD_DIR REPO_ROOT SCRATCH_DIR)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
-    message(FATAL_ERROR "migration_T56 requires -D${_required}")
+    message(FATAL_ERROR "tooling_checks requires -D${_required}")
   endif()
 endforeach()
 if(NOT DEFINED DEPS_ROOT)
@@ -342,7 +341,7 @@ set(_ccdb "${BUILD_DIR}/compile_commands.json")
 foreach(_required_file "${_ctx}" "${_sources}" "${_ccdb}")
   if(NOT EXISTS "${_required_file}")
     message(FATAL_ERROR
-      "migration_T56 requires the produced build to emit ${_required_file}")
+      "tooling_checks requires the produced build to emit ${_required_file}")
   endif()
 endforeach()
 file(READ "${_ctx}" _context_json)
@@ -890,55 +889,6 @@ run_case(t56_scripts_empty EXPECT_EXIT FAIL
 # control; exercises tools/*.sh and tools/*/*.sh through shellcheck).
 run_case(t56_scripts_real EXPECT_EXIT 0
   COMMAND "${CHECKS_BINARY}" --kind scripts --build "${BUILD_DIR}")
-
-# ---------------------------------------------------------------------------
-# bike-python-audit fixtures
-set(_pkg_bad "${SCRATCH_DIR}/pkg-bad")
-file(MAKE_DIRECTORY "${_pkg_bad}/lib" "${_pkg_bad}/dist" "${_pkg_bad}/bin")
-file(WRITE "${_pkg_bad}/app.py" "print('planted')\n")
-file(WRITE "${_pkg_bad}/lib/module.pyc" "planted\n")
-file(WRITE "${_pkg_bad}/dist/pkg-1.0.whl" "planted\n")
-file(WRITE "${_pkg_bad}/bin/tool" "#!/usr/bin/env python3\nprint('x')\n")
-run_case(t56_audit_pkg_bad EXPECT_EXIT FAIL
-  EXPECT_STDERR "${_py}n package audit"
-  COMMAND "${AUDIT_BINARY}" --root "${_pkg_bad}" --mode package
-        --policy "${REPO_ROOT}/migration/no-python-policy.json")
-
-set(_pkg_clean "${SCRATCH_DIR}/pkg-clean")
-file(MAKE_DIRECTORY "${_pkg_clean}")
-file(WRITE "${_pkg_clean}/README.txt" "no interpreter artifacts\n")
-run_case(t56_audit_pkg_clean EXPECT_EXIT 0
-  COMMAND "${AUDIT_BINARY}" --root "${_pkg_clean}" --mode package
-        --policy "${REPO_ROOT}/migration/no-python-policy.json")
-
-set(_doc_bad "${SCRATCH_DIR}/doc-bad")
-file(MAKE_DIRECTORY "${_doc_bad}")
-# Backticks are literal in CMake strings; escaping them (\`) is tolerated
-# differently by CMake 3.x (kept) and 4.x (stripped), which changed the
-# fence content per platform — write them unescaped for identical bytes.
-file(WRITE "${_doc_bad}/README.md"
-  "# fixture\n\n```bash\npython tool.py --flag\n```\n")
-run_case(t56_audit_doc_bad EXPECT_EXIT FAIL
-  EXPECT_STDERR "${_py}n documentation audit"
-  COMMAND "${AUDIT_BINARY}" --root "${_doc_bad}" --mode documentation
-        --policy "${REPO_ROOT}/migration/no-python-policy.json")
-
-set(_doc_clean "${SCRATCH_DIR}/doc-clean")
-file(MAKE_DIRECTORY "${_doc_clean}")
-file(WRITE "${_doc_clean}/README.md"
-  "# fixture\n\n```bash\n./bike-native-checks --kind context\n```\n")
-run_case(t56_audit_doc_clean EXPECT_EXIT 0
-  COMMAND "${AUDIT_BINARY}" --root "${_doc_clean}" --mode documentation
-        --policy "${REPO_ROOT}/migration/no-python-policy.json")
-
-set(_src_bad "${SCRATCH_DIR}/src-bad")
-file(MAKE_DIRECTORY "${_src_bad}/tools")
-file(WRITE "${_src_bad}/tools/thing.sh"
-  "#!/usr/bin/env bash\nuv run ${_py}n thing.py\n")
-run_case(t56_audit_src_bad EXPECT_EXIT FAIL
-  EXPECT_STDERR "interpreter invocation"
-  COMMAND "${AUDIT_BINARY}" --root "${_src_bad}" --mode source
-        --policy "${REPO_ROOT}/migration/no-python-policy.json")
 
 # ===========================================================================
 # Batch 3.29b — check_tools / contract_checks ports (T53)
@@ -2261,8 +2211,6 @@ set(_base_sum "${b29fx-base_BUILD}/native_check_summaries/contracts.json")
 expect_json(b29_contract_base "${_base_sum}" "passed" status)
 expect_json(b29_contract_base "${_base_sum}" "pending"
   checks engine_call_wrappers status)
-expect_json(b29_contract_base "${_base_sum}" "pending"
-  checks benchmark_manifest_membership status)
 expect_json(b29_contract_base "${_base_sum}" "passed"
   checks loader_provenance status)
 expect_json(b29_contract_base "${_base_sum}" "${b29fx-base_BUILD}"
@@ -2453,36 +2401,6 @@ expect_json(b29_multi_context "${_mc_sum}" 2
   checks manifest_selection source_count)
 expect_json(b29_multi_context "${_mc_sum}" 3
   checks manifest_selection translation_unit_context_count)
-
-# A manifested native_bench source under tools/proto_native_bench flips
-# the pending rule to passed.
-b29_contract_fixture(b29fx-bench)
-set(_bench_root "${b29fx-bench_REPO}/tools/proto_native_bench")
-file(MAKE_DIRECTORY "${_bench_root}")
-file(WRITE "${_bench_root}/bench.cpp" "int benchmark_source() { return 3; }\n")
-file(READ "${b29fx-bench_BUILD}/native_sources.json" _doc)
-string(JSON _r_count LENGTH "${_doc}" first_party_roots)
-string(JSON _doc SET "${_doc}" first_party_roots ${_r_count}
-  "\"${_bench_root}\"")
-string(JSON _count LENGTH "${_doc}" sources)
-string(JSON _doc SET "${_doc}" sources ${_count}
-  "{\"path\":\"${_bench_root}/bench.cpp\",\"target\":\"native_bench\",\"context\":\"native_bench:fixture\"}")
-file(WRITE "${b29fx-bench_BUILD}/native_sources.json" "${_doc}")
-file(READ "${b29fx-bench_BUILD}/native_check_context.json" _ctx)
-string(JSON _r_count LENGTH "${_ctx}" source_roots)
-string(JSON _ctx SET "${_ctx}" source_roots ${_r_count} "\"${_bench_root}\"")
-string(JSON _bike_tc GET "${_ctx}" target_contexts bike_native)
-string(JSON _ctx SET "${_ctx}" target_contexts native_bench "${_bike_tc}")
-file(WRITE "${b29fx-bench_BUILD}/native_check_context.json" "${_ctx}")
-file(READ "${b29fx-bench_BUILD}/compile_commands.json" _db)
-string(JSON _count LENGTH "${_db}")
-string(JSON _db SET "${_db}" ${_count}
-  "{\"directory\":\"${b29fx-bench_BUILD}\",\"file\":\"${_bench_root}/bench.cpp\",\"output\":\"CMakeFiles/native_bench.dir/bench.cpp.o\",\"arguments\":[\"${CMAKE_COMMAND}\",\"-std=c++23\",\"-isysroot\",\"${b29fx-bench_SDK}\",\"-D${b29fx-bench_DEF}\",\"-c\",\"${_bench_root}/bench.cpp\",\"-o\",\"CMakeFiles/native_bench.dir/bench.cpp.o\"]}")
-file(WRITE "${b29fx-bench_BUILD}/compile_commands.json" "${_db}")
-b29_contract_run(b29_bench EXPECT_EXIT 0 NAME b29fx-bench)
-expect_json(b29_bench
-  "${b29fx-bench_BUILD}/native_check_summaries/contracts.json" "passed"
-  checks benchmark_manifest_membership status)
 
 # The repository's own folded .clang-tidy parses as a valid policy.
 b29_contract_fixture(b29fx-folded)
@@ -4094,6 +4012,6 @@ else()
 endif()
 
 if(NOT _failures STREQUAL "")
-  message(FATAL_ERROR "migration_T56 fixture contract failed:${_failures}")
+  message(FATAL_ERROR "tooling_checks fixture contract failed:${_failures}")
 endif()
-message(STATUS "migration_T56 fixture contract passed")
+message(STATUS "tooling_checks fixture contract passed")

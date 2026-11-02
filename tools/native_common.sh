@@ -6,17 +6,14 @@
 # Contract:
 #   bike_repo_root          — absolute repository root (parent of tools/)
 #   bike_checks_binary DIR  — produced bike-native-checks (see search order)
-#   bike_audit_binary DIR   — produced bike-python-audit (see search order)
 #   bike_die MESSAGE        — fail loudly with a stable prefix
 #   bike_log MESSAGE        — progress line on stderr
 #
-# Binary search order (checks, then audit mirrors it):
-#   1. $BIKE_NATIVE_CHECKS / $BIKE_PYTHON_AUDIT when set — an explicit tool
-#      path, same convention as the CLANG_TIDY/SHELLCHECK overrides.
+# Binary search order:
+#   1. $BIKE_NATIVE_CHECKS when set — an explicit tool path, same convention
+#      as the CLANG_TIDY/SHELLCHECK overrides.
 #   2. DIR/bin/, DIR/ — the analyzed build may carry its own produced tools.
-#   3. <repo>/build/native-release/bin/ — the produced standalone build;
-#      lets the transition graph's check_* targets run the native
-#      orchestrator against the legacy build dir without an interpreter.
+#   3. <repo>/build/native-release/bin/ — the produced standalone build.
 
 bike_repo_root() {
     local source_dir
@@ -55,31 +52,6 @@ bike_checks_binary() {
         done
         if [[ -z "${candidate}" ]]; then
             bike_die "bike-native-checks not found under ${build_dir} or the produced standalone build (configure and build build/native-release first)"
-        fi
-    fi
-    printf '%s\n' "${candidate}"
-}
-
-bike_audit_binary() {
-    local build_dir="$1"
-    local candidate=""
-    if [[ -n "${BIKE_PYTHON_AUDIT:-}" ]]; then
-        candidate="${BIKE_PYTHON_AUDIT}"
-        if [[ ! -x "${candidate}" ]]; then
-            bike_die "BIKE_PYTHON_AUDIT is not executable: ${candidate}"
-        fi
-    else
-        for candidate in \
-            "${build_dir}/bin/bike-python-audit" \
-            "${build_dir}/bike-python-audit" \
-            "$(bike_repo_root)/build/native-release/bin/bike-python-audit"; do
-            if [[ -x "${candidate}" ]]; then
-                break
-            fi
-            candidate=""
-        done
-        if [[ -z "${candidate}" ]]; then
-            bike_die "bike-python-audit not found under ${build_dir} or the produced standalone build (configure and build build/native-release first)"
         fi
     fi
     printf '%s\n' "${candidate}"

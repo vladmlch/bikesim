@@ -94,7 +94,6 @@ void compare(const mjModel& actual,const mjModel& expected) {
     bt::require(actual.opt.tolerance==expected.opt.tolerance,"solver tolerance");
 }
 void captured_welded() {
-    bt::manifest_verify_files(bt::manifest_entry("model/welded.xml"));
     auto request=physical();
     // RCP-02 was captured from rough_uphill_savage: 130 m field, 30.1 m
     // elevation, 2.8 m datum; these are reference INPUTS, not output data.

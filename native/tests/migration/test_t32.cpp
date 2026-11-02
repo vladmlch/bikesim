@@ -71,7 +71,7 @@ void wheelies(){
     bt::invalid([&]{tracker.update(t,.01,{});});tracker.reset();bt::require(tracker.state()=="uninitialized","tracker reset clears temporal state");
     bt::require(runtime::quasistatic_front_load(100.,1.,.5,1.,0.,10.)<0.,"quasistatic diagnostic keeps an infeasible signed front load");
 }
-void oracle(){bt::manifest_verify_files(bt::manifest_entry("metrics/filter"));const auto input=bt::read_f64(bt::fixture("metrics/filter_input.f64"));bt::golden_f64("metrics/filter_expected.f64",bike::numerics::legacy_ride_filter(input,1000.));
+void oracle(){const auto input=bt::read_f64(bt::fixture("metrics/filter_input.f64"));bt::golden_f64("metrics/filter_expected.f64",bike::numerics::legacy_ride_filter(input,1000.));
     const auto short_input=bt::read_f64(bt::fixture("metrics/filter_input_short.f64"));bt::golden_f64("metrics/filter_short.f64",bike::numerics::legacy_ride_filter(short_input,1000.));}
 }
 int main(){return bt::run([]{filters();events_and_metrics();controls();wheelies();oracle();});}

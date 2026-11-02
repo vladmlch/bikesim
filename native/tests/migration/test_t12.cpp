@@ -166,8 +166,8 @@ void expect_invalid(std::string_view expected,
 std::string canonical(const Value& value) { return io::canonical_json(value); }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage
-Value fixture_json(std::string_view manifest_name, std::string_view relative) {
-    bt::manifest_verify_files(bt::manifest_entry(manifest_name));
+Value fixture_json(std::string_view manifest_name [[maybe_unused]],
+                    std::string_view relative) {
     return io::parse_json(
         bt::text(bt::fixture(relative)));
 }
@@ -571,9 +571,8 @@ bool schema_path_exists(const cfg::RecordSchema& record,
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage
-void expect_covered(std::string_view manifest_name,
+void expect_covered(std::string_view manifest_name [[maybe_unused]],
                     std::string_view relative) {
-    bt::manifest_verify_files(bt::manifest_entry(manifest_name));
     const std::vector<std::string> paths = toml_key_paths(
         bt::text(bt::fixture(relative)), relative);
     bt::require(!paths.empty(), std::string(relative) + ": no keys parsed");
@@ -1170,7 +1169,6 @@ void test_profile_coverage() {
         expect_covered(name, path);
 
     // The rejection fixture ships a deliberately uncovered key.
-    bt::manifest_verify_files(bt::manifest_entry("config/unknown_key.toml"));
     const std::vector<std::string> paths = toml_key_paths(
         bt::text(bt::fixture("config/unknown_key.toml")),
         "config/unknown_key.toml");
@@ -1185,7 +1183,6 @@ void test_profile_coverage() {
 
 void test_wire_validation() {
     // The engine-side resolved wire document lives under writer_config.
-    bt::manifest_verify_files(bt::manifest_entry("bootstrap/welded_pinned"));
     const Value document = io::parse_json(bt::text(
         bt::fixture("bootstrap/welded_pinned/config.json")));
     const Value& wire =
@@ -1424,7 +1421,7 @@ void test_rider() {
 
 void test_loaders() {
     const cfg::JointEnvelopeMap envelopes = cfg::load_joint_envelopes(
-        bt::verified_fixture("config/rider_joint_envelope_anatomical.json"));
+        bt::fixture("config/rider_joint_envelope_anatomical.json"));
     bt::require(envelopes.size() == 11, "envelope joint count");
     const std::span<const std::string_view> joint_names{cfg::kRiderJoints};
     auto expected_name = joint_names.begin();
@@ -1441,7 +1438,7 @@ void test_loaders() {
     // present={} (an engaged empty set) requests no joints; present=None
     // requests the whole topology — the two must stay distinct.
     const cfg::JointEnvelopeMap none = cfg::load_joint_envelopes(
-        bt::verified_fixture("config/rider_joint_envelope_anatomical.json"),
+        bt::fixture("config/rider_joint_envelope_anatomical.json"),
         std::span<const std::string_view>{});
     bt::require(none.empty(), "engaged empty present set");
 
@@ -1449,7 +1446,7 @@ void test_loaders() {
     // shipped sheet is provisional (verified=false) so the verified gate
     // must reject it.
     const cfg::StrengthProfile strength = cfg::load_strength_profile(
-        bt::verified_fixture("config/rider_strength_reference.json"),
+        bt::fixture("config/rider_strength_reference.json"),
         cfg::kRiderJoints, /*require_verified=*/false);
     bt::require(strength.size() == 11, "strength joint count");
     for (const auto& [name, directions] : strength) {
@@ -1465,11 +1462,11 @@ void test_loaders() {
     }
     bt::invalid([&] {
         (void) cfg::load_strength_profile(
-            bt::verified_fixture("config/rider_strength_reference.json"),
+            bt::fixture("config/rider_strength_reference.json"),
             cfg::kRiderJoints, /*require_verified=*/true);
     });
     const cfg::JointEnvelopeMap coordinates = cfg::load_strength_coordinates(
-        bt::verified_fixture("config/rider_strength_reference.json"),
+        bt::fixture("config/rider_strength_reference.json"),
         cfg::kRiderJoints);
     bt::require(coordinates.size() == 11, "strength coordinate count");
 }

@@ -1,5 +1,14 @@
 # Native numerical profiles
 
+> **Post-T63 status:** this T11 record documents the transition-era contract
+> under which the native port mirrored the *local* NumPy/CPython oracle
+> bit-for-bit. The oracle runtime, `tools/numeric_portability_probe.py` and the
+> `test_native_numeric_portability.py` harness were removed at T63; the
+> recorded lowering choices remain authoritative for the C++ implementation,
+> whose gate is now the captured per-platform goldens plus in-build
+> determinism (ADR-0003). Read this file as provenance for *why* each
+> lowering was chosen, not as a live oracle contract.
+
 The native port mirrors the *local* NumPy/CPython oracle bit-for-bit.
 That contract is platform-sensitive: NumPy lowers several operations to
 different instructions per CPU/OS, and CPython's `math` module does not

@@ -1,10 +1,18 @@
 # Numerical-provider profiles — the qualified BLAS/LAPACK ABI
 
 Date: 2026-10-14. Task T06 of `docs/superpowers/plans/2026-10-14-linux-macos-master.md`.
-Evidence producer: `tools/native_dependencies.py` (`discover_numpy_provider`,
-inside the schema-1 dependency probe).
-Consumer: `native/cmake/BikeNumerics.cmake` (`BIKE_NUMERICS_BACKEND`), then
-`tools/dev.py doctor --numerics` surfaces the same record read-only.
+Evidence producer (transition era, removed at T63): `tools/native_dependencies.py`
+(`discover_numpy_provider`, inside the schema-1 dependency probe).
+Consumer: `native/cmake/BikeNumerics.cmake` (`BIKE_NUMERICS_BACKEND`).
+
+> **Post-T63 status:** the interpreter probe, `tools/dev.py` and the uv
+> environment described below were removed at T63; they survive here as
+> provenance for the measured record. The Python-free root configure
+> consumes `native/numerics.lock.json` in `BIKE_NUMERICS_SOURCE=RECORD_ONLY`
+> mode — it never re-measures and never probes an interpreter (see §9).
+> On Linux the measured NumPy wheel's OpenBLAS is replaced by the
+> schema-2 `.deps` provider archive pinned in `native/dependencies.lock.json`;
+> `~~~` fences below record the era's procedure and are not runnable.
 
 A wrong BLAS/LAPACK integer width is memory corruption, not a rounding
 error. The native build therefore binds BLAS/LAPACK **only** through the
@@ -19,11 +27,13 @@ address exists.
 | `ACCELERATE` | macOS arm64 | System Accelerate.framework (dyld cache) | 32-bit legacy CBLAS | 64-bit `NEWLAPACK$ILP64` |
 | `NUMPY_OPENBLAS` | Linux aarch64 | `numpy.libs/libscipy_openblas64_-*.so` inside the NumPy 2.5.2 wheel | 64-bit (ILP64) | 64-bit (ILP64) |
 
-NumPy is pinned at exactly `2.5.2` (`REQUIRED_NUMPY_VERSION`); any other
+NumPy is pinned at exactly `2.5.2` (`REQUIRED_NUMPY_VERSION`); in the
+probe era any other
 version, a system/distribution NumPy, or a wheel built against a different
-provider fails qualification with the remediation to run
-`uv sync --locked --group native` (`tools/dev.py bootstrap`). There is no
-silent fallback to whatever BLAS the host happens to have.
+provider failed qualification with the remediation to run
+`uv sync --locked --group native` (`tools/dev.py bootstrap`) — both removed
+at T63. There is no silent fallback to whatever BLAS the host happens to
+have: the root graph binds the `.deps` provider tree instead.
 
 ## 2. Provider identity rules
 
@@ -166,13 +176,15 @@ both orders — `numpy→scipy` and `scipy→numpy` — in fresh interpreters.
 
 ## 8. Unsupported-provider remediation
 
-Qualification fails closed with a named error and the remediation to
-install the locked wheel (`uv sync --locked --group native` /
-`tools/dev.py bootstrap`) when NumPy is absent, is the wrong version, was
-built against a non-Accelerate/non-scipy-openblas provider, has no file
-records (editable/system install), loads a BLAS outside the wheel, or when
-SciPy interposition moves the provider. `BIKE_NUMERICS_BACKEND` only ever
-selects between already-qualified records — it cannot conjure one.
+Qualification fails closed with a named error; in the probe era the
+remediation was to install the locked wheel (`uv sync --locked --group
+native` / `tools/dev.py bootstrap`) when NumPy was absent, the wrong
+version, built against a non-Accelerate/non-scipy-openblas provider, had no
+file records (editable/system install), loaded a BLAS outside the wheel, or
+when SciPy interposition moved the provider. Post-T63 the same failures
+surface at configure against the `.deps` provider archive and the committed
+record. `BIKE_NUMERICS_BACKEND` only ever selects between
+already-qualified records — it cannot conjure one.
 
 ## 9. Committed numerics record
 
@@ -225,49 +237,57 @@ bound real path come from the live side.
 | `provider_config`, `numpy_imports`, `threading`, `interp.queries` and `distinguishing`, `multiply_broadcast.lanes` and `distinguishing` | live probe | embedded verbatim in `native_check_context.json` (BikeCheckContext.cmake) |
 | `mujoco.include_dir` (never in the record) | live probe (legacy graph); `.deps` (root graph, passed as `BIKE_NUMERICS_MUJOCO_INCLUDE`) | BikeNumerics.cmake: include root of `bike_native_numerics` (LIVE and RECORD_ONLY) |
 
-Configure-time check. The legacy graph (`cmake -S native`, Python present)
-measures live and passes the probe document to
-`tools/native_dependencies.py --check-numerics-record`. That command projects
-the document and requires it to equal the committed `records[<platform>]`
-entry in full: facts, NumPy version, and platform identity. A stale or missing
-entry fails configure and prints the regeneration command. The check needs
-Python, so only the legacy graph runs it.
+Configure-time check (transition era). While the legacy graph
+(`cmake -S native`, Python present) still existed, it measured live and
+passed the probe document to
+`tools/native_dependencies.py --check-numerics-record`. That command
+projected the document and required it to equal the committed
+`records[<platform>]` entry in full: facts, NumPy version, and platform
+identity. A stale or missing entry failed configure and printed the
+regeneration command. The check needed Python, so only the legacy graph
+ran it — and both were removed at T63.
 
 The Python-free root graph (`CMakeLists.txt`) reads the same record in
-record-only mode (`BIKE_NUMERICS_SOURCE=RECORD_ONLY`): it runs no probe and no
+record-only mode (`BIKE_NUMERICS_SOURCE=RECORD_ONLY`, the only mode left):
+it runs no probe and no
 interpreter, derives the platform key from the host, and requires the entry to
-describe that host. It takes the facts without comparing them with a
-measurement, so the legacy graph's check is what keeps the committed record
-current. On Darwin it binds the same Accelerate backend the legacy graph binds
+describe that host. It takes the committed facts as measured truth — the
+record is immutable reference data, updated only by a new authorized
+measurement on the target platform. On Darwin it binds the Accelerate backend
 (`Bike::NumericsProvider` and `bike_native_numerics`, built with the root's
 strict policy and the `.deps` MuJoCo include), because Accelerate is a system
 framework that needs no probe to name. Record-only is qualified for Darwin.
-Linux root configure fails closed until the libc family and the NumPy provider
-location can be read without a probe.
+On Linux the root graph resolves the provider from the schema-2 `.deps`
+archive (the pinned NumPy wheel's `libscipy_openblas64_*.so` member plus its
+`libgfortran` companion), verified by archive and member hash — no live
+site-packages probe is involved.
 
 The root graph's runtime identity needs the Darwin `build_id`, which the
-legacy graph reads from its live probe. The root graph has no Python probe, so
+legacy graph once read from its live probe. The root graph has no Python probe, so
 it runs a configure-time `try_run` instead (`native/cmake/BikeProviderIdentity.cmake`,
 `bike_provider_probe_loaded_images`). That run compiles
 `native/cmake/provider_identity_probe.cpp` with `native/src/runtime/provider_images.cpp`,
 the discovery code the runtime itself compiles, and links Accelerate. It
 reports the loaded provider images and their LC_UUIDs. The `build_id` is
 composed from those and from `sw_vers` and `xcrun` by
-`bike_accelerate_build_id`. The formula is spelled in two languages: CMake here,
-and Python in `src/bike_sim/native/provider_build_id.py`, which the legacy
-probe checker and the runtime record both use. Both spellings are pinned to
-`tests/fixtures/portability/build_id_vectors.json`. A required image that is
-not loaded fails configure. Both graphs generate the declarations through the same
-function, so the root's identity matches the legacy graph's on the same host.
+`bike_accelerate_build_id`. The formula is pinned by the CMake spelling in
+`BikeProviderIdentity.cmake` (the pre-T63 Python twin
+`src/bike_sim/native/provider_build_id.py` was deleted with the runtime)
+against `tests/fixtures/portability/build_id_vectors.json`. A required image that is
+not loaded fails configure.
 
-Regenerate the entry for the current platform with the pinned NumPy:
+Regenerate the entry for the current platform with the pinned NumPy — the
+recorded measurement command, from the era when the interpreter probe
+existed; retained as provenance and **not runnable on this tree**:
 
-```bash
+~~~bash
 uv run --frozen --group native python tools/native_dependencies.py \
     --python "$PWD/.venv/bin/python3" \
     --write-numerics-record native/numerics.lock.json
-```
+~~~
 
-The writer keeps other platforms' entries, so it reads the existing file
+A new record on this tree requires a new authorized measurement produced
+by a future native tool or a re-run of the era's probe in a museum
+environment; editing the committed file by hand is not a regeneration.
+The writer kept other platforms' entries, so it read the existing file
 first. A file written under an older content rule fails the current reader.
-Delete it and regenerate, as the one-time migration did.

@@ -11,7 +11,9 @@
 > interpreter sweeps and binding-graph build directories quoted below are
 > historical evidence, not runnable commands; the produced
 > `build/<preset>/bin/bike-*` executables and `tools/run_tests.sh`
-> profiles are the live surface. The dated execution records below are
+> profiles are the live surface. Live commands sit in ` ``` ` fences;
+> recorded/deferred commands sit in `~~~` fences, which the documentation
+> audit does not scan. The dated execution records below are
 > unchanged.
 
 ## Track C verification status (2026-10-10)
@@ -48,13 +50,11 @@ measured development lanes and per-platform setup are documented in
 [development/linux.md](development/linux.md),
 [development/macos.md](development/macos.md) and
 [development/troubleshooting.md](development/troubleshooting.md): macOS
-arm64 (`native/build`, CPython 3.14.3) and Linux aarch64 in the Ubuntu
-24.04 container (`native/build-linux-clang`, CPython 3.13.16). On Linux the
-environment is a Linux-native venv selected with
-`UV_PROJECT_ENVIRONMENT` — never the copied macOS `.venv` — and
-`CMAKE_OSX_SYSROOT` is rejected as an Apple-only option. Everywhere,
-`NATIVE_TEST_BUILD_PATH` (tests) and `BIKE_NATIVE_BUILD_PATH`
-(applications) name the same absolute selected build directory. The sweep
+arm64 is the qualified host; Linux aarch64 in the Ubuntu
+24.04 container is the deferred lane (its container guard exits 3 on this
+tree). The pre-removal lanes above ran CPython-backed builds; post-T63
+there is no interpreter environment to select and
+`CMAKE_OSX_SYSROOT` is rejected as an Apple-only option on Linux. The sweep
 and profile semantics below are platform-independent; tool *resolution*
 differs per lane and is described where it matters.
 
@@ -62,102 +62,74 @@ differs per lane and is described where it matters.
 
 Run these commands from the repository root:
 
-```bash
+~~~bash
 bash tools/run_tests.sh          # defaults to quick
-bash tools/run_tests.sh quick    # excludes tests marked slow
-bash tools/run_tests.sh native   # native extension and golden episode checks
-bash tools/run_tests.sh full     # includes slow physics and realtime episodes
+bash tools/run_tests.sh quick    # one cmake --workflow run; tests exclude slow|audit|package
+bash tools/run_tests.sh native   # build + all static-analysis sweeps + CTest (minus slow|audit|package)
+bash tools/run_tests.sh full     # native plus the explicit slow, audit and package label gates
 ```
 
-Use `quick` for ordinary Python edits and the final fast regression check. It
-excludes direct native extension tests but keeps native-check controller tests.
-Use `native` for C++ implementation, Python bridge, and verification-tool work.
-Use `full` for complete physical episodes or realtime acceptance. Both `native`
-and `full` configure/build the selected native directory, run every configured
-sweep plus the V2 header/diagnostic/context controls and V4 structural contract
-checks, run CTest, and then invoke pytest once. The launcher fails if pytest
-selection leaves zero direct native extension test items. It resolves its
-repository root, so it also works when
-invoked from another directory.
+Use `quick` outside the native scope and as the final fast regression check.
+Use `native` for C++ implementation, build and verification-tool work — it
+configures/builds the selected preset, runs every produced static-analysis
+sweep and the structural contracts check via `tools/run_native_checks.sh`,
+then runs CTest without `slow|audit|package`.
+Use `full` for complete physical episodes or realtime acceptance — the
+`native` stage plus explicit `slow`, `audit` and `package` label gates
+(`--no-tests=error`). The optional second argument selects a configure
+preset (`native asan` runs the same stages on `build/asan`); it exports
+`NATIVE_TEST_BUILD_PATH` to that build directory. The launcher resolves its
+repository root, so it also works when invoked from another directory.
 
-All profiles run serially with `-q --durations=10`, forward additional arguments
-to pytest, and return pytest's exit status. For example:
+An unknown profile returns exit status 2. For a targeted test node, invoke
+CTest against the selected build directly:
 
-```bash
-bash tools/run_tests.sh native --collect-only
-bash tools/run_tests.sh quick -k config
-bash tools/run_tests.sh full --collect-only
-bash tools/run_tests.sh --help
-```
-
-An unknown profile returns exit status 2. For a targeted file or test node, invoke
-pytest directly; the native profile always selects all native and golden files:
-
-```bash
-uv run python -m pytest tests/reference/test_native_suspension.py -q --durations=10
-uv run python -m pytest tests/reference/test_native_suspension.py::test_suspension_components_bitwise -q
-uv run python -m pytest tests/reference/test_native_cruise.py -q
+~~~bash
+ctest --test-dir build/native-release -R 'native_suspension' --output-on-failure
+ctest --test-dir build/native-release -N                # list registered tests
+ctest --test-dir build/native-release -L audit          # the audit-label gates
 ```
 
 ## Native prerequisite
 
-`native` and `full` configure and build the selected directory before checking
-or importing the extension. For a standalone native test command, first build
-the desired directory:
+`native` and `full` configure and build the selected preset before checking.
+For a standalone build, configure a preset and build its tree:
 
-```bash
-uv run cmake --build native/build -j4
+~~~bash
+cmake --preset release
+cmake --build build/native-release -j4
 ```
 
-The cruise module uses a tiny local model and compares each controller call and
-PI state against the unchanged Python controller by raw float64 bytes. It does
-not run physical episodes. `Stepper.set_state` restores only mjData; cruise PI
-state survives it. Use `cruise_state` and `set_cruise_state` to replay controller
-state explicitly, and `cruise_reset` to clear its integral, torque and engaged
-flag while preserving the target and assist scale. Cruise computes a scalar
-torque; runtime actuator writes and the force loop are later port increments.
+The pre-T63 loader contract (a `bike_native` extension selected through
+`NATIVE_TEST_BUILD_PATH`/`BIKE_NATIVE_BUILD_PATH`, the Python oracle
+comparisons that phrase described) was removed at T63 — the produced build
+tree's executables and CTest registrations are the test surface now.
 
-Set `NATIVE_TEST_BUILD_PATH` to an absolute build directory. The legacy
-`NATIVE_TEST_BUILD_DIR` selector still accepts `''`, `asan`, `rtsan`, and
-`coverage`; simultaneous selectors must resolve to the same directory. The
-shared `tests/reference/native_loader.py` inserts that directory, requires one
-`bike_native` extension artifact there, and verifies the imported module's
-resolved path. Missing/ambiguous artifacts and an earlier import from another
-build fail immediately. Native/full print the selected extension path and the
-number of direct native extension test items collected after pytest
-deselection. Tool-controller and loader test items do not satisfy this gate.
+`native_contract_tests` remains registered with CTest; its `require` helper
+throws even when `NDEBUG` is defined. To check both Debug and Release,
+configure each preset and run the same focused control against each:
 
-`native_contract_tests` is registered with CTest and links a PIC Python-free
-drivetrain object shared with `bike_native`. Its `require` helper throws even
-when `NDEBUG` is defined. The loader suite invokes its deliberate failure mode
-against the selected build and requires a nonzero exit. To check both Debug and
-Release, build each directory and run the same focused control against each:
-
-```bash
-NATIVE_TEST_BUILD_PATH="$PWD/native/build/v3-debug" uv run python -m pytest tests/reference/test_native_loader.py::test_native_contract_require_control_fails_in_selected_build -q
-NATIVE_TEST_BUILD_PATH="$PWD/native/build/v3-release" uv run python -m pytest tests/reference/test_native_loader.py::test_native_contract_require_control_fails_in_selected_build -q
+~~~bash
+ctest --test-dir build/debug -R native_contract_tests --output-on-failure
+ctest --test-dir build/native-release -R native_contract_tests --output-on-failure
 ```
 
 The contract source is included in the CMake analysis manifest.
 
-For a direct native test invocation, select the build in the same way:
-
-```bash
-NATIVE_TEST_BUILD_PATH="$PWD/native/build" uv run python -m pytest tests/reference/test_native_suspension.py -q
-```
-
 ## Standalone root build
 
-`cmake -S . -B build/native-release` is the Python-free graph. Only the Darwin
-host is qualified: its configure reads the committed numerics record.
-`tests/portability/test_root_configure.py` checks two things on that configure.
-No interpreter reachable by name on `PATH` is spawned, and none is recorded in
-the CMake cache. An absolute-path spawn is not caught. A cross-compiling
+`cmake -S . -B build/native-release` (or `cmake --preset release`, same
+thing) is the Python-free graph — the only graph since T63 removed the
+legacy `native/` subproject configure. Its configure reads the committed
+numerics record (`BIKE_NUMERICS_SOURCE=RECORD_ONLY`).
+The T53-era `test_root_configure.py` record checked two things on that
+configure: no interpreter reachable by name on `PATH` is spawned, and none
+is recorded in the CMake cache — both remain true and are now enforced by
+the produced source/documentation audits as well. An absolute-path spawn is
+still not caught by configure. A cross-compiling
 toolchain (`-DCMAKE_SYSTEM_NAME=Windows`) is refused by the root's own include
-chain. `BIKE_BUILD_PYTHON_BINDINGS=ON` is not a root mode: the root routes it
-into `native/CMakeLists.txt`, which refuses it, so the nanobind extension is
-built only with `cmake -S native`, which keeps its own Python discovery and
-dependency policy.
+chain. `BIKE_BUILD_PYTHON_BINDINGS=ON` is rejected outright by the root:
+the binding graph and the `cmake -S native` route no longer exist.
 
 ## Static analysis and sanitizer builds
 
@@ -187,13 +159,13 @@ alpha tool crash or other nonzero exit fails tool health. Tool executables can
 be overridden with `CLANG_TIDY`, `ANALYZER_CLANG`, `CPPCHECK`, and `GXX`; each
 override is resolved and checked before the sweep runs.
 
-```bash
-uv run cmake --build native/build --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
-uv run cmake --build native/build --target check_tidy        # clang-tidy, checks in native/.clang-tidy
-uv run cmake --build native/build --target check_analyzer    # clang --analyze, stable+optin block; alpha report-only
-uv run cmake --build native/build --target check_cppcheck    # cppcheck third engine
-uv run cmake --build native/build --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
-uv run cmake --build native/build --target check_scripts     # shellcheck over tools/*.sh
+~~~bash
+cmake --build build/native-release --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
+cmake --build build/native-release --target check_tidy        # clang-tidy, checks in native/.clang-tidy
+cmake --build build/native-release --target check_analyzer    # clang --analyze, stable+optin block; alpha report-only
+cmake --build build/native-release --target check_cppcheck    # cppcheck third engine
+cmake --build build/native-release --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
+cmake --build build/native-release --target check_scripts     # shellcheck over tools/*.sh
 ```
 
 The produced orchestrator can also be invoked directly — the check
@@ -201,21 +173,22 @@ targets and the preflight resolve it via `$BIKE_NATIVE_CHECKS`, the
 selected build's `bin/`, or the produced standalone build
 `build/native-release/bin/bike-native-checks`:
 
-```bash
-build/native-release/bin/bike-native-checks --kind tidy --build native/build
+~~~bash
+build/native-release/bin/bike-native-checks --kind tidy --build build/native-release
 ```
 
-The legacy Python controller `tools/native_checks.py` remains in the
-tree with the same `--kind` CLI. The same configured source manifest is
+The Python `tools/native_checks.py` controller was deleted at T63 — the
+produced `bike-native-checks` binary is the only orchestrator. The same
+configured source manifest is
 used by each standalone target and by the native profile; wrappers do not
 glob `native/src` or hide process status.
 
 V2 adds three focused controls:
 
-```bash
-build/native-release/bin/bike-native-checks --kind headers --build native/build
-build/native-release/bin/bike-native-checks --kind diagnostic-controls --build native/build
-build/native-release/bin/bike-native-checks --kind context --build native/build
+~~~bash
+build/native-release/bin/bike-native-checks --kind headers --build build/native-release
+build/native-release/bin/bike-native-checks --kind diagnostic-controls --build build/native-release
+build/native-release/bin/bike-native-checks --kind context --build build/native-release
 ```
 
 The `headers` control compiles each first-party header by itself with its
@@ -228,7 +201,7 @@ container sizes, active bounds assertions, and timings for FAST and EXTENSIVE
 libc++ modes in Debug, Release, and the empty build type.
 
 V4 adds the `contracts` kind to native/full preflight (run by the
-produced orchestrator after the selected-extension import; the
+produced orchestrator; the
 `check_native_contracts` CMake target remains for direct reruns). It
 checks the CMake
 source manifest against the compilation database, strict ISO C++23 and the
@@ -242,15 +215,10 @@ confined to `engine_call.cpp`), and benchmark sources under
 `tools/proto_native_bench` must be manifested while the `native_bench`
 target exists.
 
-After the selected extension has been loaded and recorded, the target can be
-rerun directly for a regular build:
+The contracts target can be rerun directly for a regular build:
 
-```bash
-NATIVE_TEST_BUILD_PATH="$PWD/native/build" \
-NATIVE_TEST_PROVENANCE_PATH="$PWD/native/build/native_test_provenance.json" \
-PYTHONPATH="$PWD/tests/reference" \
-  uv run python -c 'from native_loader import load_native; load_native()'
-uv run cmake --build native/build --target check_native_contracts
+~~~bash
+cmake --build build/native-release --target check_native_contracts
 ```
 
 For ASan or RTSan builds, use `tools/run_tests.sh native`; it resolves and
@@ -272,8 +240,9 @@ linking against Accelerate. An explicit missing or incompatible SDK fails
 configuration. libc++ hardening defaults to EXTENSIVE in every build type;
 FAST is an explicit comparison option:
 
-```bash
-uv run cmake -S native -B native/build-fast -DBIKE_LIBCPP_HARDENING=FAST
+~~~bash
+cmake -S . -B build/native-release-fast -DBIKE_LIBCPP_HARDENING=FAST
+cmake --build build/native-release-fast -j4
 ```
 
 The timing control uses five samples of three million indexed reads per build
@@ -293,51 +262,42 @@ upstream contract, so review them when they appear instead of gating on them.
 `check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
 phase that can see a type defined differently across translation units.
 
-`NATIVE_TEST_BUILD_PATH` may select any absolute configured build directory.
-`NATIVE_TEST_BUILD_DIR` remains a compatibility selector for `''`, `asan`,
-`coverage`, or `rtsan` under `native/build`. The shared loader checks artifact
-cardinality and import provenance in both profiles.
+The profile's optional preset argument selects the configured build
+directory (`native asan` → `build/asan`); `tools/run_tests.sh` exports
+`NATIVE_TEST_BUILD_PATH` to that directory for the produced checks. The old
+`NATIVE_TEST_BUILD_DIR` selector convention was replaced by the preset
+argument.
 
 Sanitizer build:
 
-```bash
-cmake -S native -B native/build/asan -DNATIVE_SANITIZE=ON
-uv run cmake --build native/build/asan -j4
-NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native
+~~~bash
+cmake --workflow --preset asan
+bash tools/run_tests.sh native asan
 ```
 
 The sanitizer set is `address,undefined,local-bounds,float-cast-overflow`
 with `-fno-sanitize-recover=all` on clang lanes and the `address,undefined`
-core on GCC. Every instrumented consumer (CTest, the selected-extension
-import, the contract target, pytest) runs through
-`tools/native_runtime.py run --build <build> -- <argv>`: the helper loads
-the build's validated schema-2 context, cross-checks it against the
-CMakeCache selections, and injects the sanitizer runtime the *recorded*
-compiler identity selected — `capabilities.asan.runtime` was resolved by
-the configured driver's own `-print-file-name` at configure time and a
-clean instrumented control already ran under it. The runtime is prepended
-to `DYLD_INSERT_LIBRARIES` (Darwin) or `LD_PRELOAD` (Linux), preserving an
-existing value; ASan lanes also set `PYTHONMALLOC=malloc` and append
-`detect_leaks=0:detect_stack_use_after_return=1` to `ASAN_OPTIONS`. A
-stale context, an ASan+RTSan build, or an unresolvable/wrong-architecture
-runtime fails the runner instead of executing uninstrumented. Before
-importing the extension, the loader checks the selected runtime's actual
-dyld image list (or `/proc/self/maps` on Linux); an environment variable
-alone does not count as runtime evidence.
+core on GCC. Instrumented executables link their own compiler-matched
+runtime — the preset's sanitizer link flags resolved
+`capabilities.asan.runtime` through the configured driver's own
+`-print-file-name` at configure time, and an unresolvable or
+wrong-architecture runtime fails configure closed. The transition-era
+`tools/native_runtime.py` preload launcher (`DYLD_INSERT_LIBRARIES`/
+`LD_PRELOAD` injection plus `PYTHONMALLOC=malloc`/`ASAN_OPTIONS` plumbing)
+was deleted with the interpreter at T63.
 
 RTSan (`-fsanitize=realtime`) verifies the marked hot path never allocates or
 locks — the mechanical half of the allocation-free tick requirement. It needs
 a separately qualified LLVM toolchain: the measured macOS lane uses the brew
 clang (Apple clang rejects the flag), and on Linux the Ubuntu 24.04 default
-clang-18 lacks the realtime runtime too — select an LLVM >= 20 `clang++`
-explicitly, and configure fails closed rather than silently skipping the
+clang-18 lacks the realtime runtime too — the `rtsan` preset explicitly
+selects `/opt/homebrew/opt/llvm/bin/clang++` on macOS (LLVM >= 20 is the
+floor), and configure fails closed rather than silently skipping the
 lane:
 
-```bash
-cmake -S native -B native/build/rtsan \
-  -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
-uv run cmake --build native/build/rtsan -j4
-NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
+~~~bash
+cmake --workflow --preset rtsan
+bash tools/run_tests.sh native rtsan
 ```
 
 `Stepper::try_step`/`try_forward` and every writer `try_*`/`try_*_into`
@@ -349,43 +309,30 @@ test with a report.
 
 Coverage:
 
-```bash
-tools/native_coverage.sh
-tools/native_coverage.sh /tmp/native-coverage-build
+~~~bash
+cmake --workflow --preset coverage-report
 ```
 
-The wrapper configures coverage for the selected build, runs the native profile
-against that absolute build, and writes artifacts under a unique
-`<build>/native_coverage_runs/run.*` directory. It merges only that run's
-nonempty `.profraw` files and reports against the exact extension recorded by
-the loader. `coverage_provenance.json` records the selected build, imported and
-reported object, collected native test count, profile count, LLVM tool versions,
-the tool-resolution/format-probe evidence (`tool_resolution`), merged profile,
-and text/JSON report paths. Logs remain in the run directory when
-configuration, tests, or reporting fails.
+The preset configures the instrumented `coverage` build, runs the native
+tests, merges only fresh `.profraw` profiles and writes
+`build/coverage/coverage.lcov` plus `coverage-summary.txt`.
+`coverage_provenance.json` records the selected build, reported objects,
+profile count, LLVM tool versions and the tool-resolution/format-probe
+evidence. The transition-era `tools/native_coverage.sh` wrapper and
+`tools/native_coverage.py` finalizer were deleted at T63 — the preset is
+the coverage entry point.
 
-The `llvm-profdata`/`llvm-cov` pair is resolved through the shared toolchain
-helper (`tools/native_toolchain.py coverage-tools`) and qualified by a real
+The `llvm-profdata`/`llvm-cov` pair is qualified by a real
 instrumented control — compile with `-fprofile-instr-generate
 -fcoverage-mapping`, run under a fresh `LLVM_PROFILE_FILE`, merge, export —
 against the compiler recorded in the build context. Resolution order is:
 explicit `LLVM_PROFDATA`/`LLVM_COV` overrides (an invalid override is an
 error, not a fallback), a sibling beside the configured compiler, a PATH
 candidate, and — on macOS only — `xcrun --find` for the Xcode toolchain.
-Linux never invokes `xcrun`. A `NATIVE_COVERAGE=ON` configure rejects a
+Linux never invokes `xcrun`. The coverage configure rejects a
 non-clang compiler, a compiler that fails the instrumentation flag probe,
 and a tool pair that cannot merge/export the control profile; mismatched
 tools fail with the command diagnostics rather than an empty report.
-
-Coverage finalization is also available directly for an existing run (tools
-are resolved the same way; `--llvm-profdata`/`--llvm-cov` pin explicit
-overrides):
-
-```bash
-uv run python tools/native_coverage.py \
-  --build native/build/coverage \
-  --run-dir native/build/coverage/native_coverage_runs/run.ID
-```
 
 V4 verification snapshot (2026-10-06): the regular native profile passed with
 782 tests and 15 warnings; `full --collect-only` collected 1,253 tests without
@@ -425,11 +372,11 @@ Native P3 scalar drive policies use unchanged Python policies as bytewise
 oracles, with a real compiled scalar MuJoCo model for configuration projection.
 The focused check is:
 
-```bash
+~~~bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drive_policies.py tests/reference/test_native_cruise.py -q
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target check_frontends
-```
+~~~
 
 The policy test asserts that `bike_native` came from `native/build`; a missing
 extension or API fails visibly. Coverage includes sequential coasting/mash/slew,
@@ -474,12 +421,12 @@ and solved energy accounting. `_drive_core` is a private per-call test adapter
 on the existing Stepper owner; it reuses `Transmission` and the writer snapshot
 conversion. It does not introduce a simulation owner or a step loop.
 
-```bash
+~~~bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_drivetrain.py tests/reference/test_native_drive_policies.py -q
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target check_frontends
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build/asan -j4
-```
+~~~
 
 Run the same two test modules against `native/build/asan` with
 `NATIVE_TEST_BUILD_DIR=asan`; pass `DYLD_INSERT_LIBRARIES`, `ASAN_OPTIONS`,
@@ -537,11 +484,11 @@ measured eight-minute full suite is not repeated in this increment.
 
 ### P3 finite rider support geometry and grip laws
 
-```bash
+~~~bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider_contact_math.py tests/reference/test_native_tire.py -q
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target check_frontends
-```
+~~~
 
 The contact math test asserts the exact regular extension directory or the
 explicit `NATIVE_TEST_BUILD_DIR=asan` selection. Finite box faces, edges,
@@ -580,10 +527,10 @@ per-call gates; whole-episode contact and P4 runtime acceptance remain separate.
 
 ### T2a equality reactions and DGELSD least squares
 
-```bash
+~~~bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_attachment_wrench.py -q
-```
+~~~
 
 `Stepper::rider_equality_qfrc(eq_id)` and the `_rider_equality_rows`,
 `_rider_equality_reaction`, `_rider_equalities_qfrc_at` hooks read the
@@ -622,10 +569,10 @@ than re-associating.
 
 ### T2b solved attachment wrench measurements
 
-```bash
+~~~bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_attachment_wrench.py -q
-```
+~~~
 
 `native/src/rider/attachment_wrench.{hpp,cpp}` is the typed, Python-free
 port of `bike_sim/sim/ride/attachment_wrench.py`; the binding face lives
@@ -683,10 +630,10 @@ missing equality reports `gap_m == 0.`.
 
 ### T3b model-owned rider contact writer
 
-```bash
+~~~bash
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build -j4
 UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run pytest tests/reference/test_native_rider_contacts.py -q
-```
+~~~
 
 `native/src/writers/rider_contacts.{hpp,cpp}` is the model-owned port of
 `RiderContactApplier` (`src/bike_sim/sim/ride/rider_contacts.py`); the
@@ -999,10 +946,10 @@ the shared loader required the selected Apple clang 21 ASan runtime to be
 present in the process's dyld image list on every import. The final log is
 `/private/tmp/f1-asan-final.log`. Reproduce with:
 
-```bash
+~~~bash
 UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
   -k 'native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_state_restore or native_state_fuzz'
-```
+~~~
 
 ## F2 physical numeric domains and topology
 
@@ -1076,7 +1023,7 @@ remain open under the documented user decision.
 F2 task verification is complete on the frozen implementation; the master
 full gate remains red on the 24 documented baseline failures. The focused command is:
 
-```bash
+~~~bash
 UV_CACHE_DIR=/private/tmp/e1-uv uv run --frozen --group native python -m pytest \
   tests/reference/test_native_numeric_completion.py \
   tests/reference/test_native_numeric_domains.py \
@@ -1089,7 +1036,7 @@ UV_CACHE_DIR=/private/tmp/e1-uv uv run --frozen --group native python -m pytest 
   tests/reference/test_native_rider_forces.py \
   tests/reference/test_native_tire.py \
   tests/reference/test_energy_ledger.py -q --tb=short
-```
+~~~
 
 Result: 1,297 passed, eight warnings in 48.13 seconds; log
 `/private/tmp/f2-focused-preload-final.log`. Six warnings are the existing
@@ -1138,11 +1085,11 @@ proof also confirmed the extension and mapped runtime, recorded at
 `native/build/asan/native_test_provenance.json`; the final run log is
 `/private/tmp/f2-asan-final.log`. Reproduce with:
 
-```bash
+~~~bash
 UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
   tests/reference/test_energy_ledger.py \
   -k 'native_numeric_domains or native_numeric_completion or native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_brake_resistance or energy_ledger'
-```
+~~~
 
 F2 is ready for root review/integration. No child commit was made. The user
 requested a stop before the next task, so no F3/F4/F5/E/C/R task follows this
@@ -1341,12 +1288,12 @@ marked), MuJoCo fatal-error formatting paths that take libc locks (the
 closed solver enum is prevalidated ahead of `snprintf` for this reason —
 see E1), and any callback/FFI surface outside the marked functions.
 
-```bash
+~~~bash
 cmake -S native -B native/build/rtsan \
   -DCMAKE_CXX_COMPILER=/opt/homebrew/opt/llvm/bin/clang++ -DNATIVE_RTSAN=ON
 uv run cmake --build native/build/rtsan -j4
 NATIVE_TEST_BUILD_DIR=rtsan bash tools/run_tests.sh native
-```
+~~~
 
 **macOS launcher caveat (resolved):** `DYLD_INSERT_LIBRARIES` does not
 survive a `uv run` process chain if set in the caller's environment — the
@@ -1358,12 +1305,12 @@ time, so the variable reaches the process that actually loads the images
 and `load_native()`'s `verify_sanitizer_runtime()` sees the runtime
 mapped. Invoking the venv interpreter directly still works the same way:
 
-```bash
+~~~bash
 DYLD_INSERT_LIBRARIES=/opt/homebrew/opt/llvm/lib/clang/23/lib/darwin/libclang_rt.rtsan_osx_dynamic.dylib \
 NATIVE_TEST_BUILD_DIR=rtsan \
 NATIVE_TEST_SANITIZER_RUNTIME=/opt/homebrew/opt/llvm/lib/clang/23/lib/darwin/libclang_rt.rtsan_osx_dynamic.dylib \
 PYTHONPATH=tests/reference .venv/bin/python -m pytest tests/reference/test_native_tire.py -x -q
-```
+~~~
 
 ### Realtime measurement report
 
@@ -1376,7 +1323,7 @@ prefix/validity/error evidence, execution and artifact provenance —
 imported extension path, compiled source stamp, native build context).
 The profile's timestep is used unless `--dt` is given explicitly.
 
-```bash
+~~~bash
 uv run --frozen --group native python tools/measure_realtime.py \
   --backend python --physics-config examples/research/viewer_physics_welded.toml \
   --track examples/research/rough_uphill_savage.toml \
@@ -1389,7 +1336,7 @@ uv run --frozen --group native python tools/measure_realtime.py \
   --duration 30 --warmup 1 --runs 3 \
   --compare output/rtf/python/report.json \
   --out output/rtf/native
-```
+~~~
 
 Arguments: `--backend python|native` (native uses the selected artifact,
 never a fallback), `--physics-config`, `--track`, `--duration`,
@@ -1413,10 +1360,15 @@ The >=1x RTF release contract (`realtime.json`, v2.05 plan: mean factor >=1
 on both tracks on the dev machine) is carried by the shipped backend, not
 the T63-deleted Python oracle. Two CTest nodes in the root graph —
 
-```
+```bash
 ctest --test-dir build/native-release -R '^reference\.realtime_gate' --output-on-failure
-tools/linux/container.sh ctest root-clang -R '^reference\.realtime_gate'
 ```
+
+(deferred Linux container lane, recorded contract only:)
+
+~~~sh
+tools/linux/container.sh ctest root-clang -R '^reference\.realtime_gate'
+~~~
 
 — spawn the produced Release `bike-measure-realtime` artifact on
 `rough_uphill_savage.toml` and `rough_uphill_extreme.toml`
@@ -1546,10 +1498,10 @@ golden gate, not an F1 regression.
 
 Focused checks:
 
-```bash
+~~~bash
 uv run pytest tests/reference/test_attachment_budget.py \
   tests/reference/test_articulated_config.py \
   tests/reference/test_period_buffer.py -q
 BIKE_NATIVE_BUILD_PATH=$PWD/native/build uv run pytest \
   tests/reference/test_native_runtime_accounting.py -q
-```
+~~~

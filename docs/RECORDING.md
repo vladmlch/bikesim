@@ -25,9 +25,8 @@ native artifact.
 `--record` defaults to false. `--out` selects an output root but does not enable
 recording. Ordinary physical `bike-ride --backend native` supports capture in
 headless and viewer modes. `bike-research` and `bike-ride --research` support
-Python and native capture. Ordinary physical Python execution remains available
-without recording; requesting its new recording adapter is an explicit error,
-not an implicit switch to native. Legacy/nonphysical and preview modes reject the
+capture. The Python research/execution routes that once shared this surface were
+removed at T63. Legacy/nonphysical and preview modes reject the
 new recording flag.
 
 Without recording, physical accounting, live views, checks, sensor delay queues
@@ -37,18 +36,18 @@ written by the normal physical/research CLI.
 
 ```bash
 # Ordinary native, using the supplied reference physical profile.
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride \
+build/native-release/bin/bike-ride \
   --backend native --physics-config examples/research/viewer_physics_welded.toml \
   --track examples/research/rough_uphill_savage.toml --headless --duration 1 \
   --check-policy strict --record --out output/ride
 
-# Python research. The same invocation accepts --backend native with its artifact selected.
-uv run --frozen bike-research --backend python \
+# Headless research capture.
+build/native-release/bin/bike-research \
   --physics-config examples/research/viewer_physics_welded.toml \
   --scenario flat --duration 1 --check-policy diagnostic --record --out output/research
 
 # Interactive research: retain reset-separated episodes, publish on viewer close.
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride \
+build/native-release/bin/bike-ride \
   --backend native --research --physics-config examples/research/viewer_physics_welded.toml \
   --track examples/research/rough_uphill_savage.toml --duration 1 --record
 ```
@@ -193,15 +192,15 @@ simulator or import a recorded policy.
 
 ```bash
 RUN=/absolute/path/to/the/published/run
-uv run --frozen bike-recording overview "$RUN" --json
-uv run --frozen bike-recording fields "$RUN" --pattern energy --limit 200 --json
-uv run --frozen bike-recording events "$RUN" --episode 0 --json
-uv run --frozen bike-recording window "$RUN" --episode 0 --start 0 --end 0.02 \
+build/native-release/bin/bike-recording overview "$RUN" --json
+build/native-release/bin/bike-recording fields "$RUN" --pattern energy --limit 200 --json
+build/native-release/bin/bike-recording events "$RUN" --episode 0 --json
+build/native-release/bin/bike-recording window "$RUN" --episode 0 --start 0 --end 0.02 \
   --fields physics.time_s,physics.qvel,channel_energy.residual_j --json
-uv run --frozen bike-recording sql "$RUN" \
+build/native-release/bin/bike-recording sql "$RUN" \
   --query 'SELECT episode_id, interval_id, component, power_w FROM forces ORDER BY episode_id, interval_id, component' \
   --limit 200
-uv run --frozen bike-recording export "$RUN" --episode 0 --format jsonl \
+build/native-release/bin/bike-recording export "$RUN" --episode 0 --format jsonl \
   --table telemetry --output intervals.jsonl
 ```
 
@@ -228,10 +227,10 @@ share an identical trajectory. Neither mode silently aligns time or distance.
 ```bash
 LEFT=/absolute/path/to/left/run
 RIGHT=/absolute/path/to/right/run
-uv run --frozen bike-recording compare "$LEFT" "$RIGHT" \
+build/native-release/bin/bike-recording compare "$LEFT" "$RIGHT" \
   --left-episode 0 --right-episode 0 --mode exact \
   --fields physics.qpos,physics.qvel --atol 1e-9 --rtol 1e-9 --json
-uv run --frozen bike-recording compare "$LEFT" "$RIGHT" \
+build/native-release/bin/bike-recording compare "$LEFT" "$RIGHT" \
   --left-episode 0 --right-episode 0 --mode summary --json
 ```
 
@@ -246,9 +245,9 @@ changing a published `summary.md` in place invalidates its manifest hash.
 ## Checked research replay and legacy compatibility
 
 ```bash
-uv run --frozen --group native bike-replay "$RUN" --episode 0
-uv run --frozen --group native bike-replay "$RUN" --episode 0 --viewer --time-scale 2
-uv run --frozen bike-replay "$RUN" --episode 0 --view        # unverified recorded playback
+build/native-release/bin/bike-replay "$RUN" --episode 0
+build/native-release/bin/bike-replay "$RUN" --episode 0 --viewer --time-scale 2
+build/native-release/bin/bike-replay "$RUN" --episode 0 --view        # unverified recorded playback
 ```
 
 Episode selection is optional only when the recording contains exactly one

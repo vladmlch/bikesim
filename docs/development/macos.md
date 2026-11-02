@@ -249,7 +249,8 @@ cmake --workflow --preset coverage
 ctest --test-dir build/native-release -R '^package_smoke$' --no-tests=error --output-on-failure
 ```
 
-On Linux, prefix each command with `bash tools/linux/container.sh exec`.
+On Linux, prefix each command with `bash tools/linux/container.sh exec`
+(deferred lane — the container guard exits 3 on this tree).
 Coverage runs the native tests, merges only fresh profiles and writes
 `build/coverage/coverage.lcov` plus `coverage-summary.txt`. ASan and RTSan
 executables link their own runtime; no interpreter preload is used by the

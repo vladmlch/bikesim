@@ -15,8 +15,15 @@ Tools that generate the numbers in
 `d-scree-sections/`) into reproducible form and ships the pinned intermediate
 datasets in `data/` so the published statistics can be regenerated offline.
 
-Every script carries a PEP-723 header — run with `uv run <script>.py …`
-from inside this directory; `uv` resolves dependencies automatically.
+**T63 status: exempt research tooling.** Everything under `tools/research/` is
+retained outside the product runtime and every delivery surface — it is not
+invoked by any build, test or packaging surface of the Python-free product.
+Every script carries a PEP-723 header; running it is optional and requires an
+external interpreter supplied by the operator (the era's runner was
+`uv run <script>.py …` from inside this directory; `uv` resolves dependencies
+automatically). Command blocks below are recorded provenance for the pinned
+`data/` artifacts, not live product instructions, and use `~~~` fences
+accordingly.
 
 ## What is reproduced
 
@@ -50,7 +57,7 @@ verified count-identical on re-run (see Verification).
 
 ## Slope pipeline (per region)
 
-```sh
+~~~sh
 # 1. OSM ways — fixed query, regions zermatt|engadin
 uv run fetch_osm_paths.py --region zermatt --outdir work/osm
 
@@ -68,11 +75,11 @@ uv run bandfrac.py   --profiles-dir work/osm
 uv run descfrac.py   --profiles-dir work/osm
 uv run dense_check.py --osmdir work/osm
 uv run noise_check.py --profiles-dir work/osm
-```
+~~~
 
 Or regenerate the published numbers directly from the pinned snapshots:
 
-```sh
+~~~sh
 uv run stats2.py --profiles-dir data --out /tmp/stats2_out.json
 uv run compare_stats.py /tmp/stats2_out.json      # gate vs expected/
 uv run bandfrac.py   --profiles-dir data
@@ -80,7 +87,7 @@ uv run descfrac.py   --profiles-dir data
 uv run dense_check.py                            # uses data/
 uv run noise_check.py --profiles-dir data
 uv run scree_stats.py --datadir data             # F1–F4 tables
-```
+~~~
 
 ### Fixed methodology (slope)
 
@@ -119,14 +126,14 @@ uv run scree_stats.py --datadir data             # F1–F4 tables
 
 ## Scree pipeline (Austria + Switzerland)
 
-```sh
+~~~sh
 uv run scree_collect.py --pbf austria.osm.pbf --out work/scree_data_at.json
 uv run scree_analyze.py --data work/scree_data_at.json --out work/crossings_at.json
 uv run scree_tiles.py   --crossings work/crossings_at.json --tiles-dir work/tiles13
 uv run scree_elev.py    --crossings work/crossings_at.json --data work/scree_data_at.json \
                         --tiles-dir work/tiles13 --out work/crossing_elev_at.json
 uv run scree_stats.py   --datadir data      # publishes F1–F4 tables
-```
+~~~
 
 - **Inputs**: Geofabrik nightly extracts `austria-261013.osm.pbf` (812 MB,
   snapshot dated 2026-10-13 per filename convention) and

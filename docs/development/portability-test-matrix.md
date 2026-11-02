@@ -2,6 +2,16 @@
 
 Date: 2026-10-18. Task T27 of `docs/superpowers/plans/2026-10-14-linux-macos-07-validation.md`.
 
+> **Post-T63 status: transition-era enforcement record.** The pytest files
+> and `tools/*.py` helpers named in the rows below were deleted with the
+> interpreter at T63. The requirements themselves still bind; their current
+> enforcement is the produced C++ test suite under `ctest
+> --test-dir build/<preset>`, the `reference.*`/contract/audit CTest nodes,
+> `tools/run_tests.sh` profiles and the `bike-python-audit` binary — see
+> [TESTING.md](../TESTING.md). Treat every `tests/**/*.py` path and
+> `tools/*.py` command below as historical evidence of the row's original
+> enforcement, not a runnable surface.
+
 This matrix maps every release-blocking requirement of the portability
 design (`docs/superpowers/specs/2026-10-14-linux-macos-portability-design.md`)
 to the exact test files, node IDs, or commands that enforce it, and to the

@@ -203,15 +203,13 @@ endif()
 # trees: the binary must exit 0 and print its clean summary. A nonzero
 # exit, a usage error, the 'audit failed' exception path, a findings
 # summary or silence all fail this test — a vacuous or broken audit can
-# never pass. The documentation audit remains a measured-failure gate:
-# live docs still carry historical interpreter commands whose rewrite is
-# tracked separately. WILL_FAIL inverts ctest's *determined* result —
-# including regex results — so FAIL_REGULAR_EXPRESSION names the audit's
-# own violation summary: the test passes only when the audit fails with a
-# real findings report. A clean audit (exit 0), a usage error (exit 2), the
-# 'audit failed' exception path and a crash all produce no summary match,
-# so ctest determines 'pass' and the inversion fails the test — a vacuous
-# or broken audit can never pass as an expected failure. The package-mode
+# never pass. The documentation audit is a positive required gate since
+# the live documentation rewrite: active fenced command blocks (```) in
+# scanned docs must carry no interpreter invocation; recorded/deferred
+# commands use ~~~ fences, which the audit does not scan. A findings
+# report (nonzero exit plus the violation summary), a usage error, the
+# 'audit failed' exception path and silence all fail the test — a vacuous
+# or broken audit can never pass. The package-mode
 # audit is a positive gate already: it ships inside package_smoke and the
 # no_python/audit_negative_controls script tests under packaging/.
 if(BUILD_TESTING)
@@ -231,8 +229,8 @@ if(BUILD_TESTING)
             --root "${CMAKE_SOURCE_DIR}"
             --policy "${CMAKE_SOURCE_DIR}/migration/no-python-policy.json")
   set_tests_properties(python_audit_documentation PROPERTIES
-    WILL_FAIL TRUE
-    FAIL_REGULAR_EXPRESSION "documentation audit: [0-9]+ active invocation"
+    PASS_REGULAR_EXPRESSION "documentation audit clean"
+    FAIL_REGULAR_EXPRESSION "active invocation|audit failed"
     LABELS "audit"
     TIMEOUT 600)
 endif()

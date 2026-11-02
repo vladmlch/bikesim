@@ -233,12 +233,17 @@ C_α/F_z растёт до ~14 у 2.8–3.0″, C_γ/F_z до ~1.2–1.5 — ш�
 
 ## 9. Воспроизводимость
 
-```bash
+Скрипты ниже лежат в T63-exempt `tools/research/` — автономный исследовательский
+инструментарий, не часть Python-free продукта; запуск требует внешнего
+интерпретатора оператора (заголовки PEP-723 в скриптах). Команды сохранены как
+происхождение зафиксированных артефактов, а не как живая инструкция продукта:
+
+~~~bash
 cd tools/research/lateral_digitise
 uv run --with pillow --with numpy --with scipy python digitise.py   # проходы A,B -> points/
 uv run --with numpy python analyse.py                               # A-vs-B diff + показатели
 uv run --with numpy python finalise.py                              # final_*.csv + derived
-```
+~~~
 
 Артефакты: `figs/` (PDF, рендеры страниц 6/12/19, встроенные растры,
 издательские PNG), `points/` (~60 CSV серий + `final_summary.json` +

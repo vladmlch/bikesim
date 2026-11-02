@@ -28,13 +28,16 @@ cmake --workflow --preset release
 bash tools/run_native_checks.sh build/native-release
 ```
 
-On Linux the required lane is aarch64 inside the checkout's container:
+On Linux the documented lane is aarch64 inside the checkout's container.
+That lane is not yet qualified on this tree (see the
+[release qualification checklist](../releases/python-free-qualification.md));
+the recorded container contract is:
 
-```sh
+~~~sh
 bash tools/linux/container.sh sync
 bash tools/linux/container.sh exec cmake --workflow --preset release
 bash tools/linux/container.sh exec bash tools/run_native_checks.sh build/native-release
-```
+~~~
 
 The release directory stays `build/native-release`; `debug`, `gui`,
 `asan`, `rtsan` and `coverage` use `build/<preset>`. Do not copy a CMake
@@ -63,26 +66,20 @@ Their identity comes from the linked native build and configured provider
 record. Checked replay still requires the recording's execution identity
 to match; recorded-state inspection does not prove physical replay.
 
-## Transition binding/oracle setup
+## Historical: transition binding/oracle setup (removed at T63)
 
-The Python files are retained solely until the staged migration has
-captured and qualified their C++ successors. A text-only Repomix snapshot
-cannot supply omitted binary assets, dependencies, executable metadata or
-Git ancestry. Use the full source checkout for this transition route.
-
-A binding build is explicitly configured from `native/`, with CPython 3.13
-from the selected frozen environment. Select the interpreter and build
-path consistently. `BIKE_NATIVE_BUILD_PATH` and `NATIVE_TEST_BUILD_PATH`
-apply to those retained Python entry points; they do not choose which root
-C++ executable a shell command invokes. The binding loader still checks
-SOABI, selected artifact, source stamp and provider identity. Renaming or
-copying an extension between operating systems does not satisfy those
-checks.
-
-The Python package wheel does not contain the `bike_native` extension.
-The former full/slim offline Python installers remain available as
-transition artifacts and are deleted only at the Phase 4 gate. They are
-not installers for the native CPack distributions.
+The retained-Python transition route was deleted at T63 with the runtime,
+the frozen environment and the binding surface; the instructions that
+followed here are historical only. During the transition a binding build
+was configured from `native/` against CPython 3.13, `BIKE_NATIVE_BUILD_PATH`
+and `NATIVE_TEST_BUILD_PATH` selected the extension artifact for the
+retained Python entry points, and the binding loader checked SOABI, source
+stamp and provider identity. The Python package wheel never contained the
+`bike_native` extension, and the former full/slim offline Python installers
+were transition artifacts — never installers for the native CPack
+distributions. None of those mechanisms survive: the produced
+`build/<preset>/bin/bike-*` executables are the only runnable surface and
+carry their provider identity in the linked build record.
 
 ## Verification status
 

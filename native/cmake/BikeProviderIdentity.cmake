@@ -4,9 +4,10 @@
 # The runtime reports this identity and checks it against the provider images
 # actually loaded (native/src/runtime/provenance.cpp). Both graphs generate the
 # declarations through bike_provider_identity_declarations(), so the text and
-# its field order cannot drift between them. They differ only in where the
-# machine-specific build_id comes from: the legacy graph reads the live probe
-# document, which Python measured inside the selected interpreter.
+# its field order cannot drift between them. They differed only in where the
+# machine-specific build_id came from: the deleted legacy graph read the live
+# probe document, which Python measured inside the selected interpreter
+# (removed at T63). The root graph probes the loaded images itself.
 #
 # Preconditions: BikeNumerics.cmake has bound the providers (its
 # _native_numerics_provider_paths, _native_numerics_record_key and the
@@ -138,8 +139,9 @@ function(bike_provider_identity_declarations out_var)
 endfunction()
 
 # --------------------------------------------------------------------------
-# Python-free build_id for the root graph (Darwin, Accelerate). The legacy
-# graph reads build_id from the live probe document, which Python measured.
+# Python-free build_id for the root graph (Darwin, Accelerate). The deleted
+# legacy graph read build_id from the live probe document, which Python
+# measured (removed at T63).
 # The root graph has no such document, so it probes the loaded images itself.
 # --------------------------------------------------------------------------
 
@@ -277,8 +279,9 @@ endfunction()
 
 # bike_accelerate_build_id(<out> MACOS_BUILD <m> SDK_BUILD <s> UUID <u>)
 #   The apple-system build_id, macos-<m>+accelerate-<u>+sdk-<s>. This is the
-#   CMake spelling of the formula; src/bike_sim/native/provider_build_id.py is
-#   the Python spelling, and both are pinned to
+#   CMake spelling of the formula; the pre-T63 Python spelling
+#   (src/bike_sim/native/provider_build_id.py) was deleted with the runtime,
+#   and the spelling is pinned to
 #   tests/fixtures/portability/build_id_vectors.json. Each component must be a
 #   nonempty token of [A-Za-z0-9.-]. A malformed component sets <out> to the
 #   empty string, so the caller names the failure and the vectors can pin it.

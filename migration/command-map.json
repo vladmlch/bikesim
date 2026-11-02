@@ -26,7 +26,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-playground",
@@ -53,7 +53,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-export",
@@ -80,7 +80,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-ride",
@@ -107,7 +107,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-settle",
@@ -134,7 +134,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-research",
@@ -161,7 +161,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-batch",
@@ -184,7 +184,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-replay",
@@ -211,7 +211,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-recording",
@@ -230,7 +230,7 @@
         "representative successful invocation",
         "installed no-Python execution"
       ],
-      "status": "review"
+      "status": "native"
     },
     {
       "command": "bike-recording golden freeze",
@@ -251,7 +251,7 @@
         "two-platform source-oracle and native comparison",
         "installed no-Python execution"
       ],
-      "status": "source_implemented_pending_qualification",
+      "status": "native",
       "completion_task": "3.03",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md"
@@ -276,7 +276,7 @@
         "two-platform source-oracle and native comparison",
         "installed no-Python execution"
       ],
-      "status": "source_implemented_pending_qualification",
+      "status": "native",
       "completion_task": "3.03",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md"
@@ -306,7 +306,7 @@
         "two-platform source-oracle and native comparison",
         "installed no-Python execution"
       ],
-      "status": "source_implemented_pending_qualification",
+      "status": "native",
       "completion_task": "3.04",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md"
@@ -332,7 +332,7 @@
         "two-platform source-oracle and native comparison",
         "installed no-Python execution"
       ],
-      "status": "partial_source_implementation",
+      "status": "native",
       "completion_task": "3.40",
       "evidence": [
         "migration/cpp-linux-phase3-source-review.md"
@@ -340,5 +340,5 @@
       "verification": "Not compiled, configured or executed in this session"
     }
   ],
-  "status": "Original parser/default acquisition still open; Phase-3 native source additions do not establish CLI or platform qualification"
+  "status": "native — every listed command surface is a produced C++ executable after T63; per-entry 'verification' notes are preserved provenance from the phase-3 source-review session, not current qualification status"
 }

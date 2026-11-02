@@ -13,7 +13,9 @@ live in [development/linux.md](../development/linux.md), [development/macos.md](
 
 ## Establish the contract
 
-1. Record the current commit and working-tree changes. Read the affected implementation, its Python counterpart, and the
+1. Record the current commit and working-tree changes. Read the affected implementation, its surviving Python-era
+   counterpart where one is retained in history or referenced in migration evidence (the runtime itself was removed at
+   T63), and the
    consuming call sites. Complete this step when each public input and mutable output has an identified owner and
    domain.
 2. Treat review assertions as hypotheses. For each accepted assertion, retain at least two independent checks:
@@ -26,14 +28,15 @@ live in [development/linux.md](../development/linux.md), [development/macos.md](
 
 ## Implement the shared behavior
 
-Use the specification's strict input domains in Python and C++ together until the Python replacement is qualified.
-Preserve valid-input binary64 operation order (parity with the Python oracle per
-[ADR-0003](../adr/0003-native-authoritative-python-removal.md) until a file's two-platform goldens and C++ port land;
-afterwards determinism and goldens), and existing deliberate saturation. Keep exceptional sentinels local to named fields. Field errors identify the public
+Use the specification's strict input domains in the C++ implementation and its committed goldens together; the live
+Python-oracle comparisons this rule once named were removed at T63.
+Preserve valid-input binary64 operation order — the parity regime per
+[ADR-0003](../adr/0003-native-authoritative-python-removal.md) is settled: the captured per-platform goldens plus
+in-build determinism are the gate — and existing deliberate saturation. Keep exceptional sentinels local to named fields. Field errors identify the public
 API and full field path and use the shared exception class.
 
 Validate and stage before committing state. Include model coefficients, policies, telemetry, clocks, pending actuation,
-and energy in the transaction boundary. Python-result boxing happens before commit when its failure could otherwise
+and energy in the transaction boundary. Result boxing happens before commit when its failure could otherwise
 leave an operation half completed. Engine failures use the documented poison contract. Complete an exception-safety
 change when invalid-input and allocation-failure retries match a single successful operation from the original state.
 
@@ -48,8 +51,8 @@ Use the test entry point and profiles in [AGENTS.md](../../AGENTS.md). Until `fu
 physics/realtime change requires **both** `native` and `full`. Determine whether that integration exists from the
 launcher code, not from a prior assistant message.
 
-For sanitizers, RTSan, or coverage, follow [TESTING.md](../TESTING.md) and verify the imported extension path and tool
-runtime in the test process. A green test of a regular extension is not a sanitizer result. A sweep must report selected
+For sanitizers, RTSan, or coverage, follow [TESTING.md](../TESTING.md) and verify the selected build tree and tool
+runtime in the produced check context. A green test of a regular build is not a sanitizer result. A sweep must report selected
 translation units, tool exit health, and diagnostic outcome. Resolve missing mandatory tools; experimental findings
 remain report-only while execution health is visible.
 

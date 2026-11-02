@@ -3,6 +3,18 @@
 Date: 2026-10-14. Task T02 of `docs/superpowers/plans/2026-10-14-linux-macos-master.md`.
 Baseline ledger: `docs/superpowers/audits/2026-10-14-linux-macos-baseline.md`.
 
+> **Post-T63 status: historical qualification evidence.** The interpreter
+> stack this matrix qualifies (`pyproject.toml`, `uv.lock`, the frozen
+> `.venv`, the `bike_native` extension and its PyPI wheels) was removed at
+> T63 under ADR-0003. None of it is a live requirement of the Python-free
+> product: native dependencies now come from the schema-2 lock
+> `native/dependencies.lock.json` and the `.deps` tree — see
+> [native/dependencies.md](../../native/dependencies.md) and
+> [install-modes.md](install-modes.md). Commands in `~~~` fences below are
+> the recorded qualification procedure, not runnable instructions; the
+> wheel manifests are retained verbatim as provenance for the captured
+> reference data.
+
 Scope: **PyPI dependencies only.** Every wheel listed here is a third-party
 binary. It says nothing about `bike_native` — the extension is compiled
 per-platform from `native/`; a manylinux-tagged MuJoCo wheel does not make an
@@ -54,9 +66,9 @@ lane. Verified imports on each interpreter:
 
 Exported requirements (hash-pinned, all locked platforms' hashes included):
 
-```sh
+~~~sh
 uv export --locked --group native --group dev --no-emit-project -o output/portability/native-requirements.txt
-```
+~~~
 
 Downloads used an ephemeral pip helper (`uv run --frozen --group native
 --with pip python -m pip download ...`) — a packaging tool, not an
@@ -78,10 +90,10 @@ marker).
 The conservative probe `--platform manylinux_2_17_x86_64 --python-version
 3.13 --only-binary=:all:` **fails**:
 
-```text
+~~~text
 ERROR: Could not find a version that satisfies the requirement contourpy==1.3.3 (from versions: 1.3.0, 1.3.1, 1.3.2)
 ERROR: No matching distribution found for contourpy==1.3.3
-```
+~~~
 
 This is a floor property, not a missing package: the locked dependency
 intersection does not support glibc 2.17. Lowest published x86_64 cp313
@@ -120,7 +132,7 @@ Same intersection: highest aarch64 tag is pyarrow's
 
 ### macOS arm64 — `output/portability/wheelhouse/` (cp314, host 3.14.3)
 
-```text
+~~~text
 0f17b89f2a4eaaedc4f28c622998aa690564b3012a396a4ffad0821007fe03ba  absl_py-2.5.0-py3-none-any.whl
 cbedb772ed74ff5be440fa8eee9bd49f64f6e3fc09436d9c7d8f1c287b121d77  contourpy-1.3.3-cp314-cp314-macosx_11_0_arm64.whl
 85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30  cycler-0.12.1-py3-none-any.whl
@@ -159,11 +171,11 @@ a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0  sortedcontaine
 cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be  threadpoolctl-3.7.0-py3-none-any.whl
 481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8  typing_extensions-4.16.0-py3-none-any.whl
 25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f  zipp-4.1.0-py3-none-any.whl
-```
+~~~
 
 ### Linux aarch64 — `output/portability/wheelhouse-linux-aarch64/` (cp313, container 3.13.16)
 
-```text
+~~~text
 0f17b89f2a4eaaedc4f28c622998aa690564b3012a396a4ffad0821007fe03ba  absl_py-2.5.0-py3-none-any.whl
 348ac1f5d4f1d66d3322420f01d42e43122f43616e0f194fc1c9f5d830c5b286  contourpy-1.3.3-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl
 85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30  cycler-0.12.1-py3-none-any.whl
@@ -202,11 +214,11 @@ a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0  sortedcontaine
 cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be  threadpoolctl-3.7.0-py3-none-any.whl
 481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8  typing_extensions-4.16.0-py3-none-any.whl
 25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f  zipp-4.1.0-py3-none-any.whl
-```
+~~~
 
 ### Linux x86_64 — `output/portability/wheelhouse-linux-x86_64/` (cp313 cross-probe)
 
-```text
+~~~text
 0f17b89f2a4eaaedc4f28c622998aa690564b3012a396a4ffad0821007fe03ba  absl_py-2.5.0-py3-none-any.whl
 4debd64f124ca62069f313a9cb86656ff087786016d76927ae2cf37846b006c9  contourpy-1.3.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
 85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30  cycler-0.12.1-py3-none-any.whl
@@ -245,7 +257,7 @@ a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0  sortedcontaine
 cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be  threadpoolctl-3.7.0-py3-none-any.whl
 481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8  typing_extensions-4.16.0-py3-none-any.whl
 25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f  zipp-4.1.0-py3-none-any.whl
-```
+~~~
 
 ## 5. Gaps and follow-ups
 

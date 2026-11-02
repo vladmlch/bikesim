@@ -6,6 +6,13 @@ prohibited from building, running tests, opening viewers or executing probes. Ev
 desktop row below is pending. Existing macOS or Linux build/test reports are not
 evidence that one of these interactive sessions ran.
 
+Post-T63 note: the interpreter machinery this wave described (`cli/ride.py`,
+`ensure_macos_mjpython()`, `mujoco.viewer` imports, `DYLD_FALLBACK_LIBRARY_PATH`)
+was removed with the Python runtime; it survives below as historical evidence of
+the reviewed ownership repairs. The preserved entry points are now the produced
+`build/<preset>/bin/bike-*` executables and the commands in the "Future
+commands" section already reflect that surface.
+
 The contract is [portability design D7](../superpowers/specs/2026-10-14-linux-macos-portability-design.md)
 and [T19](../superpowers/plans/2026-10-14-linux-macos-05-runtime.md).
 The source snapshot supplies implementation evidence, not its original Git history
@@ -105,11 +112,13 @@ alone is insufficient to mark visual quality passed.
 
 ## Future commands, not executed in this session
 
-Use a host-local build that has already passed its required native gates. Set
-`BIKE_NATIVE_BUILD_PATH` to its absolute directory, with a matching interpreter and
-locked dependency environment. Do not reuse an extension from the other platform.
-The [installation modes](install-modes.md) and
-[dependency matrix](dependency-matrix.md) describe the existing environment route.
+Use a host-local build that has already passed its required native gates.
+Post-T63 there is no interpreter or binding environment to select: run the
+produced executables from the qualified build tree's `bin/` directory
+(`build/native-release/bin` for the release preset) — the retired
+`BIKE_NATIVE_BUILD_PATH` selector was removed with the runtime, and
+`--backend` accepts only `native`.
+The [installation modes](install-modes.md) describe the produced-build route.
 Record the actual GLFW, OpenGL loader, Mesa or proprietary graphics driver and
 display-server packages installed on the Linux desktop; those packages are not
 installed by the viewer.
@@ -117,12 +126,10 @@ installed by the viewer.
 ### Physical and research
 
 ```sh
-: "${BIKE_NATIVE_BUILD_PATH:?Set an absolute, qualified, host-local native build directory}"
-export BIKE_NATIVE_BUILD_PATH
-uv run --frozen --group native bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
-uv run --frozen --group native bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 8
-uv run --frozen --group native bike-ride --research --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
-uv run --frozen --group native bike-ride --research --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 8
+build/native-release/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
+build/native-release/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 8
+build/native-release/bin/bike-ride --research --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
+build/native-release/bin/bike-ride --research --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 8
 ```
 
 For physical controls exercise C/1/2 cameras, T telemetry, G markers, Space brakes,
@@ -156,8 +163,8 @@ does not count as successful same-environment checked replay.
 ```sh
 : "${RUN:?Set the actual finalized T21 recording directory}"
 : "${EPISODE:?Set an episode ID present in the recording}"
-uv run --frozen --group native bike-replay "$RUN" --episode "$EPISODE" --viewer --time-scale 1
-uv run --frozen --group native bike-replay "$RUN" --episode "$EPISODE" --viewer --time-scale 8
+build/native-release/bin/bike-replay "$RUN" --episode "$EPISODE" --viewer --time-scale 1
+build/native-release/bin/bike-replay "$RUN" --episode "$EPISODE" --viewer --time-scale 8
 ```
 
 Exercise checked replay's Space pause, R restart, C/1/2, T, G, F6/F7/F8 and
@@ -171,8 +178,8 @@ replay `--episode` selector; T22 must qualify the intended container formats.
 
 ```sh
 : "${PLAYBACK_RUN:?Set an existing recording supported by the pose playback loader}"
-uv run --frozen --group native bike-replay "$PLAYBACK_RUN" --view --speed 1
-uv run --frozen --group native bike-replay "$PLAYBACK_RUN" --view --speed 8
+build/native-release/bin/bike-replay "$PLAYBACK_RUN" --view --speed 1
+build/native-release/bin/bike-replay "$PLAYBACK_RUN" --view --speed 8
 ```
 
 Exercise Space pause, left/right seek, Shift plus left/right fine seek, up/down
@@ -184,7 +191,7 @@ replay gate.
 ### Playground
 
 ```sh
-uv run --frozen --group native bike-playground
+build/native-release/bin/bike-playground
 ```
 
 Exercise the printed stand controls, camera modes, rider/marker toggles, reset,
@@ -193,24 +200,26 @@ pacing and visible geometry; do not treat it as native physics qualification.
 
 ### Automated controls and platform gates
 
-These are proposed commands for a later authorized verification session:
+The pytest control nodes proposed in the source-only wave were superseded:
+the interpreter harness was removed at T63, and the automated viewer/CLI
+controls are now produced C++ tests in the ordinary CTest set. For a later
+authorized verification session the equivalent focused controls are:
 
 ```sh
-uv run --frozen --group native python -m pytest tests/portability/test_viewer_launch_platform.py -q
-uv run --frozen --group native python -m pytest tests/reference/test_frontend_windows.py -q
+ctest --test-dir build/native-release -R 'native_view_contracts|ride_backend_cli|replay' --output-on-failure
+bash tools/run_tests.sh native
 ```
 
-The new tests fake library launch and owner surfaces. They cover Linux early return,
-Darwin original argv, marker/sentinel and conditional dylib fallback, failed-exec
-rollback and retry, missing launcher, launcher-before-GL ordering, early playback
-quit, physical/replay primary versus cleanup exceptions, normal close/incomplete
-replay and research setup failure/success ownership. They do not load a native
-extension, step a simulation, open a context or prove actual GUI availability.
+`reference.native_view_contracts` covers the launcher/owner contract
+surface; `reference.ride_backend_cli` and the `reference.*replay*` nodes
+cover CLI and replay behavior. They do not open a real window, step a
+desktop session or prove actual GUI availability — the interactive rows
+above stay pending until a real desktop session runs them.
 
 After focused controls, run the profiles required by [AGENTS.md](../../AGENTS.md)
 and [TESTING.md](../TESTING.md) for the integrated change. Serialize the native
-gate on each machine. A later run should also exercise native snapshot controls
-against the selected artifact and T21/T22 lifecycle and replay tests. None of
+gate on each machine. A later run should also exercise the native T21/T22
+lifecycle and replay CTest nodes. None of
 those gates was run for this source-only wave.
 
 ## Evidence record template

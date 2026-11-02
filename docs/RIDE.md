@@ -17,10 +17,15 @@ for the requirement map. The visual-runtime results below are historical and
 predate recording; the recording behavior described in this document was
 separately exercised on this branch.
 
-### Platform support — measured 2026-10-17/18
+### Platform support — measured 2026-10-17/18 (binding era, pre-T63)
 
-This section is current evidence; the dated sections further down remain
-historical macOS results.
+This table is the last measurement of the deleted binding lane, retained as
+dated evidence — the CPython/`.so`/pytest entries describe the removed
+runtime, not the current product. Post-T63 the artifact column is the
+produced `build/<preset>/bin/bike-*` executables and the gate is the native
+CTest suite; macOS arm64 evidence lives in the
+[release qualification checklist](releases/python-free-qualification.md)
+and post-T63 Linux qualification is deferred.
 
 | Lane | Toolchain | Native artifact | Gate evidence |
 |---|---|---|---|
@@ -65,26 +70,25 @@ The original acceptance session (branch `impl/cpp-port-p2`) recorded:
   interactive evidence: native held `achieved_rtf` mean 0.9999 at requested 1x
   (visual 1x gate >= 0.95 satisfied) and ~1.8x at requested 8x.
 
-The native source targets the project's macOS/Accelerate toolchain. It requires
-a freshly built extension: a Track B binary does not implement the presentation
-and pacing interfaces, and the loaded artifact must carry the current compiled
-source stamp. One-time build:
+The native source targets the project's macOS/Accelerate toolchain. The
+product surface is the produced executable tree, configured and built by
+the root graph:
 
 ```bash
-uv run --frozen --group native cmake -S native -B native/build/release -DCMAKE_BUILD_TYPE=Release
-uv run --frozen --group native cmake --build native/build/release
+cmake --workflow --preset release
 ```
 
-Application loading does not run these commands. It selects
-`native/build/release`, or the absolute directory in `BIKE_NATIVE_BUILD_PATH`,
-and verifies the actual imported extension path, required dependency versions,
-compiled source stamp and loaded MuJoCo identity. Unsupported configuration,
-missing/stale binary or a conflicting prior import fails; it never falls back to
-Python.
+Executables land at `build/native-release/bin/` and run directly — there is
+no extension artifact, selector environment or interpreter to resolve.
+Unsupported configuration, missing dependencies or a provider mismatch
+fails configure or launch; it never falls back to a Python path because
+none exists.
 
 ## Physical backend and fixed physics
 
-`bike-ride --backend python|native` defaults to `python`. `--time-scale` is accepted
+`bike-ride` accepts `--backend native` only — the `--backend python` route
+was removed at T63 and the switch survives as fail-closed CLI surface.
+`--time-scale` is accepted
 only for interactive physical/research runs, with values 1, 2, 4 and 8; absent
 means 1. Supplying it to a headless, legacy or track-preview run is an error,
 including an explicit `--time-scale 1`.
@@ -101,11 +105,12 @@ t=31.178750 s, 24943 steps, identical position).
 Exact profile/track examples:
 
 ```bash
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 2
+build/native-release/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
+build/native-release/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 2
 ```
 
-Use `--backend python` for the reference path with the same profile. A headless
+The `--backend python` reference path was removed at T63; the produced
+binary is the only path. A headless
 physical run uses `--headless --duration 30 --no-plots`; it has no playback scale.
 Headless physical runs use strict checks — on this platform they terminate at
 the documented `energy.constraint_work` baseline violation (t=0.005 s) as
@@ -163,7 +168,7 @@ frame without publishing until the window closes. See [RECORDING](RECORDING.md)
 for failure/retry behavior, check policy, analysis commands and explicit legacy exports.
 
 The window holds an independent render model/data pair. An owning frame carries
-full `mjSTATE_INTEGRATION`, the six declared mutable model arrays, native/Python
+full `mjSTATE_INTEGRATION`, the six declared mutable model arrays, the
 endpoint values and the latest accounted interval. Applying it performs geometry
 updates only, not `mj_step`, `mj_forward`, force accounting or sensor acquisition.
 Changes to the render model cannot steer authoritative physics. Existing HUD
@@ -173,22 +178,21 @@ Playback debt is reduced by actual completed physics steps. A budget yield keeps
 unfinished work; scale/pause/reset rebases discard stale pacing debt. A normal
 compute slice has an 8 ms budget checked between physics steps and frame requests
 are capped at 60 Hz. These are cooperative boundaries, not a preemptive deadline:
-a single solve, external Python policy call, export or GUI operation can exceed
+a single solve, external policy call, export or GUI operation can exceed
 8 ms. No new zero-allocation/real-time-safe C++ region is claimed.
 
 On macOS the passive viewer installs its own `mjcb_time` timer from
-`mujoco._simulate` at launch; the native stepper whitelists exactly the
-`mujoco._structs`/`mujoco._simulate` vendor timers and still rejects
-Python-installed or foreign C callbacks before stepping.
+`mujoco._simulate` at launch — a transition-era check; the native stepper's
+callback whitelist and the Python callback rejection it described died with
+the interpreter at T63.
 
-## Research and Python motor policies
+## Research and policy motors
 
-`bike-ride --research` supports both interactive and headless execution with the
-same `--backend` selection. `bike-research --backend python|native` remains
-headless and has no playback-scale switch. Example:
+`bike-ride --research` supports both interactive and headless execution.
+`bike-research` remains headless and has no playback-scale switch. Example:
 
 ```bash
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-ride --backend native --research --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 1 --time-scale 1 --record --out output/track-c-research
+build/native-release/bin/bike-ride --backend native --research --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 1 --time-scale 1 --record --out output/track-c-research
 ```
 
 Space pauses/resumes; B toggles brakes; R seals the outgoing episode in RAM and
@@ -197,27 +201,26 @@ resets. With `--record`, finalization creates a unique run directory beneath
 automatically exported `episode-0000` directories. Pause/brake/stop/reset requests
 take effect at the external control boundary. Closing the window finishes only
 its already accepted control interval and then publishes; it does not request
-another policy command. Both Python and native research support the new recorder.
-Explicit programmatic legacy `save()` remains available.
+another policy command. Native research supports the recorder.
+The legacy Python `save()` entry point was removed with the runtime.
 
-A `module:factory` motor policy stays in Python. `PolicySession.begin_advance()`
-invokes it once; repeated `advance_pending(wall_budget_s=..., target_step=...)`
-continues that exact command. The optional absolute `target_step` limits physics
-progress without truncating the external window, flushing a partial period or
-publishing an extra transition. This also allows control periods longer than the
-pacing debt cap. Default no-target synchronous APIs remain compatible.
+In the interpreter era a `module:factory` motor policy stayed in Python and
+`PolicySession.begin_advance()` invoked it once per command; that mechanism
+is gone — the native research policy surface is whatever the produced
+binary's `--physics-config` surface accepts.
 
 ## Checked replay
 
 ```bash
 # Set RUN to the actual unique directory printed by a recorded research launch.
 RUN=/absolute/path/to/published/run
-uv run --frozen --group native bike-replay "$RUN" --episode 0
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native bike-replay "$RUN" --episode 0 --viewer --time-scale 2
+build/native-release/bin/bike-replay "$RUN" --episode 0
+build/native-release/bin/bike-replay "$RUN" --episode 0 --viewer --time-scale 2
 ```
 
-There is no replay backend override. Legacy replay schema 1 selects Python;
-schema 2 selects its recorded backend and execution identity. New DuckDB
+There is no replay backend override. Legacy replay schema 1 selected the
+deleted Python runtime; schema 2 selects its recorded backend and execution
+identity. New DuckDB
 containers use container schema 1 and separate replay contract 3; `--episode` is
 required when selection is ambiguous. Old directories retain their original
 reader and are not upgraded in place. File hashes, source/runtime,
@@ -246,13 +249,14 @@ produce a successful `report()`, and its close does not simulate hidden work.
 
 ## Throughput evidence
 
-`tools/measure_realtime.py` takes the profile's timestep unless `--dt` is
-explicit. It does not build native code. Run Python and native sequentially with
-the same settings; one warm-up and three measured repetitions are defaults:
+`bike-measure-realtime` takes the profile's timestep unless `--dt` is
+explicit. The measured run below is the produced executable; the
+Python-vs-native A/B the deleted `tools/measure_realtime.py` used to run is
+historical only — post-T63 there is one native measurement per host, and
+`--compare` still accepts a previously captured report:
 
 ```bash
-uv run --frozen --group native python tools/measure_realtime.py --backend python --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 30 --warmup 1 --runs 3 --out output/track-c-rtf/python
-BIKE_NATIVE_BUILD_PATH="$PWD/native/build/release" uv run --frozen --group native python tools/measure_realtime.py --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 30 --warmup 1 --runs 3 --compare output/track-c-rtf/python/report.json --out output/track-c-rtf/native
+build/native-release/bin/bike-measure-realtime --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 30 --warmup 1 --runs 3 --out output/track-c-rtf/native
 ```
 
 Measured wall time surrounds the full advancement loop and final flush. Setup

@@ -127,7 +127,8 @@ runtime qualification result.
 
 - **MuJoCo**: the wheel is purely the transport for the already-pinned
   3.12.0 binaries — the extracted dylib is byte-identical (SHA-256
-  `9e772461…`) to the one the `.venv` package ships, so the standalone build
+  `9e772461…`) to the one the transition `.venv` package shipped (removed
+  at T63), so the standalone build
   links the same library without a Python edge. No interpreter, package, or
   wheel directory enters the build closure; nothing is "installed" from the
   wheel, only files copied out of the zip.

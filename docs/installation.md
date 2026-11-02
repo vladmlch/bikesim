@@ -48,9 +48,10 @@ platform selection and rejects archives for a different lane.
 CPack stages the source at package time and excludes `.git`, `.venv`,
 extracted `.deps` trees, build outputs, `output`, `.worktrees`, `.scratch`,
 `.work` and Python bytecode. It adds exactly the selected archive names.
-The transition Python sources are retained until the separately gated
-Phase 4 removal; their presence does not introduce interpreter execution
-into the root configure/build/install path. Archive bytes are checked
+The transition Python sources were removed at T63 — the `.venv`/bytecode
+exclusions remain as belt-and-suspenders filters for ad-hoc files an
+operator may drop into a checkout; nothing in the staged tree carries an
+interpreter requirement. Archive bytes are checked
 against the dependency lock before staging, and package smoke rechecks
 their digests after extracting the completed source archive.
 
@@ -110,11 +111,11 @@ package directory mounted read-only. Inside that container it extracts
 one source archive, runs the offline extractor and runs the release
 workflow. It does not reuse the checkout's extracted dependencies.
 
-## Transition from full/slim Python bundles
+## Historical: transition from full/slim Python bundles (removed at T63)
 
 The old `packaging/OFFLINE_README_full.md`, `OFFLINE_README_slim.md` and
-installer scripts describe the retained Python distribution. They remain
-until Phase 4 and are not entry points for these native archives.
+installer scripts described the transition-era Python distribution. They
+were deleted at T63 and were never entry points for these native archives.
 Native binary packages carry runtime libraries; native source packages
 carry the selected locked archives. There is no full/slim environment
 installation or interpreter selection in the new path.

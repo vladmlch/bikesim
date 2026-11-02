@@ -1,65 +1,68 @@
-# proto_native_bench — paired native benchmark
+# proto_native_bench — retained native benchmark
 
-`bench.cpp` and `bench.py` are the paired C++/Python implementations of the
-bike_native binding workload (native-safety runtime plan, tasks R2+R3). Both
-replay one recorded `mjData` snapshot through `mj_step` under a shared,
-deterministic workload definition, and both emit the same JSON report so the
-operation mix and its checksums can be compared across languages. Every
-native engine call crosses the `bike_native_engine` boundary (E1): MuJoCo
-warnings/fatals arrive as recoverable `engine::EngineFailure` exceptions, and
-the CLI reports failures and exits nonzero — it never takes MuJoCo's
-process-exit path.
+`bench.cpp` is the native implementation of the former `bike_native`
+binding workload (native-safety runtime plan, tasks R2+R3). It replays one
+recorded `mjData` snapshot through `mj_step` under a shared, deterministic
+workload definition and emits a JSON report whose per-stage checksums the
+CTest suite verifies. Every native engine call crosses the
+`bike_native_engine` boundary (E1): MuJoCo warnings/fatals arrive as
+recoverable `engine::EngineFailure` exceptions, and the CLI reports failures
+and exits nonzero — it never takes MuJoCo's process-exit path.
+
+> **Post-T63 status.** The paired Python twin (`bench.py`,
+> `dump_model.py`, the `state_format` Python module and the pytest
+> conformance harness) was removed at T63 with the interpreter runtime.
+> The retained surface is the C++ target alone: the `native_bench`
+> executable, this directory's `bench.cpp`/`state_format.hpp`, and the
+> pinned artifact fixtures under `artifacts/`. The cross-language parity
+> claims below are historical provenance for those fixtures — the current
+> gate is the C++ CTest suite (`reference.native_benchmark`,
+> `reference.native_state_bundle`, `reference.native_state_restore`,
+> `reference.native_state_fuzz`, `reference.equilibrium_state_file`)
+> against the committed artifacts and its own generated corpora.
 
 ## Build
 
-The benchmark is a plain CMake target inside the existing `native` project
-(strict ISO C++23, extensions disabled, same warning/hardening/sanitizer
-context as the extension targets):
+The benchmark is a root-graph target (`add_executable(native_bench
+tools/proto_native_bench/bench.cpp)`) built under the same strict ISO C++23
+policy as every native target:
 
 ```bash
-cmake -S native -B native/build          # once; tools/run_tests.sh native does this too
-cmake --build native/build --target native_bench
+cmake --preset release
+cmake --build build/native-release --target native_bench
 ```
 
-The binary lands at `native/build/native_bench` and the post-build step fixes
-its `libmujoco` install name against the pinned Python wheel, the same recipe
-the contract test binary uses. The checked-in `bench` binary of the pre-CMake
-prototype was removed in R3 — the CMake target is the only supported build.
-
-Sanitizer variants are ordinary `native` build flavors, so the benchmark is
-reachable under ASan/UBSan, RTSan, and coverage builds by configuring the
-corresponding options (`-DNATIVE_SANITIZE=ON` etc.) — the target inherits the
-module's flags.
+The binary lands at `build/native-release/native_bench`. Sanitizer variants
+are ordinary preset flavors — the target is reachable under the `asan`,
+`rtsan` and `coverage` builds by configuring the corresponding preset.
 
 ## Run
 
 ```text
 native_bench {bare,glue,heavy,operation_mix} [steps] [rewind]
              --artifacts <directory> [--emit-json <path>]
-bench.py     {bare,glue,heavy,operation_mix} [steps] [rewind]
-             --artifacts <directory> [--emit-json <path>]
 ```
 
 - `bare` — `mj_step` only, on a frozen replayed state (periodic state
   rewind).
-- `glue` — bare + the engine-call surface of the Python glue: forward passes,
-  point Jacobians, `mj_name2id` lookups, eight `qfrc_applied` assemblies
-  driven through the engine-projected `qfrc_actuator` mapping, and 100
-  channel writes per step.
-- `heavy` — glue + representative telemetry/accounting volume: an `efc_*` row
-  unpack, five attachment wrench solves over paired Jacobians, an energy
+- `glue` — bare + the engine-call surface the deleted Python glue used:
+  forward passes, point Jacobians, `mj_name2id` lookups, eight
+  `qfrc_applied` assemblies driven through the engine-projected
+  `qfrc_actuator` mapping, and 100 channel writes per step.
+- `heavy` — glue + representative telemetry/accounting volume: an `efc_*`
+  row unpack, five attachment wrench solves over paired Jacobians, an energy
   ledger, per-step record churn, and a period-batch gradient-free solve.
 - `operation_mix` — the retained R2 approximation mix. It exercises roughly
   the same engine surface but follows its own (deliberately different)
   arithmetic and carries **no parity claim**: its report is labeled
   `"comparison": "operation_mix"` and its numbers must not be quoted as
-  Python-vs-C++ conformance evidence.
+  conformance evidence.
 
-`bare`, `glue`, and `heavy` are the matched workloads: the two languages run
-the same warmup/rewind phases, the same stage order, the same operation
-counts, the same attachment Jacobians and `1e-6 * I`-regularized 3x3 solve
-sequence, the same `qfrc_actuator` actuator-to-velocity mapping (correct when
-`nu > nv`), and the same SplitMix64-driven channels from a fixed seed.
+`bare`, `glue`, and `heavy` remain the matched workload definitions that
+the (deleted) paired run executed identically in both languages — same
+warmup/rewind phases, stage order, operation counts, attachment Jacobians
+and `1e-6 * I`-regularized 3x3 solve sequence, `qfrc_actuator` mapping and
+SplitMix64-driven channels from a fixed seed.
 
 `steps` (default 4000) is the timed iteration count and `rewind` (default
 250) is the state-restore period; both must be integers in
@@ -77,14 +80,12 @@ values, unknown modes, stray options, and extra positionals are errors
 `--emit-json` writes the run report: workload definition, operation counts,
 per-stage checksum contributions, solver outputs, provenance (language,
 mujoco version, bundle CRCs, pointer-vs-direct resolution), and the total
-checksum. This is the document the conformance test compares.
+checksum. The C++ CTest suite verifies this document.
 
 Example against the tracked artifacts:
 
 ```bash
-./native/build/native_bench glue 5 --artifacts tools/proto_native_bench/artifacts
-uv run python tools/proto_native_bench/bench.py glue 5 \
-    --artifacts tools/proto_native_bench/artifacts
+./build/native-release/native_bench glue 5 --artifacts tools/proto_native_bench/artifacts
 ```
 
 ## Bundle format (BIKEST02)
@@ -122,80 +123,60 @@ xfrc_applied flattened (6*nbody), qacc_warmstart(nv)
 
 Required payload = `8 * (1 + nq + 3*nv + na + nu + 6*nbody)` bytes.
 
-Reader contract (both languages, same order): size floor, magic, version,
-flags, u64 field ranges vs the signed mjtSize domain, dimension equality
-against the loaded model, declared `payload_bytes` vs the recomputed
-requirement, actual file length vs the requirement, payload CRC64, model
-CRC64, then per-section finiteness during decode. Dimension equality does not
-excuse a checksum mismatch — every check is independently mandatory. The C++
-reader decodes fields explicitly little-endian; it never casts a packed
-struct. The legacy `0xBEA0` layout (R2) is retired: files starting with that
-magic are rejected with a regeneration instruction.
+Reader contract (size floor, magic, version, flags, u64 field ranges vs the
+signed mjtSize domain, dimension equality against the loaded model,
+declared `payload_bytes` vs the recomputed requirement, actual file length
+vs the requirement, payload CRC64, model CRC64, then per-section finiteness
+during decode). Dimension equality does not excuse a checksum mismatch —
+every check is independently mandatory. The C++ reader decodes fields
+explicitly little-endian; it never casts a packed struct. The legacy
+`0xBEA0` layout (R2) is retired: files starting with that magic are
+rejected with a regeneration instruction.
 
 CRC64-ECMA parameters: polynomial `0x42F0E1EBA9EA3693`, init 0, no
 reflection, no final xor; check vector `crc64("123456789") ==
-0x6C40DF5F0B497347` (asserted by `native_bench --selftest` and by the Python
-suite). The checksums detect corruption and cross-generation mixing — `state.bin`
-is bound to its own `model.mjb`; they are an integrity signal, not a
-security guarantee.
+0x6C40DF5F0B497347` (asserted by `native_bench --selftest` and by the C++
+suite). The checksums detect corruption and cross-generation mixing —
+`state.bin` is bound to its own `model.mjb`; they are an integrity signal,
+not a security guarantee.
 
 ## Generation and pointer publication
 
-`dump_model.py` (or `state_format.write_bundle` directly) creates a NEW
-versioned bundle directory under the artifacts root, writes the four members
-from one consistent `mjData` snapshot, re-reads and re-validates every file,
-and only then publishes `current.json` atomically (write-temp + fsync +
-rename, plus a best-effort directory fsync). A failed generation removes the
-partial directory and never touches the pointer, so a consumer can never
-observe a mid-write bundle and files from different generations can never be
-mixed. Bundle directories are immutable — reusing a name fails.
+The committed fixtures under `artifacts/` were produced by the deleted
+`dump_model.py` writer: it created a new versioned bundle directory under
+the artifacts root, wrote the four members from one consistent `mjData`
+snapshot, re-read and re-validated every file, and only then published
+`current.json` atomically (write-temp + fsync + rename, plus a best-effort
+directory fsync). That writer is gone; the bundle format is now read-only
+input data and regenerating it requires a new authorized measurement tool
+— the committed fixtures are immutable reference data.
 
 Consumers resolve `current.json` exactly once. A malformed, oversized, or
 path-escaping pointer is a loud error, never a fallback guess.
 
-Regenerate the tracked fixture with:
-
-```bash
-uv run python tools/proto_native_bench/dump_model.py --name fixture-v2
-```
-
-(see `dump_model.py --help` for track/config/warmup/duration overrides).
-
 ## Artifact tracking policy
 
-`artifacts/` tracks exactly one fixture generation — currently
-`fixture-v2/` plus the `current.json` that points at it — and the shared
-`model.mjb`, which other test suites load directly as their compiled model
-(it predates the bundle format and stays for them; bundle consumers always
-read the bundle's own `model.mjb`, which `state.bin` is CRC-bound to).
-Auto-generated bundle directories (`v2-*`) and ad-hoc run output (`run*/`)
-are gitignored — a bundle is regenerable, so the repository does not
-accumulate binary blobs. To swap the fixture: generate a new directory,
-repoint `current.json`, commit both paths, and drop the old directory. The
-flat legacy `state.bin`/`state.npz` were removed in R3 — they predate the
-bundle format and can no longer be read.
+`artifacts/` tracks the pinned fixture generations (`fixture-v2/`,
+`fixture-v3/`, the `current.json` pointer) and the shared `model.mjb`,
+which other test suites load directly as their compiled model (it predates
+the bundle format and stays for them; bundle consumers always read the
+bundle's own `model.mjb`, which `state.bin` is CRC-bound to). Ad-hoc run
+output (`run*/`) is gitignored. The flat legacy `state.bin`/`state.npz`
+were removed in R3 — they predate the bundle format and can no longer be
+read.
 
 ## Numerical comparison scope
 
-`--emit-json` reports are the conformance surface. For matched modes the
-suite requires:
+`--emit-json` reports are the verification surface. The retained C++ suite
+checks the workload/operation-count blocks, stage checksums and the total
+`checksum` against the committed expectations inside `rtol=1e-12,
+atol=1e-12` (integer/scalar stages byte-equal), and `solve_outputs` same
+shape, all finite, inside the same tolerance.
 
-- identical `workload` and `operation_counts` blocks;
-- `name_ids` and `trajectory_time` stage checksums exactly equal;
-- every other stage checksum and the total `checksum` inside
-  `rtol=1e-12, atol=1e-12`;
-- `solve_outputs` — the regularized attachment/batch solve results — same
-  shape, all finite, inside `rtol=1e-12, atol=1e-12`.
-
-Remaining legitimate divergence is platform libm noise (for example the
-energy ledger's BLAS ordering), bounded well inside the declared tolerance.
-`operation_mix` is excluded from all of this by definition.
-
-`state.bin` replay freezes applied forces (`qfrc_applied`/`xfrc_applied` are
-re-staged, not recomputed), so trajectories are a workload fixture, not a
-rollout; `steps/s`/`RTF` numbers remain comparative signals on the same
-fixture, not cross-language timing parity — the *workload* is shared, the
-wall clock is not.
+`state.bin` replay freezes applied forces (`qfrc_applied`/`xfrc_applied`
+are re-staged, not recomputed), so trajectories are a workload fixture, not
+a rollout; `steps/s`/`RTF` numbers remain comparative signals on the same
+fixture.
 
 ## Supported workload domains
 
@@ -215,45 +196,32 @@ dimension.
 
 ## Scope and honest limitations
 
-- The matched workloads share a deterministic definition; they do not claim
-  bit-identical output — only the solver outputs and stage checksums inside
-  the declared `1e-12` tolerance, with integer/scalar stages byte-equal.
-- `operation_mix` approximates the *shape* of the binding's per-step work and
-  is labeled as such; it is not parity evidence.
-- All scratch is owned and model-sized (`nv`, `3*nv`, `6*nbody`); there is no
-  fixed-size cap such as the prototype's 64-element Jacobian array.
+- The matched workloads share a deterministic definition; the deleted
+  paired run never claimed bit-identical output — only solver outputs and
+  stage checksums inside the declared `1e-12` tolerance, with
+  integer/scalar stages byte-equal.
+- `operation_mix` approximates the *shape* of the binding's per-step work
+  and is labeled as such; it is not parity evidence.
+- All scratch is owned and model-sized (`nv`, `3*nv`, `6*nbody`); there is
+  no fixed-size cap such as the prototype's 64-element Jacobian array.
 - The Jacobian buffers `jacp`, `jacr`, and `jacp2` are independent — the
   prototype reused one buffer and truncated the second body's Jacobian.
-- Nothing here measures or claims allocation-freedom for the Python API —
-  the owned, model-sized scratch lives inside this executable only.
-- The CLI is intentionally minimal beyond the conformance report: no
-  statistical aggregation; measurement methodology is out of scope.
+- The CLI is intentionally minimal beyond the report: no statistical
+  aggregation; measurement methodology is out of scope.
 
 ## Tests
 
-The regression suites generate their own fixtures (slide-joint chains sized
+The retained C++ suite generates its own fixtures (slide-joint chains sized
 per case, synthetic BIKEST02 images, plus corrupt-model/corrupt-state
-corpora) and exercise both the Python format module and the selected build's
-`native_bench`:
+corpora) and exercises both the C++ state-format implementation and the
+real `native_bench` executable from the same build:
 
 ```bash
-uv run pytest tests/reference/test_native_benchmark.py \
-              tests/reference/test_native_state_bundle.py -x -q
+ctest --test-dir build/native-release -R 'native_benchmark|native_state_bundle|native_state_restore|native_state_fuzz|equilibrium_state_file' --output-on-failure
 ```
 
-`test_native_state_bundle.py` covers the writer/reader/pointer contract in
-Python (roundtrip, NPZ↔bin byte equality including the warmstart, header and
-checksum corruption, truncation/trailing bytes, dimension and CRC mismatch,
-mixed-generation and interrupted-publication rejection, and the CRC64 check
-vector). `test_native_benchmark.py` covers the CLI, the C++ reader through
-the binary, the artifact/pointer resolution, the emitted JSON, and the
-paired Python/C++ matched-workload conformance.
-
-The tests honor `NATIVE_TEST_BUILD_PATH` / `NATIVE_TEST_BUILD_DIR` like every
-other `test_native_*` module, so the same files cover the ASan build
-(`NATIVE_TEST_BUILD_DIR=asan`). The full native profile — build, all static
-analysis sweeps, CTest (which runs the smoke invocations), contract checks,
-and these test modules — is:
+The full native profile — configure, build, all static-analysis sweeps,
+structural contracts and CTest — is:
 
 ```bash
 bash tools/run_tests.sh native

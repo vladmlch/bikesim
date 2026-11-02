@@ -67,8 +67,8 @@ capability probe fails, record the compiler and diagnostic as unsupported;
 do not replace it with a successful unsanitized job. The Clang 18 Linux
 release lane is not an RTSan qualification.
 
-`docs/development/toolchain-matrix.json` is retained as historical metadata
-because transition Python qualification code still reads it. Its appended
-Phase 3 qualification section identifies this checklist as authoritative
-and marks the historical x86_64 lanes not qualified. Remove the obsolete
-machine-readable consumer only in the separately gated Python deletion.
+`docs/development/toolchain-matrix.json` is retained as historical metadata.
+The transition Python qualification code that once consumed it was deleted
+at T63, so nothing machine-readable reads it now; its appended Phase 3
+qualification section still identifies this checklist as authoritative
+and marks the historical x86_64 lanes not qualified.

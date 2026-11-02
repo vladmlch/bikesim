@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "bike-python-audit policy (T56-produced, T62-enforced). Source mode enumerates tracked Python removal-ledger paths still present plus interpreter invocation edges in first-party executable surfaces; package mode scans install/runtime trees for interpreter artifacts and linkage; documentation mode scans active fenced command blocks in live documentation.",
+  "description": "bike-python-audit policy (T56-produced, T62-enforced). Source mode enumerates tracked Python removal-ledger paths still present plus interpreter invocation edges in first-party executable surfaces; package mode scans install/runtime trees for interpreter artifacts and linkage; documentation mode scans active fenced command blocks (``` fences) in live documentation; recorded/deferred commands use ~~~ fences and are not scanned.",
   "removal_inventory": "migration/python-removal.json",
   "source_mode": {
     "invocation_globs": [
@@ -69,9 +69,13 @@
   "documentation_mode": {
     "document_globs": [
       "*.md",
+      "docs/*.md",
       "docs/**/*.md",
+      "native/*.md",
       "native/**/*.md",
+      "tools/*.md",
       "tools/**/*.md",
+      ".github/*.md",
       ".github/**/*.md"
     ],
     "exempt_globs": [

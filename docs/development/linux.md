@@ -4,6 +4,15 @@ Active instructions for developing bike-sim on Linux. The sibling
 [macOS guide](macos.md) covers the Darwin toolchain; shared failure
 diagnosis lives in [troubleshooting.md](troubleshooting.md).
 
+**Qualification status:** post-T63 Linux qualification is **deferred** —
+no lane of the Python-free root graph has executed on this tree, so every
+"qualified" claim below is pre-removal historical evidence, not a current
+qualification. The authoritative status matrix is the
+[release qualification checklist](../releases/python-free-qualification.md).
+Commands in `~~~` fences are the recorded/deferred lane contract, not a
+run book for this checkout (the container driver currently exits 3 under
+the plan-change guard; Docker is unavailable on the Darwin-only host).
+
 Historical qualified lane (measured 2026-10-17/18, before the completion changes below):
 
 | Component | Qualified value |
@@ -215,15 +224,17 @@ override were removed at T63; there is nothing to sync.
 ## Configure and build with root presets
 
 The standalone graph uses `.deps` and the measured numerics record. Its
-configure/build/test route invokes no interpreter. Run every Linux
-qualification command inside the checkout's aarch64 container:
+configure/build/test route invokes no interpreter. Every Linux
+qualification command runs inside the checkout's aarch64 container; that
+lane is deferred on this tree (container guard exits 3), so the recorded
+contract is:
 
-```sh
+~~~sh
 bash tools/linux/container.sh sync
 bash tools/linux/container.sh exec cmake --workflow --preset release
 bash tools/linux/container.sh exec cmake --workflow --preset debug
 bash tools/linux/container.sh exec bash tools/run_native_checks.sh build/native-release
-```
+~~~
 
 `release` selects `/usr/bin/clang++-18` and keeps
 `build/native-release`; `debug` selects `/usr/bin/g++` and uses
@@ -307,7 +318,8 @@ toolchain family fails rather than silently mixing.
 
 ## Sanitizers and coverage
 
-ASan/UBSan lane (Clang and GCC both qualified on aarch64):
+ASan/UBSan lane (Clang and GCC were both qualified on aarch64 in the
+pre-removal lane; the post-T63 ASan run is deferred):
 
 ```sh
 cmake --workflow --preset asan
@@ -393,7 +405,8 @@ cmake --workflow --preset coverage
 ctest --test-dir build/native-release -R '^package_smoke$' --no-tests=error --output-on-failure
 ```
 
-On Linux, prefix each command with `bash tools/linux/container.sh exec`.
+On Linux, prefix each command with `bash tools/linux/container.sh exec`
+(deferred lane — the container guard exits 3 on this tree).
 Coverage runs the native tests, merges only fresh profiles and writes
 `build/coverage/coverage.lcov` plus `coverage-summary.txt`. ASan and RTSan
 executables link their own runtime; no interpreter preload is used by the

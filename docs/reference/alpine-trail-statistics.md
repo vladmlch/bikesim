@@ -283,7 +283,13 @@ on the 2 m assets.
 
 ## 7. Reproduction
 
-```sh
+The pipeline below lives in the T63-exempt `tools/research/` tree — it is
+offline research tooling, not part of the Python-free product surface, and
+requires an external interpreter provided by the operator (the scripts carry
+PEP-723 headers; see the directory README). The commands are recorded
+provenance for the pinned `data/` artifacts, not a live product workflow:
+
+~~~sh
 cd tools/research/alpine_osm_dem
 uv run stats2.py --profiles-dir data --out /tmp/stats2_out.json
 uv run compare_stats.py /tmp/stats2_out.json   # → "fields compared OK"
@@ -291,7 +297,7 @@ uv run bandfrac.py --profiles-dir data && uv run descfrac.py --profiles-dir data
 uv run dense_check.py                          # dense-subset control
 uv run noise_check.py --profiles-dir data      # valley-floor negative control
 uv run scree_stats.py --datadir data           # all §2 tables
-```
+~~~
 
 Gate result (2026-10-14): `compare_stats.py` reports **all fields identical**
 to `expected/stats2_out.json` (the audit's `.scratch` output). Both scree

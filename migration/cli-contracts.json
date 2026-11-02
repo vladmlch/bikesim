@@ -1835,5 +1835,6 @@
       "module": "bike_sim.cli.main"
     }
   },
-  "schema": "migration-cli-contracts/v1"
+  "schema": "migration-cli-contracts/v1",
+  "status": "native"
 }

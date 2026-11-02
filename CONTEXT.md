@@ -13,15 +13,15 @@ Ubiquitous language. Terms that resolved into stable shared vocabulary; use exac
 
 ## Model construction
 
-- **MJCF-builder** — model construction that generates MuJoCo XML once per model, outside the tick-path. The Python implementation remains an oracle during migration; its native replacement becomes authoritative under ADR-0003 and Python is removed at T63.
+- **MJCF-builder** — model construction that generates MuJoCo XML once per model, outside the tick-path. The Python implementation was the migration oracle; the native replacement is authoritative under ADR-0003 and Python was removed at T63.
 - **equality welds / virtual chain** — MuJoCo equality constraints and the generated tendon/actuator chains used to weld or drive bodies.
 
 ## Port effort (decision in `docs/adr/0001-native-port-mujoco-core.md`)
 
 - **native core** — the C++23 library that owns the tick-path, `mjModel`, `mjData`, and all native buffers.
-- **frontends** — the two entry points to the same native core: nanobind-extension (interactive/viewer, seam-checkable from Python tests) and standalone CLI (headless batch, own threads).
+- **frontends** — the entry points to the same native core: the produced `bike-*` CLI/viewer executables (T63 removed the nanobind extension frontend; standalone CLI/viewer is the product surface).
 - **bespoke** — the parked fourth option: replace MuJoCo with own nv=26 constraint/contact pipeline (Pinocchio-based). Activated only by trigger: post-port RTF insufficient AND engine dominates the step.
-- **golden episode** — a frozen artifact (raw state + all recorder channels) serving as a correctness oracle. Live Python comparisons remain gates until each test file's values are captured on both platforms and its C++ port lands; then per-platform goldens become the gate ([ADR-0003](docs/adr/0003-native-authoritative-python-removal.md)).
+- **golden episode** — a frozen artifact (raw state + all recorder channels) serving as a correctness oracle. Python was removed at T63: the C++ tests against the captured per-platform goldens under `tests/fixtures/golden/<platform>/` are the gate ([ADR-0003](docs/adr/0003-native-authoritative-python-removal.md)).
 - **replica-mjData** — the viewer's local copy of simulation state for rendering (snapshot per frame; core keeps the authoritative `mjData`).
 - **RTF** — real-time factor, simulated seconds per wall second; 1.0 = real time at dt=0.5 ms means step must cost ≤0.5 ms.
 
@@ -33,4 +33,4 @@ Ubiquitous language. Terms that resolved into stable shared vocabulary; use exac
 - **headroom** — achieved RTF above 1.0 at the interactive gate; the margin that absorbs a dearer tyre model or a slower frame.
 - **benchmark mode** — a measurement run whose energy-residual cutoff is raised solely so the episode reaches steady state; marked as such in provenance, never a valid ride.
 - **baseline configuration** — the measured "today" column of the ledger: native backend, welded profile, distributed tyre at its default station count on `alpine_rocky`.
-- **order-changing optimization** — any speed-up that alters floating-point operation order (parallel sums, FMA, SIMD lanes, different BLAS). Under [ADR-0003](docs/adr/0003-native-authoritative-python-removal.md), preserve valid-input binary64 operation order and live-oracle bitwise gates until each affected file's two-platform golden capture and C++ test port land. Afterwards, numerical behavior changes still require review, in-build determinism and updates to the affected native self-goldens with before/after comparison evidence. `-ffp-contract=off` stays; changing it requires a separate decision.
+- **order-changing optimization** — any speed-up that alters floating-point operation order (parallel sums, FMA, SIMD lanes, different BLAS). Under [ADR-0003](docs/adr/0003-native-authoritative-python-removal.md), preserve valid-input binary64 operation order; the captured two-platform goldens plus in-build determinism are the gate. Numerical behavior changes still require review, in-build determinism and updates to the affected native self-goldens with before/after comparison evidence. `-ffp-contract=off` stays; changing it requires a separate decision.

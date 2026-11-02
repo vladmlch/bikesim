@@ -5,12 +5,18 @@ Standalone, stdlib-only recomputations backing
 `claimed / recomputed / diff / OK-or-MISMATCH` per checked value; 1 % relative is the
 default pass band (5 % where the audit itself round-trips coarse digits).
 
-Run:
+**T63 status: exempt research tooling.** These scripts sit under
+`tools/research/`, which the T63 exemption set retains outside the product
+runtime and every delivery surface. They are not part of the Python-free
+product and are not invoked by any build, test or packaging surface — running
+them is optional and requires an external interpreter supplied by the operator.
+The recorded invocation (kept verbatim as provenance, not a live product
+command) was:
 
-```bash
+~~~bash
 uv run python tools/research/adjudication/gemini_golden_cases.py
 uv run python tools/research/adjudication/audit_golden_cases.py
-```
+~~~
 
 - `gemini_golden_cases.py` — Gemini tyre report golden cases TC-M1 (Bekker plate,
   compaction work), TC-M2 (hard-bottom exponential hardening), TC-M3 (Janosi shear vs

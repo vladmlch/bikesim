@@ -1,6 +1,9 @@
 1. There is no first-party Python: T63 removed the runtime, the uv
    environment and the binding surface; do not reintroduce interpreter
    invocations in tracked sources (the produced source audit gates this).
+   In documentation, live commands use ` ``` ` fences — the documentation
+   audit fails on interpreter tokens (`python`, `uv`, `pip`, `pytest`,
+   `mjpython`) in them; recorded/deferred commands use `~~~` fences.
 2. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
 
 # Libraries source code (optional reference)

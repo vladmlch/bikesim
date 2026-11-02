@@ -18,8 +18,8 @@ The implementation is registered in
 The application target is `bike-native-ride`, and the C++ application library is
 `bike_app`. The ordinary preparation path constructs the model and initial state
 in C++; it does not require a previously captured Python bootstrap. Removal of
-the old implementation and final Python-free acceptance remain later migration
-work.
+the old implementation completed at T63; final Python-free acceptance is
+tracked in the release qualification checklist.
 
 ## Current execution scope
 

@@ -5,7 +5,7 @@
 // Ported (all 10 records): the four native-vs-native contracts plus the
 // six oracle-parity records, now gated on FT-2 goldens replayed through
 // the committed welded bootstrap under
-// tests/fixtures/migration/ft2/<platform>/ride.
+// tests/fixtures/ft2/<platform>/ride.
 #include "ft2_reference_support.hpp"
 #include "runtime_reference_support.hpp"
 

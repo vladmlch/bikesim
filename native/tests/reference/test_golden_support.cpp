@@ -1,5 +1,5 @@
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "io/npy.hpp"
 
 #include <array>

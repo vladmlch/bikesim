@@ -3,7 +3,7 @@
 // native surface: evaluate_attachments consumes AttachmentRaw spatial 6 x k
 // blocks only. The scalar leg keeps recover_wrench on the same dense matrix,
 // which is exactly what the Python test compares the batched sample against.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "diag.hpp"
 #include "configuration/fields.hpp"

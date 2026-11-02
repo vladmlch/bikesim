@@ -31,7 +31,7 @@
 //     entry points is covered natively by
 //     test_async_close.cpp::async_close_publishes_identical_samples, which
 //     compares the published samples bitwise (stronger than exit parity).
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "batch/plan.hpp"
 #include <algorithm>
 #include <thread>

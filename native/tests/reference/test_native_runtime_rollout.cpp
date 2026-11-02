@@ -16,7 +16,7 @@
 // pre-existing ADR-0003 red family the 3.25 step/commands ports recorded.
 // FT-2 (lane/f2): all six records are now ported. The four oracle-parity
 // records replay the committed welded capture under
-// tests/fixtures/migration/ft2/<platform>/ride and compare rows, columns
+// tests/fixtures/ft2/<platform>/ride and compare rows, columns
 // and the integration vector against the frozen goldens.
 #include "ft2_reference_support.hpp"
 #include "runtime_reference_support.hpp"

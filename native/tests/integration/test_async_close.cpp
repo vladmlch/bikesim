@@ -8,7 +8,7 @@
 // falls back to synchronous replay, and detach_async() disables async
 // telemetry permanently. Finally, a welded runtime with async_telemetry
 // publishes sample-identical episodes to the synchronous one.
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "../reference/runtime_reference_support.hpp"
 #include "research/environment.hpp"

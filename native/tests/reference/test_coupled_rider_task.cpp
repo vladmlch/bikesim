@@ -6,7 +6,7 @@
 // ArticulatedConfig(coupled_task_control=1) is a compile-time type
 // rejection in the bool signature (the Python bool-field validator rejects
 // the int); only the default-false half is a runtime contract.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "rider_control_reference_support.hpp"
 #include "configuration/physical_config.hpp"
 #include "numerics/dense.hpp"

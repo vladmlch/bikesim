@@ -6,7 +6,7 @@
 // byte-identical on non-tick physics steps, the per-step solved-effort
 // telemetry channel, the interval cadence and the reset semantics — is
 // asserted on the episode artifact the native runtime produces.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "runtime/control.hpp"
 #include "configuration/model_config.hpp"

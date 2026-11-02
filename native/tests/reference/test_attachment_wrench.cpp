@@ -25,7 +25,7 @@
 #include "diag.hpp"
 #include "engine_call.hpp"
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "rider/attachment_wrench.hpp"
 #include "rider/contact_config.hpp"

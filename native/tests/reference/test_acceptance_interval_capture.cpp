@@ -4,7 +4,7 @@
 // _violations_after applies the startup grace per-interval, so a clean
 // period endpoint cannot mask an earlier rejection.
 #include "acceptance_reference_support.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "runtime/samples.hpp"
 #include <memory>
 #include <span>

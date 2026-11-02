@@ -3,7 +3,7 @@
 // self-golden or synthetic numeric values. Keep ADR-0003 parity until the
 // two-platform captures and cross-reads have actually been qualified.
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "golden/episode.hpp"
 #include "io/json.hpp"
 #include "research/environment.hpp"

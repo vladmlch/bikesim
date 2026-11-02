@@ -1,6 +1,6 @@
 // Completion 3.04 CLI acceptance contracts. These are source registrations,
 // not a record that a measurement or the native build has passed.
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "runtime/realtime_runner.hpp"
 #include "runtime/setup_values.hpp"

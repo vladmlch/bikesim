@@ -18,7 +18,7 @@
 // saddle-reserve param), the produced bound differs only by the 1e-5 force
 // guard — inside the oracle's own pytest.approx tolerance — and is
 // asserted with that same tolerance.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "configuration/physical_config.hpp"
 #include "engine_call.hpp"

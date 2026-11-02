@@ -5,7 +5,7 @@
 // created. `--serial`/`--jobs N` must not perform CPU discovery, the report
 // carries workers/thread_policy, and a real two-job episode writes ordered
 // batch_results.jsonl records through isolated bike-research children.
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "batch/plan.hpp"
 #include "cli/application.hpp"
@@ -166,10 +166,10 @@ void validate_rejects_flags_research_does_not_know() {
 }
 
 [[nodiscard]] std::string welded_toml() {
-    // bt::fixture lands in <repo>/tests/fixtures/migration — five parents up is
+    // bt::fixture lands in <repo>/tests/fixtures — four parents up is
     // the repository root that owns examples/research/.
     auto root = bt::fixture("bootstrap/welded");
-    for (int i = 0; i < 5; ++i) root = root.parent_path();
+    for (int i = 0; i < 4; ++i) root = root.parent_path();
     return (root / "examples/research/viewer_physics_welded.toml").string();
 }
 

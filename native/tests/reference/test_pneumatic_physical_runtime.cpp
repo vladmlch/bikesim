@@ -17,7 +17,7 @@
 //     reference.pneumatic_tire_forces::test_state_wire_names_and_round_trip;
 //   * ...round_trips_through_the_npz_cache_file ->
 //     reference.equilibrium_state_file's state_tire_wire npz coverage.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "recording_test_support.hpp"
 #include "app/prepare.hpp"
 #include "cli/application.hpp"

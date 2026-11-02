@@ -1,5 +1,5 @@
 // Task 3.19: tests/reference/test_system_momentum_drive.py, both slow stands.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "validation/rigs.hpp"
 #include "io/value.hpp"
 

@@ -15,7 +15,7 @@
 // _close_queues records are dropped (the native runner owns a single
 // thread whose close() is noexcept — there is no multi-handle transport
 // to drain).
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "runtime/accounting.hpp"
 #include "runtime/async_close.hpp"
 #include "runtime/status.hpp"

@@ -1,4 +1,4 @@
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "cli/recording.hpp"
 #include "golden/episode.hpp"
 #include "io/json.hpp"

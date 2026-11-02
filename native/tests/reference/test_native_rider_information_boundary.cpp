@@ -11,7 +11,7 @@
 // same controller and demands an identical command. The oracle node was red
 // at HEAD — a second committing compute() at one timestamp trips the
 // activation-once-per-timestamp guard; the test now probes non-advancing.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "engine_call.hpp"
 #include "model_access.hpp"

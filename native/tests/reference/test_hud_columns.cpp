@@ -5,7 +5,7 @@
 // saturation-highlight record is dispositioned drop: no styled-segment
 // surface exists on the native HUD, and the directional-capacity data it
 // colored still reaches the sample's rider_joint_capacity_nm channel.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "runtime/runtime.hpp"
 #include "viewer/hud.hpp"
 #include <algorithm>

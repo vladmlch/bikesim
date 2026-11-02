@@ -8,7 +8,7 @@
 // articulated_planar variant, crank_joint, then generate_mjcf +
 // compile_mjcf like generate_mujoco_xml, with the controller built from
 // the runtime's own projected rider_controller document.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "diag.hpp"
 #include "configuration/load.hpp"

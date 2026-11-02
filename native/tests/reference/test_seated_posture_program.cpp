@@ -13,7 +13,7 @@
 // oracle's apply_forces; the values it asserts — the preview-end road
 // sample and the folded grade — are asserted here directly off
 // road_samples/road_grade_for_posture on the identical inputs.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"

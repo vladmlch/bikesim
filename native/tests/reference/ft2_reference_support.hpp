@@ -1,7 +1,7 @@
 // ft2_reference_support.hpp — committed-bootstrap plumbing + golden-tree
 // consumption for the FT-2 (lane/f2) reference ports.
 //
-// Fixture story: tests/fixtures/migration/ft2/<platform-key>/ holds three
+// Fixture story: tests/fixtures/ft2/<platform-key>/ holds three
 // oracle captures produced by tools/migration/_ft2_capture.py under the
 // reference-test kernel pinning —
 //   ride/            make_python_ride(strict=False, decimation=1): welded
@@ -26,7 +26,7 @@
 #pragma once
 
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "runtime_reference_support.hpp"
 
 #include "diag.hpp"

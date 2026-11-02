@@ -1,5 +1,5 @@
 // Source successor of all seven test_playback_clock.py functions (3.20).
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "research/policy_session.hpp"
 #include "viewer/input.hpp"
 #include <array>

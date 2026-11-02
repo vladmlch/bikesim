@@ -45,7 +45,7 @@
 #include "runtime/samples.hpp"
 #include "stepper.hpp"
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "terrain/trackfile.hpp"
 #include "validation/runtime_access.hpp"
 

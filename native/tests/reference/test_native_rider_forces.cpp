@@ -34,7 +34,7 @@
 #include "io/float_format.hpp"
 #include "io/json.hpp"
 #include "io/npy.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "model/builder.hpp"
 #include "research/environment.hpp"
 #include "rider/attachment_wrench.hpp"

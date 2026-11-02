@@ -4,9 +4,9 @@
 // native-produced recording round-trip; synthetic bundles exercise the
 // data-only reader without a plant.
 #pragma once
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
-#include "migration/recording_fixture.hpp"
+#include "recording/recording_fixture.hpp"
 #include "engine_call.hpp"
 #include "io/hash.hpp"
 #include "io/json.hpp"

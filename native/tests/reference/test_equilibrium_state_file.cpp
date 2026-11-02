@@ -33,7 +33,7 @@
 #include "model/rider_geometry.hpp"
 #include "runtime/control.hpp"
 #include "runtime/runtime.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 
 #include <algorithm>

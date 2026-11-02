@@ -9,7 +9,7 @@
 // cfg::detail::post_init — the __post_init__ port, strip-aware provenance
 // check included (spindle::validate_torque_curve is the wire-decoder twin
 // and intentionally not this contract).
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 #include "rider_control_reference_support.hpp"
 #include "configuration/rider_spec.hpp"

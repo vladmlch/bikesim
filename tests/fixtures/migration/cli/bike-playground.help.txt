@@ -1,6 +1,0 @@
-usage: bike-playground [-h]
-
-2D Mountain Bike Suspension Test Stand Playground in MuJoCo.
-
-options:
-  -h, --help  show this help message and exit

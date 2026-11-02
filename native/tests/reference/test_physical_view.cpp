@@ -13,7 +13,7 @@
 //     reset+close;
 //   * reject-before-mutation — apply() stages the whole frame and throws
 //     before touching the replica arrays.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "recording_test_support.hpp"
 #include "runtime/runtime.hpp"
 #include "viewer/render_owner.hpp"

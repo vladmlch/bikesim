@@ -32,7 +32,7 @@
 #include <string>
 #include <vector>
 
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "cli/application.hpp"
 #include "platform/process.hpp"
 

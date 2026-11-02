@@ -2,7 +2,7 @@
 // The two Python dynamic-type constructions are impossible for the typed
 // member; their native contracts are compile-time assignment rejection plus
 // the same malformed-table rejection at the real configuration ingress.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "diag.hpp"
 #include "configuration/load.hpp"
 #include "io/json.hpp"

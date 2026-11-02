@@ -3,7 +3,7 @@
 // against the frozen legacy draws, the tape's ownership/validation contract,
 // and the delivery pipeline's read/push/counter semantics against the frozen
 // pre-refactor oracle trace.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "random/numpy_compat.hpp"
 #include "runtime/sensors.hpp"

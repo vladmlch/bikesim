@@ -14,7 +14,7 @@
 // rear-driving crank half (crank_split.leg_shares assigns the stroke to
 // the rear leg when cos(phase) < 0). The earlier adapter-only sweep left
 // the runtime consumer untested; this freezes the oracle's own values.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "diag.hpp"
 #include "io/json.hpp"

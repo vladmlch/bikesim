@@ -9,7 +9,7 @@
 // -0.0, NaN payloads, empty-vs-absent maps and NULL-vs-absent optionals
 // all stay observable. Tests consume golden entries in the same order the
 // pytest node recorded them.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "support/temporary_directory.hpp"
 #include "diag.hpp"

@@ -6,7 +6,7 @@
 // adapter-only records (python-mode preview path existence, preview
 // rejection, monkeypatched viewer-window terminal tail and exceptional
 // cleanup) have no native contract and are dropped in the ledger.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "support/temporary_directory.hpp"
 #include "io/value.hpp"

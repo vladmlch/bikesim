@@ -29,7 +29,7 @@
 #include "rider/intent.hpp"
 #include "rider/state_codec.hpp"
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 
 namespace {
 namespace bio = bike::io;

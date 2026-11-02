@@ -11,7 +11,7 @@
 // boxing/encoding seams the oracle called through nanobind.
 #pragma once
 
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "recording/analysis_detail.hpp"
 #include "recording/capture.hpp"
@@ -511,7 +511,7 @@ inline void mutate_database(const std::filesystem::path &recording,
 
 // ---- captured-bootstrap runtime staging ------------------------------------
 
-// Stage a copy of tests/fixtures/migration/bootstrap/welded with selected
+// Stage a copy of tests/fixtures/bootstrap/welded with selected
 // config.json fields re-written (retention mode, measurement cadence,
 // strictness) — the cheap NativeRideRuntime path shared by the retention
 // and lifecycle runtime-level ports.

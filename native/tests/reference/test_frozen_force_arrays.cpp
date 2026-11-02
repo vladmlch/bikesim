@@ -4,7 +4,7 @@
 // copying, that published samples hand out const access only, and that the
 // consumption gates (finite values, matching widths) fail closed exactly like
 // freeze_force's ValueError paths.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "runtime/accounting.hpp"
 #include "runtime/samples.hpp"
 #include "runtime/step.hpp"

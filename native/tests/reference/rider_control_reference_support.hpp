@@ -12,7 +12,7 @@
 // Harness only: the _compiled/_model plant helpers from
 // tests/reference/test_pinned_topology.py and the seeded-env rig the
 // environment-dependent records step, plus exception-message checks. The
-// pinned fixture physics (tests/fixtures/migration/config/
+// pinned fixture physics (tests/fixtures/config/
 // viewer_physics_welded.toml) already ships the oracle's
 // spindle/pin/connect attachment triple, so no attachment rewrite applies;
 // the compiled/env paths mirror _pinned_config/_compiled/_model verbatim.
@@ -33,7 +33,7 @@
 #include <vector>
 
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 
 #include "configuration/fields.hpp"
 #include "configuration/load.hpp"

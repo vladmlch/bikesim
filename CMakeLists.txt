@@ -573,24 +573,10 @@ if(BUILD_TESTING)
   add_test(NAME native_station_tests COMMAND native_station_tests)
 endif()
 
-# The migration contract-test harness + task regressions (migration_T02 and
-# the script-registered migration_T03; later tasks add their own). Added
-# after the native executables exist: the migration_T03 build target depends
-# on them.
-add_subdirectory(native/tests/migration)
+# The contract-test harness + domain regressions. Added after the native
+# executables exist: the platform_build build target depends on them.
+add_subdirectory(native/tests)
 
-# Completion 3.37-3.40: root-only validation stands and evidence contracts.
-# The binding graph keeps its own migration scope until phase 4.
-if(BUILD_TESTING)
-  add_executable(migration_T54 "${_bike_native_tests_dir}/migration/test_t54.cpp")
-  bike_startup_target_policy(migration_T54 "${_bike_native_dir}")
-  target_link_libraries(migration_T54 PRIVATE bike_migration_test bike_validation)
-  bike_rewrite_mujoco_load_name(migration_T54 "${BIKE_DEP_mujoco_LIBRARY}")
-  add_dependencies(migration_T54 bike-validate)
-  add_test(NAME migration_T54 COMMAND migration_T54)
-  set_tests_properties(migration_T54 PROPERTIES LABELS "migration;t54;validation;slow"
-    WORKING_DIRECTORY "$<TARGET_FILE_DIR:migration_T54>")
-endif()
 
 # Completion 3.02: keep the binding graph's portable regressions alive in
 # the root graph before Phase 4 removes that graph. Each source compiles
@@ -632,7 +618,7 @@ if(BUILD_TESTING AND TARGET bike_installed_provider)
   target_include_directories(native_installed_provider_tests SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${_bike_native_tests_dir}/support")
   target_link_libraries(native_installed_provider_tests PRIVATE
-    bike_installed_provider bike_migration_test)
+    bike_installed_provider bike_test_fixtures)
   add_test(NAME native_installed_provider_tests COMMAND native_installed_provider_tests)
 endif()
 

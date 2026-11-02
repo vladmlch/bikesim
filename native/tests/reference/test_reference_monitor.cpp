@@ -4,7 +4,7 @@
 // The native monitor's observe() stores the first failure and sets
 // warning_pending in non-strict mode; the caller raises — mirroring
 // reference_monitor.py's accept()/observe split.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "runtime/status.hpp"
 #include <optional>
 #include <string>

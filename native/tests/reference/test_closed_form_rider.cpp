@@ -8,7 +8,7 @@
 // c.allocate's monkeypatch "forbidden" has no native analogue: the pinned
 // controller never reaches the allocator — the proof is structural (final
 // commands are published and allocation diagnostics stay clean).
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "rider_control_reference_support.hpp"
 #include "model_access.hpp"
 #include "runtime/samples.hpp"

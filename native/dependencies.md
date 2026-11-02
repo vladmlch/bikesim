@@ -221,5 +221,5 @@ shasum -a 256 .deps/mujoco-3.12.0/lib/libmujoco.3.12.0.dylib
 
 `cmake -S . -B build/native-release` then re-verifies everything and fails
 closed on any deviation — the negative cases (missing root, wrong
-version, tampered file, missing TLS ABI and absent platform key) are covered by the `migration_T03`
+version, tampered file, missing TLS ABI and absent platform key) are covered by the `platform_build`
 CTest script.

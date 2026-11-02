@@ -1,5 +1,5 @@
 // Batch 3.34 shared pinned-plant builder — the migration welded bootstrap
-// (tests/fixtures/migration/bootstrap/welded) carries the pinned
+// (tests/fixtures/bootstrap/welded) carries the pinned
 // spindle/pin/connect plant's compiled model.mjb plus its projected
 // writer_config; test_pinned_measurement.cpp and
 // test_realtime_deferred_checks.cpp both construct the same
@@ -7,7 +7,7 @@
 // test_pinned_topology._compiled().
 #pragma once
 
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "runtime_reference_support.hpp"
 #include "engine_call.hpp"
 #include "io/hash.hpp"

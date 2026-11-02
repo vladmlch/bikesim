@@ -40,7 +40,7 @@
 #include <vector>
 
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 
 #include "config_types.hpp"
 #include "engine_call.hpp"

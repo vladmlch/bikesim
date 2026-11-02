@@ -26,7 +26,7 @@
 #include "diag.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "strictness_reference_support.hpp"
 #include "runtime/accounting.hpp"
 #include "runtime/bootstrap.hpp"

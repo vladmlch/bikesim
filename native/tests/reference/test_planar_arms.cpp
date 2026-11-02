@@ -12,7 +12,7 @@
 // is runtime::evaluate_attachments over the closing RawStep's own
 // attachment_raw blocks — the same decompose_wrench projection the
 // oracle's evaluate_attachments applies to its last period's raws.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 #include "rider_control_reference_support.hpp"
 #include "configuration/rider_spec.hpp"

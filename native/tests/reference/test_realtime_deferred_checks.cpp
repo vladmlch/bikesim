@@ -8,7 +8,7 @@
 // prepare/raw_from_geometry pair and runtime::PeriodAccounting — the real
 // pinned plant (welded bootstrap model.mjb) for the efc arena, the real
 // accounting path for the interval attribution.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "pinned_test_support.hpp"
 #include "engine_call.hpp"
 #include "numeric_numpy.hpp"

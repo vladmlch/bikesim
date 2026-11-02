@@ -1,7 +1,7 @@
 // Task 3.21b: retain native kernel contracts when the Numba-vs-Python twin
 // comparison loses its subject in phase 4. The four Hypothesis equivalence
 // functions are not represented as 1000 native oracle passes by these tests.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "contact/laws.hpp"
 #include "rider/spindle_math.hpp"
 #include "rider/support_geometry.hpp"

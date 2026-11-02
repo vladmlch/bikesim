@@ -11,7 +11,7 @@
 // validation domains, export refusal). Substitution documented in
 // task-C333a-report.md.
 #pragma once
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "cli/physical_capture.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/rider_spec.hpp"

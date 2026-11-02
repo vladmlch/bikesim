@@ -8,7 +8,7 @@
 // reads RiderContactsState::settled_welds — the identical latch, one
 // advance per physics step — so the asserted invariant stays the
 // time-mean static balance rather than a channel sample.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"

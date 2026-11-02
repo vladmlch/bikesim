@@ -11,7 +11,7 @@
 // seal feeds. Assets are the real cli::physical_assets output; the typed
 // table decode is covered by reference.native_recording_lifecycle's
 // real-episode rows (cited in the ledger).
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 #include "recording_test_support.hpp"
 #include "app/prepare.hpp"

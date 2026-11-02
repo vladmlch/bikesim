@@ -2,7 +2,7 @@
 // profile is the realistic pedelec default. The module-scope `cfg` fixture
 // becomes one load_physics() of the live example document; every member is
 // asserted exactly like the oracle's attribute reads.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"

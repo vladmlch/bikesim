@@ -14,7 +14,7 @@
 
 #include "configuration/physical_config.hpp"
 #include "diag.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "rider/attachment_wrench.hpp"
 #include "runtime/period_buffer.hpp"
 

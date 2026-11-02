@@ -25,7 +25,7 @@
 //   soabi= tags); the native executable IS the artifact, so the ported
 //   contract asserts a missing required input file exits nonzero naming
 //   the requested path.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "support/temporary_directory.hpp"
 #include "cli/application.hpp"

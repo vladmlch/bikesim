@@ -36,7 +36,7 @@
 #include <vector>
 
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "support/temporary_directory.hpp"
 

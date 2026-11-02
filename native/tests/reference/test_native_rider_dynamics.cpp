@@ -7,7 +7,7 @@
 // is controller-internal in C++; its contract — delivered equals the
 // allocated torque and the committed state is exactly one activation step —
 // is asserted through the same activation math it publishes.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "engine_call.hpp"
 #include "model_access.hpp"

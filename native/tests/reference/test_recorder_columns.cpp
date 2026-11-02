@@ -2,7 +2,7 @@
 // The Python PhysicalRecorder's flat row lives on PhysicalSampleData::
 // flat_columns + make_columns; its CSV/JSONL emission is the realtime-driver
 // export contract (sorted names, NaN -> empty cell, repr_double payload).
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "diag.hpp"
 #include "configuration/fields.hpp"
 #include "configuration/load.hpp"

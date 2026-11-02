@@ -9,7 +9,7 @@
 // the same spindle/pin/connect physics document — and its projected
 // writer_config supplies the decoded RiderContactsConfig verbatim, like the
 // oracle's ArticulatedConfig.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "pinned_test_support.hpp"
 #include "recording_test_support.hpp"
 #include "runtime_reference_support.hpp"

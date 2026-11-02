@@ -35,7 +35,7 @@
 #include <mujoco/mujoco.h>
 
 #include "drivetrain_reference_support.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "engine_call.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"

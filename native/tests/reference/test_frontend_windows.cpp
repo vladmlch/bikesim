@@ -25,7 +25,7 @@
 //     reference.t49's replay_exit_code table, and the report-only-on-
 //     complete branch is replay_command's caller-side selection, which no
 //     headless seam can reach.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "recording_test_support.hpp"
 #include "research/preview_csv.hpp"
 #include "runtime/runtime.hpp"

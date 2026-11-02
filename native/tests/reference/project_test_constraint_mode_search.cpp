@@ -4,7 +4,7 @@
 // -1/1.5/True/None parameter rows of
 // test_invalid_mode_budget_fails_before_evaluating_dynamics are compile-time
 // rejections in this signature; only 0 reaches the same runtime check.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "engine_call.hpp"
 #include "model_access.hpp"

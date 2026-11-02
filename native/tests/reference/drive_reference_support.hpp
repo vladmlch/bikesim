@@ -1,6 +1,6 @@
 #pragma once
 
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "configuration/load.hpp"
 #include "drivetrain/motor.hpp"
 #include "drivetrain/pedaling.hpp"

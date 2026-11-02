@@ -8,7 +8,7 @@
 // collision, crash staging, EACCES-and-retry, the spaced-unicode output
 // path, the deep real-run payload shape, the strict invalid prefix, and
 // the research publication contract.
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "recording_test_support.hpp"
 #include "replay_reference_support.hpp"

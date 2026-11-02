@@ -31,7 +31,7 @@
 #include <mujoco/mujoco.h>
 
 #include "drivetrain_reference_support.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
 #include "support/temporary_directory.hpp"
 #include "tyre_reference_support.hpp"

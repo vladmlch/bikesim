@@ -4,7 +4,7 @@
 // spindle_math's leg-loop helpers directly; the two slow records replay the
 // _compiled/_model pinned plants from test_pinned_topology.py through
 // rider_control_reference_support.hpp.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "rider_control_reference_support.hpp"
 #include "rider/spindle_math.hpp"
 #include "engine_call.hpp"

@@ -2,7 +2,7 @@
 // Geometric lean ceiling over the articulated pose and the anatomical
 // envelopes: elbow ROM can lower the attainable lean and the torso hinge
 // caps it at its own residual range.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "configuration/rider_spec.hpp"
 #include "geometry/specs.hpp"

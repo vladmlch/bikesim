@@ -46,7 +46,7 @@
 #include "../../../tools/proto_native_bench/state_format.hpp"
 #include "model/builder.hpp"
 #include "platform/process.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 #include "support/golden.hpp"
 

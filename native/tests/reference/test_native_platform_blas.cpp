@@ -29,7 +29,7 @@
 #include <vector>
 
 #include "../support/golden.hpp"
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "cblas_abi.hpp"
 
 namespace {

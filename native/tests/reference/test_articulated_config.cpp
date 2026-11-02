@@ -8,7 +8,7 @@
 // oracle's 'bolts' non-real input has no statically typed analogue —
 // the optional_real decode gate it exercises is covered by the wire
 // decoder's own validation suite.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/physical_config.hpp"
 #include "rider/intent.hpp"

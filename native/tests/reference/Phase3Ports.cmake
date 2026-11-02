@@ -377,7 +377,7 @@ bike_add_reference_test(realistic_pedelec_acceptance ENGINE
 # 3.25 T53 runtime batch — NativeRideRuntime construction/bootstrap,
 # the bounded-advance command contract, sample acknowledgement and
 # ownership, and the owned physical step. Ports exercise the welded
-# bootstrap capture (tests/fixtures/migration/bootstrap/welded); the
+# bootstrap capture (tests/fixtures/bootstrap/welded); the
 # six+four live-oracle parity reds of the sources stay `planned` and are
 # not reproduced (see task-C325-report.md).
 bike_add_reference_test(native_runtime_bootstrap ENGINE
@@ -546,7 +546,7 @@ bike_add_reference_test(native_viewer_snapshot ENGINE
 # $<TARGET_OBJECTS:...> exactly like a listed source.
 add_library(bike_test_research_reference OBJECT research_reference_support.cpp)
 bike_startup_target_policy(bike_test_research_reference "${CMAKE_SOURCE_DIR}/native")
-target_link_libraries(bike_test_research_reference PUBLIC bike_migration_test)
+target_link_libraries(bike_test_research_reference PUBLIC bike_test_fixtures)
 
 # 3.33a T53 research batch — the NativeResearchRuntime external-boundary,
 # capture-cursor, failure/reset, PolicySession lifecycle, program

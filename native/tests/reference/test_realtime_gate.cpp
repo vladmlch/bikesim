@@ -18,7 +18,7 @@
 // The reported prefix stays a throughput sample of a ride whose validity is
 // separately documented red — the gate asserts duration/steps/RTF, never a
 // valid-ride claim.
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "io/json.hpp"
 #include "platform/argv.hpp"

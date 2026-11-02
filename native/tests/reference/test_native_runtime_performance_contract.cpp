@@ -13,7 +13,7 @@
 // for the compiled-in artifact identity — the native counterpart of
 // execution_provenance('native', artifact=...). No Python tree or golden
 // is consulted.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 
 #include "../../src/io/json.hpp"
 #include "../../src/runtime/provenance.hpp"

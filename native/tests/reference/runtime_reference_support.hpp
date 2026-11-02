@@ -6,7 +6,7 @@
 // capture_bootstrap() of the welded-physics + rough_uphill_savage ride
 // (tests/reference/_native_runtime_support.py::make_python_ride). The C++
 // ports run the identical boundary against the recorded welded capture
-// tests/fixtures/migration/bootstrap/welded — the same model, config
+// tests/fixtures/bootstrap/welded — the same model, config
 // envelope (dt .00125, control period 4 steps, decimation 1, non-strict)
 // and t=0 state document. All ported assertions are native-vs-native or
 // literals: the six/four live-oracle parity reds of the source files stay
@@ -14,7 +14,7 @@
 // reproduced here, so this header holds no golden nodes.
 #pragma once
 
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 #include "diag.hpp"
 

@@ -13,7 +13,7 @@
 // the optional share out. The rig hosting the PhysicalStep is the
 // welded-plant fixture request; the fold itself reads no physics state,
 // so the numbers are the dict's literals like the Python assertion.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"

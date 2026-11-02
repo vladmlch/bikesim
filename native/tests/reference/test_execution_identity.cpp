@@ -24,7 +24,7 @@
 //   are enforced by validate_execution (nested_field_rules_fail_closed).
 //   test_validation_imports_nothing — a sys.modules probe; the native
 //   validator is data-only compiled code with no import machinery.
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "engine_identity.hpp"
 #include "io/json.hpp"
 #include "platform/provenance.hpp"

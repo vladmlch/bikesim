@@ -11,7 +11,7 @@ endif()
 file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/support/bike_golden_paths.hpp"
   CONTENT "#pragma once\n#define BIKE_GOLDEN_ROOT \"${BIKE_GOLDEN_ROOT}\"\n#define BIKE_GOLDEN_PLATFORM \"${BIKE_GOLDEN_PLATFORM}\"\n")
 add_library(bike_golden_test STATIC ../support/golden.cpp)
-target_link_libraries(bike_golden_test PUBLIC bike_migration_test bike_io)
+target_link_libraries(bike_golden_test PUBLIC bike_test_fixtures bike_io)
 target_include_directories(bike_golden_test PRIVATE
   "${CMAKE_SOURCE_DIR}/native/src" "${CMAKE_CURRENT_BINARY_DIR}/support")
 bike_apply_native_policy(bike_golden_test)

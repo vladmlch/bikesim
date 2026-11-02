@@ -3,7 +3,7 @@
 // and positive-work muscle budgets. The Python dict returns keep their
 // insertion order: leg_shares/leg_crank_targets are (front, rear) pairs and
 // scale_to_power_budget's dict is the caller's parallel-array order.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "rider/spindle_math.hpp"
 
 #include <cmath>

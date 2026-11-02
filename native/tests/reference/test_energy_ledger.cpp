@@ -51,7 +51,7 @@
 #include "runtime/status.hpp"
 #include "runtime/step.hpp"
 #include "strictness_reference_support.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 
 namespace {
 

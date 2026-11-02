@@ -1,5 +1,5 @@
 #include "golden.hpp"
-#include "migration_test.hpp"
+#include "fixture_test.hpp"
 #include "bike_golden_paths.hpp"
 #include "io/hash.hpp"
 #include "io/json.hpp"

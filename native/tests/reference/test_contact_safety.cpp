@@ -17,7 +17,7 @@
 
 #include "diag.hpp"
 #include "support/golden.hpp"
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "terrain/profile.hpp"
 #include "terrain/types.hpp"
 

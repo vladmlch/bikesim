@@ -6,7 +6,7 @@
 // staging qfrc_applied and before rider compute(), mirroring
 // physical_runtime.py's mj_forward — otherwise ConstraintDynamics snapshots
 // the previous interval's qfrc_actuator and the weld projection drifts.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "configuration/physical_config.hpp"
 #include "geometry/specs.hpp"
 #include "initialization/capture.hpp"

@@ -27,7 +27,7 @@
 #include <vector>
 
 #include "../support/golden.hpp"
-#include "../support/migration_test.hpp"
+#include "../support/fixture_test.hpp"
 #include "numeric_norm.hpp"
 #include "numeric_numpy.hpp"
 #include "numeric_sincos.hpp"

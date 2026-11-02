@@ -3,7 +3,7 @@
 // layout shapes/annotations: a shift event is a vertical Marker on the gear
 // panel of report 0, an obstacle is a full_height (paper-relative) Marker on
 // the suspension report's panels.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "viz/plot.hpp"
 #include <algorithm>
 #include <chrono>

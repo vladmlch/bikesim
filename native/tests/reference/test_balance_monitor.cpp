@@ -4,7 +4,7 @@
 // summary/metrics record pins the latched `event` (never `current_event`
 // or a later position) through the production presentation/summary read
 // and the research episode_metrics surface.
-#include "support/migration_test.hpp"
+#include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "cli/physical_capture.hpp"
 #include "configuration/load.hpp"

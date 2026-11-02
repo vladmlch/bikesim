@@ -37,6 +37,8 @@ namespace {
 constexpr std::string_view kFile =
     "native_platform_blas/";
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (name, param) order mirrors the oracle id
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (name, param) order mirrors the oracle id
 [[nodiscard]] std::string node(std::string_view name, std::string_view param) {
     std::string out{kFile};
     out += name.starts_with("test_") ? name.substr(5) : name;

@@ -12,9 +12,8 @@
 > historical evidence, not runnable commands; the produced
 > `build/<preset>/bin/bike-*` executables and `tools/run_tests.sh`
 > profiles are the live surface. Live commands sit in ` ``` ` fences;
-> recorded/deferred commands sit in `~~~` fences, which the documentation
-> audit does not scan. The dated execution records below are
-> unchanged.
+> recorded/deferred commands sit in `~~~` fences. The dated execution
+> records below are unchanged.
 
 ## Track C verification status (2026-10-10)
 
@@ -64,18 +63,18 @@ Run these commands from the repository root:
 
 ~~~bash
 bash tools/run_tests.sh          # defaults to quick
-bash tools/run_tests.sh quick    # one cmake --workflow run; tests exclude slow|audit|package
-bash tools/run_tests.sh native   # build + all static-analysis sweeps + CTest (minus slow|audit|package)
-bash tools/run_tests.sh full     # native plus the explicit slow, audit and package label gates
+bash tools/run_tests.sh quick    # one cmake --workflow run; tests exclude slow|package
+bash tools/run_tests.sh native   # build + all static-analysis sweeps + CTest (minus slow|package)
+bash tools/run_tests.sh full     # native plus the explicit slow and package label gates
 ```
 
 Use `quick` outside the native scope and as the final fast regression check.
 Use `native` for C++ implementation, build and verification-tool work — it
 configures/builds the selected preset, runs every produced static-analysis
 sweep and the structural contracts check via `tools/run_native_checks.sh`,
-then runs CTest without `slow|audit|package`.
+then runs CTest without `slow|package`.
 Use `full` for complete physical episodes or realtime acceptance — the
-`native` stage plus explicit `slow`, `audit` and `package` label gates
+`native` stage plus explicit `slow` and `package` label gates
 (`--no-tests=error`). The optional second argument selects a configure
 preset (`native asan` runs the same stages on `build/asan`); it exports
 `NATIVE_TEST_BUILD_PATH` to that build directory. The launcher resolves its
@@ -87,7 +86,6 @@ CTest against the selected build directly:
 ~~~bash
 ctest --test-dir build/native-release -R 'native_suspension' --output-on-failure
 ctest --test-dir build/native-release -N                # list registered tests
-ctest --test-dir build/native-release -L audit          # the audit-label gates
 ```
 
 ## Native prerequisite
@@ -124,8 +122,8 @@ legacy `native/` subproject configure. Its configure reads the committed
 numerics record (`BIKE_NUMERICS_SOURCE=RECORD_ONLY`).
 The T53-era `test_root_configure.py` record checked two things on that
 configure: no interpreter reachable by name on `PATH` is spawned, and none
-is recorded in the CMake cache — both remain true and are now enforced by
-the produced source/documentation audits as well. An absolute-path spawn is
+is recorded in the CMake cache — both remain true and are enforced by the
+produced source manifest and context checks. An absolute-path spawn is
 still not caught by configure. A cross-compiling
 toolchain (`-DCMAKE_SYSTEM_NAME=Windows`) is refused by the root's own include
 chain. `BIKE_BUILD_PYTHON_BINDINGS=ON` is rejected outright by the root:
@@ -138,7 +136,7 @@ configure, build, every CMake sweep, the standalone header/diagnostic/context
 controls, CTest, an exact selected-extension import, and the `contracts`
 kind before pytest. Each configured sweep is also a standalone CMake target.
 The profiles first configure and build the produced check orchestrator into
-`build/native-release` (`bike-native-checks`, `bike-python-audit`) when its
+`build/native-release` (`bike-native-checks`) when its
 cache is absent, then always rebuild it incrementally so checks never run on
 a stale binary. CMake writes
 `<selected-build>/native_sources.json` from the first-party sources attached to
@@ -211,9 +209,7 @@ registration. It asks the contract executable to list and run each registered
 case. These are structural and focused behavioral checks; they do not claim to
 prove exception safety for every native operation. The engine-call wrapper
 rules now run actively (pinned wrappers manifested, fatal-capable calls
-confined to `engine_call.cpp`), and benchmark sources under
-`tools/proto_native_bench` must be manifested while the `native_bench`
-target exists.
+confined to `engine_call.cpp`).
 
 The contracts target can be rerun directly for a regular build:
 
@@ -226,8 +222,8 @@ passes the selected sanitizer runtime to the contract executable's child
 processes.
 
 First-party targets use strict ISO C++23. The `.clang-tidy` header filter is
-checkout independent and covers `native/src`, `native/tests`, and
-`tools/proto_native_bench`. First-party Move findings remain blocking. The
+checkout independent and covers `native/src` and `native/tests`.
+First-party Move findings remain blocking. The
 only current third-party exception is in
 `native/analysis_suppressions.json`: it matches the observed Move diagnostic
 from nanobind's fixed size `std::array` caster by checker, header path, message,
@@ -343,8 +339,7 @@ object path were identical. Apple LLVM 21.0.0 reported 91.63% line and 78.00%
 branch coverage for that run. The real one-file control reported 3/4 lines and
 1/2 branches covered, exercising both a covered and an uncovered path. These
 are observed counts, not minimum coverage thresholds. Engine-call wrapper
-checks remain pending on E1; benchmark manifest membership remains pending
-until R2 adds the `native_bench` target. The slow `full` profile was not run.
+checks remain pending on E1. The slow `full` profile was not run.
 
 The launcher sets `PYTHONDEVMODE=1` everywhere and `MallocScribble`,
 `MallocPreScribble`, `MallocGuardEdges` on quick/native (not `full`, which
@@ -754,8 +749,8 @@ by about `8.72e-5 J`; the planar-arm model lacked
 
 The 13 failing node IDs, identical in the baseline and current full run, are:
 
-- `closed_form_rider/flat_launch_delivers_crank_torque` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
-- `joint_strength/stepped_effort_respects_strength_and_the_power_budget` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
+- `closed_form_rider/flat_launch_delivers_crank_torque` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (the 2026-10-23 baseline refresh record (removed with the migration ledger)); retained for the historical record.
+- `joint_strength/stepped_effort_respects_strength_and_the_power_budget` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (the 2026-10-23 baseline refresh record (removed with the migration ledger)); retained for the historical record.
 - `realistic_pedelec_acceptance/flat_reaches_25_kmh_within_10_s`
 - `realistic_pedelec_acceptance/motor_follows_the_rider_through_a_shift_without_an_extra_cut`
 - `realistic_pedelec_acceptance/fifteen_percent_climb_holds_12_kmh`
@@ -776,7 +771,7 @@ baseline set rather than blocking the port batch:
 - `native_pneumatic_tire/pneumatic_golden_episode_event_rich` — episode capture exhausts the 64,000-step equilibrium budget (`front_wheel_spin` residual ≈ 0.081; same savage-plant defect family as `test_savage_is_ridden_to_the_end`).
 - `native_pneumatic_tire/pneumatic_probe_and_clock` — the recorded probe interval diverges bitwise from the live simulation at step 1 on both platforms.
 
-2026-10-23 refresh (`migration/baseline-refresh-2026-10-23.md`, measured at
+2026-10-23 refresh (the 2026-10-23 baseline refresh record (removed with the migration ledger), measured at
 `fe4feaa`): the two annotated nodes now pass; the other 11 nodes remain
 failing with deterministic signatures, so the live residual is 11 nodes.
 

@@ -38,6 +38,7 @@ constexpr double inf = std::numeric_limits<double>::infinity();
 constexpr double nan = std::numeric_limits<double>::quiet_NaN();
 using interval_clock::interval_id;
 using Pair = std::pair<double, std::int64_t>;
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (group, symbol) order mirrors the oracle id
 bt::oracle::Node oracle(std::string_view group, std::string_view symbol) {
     auto case_id = std::string(symbol);
     if (case_id.starts_with("test_")) case_id.erase(0, 5);

@@ -65,6 +65,7 @@ using bike::io::Value;
 // Golden node addressing + leaf consumers
 // ---------------------------------------------------------------------
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the oracle API
 [[nodiscard]] inline bt::oracle::Node node(std::string_view file,
                                            std::string_view function, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                            std::string_view parameters = {}) {

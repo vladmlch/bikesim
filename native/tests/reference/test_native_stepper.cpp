@@ -17,7 +17,7 @@ using namespace tyre_reference;
     auto golden = node("test_native_stepper.py",
                        "test_native_step_matches_python_bitwise");
     const auto path =
-            repo_file("tools/proto_native_bench/artifacts/model.mjb");
+            repo_file("tests/fixtures/benchmark/model.mjb");
     Stepper native(path.string());
     const auto image = fixture_bytes(path);
     bike::model::ModelOwner ref(engine::load_model_image(image));

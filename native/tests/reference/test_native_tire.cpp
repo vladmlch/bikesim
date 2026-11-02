@@ -89,7 +89,7 @@ tire_row(const Episode &ep, std::size_t k) {
 
 [[nodiscard]] const std::string &mjb() {
     static const std::string path =
-            repo_file("tools/proto_native_bench/artifacts/model.mjb")
+            repo_file("tests/fixtures/benchmark/model.mjb")
                     .string();
     return path;
 }

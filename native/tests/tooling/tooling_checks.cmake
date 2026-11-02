@@ -2084,7 +2084,7 @@ function(b29_contract_fixture name)
     "{\"schema_version\":1,\"suppressions\":[]}\n")
   file(WRITE "${_repo}/native/.clang-tidy"
     "Checks: 'bugprone-*,clang-analyzer-cplusplus.Move'\n"
-    "HeaderFilterRegex: '(^|/)(native/(src|tests)|tools/proto_native_bench)/'\n")
+    "HeaderFilterRegex: '(^|/)(native/(src|tests)|tools)/'\n")
   file(WRITE "${_repo}/tests/reference/test_native_probe.py"
     "from native_loader import load_native\nbike_native = load_native()\n")
   file(REAL_PATH "${_repo}" _repo_real)
@@ -2102,12 +2102,10 @@ function(b29_contract_fixture name)
   set(_cc "${CMAKE_COMMAND}")
   set(_tc_json "")
   foreach(_t bike_native native_contract_tests native_distance_tests
-          native_station_tests native_bench native_platform_blas_tests
+          native_station_tests native_platform_blas_tests
           native_platform_lapack_tests)
     if(_t MATCHES "platform")
       set(_edges "\"Bike::Numerics\"")
-    elseif(_t STREQUAL "native_bench")
-      set(_edges "\"Bike::MuJoCo\"")
     else()
       set(_edges "\"Bike::MuJoCo\",\"Bike::Numerics\"")
     endif()
@@ -2154,9 +2152,7 @@ function(b29_contract_fixture name)
     "add_test([=[native_platform_blas_tests]=] \"native_platform_blas_tests\")\n"
     "add_test([=[native_platform_lapack_tests]=] "
     "\"native_platform_lapack_tests\")\n"
-    "add_test([=[native_bench_bare]=] \"native_bench\" \"bare\" \"20\" \"5\")\n"
-    "add_test([=[native_bench_glue]=] \"native_bench\" \"glue\" \"10\" \"4\")\n"
-    "add_test([=[native_bench_heavy]=] \"native_bench\" \"heavy\" \"6\" \"3\")\n")
+)
   file(WRITE "${_build}/native_contract_tests"
     "#!/bin/sh\n"
     "if [ \"\${1:-}\" = \"--list\" ]; then "
@@ -2365,7 +2361,7 @@ b29_contract_run(b29_hardening_def EXPECT_EXIT FAIL
 b29_contract_fixture(b29fx-move)
 file(WRITE "${b29fx-move_REPO}/native/.clang-tidy"
   "Checks: 'bugprone-*,-clang-analyzer-cplusplus.Move'\n"
-  "HeaderFilterRegex: '(^|/)(native/(src|tests)|tools/proto_native_bench)/'\n")
+  "HeaderFilterRegex: '(^|/)(native/(src|tests)|tools)/'\n")
 b29_contract_run(b29_move_disabled EXPECT_EXIT FAIL
   EXPECT_STDERR "must enable first-party clang-analyzer-cplusplus.Move"
   NAME b29fx-move)

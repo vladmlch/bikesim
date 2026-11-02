@@ -736,9 +736,9 @@ void write_log(const fs::path &path, const std::string &content) {
     if (stream) stream << content;
 }
 
-// The sign-encoded exit code -> Python subprocess returncode convention:
-// wait status 128+N means killed by signal N, reported as -N by CPython.
-std::optional<std::int64_t> python_returncode(int exit_code) {
+// Sign-encoded exit code -> subprocess returncode convention: wait status
+// 128+N means killed by signal N, reported as -N.
+std::optional<std::int64_t> subprocess_returncode(int exit_code) {
     if (exit_code > 128) return static_cast<std::int64_t>(128 - exit_code);
     return static_cast<std::int64_t>(exit_code);
 }
@@ -842,7 +842,7 @@ Value run_process(const std::vector<std::string> &argv, const fs::path &cwd,
             platform::run(effective, cwd, options);
         out = utf8_replace(result.out);
         err = utf8_replace(result.err);
-        returncode = python_returncode(result.exit_code);
+        returncode = subprocess_returncode(result.exit_code);
         const double elapsed =
             std::chrono::duration<double>(std::chrono::steady_clock::now() - before)
                 .count();
@@ -968,7 +968,7 @@ Value run_query(const std::vector<std::string> &argv, double timeout_s = 60.0) {
             launch_error = "Command '[" + rendered + "]' timed out after " +
                            timeout_text.str() + " seconds";
         } else {
-            returncode = python_returncode(result.exit_code);
+            returncode = subprocess_returncode(result.exit_code);
         }
     } catch (const std::invalid_argument &error) {
         launch_error = error.what();

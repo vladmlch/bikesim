@@ -87,8 +87,7 @@ function(bike_write_check_context)
     endif()
   endforeach()
 
-    set(_native_first_party_roots "${_ctx_native_dir}"
-      "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench")
+    set(_native_first_party_roots "${_ctx_native_dir}")
     set(MJ_DIR "${BIKE_DEP_mujoco_ROOT}")
     get_filename_component(_native_mujoco_library
       "${BIKE_DEP_mujoco_LIBRARY}" REALPATH)
@@ -392,11 +391,19 @@ function(bike_write_check_context)
   set(_native_target_contexts "{")
   set(_native_target_separator "")
   # BUILDSYSTEM_TARGETS is scoped to this directory — targets created through
-  # add_subdirectory() (native/tests/migration) must be collected via
-  # SUBDIRECTORIES or their first-party translation units never enter the
-  # manifest while compile_commands.json still compiles them.
+  # add_subdirectory() must be collected via SUBDIRECTORIES, recursively or
+  # nested test-domain targets never enter the manifest while
+  # compile_commands.json still compiles them.
   get_property(_native_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
-  get_property(_native_subdirectories DIRECTORY PROPERTY SUBDIRECTORIES)
+  get_property(_native_pending_directories DIRECTORY PROPERTY SUBDIRECTORIES)
+  set(_native_subdirectories "")
+  while(_native_pending_directories)
+    list(POP_FRONT _native_pending_directories _native_subdirectory)
+    list(APPEND _native_subdirectories "${_native_subdirectory}")
+    get_property(_native_nested_subdirectories
+      DIRECTORY "${_native_subdirectory}" PROPERTY SUBDIRECTORIES)
+    list(APPEND _native_pending_directories ${_native_nested_subdirectories})
+  endwhile()
   foreach(_native_subdirectory IN LISTS _native_subdirectories)
     get_property(_native_subdirectory_targets DIRECTORY "${_native_subdirectory}"
       PROPERTY BUILDSYSTEM_TARGETS)

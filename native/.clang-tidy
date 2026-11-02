@@ -41,4 +41,4 @@ Checks: >
 
 # Analyze first-party diagnostics after relocating the checkout. Third-party
 # headers remain outside this filter and are handled by scoped CSA suppressions.
-HeaderFilterRegex: '(^|/)(native/(src|tests)|tools/proto_native_bench)/'
+HeaderFilterRegex: '(^|/)(native/(src|tests))/'

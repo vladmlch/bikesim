@@ -233,7 +233,7 @@ void test_native_matches_python_at_each_serialized_timestep() {
 }
 [[nodiscard]] std::string bench_mjb() {
     return (bt::oracle::root().parent_path().parent_path().parent_path() /
-            "tools/proto_native_bench/artifacts/model.mjb").string();
+            "tests/fixtures/benchmark/model.mjb").string();
 }
 [[nodiscard]] nativecfg::WriterConfig tire_cfg() {
     const std::string material =

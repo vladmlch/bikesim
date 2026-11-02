@@ -34,7 +34,7 @@ constexpr std::array kDemandNames{"0.0", "0.3", "0.7", "1.0", "-0.2",
                                   "1.5"};
 
 [[nodiscard]] std::string mjb() {
-    return repo_file("tools/proto_native_bench/artifacts/model.mjb")
+    return repo_file("tests/fixtures/benchmark/model.mjb")
             .string();
 }
 

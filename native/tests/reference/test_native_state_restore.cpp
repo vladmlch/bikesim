@@ -69,7 +69,7 @@ using namespace runtime::setupvalue;
 }
 
 [[nodiscard]] std::string bench_model_path() {
-    return (repo_root() / "tools" / "proto_native_bench" / "artifacts" /
+    return (repo_root() / "tests" / "fixtures" / "benchmark" /
             "model.mjb")
         .string();
 }

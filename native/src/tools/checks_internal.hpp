@@ -234,8 +234,6 @@ struct SuppressionFilter {
 // Ports load_context(): strict validation of every documented field; paths
 // are canonicalized in place. A complete, path-validated standalone record
 // carries "python_executable": null (and "python": null in schema 2).
-// Binding contexts require the configured executable exactly as the oracle
-// does; missing/null root metadata cannot relax that requirement.
 [[nodiscard]] Value load_context(const fs::path &build);
 // Schema 2 records a Linux sysroot separately from the Darwin SDK;
 // schema 1 falls back to its SDK. Null admits no forwarded sysroot flag.
@@ -316,7 +314,7 @@ struct SourceManifest {
                                                         const Value &context);
 
 // Ports _standalone_header_roots(): <root>/src and <root>/tests per
-// first-party root plus the repository tools/proto_native_bench tree.
+// first-party root.
 [[nodiscard]] std::vector<fs::path> standalone_header_roots(
     const std::vector<fs::path> &first_party_roots);
 

@@ -10,7 +10,7 @@
 // bounded argv boundary: no shell, concurrent stream drain, killpg
 // cleanup, monotonic deadline). The generated bike_ride_cli_paths.hpp
 // supplies the three executable paths — never a quoted compile
-// definition (the bike_native_bench_path.hpp pattern).
+// definition.
 //
 // Oracle→native semantic deltas, each discharged at its assertion:
 // - The oracle's --backend accepts ('python','native') and defaults to

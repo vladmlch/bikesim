@@ -24,7 +24,7 @@ namespace setupvalue = runtime::setupvalue;
 constexpr std::string_view kFile = "test_native_suspension.py";
 
 [[nodiscard]] std::string mjb() {
-    return repo_file("tools/proto_native_bench/artifacts/model.mjb")
+    return repo_file("tests/fixtures/benchmark/model.mjb")
             .string();
 }
 

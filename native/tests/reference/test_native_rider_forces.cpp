@@ -66,7 +66,7 @@ std::filesystem::path repo_file(std::string_view relative) {
 
 const std::string &bench_mjb() {
     static const std::string path =
-        repo_file("tools/proto_native_bench/artifacts/model.mjb").string();
+        repo_file("tests/fixtures/benchmark/model.mjb").string();
     return path;
 }
 

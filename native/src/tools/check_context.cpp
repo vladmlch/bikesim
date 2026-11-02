@@ -477,18 +477,6 @@ Value load_context(const fs::path &build) {
             if (identity == nullptr || !io::is_null(*identity))
                 throw CheckError("Python-free root context must record python: null");
         }
-    } else {
-        // Preserve the oracle's required binding interpreter and its venv
-        // symlink spelling. Explicit null belongs only to a validated root.
-        const fs::path python_path = require_existing_path(
-            python != nullptr ? *python : Value{},
-            "configured Python executable", true, true);
-        set_member(context, "python_executable", vstr(python_path.string()));
-        const Value *identity = member(context, "python");
-        // Older binding contexts may omit the additive identity record;
-        // when present it cannot borrow the root graph's null exception.
-        if (identity != nullptr && !is_object(identity))
-            throw CheckError("binding native check context python must be an object");
     }
 
     const std::string system = schema_text == "2" ? validate_platform_record(context) : "Darwin";
@@ -1524,11 +1512,6 @@ std::vector<fs::path> standalone_header_roots(
             if (fs::is_directory(candidate, ec))
                 roots.push_back(canonical_path(candidate));
         }
-        const fs::path benchmark_headers =
-            first_party_root.parent_path() / "tools" / "proto_native_bench";
-        std::error_code ec;
-        if (fs::is_directory(benchmark_headers, ec))
-            roots.push_back(canonical_path(benchmark_headers));
     }
     return roots;
 }

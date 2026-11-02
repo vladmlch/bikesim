@@ -225,7 +225,7 @@ std::vector<std::string> tool_argv(const std::string &kind,
             temporary_database(build, kind, run_id, index, entry);
         std::vector<std::string> argv = {tool.string(), "-p", database.string(),
                                          "--extra-arg=-Wno-error", "--quiet"};
-        // First-party sources outside native/ (e.g. tools/proto_native_bench)
+        // First-party sources outside native/
         // do not inherit native/.clang-tidy through parent-directory
         // discovery — without it clang-tidy reports "no checks enabled".
         const auto &roots_array =
@@ -452,10 +452,6 @@ int run_sweep(const std::string &kind, const fs::path &build) {
             set_member(summary, "compiler_context",
                        *member(context, "compiler"));
             set_member(summary, "sdk", *member(context, "sdk"));
-            set_member(summary, "python_executable",
-                       member(context, "python_executable") != nullptr
-                           ? *member(context, "python_executable")
-                           : vnull());
             std::set<std::string> unique_sources;
             for (const auto &entry: entries) unique_sources.insert(entry.source.string());
             set_member(summary, "unique_source_count",
@@ -765,13 +761,10 @@ int run_sweep(const std::string &kind, const fs::path &build) {
 namespace {
 
 // The header sweep's coverage question — which first-party headers a build
-// actually exercises — is decided per context kind. A bindings context
-// (context["python_executable"] set, the transition graph) keeps the
-// oracle's contract verbatim: every first-party header compiles under every
-// covering target. A produced standalone context applies textual
-// reachability instead: a header is swept iff at least one compiled
-// translation unit reaches it through its #include chain, under the compile
-// context of each reaching target. That keeps binding-side headers —
+// actually exercises — is textual reachability: a header is swept iff at
+// least one compiled translation unit reaches it through its #include
+// chain, under the compile context of each reaching target. That keeps
+// headers no TU reaches —
 // reachable only from translation units the produced build does not
 // compile — out of the sweep without weakening the check for anything the
 // build actually includes; the excluded set is recorded in the summary.
@@ -987,16 +980,10 @@ int run_header_sweep(const fs::path &build) {
                         // overwrite the same target key.
                         entries_by_root[root.string()][entry.target.value_or("")] =
                             &entry;
-            // Reachability scoping applies only to produced (Python-free)
-            // contexts: binding-side headers are reachable exclusively from
-            // translation units the standalone graph does not build, so they
-            // are recorded, not swept. A bindings context keeps the oracle's
-            // exact contract — every header under every covering target —
-            // because the extension TU set compiles the whole first-party
-            // surface there.
-            const bool bindings_expected =
-                opt_string(context, "python_executable").has_value();
-            if (!bindings_expected) {
+            // Reachability scoping applies to the produced context: a header
+            // is swept iff at least one compiled TU reaches it; headers no TU
+            // reaches are recorded, not swept.
+            {
                 std::map<std::string, std::vector<IncludeDirective>>
                     include_cache;
                 reaching = reaching_targets(entries, header_roots, include_cache);
@@ -1061,18 +1048,15 @@ int run_header_sweep(const fs::path &build) {
             set_member(summary, "headers", varr(std::move(header_values)));
             // Provenance for the scoping decision: headers under the roots
             // that no compiled TU reaches are reported, never silently
-            // skipped. Produced-only keys — a bindings context emits exactly
-            // the oracle's summary shape.
-            if (!bindings_expected) {
-                Array excluded_values;
-                for (const fs::path &header: excluded_headers)
-                    excluded_values.push_back(vstr(header.string()));
-                set_member(summary, "unreachable_headers",
-                           varr(std::move(excluded_values)));
-                set_member(
-                    summary, "unreachable_header_count",
-                    vint(static_cast<std::int64_t>(excluded_headers.size())));
-            }
+            // skipped.
+            Array excluded_values;
+            for (const fs::path &header: excluded_headers)
+                excluded_values.push_back(vstr(header.string()));
+            set_member(summary, "unreachable_headers",
+                       varr(std::move(excluded_values)));
+            set_member(
+                summary, "unreachable_header_count",
+                vint(static_cast<std::int64_t>(excluded_headers.size())));
         } catch (const std::exception &error) {
             std::get<Array>(member_mut(summary, "errors")->data)
                 .push_back(vstr(error.what()));

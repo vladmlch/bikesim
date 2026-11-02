@@ -12,9 +12,7 @@
 //   * contract checks that only exist for a binding artifact (loader
 //     provenance, selected-artifact test loaders, contract executable) are
 //     reported "not-applicable" when the artifact class is absent from a
-//     Python-free build instead of failing on an absent extension; a
-//     bindings context (python_executable non-null) keeps the oracle's
-//     fail-closed "exactly one extension" requirement.
+//     Python-free build instead of failing on an absent extension.
 #include "checks_internal.hpp"
 
 #include "../platform/process.hpp"
@@ -1816,7 +1814,6 @@ Value validate_tidy_policy(const fs::path &repo_root) {
     const std::vector<std::string> required_paths = {
         "native/src/contract.hpp",
         "native/tests/test_contracts.cpp",
-        "tools/proto_native_bench/bench.cpp",
     };
     for (const auto &required: required_paths)
         if (!std::regex_search(required, header_pattern))
@@ -2291,78 +2288,6 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
     }
     }();
 
-    Object benchmark_status;
-    [&]() {
-    {
-        std::set<std::string> benchmark_targets;
-        for (const Value &entry: source_entries) {
-            if (!std::holds_alternative<Object>(entry.data)) continue;
-            const auto *target = member(entry, "target") != nullptr
-                                     ? std::get_if<std::string>(
-                                           &member(entry, "target")->data)
-                                     : nullptr;
-            if (target != nullptr && *target == "native_bench")
-                benchmark_targets.insert(*target);
-        }
-        if (!benchmark_targets.empty()) {
-            std::set<std::string> benchmark_sources;
-            const fs::path bench_dir =
-                repo_root / "tools" / "proto_native_bench";
-            for (fs::directory_iterator it(bench_dir, ec), end;
-                 !ec && it != end; it.increment(ec)) {
-                std::error_code file_ec;
-                if (it->is_regular_file(file_ec) &&
-                    it->path().extension() == ".cpp")
-                    benchmark_sources.insert(canonical_path(it->path()).string());
-            }
-            if (benchmark_sources.empty())
-                throw ContractError(
-                    "native_bench target has no C++ sources under "
-                    "tools/proto_native_bench");
-            std::set<std::string> manifested;
-            for (const Value &entry: source_entries) {
-                if (!std::holds_alternative<Object>(entry.data)) continue;
-                const auto *path = member(entry, "path") != nullptr
-                                       ? std::get_if<std::string>(
-                                             &member(entry, "path")->data)
-                                       : nullptr;
-                const auto *target = member(entry, "target") != nullptr
-                                         ? std::get_if<std::string>(
-                                               &member(entry, "target")->data)
-                                         : nullptr;
-                if (path != nullptr && target != nullptr &&
-                    benchmark_targets.contains(*target))
-                    manifested.insert(canonical_path(*path).string());
-            }
-            std::vector<std::string> missing_sources;
-            for (const auto &source: benchmark_sources)
-                if (!manifested.contains(source))
-                    missing_sources.push_back(source);
-            if (!missing_sources.empty()) {
-                std::string joined;
-                for (const auto &source: missing_sources) {
-                    if (!joined.empty()) joined += ", ";
-                    joined += source;
-                }
-                throw ContractError(
-                    "benchmark sources are missing from CMake manifest: " +
-                    joined);
-            }
-            benchmark_status = {
-                {"status", vstr("passed")},
-                {"detail",
-                 vstr("configured benchmark sources are manifested")},
-            };
-        } else {
-            benchmark_status = {
-                {"status", vstr("pending")},
-                {"detail",
-                 vstr("no configured proto_native_bench target exists yet")},
-            };
-        }
-    }
-    }();
-
     // Shared include-edge recognizer for the dependency rules below.
     static const std::regex include_target(
         R"(^[ \t]*#[ \t]*include[ \t]*[<"]([^>"]+)[>"])");
@@ -2523,8 +2448,6 @@ Value check_pending_rules(const fs::path &repo_root, const Value &sources) {
 
     return vobj({
         {"engine_call_wrappers", vobj(std::move(engine_status))},
-        {"benchmark_manifest_membership",
-         vobj(std::move(benchmark_status))},
         {"pure_core_python_free", vobj(std::move(pure_core_status))},
         {"hot_kernel_dependency_free", vobj(std::move(hot_kernel_status))},
     });
@@ -2628,18 +2551,10 @@ int run_contracts(const fs::path &build,
             // Binding-artifact checks: the Python-free build produces no
             // extension, so loader provenance / contract-executable checks
             // report not-applicable rather than failing on an intentionally
-            // absent artifact; when an extension IS present the oracle path
-            // runs unchanged. A bindings context (python_executable non-null)
-            // keeps the oracle's fail-closed contract — an absent extension
-            // there is a broken build, not an accepted shape.
-            const bool bindings_expected =
-                opt_string(context, "python_executable").has_value();
+            // absent artifact; when an extension IS present the same checks
+            // validate it.
             const std::vector<fs::path> found_extensions =
                 extensions_in(build_dir);
-            if (found_extensions.empty() && bindings_expected)
-                throw ContractError(
-                    "expected exactly one bike_native extension in " +
-                    build_dir.string() + ", found 0");
             if (!found_extensions.empty()) {
                 const fs::path extension = selected_extension(build_dir);
                 checks.emplace_back(

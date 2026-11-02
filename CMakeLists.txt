@@ -534,20 +534,6 @@ bike_add_realtime_measurement("${_bike_native_dir}")
 include("${_bike_native_dir}/cmake/NativeValidation.cmake")
 bike_add_native_validation("${_bike_native_dir}")
 
-# native_bench: the proto_native_bench prototype TU. The produced manifest
-# declares tools/proto_native_bench a first-party root, so this target must
-# exist or the headers sweep has no compile context for state_format.hpp
-# (the oracle fails closed on that hole).
-add_executable(native_bench
-  "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/bench.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/tools/proto_native_bench/state_format.hpp")
-bike_apply_native_policy(native_bench)
-target_include_directories(native_bench SYSTEM PRIVATE
-  "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
-target_link_libraries(native_bench PRIVATE bike_engine)
-bike_rewrite_mujoco_load_name(native_bench
-  "${BIKE_DEP_mujoco_LIBRARY}")
-
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:
   # the produced-command contract's focused executable pair.
@@ -602,12 +588,6 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME native_platform_${_numeric}_tests COMMAND native_platform_${_numeric}_tests)
   endforeach()
-  add_test(NAME native_bench_bare COMMAND native_bench bare 20 5
-    --artifacts "${CMAKE_SOURCE_DIR}/tools/proto_native_bench/artifacts")
-  add_test(NAME native_bench_glue COMMAND native_bench glue 10 4
-    --artifacts "${CMAKE_SOURCE_DIR}/tools/proto_native_bench/artifacts")
-  add_test(NAME native_bench_heavy COMMAND native_bench heavy 6 3
-    --artifacts "${CMAKE_SOURCE_DIR}/tools/proto_native_bench/artifacts")
 endif()
 add_subdirectory(native/tests/reference)
 

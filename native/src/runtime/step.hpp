@@ -80,7 +80,8 @@ struct RawStep {
     std::vector<std::pair<std::string, std::vector<double>>> components;
     std::vector<std::pair<std::string, rider::AttachmentRaw>>
         attachment_raw;
-    std::vector<double> actuator_force, qfrc_passive;
+    std::vector<double> actuator_force;
+    std::vector<double> qfrc_passive; // oracle parity; currently unread
     WireObject contact_truth;
     WireObject channels, diagnostics;
     std::vector<std::string> attachment_errors;
@@ -455,7 +456,8 @@ private:
         writers::RiderContactsDiagnostics rider_diag{};
         double loss_step = 0., linkage_error = 0., shock_limit_power = 0.;
         Wire electrical_power_w{};
-        std::vector<double> solved_actuator{}, solved_passive{};
+        std::vector<double> solved_actuator{};
+        std::vector<double> solved_passive{}; // oracle parity; currently unread
     };
     // Solved-interval stage: constraint/brake/component merges through the
     // endpoint forward + finiteness check (physical_runtime.py:624-661).

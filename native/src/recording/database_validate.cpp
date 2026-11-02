@@ -26,6 +26,76 @@ std::string normalize(std::string value) {
     for (auto& ch : value) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
     return value;
 }
+// legacy recordings: channel_rider fields removed from the catalog may
+// persist as recorded columns (value + _present) and field_catalog rows;
+// the recorded side is normalized by this set — the spec stays strict.
+constexpr std::array kLegacyFields{"rider_passive_power_w",
+                                   "rider_passive_work_step_j"};
+// legacy recordings: optional struct children removed from
+// channel_rider.rider_control persist inside recorded type spellings and
+// field-catalog descriptors.
+constexpr std::array kLegacyStructChildren{"passive_damping_nm",
+                                           "solved_passive_nm"};
+// A legacy channel field persists as the value column, its `_present`
+// presence column, and the `__`-prefixed claim parent-mask columns.
+bool is_legacy_column(std::string_view column, std::string_view field) {
+    return column == field || column == std::string(field) + "_present" ||
+           column == "__" + std::string(field) + "_present" ||
+           column == "__" + std::string(field) + "_valid";
+}
+// Normalized `"NAME" TYPE` member segments of those children (value
+// DOUBLE plus the presence BOOLEAN every optional member carries).
+const std::vector<std::string>& legacy_normalized_members() {
+    static const std::vector<std::string> members = [] {
+        std::vector<std::string> out;
+        for (const char* child : kLegacyStructChildren) {
+            out.push_back(normalize(std::string(child) + " DOUBLE"));
+            out.push_back(normalize(std::string(child) + "_present BOOLEAN"));
+        }
+        return out;
+    }();
+    return members;
+}
+// Remove one normalized `"NAME" TYPE` member segment plus its separator
+// from a normalized type spelling. The token is the full glued name+type,
+// so it cannot collide inside a longer member name; the segment must sit
+// at a member boundary (preceded by '(' or ',', ended by ',' or ')').
+std::string erase_normalized_member(std::string type, std::string_view member) {
+    std::size_t start = 0;
+    for (;;) {
+        const auto pos = type.find(member, start);
+        if (pos == std::string::npos) return type;
+        const auto end = pos + member.size();
+        const bool bounded = pos > 0 &&
+            (type[pos - 1] == '(' || type[pos - 1] == ',') &&
+            end < type.size() && (type[end] == ',' || type[end] == ')');
+        if (!bounded) { start = end; continue; }
+        if (type[end] == ',') type.erase(pos, end - pos + 1);          // member + trailing comma
+        else type.erase(type[pos - 1] == ',' ? pos - 1 : pos,         // last member: drop the left comma
+                        end - (type[pos - 1] == ',' ? pos - 1 : pos));
+    }
+}
+// legacy recordings: strip removed struct children from a recorded
+// field descriptor (the field_catalog definition_json payload) so it can
+// compare against the current spec descriptor.
+io::Value strip_legacy_children(io::Value definition) {
+    auto* object = std::get_if<Value::Object>(&definition.data);
+    if (object == nullptr) return definition;
+    for (auto& [key, member] : *object) {
+        if (key != "children") continue;
+        auto* children = std::get_if<Value::Array>(&member.data);
+        if (children == nullptr) continue;
+        std::erase_if(*children, [](const Value& child) {
+            const auto* object = std::get_if<Value::Object>(&child.data);
+            const auto* key_field = object == nullptr ? nullptr : io::find_member(*object, "key");
+            return key_field != nullptr && std::ranges::any_of(
+                kLegacyStructChildren, [&](std::string_view name) {
+                    return io::as_string(*key_field, "key") == name;
+                });
+        });
+    }
+    return definition;
+}
 // NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::string nested_invalid(const FieldSpec& field, const std::string& expression, unsigned depth = 0) {
     if (depth > 64) throw std::invalid_argument("recording schema nesting exceeds validation bound");
@@ -122,10 +192,26 @@ std::set<std::string> validate_container_schema(const Connection& c) {
         io::recording_json(value::require(meta.front(), "run_id")) != io::recording_json(value::require(runs.front(), "run_id")) ||
         io::as_string(value::require(meta.front(), "codec"), "codec") != "bike_recording.json.v1") throw std::invalid_argument("invalid recording identity/schema");
     for (const auto& spec : all_tables()) {
-        const auto columns = c.query("DESCRIBE " + quote(spec.name)); const auto types = column_types(spec);
+        // legacy recordings: fields removed from the catalog may persist
+        // as recorded columns (value + _present) and as struct children
+        // inside recorded type spellings; normalize the recorded side by
+        // the legacy set — the spec side stays strict.
+        std::vector<std::pair<std::string, std::string>> columns;
+        for (const auto& column : c.query("DESCRIBE " + quote(spec.name))) {
+            const auto name = io::as_string(value::require(column, "column_name"), "column_name");
+            const auto legacy_column = std::ranges::any_of(kLegacyFields, [&](std::string_view field) {
+                return is_legacy_column(name, field);
+            });
+            if (legacy_column) continue;
+            auto type = normalize(io::as_string(value::require(column, "column_type"), "column_type"));
+            for (const auto& member : legacy_normalized_members())
+                type = erase_normalized_member(std::move(type), member);
+            columns.emplace_back(name, std::move(type));
+        }
+        const auto types = column_types(spec);
         if (columns.size() != types.size()) throw std::invalid_argument(spec.name + ": columns differ from schema 1");
-        for (std::size_t i = 0; i < columns.size(); ++i) if (io::as_string(value::require(columns[i], "column_name"), "column_name") != types[i].first ||
-            normalize(io::as_string(value::require(columns[i], "column_type"), "column_type")) != normalize(types[i].second)) throw std::invalid_argument(spec.name + ": column order/types differ from schema 1");
+        for (std::size_t i = 0; i < columns.size(); ++i) if (columns[i].first != types[i].first ||
+            columns[i].second != normalize(types[i].second)) throw std::invalid_argument(spec.name + ": column order/types differ from schema 1");
         presence(c, spec);
         std::vector<std::string> keys; keys.reserve(spec.keys.size());
         for (const auto& f : spec.keys) keys.push_back(f.key);
@@ -143,12 +229,39 @@ void validate_declared_catalog(Connection const& c) {
         const auto first = io::as_string(a[0], "table").compare(io::as_string(b[0], "table"));
         return first < 0 || (first == 0 && io::as_string(a[1], "field") < io::as_string(b[1], "field"));
     });
-    const auto catalog = c.query("SELECT * FROM field_catalog ORDER BY table_name,field_name");
-    if (catalog.size() != declared.size()) throw std::invalid_argument("field catalog differs from reviewed schema");
-    for (std::size_t i = 0; i < catalog.size(); ++i) {
-        Value::Array row; for (const auto& [name, v] : catalog[i]) { (void)name; row.push_back(v); }
-        if (io::recording_json(Value{row}) != io::recording_json(Value{declared[i]})) throw std::invalid_argument("field catalog descriptor differs from reviewed schema");
+    // The spec dtype text is compared through the same normalization the
+    // recorded side gets (normalize() plus the legacy member strip).
+    for (auto& row : declared)
+        row[2] = value::text(normalize(io::as_string(row[2], "dtype")));
+    // legacy recordings: rows for removed channel_rider fields are
+    // dropped; dtype/definition_json of surviving rows are normalized by
+    // the legacy struct-child set before the strict row comparison.
+    std::vector<Value::Array> catalog;
+    for (const auto& row : c.query("SELECT * FROM field_catalog ORDER BY table_name,field_name")) {
+        const auto table = io::as_string(value::require(row, "table_name"), "table_name");
+        const auto field_name = io::as_string(value::require(row, "field_name"), "field_name");
+        const auto legacy_row = table == "channel_rider" && std::ranges::any_of(
+            kLegacyFields, [&](std::string_view name) {
+                return is_legacy_column(field_name, name);
+            });
+        if (legacy_row) continue;
+        Value::Array normalized;
+        for (const auto& [name, v] : row) {
+            if (name == "dtype") {
+                auto type = normalize(io::as_string(v, "dtype"));
+                for (const auto& member : legacy_normalized_members())
+                    type = erase_normalized_member(std::move(type), member);
+                normalized.push_back(value::text(std::move(type)));
+            } else if (name == "definition_json")
+                normalized.push_back(value::text(io::recording_json(
+                    strip_legacy_children(io::parse_json(io::as_string(v, "definition_json"))))));
+            else normalized.push_back(v);
+        }
+        catalog.push_back(std::move(normalized));
     }
+    if (catalog.size() != declared.size()) throw std::invalid_argument("field catalog differs from reviewed schema");
+    for (std::size_t i = 0; i < catalog.size(); ++i)
+        if (io::recording_json(Value{catalog[i]}) != io::recording_json(Value{declared[i]})) throw std::invalid_argument("field catalog descriptor differs from reviewed schema");
 }
 void validate_relationships_and_assets(const Connection& c) {
     for (auto table : {"assets", "integration_states", "metrics", "coordinate_catalog", "alias_catalog", "events"}) require_zero(c,

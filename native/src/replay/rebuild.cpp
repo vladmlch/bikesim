@@ -68,8 +68,24 @@ configuration::RiderSpecs rider_specs(const Value& value) {
 #undef BIKE_RIDER
     configuration::detail::post_init(out); return out;
 }
+// legacy recordings: the removed joint_passive_damping_nms_rad knob is
+// tolerated only when the recorded value is inert (null or 0.0). A nonzero
+// recorded value cannot be replayed — silently dropping it would let
+// verify_configuration bless a physically different reconstruction.
+void drop_removed_passive_damping(Value& articulated) {
+    auto& object = std::get<Object>(articulated.data);
+    const auto* member = find(object, "joint_passive_damping_nms_rad");
+    if (member == nullptr) return;
+    if (!io::is_null(*member) &&
+        io::as_double(*member, "resolved_config.physics.articulated.joint_passive_damping_nms_rad") != 0.)
+        throw IncompatibleExecution(
+            "resolved_config.physics.articulated.joint_passive_damping_nms_rad: "
+            "recorded nonzero damping cannot be replayed — the mechanism no longer exists");
+    (void)pop(object, "joint_passive_damping_nms_rad");
+}
 Value configuration_hashable(Value resolved) {
     auto physics = field(resolved, "physics"), articulated = field(physics, "articulated");
+    drop_removed_passive_damping(articulated);
     for (auto key : {"joint_envelope", "joint_strength"}) set(articulated, std::string(key) + "_path", maybe(resolved, std::string(key) + "_sha256"));
     set(physics, "articulated", std::move(articulated)); set(resolved, "physics", std::move(physics)); return resolved;
 }
@@ -97,6 +113,7 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         if (declared && !io::is_null(*declared) && !bundled) throw IncompatibleExecution(std::string("legacy recording lacks bundled ") + key);
         set(articulated, std::string(key) + "_path", bundled ? text((assets.path() / name).string()) : Value{});
     }
+    drop_removed_passive_damping(articulated);
     set(physics, "articulated", std::move(articulated));
     if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file))
         throw IncompatibleExecution("recording startup depends on an unbundled initial-state file; recorded paths are never followed");

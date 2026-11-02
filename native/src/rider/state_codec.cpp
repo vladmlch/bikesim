@@ -1953,6 +1953,14 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
     const std::string path = "config.rider_controller";
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d, kConfigRequiredKeys, kConfigOptionalKeys);
+    // legacy recordings: the removed knob is accepted only when the
+    // recorded value is inert (null or 0.0); a nonzero value cannot be
+    // silently dropped — it would bless a different reconstruction.
+    if (d.contains("joint_passive_damping_nms_rad"))
+        if (const auto damping = d["joint_passive_damping_nms_rad"].optional_real(path);
+            damping.has_value() && *damping != 0.)
+            invalid(std::string(path) + ".joint_passive_damping_nms_rad",
+                    "removed config knob carries a nonzero recorded value");
     SpindleConfig config;
     decode_actuation_scalars(d, path, config);
     decode_geometry_scalars(d, path, config);
@@ -1968,7 +1976,7 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
         bio::Value::Object members;
         for (const auto& [key, member] : std::get<bio::Value::Object>(value.data))
             if (key != "strength" && key != "strength_coordinates" && key != "envelopes" &&
-                key != "joint_passive_damping_nms_rad") // legacy recordings
+                key != "joint_passive_damping_nms_rad") // legacy recordings: inert-only, gated above
                 members.emplace_back(key,member);
         config.legacy = decode_articulated_config(bio::Value{std::move(members)});
     }

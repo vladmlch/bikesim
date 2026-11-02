@@ -53,7 +53,7 @@ void populate_heightfield(mjModel const& compiled, const SetupRequest& request) 
 }
 
 Value equilibrium_value(const EquilibriumResult& result) {
-    return Value{Object{{"steps", integer(result.steps)},
+    Value value{Object{{"steps", integer(result.steps)},
         {"residual_qacc", real(result.residual_qacc)}, {"cache_hit", Value{result.cache_hit}},
         {"fork_travel_mm", real(result.fork_travel_mm)},
         {"shock_stroke_mm", real(result.shock_stroke_mm)},
@@ -74,6 +74,15 @@ Value equilibrium_value(const EquilibriumResult& result) {
             ? real(*result.initial_state_source_timestep_s) : Value{}},
         {"source_equilibrium_residual_qacc", result.source_equilibrium_residual_qacc
             ? real(*result.source_equilibrium_residual_qacc) : Value{}}}};
+    // Kinetic-settle diagnostics appear only when set: the default record
+    // keeps its historical keys.
+    auto& object = std::get<Object>(value.data);
+    if (result.relaxation) object.emplace_back("relaxation", text(*result.relaxation));
+    if (result.relaxation_resets)
+        object.emplace_back("relaxation_resets", integer(*result.relaxation_resets));
+    if (result.settle_x_drift_m)
+        object.emplace_back("settle_x_drift_m", real(*result.settle_x_drift_m));
+    return value;
 }
 
 void length(io::Sha256& digest, std::uint64_t size) {

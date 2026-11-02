@@ -48,7 +48,7 @@ void guard(const SetupContext& context){if(context.physical.step()!=0||context.s
 std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_damping=false){
     bio::Value physics=plain(configuration::to_value(context.physics));auto& config=std::get<bio::Value::Object>(physics.data);
     if(station_count){auto tires=field(config,"tires");auto distributed=field(std::get<bio::Value::Object>(tires.data),"distributed");put(std::get<bio::Value::Object>(distributed.data),"station_count",integer(*station_count));put(std::get<bio::Value::Object>(tires.data),"distributed",std::move(distributed));put(config,"tires",std::move(tires));}
-    std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s";});
+    std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s"||p.first=="equilibrium_relaxation";});
     // The resolved paths are worktree-absolute spellings; the contract binds
     // the file CONTENT below so a stored transfer validates from any checkout.
     auto articulated=field(config,"articulated");auto& section=std::get<bio::Value::Object>(articulated.data);

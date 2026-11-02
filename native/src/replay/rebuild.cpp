@@ -196,6 +196,15 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
     auto reconstructed = field(prepared.metadata, "resolved_config");
     auto physics = field(reconstructed, "physics");
     set(physics, "equilibrium_cache_enabled", field(field(expected, "physics"), "equilibrium_cache_enabled"));
+    // Recipes recorded before the equilibrium_relaxation selector carry no
+    // such key: they were settled with its default schedule ("cycle"), so a
+    // default reconstruction drops the key and still verifies.
+    if (!find(field(expected, "physics"), "equilibrium_relaxation")) {
+        if (const auto* relaxation = find(physics, "equilibrium_relaxation");
+            relaxation != nullptr && string(*relaxation) == "cycle")
+            std::erase_if(std::get<io::Value::Object>(physics.data),
+                          [](const auto& entry) { return entry.first == "equilibrium_relaxation"; });
+    }
     set(reconstructed, "physics", std::move(physics));
     const auto actual_hashable = configuration_hashable(reconstructed), expected_hashable = configuration_hashable(expected);
     const auto actual_json = io::canonical_json(actual_hashable);

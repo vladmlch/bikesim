@@ -599,6 +599,7 @@ void test_defaults() {
     bt::require(c.equilibrium_refine_period_s == 3.0, "refine_period default");
     bt::require(!c.equilibrium_cache_enabled, "cache default");
     bt::require(!c.equilibrium_state_file.has_value(), "state file default");
+    bt::require(c.equilibrium_relaxation == "cycle", "relaxation default");
     bt::require(c.initial_speed_mps == 0. && c.initial_front_brake == 0. &&
                     c.initial_rear_brake == 0.,
                 "initial speed/brake defaults");
@@ -665,7 +666,7 @@ void test_schema() {
                 "schema config_class");
     const Value::Array& fields = io::as_array(
         member(document, "fields", "schema"), "schema.fields");
-    static constexpr std::array<std::string_view, 19> kTopOrder{
+    static constexpr std::array<std::string_view, 20> kTopOrder{
         "physics_mode",
         "drive_mode",
         "timestep_s",
@@ -685,8 +686,9 @@ void test_schema() {
         "equilibrium_refine_period_s",
         "equilibrium_cache_enabled",
         "equilibrium_state_file",
+        "equilibrium_relaxation",
     };
-    bt::require(fields.size() == 19, "top-level field count");
+    bt::require(fields.size() == 20, "top-level field count");
     for (std::size_t i = 0; i < fields.size(); ++i)
         bt::require(
             string_of(member(fields[i], "name", "fields"), "name") ==
@@ -855,6 +857,11 @@ void test_validation() {
                           c.initial_speed_mps =
                               std::numeric_limits<double>::infinity();
                       });
+    for (const char* bad : {"", "Kinetic", "fire"})
+        case_from_default("equilibrium_relaxation must be 'cycle' or 'kinetic'",
+                          [bad](cfg::SimulationPhysicsConfig& c) {
+                              c.equilibrium_relaxation = bad;
+                          });
     case_from_default(
         "equilibrium_state_file must be a non-empty path or None",
         [](cfg::SimulationPhysicsConfig& c) {

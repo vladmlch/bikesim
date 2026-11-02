@@ -1,5 +1,7 @@
 #include "context.hpp"
 #include "state_file.hpp"
+#include "../cblas_abi.hpp"
+#include "../engine_call.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
 #include "../writers/suspension.hpp"
@@ -32,6 +34,40 @@ std::vector<std::pair<std::string,double>> worst(SetupContext const& context){
     std::vector<std::pair<std::string,double>> result;
     for(std::size_t i=0;i<std::min<std::size_t>(5,order.size());++i){const auto dof=order[i];const char* name=mj_id2name(m,mjOBJ_JOINT,joints[dof]);result.emplace_back(name?name:"(unnamed)",q[dof]);}return result;
 }
+// Kinetic damping bounds: the minimum segment keeps high-frequency ripple
+// from resetting every few steps, the drop margin ignores ripple on the main
+// peak, the maximum segment bounds a mode that never peaks (free rolling).
+constexpr double kKineticMinSegmentS=.002,kKineticMaxSegmentS=.25,kKineticPeakDrop=.02;
+// Steps between two velocity resets. "cycle" takes the fixed clock; "kinetic"
+// stops once the kinetic energy has dropped clearly below its running peak.
+struct Segments{
+    bool kinetic=false;std::int64_t cycle=1,min_segment=1,max_segment=1;std::vector<double> momentum;
+    Segments(SetupContext const& context,double dt,std::int64_t cycle_steps,bool kinetic_schedule)
+        :kinetic(kinetic_schedule),cycle(cycle_steps){
+        if(!kinetic)return;
+        min_segment=std::max<std::int64_t>(1,round_even(kKineticMinSegmentS/dt));
+        max_segment=std::max(min_segment,round_even(kKineticMaxSegmentS/dt));
+        const auto nv=context.stepper.model()->nv;
+        if(nv<0||nv>std::numeric_limits<int>::max())throw std::invalid_argument("kinetic damping: nv exceeds the BLAS int range");
+        momentum.assign(static_cast<std::size_t>(nv),0.);
+    }
+    template<typename Step>std::int64_t run(SetupContext& context,Step&& step,std::int64_t budget){
+        if(!kinetic){const auto count=std::min(cycle,budget);for(std::int64_t i=0;i<count;++i)step();return count;}
+        // qM after mj_step belongs to the step's start pose: one step stale,
+        // which only shifts the detected peak by one step.
+        double peak=0.;std::int64_t taken=0;
+        while(taken<budget&&taken<max_segment){
+            step();++taken;
+            const mjModel* m=context.stepper.model();const mjData* d=context.stepper.data();
+            context.stepper.mutate([&]{engine::mul_m(m,d,momentum.data(),d->qvel);});
+            // numpy's qvel@momentum is the provider ddot with its 0.+ seed.
+            const double energy=.5*blas::ddot(static_cast<int>(momentum.size()),d->qvel,1,momentum.data(),1);
+            if(energy>peak)peak=energy;
+            else if(taken>=min_segment&&energy<(1.-kKineticPeakDrop)*peak)break;
+        }
+        return taken;
+    }
+};
 std::string failure_message(std::int64_t steps,double residual,const std::vector<std::pair<std::string,double>>& worst){std::string message=std::format("physical equilibrium did not converge after {} steps: residual={:.6g};",steps,residual);for(const auto& [name,a]:worst)message+=std::format(" {}={:.6g}",name,a);return message;}
 }
 EquilibriumFailure::EquilibriumFailure(std::int64_t count,double residual,std::vector<std::pair<std::string,double>> worst)
@@ -69,17 +105,28 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
         }catch(const engine::EngineFailure&){throw;}catch(const std::bad_alloc&){throw;}
         catch(const std::exception& error){if(explicit_file)throw std::invalid_argument("equilibrium state file "+*explicit_file+": "+error.what());initialize_pose(context);steps=0;}
     }
+    const auto relax_step=[&]{
+        apply_initial_forces(context,true);
+        const std::vector<double> q(context.stepper.qpos().begin(),context.stepper.qpos().end()),v(context.stepper.qvel().begin(),context.stepper.qvel().end());
+        context.stepper.step();settle_contacts(context,q,v);
+        for(auto const state:{context.stepper.qpos(),context.stepper.qvel()})if(!std::ranges::all_of(state,[](double value){return std::isfinite(value);}))throw std::runtime_error("non-finite physical equilibrium state");
+    };
+    // physics.equilibrium_relaxation selects the schedule.
+    const bool kinetic=context.physics.equilibrium_relaxation=="kinetic";
+    Segments segments(context,dt,cycle,kinetic);
+    const auto root_x=static_cast<std::size_t>(joint_address(context,"root_x").qpos);
+    const double start_x=context.stepper.qpos()[root_x];
+    std::int64_t next_refine=first_refine,resets=0;
     while(!cache_hit&&steps<budget){
-        const auto count=std::min(cycle,budget-steps);
-        for(std::int64_t i=0;i<count;++i){
-            apply_initial_forces(context,true);
-            const std::vector<double> q(context.stepper.qpos().begin(),context.stepper.qpos().end()),v(context.stepper.qvel().begin(),context.stepper.qvel().end());
-            context.stepper.step();settle_contacts(context,q,v);++steps;
-            for(auto const state:{context.stepper.qpos(),context.stepper.qvel()})if(!std::ranges::all_of(state,[](double value){return std::isfinite(value);}))throw std::runtime_error("non-finite physical equilibrium state");
-        }
+        steps+=segments.run(context,relax_step,budget-steps);++resets;
         auto const* d=context.stepper.data();std::ranges::fill(std::views::counted(d->qvel,context.stepper.model()->nv),0.);context.stepper.note_posvel_stale();
         apply_initial_forces(context,false);context.stepper.forward();residual=acceleration_residual(context);
-        if(residual>options.tolerance&&(steps==first_refine||steps%refine_period==0))
+        // Kinetic segment lengths vary, so its refine schedule is a time
+        // threshold rather than an exact step multiple.
+        bool refine_due=false;
+        if(kinetic){refine_due=steps>=next_refine;if(refine_due)next_refine=steps+refine_period;}
+        else refine_due=steps==first_refine||steps%refine_period==0;
+        if(residual>options.tolerance&&refine_due)
             for(int attempt=0;attempt<8;++attempt){const double previous=residual;residual=refine_equilibrium(context,80,options.tolerance);if(residual<=options.tolerance||residual>=previous*(1.-1e-3))break;}
         if(residual<=options.tolerance)break;
     }
@@ -89,6 +136,7 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
     if(!context.rear_travel_from_shock_mm)throw std::invalid_argument("equilibrium rear travel requires the source linkage solver");
     result.rear_travel_mm=context.rear_travel_from_shock_mm(result.shock_stroke_mm);
     result.root_z_m=q[static_cast<std::size_t>(joint_address(context,"root_z").qpos)];result.pitch_rad=q[static_cast<std::size_t>(joint_address(context,"root_pitch").qpos)];result.initial_crank_phase_rad=context.physics.drive.crank_phase_rad;result.settled_crank_phase_rad=q[static_cast<std::size_t>(joint_address(context,"crank_spin").qpos)];result.state_file=explicit_file;
+    if(kinetic&&!cache_hit){result.relaxation="kinetic";result.relaxation_resets=resets;result.settle_x_drift_m=q[root_x]-start_x;}
     if(context.physics.equilibrium_cache_enabled&&!cache_hit)save_equilibrium_cache(context,capture_state(context,steps,residual));
     context.equilibrium=result;context.completed=true;return result;
 }

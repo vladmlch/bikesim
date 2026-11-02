@@ -40,7 +40,7 @@ struct EndStopConfig {
 // reuse keeps one declaration for the input and the intent boundary.
 using SeatedClimbConfig = ::rider::IntentConfig;
 
-// model_config.py SimulationPhysicsConfig — 19 fields; drive_mode/pitch_assist
+// model_config.py SimulationPhysicsConfig — 20 fields; drive_mode/pitch_assist
 // declared defaults are None (nullopt), resolved by post_init.
 struct SimulationPhysicsConfig {
     std::string physics_mode = "legacy";
@@ -62,6 +62,10 @@ struct SimulationPhysicsConfig {
     double equilibrium_refine_period_s = 3.;
     bool equilibrium_cache_enabled = false;
     std::optional<std::string> equilibrium_state_file;
+    // Initial-equilibrium relaxation schedule: "cycle" (fixed 20 ms velocity
+    // resets, the historical default) or "kinetic" (kinetic damping: reset
+    // once the kinetic energy has peaked). initialization/equilibrium.cpp.
+    std::string equilibrium_relaxation = "cycle";
 };
 
 // ---- public boundary -----------------------------------------------------------
@@ -233,6 +237,9 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .factory="", .nested=nullptr, .nested2=nullptr},
     {.name="equilibrium_state_file", .type="str | None", .kind=FieldKind::OptionalText,
      .offset=offsetof(SimulationPhysicsConfig, equilibrium_state_file), .required=false, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_relaxation", .type="<class 'str'>", .kind=FieldKind::Text,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_relaxation), .required=false, .factory="",
      .nested=nullptr, .nested2=nullptr},
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there

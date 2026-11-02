@@ -166,6 +166,10 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     const auto& identity=io::as_object(context.identity,"equilibrium identity");
     io::Value physics=plain(configuration::to_value(context.physics));auto& fields=std::get<io::Value::Object>(physics.data);
     std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file";});
+    // Historical NPZ payloads predate the relaxation selector; the legacy
+    // branch keeps them byte-for-byte. The canonical key binds it, like the
+    // refine timing: the schedule shapes which rest the solve reaches.
+    if(legacy)std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_relaxation";});
     io::Value::Object payload{{"version",io::Value{io::Number{"4"}}},{"source",io::Value{legacy?*context.legacy_source_identity:context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"physics",std::move(physics)},
         {"specs",plain(field(identity,"specs"))},{"mass_specs",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"track",plain(legacy?*context.legacy_track_identity:field(identity,"track"))},{"start_x_m",number(context.start_x_m)}};
     // Schema 2 pins the settle contract: max_steps truncates and tolerance

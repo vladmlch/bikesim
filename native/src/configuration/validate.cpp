@@ -1085,6 +1085,9 @@ void post_init(SimulationPhysicsConfig &config) {
     scalar(config.timestep_s, "timestep", std::nullopt, true);
     // isinstance(pitch_assist, bool) / isinstance(cache_enabled, bool) are
     // typed members — the checks are vacuous.
+    if (config.equilibrium_relaxation != "cycle" &&
+        config.equilibrium_relaxation != "kinetic")
+        fail("equilibrium_relaxation must be 'cycle' or 'kinetic'");
     if (config.equilibrium_state_file &&
         !nonblank(*config.equilibrium_state_file))
         fail("equilibrium_state_file must be a non-empty path or None");

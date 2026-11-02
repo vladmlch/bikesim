@@ -34,6 +34,11 @@ struct EquilibriumResult {
     std::optional<std::string> initial_state_source_sha256;
     std::optional<double> initial_state_source_timestep_s;
     std::optional<double> source_equilibrium_residual_qacc;
+    // Set only by a freshly solved kinetic-damping settle, so the default
+    // (cycle) record keeps its historical keys.
+    std::optional<std::string> relaxation;
+    std::optional<std::int64_t> relaxation_resets;
+    std::optional<double> settle_x_drift_m;
 };
 
 // The unconverged owner remains inspectable; it can never be sealed.

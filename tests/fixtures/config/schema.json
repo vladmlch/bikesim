@@ -1635,6 +1635,12 @@
       "default_factory": null,
       "name": "equilibrium_state_file",
       "type": "str | None"
+    },
+    {
+      "default": "cycle",
+      "default_factory": null,
+      "name": "equilibrium_relaxation",
+      "type": "<class 'str'>"
     }
   ]
 }

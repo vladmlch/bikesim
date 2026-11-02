@@ -7,7 +7,9 @@
 
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <string>
+#include <string_view>
 
 NATIVE_DIAG_PUSH
 // NATIVE_DIAG_IGNORE is the project diagnostic-pragma macro from diag.hpp; cppcheck cannot resolve it.
@@ -100,7 +102,41 @@ namespace init=bike::initialization;
                 std::isfinite(result.pitch_rad),
                 "slope solve measures both supported wheels and an actual settled chassis angle");
 }
+
+// physics.equilibrium_relaxation="kinetic" resets velocities once the kinetic
+// energy has peaked instead of on the fixed 20 ms clock. It must reach the
+// same rest as the default schedule and report its own diagnostics, while the
+// default result keeps its historical shape.
+[[gnu::noinline]] void kinetic_relaxation() {
+    const auto solve=[](std::string_view relaxation){
+        auto request=init::read_setup_request(bt::fixture("requests/welded_flat.toml"));
+        auto& physics=request.model.physics.value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+        physics.equilibrium_cache_enabled=false;
+        physics.equilibrium_state_file.reset();
+        physics.initial_speed_mps=0.;
+        physics.equilibrium_relaxation=std::string(relaxation);
+        request.initial_state.reset();
+        auto owner=init::make_setup(request);
+        return init::settle(*owner);
+    };
+    const auto cycle=solve("cycle");
+    const auto kinetic=solve("kinetic");
+    bt::require(!cycle.relaxation && !cycle.relaxation_resets && !cycle.settle_x_drift_m,
+                "the default cycle settle keeps its historical result fields");
+    bt::require(kinetic.relaxation==std::optional<std::string>{"kinetic"} &&
+                kinetic.relaxation_resets.value_or(0)>=1 &&
+                std::isfinite(kinetic.settle_x_drift_m.value_or(
+                    std::numeric_limits<double>::quiet_NaN())),
+                "a kinetic settle reports its schedule, reset count and settle drift");
+    bt::require(kinetic.residual_qacc<=.05 && !kinetic.cache_hit,
+                "a kinetic settle passes the same zero-velocity acceptance gate");
+    bt::require(std::abs(kinetic.fork_travel_mm-cycle.fork_travel_mm)<.5 &&
+                std::abs(kinetic.shock_stroke_mm-cycle.shock_stroke_mm)<.5 &&
+                std::abs(kinetic.rear_travel_mm-cycle.rear_travel_mm)<.5 &&
+                std::abs(kinetic.pitch_rad-cycle.pitch_rad)<1e-3,
+                "kinetic and cycle schedules reach the same rest pose");
+}
 } // namespace
 
-int main(){return bt::run([]{budgets();convergence_and_failure();slope_brake_and_crank();});}
+int main(){return bt::run([]{budgets();convergence_and_failure();slope_brake_and_crank();kinetic_relaxation();});}
 NATIVE_DIAG_POP

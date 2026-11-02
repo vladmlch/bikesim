@@ -374,9 +374,9 @@ void python_coercion_and_density_contract(){
     // experiment_acceptance.py::is_synthetic — str(source).strip().lower()
     // prefix matching plus the strict boolean synthetic declaration.
     for(const char* source:{"synthetic"," Synthetic-2 ","SIMULATION: v3","fixture:gold"})
-        bt::require(is_synthetic(json(std::string("{\"source\":\"")+source+"\"}")),"str() source prefixes survive strip/lower");
+        bt::require(is_synthetic(json(std::string(R"({"source":")")+source+R"("})")),"str() source prefixes survive strip/lower");
     for(const char* source:{"lab","[1]","123.4","none-sourced"})
-        bt::require(!is_synthetic(json(std::string("{\"source\":\"")+source+"\"}")),"non-synthetic sources stay measured");
+        bt::require(!is_synthetic(json(std::string(R"({"source":")")+source+R"("})")),"non-synthetic sources stay measured");
     bt::require(!is_synthetic(json(R"({"source":123})"))&&!is_synthetic(json(R"({"source":null})"))&&
         !is_synthetic(json(R"({"source":["synthetic:x"]})"))&&!is_synthetic(json(R"({})")),
         "Python str() over non-string JSON values cannot produce a synthetic prefix");

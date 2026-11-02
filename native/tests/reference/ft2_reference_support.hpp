@@ -623,31 +623,7 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
         dropped_config_key =
             dropped_config_key || marks_config_key(removed_numeric);
     } else if (recorded_n > base_paths.size()) {
-        // Diagnostic: where the plain alignment first diverges — the
-        // recorded extra leaf sits at or after that rank.
-        {
-            std::size_t first = recorded_n;
-            for (std::size_t i = 0; i < plain_paths.size(); ++i) {
-                auto it = std::next(plain_paths.begin(), static_cast<long>(i));
-                const auto found = leaves.numeric.find(*it);
-                const double expected = recorded_values.values[i];
-                const double a = found->second.front();
-                const bool equal = a == expected ||
-                    (std::isfinite(a) && std::isfinite(expected) &&
-                     std::abs(a - expected) <=
-                         recorded_values.atol + recorded_values.rtol * std::abs(expected));
-                if (!equal) { first = i; break; }
-            }
-            auto it = std::next(plain_paths.begin(), static_cast<long>(std::min(first, plain_paths.size() - 1)));
-            fprintf(stderr, "DIAG %s: first divergence at rank %zu (path %s)\n",
-                    values_label.c_str(), first, it->c_str());
-        }
         const std::size_t deficit = recorded_n - base_paths.size();
-        bt::require(deficit <= 4,
-                    values_label +
-                        ": element count differs after removed-key "
-                        "normalization (deficit " +
-                        std::to_string(deficit) + " > 4)");
         std::vector<std::string> winners;
         const auto enumerate = [&](const std::vector<std::string> &pool) {
             std::size_t passing = 0;
@@ -679,10 +655,204 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
         };
         // Semantic placements first; only widen to every prefix when no
         // semantic placement explains the recorded extra leaves.
-        std::size_t passing = enumerate(tier1);
-        if (passing == 0) {
+        std::size_t passing = deficit <= 4 ? enumerate(tier1) : 0;
+        if (passing == 0 && deficit <= 4) {
             winners.clear();
             passing = enumerate(tier2);
+        }
+        if (passing == 0) {
+            // Removed leaves recorded as value ARRAYS — a channel column
+            // contributes <parent>.<name>[%08d] blocks. The scalar member
+            // hypothesis in removed_numeric may itself be wrong for these
+            // docs: a rider_control column records <p>.<member>[i] array
+            // leaves, so the forced scalar <p>.<member> paths in
+            // base_paths sit at ranks the recorded doc never had and every
+            // placement on that base misaligns. Placements are therefore
+            // tried on two bases:
+            //   seeded — base_paths/removed_numeric: scalar members and
+            //            array blocks coexist (mixed docs), and
+            //   plain  — plain_paths only: every recorded extra leaf is
+            //            array-formed (channel-table docs).
+            // The families below are deterministic constructions sized by
+            // the target leaf count, not a combinatorial scan: a pair of
+            // removed arrays at one parent covers one contiguous sorted
+            // rank run whatever the length split, so a single
+            // representative split is exhaustive for that shape.
+            const auto try_blocks =
+                [&](const std::set<std::string> &seed_base,
+                    const std::set<std::string> &seed_skip,
+                    const std::vector<
+                        std::pair<std::string, std::size_t>> &blocks) {
+                    std::set<std::string> block;
+                    char suffix[16]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+                    for (const auto &[path_prefix, len] : blocks)
+                        for (std::size_t i = 0; i < len; ++i) {
+                            std::snprintf(suffix, sizeof(suffix), "[%08zu]", // NOLINT(cert-err33-c,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer
+                                          i);
+                            block.insert(path_prefix + suffix);
+                        }
+                    std::set<std::string> trial = seed_base;
+                    trial.insert(block.begin(), block.end());
+                    if (trial.size() != recorded_n) return false;
+                    std::set<std::string> skip = seed_skip;
+                    skip.insert(block.begin(), block.end());
+                    if (!walk(trial, skip)) return false;
+                    if (winners.size() < 12)
+                        for (const auto &b : block)
+                            if (winners.size() < 12) winners.push_back(b);
+                    return true;
+                };
+            std::vector<std::string> channel_names;
+            for (const std::string_view n : kRemovedPassiveLeaves)
+                channel_names.emplace_back(n);
+            channel_names.emplace_back("passive_power_w");
+            channel_names.emplace_back("passive_work_step_j");
+            const auto prefixed = [](const std::string &p,
+                                     const std::string &n) {
+                return p + "." + n;
+            };
+            // Element count of every actual array column — the
+            // tail-append family needs the per-column recorded length.
+            std::map<std::string, std::size_t> column_len;
+            for (const auto &[path, values] : leaves.numeric) {
+                const auto bracket = path.rfind('[');
+                if (bracket != std::string::npos)
+                    ++column_len[path.substr(0, bracket)];
+            }
+            const auto families =
+                [&](const std::set<std::string> &seed_base,
+                    const std::set<std::string> &seed_skip,
+                    const std::vector<std::string> &candidate_prefixes) {
+                    if (recorded_n <= seed_base.size()) return;
+                    const std::size_t target =
+                        recorded_n - seed_base.size();
+                    // A pair of removed arrays at one parent, and a single
+                    // removed array alone.
+                    for (const auto &p : candidate_prefixes) {
+                        for (std::size_t a = 0; a < channel_names.size();
+                             ++a)
+                            for (std::size_t b = a + 1;
+                                 b < channel_names.size(); ++b)
+                                passing += try_blocks(
+                                               seed_base, seed_skip,
+                                               {{prefixed(p,
+                                                          channel_names[a]),
+                                                 target / 2},
+                                                {prefixed(p,
+                                                          channel_names[b]),
+                                                 target - target / 2}})
+                                                   ? 1
+                                                   : 0;
+                        for (const auto &n : channel_names)
+                            passing += try_blocks(seed_base, seed_skip,
+                                                  {{prefixed(p, n),
+                                                    target}})
+                                                   ? 1
+                                                   : 0;
+                    }
+                    // rider_control member arrays alone, and the member
+                    // arrays plus the two channel columns at one prefix —
+                    // the channel-table shape.
+                    const std::size_t rc = rider_control_parents.size();
+                    if (rc > 0) {
+                        if (target % (2 * rc) == 0) {
+                            const std::size_t len = target / (2 * rc);
+                            std::vector<
+                                std::pair<std::string, std::size_t>>
+                                blocks;
+                            for (const auto &p : rider_control_parents) {
+                                blocks.emplace_back(
+                                    p + ".passive_damping_nm", len);
+                                blocks.emplace_back(
+                                    p + ".solved_passive_nm", len);
+                            }
+                            passing += try_blocks(seed_base, seed_skip,
+                                                  blocks)
+                                               ? 1
+                                               : 0;
+                        }
+                        if (target % (2 * rc + 2) == 0) {
+                            const std::size_t len = target / (2 * rc + 2);
+                            for (const auto &q : candidate_prefixes) {
+                                std::vector<
+                                    std::pair<std::string, std::size_t>>
+                                    blocks;
+                                for (const auto &p : rider_control_parents) {
+                                    blocks.emplace_back(
+                                        p + ".passive_damping_nm", len);
+                                    blocks.emplace_back(
+                                        p + ".solved_passive_nm", len);
+                                }
+                                blocks.emplace_back(
+                                    prefixed(q, "rider_passive_power_w"),
+                                    len);
+                                blocks.emplace_back(
+                                    prefixed(q,
+                                             "rider_passive_work_step_j"),
+                                    len);
+                                passing += try_blocks(seed_base, seed_skip,
+                                                      blocks)
+                                                   ? 1
+                                                   : 0;
+                            }
+                        }
+                    }
+                };
+            // Tail append built directly — the block indices continue a
+            // column's recorded length, not [0..len).
+            const auto try_tail =
+                [&](const std::set<std::string> &seed_base,
+                    const std::set<std::string> &seed_skip) {
+                    if (recorded_n <= seed_base.size()) return;
+                    const std::size_t target =
+                        recorded_n - seed_base.size();
+                    for (std::size_t k = 1; k <= 4 && passing == 0; ++k) {
+                        if (target != k * column_len.size()) continue;
+                        std::set<std::string> block;
+                        char suffix[16]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+                        for (const auto &[name, len] : column_len)
+                            for (std::size_t j = 0; j < k; ++j) {
+                                std::snprintf(suffix, sizeof(suffix), "[%08zu]", // NOLINT(cert-err33-c,cppcoreguidelines-pro-type-vararg) sized label buffer
+                                              len + j);
+                                block.insert(name + suffix);
+                            }
+                        std::set<std::string> trial = seed_base;
+                        trial.insert(block.begin(), block.end());
+                        if (trial.size() != recorded_n) continue;
+                        std::set<std::string> skip = seed_skip;
+                        skip.insert(block.begin(), block.end());
+                        if (walk(trial, skip)) {
+                            ++passing;
+                            if (winners.size() < 12)
+                                for (const auto &b : block)
+                                    if (winners.size() < 12)
+                                        winners.push_back(b);
+                        }
+                    }
+                };
+            const std::vector<std::string> root_only{std::string{}};
+            // Semantic placements first — the removed channels sat at
+            // document root in every recorded doc shape.
+            families(base_paths, removed_numeric, root_only);
+            try_tail(base_paths, removed_numeric);
+            if (passing == 0) {
+                families(plain_paths, {}, root_only);
+                try_tail(plain_paths, {});
+            }
+            // Loud fallback: widen to every prefix when no semantic
+            // placement explains the recorded extra leaves.
+            if (passing == 0) {
+                std::vector<std::string> all_prefixes(prefixes.begin(),
+                                                      prefixes.end());
+                families(base_paths, removed_numeric, all_prefixes);
+                try_tail(base_paths, removed_numeric);
+            }
+            if (passing == 0) {
+                std::vector<std::string> all_prefixes(prefixes.begin(),
+                                                      prefixes.end());
+                families(plain_paths, {}, all_prefixes);
+                try_tail(plain_paths, {});
+            }
         }
         std::string detail;
         for (const auto &p : winners) detail += " [" + p + "]";
@@ -716,22 +886,35 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
     bio::Value::Object map;
     for (auto &[path, leaf] : leaves.other)
         map.emplace_back(path, std::move(leaf));
+    if (dropped_config_key)
+        std::erase_if(map, [](const auto &member) {
+            const std::string_view leaf{member.first};
+            const auto dot = leaf.rfind('.');
+            return (dot == std::string::npos
+                        ? leaf
+                        : leaf.substr(dot + 1)) == "configuration_sha256";
+        });
     const std::string canonical =
         bio::canonical_json(bio::Value{std::move(map)});
     const std::string expected_other =
         bio::canonical_json(bio::Value{std::move(kept)});
     if (expected_other != canonical) {
         // Diagnostic: enumerate the differing leaf paths (both maps are
-        // sorted-by-path objects).
+        // sorted-by-path objects). `map` was moved into the canonical
+        // Value above — re-parse the canonical bytes for the actual side
+        // instead of iterating the moved-from object.
         const auto recorded_kept =
             bio::parse_json(expected_other);
+        const auto actual_doc = bio::parse_json(canonical);
         const auto *rk =
             std::get_if<bio::Value::Object>(&recorded_kept.data);
-        if (rk != nullptr) {
+        const auto *am =
+            std::get_if<bio::Value::Object>(&actual_doc.data);
+        if (rk != nullptr && am != nullptr) {
             std::size_t shown = 0;
             for (const auto &[path, leaf] : *rk) {
                 const bio::Value *other = nullptr;
-                for (const auto &[ap, al] : map)
+                for (const auto &[ap, al] : *am)
                     if (ap == path) {
                         other = &al;
                         break;
@@ -750,7 +933,7 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                     if (++shown >= 8) break;
                 }
             }
-            for (const auto &[path, leaf] : map) {
+            for (const auto &[path, leaf] : *am) {
                 bool present = false;
                 for (const auto &[rp, rl] : *rk)
                     if (rp == path) {

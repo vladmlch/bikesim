@@ -1,0 +1,44 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "native_rider_intent/state_unknown_signals_keys_rejected",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.resolve.0",
+  "nbytes": 3312,
+  "node": "native_rider_intent/state_unknown_signals_keys_rejected",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   414
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "error.resolve.0",
+  "nbytes": 0,
+  "node": "native_rider_intent/state_unknown_signals_keys_rejected",
+  "offset": 7224,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ }
+]

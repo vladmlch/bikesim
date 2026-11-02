@@ -22,7 +22,7 @@ and stays unqualified. The dated
 GUI numbers below in this repository's documents are historical. The
 measured `native` gate run recorded `3202 passed, 1 failed` — the retained
 failure
-`tests/reference/test_native_replay_session.py::test_native_replay_rejects_a_missing_selected_extension`
+`native_replay_session/native_replay_rejects_a_missing_selected_extension`
 (diagnostic-text drift in the install-modes workstream) is evidence, not a
 waiver. Linux aarch64 is a separately qualified lane, not evidence for
 macOS.

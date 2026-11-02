@@ -1,6 +1,6 @@
 // Plan executor for the columnar recording encoder — the Python-free
 // core (task T11). The Python plan compiler
-// (recording/native_encode.py::compile_plan) stays the source of truth
+// (recording/native_encode.py:compile_plan) stays the source of truth
 // for which tables are eligible; this side validates the staged plan
 // document (bike::io::Value — encode_binding.cpp materializes the Python
 // plan into it; native consumers stage JSON/Value documents directly) and
@@ -698,7 +698,7 @@ void append_null(const EncodePlanColumn &node, Piece &piece) {
 }
 
 // One element of an x[] leaf, mirroring the member dtype's per-element
-// conversion boundary (encoding.py::_convert_scalar inside _convert).
+// conversion boundary (encoding.py:_convert_scalar inside _convert).
 void append_list_element(Piece &piece, const Wire &element,
                          const Label &label) {
     if (piece.kind == Piece::Kind::list_d) {
@@ -749,7 +749,7 @@ std::size_t utf8_width(char lead, const std::string &text,
 }
 
 // A map entry's member value converted at the map's member dtype — the
-// encoding.py::_convert recursion inside the map<K> branch. items is the
+// encoding.py:_convert recursion inside the map<K> branch. items is the
 // member piece the row loop allocated for this column.
 void append_map_member(const EncodePlanColumn &column, Piece &items,
                        const Wire &member, const Label &label) {
@@ -834,7 +834,7 @@ void append_map_member(const EncodePlanColumn &column, Piece &items,
 }
 
 // Members a deeper sibling leaf owns — routing strips them before the
-// container terminal at this path sees the dict (encoding.py::_distribute
+// container terminal at this path sees the dict (encoding.py:_distribute
 // pops them out of the remainder). `owned` is the routing index's member
 // set at the leaf's own path, nullptr when no deeper field claims below.
 bool owned_member(const std::set<std::string> *owned,
@@ -844,7 +844,7 @@ bool owned_member(const std::set<std::string> *owned,
 
 // The routed remainder of a container leaf: a dict whose members are all
 // owned by deeper siblings encodes the leaf absent rather than an empty
-// container (encoding.py::_distribute assigns only a non-empty
+// container (encoding.py:_distribute assigns only a non-empty
 // remainder). This binds at every depth a container terminal sits at — a
 // depth-1 root dict is the common case.
 bool remainder_nonempty(const std::set<std::string> *owned,
@@ -855,7 +855,7 @@ bool remainder_nonempty(const std::set<std::string> *owned,
 }
 
 // Converts one resolved (non-null) leaf value into its piece; lists append
-// their elements plus the end offset. Mirrors encoding.py::_convert's
+// their elements plus the end offset. Mirrors encoding.py:_convert's
 // dtype/shape gates; a dict routed to a deeper leaf still converts, so no
 // Mapping check precedes the dtype gates. `owned` carries the member set
 // deeper sibling fields claim at this leaf's path (nullptr nested or when
@@ -990,7 +990,7 @@ void append_node(const EncodePlanColumn &node, const Wire &value, Piece &piece,
                  const std::set<std::string> *owned);
 
 // One declared member of a struct value -> its child piece plus its
-// `_present` companion. Mirrors encoding.py::_convert_struct's member
+// `_present` companion. Mirrors encoding.py:_convert_struct's member
 // loop: `present` is `child.key in value` — an explicit None reads present
 // with a NULL member — and a required member absent-or-null rejects.
 // NOLINTNEXTLINE(misc-no-recursion) member tree mirrors the plan tree
@@ -1009,7 +1009,7 @@ void append_member(const EncodePlanColumn &child, const Wire *member,
     if (companion != nullptr) companion->b.push_back(1);
 }
 
-// encoding.py::_convert_struct: dict payload, unknown-member rejection
+// encoding.py:_convert_struct: dict payload, unknown-member rejection
 // ahead of conversion, then every declared member in catalog order.
 // `owned` strips members claimed by deeper sibling leaves (remainder
 // routing); nested calls always pass nullptr — routing ends at the leaf.
@@ -1070,7 +1070,7 @@ void convert_struct(const EncodePlanColumn &node, const Wire &value, Piece &piec
     }
 }
 
-// encoding.py::_convert's `struct[]` branch: every element converts
+// encoding.py:_convert's `struct[]` branch: every element converts
 // through _convert_struct into the shared member columns; this piece's
 // offsets close the slot once, like a list leaf.
 // NOLINTNEXTLINE(misc-no-recursion) element tree mirrors the plan tree

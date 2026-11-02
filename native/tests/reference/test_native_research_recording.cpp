@@ -96,7 +96,7 @@ void throws_file_error(F &&action) {
   return contents.str();
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_empty_recording_and_no_overwrite
 void test_empty_recording_and_no_overwrite() {
   Directory const directory;
@@ -114,7 +114,7 @@ void test_empty_recording_and_no_overwrite() {
               "the refused save leaves the published manifest untouched");
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_failed_staging_does_not_destroy_existing_recording
 void test_failed_staging_does_not_destroy_existing_recording() {
   Directory const directory;
@@ -149,7 +149,7 @@ void test_failed_staging_does_not_destroy_existing_recording() {
                 "the refused file parent keeps its original bytes");
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_manifest_is_the_publication_seal
 void test_manifest_is_the_publication_seal() {
   Directory const directory;
@@ -163,7 +163,7 @@ void test_manifest_is_the_publication_seal() {
       [&] { (void)bike::replay::load_legacy_input(destination); });
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_validation_never_resolves_the_recorded_policy
 void test_validation_never_resolves_the_recorded_policy() {
   Directory const directory;
@@ -190,7 +190,7 @@ void test_validation_never_resolves_the_recorded_policy() {
               "the recorded policy reference is opaque provenance");
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_save_refuses_pending_control_window
 void test_save_refuses_pending_control_window() {
   Directory const directory;
@@ -217,7 +217,7 @@ void test_save_refuses_pending_control_window() {
     env->acknowledge_control();
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_changed_execution_is_not_relabelled_as_startup_identity
 // Field mapping: the Python params ['native_source_sha256',
 // 'extension_sha256', 'mujoco_library_sha256'] flip keys of the adapter's
@@ -287,7 +287,7 @@ void test_changed_execution_is_not_relabelled_as_startup_identity(
                 "the recorded execution keeps the startup value");
 }
 
-// tests/reference/test_native_research_recording.py::
+// tests/reference/test_native_research_recording.py:
 //   test_shared_export_native_rows_and_complete_provenance
 // The golden-qualified leg the file header deferred: the native export of
 // the frozen research_flat capture replays the oracle's rows byte-for-byte.
@@ -295,14 +295,14 @@ void test_changed_execution_is_not_relabelled_as_startup_identity(
 // owner identity), popped before the tree compare exactly like the Python
 // deepcopy+del leg.
 constexpr std::string_view kNode =
-    "tests/reference/test_native_research_recording.py::";
+    "native_research_recording/";
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_shared_export_native_rows_and_complete_provenance() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_shared_export_native_rows_and_complete_provenance");
+        "shared_export_native_rows_and_complete_provenance");
     const auto env = ft2_reference::research_variant("research_flat",
                                                      std::nullopt, 3);
     char label[48]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
@@ -404,7 +404,7 @@ void test_shared_export_native_rows_and_complete_provenance() {
                           std::string(bt::oracle::platform()) /
                           bt::oracle::node_path(
                               std::string(kNode) +
-                              "test_shared_export_native_rows_and_complete_"
+        "shared_export_native_rows_and_complete_"
                               "provenance");
         const auto index = bike::io::parse_json(
             read_bytes(base.string() + ".json"));

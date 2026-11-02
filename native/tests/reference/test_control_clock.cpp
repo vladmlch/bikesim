@@ -54,7 +54,7 @@ void test_clock_rejects_invalid_durations() {
     bt::invalid([] { runtime::ControlClock const invalid(1e-300, 1e300); });
 }
 
-// tests/reference/test_control_clock.py::test_runtime_holds_ctrl_but_observes_solved_effort_each_step
+// control_clock/runtime_holds_ctrl_but_observes_solved_effort_each_step
 // 403 physics steps over the flat-track welded env: ticks at steps
 // 0,10,...,400 (41 advancing control windows — the oracle's monkeypatch
 // counting of ArticulatedRiderController.compute has no native seam; the

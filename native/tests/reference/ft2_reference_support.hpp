@@ -16,7 +16,7 @@
 //   research_savage/ make_python_research(): welded + rough_uphill_savage,
 //                    duration .1, seed 210, diagnostic, assist, legacy.
 //
-// Golden-tree story: tests/reference/_golden.py::record_tree emits two
+// Golden-tree story: tests/reference/_golden.py:record_tree emits two
 // entries per call — "<label>.values" (close f8: every numeric leaf in
 // sorted-path order) and "<label>.other" (bitwise |u1: canonical JSON of
 // the nonnumeric leaves as {path: leaf}, empty containers marked

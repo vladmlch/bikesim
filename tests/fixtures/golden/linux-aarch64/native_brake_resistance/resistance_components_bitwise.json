@@ -1,0 +1,2242 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 0",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 0",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 0",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 0",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 624,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 1",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 832,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 1",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 1040,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 1",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 1248,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 1",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 1456,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 2",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 1664,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 2",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 1872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 2",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 2080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 2",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 2288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 3",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 2496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 3",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 2704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 3",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 2912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 3",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 3120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 4",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 3328,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 4",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 3536,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 4",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 3744,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 4",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 3952,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 5",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 4160,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 5",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 4368,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 5",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 4576,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 5",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 4784,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 6",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 4992,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 6",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 5200,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 6",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 5408,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 6",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 5616,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 7",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 5824,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 7",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 6032,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 7",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 6240,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 7",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 6448,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 8",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 6656,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 8",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 6864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 8",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 7072,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 8",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 7280,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 9",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 7488,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 9",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 7696,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 9",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 7904,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 9",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 8112,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 10",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 8320,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 10",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 8528,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 10",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 8736,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 10",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 8944,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 11",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 9152,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 11",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 9360,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 11",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 9568,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 11",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 9776,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 12",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 9984,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 12",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 10192,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 12",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 10400,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 12",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 10608,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 13",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 10816,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 13",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 11024,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 13",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 11232,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 13",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 11440,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 14",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 11648,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 14",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 11856,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 14",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 12064,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 14",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 12272,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 15",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 12480,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 15",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 12688,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 15",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 12896,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 15",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 13104,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 16",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 13312,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 16",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 13520,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 16",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 13728,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 16",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 13936,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 17",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 14144,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 17",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 14352,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 17",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 14560,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 17",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 14768,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 18",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 14976,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 18",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 15184,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 18",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 15392,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 18",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 15600,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 19",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 15808,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 19",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 16016,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 19",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 16224,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 19",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 16432,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 20",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 16640,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 20",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 16848,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 20",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 17056,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 20",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 17264,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 21",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 17472,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 21",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 17680,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 21",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 17888,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 21",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 18096,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 22",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 18304,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 22",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 18512,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 22",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 18720,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 22",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 18928,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 23",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 19136,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 23",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 19344,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 23",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 19552,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 23",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 19760,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 24",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 19968,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 24",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 20176,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 24",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 20384,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 24",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 20592,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 25",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 20800,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 25",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 21008,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 25",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 21216,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 25",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 21424,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 26",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 21632,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 26",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 21840,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 26",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 22048,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 26",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 22256,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 27",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 22464,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 27",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 22672,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 27",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 22880,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 27",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 23088,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 28",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 23296,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 28",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 23504,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 28",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 23712,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 28",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 23920,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 29",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 24128,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 29",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 24336,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 29",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 24544,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 29",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 24752,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 30",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 24960,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 30",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 25168,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 30",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 25376,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 30",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 25584,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 31",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 25792,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 31",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 26000,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 31",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 26208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 31",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 26416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 32",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 26624,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 32",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 26832,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 32",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 27040,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 32",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 27248,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 33",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 27456,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 33",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 27664,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 33",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 27872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 33",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 28080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 34",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 28288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 34",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 28496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 34",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 28704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 34",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 28912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 35",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 29120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 35",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 29328,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 35",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 29536,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 35",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 29744,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 36",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 29952,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 36",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 30160,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 36",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 30368,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 36",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 30576,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 37",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 30784,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 37",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 30992,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 37",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 31200,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 37",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 31408,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 38",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 31616,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 38",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 31824,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 38",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 32032,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 38",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 32240,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "road_rolling oracle step 39",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 32448,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "road_rolling golden step 39",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 32656,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "aerodynamic oracle step 39",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 32864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "aerodynamic golden step 39",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_components_bitwise",
+  "offset": 33072,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

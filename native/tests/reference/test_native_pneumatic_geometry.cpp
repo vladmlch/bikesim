@@ -103,7 +103,7 @@ struct BranchOutcome {
 
 // ---------------------------------------------------------------------
 // The corpus roads — z(x) cell functions matching
-// test_native_pneumatic_geometry.py::_cases().
+// native_pneumatic_geometry/_cases().
 // ---------------------------------------------------------------------
 double z_flat(double) { return 0.0; }
 double z_ramp(double x) { return 0.03 * x - 0.15; }

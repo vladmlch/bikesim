@@ -120,7 +120,7 @@ std::string rejected(F&& action, std::string_view message = {}) {
     return out;
 }
 
-// Source: test_native_atomicity.py::test_failed_geometric_shift_is_atomic
+// Source: native_atomicity/failed_geometric_shift_is_atomic
 void test_failed_geometric_shift_is_atomic() {
     auto owner = shifted_pair(kGeometric, invalid_cassette());
     spin(*owner);
@@ -136,7 +136,7 @@ void test_failed_geometric_shift_is_atomic() {
     bt::require(first == second, "repeated rejection emits the identical diagnostic");
 }
 
-// Source: test_native_atomicity.py::test_valid_shift_commits_atomically
+// Source: native_atomicity/valid_shift_commits_atomically
 void test_valid_shift_commits_atomically() {
     for (const std::string_view kind : std::array<std::string_view, 2>{"ideal_mid_drive", kGeometric}) {
         auto owner = shifted_pair(kind, valid_cassette());
@@ -189,7 +189,7 @@ void test_valid_shift_commits_atomically() {
     }
 }
 
-// Source: test_native_atomicity.py::test_rejected_then_reset_prepare_and_restore
+// Source: native_atomicity/rejected_then_reset_prepare_and_restore
 void test_rejected_then_reset_prepare_and_restore() {
     for (const std::string_view kind : std::array<std::string_view, 2>{"ideal_mid_drive", kGeometric}) {
         auto owner = shifted_pair(kind, invalid_cassette());
@@ -219,7 +219,7 @@ void test_rejected_then_reset_prepare_and_restore() {
     }
 }
 
-// Source: test_native_atomicity.py::test_invalid_restore_is_atomic
+// Source: native_atomicity/invalid_restore_is_atomic
 void test_invalid_restore_is_atomic() {
     auto owner = pair(kGeometric);
     spin(*owner);
@@ -235,7 +235,7 @@ void test_invalid_restore_is_atomic() {
     bt::require(frozen(*owner) == before, "non-finite restore publishes nothing");
 }
 
-// Source: test_native_atomicity.py::test_rejected_timestamp_advance_is_atomic
+// Source: native_atomicity/rejected_timestamp_advance_is_atomic
 void test_rejected_timestamp_advance_is_atomic() {
     auto owner = pair(kGeometric);
     spin(*owner);
@@ -246,7 +246,7 @@ void test_rejected_timestamp_advance_is_atomic() {
     bt::require(frozen(*owner) == before, "duplicate timestamp publishes nothing");
 }
 
-// Source: test_native_atomicity.py::test_rejected_shift_preserves_auxiliary_transmissions
+// Source: native_atomicity/rejected_shift_preserves_auxiliary_transmissions
 void test_rejected_shift_preserves_auxiliary_transmissions() {
     for (auto topology : {"clutch", "rotor"}) {
         auto owner = shifted_pair(kGeometric, invalid_cassette(), topology);
@@ -261,7 +261,7 @@ void test_rejected_shift_preserves_auxiliary_transmissions() {
     }
 }
 
-// Source: test_native_atomicity.py::test_probe_controls_do_not_publish
+// Source: native_atomicity/probe_controls_do_not_publish
 void test_probe_controls_do_not_publish() {
     auto owner = shifted_pair(kGeometric, invalid_cassette());
     spin(*owner);
@@ -277,7 +277,7 @@ void test_probe_controls_do_not_publish() {
                 "probe after rejection publishes only its declared channel");
 }
 
-// Source: test_native_atomicity.py::test_rejected_prepare_keeps_policy_state
+// Source: native_atomicity/rejected_prepare_keeps_policy_state
 void test_rejected_prepare_keeps_policy_state() {
     // A ceiling rejection discards the candidate: pedaling, shifter EMAs,
     // shift clock and staged model updates all stay at their pre-call
@@ -305,7 +305,7 @@ void test_rejected_prepare_keeps_policy_state() {
     }
 }
 
-// Source: test_native_atomicity.py::test_rejected_compute_keeps_everything
+// Source: native_atomicity/rejected_compute_keeps_everything
 void test_rejected_compute_keeps_everything() {
     // Wire-level and staging-level rejections publish nothing: not the
     // policy candidates, not ctrl, not the diagnostics or timestamp state.
@@ -339,7 +339,7 @@ void test_rejected_compute_keeps_everything() {
     }
 }
 
-// Source: test_native_atomicity.py::test_unsettled_pending_rejects_before_policy_advance
+// Source: native_atomicity/unsettled_pending_rejects_before_policy_advance
 void test_unsettled_pending_rejects_before_policy_advance() {
     // An unsettled actuation rejects before pedaling/assist candidates are
     // built — retries can never accumulate effort or EMA state.
@@ -360,7 +360,7 @@ void test_unsettled_pending_rejects_before_policy_advance() {
     (void)components(*owner, .002, 2.);
 }
 
-// Source: test_native_atomicity.py::test_prepare_duplicate_timestamp_is_atomic
+// Source: native_atomicity/prepare_duplicate_timestamp_is_atomic
 void test_prepare_duplicate_timestamp_is_atomic() {
     // The interval clock is shared: a successful compute makes a later
     // same-timestamp prepare a rejection, and the rejection writes nothing.
@@ -374,7 +374,7 @@ void test_prepare_duplicate_timestamp_is_atomic() {
     bt::require(frozen(*owner) == before, "duplicate prepare timestamp publishes nothing");
 }
 
-// Source: test_native_atomicity.py::test_probe_atomicity
+// Source: native_atomicity/probe_atomicity
 void test_probe_atomicity() {
     // A probe publishes only its declared telemetry — the force rows and
     // the probe diagnostics channel. Policy, clock, pending and model state
@@ -405,7 +405,7 @@ void test_probe_atomicity() {
     }
 }
 
-// Source: test_native_atomicity.py::test_prepare_then_components_matches_internal_prepare
+// Source: native_atomicity/prepare_then_components_matches_internal_prepare
 void test_prepare_then_components_matches_internal_prepare() {
     // prepare→compute(supplied state) equals compute's internal prepare:
     // the staged pedaling advance is identical whether it commits early or
@@ -447,7 +447,7 @@ Value solved_fixture(Stepper& owner, std::vector<double>& control) {
     return armed;
 }
 
-// Source: test_native_atomicity.py::test_rejected_settle_keeps_everything
+// Source: native_atomicity/rejected_settle_keeps_everything
 void test_rejected_settle_keeps_everything() {
     // A settle rejection publishes nothing — not even transmission solve
     // telemetry: pending validation runs ahead of every solve, so a refused
@@ -492,7 +492,7 @@ void test_rejected_settle_keeps_everything() {
     }
 }
 
-// Source: test_native_atomicity.py::test_battery_budget_rejection_is_atomic
+// Source: native_atomicity/battery_budget_rejection_is_atomic
 void test_battery_budget_rejection_is_atomic() {
     // The store check rejects before any publication too — and the retry
     // with an honest reservation debits exactly once.
@@ -521,7 +521,7 @@ void test_battery_budget_rejection_is_atomic() {
                 "honest retry debits exactly once and consumes pending");
 }
 
-// Source: test_native_atomicity.py::test_sparse_last_settle_debits_once
+// Source: native_atomicity/sparse_last_settle_debits_once
 void test_sparse_last_settle_debits_once() {
     // The A12 shape at the FFI: a restored sparse last={} cannot change
     // exactly-once settlement — the detached map republishes the telemetry,

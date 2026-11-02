@@ -30,9 +30,9 @@ the C++ + Linux completion plan makes Linux **aarch64** the required lane;
 x86_64 is optional, not qualified and not advertised. Desktop GUI sessions on X11/XWayland are pending real acceptance.
 The measured Linux pytest run reported `3221 passed, 3 failed`; the three
 retained failures
-(`tests/reference/test_native_platform_recording.py::test_publication_permission_denied_then_retry`,
-`tests/reference/test_native_runtime_commands.py::test_engine_failure_keeps_committed_prefix`,
-`tests/reference/test_native_runtime_ownership.py::test_fatal_engine_error_preserves_completed_prefix_and_can_reset`)
+(`native_platform_recording/publication_permission_denied_then_retry`,
+`native_runtime_commands/engine_failure_keeps_committed_prefix`,
+`native_runtime_ownership/fatal_engine_error_preserves_completed_prefix_and_can_reset`)
 have since been root-caused and fixed under Task 3.11 of the C++ + Linux
 completion plan — the original logs stay verbatim in
 `output/portability/logs/` as history. No retained failures remain in this

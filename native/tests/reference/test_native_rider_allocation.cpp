@@ -151,7 +151,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_saddle_reserve_is_an_actual_configured_lower_bound() {
-    // tests/reference/test_rider_allocation.py::test_saddle_reserve_is_an_actual_configured_lower_bound
+    // rider_allocation/saddle_reserve_is_an_actual_configured_lower_bound
     for (const bool coupled : {true, false})
         for (const double reserve : {0., .15, .5}) {
             // x = [qddot/500, tau/50, Fx/300, Fz/300, p/450]. Check the
@@ -207,7 +207,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_coupled_support_cone_allows_compression_and_rejects_tension() {
-    // tests/reference/test_rider_allocation.py::test_coupled_support_cone_allows_compression_and_rejects_tension
+    // rider_allocation/coupled_support_cone_allows_compression_and_rejects_tension
     for (const std::string_view name : {"front", "rear", "saddle"}) {
         Matrix force_map = d::zeros(3, 5);
         force_map.values[2] = force_map.values[5 + 3] = 300.;
@@ -245,7 +245,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish() {
-    // tests/reference/test_rider_allocation.py::test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish
+    // rider_allocation/finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish
     // The oracle exercises finalize_effort on a __new__ stub; the delivery
     // contract — the allocated torque survives activation, strength and
     // power shaping unchanged — is the same free-function chain the
@@ -272,7 +272,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_support_moment_constraints_reject_cop_outside_the_physical_patch() {
-    // tests/reference/test_rider_allocation.py::test_support_moment_constraints_reject_cop_outside_the_physical_patch
+    // rider_allocation/support_moment_constraints_reject_cop_outside_the_physical_patch
     for (const auto &param :
          {std::tuple{false, .05, 100.}, std::tuple{true, .045, 200.}}) {
         const bool saddle = std::get<0>(param);
@@ -302,7 +302,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_activation_dynamics_shape_the_wish_before_support_allocation() {
-    // tests/reference/test_rider_allocation.py::test_activation_dynamics_shape_the_wish_before_support_allocation
+    // rider_allocation/activation_dynamics_shape_the_wish_before_support_allocation
     const Vector state{10.};
     const double expected = 10. + (50. - 10.) * (1. - std::exp(-.005 / .04));
     const auto wished = ::spindle::activation_step(state, Vector{50.}, .005,
@@ -317,7 +317,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_intent_is_relaxed_but_physical_limit_is_not() {
-    // tests/reference/test_rider_allocation.py::test_intent_is_relaxed_but_physical_limit_is_not
+    // rider_allocation/intent_is_relaxed_but_physical_limit_is_not
     const auto result = rider::allocate(
         problem({100.}, d::zeros(0, 1), {}, matrix(1, 1, {1.}), {80.},
                 {0.}, {200.}));
@@ -327,7 +327,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_infeasible_support_is_not_reported_as_valid_stall() {
-    // tests/reference/test_rider_allocation.py::test_infeasible_support_is_not_reported_as_valid_stall
+    // rider_allocation/infeasible_support_is_not_reported_as_valid_stall
     const auto result = rider::allocate(
         problem({0.}, matrix(1, 1, {1.}), {-1.}, d::zeros(0, 1), {},
                 {20.}, {100.}));
@@ -336,7 +336,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_scaled_grip_uses_a_circle_not_a_componentwise_square() {
-    // tests/reference/test_rider_allocation.py::test_scaled_grip_uses_a_circle_not_a_componentwise_square
+    // rider_allocation/scaled_grip_uses_a_circle_not_a_componentwise_square
     const double scale = 300.;
     auto map = d::identity(2);
     for (auto &v : map.values) v *= scale;
@@ -357,7 +357,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_diagonal_pull_beyond_the_circle_is_infeasible() {
-    // tests/reference/test_rider_allocation.py::test_diagonal_pull_beyond_the_circle_is_infeasible
+    // rider_allocation/diagonal_pull_beyond_the_circle_is_infeasible
     const double scale = 300.;
     auto map = d::identity(2);
     for (auto &v : map.values) v *= scale;
@@ -373,7 +373,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_grip_constraint_validation() {
-    // tests/reference/test_rider_allocation.py::test_grip_constraint_validation
+    // rider_allocation/grip_constraint_validation
     const double inv = 1. / std::numbers::sqrt2;
     throws([&] { (void)rider::grip_constraints(d::identity(2), {2., 0.},
                                                true, 300.); },
@@ -388,7 +388,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_pressing_branch_bounds_only_the_sign() {
-    // tests/reference/test_rider_allocation.py::test_pressing_branch_bounds_only_the_sign
+    // rider_allocation/pressing_branch_bounds_only_the_sign
     const double scale = 300.;
     auto map = d::identity(2);
     for (auto &v : map.values) v *= scale;
@@ -406,7 +406,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_inverse_dynamics_rows_layout_and_sign() {
-    // tests/reference/test_rider_allocation.py::test_inverse_dynamics_rows_layout_and_sign
+    // rider_allocation/inverse_dynamics_rows_layout_and_sign
     const Matrix mass = matrix(2, 2, {2., .1, .1, 3.});
     const Matrix actuation = matrix(2, 1, {1., 0.});
     const Matrix support = matrix(2, 2, {.5, 0., 0., .5});
@@ -435,7 +435,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_allocation_rejects_bad_problem_data() {
-    // tests/reference/test_rider_allocation.py::test_allocation_rejects_bad_problem_data
+    // rider_allocation/allocation_rejects_bad_problem_data
     throws([&] {
         (void)rider::allocate(problem(
             {std::numeric_limits<double>::quiet_NaN()}, d::zeros(0, 1), {},
@@ -448,7 +448,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_nonfinite_constraint_eval_reports_infinite_violation() {
-    // tests/reference/test_rider_allocation.py::test_nonfinite_constraint_eval_reports_infinite_violation
+    // rider_allocation/nonfinite_constraint_eval_reports_infinite_violation
     rider::ExtraConstraint bad;
     bad.evaluate = [](std::span<const double>) {
         return Vector{std::numeric_limits<double>::quiet_NaN()};
@@ -472,7 +472,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_positive_power_cap_is_a_sum_not_a_net() {
-    // tests/reference/test_rider_allocation.py::test_positive_power_cap_is_a_sum_not_a_net
+    // rider_allocation/positive_power_cap_is_a_sum_not_a_net
     // z = [tau(3), p(3)]; p_j >= tau_j*v_j, p_j >= 0, sum(p) <= 450.
     const Vector speeds{2., -1., 1.};
     const std::size_t n = 6;
@@ -503,7 +503,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_isometric_joint_does_not_divide_by_zero_speed() {
-    // tests/reference/test_rider_allocation.py::test_isometric_joint_does_not_divide_by_zero_speed
+    // rider_allocation/isometric_joint_does_not_divide_by_zero_speed
     const Vector speeds{0., 1.};
     const std::size_t n = 4;
     auto g = d::zeros(3, n);
@@ -527,7 +527,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_solution_is_deterministic_for_identical_inputs() {
-    // tests/reference/test_rider_allocation.py::test_solution_is_deterministic_for_identical_inputs
+    // rider_allocation/solution_is_deterministic_for_identical_inputs
     const auto args = [] {
         return problem({3., -2.}, matrix(1, 2, {1., 1.}), {1.},
                        matrix(1, 2, {1., 0.}), {2.}, {-5., -5.}, {5., 5.});
@@ -541,7 +541,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_candidate_is_preserved_when_infeasible() {
-    // tests/reference/test_rider_allocation.py::test_candidate_is_preserved_when_infeasible
+    // rider_allocation/candidate_is_preserved_when_infeasible
     const auto result = rider::allocate(
         problem({0.}, matrix(1, 1, {1.}), {-1.}, d::zeros(0, 1), {},
                 {20.}, {100.}));
@@ -555,7 +555,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_warm_start_does_not_change_the_answer() {
-    // tests/reference/test_rider_allocation.py::test_warm_start_does_not_change_the_answer
+    // rider_allocation/warm_start_does_not_change_the_answer
     const auto args = [] {
         return problem({100., -20.}, d::zeros(0, 2), {},
                        matrix(1, 2, {1., 0.}), {80.}, {0., -50.},
@@ -572,7 +572,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_invalid_warm_start_is_rejected() {
-    // tests/reference/test_rider_allocation.py::test_invalid_warm_start_is_rejected
+    // rider_allocation/invalid_warm_start_is_rejected
     throws(
         [&] {
           auto const args =
@@ -593,7 +593,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_branch_memory_preserves_cold_ranking_and_full_fallback() {
-    // tests/reference/test_rider_allocation.py::test_branch_memory_preserves_cold_ranking_and_full_fallback
+    // rider_allocation/branch_memory_preserves_cold_ranking_and_full_fallback
     const Vector target{0.};
     const std::array<bool, 2> ff{false, false};
     std::vector<std::array<bool, 2>> calls;
@@ -642,7 +642,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics() {
-    // tests/reference/test_rider_allocation.py::test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics
+    // rider_allocation/vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics
     std::vector<rider::ExtraConstraint> extra;
     extra.push_back(rider::linear_constraint(matrix(1, 2, {1., 1.}), {1.},
                                              {1.}));
@@ -667,7 +667,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_nonlinear_constraint_is_evaluated_at_the_bounded_start() {
-    // tests/reference/test_rider_allocation.py::test_nonlinear_constraint_is_evaluated_at_the_bounded_start
+    // rider_allocation/nonlinear_constraint_is_evaluated_at_the_bounded_start
     for (const std::optional<Vector> &x0 :
          {std::optional<Vector>{std::nullopt}, std::optional<Vector>{Vector{1.}}}) {
         rider::ExtraConstraint log_bound;
@@ -691,7 +691,7 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 [[gnu::noinline]] void test_real_grip_problem_changes_from_remembered_pull_to_press() {
-    // tests/reference/test_rider_allocation.py::test_real_grip_problem_changes_from_remembered_pull_to_press
+    // rider_allocation/real_grip_problem_changes_from_remembered_pull_to_press
     rider::AllocationMemory memory;
     std::vector<std::array<bool, 2>> calls;
     const auto run = [&](const Vector &target, bool prescribed) {
@@ -970,7 +970,7 @@ Vector channel_array(const runtime::WireObject &object,
 }
 
 [[gnu::noinline]] void test_healthy_step_allocates_a_feasible_command() {
-    // tests/reference/test_rider_allocation.py::test_healthy_step_allocates_a_feasible_command
+    // rider_allocation/healthy_step_allocates_a_feasible_command
     auto rig = welded_rig();
     const rcfg::RawStep last = advance_env_steps(*rig->physical, 40);
     const auto &allocation = channel(last, "rider_allocation");
@@ -1045,7 +1045,7 @@ welded_attachments(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_allocated_wrenches_close_the_rider_dynamics() {
-    // tests/reference/test_rider_allocation.py::test_allocated_wrenches_close_the_rider_dynamics
+    // rider_allocation/allocated_wrenches_close_the_rider_dynamics
     auto rig = welded_rig();
     const rcfg::RawStep last = advance_env_steps(*rig->physical, 30);
     const auto &allocation = channel(last, "rider_allocation");
@@ -1160,7 +1160,7 @@ welded_attachments(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_command_does_not_read_solved_reactions() {
-    // tests/reference/test_rider_allocation.py::test_command_does_not_read_solved_reactions
+    // rider_allocation/command_does_not_read_solved_reactions
     auto rig = welded_rig();
     (void)advance_env_steps(*rig->physical, 20);
     ::rider::RiderCommand command;
@@ -1217,7 +1217,7 @@ welded_attachments(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_infeasible_intent_keeps_the_physical_bounds() {
-    // tests/reference/test_rider_allocation.py::test_infeasible_intent_keeps_the_physical_bounds
+    // rider_allocation/infeasible_intent_keeps_the_physical_bounds
     auto rig = welded_rig();
     (void)advance_env_steps(*rig->physical, 20);
     auto const *model = rig->stepper->model();
@@ -1334,7 +1334,7 @@ welded_attachments(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_allocate_effort_returns_target_without_slsqp_when_target_is_feasible() {
-    // tests/reference/test_rider_allocation.py::test_allocate_effort_returns_target_without_slsqp_when_target_is_feasible
+    // rider_allocation/allocate_effort_returns_target_without_slsqp_when_target_is_feasible
     // The oracle proves the solver never runs by failing a monkeypatched
     // minimize; the native fast path is the residual<=1e-7 early return —
     // bitwise identity to the feasible target is the same proof.

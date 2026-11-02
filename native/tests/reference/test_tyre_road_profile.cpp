@@ -37,7 +37,7 @@ namespace terrain = bike::terrain;
             .sections = {}};
 }
 
-// tests/reference/test_tyre_road_profile.py::test_build_road_profile_matches_the_former_inline_construction_bitwise
+// tyre_road_profile/build_road_profile_matches_the_former_inline_construction_bitwise
 // Capture: expected.x0_m, expected.dx_m, expected.z_m — the oracle's
 // inline-construction RoadProfile the helper must reproduce bitwise.
 void test_build_road_profile_matches_the_former_inline_construction_bitwise() {
@@ -71,7 +71,7 @@ void test_build_road_profile_matches_the_former_inline_construction_bitwise() {
     golden.done();
 }
 
-// tests/reference/test_tyre_road_profile.py::test_patch_slip_speed_mps_is_the_signed_tread_slip[v_x-omega-id]
+// tyre_road_profile/patch_slip_speed_mps_is_the_signed_tread_slip/v_x-omega-id
 // _loaded_outputs: flat 20 m road at 5 mm, hub dropped 6 mm below the
 // outer radius, constant forward velocity — dt is the tier's own step.
 // Capture per node: patch count, then expected_v_s per patch.

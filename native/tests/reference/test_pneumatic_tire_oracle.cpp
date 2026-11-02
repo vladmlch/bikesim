@@ -29,9 +29,9 @@ void keys(bt::oracle::Node &node, const biketyre::PneumaticTyreModel &wheel, std
     node.bytes(bytes, "<i8", shape, label);
 }
 
-// tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[tier]
+// pneumatic_tire_forces/oracle_parity_with_xfrc_writer/tier
 void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
-    bt::oracle::Node node("tests/reference/test_pneumatic_tire_forces.py::test_oracle_parity_with_xfrc_writer[" + std::string(tier) + "]");
+    bt::oracle::Node node("pneumatic_tire_forces/oracle_parity_with_xfrc_writer/" + std::string(tier));
     Rig rig(tier), legacy_rig(tier);
     auto config = std::make_unique<bike::legacy::TyreConfig>();
     config->model = "pneumatic"; config->tier = tier; config->surface = "asphalt";

@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.report",
+  "nbytes": 1781,
+  "node": "native_benchmark/matched_workload_python_native_conformance/glue",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1781
+  ]
+ }
+]

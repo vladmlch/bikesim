@@ -11,7 +11,7 @@
 namespace {
 using namespace research_reference;
 
-// tests/reference/test_research_frontend.py::
+// tests/reference/test_research_frontend.py:
 //   test_partial_ticks_call_policy_once_and_stop_does_not_start_another
 void test_partial_ticks_call_policy_once_and_stop_does_not_start_another() {
     auto env = environment();

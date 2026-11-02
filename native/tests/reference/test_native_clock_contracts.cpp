@@ -39,8 +39,10 @@ constexpr double nan = std::numeric_limits<double>::quiet_NaN();
 using interval_clock::interval_id;
 using Pair = std::pair<double, std::int64_t>;
 bt::oracle::Node oracle(std::string_view group, std::string_view symbol) {
-    return bt::oracle::Node("tests/reference/test_native_clock_contracts.py::" +
-        std::string(group) + "::" + std::string(symbol));
+    auto case_id = std::string(symbol);
+    if (case_id.starts_with("test_")) case_id.erase(0, 5);
+    return bt::oracle::Node("native_clock_contracts/" +
+        std::string(group) + "/" + case_id);
 }
 void integer(bt::oracle::Node& golden, std::int64_t value, std::string_view label) {
     // Explicit little-endian representation, including on a future big-endian

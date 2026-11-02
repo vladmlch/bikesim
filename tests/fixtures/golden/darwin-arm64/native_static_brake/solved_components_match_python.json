@@ -1,0 +1,30 @@
+[
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "front static brake solved",
+  "nbytes": 64,
+  "node": "native_static_brake/solved_components_match_python",
+  "offset": 0,
+  "rtol": 1e-12,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "close",
+  "label": "rear static brake solved",
+  "nbytes": 64,
+  "node": "native_static_brake/solved_components_match_python",
+  "offset": 64,
+  "rtol": 1e-12,
+  "shape": [
+   8
+  ]
+ }
+]

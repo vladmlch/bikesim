@@ -95,7 +95,7 @@ bike::terrain::TrackSpec flat_track() {
 
 [[gnu::noinline]] void
 test_pinned_control_never_calls_allocator_and_publishes_final_commands() {
-    // tests/reference/test_closed_form_rider.py::test_pinned_control_never_calls_allocator_and_publishes_final_commands
+    // closed_form_rider/pinned_control_never_calls_allocator_and_publishes_final_commands
     auto plant = rr::pinned_model();
     auto &c = *plant.controller;
     const auto result = c.compute(plant.data.get(), crank_command(40.),
@@ -119,7 +119,7 @@ test_pinned_control_never_calls_allocator_and_publishes_final_commands() {
 
 [[gnu::noinline]] void
 test_upper_pose_target_accounts_for_pelvis_and_frame_pitch() {
-    // tests/reference/test_closed_form_rider.py::test_upper_pose_target_accounts_for_pelvis_and_frame_pitch
+    // closed_form_rider/upper_pose_target_accounts_for_pelvis_and_frame_pitch
     auto plant = rr::pinned_model();
     auto &c = *plant.controller;
     rider::RiderPosture pose;
@@ -143,7 +143,7 @@ test_upper_pose_target_accounts_for_pelvis_and_frame_pitch() {
 
 [[gnu::noinline]] void
 test_native_torso_torque_has_restoring_pelvis_reaction() {
-    // tests/reference/test_closed_form_rider.py::test_native_torso_torque_has_restoring_pelvis_reaction
+    // closed_form_rider/native_torso_torque_has_restoring_pelvis_reaction
     auto plant = rr::pinned_model();
     mjModel const *m = plant.model.get();
     mjData *d = plant.data.get();
@@ -166,7 +166,7 @@ test_native_torso_torque_has_restoring_pelvis_reaction() {
 
 [[gnu::noinline]] void
 test_final_torques_obey_strength_power_and_accelerating_speed_limits() {
-    // tests/reference/test_closed_form_rider.py::test_final_torques_obey_strength_power_and_accelerating_speed_limits
+    // closed_form_rider/final_torques_obey_strength_power_and_accelerating_speed_limits
     auto plant = rr::pinned_model();
     auto &c = *plant.controller;
     mjModel const *m = plant.model.get();
@@ -204,7 +204,7 @@ test_final_torques_obey_strength_power_and_accelerating_speed_limits() {
 
 [[gnu::noinline]] void
 test_optional_activation_is_bounded_and_probes_do_not_advance_state() {
-    // tests/reference/test_closed_form_rider.py::test_optional_activation_is_bounded_and_probes_do_not_advance_state
+    // closed_form_rider/optional_activation_is_bounded_and_probes_do_not_advance_state
     auto plant = rr::pinned_model(
         "examples/research/viewer_physics_welded.toml",
         [](rider::SpindleConfig &c) { c.activation_tau_s = .05; });
@@ -242,7 +242,7 @@ test_optional_activation_is_bounded_and_probes_do_not_advance_state() {
 
 [[gnu::noinline]] void
 test_disabled_activation_probe_returns_zero_without_advancing_state() {
-    // tests/reference/test_closed_form_rider.py::test_disabled_activation_probe_returns_zero_without_advancing_state
+    // closed_form_rider/disabled_activation_probe_returns_zero_without_advancing_state
     auto plant = rr::pinned_model(
         "examples/research/viewer_physics_welded.toml",
         [](rider::SpindleConfig &c) { c.activation_tau_s = .05; });
@@ -265,7 +265,7 @@ test_disabled_activation_probe_returns_zero_without_advancing_state() {
 }
 
 [[gnu::noinline]] void test_flat_launch_delivers_crank_torque() {
-    // tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque
+    // closed_form_rider/flat_launch_delivers_crank_torque
     auto rig = rr::pinned_rig({}, flat_track());
     auto &physical = *rig->physical;
     mjModel const *m = rig->stepper->model();
@@ -318,7 +318,7 @@ test_disabled_activation_probe_returns_zero_without_advancing_state() {
 
 [[gnu::noinline]] void
 test_runtime_produces_front_load_share_without_changing_external_sensors() {
-    // tests/reference/test_closed_form_rider.py::test_runtime_produces_front_load_share_without_changing_external_sensors
+    // closed_form_rider/runtime_produces_front_load_share_without_changing_external_sensors
     auto rig = rr::pinned_rig();
     auto &physical = *rig->physical;
     rcfg::RideControl control;

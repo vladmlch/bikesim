@@ -1,0 +1,4342 @@
+[
+ {
+  "atol": 0.0,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "startup.observation.values",
+  "nbytes": 88,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 0,
+  "rtol": 0.0,
+  "shape": [
+   11
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "startup.observation.other",
+  "nbytes": 16,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 88,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "close",
+  "label": "transition.00000000.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 104,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "transition.00000000.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 328,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "integration state at step 8",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 503,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "close",
+  "label": "transition.00000001.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 2839,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "transition.00000001.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 3063,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "integration state at step 16",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 3238,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "close",
+  "label": "transition.00000002.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 5574,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "transition.00000002.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 5798,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "integration state at step 24",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 5973,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "close",
+  "label": "transition.00000003.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 8309,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "transition.00000003.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 8533,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "integration state at step 32",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 8708,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "close",
+  "label": "transition.00000004.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 11044,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "transition.00000004.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 11268,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "integration state at step 40",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 11443,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "close",
+  "label": "transition.00000005.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 13779,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "transition.00000005.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 14003,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "integration state at step 48",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 14178,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "close",
+  "label": "transition.00000006.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 16514,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "transition.00000006.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 16738,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "integration state at step 56",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 16913,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "close",
+  "label": "transition.00000007.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 19249,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "transition.00000007.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 19473,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "integration state at step 64",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 19648,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "close",
+  "label": "transition.00000008.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 21984,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "transition.00000008.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 22208,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "integration state at step 72",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 22383,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "close",
+  "label": "transition.00000009.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 24719,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "transition.00000009.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 24943,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "integration state at step 80",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 25118,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "close",
+  "label": "transition.00000010.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 27454,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "transition.00000010.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 27678,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "integration state at step 88",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 27853,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "close",
+  "label": "transition.00000011.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 30189,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "transition.00000011.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 30413,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "integration state at step 96",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 30588,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "close",
+  "label": "transition.00000012.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 32924,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "transition.00000012.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 33148,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "integration state at step 104",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 33323,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "close",
+  "label": "transition.00000013.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 35659,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "transition.00000013.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 35883,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "integration state at step 112",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 36058,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "close",
+  "label": "transition.00000014.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 38394,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "transition.00000014.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 38618,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "integration state at step 120",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 38793,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "close",
+  "label": "transition.00000015.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 41129,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "transition.00000015.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 41353,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "integration state at step 128",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 41528,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "close",
+  "label": "transition.00000016.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 43864,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "transition.00000016.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 44088,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "integration state at step 136",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 44263,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "close",
+  "label": "transition.00000017.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 46599,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "transition.00000017.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 46823,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "integration state at step 144",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 46998,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "close",
+  "label": "transition.00000018.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 49334,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "transition.00000018.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 49558,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "integration state at step 152",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 49733,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "close",
+  "label": "transition.00000019.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 52069,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "transition.00000019.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 52293,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "integration state at step 160",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 52468,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "close",
+  "label": "transition.00000020.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 54804,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "transition.00000020.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 55028,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "integration state at step 168",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 55203,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "close",
+  "label": "transition.00000021.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 57539,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "transition.00000021.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 57763,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "integration state at step 176",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 57938,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "close",
+  "label": "transition.00000022.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 60274,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "transition.00000022.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 60498,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "integration state at step 184",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 60673,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "close",
+  "label": "transition.00000023.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 63009,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "transition.00000023.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 63233,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "integration state at step 192",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 63408,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "close",
+  "label": "transition.00000024.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 65744,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "transition.00000024.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 65968,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "integration state at step 200",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 66143,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "close",
+  "label": "transition.00000025.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 68479,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "transition.00000025.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 68703,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "integration state at step 208",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 68878,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "close",
+  "label": "transition.00000026.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 71214,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "transition.00000026.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 71438,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "integration state at step 216",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 71613,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "close",
+  "label": "transition.00000027.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 73949,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "transition.00000027.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 74173,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "integration state at step 224",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 74348,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "close",
+  "label": "transition.00000028.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 76684,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "transition.00000028.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 76908,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "integration state at step 232",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 77083,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "close",
+  "label": "transition.00000029.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 79419,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "transition.00000029.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 79643,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "integration state at step 240",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 79818,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "close",
+  "label": "transition.00000030.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 82154,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "transition.00000030.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 82378,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "integration state at step 248",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 82553,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "close",
+  "label": "transition.00000031.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 84889,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "transition.00000031.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 85113,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "integration state at step 256",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 85288,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "close",
+  "label": "transition.00000032.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 87624,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "transition.00000032.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 87848,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "integration state at step 264",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 88023,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "close",
+  "label": "transition.00000033.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 90359,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "transition.00000033.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 90583,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "integration state at step 272",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 90758,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "close",
+  "label": "transition.00000034.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 93094,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "transition.00000034.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 93318,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "integration state at step 280",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 93493,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "close",
+  "label": "transition.00000035.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 95829,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "transition.00000035.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 96053,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "integration state at step 288",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 96232,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "close",
+  "label": "transition.00000036.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 98568,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "transition.00000036.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 98792,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "integration state at step 296",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 98971,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "close",
+  "label": "transition.00000037.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 101307,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "transition.00000037.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 101531,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "integration state at step 304",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 101710,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "close",
+  "label": "transition.00000038.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 104046,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "transition.00000038.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 104270,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "integration state at step 312",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 104449,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "close",
+  "label": "transition.00000039.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 106785,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "transition.00000039.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 107009,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "integration state at step 320",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 107188,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "close",
+  "label": "transition.00000040.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 109524,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "transition.00000040.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 109748,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "integration state at step 328",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 109927,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "close",
+  "label": "transition.00000041.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 112263,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "transition.00000041.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 112487,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "integration state at step 336",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 112666,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "close",
+  "label": "transition.00000042.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 115002,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "transition.00000042.other",
+  "nbytes": 179,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 115226,
+  "rtol": null,
+  "shape": [
+   179
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "integration state at step 344",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 115405,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "close",
+  "label": "transition.00000043.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 117741,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "transition.00000043.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 117965,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "integration state at step 352",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 118140,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "close",
+  "label": "transition.00000044.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 120476,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "transition.00000044.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 120700,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "integration state at step 360",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 120875,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "close",
+  "label": "transition.00000045.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 123211,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "transition.00000045.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 123435,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "integration state at step 368",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 123610,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "close",
+  "label": "transition.00000046.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 125946,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "transition.00000046.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 126170,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "integration state at step 376",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 126345,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "close",
+  "label": "transition.00000047.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 128681,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "transition.00000047.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 128905,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "integration state at step 384",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 129080,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "close",
+  "label": "transition.00000048.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 131416,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "transition.00000048.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 131640,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "integration state at step 392",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 131815,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "close",
+  "label": "transition.00000049.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 134151,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "transition.00000049.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 134375,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "integration state at step 400",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 134550,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "close",
+  "label": "transition.00000050.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 136886,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "transition.00000050.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 137110,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "integration state at step 408",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 137285,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "close",
+  "label": "transition.00000051.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 139621,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "transition.00000051.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 139845,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "integration state at step 416",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 140020,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "close",
+  "label": "transition.00000052.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 142356,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "transition.00000052.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 142580,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "integration state at step 424",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 142755,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "close",
+  "label": "transition.00000053.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 145091,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "transition.00000053.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 145315,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "integration state at step 432",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 145490,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "close",
+  "label": "transition.00000054.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 147826,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "transition.00000054.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 148050,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "integration state at step 440",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 148225,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "close",
+  "label": "transition.00000055.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 150561,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "transition.00000055.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 150785,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "integration state at step 448",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 150960,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "close",
+  "label": "transition.00000056.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 153296,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "transition.00000056.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 153520,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "integration state at step 456",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 153695,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "close",
+  "label": "transition.00000057.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 156031,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "transition.00000057.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 156255,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "integration state at step 464",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 156430,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "close",
+  "label": "transition.00000058.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 158766,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "transition.00000058.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 158990,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "integration state at step 472",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 159165,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "close",
+  "label": "transition.00000059.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 161501,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "transition.00000059.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 161725,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "integration state at step 480",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 161900,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "close",
+  "label": "transition.00000060.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 164236,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "transition.00000060.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 164460,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "integration state at step 488",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 164635,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "close",
+  "label": "transition.00000061.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 166971,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "transition.00000061.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 167195,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "integration state at step 496",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 167370,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "close",
+  "label": "transition.00000062.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 169706,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "transition.00000062.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 169930,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "integration state at step 504",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 170105,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "close",
+  "label": "transition.00000063.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 172441,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "transition.00000063.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 172665,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "integration state at step 512",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 172840,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "close",
+  "label": "transition.00000064.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 175176,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "transition.00000064.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 175400,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "integration state at step 520",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 175575,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "close",
+  "label": "transition.00000065.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 177911,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "transition.00000065.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 178135,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "integration state at step 528",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 178310,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "close",
+  "label": "transition.00000066.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 180646,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "transition.00000066.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 180870,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "integration state at step 536",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 181045,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "close",
+  "label": "transition.00000067.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 183381,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "transition.00000067.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 183605,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "integration state at step 544",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 183780,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "close",
+  "label": "transition.00000068.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 186116,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "transition.00000068.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 186340,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "integration state at step 552",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 186515,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "close",
+  "label": "transition.00000069.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 188851,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "transition.00000069.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 189075,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "integration state at step 560",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 189250,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "close",
+  "label": "transition.00000070.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 191586,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "transition.00000070.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 191810,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "integration state at step 568",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 191985,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "close",
+  "label": "transition.00000071.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 194321,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "transition.00000071.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 194545,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "integration state at step 576",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 194720,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "close",
+  "label": "transition.00000072.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 197056,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "transition.00000072.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 197280,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "integration state at step 584",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 197455,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "close",
+  "label": "transition.00000073.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 199791,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "transition.00000073.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 200015,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "integration state at step 592",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 200190,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "close",
+  "label": "transition.00000074.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 202526,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "transition.00000074.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 202750,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "integration state at step 600",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 202925,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 227,
+  "kind": "close",
+  "label": "transition.00000075.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 205261,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "transition.00000075.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 205485,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "integration state at step 608",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 205660,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "close",
+  "label": "transition.00000076.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 207996,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "transition.00000076.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 208220,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "integration state at step 616",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 208395,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "close",
+  "label": "transition.00000077.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 210731,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "transition.00000077.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 210955,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "integration state at step 624",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 211130,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "close",
+  "label": "transition.00000078.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 213466,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "transition.00000078.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 213690,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "integration state at step 632",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 213865,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "close",
+  "label": "transition.00000079.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 216201,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "transition.00000079.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 216425,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "integration state at step 640",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 216600,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "close",
+  "label": "transition.00000080.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 218936,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "transition.00000080.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 219160,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "integration state at step 648",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 219335,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 245,
+  "kind": "close",
+  "label": "transition.00000081.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 221671,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "transition.00000081.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 221895,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "integration state at step 656",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 222070,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "close",
+  "label": "transition.00000082.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 224406,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "transition.00000082.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 224630,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "integration state at step 664",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 224805,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 251,
+  "kind": "close",
+  "label": "transition.00000083.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 227141,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "transition.00000083.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 227365,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "integration state at step 672",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 227540,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "close",
+  "label": "transition.00000084.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 229876,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "transition.00000084.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 230100,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "integration state at step 680",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 230275,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 257,
+  "kind": "close",
+  "label": "transition.00000085.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 232611,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "transition.00000085.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 232835,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "integration state at step 688",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 233010,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "close",
+  "label": "transition.00000086.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 235346,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "transition.00000086.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 235570,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "integration state at step 696",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 235745,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 263,
+  "kind": "close",
+  "label": "transition.00000087.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 238081,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "transition.00000087.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 238305,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "integration state at step 704",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 238480,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 266,
+  "kind": "close",
+  "label": "transition.00000088.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 240816,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "transition.00000088.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 241040,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "integration state at step 712",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 241215,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 269,
+  "kind": "close",
+  "label": "transition.00000089.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 243551,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "transition.00000089.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 243775,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "integration state at step 720",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 243950,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "close",
+  "label": "transition.00000090.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 246286,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "transition.00000090.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 246510,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "integration state at step 728",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 246685,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 275,
+  "kind": "close",
+  "label": "transition.00000091.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 249021,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "transition.00000091.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 249245,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "integration state at step 736",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 249420,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 278,
+  "kind": "close",
+  "label": "transition.00000092.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 251756,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "transition.00000092.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 251980,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "integration state at step 744",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 252155,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 281,
+  "kind": "close",
+  "label": "transition.00000093.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 254491,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "transition.00000093.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 254715,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "integration state at step 752",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 254890,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "close",
+  "label": "transition.00000094.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 257226,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "transition.00000094.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 257450,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "integration state at step 760",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 257625,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 287,
+  "kind": "close",
+  "label": "transition.00000095.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 259961,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "transition.00000095.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 260185,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "integration state at step 768",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 260360,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 290,
+  "kind": "close",
+  "label": "transition.00000096.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 262696,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "transition.00000096.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 262920,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "integration state at step 776",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 263095,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 293,
+  "kind": "close",
+  "label": "transition.00000097.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 265431,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "transition.00000097.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 265655,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "integration state at step 784",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 265830,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "close",
+  "label": "transition.00000098.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 268166,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "transition.00000098.other",
+  "nbytes": 175,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 268390,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "integration state at step 792",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 268565,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 299,
+  "kind": "close",
+  "label": "transition.00000099.values",
+  "nbytes": 224,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 270901,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "transition.00000099.other",
+  "nbytes": 180,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 271125,
+  "rtol": null,
+  "shape": [
+   180
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "integration state at step 800",
+  "nbytes": 2336,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 271305,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": 0.0,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "close",
+  "label": "commands_requested.values",
+  "nbytes": 4000,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 273641,
+  "rtol": 0.0,
+  "shape": [
+   500
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "commands_requested.other",
+  "nbytes": 20701,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 277641,
+  "rtol": null,
+  "shape": [
+   20701
+  ]
+ },
+ {
+  "atol": 0.0,
+  "dtype": "<f8",
+  "index": 304,
+  "kind": "close",
+  "label": "commands_applied.values",
+  "nbytes": 24,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 298342,
+  "rtol": 0.0,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "commands_applied.other",
+  "nbytes": 208,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 298366,
+  "rtol": null,
+  "shape": [
+   208
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "close",
+  "label": "episode_metrics.values",
+  "nbytes": 192,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 298574,
+  "rtol": 1e-09,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "episode_metrics.other",
+  "nbytes": 529,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 298766,
+  "rtol": null,
+  "shape": [
+   529
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 308,
+  "kind": "close",
+  "label": "recorder.columns.values",
+  "nbytes": 287040,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 299295,
+  "rtol": 1e-09,
+  "shape": [
+   35880
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "recorder.columns.other",
+  "nbytes": 2,
+  "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
+  "offset": 586335,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ }
+]

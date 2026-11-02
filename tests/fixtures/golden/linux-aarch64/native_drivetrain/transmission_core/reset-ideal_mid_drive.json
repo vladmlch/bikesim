@@ -1,0 +1,54 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "native_drivetrain/transmission_core/reset-ideal_mid_drive",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "native_drivetrain/transmission_core/reset-ideal_mid_drive",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 16,
+  "node": "native_drivetrain/transmission_core/reset-ideal_mid_drive",
+  "offset": 16,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 8,
+  "node": "native_drivetrain/transmission_core/reset-ideal_mid_drive",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ }
+]

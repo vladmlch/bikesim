@@ -29,7 +29,7 @@ using runtime_reference::expect_error;
 using runtime_reference::expect_invalid;
 
 constexpr std::string_view kNode =
-    "tests/reference/test_native_runtime_commands.py::";
+    "native_runtime_commands/";
 
 [[nodiscard]] std::unique_ptr<runtime::NativeRideRuntime> ride() {
     return ft2_reference::ride();
@@ -202,7 +202,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_explicit_zero_effort_differs_from_automatic() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_explicit_zero_effort_differs_from_automatic");
+        "explicit_zero_effort_differs_from_automatic");
     const auto native = ride();
     const auto automatic = ride();
     runtime::RideControl zero;
@@ -228,7 +228,8 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_motor_ceiling_change_matches_python() {
     bt::oracle::Node node(
-        std::string(kNode) + "test_motor_ceiling_change_matches_python");
+        std::string(kNode) +
+        "motor_ceiling_change_matches_python");
     const auto native = ride();
     char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::int64_t target = 1; target <= 30; ++target) {
@@ -249,7 +250,8 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_brake_apply_release_matches_python() {
     bt::oracle::Node node(
-        std::string(kNode) + "test_brake_apply_release_matches_python");
+        std::string(kNode) +
+        "brake_apply_release_matches_python");
     const auto native = ride();
     runtime::RideControl command;
     command.human_torque_nm = 25.;
@@ -272,7 +274,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_gear_shift_and_coast_resume_match_python() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_gear_shift_and_coast_resume_match_python");
+        "gear_shift_and_coast_resume_match_python");
     const auto native = ride();
     const std::array<std::pair<std::int64_t, double>, 3> segments{
         {{60, 35.}, {80, 0.}, {120, 35.}}};

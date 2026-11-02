@@ -246,7 +246,7 @@ NATIVE_DIAG_POP
 // The frozen oracle rows/columns replay against the ft2 ride capture.
 
 constexpr std::string_view kNode =
-    "tests/reference/test_native_runtime_rollout.py::";
+    "native_runtime_rollout/";
 
 void consume_rows(bt::oracle::Node &node,
                   const std::vector<runtime::SamplePtr> &samples,
@@ -267,7 +267,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_full_rows_match_python_for_non_aligned_tail() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_full_rows_match_python_for_non_aligned_tail");
+        "native_full_rows_match_python_for_non_aligned_tail");
     const auto native = ft2_reference::ride();
     const runtime::RideControl command;
     static_cast<void>(native->advance(41, command, 0., 0., std::nullopt));
@@ -296,7 +296,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_identical_non_aligned_explicit_flush_schedule_matches_python() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_identical_non_aligned_explicit_flush_schedule_matches_python");
+        "identical_non_aligned_explicit_flush_schedule_matches_python");
     const auto native = ft2_reference::ride_decimated(7);
     // (target, held human torque): nullopt = the automatic lane.
     const std::array<std::pair<std::int64_t, std::optional<double>>, 4>
@@ -326,7 +326,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip");
+        "native_recorded_columns_match_scalar_recorder_without_row_roundtrip");
     const auto native = ft2_reference::ride_decimated(7);
     const runtime::RideControl command;
     static_cast<void>(native->advance(41, command, 0., 0., std::nullopt));
@@ -350,7 +350,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_one_second_800_interval_golden_episode_all_channels() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_one_second_800_interval_golden_episode_all_channels");
+        "one_second_800_interval_golden_episode_all_channels");
     const auto native = ft2_reference::ride();
     const runtime::RideControl command;
     const runtime::AdvanceResult done =

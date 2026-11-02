@@ -1,0 +1,702 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 168,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 96,
+  "rtol": null,
+  "shape": [
+   21
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 264,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 168,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   21
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 528,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 168,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 624,
+  "rtol": null,
+  "shape": [
+   21
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 792,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 264,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 888,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 1152,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 264,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 1248,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 1512,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 360,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 1608,
+  "rtol": null,
+  "shape": [
+   45
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 1968,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 456,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 2064,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 2520,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 456,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 2616,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 3072,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 3168,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 3720,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 3816,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 4368,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 4464,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 5016,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 648,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 5112,
+  "rtol": null,
+  "shape": [
+   81
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 5760,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 648,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 5856,
+  "rtol": null,
+  "shape": [
+   81
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 6504,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 648,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 6600,
+  "rtol": null,
+  "shape": [
+   81
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 7248,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 7344,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 7896,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 7992,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 8544,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 8640,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 9192,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 9288,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 9840,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 648,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 9936,
+  "rtol": null,
+  "shape": [
+   81
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 10584,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 10680,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 11232,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 456,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 11328,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 11784,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 456,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 11880,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 12336,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 456,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 12432,
+  "rtol": null,
+  "shape": [
+   57
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 12888,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 552,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 12984,
+  "rtol": null,
+  "shape": [
+   69
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "read",
+  "nbytes": 96,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 13536,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "state",
+  "nbytes": 264,
+  "node": "native_research_sensors/noise_latency_dropout_and_stale_match_python/True-0.4-0.02",
+  "offset": 13632,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ }
+]

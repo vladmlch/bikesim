@@ -120,8 +120,10 @@ inline Value shifting_result(const PolicySet& value) {
 }
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) mirrors the Python oracle-node helper signature
 inline bt::oracle::Node node(std::string_view function, std::string_view parameter = {}) {
-    auto name = "tests/reference/test_native_drive_policies.py::" + std::string(function);
-    if (!parameter.empty()) name += "[" + std::string(parameter) + "]";
+    auto name = "native_drive_policies/" +
+        (function.starts_with("test_") ? std::string(function.substr(5))
+                                       : std::string(function));
+    if (!parameter.empty()) name += "/" + bt::oracle::key(parameter);
     return bt::oracle::Node(name);
 }
 inline double electrical(const PolicySet& policy, double torque, double omega, bool enabled) {

@@ -184,9 +184,10 @@ void typed_wire_config(const nativecfg::WriterConfig& config) {
 // ---- golden plumbing --------------------------------------------------------
 
 bt::oracle::Node node(std::string_view function, std::string_view id = {}) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    auto name = "tests/reference/test_native_numeric_completion.py::" +
-                std::string(function);
-    if (!id.empty()) name += "[" + std::string(id) + "]";
+    std::string name = "native_numeric_completion/" +
+        (function.starts_with("test_") ? std::string(function.substr(5))
+                                       : std::string(function));
+    if (!id.empty()) name += "/" + bt::oracle::key(id);
     return bt::oracle::Node(name);
 }
 void scalar(bt::oracle::Node& golden, double value) {

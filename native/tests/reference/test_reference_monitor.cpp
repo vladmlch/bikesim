@@ -54,7 +54,7 @@ void require_first(const runtime::ReferenceMonitor &monitor, double time_s,
               std::string(message) + ": first_failure violations drifted");
 }
 
-// test_reference_monitor.py::test_research_stops_before_decimation_can_hide_bad_step
+// reference_monitor/research_stops_before_decimation_can_hide_bad_step
 void test_research_stops_before_decimation_can_hide_bad_step() {
     runtime::ReferenceMonitor monitor{.strict = true, .first_failure = std::nullopt, .warning_pending = false};
     throws<runtime::InvalidReferenceRun>(
@@ -64,7 +64,7 @@ void test_research_stops_before_decimation_can_hide_bad_step() {
                   "the strict monitor keeps the first failure it raised on");
 }
 
-// test_reference_monitor.py::test_viewer_warns_but_never_restores_valid_status
+// reference_monitor/viewer_warns_but_never_restores_valid_status
 void test_viewer_warns_but_never_restores_valid_status() {
     runtime::ReferenceMonitor monitor{.strict = false, .first_failure = std::nullopt, .warning_pending = false};
     const auto warning = accept(monitor, 0.01, {"grip_left.pull"});
@@ -77,7 +77,7 @@ void test_viewer_warns_but_never_restores_valid_status() {
                   "a clean interval never restores valid status");
 }
 
-// test_reference_monitor.py::test_non_strict_warns_once_and_keeps_the_first_failure
+// reference_monitor/non_strict_warns_once_and_keeps_the_first_failure
 void test_non_strict_warns_once_and_keeps_the_first_failure() {
     runtime::ReferenceMonitor monitor{.strict = false, .first_failure = std::nullopt, .warning_pending = false};
     const auto warning = accept(monitor, 0.01, {"foot_rear.friction"});
@@ -92,7 +92,7 @@ void test_non_strict_warns_once_and_keeps_the_first_failure() {
                   "later violations never replace the first failure");
 }
 
-// test_reference_monitor.py::test_strict_raises_even_after_a_stored_failure
+// reference_monitor/strict_raises_even_after_a_stored_failure
 void test_strict_raises_even_after_a_stored_failure() {
     runtime::ReferenceMonitor monitor{.strict = true, .first_failure = std::nullopt, .warning_pending = false};
     throws<runtime::InvalidReferenceRun>(

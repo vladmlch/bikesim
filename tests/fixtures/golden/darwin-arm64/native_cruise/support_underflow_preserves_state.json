@@ -1,0 +1,30 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "native_cruise/support_underflow_preserves_state",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "native_cruise/support_underflow_preserves_state",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

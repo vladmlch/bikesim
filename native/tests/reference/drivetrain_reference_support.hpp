@@ -95,8 +95,10 @@ inline std::unique_ptr<Stepper> pair(std::string_view kind = "ideal_mid_drive", 
     return pair(source(kind, topology), mode, topology, sparse);
 }
 inline bt::oracle::Node node(std::string_view function, std::string_view parameters = {}) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
-    std::string name = "tests/reference/test_native_drivetrain.py::" + std::string(function);
-    if (!parameters.empty()) name += "[" + std::string(parameters) + "]";
+    std::string name = "native_drivetrain/" +
+        (function.starts_with("test_") ? std::string(function.substr(5))
+                                       : std::string(function));
+    if (!parameters.empty()) name += "/" + bt::oracle::key(parameters);
     return bt::oracle::Node(name);
 }
 inline void array(bt::oracle::Node& golden, std::span<const double> actual, std::string_view label = "") {

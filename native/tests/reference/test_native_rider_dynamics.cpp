@@ -99,7 +99,7 @@ void set_impedance(mjModel const *model, double impedance) {
 }
 
 [[gnu::noinline]] void test_model_response_predicts_current_acceleration_and_all_reactions() {
-    // tests/reference/test_rider_dynamics.py::test_model_response_predicts_current_acceleration_and_all_reactions
+    // rider_dynamics/model_response_predicts_current_acceleration_and_all_reactions
     struct Param { const char *kind; double torque, impedance; };
     for (const char *kind : {"weld", "tendon", "friction"})
         for (const double torque : {-20., 0., 20.})
@@ -148,7 +148,7 @@ void set_impedance(mjModel const *model, double impedance) {
 }
 
 [[gnu::noinline]] void test_prediction_does_not_read_previous_reactions_or_acceleration() {
-    // tests/reference/test_rider_dynamics.py::test_prediction_does_not_read_previous_reactions_or_acceleration
+    // rider_dynamics/prediction_does_not_read_previous_reactions_or_acceleration
     auto rig = stand("weld");
     model_access::mutable_buffer(rig.data->qfrc_applied, rig.model->nv,
                                  "qfrc_applied")[0] = 10.;
@@ -182,7 +182,7 @@ void set_impedance(mjModel const *model, double impedance) {
 }
 
 [[gnu::noinline]] void test_unilateral_mode_domain_rejects_a_command_that_changes_contact_state() {
-    // tests/reference/test_rider_dynamics.py::test_unilateral_mode_domain_rejects_a_command_that_changes_contact_state
+    // rider_dynamics/unilateral_mode_domain_rejects_a_command_that_changes_contact_state
     auto rig = stand("tendon");
     model_access::mutable_buffer(rig.data->qpos, rig.model->nq,
                                  "qpos")[0] = 1e-5;
@@ -210,7 +210,7 @@ void set_impedance(mjModel const *model, double impedance) {
 }
 
 [[gnu::noinline]] void test_allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode() {
-    // tests/reference/test_rider_dynamics.py::test_allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode
+    // rider_dynamics/allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode
     auto rig = stand("friction");
     engine::forward(rig.model.get(), rig.data.get());
     const std::array<int, 1> dofs{0};
@@ -257,7 +257,7 @@ void set_impedance(mjModel const *model, double impedance) {
 }
 
 [[gnu::noinline]] void test_predicted_weld_wrench_includes_the_actual_support_moment() {
-    // tests/reference/test_rider_dynamics.py::test_predicted_weld_wrench_includes_the_actual_support_moment
+    // rider_dynamics/predicted_weld_wrench_includes_the_actual_support_moment
     auto rig = stand("weld");
     engine::forward(rig.model.get(), rig.data.get());
     const std::array<int, 1> dofs{4};
@@ -313,7 +313,7 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque() {
-    // tests/reference/test_rider_dynamics.py::test_feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque
+    // rider_dynamics/feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque
     bt::ModelFixture rig(
         "<mujoco><option gravity=\"0 0 0\"/>"
         "<worldbody><body name=\"bike\"><joint name=\"bx\" type=\"slide\" axis=\"1 0 0\"/>"
@@ -361,7 +361,7 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_actual_allocation_cannot_jump_outside_bounded_activation_reach() {
-    // tests/reference/test_rider_dynamics.py::test_actual_allocation_cannot_jump_outside_bounded_activation_reach
+    // rider_dynamics/actual_allocation_cannot_jump_outside_bounded_activation_reach
     for (const double previous : {0., 35.}) {
         bt::ModelFixture rig(
             "<mujoco><option gravity=\"0 0 0\" timestep=\".0005\"/>"
@@ -436,7 +436,7 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps() {
-    // tests/reference/test_rider_dynamics.py::test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps
+    // rider_dynamics/activation_projection_and_jacobian_include_joint_and_whole_body_clamps
     {
       rider::ActivationLaw const clamped({100., 100.}, {10., 10.}, {-40., -40.},
                                          {40., 40.}, .005, .04, 450.);
@@ -473,7 +473,7 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_linear_mode_rejection_respects_the_existing_feasibility_tolerance() {
-    // tests/reference/test_rider_dynamics.py::test_linear_mode_rejection_respects_the_existing_feasibility_tolerance
+    // rider_dynamics/linear_mode_rejection_respects_the_existing_feasibility_tolerance
     const Matrix matrix{.rows = 2, .cols = 1, .values = {1., -1.}};
     bt::require(!bike::numerics::linear_region_infeasible(
                     matrix, Vector{0., -.5e-7}, Vector{-1.}, Vector{1.}),
@@ -485,7 +485,7 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
 }
 
 [[gnu::noinline]] void test_grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves() {
-    // tests/reference/test_rider_dynamics.py::test_grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves
+    // rider_dynamics/grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves
     bt::ModelFixture rig(
         "<mujoco><worldbody>"
         "<body name=\"bar\"><freejoint/><inertial mass=\"1000\" pos=\"0 0 0\" diaginertia=\"1000 1000 1000\"/></body>"

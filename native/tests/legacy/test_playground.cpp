@@ -28,7 +28,7 @@ void lifecycle(){
     const auto stable=playground->telemetry();same(initial.qpos,playground->snapshot().qpos);bt::require(metric(stable,"p3_residual_mm")<1e-2,"initial linkage closes; measured "+std::to_string(metric(stable,"p3_residual_mm")));
     playground->set_travel(90.,90.);playground->step_at(100.);const auto moved=playground->snapshot();bt::require(moved.time_s>0.&&moved.target_rear_travel_mm==90.&&moved.target_fork_travel_mm==90.,"stand targets advance controller simulation");
     const double mass=metric(moved.telemetry,"total_mass_kg");bt::require(playground->toggle_rider(),"rider enables");const auto with_rider=playground->snapshot();
-    // playground.py::_apply_rider_in_place ends in mj_setConst, which leaves
+    // playground.py:_apply_rider_in_place ends in mj_setConst, which leaves
     // d.qpos at qpos_spring (all zeros for the stand model) while qvel and the
     // clock survive; the snapshot must mirror that observable reference state.
     bt::require(std::ranges::all_of(with_rider.qpos,[](double v){return v==0.;}),"rider toggle re-poses to qpos_spring like the reference");

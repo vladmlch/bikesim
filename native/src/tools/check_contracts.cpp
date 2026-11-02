@@ -1,6 +1,6 @@
 // check_contracts.cpp — diagnostic controls, SDK/hardening context sweeps
 // and the structural native contracts check (task T56). Ports
-// tools/native_checks.py::run_diagnostic_controls / run_context_checks and
+// tools/native_checks.py:run_diagnostic_controls / run_context_checks and
 // tools/check_native_contracts.py.
 //
 // Standalone-build deviations from the oracle, all fail-closed and recorded

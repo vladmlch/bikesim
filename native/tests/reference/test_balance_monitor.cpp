@@ -60,14 +60,14 @@ bool same_event(const std::optional<runtime::BalanceLostEvent> &a,
            a->speed_mps == b->speed_mps;
 }
 
-// test_balance_monitor.py::test_slow_start_within_grace_is_fine
+// balance_monitor/slow_start_within_grace_is_fine
 void test_slow_start_within_grace_is_fine() {
     const auto monitor = run(std::vector<double>(29, 0.));
     bt::require(!monitor.event.has_value(),
                 "29 low-speed samples inside the 3 s grace never latch");
 }
 
-// test_balance_monitor.py::test_sustained_low_speed_latches_after_half_second_from_first_low_sample
+// balance_monitor/sustained_low_speed_latches_after_half_second_from_first_low_sample
 void test_sustained_low_speed_latches() {
     std::vector<double> speeds(31, 5. * KMH);
     speeds.insert(speeds.end(), 6, 3. * KMH);
@@ -81,7 +81,7 @@ void test_sustained_low_speed_latches() {
                 "the latched event is the active event");
 }
 
-// test_balance_monitor.py::test_recovered_speed_clears_the_active_event_but_keeps_the_record
+// balance_monitor/recovered_speed_clears_the_active_event_but_keeps_the_record
 void test_recovered_speed_clears_active_event() {
     std::vector<double> speeds(31, 5. * KMH);
     speeds.insert(speeds.end(), 6, 3. * KMH);
@@ -112,7 +112,7 @@ void test_recovered_speed_clears_active_event() {
                 "the first record survives the pause");
 }
 
-// test_balance_monitor.py::test_brief_dip_recovers_and_resets_dwell
+// balance_monitor/brief_dip_recovers_and_resets_dwell
 void test_brief_dip_recovers_and_resets_dwell() {
     std::vector<double> speeds(31, 5. * KMH);
     speeds.insert(speeds.end(), 4, 3. * KMH);
@@ -123,7 +123,7 @@ void test_brief_dip_recovers_and_resets_dwell() {
     bt::require(monitor.low_speed_s == 0., "recovery zeroes the dwell timer");
 }
 
-// test_balance_monitor.py::test_grace_starts_only_when_riding
+// balance_monitor/grace_starts_only_when_riding
 void test_grace_starts_only_when_riding() {
     runtime::BalanceMonitor monitor(4. / 3.6, .5, 3.);
     for (int i = 0; i < 50; ++i)
@@ -134,7 +134,7 @@ void test_grace_starts_only_when_riding() {
                     "riding samples inside grace never latch");
 }
 
-// test_balance_monitor.py::test_braking_pauses_dwell_without_restarting_grace
+// balance_monitor/braking_pauses_dwell_without_restarting_grace
 void test_braking_pauses_dwell_without_restarting_grace() {
     runtime::BalanceMonitor monitor(4. / 3.6, .5, 3.);
     monitor.update(0., 0., 5. * KMH, true);
@@ -158,7 +158,7 @@ void test_braking_pauses_dwell_without_restarting_grace() {
                 "the event time is the latching sample's time");
 }
 
-// test_balance_monitor.py::test_reset_clears_event_and_restarts_first_ride_grace
+// balance_monitor/reset_clears_event_and_restarts_first_ride_grace
 void test_reset_clears_event_and_restarts_grace() {
     runtime::BalanceMonitor monitor = run(std::vector<double>(37, 0.));
     bt::require(monitor.event.has_value(), "37 low-speed samples latch");
@@ -171,7 +171,7 @@ void test_reset_clears_event_and_restarts_grace() {
     bt::require(monitor.grace_left_s == 3., "the first-ride grace is restored");
 }
 
-// test_balance_monitor.py::test_floor_boundary_and_time_validation
+// balance_monitor/floor_boundary_and_time_validation
 void test_floor_boundary_and_time_validation() {
     runtime::BalanceMonitor monitor(1., .5, 0.);
     bt::require(!monitor.update(0., 0., 1., true).has_value(),
@@ -181,7 +181,7 @@ void test_floor_boundary_and_time_validation() {
     bt::invalid([&] { monitor.update(.5, 0., 0., true); });
 }
 
-// test_balance_monitor.py::test_summary_and_research_metrics_keep_latched_event_position
+// balance_monitor/summary_and_research_metrics_keep_latched_event_position
 // metrics leg — a fabricated sealed episode whose committed balance_event
 // carries the latched position 12 while the episode advanced to 15; the
 // production metrics surface must report the latched record.

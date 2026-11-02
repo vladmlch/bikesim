@@ -55,10 +55,17 @@ std::span<const int> ibuf(const int *p, std::size_t n) {
 }
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_spindle_controller.py";
+    "native_spindle_controller/";
 
 std::string node_id(std::string_view symbol) {
-    return std::string(kFile) + "::" + std::string(symbol);
+    std::string key{symbol};
+    if (key.starts_with("test_")) key.erase(0, 5);
+    if (const auto bracket = key.find('['); bracket != std::string::npos) {
+        auto param = std::string_view(key).substr(bracket + 1);
+        if (param.ends_with(']')) param.remove_suffix(1);
+        key = key.substr(0, bracket) + "/" + bt::oracle::key(param);
+    }
+    return std::string(kFile) + key;
 }
 
 struct Plant {

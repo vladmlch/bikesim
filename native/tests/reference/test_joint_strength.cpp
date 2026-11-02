@@ -112,7 +112,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_curve_validation() {
-    // tests/reference/test_joint_strength.py::test_curve_validation
+    // joint_strength/curve_validation
     rr::expect_invalid(
         [] {
             auto c = synthetic_curve();
@@ -181,7 +181,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_plan_fixture_ordering_and_velocity_limits() {
-    // tests/reference/test_joint_strength.py::test_plan_fixture_ordering_and_velocity_limits
+    // joint_strength/plan_fixture_ordering_and_velocity_limits
     const auto curve = synthetic_curve();
     const double iso = spindle::directional_capacity(curve, 0., 0., 1);
     const double concentric =
@@ -200,7 +200,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_isometric_interpolation_between_knots() {
-    // tests/reference/test_joint_strength.py::test_isometric_interpolation_between_knots
+    // joint_strength/isometric_interpolation_between_knots
     const auto curve = synthetic_curve();
     bt::require(rr::approx(spindle::directional_capacity(curve, 0., 0., 1),
                            100.),
@@ -218,7 +218,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 
 [[gnu::noinline]] void
 test_concentric_decays_eccentric_is_bounded_and_finite() {
-    // tests/reference/test_joint_strength.py::test_concentric_decays_eccentric_is_bounded_and_finite
+    // joint_strength/concentric_decays_eccentric_is_bounded_and_finite
     const auto curve = synthetic_curve();
     const std::vector<double> speeds{0., 2., 5., 8.};
     std::vector<double> capacities;
@@ -239,7 +239,7 @@ test_concentric_decays_eccentric_is_bounded_and_finite() {
 }
 
 [[gnu::noinline]] void test_direction_sign_uses_the_torque_direction() {
-    // tests/reference/test_joint_strength.py::test_direction_sign_uses_the_torque_direction
+    // joint_strength/direction_sign_uses_the_torque_direction
     const auto curve = synthetic_curve();
     bt::require(spindle::directional_capacity(curve, 0., -5., -1) <
                     spindle::directional_capacity(curve, 0., 0., -1),
@@ -261,7 +261,7 @@ test_concentric_decays_eccentric_is_bounded_and_finite() {
 
 [[gnu::noinline]] void
 test_positive_power_budget_scales_active_torque_only() {
-    // tests/reference/test_joint_strength.py::test_positive_power_budget_scales_active_torque_only
+    // joint_strength/positive_power_budget_scales_active_torque_only
     const std::vector<double> torque5(5, 100.), speed5(5, 5.);
     auto limited = spindle::limit_positive_power(torque5, speed5, 450.);
     double positive = 0.;
@@ -286,7 +286,7 @@ test_positive_power_budget_scales_active_torque_only() {
 }
 
 [[gnu::noinline]] void test_reference_profile_covers_exactly_the_registry() {
-    // tests/reference/test_joint_strength.py::test_reference_profile_covers_exactly_the_registry
+    // joint_strength/reference_profile_covers_exactly_the_registry
     const auto profile =
         cfg::load_strength_profile(kStrengthPath, joints(), false);
     bt::require(profile_names(profile) ==
@@ -309,7 +309,7 @@ test_positive_power_budget_scales_active_torque_only() {
 
 [[gnu::noinline]] void
 test_verified_gate_rejects_the_provisional_profile() {
-    // tests/reference/test_joint_strength.py::test_verified_gate_rejects_the_provisional_profile
+    // joint_strength/verified_gate_rejects_the_provisional_profile
     rr::expect_invalid(
         [&] {
             (void)cfg::load_strength_profile(kStrengthPath, joints(), true);
@@ -331,7 +331,7 @@ test_verified_gate_rejects_the_provisional_profile() {
 
 [[gnu::noinline]] void
 test_profile_rejects_incomplete_or_alien_coverage() {
-    // tests/reference/test_joint_strength.py::test_profile_rejects_incomplete_or_alien_coverage
+    // joint_strength/profile_rejects_incomplete_or_alien_coverage
     bt::TemporaryDirectory const dir("joint-strength-coverage");
     {
         io::Value payload = io::parse_json(read_text(kStrengthPath));
@@ -378,7 +378,7 @@ test_profile_rejects_incomplete_or_alien_coverage() {
 
 [[gnu::noinline]] void
 test_curve_knots_must_cover_the_used_anatomical_range() {
-    // tests/reference/test_joint_strength.py::test_curve_knots_must_cover_the_used_anatomical_range
+    // joint_strength/curve_knots_must_cover_the_used_anatomical_range
     io::Value payload = io::parse_json(read_text(kStrengthPath));
     auto &negative = member(
         member(member(member(payload, "joints"), "rider_knee_front"),
@@ -397,7 +397,7 @@ test_curve_knots_must_cover_the_used_anatomical_range() {
 
 [[gnu::noinline]] void
 test_strength_coordinates_agree_with_the_joint_envelope() {
-    // tests/reference/test_joint_strength.py::test_strength_coordinates_agree_with_the_joint_envelope
+    // joint_strength/strength_coordinates_agree_with_the_joint_envelope
     const auto coordinates =
         cfg::load_strength_coordinates(kStrengthPath, joints());
     const auto envelopes = cfg::load_joint_envelopes(kEnvelopePath);
@@ -438,7 +438,7 @@ bike::terrain::TrackSpec probe_track_30() {
 
 [[gnu::noinline]] void
 test_actuators_are_pure_motors_with_dof_damping() {
-    // tests/reference/test_joint_strength.py::test_actuators_are_pure_motors_with_dof_damping
+    // joint_strength/actuators_are_pure_motors_with_dof_damping
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &physical = *rig->physical;
     const auto &controller = physical.rider_control();
@@ -492,7 +492,7 @@ const std::vector<double> &component_row(const ::runtime::RawStep &raw,
 
 [[gnu::noinline]] void
 test_stepped_effort_respects_strength_and_the_power_budget() {
-    // tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget
+    // joint_strength/stepped_effort_respects_strength_and_the_power_budget
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &physical = *rig->physical;
     rcfg::RideControl control;
@@ -551,7 +551,7 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
 
 [[gnu::noinline]] void
 test_directional_capacity_bounds_the_commanded_torque() {
-    // tests/reference/test_joint_strength.py::test_directional_capacity_bounds_the_commanded_torque
+    // joint_strength/directional_capacity_bounds_the_commanded_torque
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &physical = *rig->physical;
     const auto &controller = physical.rider_control();
@@ -585,7 +585,7 @@ test_directional_capacity_bounds_the_commanded_torque() {
 
 [[gnu::noinline]] void
 test_leg_curves_span_a_120_rpm_pedalling_envelope() {
-    // tests/reference/test_joint_strength.py::test_leg_curves_span_a_120_rpm_pedalling_envelope
+    // joint_strength/leg_curves_span_a_120_rpm_pedalling_envelope
     const auto profile =
         cfg::load_strength_profile(kStrengthPath, joints(), false);
     for (const std::string side : {"front", "rear"}) {

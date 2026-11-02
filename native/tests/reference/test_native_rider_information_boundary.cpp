@@ -52,7 +52,7 @@ bool approx(double actual, double expected) {
 }
 
 [[gnu::noinline]] void test_kinematic_state_contract_fields() {
-    // tests/reference/test_rider_information_boundary.py::test_kinematic_state_contract_fields
+    // rider_information_boundary/kinematic_state_contract_fields
     // dataclasses.fields() order has no runtime C++ counterpart; the compile
     // itself pins the declared member set and order is observed below by
     // construction/readback of every declared field.
@@ -78,7 +78,7 @@ bool approx(double actual, double expected) {
 }
 
 [[gnu::noinline]] void test_state_snapshots_and_freezes_the_interval() {
-    // tests/reference/test_rider_information_boundary.py::test_state_snapshots_and_freezes_the_interval
+    // rider_information_boundary/state_snapshots_and_freezes_the_interval
     auto rig = free_rig();
     const std::array<double, 2> wheels{0., 1.};
     const auto state = runtime::rider_kinematic_state(
@@ -117,7 +117,7 @@ bool approx(double actual, double expected) {
 }
 
 [[gnu::noinline]] void test_state_is_blind_to_solver_truth() {
-    // tests/reference/test_rider_information_boundary.py::test_state_is_blind_to_solver_truth
+    // rider_information_boundary/state_is_blind_to_solver_truth
     auto rig = free_rig();
     const std::array<double, 2> wheels{0., 1.};
     const auto before = runtime::rider_kinematic_state(
@@ -150,7 +150,7 @@ bool approx(double actual, double expected) {
 }
 
 [[gnu::noinline]] void test_road_window_is_bounded() {
-    // tests/reference/test_rider_information_boundary.py::test_road_window_is_bounded
+    // rider_information_boundary/road_window_is_bounded
     const std::array<double, 2> wheels{.2, 1.2};
     const auto samples =
         runtime::road_samples(vertices(), wheels, .5, .1);
@@ -201,7 +201,7 @@ bool approx(double actual, double expected) {
 }
 
 [[gnu::noinline]] void test_sensor_observation_contract_unchanged() {
-    // tests/reference/test_rider_information_boundary.py::test_sensor_observation_contract_unchanged
+    // rider_information_boundary/sensor_observation_contract_unchanged
     // The Python dataclass field order is the wire order in the native
     // codec; the emitted key sequence is the observable contract.
     runtime::SensorObservation const observation;
@@ -219,7 +219,7 @@ bool approx(double actual, double expected) {
 }
 
 [[gnu::noinline]] void test_motor_policy_cannot_take_ownership_of_rider_cadence() {
-    // tests/reference/test_rider_information_boundary.py::test_motor_policy_cannot_take_ownership_of_rider_cadence
+    // rider_information_boundary/motor_policy_cannot_take_ownership_of_rider_cadence
     // The oracle drives the rejection through PolicySession.advance; the
     // native gate is the same validate_motor_policy_control call the
     // session's begin_advance performs before touching the environment.

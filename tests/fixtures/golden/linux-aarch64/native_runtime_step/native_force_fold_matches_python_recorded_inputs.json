@@ -1,0 +1,170 @@
+[
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "fold.0.components.values",
+  "nbytes": 3536,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 0,
+  "rtol": 1e-09,
+  "shape": [
+   442
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "fold.0.components.other",
+  "nbytes": 2,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 3536,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "close",
+  "label": "fold.0.ctrl",
+  "nbytes": 96,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 3538,
+  "rtol": 1e-09,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "close",
+  "label": "fold.0.brake_bounds",
+  "nbytes": 16,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 3634,
+  "rtol": 0.0,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "close",
+  "label": "fold.1.components.values",
+  "nbytes": 3536,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 3650,
+  "rtol": 1e-09,
+  "shape": [
+   442
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "fold.1.components.other",
+  "nbytes": 2,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 7186,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "close",
+  "label": "fold.1.ctrl",
+  "nbytes": 96,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 7188,
+  "rtol": 1e-09,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "close",
+  "label": "fold.1.brake_bounds",
+  "nbytes": 16,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 7284,
+  "rtol": 0.0,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "close",
+  "label": "fold.2.components.values",
+  "nbytes": 3536,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 7300,
+  "rtol": 1e-09,
+  "shape": [
+   442
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "fold.2.components.other",
+  "nbytes": 2,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 10836,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "close",
+  "label": "fold.2.ctrl",
+  "nbytes": 96,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 10838,
+  "rtol": 1e-09,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": 1e-12,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "close",
+  "label": "fold.2.brake_bounds",
+  "nbytes": 16,
+  "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
+  "offset": 10934,
+  "rtol": 0.0,
+  "shape": [
+   2
+  ]
+ }
+]

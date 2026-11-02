@@ -1,0 +1,282 @@
+[
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "step.0.transition.values",
+  "nbytes": 224,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 0,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "step.0.transition.other",
+  "nbytes": 175,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 224,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "close",
+  "label": "step.1.transition.values",
+  "nbytes": 224,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 399,
+  "rtol": 1e-09,
+  "shape": [
+   28
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "step.1.transition.other",
+  "nbytes": 175,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 623,
+  "rtol": null,
+  "shape": [
+   175
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "close",
+  "label": "export.summary.values",
+  "nbytes": 4200,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 798,
+  "rtol": 1e-09,
+  "shape": [
+   525
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "export.summary.other",
+  "nbytes": 11724,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 4998,
+  "rtol": null,
+  "shape": [
+   11724
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "close",
+  "label": "export.observations.jsonl.values",
+  "nbytes": 264,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 16722,
+  "rtol": 1e-09,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "export.observations.jsonl.other",
+  "nbytes": 74,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 16986,
+  "rtol": null,
+  "shape": [
+   74
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "close",
+  "label": "export.transitions.jsonl.values",
+  "nbytes": 448,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 17060,
+  "rtol": 1e-09,
+  "shape": [
+   56
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "export.transitions.jsonl.other",
+  "nbytes": 509,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 17508,
+  "rtol": null,
+  "shape": [
+   509
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "close",
+  "label": "export.commands_requested.jsonl.values",
+  "nbytes": 80,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 18017,
+  "rtol": 1e-09,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "export.commands_requested.jsonl.other",
+  "nbytes": 415,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 18097,
+  "rtol": null,
+  "shape": [
+   415
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "close",
+  "label": "export.commands_applied.jsonl.values",
+  "nbytes": 24,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 18512,
+  "rtol": 1e-09,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "export.commands_applied.jsonl.other",
+  "nbytes": 208,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 18536,
+  "rtol": null,
+  "shape": [
+   208
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "close",
+  "label": "export.intervals.jsonl.values",
+  "nbytes": 31144,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 18744,
+  "rtol": 1e-09,
+  "shape": [
+   3893
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "export.intervals.jsonl.other",
+  "nbytes": 33866,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 49888,
+  "rtol": null,
+  "shape": [
+   33866
+  ]
+ },
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "close",
+  "label": "export.episode_metrics.values",
+  "nbytes": 184,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 83754,
+  "rtol": 1e-09,
+  "shape": [
+   23
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "export.episode_metrics.other",
+  "nbytes": 534,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 83938,
+  "rtol": null,
+  "shape": [
+   534
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "states.npz initial",
+  "nbytes": 2336,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 84472,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "states.npz final",
+  "nbytes": 2336,
+  "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
+  "offset": 86808,
+  "rtol": null,
+  "shape": [
+   292
+  ]
+ }
+]

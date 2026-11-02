@@ -1,0 +1,14 @@
+[
+ {
+  "atol": 1e-08,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "waveform",
+  "nbytes": 8,
+  "node": "native_spindle_controller/spindle_waveform_matches_python/1.5707963267948966",
+  "offset": 0,
+  "rtol": 1e-07,
+  "shape": []
+ }
+]

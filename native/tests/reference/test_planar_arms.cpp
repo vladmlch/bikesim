@@ -111,7 +111,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_split_preserves_the_anatomical_budget() {
-    // tests/reference/test_planar_arms.py::test_split_preserves_the_anatomical_budget
+    // planar_arms/split_preserves_the_anatomical_budget
     const auto paired = mdl::segment_masses(80., .5);
     const auto split = mdl::split_paired_arm_masses(paired);
     std::set<std::string> expected;
@@ -137,7 +137,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_arm_split_does_not_add_mass_or_strength() {
-    // tests/reference/test_planar_arms.py::test_arm_split_does_not_add_mass_or_strength
+    // planar_arms/arm_split_does_not_add_mass_or_strength
     const auto old_masses = mdl::segment_masses(80., 0.);
     const auto new_masses = mdl::split_paired_arm_masses(old_masses);
     bt::require(rr::approx(total_mass(new_masses), 80., 1e-9, 1e-10),
@@ -161,7 +161,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_split_preserves_com_and_sagittal_inertia() {
-    // tests/reference/test_planar_arms.py::test_split_preserves_com_and_sagittal_inertia
+    // planar_arms/split_preserves_com_and_sagittal_inertia
     cfg::RiderSpecs rider;
     rider.variant = "articulated_planar";
     cfg::detail::post_init(rider);  // RiderSpecs(variant=...) construction
@@ -206,7 +206,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_hand_mass_stays_inside_each_forearm() {
-    // tests/reference/test_planar_arms.py::test_hand_mass_stays_inside_each_forearm
+    // planar_arms/hand_mass_stays_inside_each_forearm
     const auto paired = mdl::segment_masses(80., .5);
     const auto split = mdl::split_paired_arm_masses(paired);
     const double body = 80. - .5;  // the helmet's mass lives in the head
@@ -218,7 +218,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 }
 
 [[gnu::noinline]] void test_registry_names_eleven_internal_joints() {
-    // tests/reference/test_planar_arms.py::test_registry_names_eleven_internal_joints
+    // planar_arms/registry_names_eleven_internal_joints
     // reference_joint_names() and RIDER_JOINTS are the same ordered
     // declaration; cfg::kRiderJoints backs both in one native constant.
     const std::array<std::string_view, 11> expected{
@@ -236,7 +236,7 @@ std::filesystem::path write_payload(const io::Value &payload,
 
 [[gnu::noinline]] void
 test_envelope_schema_two_requires_the_two_arm_topology() {
-    // tests/reference/test_planar_arms.py::test_envelope_schema_two_requires_the_two_arm_topology
+    // planar_arms/envelope_schema_two_requires_the_two_arm_topology
     const auto envelopes = cfg::load_joint_envelopes(kEnvelopePath);
     std::set<std::string> names;
     for (const auto &[name, envelope] : envelopes) names.insert(name);
@@ -272,7 +272,7 @@ test_envelope_schema_two_requires_the_two_arm_topology() {
 }
 
 [[gnu::noinline]] void test_envelope_schema_missing_arm_fails_closed() {
-    // tests/reference/test_planar_arms.py::test_envelope_schema_missing_arm_fails_closed
+    // planar_arms/envelope_schema_missing_arm_fails_closed
     io::Value payload = io::parse_json(read_text(kEnvelopePath));
     auto &joints = std::get<io::Value::Object>(
         member(payload, "joints").data);
@@ -288,7 +288,7 @@ test_envelope_schema_two_requires_the_two_arm_topology() {
 
 [[gnu::noinline]] void
 test_compiled_topology_has_two_arms_and_two_grip_sites() {
-    // tests/reference/test_planar_arms.py::test_compiled_topology_has_two_arms_and_two_grip_sites
+    // planar_arms/compiled_topology_has_two_arms_and_two_grip_sites
     auto rig = rr::pinned_rig({}, probe_track_30());
     const mjModel *m = rig->stepper->model();
     const mjData *d = rig->stepper->data();
@@ -369,7 +369,7 @@ test_compiled_topology_has_two_arms_and_two_grip_sites() {
 }
 
 [[gnu::noinline]] void test_each_hand_jacobian_loads_only_its_own_arm() {
-    // tests/reference/test_planar_arms.py::test_each_hand_jacobian_loads_only_its_own_arm
+    // planar_arms/each_hand_jacobian_loads_only_its_own_arm
     auto rig = rr::pinned_rig({}, probe_track_30());
     mjModel *m = rig->stepper->model();
     mjData const *d = rig->stepper->data();
@@ -449,7 +449,7 @@ test_compiled_topology_has_two_arms_and_two_grip_sites() {
 
 [[gnu::noinline]] void
 test_welded_hands_report_finite_per_hand_reactions() {
-    // tests/reference/test_planar_arms.py::test_welded_hands_report_finite_per_hand_reactions
+    // planar_arms/welded_hands_report_finite_per_hand_reactions
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &physical = *rig->physical;
     const mjModel *m = rig->stepper->model();
@@ -527,7 +527,7 @@ test_welded_hands_report_finite_per_hand_reactions() {
 
 [[gnu::noinline]] void
 test_initial_state_round_trip_restores_per_hand_anchors() {
-    // tests/reference/test_planar_arms.py::test_initial_state_round_trip_restores_per_hand_anchors
+    // planar_arms/initial_state_round_trip_restores_per_hand_anchors
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &context = (rig->context).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
     // PhysicalInitialState.capture(env.sim) — only at t=0, like the

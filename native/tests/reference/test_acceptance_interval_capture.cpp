@@ -24,7 +24,7 @@ runtime::SamplePtr sample(std::int64_t interval_id, double time_s, // NOLINT(bug
     return row;
 }
 
-// test_acceptance_interval_capture.py::
+// test_acceptance_interval_capture.py:
 // test_earlier_interval_failure_survives_clean_period_endpoint
 void test_earlier_interval_failure_survives_clean_period_endpoint() {
     const std::vector<runtime::SamplePtr> samples{
@@ -42,7 +42,7 @@ void test_earlier_interval_failure_survives_clean_period_endpoint() {
                 "the earlier violating interval survives the clean endpoint");
 }
 
-// test_acceptance_interval_capture.py::
+// test_acceptance_interval_capture.py:
 // test_startup_grace_uses_each_violation_interval_time
 void test_startup_grace_uses_each_violation_interval_time() {
     const std::vector<std::vector<acceptance::IntervalViolation>> rows{

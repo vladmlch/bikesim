@@ -51,7 +51,7 @@ namespace sw = runtime::sample_wire;
 }
 
 constexpr std::string_view kNode =
-    "tests/reference/test_native_viewer_snapshot.py::";
+    "native_viewer_snapshot/";
 
 [[nodiscard]] bool finite_state(const std::vector<double> &state) {
     return !state.empty() &&
@@ -60,12 +60,12 @@ constexpr std::string_view kNode =
         });
 }
 
-// tests/reference/test_native_viewer_snapshot.py::
+// tests/reference/test_native_viewer_snapshot.py:
 //   test_native_preview_matches_reference_and_is_owned
 void preview_owned() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_preview_matches_reference_and_is_owned");
+        "native_preview_matches_reference_and_is_owned");
     const auto env = ft2_reference::research("research_flat");
     char label[40]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
     for (std::size_t iteration = 0; iteration < 3; ++iteration) {
@@ -94,7 +94,7 @@ void preview_owned() {
                 std::string(bt::oracle::platform()) /
                 bt::oracle::node_path(
                     std::string(kNode) +
-                    "test_native_preview_matches_reference_and_is_owned");
+        "native_preview_matches_reference_and_is_owned");
             const auto index = bike::io::parse_json(
                 rr_read_bytes(base.string() + ".json"));
             const auto payload = rr_read_bytes(base.string() + ".bin");
@@ -178,12 +178,12 @@ void preview_owned() {
     node.done();
 }
 
-// tests/reference/test_native_viewer_snapshot.py::
+// tests/reference/test_native_viewer_snapshot.py:
 //   test_native_target_slice_does_not_flush_or_duplicate_request
 void target_slice() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_target_slice_does_not_flush_or_duplicate_request");
+        "native_target_slice_does_not_flush_or_duplicate_request");
     const auto env = ft2_reference::research("research_flat");
     env->begin_control(motor_control(0.), 0., 0.);
     bt::require(!env->advance_control(std::nullopt, std::int64_t{1})

@@ -60,7 +60,7 @@ Value sample() { return sample(std::make_shared<State>()); }
 double number(const Value& value, std::string_view key) { return io::as_double(field(value, key), key); }
 bool boolean(const Value& value, std::string_view key) { return io::as_bool(field(value, key), key); }
 
-// tests/reference/test_realtime_measurement.py::test_whole_loop_includes_boundary_and_final_flush_but_not_setup_export
+// realtime_measurement/whole_loop_includes_boundary_and_final_flush_but_not_setup_export
 void test_whole_loop_includes_boundary_and_final_flush_but_not_setup_export() {
     auto const state = std::make_shared<State>(); const auto run = sample(state);
     bt::require(number(run, "setup_wall_s") == 2. && number(run, "wall_clock_s") == 5.5 && number(run, "final_flush_wall_s") == 1. && number(run, "export_wall_s") == 3., "setup/export are excluded and boundary/flush are included");
@@ -69,7 +69,7 @@ void test_whole_loop_includes_boundary_and_final_flush_but_not_setup_export() {
     bt::require(number(run, "real_time_factor") == .005 / 5.5 && number(field(run, "chunk_latency"), "p95") == 2., "whole-loop RTF and boundary p95 use different measured quantities");
     bt::require(io::is_null(field(run, "per_step_latency")) && boolean(run, "valid_prefix") && state->closed && state->exported, "no per-step percentile is inferred; driver is exported and closed");
 }
-// tests/reference/test_realtime_measurement.py::test_different_numerical_or_recording_settings_are_not_comparable
+// realtime_measurement/different_numerical_or_recording_settings_are_not_comparable
 void test_different_numerical_or_recording_settings_are_not_comparable() {
     const auto run = sample();
     const std::array cases{std::pair{"timestep_s", real(.0005)}, std::pair{"configuration_sha256", text("other")},
@@ -80,7 +80,7 @@ void test_different_numerical_or_recording_settings_are_not_comparable() {
         bt::require(!boolean(check, "comparable") && io::canonical_json(field(check, "differing_settings")) == "[\"" + std::string(key) + "\"]", "every changed shared numerical setting prevents comparison");
     }
 }
-// tests/reference/test_realtime_measurement.py::test_different_outcome_and_short_prefix_remain_visible
+// realtime_measurement/different_outcome_and_short_prefix_remain_visible
 void test_different_outcome_and_short_prefix_remain_visible() {
     const auto run = sample(); auto other = run; auto prefix = field(other, "prefix");
     set(prefix, "steps", integer(2)); set(prefix, "reason", text("crash")); set(prefix, "simulated_time_s", real(.0025)); set(other, "prefix", prefix);
@@ -90,14 +90,14 @@ void test_different_outcome_and_short_prefix_remain_visible() {
     bt::require(number(aggregate, "warmup_count") == 1. && number(aggregate, "measurement_count") == 3. && number(aggregate, "median_real_time_factor") == number(run, "real_time_factor"), "warmups do not enter the measured median");
     bt::require(!boolean(aggregate, "full_acceptance_verified"), "a throughput aggregate never establishes full acceptance");
 }
-// tests/reference/test_realtime_measurement.py::test_empty_chunk_statistics_are_not_invented
+// realtime_measurement/empty_chunk_statistics_are_not_invented
 void test_empty_chunk_statistics_are_not_invented() {
     bt::require(io::is_null(field(m::chunk_statistics({}), "p95")), "empty measurements have no invented percentile");
     const std::array costs{1., 3., 2.}; const auto statistics = m::chunk_statistics(costs);
     bt::require(number(statistics, "p50") == 2. && number(statistics, "p95") == 2.9, "quantiles use linear interpolation over ordered measured calls");
     const std::array negative{-1.}; bt::invalid([&] { (void)m::chunk_statistics(negative); });
 }
-// tests/reference/test_realtime_measurement.py::test_native_threshold_requires_warmup_and_three_valid_repetitions
+// realtime_measurement/native_threshold_requires_warmup_and_three_valid_repetitions
 void test_native_threshold_requires_warmup_and_three_valid_repetitions() {
     auto run = sample(); set(run, "backend", text("native")); set(run, "real_time_factor", real(2.));
     auto execution = field(run, "execution"); set(execution, "build_context", Value{Object{{"build_type", text("Release")}}}); set(run, "execution", execution);
@@ -107,7 +107,7 @@ void test_native_threshold_requires_warmup_and_three_valid_repetitions() {
     bt::require(boolean(enough, "sampling_protocol_satisfied") && boolean(enough, "headless_rtf_threshold_met") && !boolean(enough, "full_acceptance_verified"), "three valid Release repetitions with a matching warmup establish only headless throughput");
     bt::invalid([] { (void)m::build_report({}, {}); });
 }
-// tests/reference/test_realtime_measurement.py::test_measurement_cli_keeps_profile_dt_until_explicit_override
+// realtime_measurement/measurement_cli_keeps_profile_dt_until_explicit_override
 void test_measurement_cli_keeps_profile_dt_until_explicit_override() {
     const std::array<std::string_view, 2> defaults{"--out", "unused"};
     const auto options = m::parse_options(defaults);
@@ -118,7 +118,7 @@ void test_measurement_cli_keeps_profile_dt_until_explicit_override() {
     const auto explicit_options = m::parse_options(override);
     bt::require(explicit_options.timestep_s == .0005 && m::resolve_measurement_ride(explicit_options)->setup.model.physics->timestep_s == .0005, "the explicit dt reaches actual profile resolution"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
-// tests/reference/test_realtime_measurement.py::test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report
+// realtime_measurement/benchmark_mode_relaxes_only_the_monitor_and_marks_the_report
 void test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report() {
     const std::array<std::string_view, 2> arguments{"--out", "unused"};
     auto options = m::parse_options(arguments);

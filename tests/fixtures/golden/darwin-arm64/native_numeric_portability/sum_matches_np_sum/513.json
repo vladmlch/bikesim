@@ -1,0 +1,296 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 4104,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 4104,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 4112,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 8216,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 8216,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 8224,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 12328,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 12328,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 12336,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 16440,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 16440,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 16448,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 20552,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 20552,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 20560,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 24664,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 24664,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 4104,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 24672,
+  "rtol": null,
+  "shape": [
+   513
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 0,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 28776,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "np.sum len=513",
+  "nbytes": 8,
+  "node": "native_numeric_portability/sum_matches_np_sum/513",
+  "offset": 28776,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ }
+]

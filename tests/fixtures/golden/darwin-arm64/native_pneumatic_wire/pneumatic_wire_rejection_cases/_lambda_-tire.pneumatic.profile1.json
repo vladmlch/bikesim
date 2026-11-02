@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.match",
+  "nbytes": 176,
+  "node": "native_pneumatic_wire/pneumatic_wire_rejection_cases/_lambda_-tire.pneumatic.profile1",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

@@ -342,7 +342,7 @@ namespace nativecfg {
     // pressure and fitted factors, nonnegative carcass/rate/loss
     // fields, the rim inside the carcass, positive rim-strike travel
     // and the unit ceilings on the area/contact-length/loss factors —
-    // the same list schema.py::_check_tyre_specs applies on the wire.
+    // the same list schema.py:_check_tyre_specs applies on the wire.
     inline void validate(const PneumaticTyreSpec &s, std::string_view path) {
         const std::string p(path);
         validation::positive(s.outer_radius_mm, p + ".outer_radius_mm");
@@ -371,7 +371,7 @@ namespace nativecfg {
         if (!(s.loss_factor < 1.))
             throw std::invalid_argument(p + ".loss_factor: must be below 1");
     }
-    // schema.py::_check_pneumatic — the tier names a TIERS registry row
+    // schema.py:_check_pneumatic — the tier names a TIERS registry row
     // (tyre.py:183-187) carried resolved on the wire: every resolved
     // parameter must equal the registry entry bitwise so the wire stays
     // single-sourced. Then both sides' TyreSpecs domains, the resolved
@@ -408,7 +408,7 @@ namespace nativecfg {
             throw std::invalid_argument("config.tire.backend");
         if (s.surface_mode != "track" && s.surface_mode != "configured")
             throw std::invalid_argument("config.tire.surface_mode");
-        // Spec section 6 wire rule (schema.py::validate_config): each
+        // Spec section 6 wire rule (schema.py:validate_config): each
         // backend section carries that backend's own law — required iff
         // selected, forbidden otherwise — and the TireSpec material
         // rides the wire only for compliant_2d.

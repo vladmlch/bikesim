@@ -1,0 +1,31 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "noise",
+  "nbytes": 9216,
+  "node": "sensor_noise/exact_legacy_call_order/config0-19",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   128,
+   9
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "uniform",
+  "nbytes": 1024,
+  "node": "sensor_noise/exact_legacy_call_order/config0-19",
+  "offset": 9216,
+  "rtol": null,
+  "shape": [
+   128
+  ]
+ }
+]

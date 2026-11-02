@@ -38,13 +38,13 @@
 namespace {
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_numeric_portability.py::";
+    "native_numeric_portability/";
 
 [[nodiscard]] std::string node(std::string_view name, std::string_view param) {
     std::string out{kFile};
     out += name;
     out += '[';
-    out += param;
+    out += bt::oracle::key(param);
     out += ']';
     return out;
 }
@@ -193,8 +193,7 @@ void pneumatic_suites() {
         pneumatic(node_);
     }
     {
-        bt::oracle::Node node_{std::string{kFile} +
-            "test_tanh_and_hypot_adversarial_fixture"};
+        bt::oracle::Node node_{std::string{kFile} + "tanh_and_hypot_adversarial_fixture"};
         pneumatic(node_);
     }
     for (const char* stride : {"2", "3", "-1", "-2"}) {
@@ -205,8 +204,7 @@ void pneumatic_suites() {
     {
         // test_tanh_and_hypot_layout_views — three recorded views in one
         // node, each an (xs, ys, tanh, hypot) quadruple.
-        bt::oracle::Node node_{std::string{kFile} +
-            "test_tanh_and_hypot_layout_views"};
+        bt::oracle::Node node_{std::string{kFile} + "tanh_and_hypot_layout_views"};
         for (int view = 0; view < 3; ++view) {
             const auto xs = node_.f64_input("input.xs");
             const auto ys = node_.f64_input("input.ys");
@@ -225,9 +223,9 @@ void pneumatic_suites() {
 }
 
 void contract_suites() {
-    contract_node(std::string{kFile} + "test_python_hypot_matches_math_hypot",
+    contract_node(std::string{kFile} + "python_hypot_matches_math_hypot",
                   "python_hypot");
-    contract_node(std::string{kFile} + "test_python_hypot_scale_and_nan_edges",
+    contract_node(std::string{kFile} + "python_hypot_scale_and_nan_edges",
                   "python_hypot");
     for (const char* name : {"minimum", "maximum"}) {
         contract_node(node("test_minmax_matches_elementwise_ufunc", name), name);
@@ -236,17 +234,16 @@ void contract_suites() {
         contract_node(node("test_minmax_scalar_broadcast_shape", name), name);
     }
     contract_node(
-        std::string{kFile} + "test_multiply_broadcast_matches_scalar_ufunc",
+        std::string{kFile} + "multiply_broadcast_matches_scalar_ufunc",
         "multiply_broadcast");
-    contract_node(std::string{kFile} +
-                      "test_multiply_broadcast_nan_class_fixture",
+    contract_node(std::string{kFile} + "multiply_broadcast_nan_class_fixture",
                   "multiply_broadcast");
     for (const char* length :
              {"0", "1", "2", "3", "7", "8", "9", "15", "16", "17", "31", "32",
               "33", "63", "64", "65", "127", "128", "129", "130", "131", "135",
               "136", "255", "256", "257", "511", "512", "513"})
         contract_node(node("test_sum_matches_np_sum", length), "sum");
-    contract_node(std::string{kFile} + "test_sum_cancellation_fixture", "sum");
+    contract_node(std::string{kFile} + "sum_cancellation_fixture", "sum");
     for (const char* name : {"sin", "cos"}) {
         contract_node(node("test_sin_cos_match_local_ufunc", name), name);
         contract_node(node("test_sin_cos_edge_fixture", name), name);

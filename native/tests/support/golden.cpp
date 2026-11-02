@@ -36,24 +36,6 @@ std::size_t natural(const Value &value, std::string_view context) {
     if (number < 0 || !std::in_range<std::size_t>(number)) bad(context, "expected nonnegative size");
     return static_cast<std::size_t>(number);
 }
-std::string key(std::string_view source) {
-    std::string safe;
-    std::size_t cursor = 0;
-    while (cursor < source.size()) {
-        const auto cp = bike::io::detail::utf8_decode_one(source, cursor);
-        if (cp == bike::io::detail::kInvalidCodepoint) bad("golden node", "invalid UTF-8");
-        const bool allowed = (cp >= U'A' && cp <= U'Z') ||
-            (cp >= U'a' && cp <= U'z') || (cp >= U'0' && cp <= U'9') ||
-            cp == U'.' || cp == U'_' || cp == U'-';
-        safe.push_back(allowed ? static_cast<char>(cp) : '_');
-    }
-    if (safe.size() > 150) {
-        safe.resize(140);
-        safe += '-' + bike::io::sha256(std::as_bytes(std::span(source))).substr(0, 8);
-    }
-    if (safe.empty() || safe == "." || safe == "..") bad("golden node", "empty or unsafe component");
-    return safe;
-}
 std::size_t item_size(std::string_view dtype) {
     if (dtype.size() < 3 || std::string_view("<>=|").find(dtype[0]) == std::string_view::npos ||
         std::string_view("biufcSUMmV").find(dtype[1]) == std::string_view::npos)
@@ -89,12 +71,48 @@ std::string hex(std::uint64_t value) {
 }
 } // namespace
 
+std::string key(std::string_view source) {
+    std::string safe;
+    std::size_t cursor = 0;
+    while (cursor < source.size()) {
+        const auto cp = bike::io::detail::utf8_decode_one(source, cursor);
+        if (cp == bike::io::detail::kInvalidCodepoint) bad("golden node", "invalid UTF-8");
+        const bool allowed = (cp >= U'A' && cp <= U'Z') ||
+            (cp >= U'a' && cp <= U'z') || (cp >= U'0' && cp <= U'9') ||
+            cp == U'.' || cp == U'_' || cp == U'-';
+        safe.push_back(allowed ? static_cast<char>(cp) : '_');
+    }
+    if (safe.empty() || safe == "." || safe == "..") bad("golden node", "empty or unsafe component");
+    return safe;
+}
+
+
 std::filesystem::path root() { return BIKE_GOLDEN_ROOT; }
 std::string_view platform() { return BIKE_GOLDEN_PLATFORM; }
 std::string node_path(std::string_view node) {
-    const auto split = node.find("::");
-    if (split == std::string_view::npos) bad("golden node", "expected file::test");
-    return key(node.substr(0, split)) + '/' + key(node.substr(split + 2));
+    // Native key <suite>/<case>[/<param>]: each component sanitizes through
+    // key(); pytest separators are rejected outright rather than sanitized.
+    if (node.find("::") != std::string_view::npos ||
+        node.find('[') != std::string_view::npos ||
+        node.find(']') != std::string_view::npos)
+        bad("golden node", "pytest node syntax is not a native key");
+    std::string path;
+    int components = 0;
+    std::size_t cursor = 0;
+    while (true) {
+        const auto slash = node.find('/', cursor);
+        const auto part = node.substr(cursor, slash == std::string_view::npos
+                                        ? slash : slash - cursor);
+        if (part.empty()) bad("golden node", "empty component");
+        if (components == 4) bad("golden node", "expected <suite>/<case>[/<param>]");
+        path += key(part);
+        components += 1;
+        if (slash == std::string_view::npos) break;
+        path += '/';
+        cursor = slash + 1;
+    }
+    if (components < 2) bad("golden node", "expected <suite>/<case>[/<param>]");
+    return path;
 }
 Node::Node(std::string_view node) : Node(node, root()) {}
 Node::Node(std::string_view node, const std::filesystem::path &directory) : node_(node) {
@@ -117,8 +135,8 @@ Node::Node(std::string_view node, const std::filesystem::path &directory) : node
         Entry entry;
         entry.index = natural(required(object, "index", node_), node_);
         if (entry.index != entries_.size()) bad(node_, "noncontiguous comparison index");
-        if (bike::io::as_string(required(object, "node", node_), node_) != node_)
-            bad(node_, "sidecar belongs to another pytest node (path collision)");
+        if (bike::io::as_string(required(object, "node", node_), node_) != node_path(node_))
+            bad(node_, "sidecar belongs to another golden node (path collision)");
         entry.label = bike::io::as_string(required(object, "label", node_), node_);
         entry.kind = bike::io::as_string(required(object, "kind", node_), node_);
         entry.dtype = bike::io::as_string(required(object, "dtype", node_), node_);

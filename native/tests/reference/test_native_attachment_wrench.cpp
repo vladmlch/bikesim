@@ -46,7 +46,7 @@ namespace rw = rider;
 using rw::DenseMatrix;
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_attachment_wrench.py::";
+    "native_attachment_wrench/";
 
 // ------------------------- golden emit helpers ---------------------------
 
@@ -379,7 +379,7 @@ void assert_sample(bt::oracle::Node &golden,
 // test_rider_equality_qfrc_oracle[sparse|dense]
 void equality_qfrc_case(const char *jacobian) {
     const std::string node = std::string(kFile) +
-        "test_rider_equality_qfrc_oracle[" + jacobian + "]";
+        "rider_equality_qfrc_oracle/" + jacobian;
     bt::oracle::Node golden(node);
     bt::ModelFixture const fixture(
         pair_xml(kAllEqualities, std::string("jacobian=\"") + jacobian + "\""));
@@ -428,7 +428,7 @@ void test_rider_equality_qfrc_oracle() {
 }
 
 void test_rider_equality_rows_grouping() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kAllEqualities));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -456,7 +456,7 @@ void test_rider_equality_rows_grouping() {
 // translation_residual, qfrc — all bitwise on the shared arena.
 void equality_reaction_case(const char *eq_name) {
     const std::string node = std::string(kFile) +
-        "test_rider_equality_reaction_oracle[" + eq_name + "]";
+        "rider_equality_reaction_oracle/" + eq_name;
     bt::oracle::Node golden(node);
     bt::ModelFixture const fixture(pair_xml(kAllEqualities));
     mjModel const *m = fixture.model.get();
@@ -478,7 +478,7 @@ void test_rider_equality_reaction_oracle() {
 }
 
 void test_rider_equality_reaction_missing_rows_zero() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -495,7 +495,7 @@ void test_rider_equality_reaction_missing_rows_zero() {
 }
 
 void test_rider_equality_qfrc_empty_arena() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(R"(<mujoco><worldbody>
   <body pos="0 0 1"><freejoint/>
     <inertial pos="0 0 0" mass="1" diaginertia="1 1 1"/>
@@ -518,7 +518,7 @@ void test_rider_equality_qfrc_empty_arena() {
 }
 
 void test_rider_pedal_torque_oracle() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(R"(
 <mujoco><option gravity="0 0 0" timestep="0.0005"/>
 <worldbody>
@@ -571,7 +571,7 @@ void test_rider_pedal_torque_oracle() {
 }
 
 void test_stepper_qfrc_returns_owning_array() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -733,7 +733,7 @@ void test_least_squares_oracle() {
          {"8-3-1", "3-8-2", "5-5-3", "10-4-4", "4-10-5",
           "1-1-6", "7-7-7", "2-9-8", "9-2-9"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_least_squares_oracle[" + id + "]");
+        "least_squares_oracle/" + id);
         lstsq_calls(golden);
         golden.done();
     }
@@ -742,7 +742,7 @@ void test_least_squares_oracle() {
 void test_least_squares_rhs_count() {
     for (const char *id : {"0", "1", "2", "5"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_least_squares_rhs_count[" + id + "]");
+        "least_squares_rhs_count/" + id);
         lstsq_calls(golden);
         golden.done();
     }
@@ -752,15 +752,14 @@ void test_least_squares_degenerate_dims() {
     for (const char *id : {"degenerate0", "degenerate1", "degenerate2",
                            "degenerate3"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_least_squares_degenerate_dims[" + id +
-                                "]");
+        "least_squares_degenerate_dims/" + id);
         lstsq_calls(golden);
         golden.done();
     }
 }
 
 void test_least_squares_rank_deficient() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     lstsq_calls(golden);
     golden.done();
 }
@@ -768,8 +767,7 @@ void test_least_squares_rank_deficient() {
 void test_least_squares_rcond_boundary() {
     for (const char *id : {"0.9", "0.99", "1.0", "1.01", "1.1"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_least_squares_rcond_boundary[" + id +
-                                "]");
+        "least_squares_rcond_boundary/" + id);
         lstsq_calls(golden);
         golden.done();
     }
@@ -778,21 +776,20 @@ void test_least_squares_rcond_boundary() {
 void test_least_squares_rcond_values() {
     for (const char *id : {"1e-12", "-1.0", "0.0", "0.5", "0.001"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_least_squares_rcond_values[" + id +
-                                "]");
+        "least_squares_rcond_values/" + id);
         lstsq_calls(golden);
         golden.done();
     }
 }
 
 void test_least_squares_inconsistent_target() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     lstsq_calls(golden);
     golden.done();
 }
 
 void test_least_squares_wide_minimum_norm() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     lstsq_calls(golden);
     golden.done();
 }
@@ -801,7 +798,7 @@ void test_least_squares_nonfinite() {
     for (const char *id : {"a0-b0", "a1-b1", "a2-b2", "a3-b3", "a4-b4",
                            "a5-b5"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_least_squares_nonfinite[" + id + "]");
+        "least_squares_nonfinite/" + id);
         lstsq_calls(golden);
         golden.done();
     }
@@ -857,7 +854,7 @@ void test_least_squares_incompatible_dimensions_message() {
 }
 
 void test_least_squares_output_layout_and_ownership() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     lstsq_call(golden);  // f32-cast inputs: x only
     lstsq_call(golden);  // non-contiguous inputs: the full tuple
     // Fresh owned storage on every call: mutating one result disturbs no
@@ -881,13 +878,13 @@ void test_least_squares_output_layout_and_ownership() {
 }
 
 void test_linux_and_mac_lstsq_use_numpy_workspace_contract() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     lstsq_calls(golden);
     golden.done();
 }
 
 void test_least_squares_prior_fp_invalid_flag() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const LstsqInput in = lstsq_input(golden);
     // FE_INVALID on entry is the gufunc's error_occurred seed: it never
     // fails a well-posed solve and the flag survives the call.
@@ -907,7 +904,7 @@ void test_least_squares_prior_fp_invalid_flag() {
 }
 
 void test_least_squares_fp_invalid_raised_on_failure() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const LstsqInput in = lstsq_input(golden);
     // The failure path raises the flag like the oracle's failed lstsq —
     // including when the flag was already set on entry.
@@ -956,15 +953,14 @@ void test_recover_wrench_random_oracle() {
          {"shape0-1", "shape1-2", "shape2-3", "shape3-4", "shape4-5",
           "shape5-6", "shape6-7", "shape7-8", "shape8-9"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_recover_wrench_random_oracle[" + id +
-                                "]");
+        "recover_wrench_random_oracle/" + id);
         recover_calls(golden);
         golden.done();
     }
 }
 
 void test_recover_wrench_rank_deficient_and_inconsistent() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     recover_calls(golden);
     golden.done();
 }
@@ -972,8 +968,7 @@ void test_recover_wrench_rank_deficient_and_inconsistent() {
 void test_recover_wrench_rcond_boundary() {
     for (const char *id : {"0.9", "0.99", "1.0", "1.01", "1.1"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_recover_wrench_rcond_boundary[" + id +
-                                "]");
+        "recover_wrench_rcond_boundary/" + id);
         recover_calls(golden);
         golden.done();
     }
@@ -983,14 +978,14 @@ void test_recover_wrench_nonfinite() {
     for (const char *id : {"jac0-qfrc0", "jac1-qfrc1", "jac2-qfrc2",
                            "jac3-qfrc3"}) {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_recover_wrench_nonfinite[" + id + "]");
+        "recover_wrench_nonfinite/" + id);
         recover_calls(golden);
         golden.done();
     }
 }
 
 void test_recover_wrench_degenerate_and_shape_errors() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     recover_calls(golden);
     // The remaining raise-only contracts: a 1-D or 3-D jacobian is a
     // binding-cast rejection with no typed-face counterpart (documented
@@ -1005,7 +1000,7 @@ void test_recover_wrench_degenerate_and_shape_errors() {
 }
 
 void test_recover_wrench_owns_its_output() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const std::vector<double> flat = golden.f64_input("input.jac");
     const std::vector<std::size_t> shape =
         dims(golden.f64_input("input.jac.shape"));
@@ -1028,7 +1023,7 @@ void test_recover_wrench_owns_its_output() {
 }
 
 void test_native_recover_wrench() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const DenseMatrix jac{
         .rows = 3,
         .columns = 4,
@@ -1048,7 +1043,7 @@ void test_native_recover_wrench() {
 
 void planar_jacobian_case(const char *jacobian) {
     const std::string node = std::string(kFile) +
-        "test_relative_planar_jacobian_oracle[" + jacobian + "]";
+        "relative_planar_jacobian_oracle/" + jacobian;
     bt::oracle::Node golden(node);
     bt::ModelFixture const fixture(
         pair_xml(kAllEqualities, std::string("jacobian=\"") + jacobian + "\""));
@@ -1123,7 +1118,7 @@ void prepare_geometry_case(const char *id, const char *jacobian, // NOLINT(bugpr
                            bool rotational, const char *kind,
                            const std::optional<std::vector<double>> &pull) {
     const std::string node = std::string(kFile) +
-        "test_prepare_attachment_geometry_oracle[" + id + "]";
+        "prepare_attachment_geometry_oracle/" + id;
     bt::oracle::Node golden(node);
     bt::ModelFixture const fixture(pair_xml(
         R"(<weld name="w" body1="rider" body2="bike"/>)"
@@ -1175,7 +1170,8 @@ void attachment_raw_case(const char *id, const char *eq_name, // NOLINT(bugprone
                          const std::vector<double> &point, bool rotational,
                          const char *kind) {
     const std::string node =
-        std::string(kFile) + "test_attachment_raw_oracle[" + id + "]";
+        std::string(kFile) +
+        "attachment_raw_oracle/" + id;
     bt::oracle::Node golden(node);
     bt::ModelFixture const fixture(pair_xml(
         R"(<weld name="w" body1="rider" body2="bike"/>)"
@@ -1218,7 +1214,7 @@ void raw_from_geometry_case(const char *id, const char *eq_name, // NOLINT(bugpr
                             const std::vector<double> &point, bool rotational,
                             const char *kind) {
     const std::string node = std::string(kFile) +
-        "test_attachment_raw_from_geometry_oracle[" + id + "]";
+        "attachment_raw_from_geometry_oracle/" + id;
     bt::oracle::Node golden(node);
     bt::ModelFixture const fixture(pair_xml(
         R"(<weld name="w" body1="rider" body2="bike"/>)"
@@ -1264,7 +1260,7 @@ void test_attachment_raw_from_geometry_oracle() {
 }
 
 void test_attachment_sample_oracle() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(
         R"(<weld name="w" body1="rider" body2="bike"/>)"
         R"(<connect name="c" body1="hand" body2="bike" anchor="0 0 0"/>)"));
@@ -1330,7 +1326,7 @@ void test_attachment_sample_oracle() {
 }
 
 void test_decompose_wrench_oracle() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     // 200 replayed cases — the drawn inputs are frozen inputs, the
     // sample fields the comparisons.
     for (int i = 0; i < 200; ++i) {
@@ -1391,7 +1387,7 @@ void test_decompose_wrench_oracle() {
 }
 
 void test_attachment_missing_equality_is_no_measurement() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -1426,7 +1422,7 @@ void test_attachment_missing_equality_is_no_measurement() {
 }
 
 void test_attachment_shared_support_error() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -1456,7 +1452,7 @@ void test_attachment_shared_support_error() {
 }
 
 void test_attachment_out_of_plane_error() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -1487,7 +1483,7 @@ void test_attachment_out_of_plane_error() {
 }
 
 void test_attachment_unobservable_and_validation_deferral() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(R"(
 <mujoco><option gravity="0 0 0" timestep="0.0005"/>
 <worldbody>
@@ -1538,7 +1534,7 @@ void test_attachment_unobservable_and_validation_deferral() {
 }
 
 void test_attachment_newton_third_law_error() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(
         pair_xml(R"(<joint name="j" joint1="ja" joint2="jb"/>)"));
     mjModel const *m = fixture.model.get();
@@ -1565,7 +1561,7 @@ void test_attachment_newton_third_law_error() {
 }
 
 void test_attachment_measurement_dicts_own_storage() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();
@@ -1599,7 +1595,7 @@ void test_attachment_measurement_dicts_own_storage() {
 }
 
 void test_attachment_interval_start_geometry() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(pair_xml(kWeld));
     mjModel const *m = fixture.model.get();
     mjData *d = fixture.data.get();

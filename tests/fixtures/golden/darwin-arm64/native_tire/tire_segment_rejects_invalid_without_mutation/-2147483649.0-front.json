@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "rejected segment state",
+  "nbytes": 176,
+  "node": "native_tire/tire_segment_rejects_invalid_without_mutation/-2147483649.0-front",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

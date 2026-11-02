@@ -103,7 +103,7 @@ std::filesystem::path fixture(std::string_view relative) {
 
 std::string text(const std::filesystem::path &path) {
     require(std::filesystem::is_regular_file(path),
-            "fixture is not a regular file");
+            ("fixture is not a regular file: " + path.string()));
     const std::uintmax_t size = std::filesystem::file_size(path);
     require(size <= max_fixture_bytes, "fixture payload exceeds 512 MiB");
     std::ifstream stream(path, std::ios::binary);

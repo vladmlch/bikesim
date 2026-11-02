@@ -505,7 +505,7 @@ std::vector<double> channel_array(const runtime::WireObject &object,
 // rider_control terms are golden-frozen.
 void test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms() {
     bt_oracle::Node node(
-        "tests/reference/test_period_buffer.py::test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms");
+        "period_buffer/non_aligned_flush_keeps_each_intervals_actual_held_command_terms");
     auto rig = make_ride(.0075, 1, .03);
     bt::require(rig.period == 10, "the .005 s period buffer is 10 steps");
     std::vector<runtime::SamplePtr> actual;
@@ -583,7 +583,7 @@ void test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms() {
 // frozen too.
 void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
     bt_oracle::Node node(
-        "tests/reference/test_period_buffer.py::test_runtime_batch_matches_preserved_scalar_step_and_flush");
+        "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush");
     const runtime::RideControl command{
         .motor_torque_nm = 0., .motor_limit_nm = {}, .human_torque_nm = 0.,
         .crank_target_rate_rad_s = {}, .posture = {}};

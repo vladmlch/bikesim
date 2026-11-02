@@ -62,9 +62,9 @@ const std::array<std::uint64_t, 3> SEEDS{0, 19, 9223372036854775819ull}; // 2**6
 void test_exact_legacy_call_order(std::size_t config_index,
                                   std::size_t seed_index) {
     const std::string node_id =
-        "tests/reference/test_sensor_noise.py::test_exact_legacy_call_order"
-        "[config" + std::to_string(config_index) + "-" +
-        std::to_string(SEEDS[seed_index]) + "]";
+        "sensor_noise/exact_legacy_call_order"
+        "/config" + std::to_string(config_index) + "-" +
+        std::to_string(SEEDS[seed_index]);
     bt::oracle::Node node(node_id);
     const auto tape = brand::build_noise_tape(
         CONFIGS[config_index], SEEDS[seed_index], 128);
@@ -79,7 +79,7 @@ void test_exact_legacy_call_order(std::size_t config_index,
     node.done();
 }
 
-// test_sensor_noise.py::test_zero_scales_and_imu_switch_do_not_shift_other_channels
+// sensor_noise/zero_scales_and_imu_switch_do_not_shift_other_channels
 void test_zero_scales_and_imu_switch_do_not_shift_other_channels() {
     const auto reference = brand::build_noise_tape(
         brand::SensorNoiseConfig{}, 31, 64);
@@ -95,7 +95,7 @@ void test_zero_scales_and_imu_switch_do_not_shift_other_channels() {
     }
 }
 
-// test_sensor_noise.py::test_draws_own_configuration_and_tape_owns_buffers
+// sensor_noise/draws_own_configuration_and_tape_owns_buffers
 void test_draws_own_configuration_and_tape_owns_buffers() {
   brand::SensorNoiseConfig const config{};
   brand::SensorNoiseSource const source(config, 0);
@@ -117,7 +117,7 @@ void test_draws_own_configuration_and_tape_owns_buffers() {
     bt::require(value == .25, "the tape owns a copy of its uniforms");
 }
 
-// test_sensor_noise.py::test_invalid_tape_domain — the C++ tape's fixed
+// sensor_noise/invalid_tape_domain — the C++ tape's fixed
 // (count,9)/(count,) shape makes the shape/dtype parametrize rows
 // (noise0/noise1, noise6..noise9) statically inexpressible; the value-domain
 // rows port verbatim through NoiseTape::validate().
@@ -160,7 +160,7 @@ void test_invalid_tape_domain() {
     bt::invalid([&] { mismatched.validate(); });
 }
 
-// test_sensor_noise.py::test_invalid_seed — every parametrize row (True, -1,
+// sensor_noise/invalid_seed — every parametrize row (True, -1,
 // .5, '3') is a Python-domain rejection: build_noise_tape's std::uint64_t seed
 // boundary makes non-integers unexpressible and negatives statically
 // impossible, so the record holds at the type boundary. The one expressible
@@ -175,14 +175,14 @@ void test_invalid_seed() {
                 "a valid seed/count still builds a one-row tape");
 }
 
-// test_sensor_noise.py::test_invalid_count — -1 ports verbatim; True/1.5 are
+// sensor_noise/invalid_count — -1 ports verbatim; True/1.5 are
 // Python-domain rows the int64 boundary cannot spell.
 void test_invalid_count() {
     bt::invalid([&] {
         (void)brand::build_noise_tape(brand::SensorNoiseConfig{}, 0, -1); });
 }
 
-// test_sensor_noise.py::test_reads_and_invalid_push_do_not_consume_rng
+// sensor_noise/reads_and_invalid_push_do_not_consume_rng
 void test_reads_and_invalid_push_do_not_consume_rng() {
     runtime::SensorConfig config{};
     config.latency_s = 0.;
@@ -199,7 +199,7 @@ void test_reads_and_invalid_push_do_not_consume_rng() {
                 "the rejected push consumed no tape row");
 }
 
-// test_sensor_noise.py::test_pipeline_matches_frozen_pre_refactor_sensor_trace
+// sensor_noise/pipeline_matches_frozen_pre_refactor_sensor_trace
 void test_pipeline_matches_frozen_pre_refactor_sensor_trace() {
     runtime::SensorConfig config{};
     config.latency_s = .007;
@@ -211,8 +211,8 @@ void test_pipeline_matches_frozen_pre_refactor_sensor_trace() {
     auto pipeline_under_test = pipeline(config, 210, 64);
     pipeline_under_test.reset(raw_sensor());
     bt::oracle::Node node(
-        "tests/reference/test_sensor_noise.py::"
-        "test_pipeline_matches_frozen_pre_refactor_sensor_trace");
+        "sensor_noise/"
+        "pipeline_matches_frozen_pre_refactor_sensor_trace");
     std::vector<double> rows;
     rows.reserve(static_cast<std::size_t>(60 * 12));
     for (std::size_t index = 0; index < 20; ++index) {

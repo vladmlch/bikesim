@@ -1,0 +1,198 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "physics/rows",
+  "nbytes": 8,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "physics/bits/episode_id",
+  "nbytes": 48,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "physics/bits/interval_id",
+  "nbytes": 48,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 56,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "physics/bits/time_s",
+  "nbytes": 48,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 104,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "physics/bits/interval_end_s",
+  "nbytes": 48,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 152,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "physics/bits/dt_s",
+  "nbytes": 48,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 200,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "physics/bits/qpos",
+  "nbytes": 413,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 248,
+  "rtol": null,
+  "shape": [
+   413
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "physics/bits/qvel",
+  "nbytes": 413,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 661,
+  "rtol": null,
+  "shape": [
+   413
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "forces/rows",
+  "nbytes": 8,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 1074,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "forces/bits/episode_id",
+  "nbytes": 96,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 1082,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "forces/bits/interval_id",
+  "nbytes": 96,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 1178,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "forces/bits/component",
+  "nbytes": 84,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 1274,
+  "rtol": null,
+  "shape": [
+   84
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "forces/bits/qfrc",
+  "nbytes": 821,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 1358,
+  "rtol": null,
+  "shape": [
+   821
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "forces/bits/power_w",
+  "nbytes": 96,
+  "node": "native_encode_columns/physics_and_forces_bitwise_vs_oracle",
+  "offset": 2179,
+  "rtol": null,
+  "shape": [
+   96
+  ]
+ }
+]

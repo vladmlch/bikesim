@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "surface_map.surface",
+  "nbytes": 8,
+  "node": "native_pneumatic_wire/pneumatic_track_mode_keeps_the_surface_map",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ }
+]

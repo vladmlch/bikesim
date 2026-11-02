@@ -1,0 +1,166 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 151,
+  "node": "native_drivetrain/projection",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   151
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "$.cutoff_mps",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 151,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "$.engage_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 159,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "$.gain",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 167,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "$.gate_min_crank_rad_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 175,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "$.max_power",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 183,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "$.max_torque",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 191,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "$.mode",
+  "nbytes": 7,
+  "node": "native_drivetrain/projection",
+  "offset": 199,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.profile",
+  "nbytes": 4,
+  "node": "native_drivetrain/projection",
+  "offset": 206,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.slew",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 210,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.taper_width_mps",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 218,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.tau",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 226,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.torque_curve",
+  "nbytes": 4,
+  "node": "native_drivetrain/projection",
+  "offset": 234,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

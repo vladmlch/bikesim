@@ -15,7 +15,7 @@ namespace {
 using namespace research_reference;
 namespace sw = runtime::sample_wire;
 
-// tests/reference/test_native_research_capture.py::
+// tests/reference/test_native_research_capture.py:
 //   test_native_verify_boxing_failure_does_not_acknowledge_suffix
 void test_native_verify_boxing_failure_does_not_acknowledge_suffix() {
     auto env = environment({.capture = runtime::ResearchCaptureMode::verify});
@@ -58,24 +58,24 @@ void test_native_verify_boxing_failure_does_not_acknowledge_suffix() {
                 "the last requested command carries the submitted motor torque");
 }
 
-// tests/reference/test_native_research_capture.py::
+// tests/reference/test_native_research_capture.py:
 //   test_native_off_full_are_passive_and_full_records_every_interval
 // The oracle's 'off' env is capture-passive while 'full' keeps every
 // interval; both replay the same research_flat commands and their
 // transitions/state consume the frozen rows. Two Node cursors over one
 // golden node keep per-env consumption honest.
 constexpr std::string_view kNode =
-    "tests/reference/test_native_research_capture.py::";
+    "native_research_capture/";
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_off_full_are_passive_and_full_records_every_interval() {
     bt::oracle::Node node_off(
         std::string(kNode) +
-        "test_native_off_full_are_passive_and_full_records_every_interval");
+        "native_off_full_are_passive_and_full_records_every_interval");
     bt::oracle::Node node_full(
         std::string(kNode) +
-        "test_native_off_full_are_passive_and_full_records_every_interval");
+        "native_off_full_are_passive_and_full_records_every_interval");
     // The Python _noise seam injects a non-default delivery config —
     // accel bias (.1,-.2,.3), gyro bias .01, dropout .25 — before both
     // envs compose; research_variant re-runs the delivered startup state

@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "outcome.message",
+  "nbytes": 51,
+  "node": "native_rider_contact_math/planar_model_validation_oracle/_freejoint__-box-1_0_0_0",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   51
+  ]
+ }
+]

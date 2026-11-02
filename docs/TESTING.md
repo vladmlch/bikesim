@@ -754,27 +754,27 @@ by about `8.72e-5 J`; the planar-arm model lacked
 
 The 13 failing node IDs, identical in the baseline and current full run, are:
 
-- `tests/reference/test_closed_form_rider.py::test_flat_launch_delivers_crank_torque` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
-- `tests/reference/test_joint_strength.py::test_stepped_effort_respects_strength_and_the_power_budget` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
-- `tests/reference/test_realistic_pedelec_acceptance.py::test_flat_reaches_25_kmh_within_10_s`
-- `tests/reference/test_realistic_pedelec_acceptance.py::test_motor_follows_the_rider_through_a_shift_without_an_extra_cut`
-- `tests/reference/test_realistic_pedelec_acceptance.py::test_fifteen_percent_climb_holds_12_kmh`
-- `tests/reference/test_realistic_pedelec_acceptance.py::test_savage_is_ridden_to_the_end`
-- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_savage.toml]` — superseded-in-place (F3, 2026-10-25): the >=1x RTF contract now measures the native Release `bike-measure-realtime` artifact via CTest nodes `reference.realtime_gate.rough_uphill_savage`/`.rough_uphill_extreme` in the root graph (`build/native-release`, container `root-clang`). This Python node still measures the T63-deleted oracle accounted path (~0.62-0.69 on these tracks) and stays baseline-red until T63 removes it; it is superseded, not fixed.
-- `tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds[rough_uphill_extreme.toml]` — same F3 supersession as the savage row above; the contract successor is `reference.realtime_gate.rough_uphill_extreme`.
-- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[20.0]` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
-- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[40.0]` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
-- `tests/reference/test_seated_pedaling_cycle.py::test_strict_flat_cycle_delivers_and_stays_within_budgets[60.0]` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
-- `tests/reference/test_seated_pedaling_cycle.py::test_free_coast_is_an_intent_not_a_crank_lock` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
-- `tests/reference/test_seated_posture_program.py::test_pulse_redistributes_load_through_inertia_only` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`); strict on darwin-arm64, linux-aarch64 runs the monitor in diagnostic mode with a pinned failure signature (D16 disposition in the F1 section); retained for the historical record.
+- `closed_form_rider/flat_launch_delivers_crank_torque` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
+- `joint_strength/stepped_effort_respects_strength_and_the_power_budget` — resolved-in-refresh: measured PASS at `fe4feaa` on 2026-10-23 (`migration/baseline-refresh-2026-10-23.md`); retained for the historical record.
+- `realistic_pedelec_acceptance/flat_reaches_25_kmh_within_10_s`
+- `realistic_pedelec_acceptance/motor_follows_the_rider_through_a_shift_without_an_extra_cut`
+- `realistic_pedelec_acceptance/fifteen_percent_climb_holds_12_kmh`
+- `realistic_pedelec_acceptance/savage_is_ridden_to_the_end`
+- `realtime_gate/realtime_factor_for_full_twenty_seconds/rough_uphill_savage.toml` — superseded-in-place (F3, 2026-10-25): the >=1x RTF contract now measures the native Release `bike-measure-realtime` artifact via CTest nodes `reference.realtime_gate.rough_uphill_savage`/`.rough_uphill_extreme` in the root graph (`build/native-release`, container `root-clang`). This Python node still measures the T63-deleted oracle accounted path (~0.62-0.69 on these tracks) and stays baseline-red until T63 removes it; it is superseded, not fixed.
+- `realtime_gate/realtime_factor_for_full_twenty_seconds/rough_uphill_extreme.toml` — same F3 supersession as the savage row above; the contract successor is `reference.realtime_gate.rough_uphill_extreme`.
+- `seated_pedaling_cycle/strict_flat_cycle_delivers_and_stays_within_budgets/20.0` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `seated_pedaling_cycle/strict_flat_cycle_delivers_and_stays_within_budgets/40.0` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `seated_pedaling_cycle/strict_flat_cycle_delivers_and_stays_within_budgets/60.0` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `seated_pedaling_cycle/free_coast_is_an_intent_not_a_crank_lock` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`), strict on both darwin-arm64 and linux-aarch64; retained for the historical record.
+- `seated_posture_program/pulse_redistributes_load_through_inertia_only` — resolved-in-refresh: measured PASS on the lane/b F1 fix round on 2026-10-25 (`task-F1-report.md`); strict on darwin-arm64, linux-aarch64 runs the monitor in diagnostic mode with a pinned failure signature (D16 disposition in the F1 section); retained for the historical record.
 
 2026-10-24 addition (batch 3.12b lane/a triage): two further nodes of
 `test_native_pneumatic_tire.py` were verified red on the unmodified
 baseline (stash + rerun at `e843f0d`), so they join the documented
 baseline set rather than blocking the port batch:
 
-- `tests/reference/test_native_pneumatic_tire.py::test_pneumatic_golden_episode_event_rich` — episode capture exhausts the 64,000-step equilibrium budget (`front_wheel_spin` residual ≈ 0.081; same savage-plant defect family as `test_savage_is_ridden_to_the_end`).
-- `tests/reference/test_native_pneumatic_tire.py::test_pneumatic_probe_and_clock` — the recorded probe interval diverges bitwise from the live simulation at step 1 on both platforms.
+- `native_pneumatic_tire/pneumatic_golden_episode_event_rich` — episode capture exhausts the 64,000-step equilibrium budget (`front_wheel_spin` residual ≈ 0.081; same savage-plant defect family as `test_savage_is_ridden_to_the_end`).
+- `native_pneumatic_tire/pneumatic_probe_and_clock` — the recorded probe interval diverges bitwise from the live simulation at step 1 on both platforms.
 
 2026-10-23 refresh (`migration/baseline-refresh-2026-10-23.md`, measured at
 `fe4feaa`): the two annotated nodes now pass; the other 11 nodes remain
@@ -1487,7 +1487,7 @@ strict record here.
 
 ### Parity caveat
 
-`test_native_runtime_accounting.py::test_strict_rejection_publishes_the_whole_period_before_raising`
+`native_runtime_accounting/strict_rejection_publishes_the_whole_period_before_raising`
 compares interval structure and violation evidence only. Payload leaves
 (sensors, weld forces, rider torques, bookkeeping values) are not compared
 because the Python and native backends drift on this weld-heavy plant from

@@ -1,4 +1,4 @@
-// Ports tests/reference/test_coupled_rider_task.py::
+// Ports tests/reference/test_coupled_rider_task.py:
 // test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step —
 // the coupled-task invariant that the allocator's crank task coordinate
 // equals the first-step solved weld torque (same multipliers, same J^T
@@ -67,7 +67,7 @@ std::unique_ptr<WeldedRig> coupled_rig() {
     physics.articulated.saddle_attachment = "weld";
     physics.articulated.grip_attachment = "weld";
     // The coupled-task contract pair the oracle test's in-place rewrite
-    // carries (test_coupled_rider_task.py::_environment).
+    // carries (coupled_rider_task/_environment).
     physics.articulated.coupled_task_control = true;
     physics.articulated.joint_passive_damping_nms_rad = .5;
     cfg::post_init(physics);

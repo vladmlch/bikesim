@@ -66,9 +66,14 @@ namespace io = bike::io;
 [[nodiscard]] inline bt::oracle::Node node(std::string_view file,
                                            std::string_view function, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                                            std::string_view parameters = {}) {
-    std::string name = "tests/reference/" + std::string(file) + "::" +
-                       std::string(function);
-    if (!parameters.empty()) name += "[" + std::string(parameters) + "]";
+
+    auto suite = std::string(file);
+    if (suite.starts_with("test_")) suite.erase(0, 5);
+    if (suite.ends_with(".py")) suite.erase(suite.size() - 3);
+    std::string name = suite + "/" +
+        (function.starts_with("test_") ? std::string(function.substr(5))
+                                       : std::string(function));
+    if (!parameters.empty()) name += "/" + bt::oracle::key(parameters);
     return bt::oracle::Node(name);
 }
 

@@ -1,6 +1,6 @@
 // Completion 3.10 / decision F3 (2026-10-24): the realtime gate re-aimed at
 // the native backend. The ported contract of
-// tests/reference/test_realtime_gate.py::test_realtime_factor_for_full_twenty_seconds
+// realtime_gate/realtime_factor_for_full_twenty_seconds
 // is unchanged — 20 simulated seconds at dt=1.25 ms (16,000 steps, record
 // decimation 80) on each of rough_uphill_savage/rough_uphill_extreme and a
 // real-time factor >= 1x — but the measured subject is now the shipped

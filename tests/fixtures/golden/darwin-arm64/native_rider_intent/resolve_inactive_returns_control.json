@@ -1,0 +1,72 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "native_rider_intent/resolve_inactive_returns_control",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.resolve.0",
+  "nbytes": 3224,
+  "node": "native_rider_intent/resolve_inactive_returns_control",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   403
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "output.control.0",
+  "nbytes": 136,
+  "node": "native_rider_intent/resolve_inactive_returns_control",
+  "offset": 7136,
+  "rtol": null,
+  "shape": [
+   136
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "output.state.0",
+  "nbytes": 383,
+  "node": "native_rider_intent/resolve_inactive_returns_control",
+  "offset": 7272,
+  "rtol": null,
+  "shape": [
+   383
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "output.state.1",
+  "nbytes": 383,
+  "node": "native_rider_intent/resolve_inactive_returns_control",
+  "offset": 7655,
+  "rtol": null,
+  "shape": [
+   383
+  ]
+ }
+]

@@ -73,7 +73,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
 // Surface + spec contract
 // ---------------------------------------------------------------------
 
-// tests/reference/test_alpine_track.py::test_scree_surface_is_registered_below_loose
+// alpine_track/scree_surface_is_registered_below_loose
 [[gnu::noinline]] void test_scree_surface_is_registered_below_loose() {
     const auto &scree = terrain::get_surface("scree");
     const auto &loose = terrain::get_surface("loose");
@@ -89,7 +89,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "scree sits below loose");
 }
 
-// tests/reference/test_alpine_track.py::test_default_spec_matches_the_design_numbers
+// alpine_track/default_spec_matches_the_design_numbers
 [[gnu::noinline]] void test_default_spec_matches_the_design_numbers() {
     const AlpineGenSpec s;
     bt::require(s.length_m == 120. && s.lead_in_m == 10. &&
@@ -117,7 +117,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "ALPINE_PRESET_SEED is an integer");
 }
 
-// tests/reference/test_alpine_track.py::test_spec_round_trips_through_dict_and_toml_lists
+// alpine_track/spec_round_trips_through_dict_and_toml_lists
 [[gnu::noinline]] void test_spec_round_trips_through_dict_and_toml_lists() {
     const auto spec = AlpineGenSpec::from_dict(object(
             {{"ramp_grade", list({number("0.10"), number("0.20")})},
@@ -140,7 +140,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "the edited spec hashes differently");
 }
 
-// tests/reference/test_alpine_track.py::test_spec_hash_is_stable_across_numeric_input_types
+// alpine_track/spec_hash_is_stable_across_numeric_input_types
 [[gnu::noinline]] void test_spec_hash_is_stable_across_numeric_input_types() {
     const auto plain = AlpineGenSpec{}.sha256();
     bt::require(AlpineGenSpec::from_dict(object({{"length_m", number("120")}}))
@@ -161,7 +161,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     (void)widened.sha256();
 }
 
-// tests/reference/test_alpine_track.py::test_spec_rejects_invalid_values — 11 rows
+// alpine_track/spec_rejects_invalid_values — 11 rows
 [[gnu::noinline]] void test_spec_rejects_invalid_values() {
     const std::array<bike::io::Value, 11> bad{
             object({{"unknown_key", number("1")}}),
@@ -181,7 +181,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 [&] { (void)AlpineGenSpec::from_dict(doc); });
 }
 
-// tests/reference/test_alpine_track.py::test_sharp_edges_need_the_multi_contact_opt_in
+// alpine_track/sharp_edges_need_the_multi_contact_opt_in
 [[gnu::noinline]] void test_sharp_edges_need_the_multi_contact_opt_in() {
     auto spec = AlpineGenSpec{};
     spec.single_contact_safe = false;
@@ -191,7 +191,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "opted-in sharp edges survive validation");
 }
 
-// tests/reference/test_alpine_track.py::test_spec_rejects_lengths_below_the_grid — 14 rows
+// alpine_track/spec_rejects_lengths_below_the_grid — 14 rows
 [[gnu::noinline]] void test_spec_rejects_lengths_below_the_grid() {
     const auto reject = [](auto &&edit) {
         rejects<std::invalid_argument>([&] {
@@ -234,7 +234,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     reject([](auto &s) { s.rock_corr_m = {0., 0.}; });
 }
 
-// tests/reference/test_alpine_track.py::test_spec_accepts_the_grid_boundary
+// alpine_track/spec_accepts_the_grid_boundary
 [[gnu::noinline]] void test_spec_accepts_the_grid_boundary() {
     auto spec = AlpineGenSpec{};
     spec.transition_m = 0.01;
@@ -257,7 +257,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     return bike::random::NumpyRng{std::to_string(seed), {}};
 }
 
-// tests/reference/test_alpine_track.py::test_rhythm_fills_the_body_with_ramp_shelf_cycles[0..7]
+// alpine_track/rhythm_fills_the_body_with_ramp_shelf_cycles/0..7
 [[gnu::noinline]] void test_rhythm_fills_the_body_with_ramp_shelf_cycles() {
     for (std::uint64_t seed = 0; seed < 8; ++seed) {
         const AlpineGenSpec spec;
@@ -311,7 +311,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     }
 }
 
-// tests/reference/test_alpine_track.py::test_rhythm_grade_profile_is_flat_outside_the_body[0..7]
+// alpine_track/rhythm_grade_profile_is_flat_outside_the_body/0..7
 [[gnu::noinline]] void test_rhythm_grade_profile_is_flat_outside_the_body() {
     for (std::uint64_t seed = 0; seed < 8; ++seed) {
         const AlpineGenSpec spec;
@@ -342,7 +342,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     }
 }
 
-// tests/reference/test_alpine_track.py::test_rhythm_without_walls_or_counter_slopes
+// alpine_track/rhythm_without_walls_or_counter_slopes
 [[gnu::noinline]] void test_rhythm_without_walls_or_counter_slopes() {
     auto spec = AlpineGenSpec{};
     spec.n_walls = 0;
@@ -358,7 +358,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
 // Generation + structure
 // ---------------------------------------------------------------------
 
-// tests/reference/test_alpine_track.py::test_generate_rejects_bad_arguments
+// alpine_track/generate_rejects_bad_arguments
 [[gnu::noinline]] void test_generate_rejects_bad_arguments() {
     // generate_alpine_track(object(), seed=0) — a non-spec argument is a
     // compile-time impossibility natively; the ValueError seed domain is
@@ -371,7 +371,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     });
 }
 
-// tests/reference/test_alpine_track.py::test_same_seed_same_bytes_and_toml_round_trip[0..7]
+// alpine_track/same_seed_same_bytes_and_toml_round_trip/0..7
 [[gnu::noinline]] void test_same_seed_same_bytes_and_toml_round_trip() {
     for (std::uint64_t seed = 0; seed < 8; ++seed) {
         const AlpineGenSpec spec;
@@ -391,7 +391,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     }
 }
 
-// tests/reference/test_alpine_track.py::test_different_seeds_differ
+// alpine_track/different_seeds_differ
 [[gnu::noinline]] void test_different_seeds_differ() {
     std::vector<std::string> dumps;
     dumps.reserve(8);
@@ -408,7 +408,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     return {spec.lead_in_m, spec.length_m - spec.lead_out_m};
 }
 
-// tests/reference/test_alpine_track.py::test_default_track_structure[0..7]
+// alpine_track/default_track_structure/0..7
 [[gnu::noinline]] void test_default_track_structure() {
     for (std::uint64_t seed = 0; seed < 8; ++seed) {
         const AlpineGenSpec spec;
@@ -497,7 +497,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     }
 }
 
-// tests/reference/test_alpine_track.py::test_default_track_has_no_single_contact_hazards[0..7]
+// alpine_track/default_track_has_no_single_contact_hazards/0..7
 [[gnu::noinline]] void test_default_track_has_no_single_contact_hazards() {
     for (std::uint64_t seed = 0; seed < 8; ++seed)
         bt::require(terrain::single_contact_hazards(
@@ -544,7 +544,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     return count;
 }
 
-// tests/reference/test_alpine_track.py::test_default_track_rolls_clean_for_both_wheels[0..2]
+// alpine_track/default_track_rolls_clean_for_both_wheels/0..2
 [[gnu::noinline]] void test_default_track_rolls_clean_for_both_wheels() {
     for (std::uint64_t seed = 0; seed < 3; ++seed) {
         const auto track =
@@ -556,7 +556,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     }
 }
 
-// tests/reference/test_alpine_track.py::test_opting_out_of_single_contact_produces_detectable_hazards
+// alpine_track/opting_out_of_single_contact_produces_detectable_hazards
 [[gnu::noinline]] void test_opting_out_of_single_contact_produces_detectable_hazards() {
     auto spec = AlpineGenSpec{};
     spec.single_contact_safe = false;
@@ -575,7 +575,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "the raster roll counts multi-support windows");
 }
 
-// tests/reference/test_alpine_track.py::test_redraw_keeps_a_marginal_rock_garden_clean
+// alpine_track/redraw_keeps_a_marginal_rock_garden_clean
 [[gnu::noinline]] void test_redraw_keeps_a_marginal_rock_garden_clean() {
     auto spec = AlpineGenSpec{};
     spec.rock_amp_m = {.07, .07};
@@ -593,7 +593,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     }
 }
 
-// tests/reference/test_alpine_track.py::test_faceted_redraw_is_capped_not_endless
+// alpine_track/faceted_redraw_is_capped_not_endless
 [[gnu::noinline]] void test_faceted_redraw_is_capped_not_endless() {
     auto spec = AlpineGenSpec{};
     spec.max_kink_deg = 1e-4;
@@ -608,7 +608,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
 // Presets + frozen files
 // ---------------------------------------------------------------------
 
-// tests/reference/test_alpine_track.py::test_alpine_scree_preset_builder
+// alpine_track/alpine_scree_preset_builder
 [[gnu::noinline]] void test_alpine_scree_preset_builder() {
     const auto pinned = terrain::alpine_scree();
     const auto other = terrain::alpine_scree("7");
@@ -622,7 +622,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "the preset is the seeded generator output");
 }
 
-// tests/reference/test_alpine_track.py::test_preset_is_registered_and_seeded
+// alpine_track/preset_is_registered_and_seeded
 [[gnu::noinline]] void test_preset_is_registered_and_seeded() {
     const auto names = terrain::available_presets();
     bt::require(std::ranges::find(names, "alpine_scree") != names.end(),
@@ -637,7 +637,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "preset track header");
 }
 
-// tests/reference/test_alpine_track.py::test_frozen_example_equals_the_preset_dump
+// alpine_track/frozen_example_equals_the_preset_dump
 [[gnu::noinline]] void test_frozen_example_equals_the_preset_dump() {
     const auto path = repo_file("examples/research/alpine_scree.toml");
     bt::require(read_text(path) == terrain::dump_track(
@@ -655,7 +655,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     bt::require(track.length_m == 120., "frozen length");
 }
 
-// tests/reference/test_alpine_track.py::test_rocky_genspec_is_the_multi_contact_opt_in
+// alpine_track/rocky_genspec_is_the_multi_contact_opt_in
 [[gnu::noinline]] void test_rocky_genspec_is_the_multi_contact_opt_in() {
     const auto spec = AlpineGenSpec::from_dict(cfg::detail::parse_toml_file(
             repo_file("examples/research/alpine_rocky_genspec.toml")));
@@ -673,7 +673,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
 // CLI + research routing
 // ---------------------------------------------------------------------
 
-// tests/reference/test_alpine_track.py::test_ride_resolves_the_seeded_preset
+// alpine_track/ride_resolves_the_seeded_preset
 [[gnu::noinline]] void test_ride_resolves_the_seeded_preset() {
     bt::require(terrain::dump_track(bike::cli::resolve_track(
                             "alpine_scree")) ==
@@ -691,12 +691,12 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     // seed (41) wins, and the '7' resolve proves the override wins.
 }
 
-// tests/reference/test_alpine_track.py::test_ride_lists_the_preset_as_generated
+// alpine_track/ride_lists_the_preset_as_generated
 // DROPPED — the Python --list tracks row text ('generated', '120 m') is
 // a CLI-format pin; the native --list_tracks emits bare preset names and
 // the registration half is covered by test_preset_is_registered_and_seeded.
 
-// tests/reference/test_alpine_track.py::test_research_alpine_scenario_builds_the_generator_track
+// alpine_track/research_alpine_scenario_builds_the_generator_track
 [[gnu::noinline]] void test_research_alpine_scenario_builds_the_generator_track() {
     const auto track = bike::research::resolve_research_track(
             std::nullopt, "alpine", std::nullopt, "3");
@@ -721,7 +721,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     std::filesystem::remove(spec_file);
 }
 
-// tests/reference/test_alpine_track.py::test_research_gen_spec_rejects_unknown_keys_and_wrong_scenarios
+// alpine_track/research_gen_spec_rejects_unknown_keys_and_wrong_scenarios
 [[gnu::noinline]] void test_research_gen_spec_rejects_unknown_keys_and_wrong_scenarios() {
     const auto bad = std::filesystem::temp_directory_path() /
                      ("alpine_bad_" + std::to_string(::getpid()) + ".toml");
@@ -743,7 +743,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
     std::filesystem::remove(good);
 }
 
-// tests/reference/test_alpine_track.py::test_alpine_rocky_preset_is_frozen_and_hazardous_by_design
+// alpine_track/alpine_rocky_preset_is_frozen_and_hazardous_by_design
 [[gnu::noinline]] void test_alpine_rocky_preset_is_frozen_and_hazardous_by_design() {
     const auto track = terrain::get_preset("alpine_rocky");
     bt::require(track.name == "alpine_rocky", "rocky preset name");
@@ -758,7 +758,7 @@ constexpr double kRearRadiusM = .352;  // wheelpath.REAR_WHEEL_RADIUS_M
                 "rocky is hazardous by design");
 }
 
-// tests/reference/test_alpine_track.py::test_distributed_physics_profile_loads
+// alpine_track/distributed_physics_profile_loads
 [[gnu::noinline]] void test_distributed_physics_profile_loads() {
     const auto config = cfg::load_physics(
             repo_file("examples/research/viewer_physics_distributed.toml"));

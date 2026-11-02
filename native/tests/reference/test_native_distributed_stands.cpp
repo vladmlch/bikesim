@@ -14,7 +14,7 @@ namespace {
 using namespace tyre_reference;
 using bike::validation::real;
 
-// tests/reference/test_native_distributed_stands.py::test_distributed_flat_stand_native
+// native_distributed_stands/distributed_flat_stand_native
 // distributed_flat_rig's cell (dt=.000625, 128 stations, 600 N) — the
 // rig's own bounds.
 void test_distributed_flat_stand_native() {
@@ -28,7 +28,7 @@ void test_distributed_flat_stand_native() {
                 "flat stand energy residual inside the rig bound");
 }
 
-// tests/reference/test_native_distributed_stands.py::test_distributed_step_stand_native
+// native_distributed_stands/distributed_step_stand_native
 // distributed_step_rig's cell (dt=.000625, 128 stations, dx=.005) —
 // energy and multi-patch bounds.
 void test_distributed_step_stand_native() {

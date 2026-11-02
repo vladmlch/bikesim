@@ -46,7 +46,7 @@ namespace io = bike::io;
 namespace rd = bike::recording::detail;
 namespace setup = runtime::setupvalue;
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_python_on_off_capture_does_not_change_state_noise_or_results
 void test_python_on_off_capture_does_not_change_state_noise_or_results() {
     // The monkeypatched SensorConfig adds delivery bias + dropout on both
@@ -111,7 +111,7 @@ void test_python_on_off_capture_does_not_change_state_noise_or_results() {
     full->close();
 }
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_sealed_python_source_survives_reset_close_and_forbids_array_mutation
 void test_sealed_python_source_survives_reset_close_and_forbids_array_mutation() {
     auto env = environment({.decimation = 3,
@@ -162,7 +162,7 @@ void test_sealed_python_source_survives_reset_close_and_forbids_array_mutation()
                 "the seal reason is stamped on the summary");
 }
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_python_verify_suffix_is_consumed_only_after_freezing
 void test_python_verify_suffix_is_consumed_only_after_freezing() {
     auto env = environment({.capture = runtime::ResearchCaptureMode::verify});
@@ -202,7 +202,7 @@ void test_python_verify_suffix_is_consumed_only_after_freezing() {
     env->close();
 }
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_two_episode_launch_writes_only_after_finalization
 void test_two_episode_launch_writes_only_after_finalization() {
   Directory const directory;
@@ -238,7 +238,7 @@ void test_two_episode_launch_writes_only_after_finalization() {
     bt::require(launch.finish() == path, "repeat finish is idempotent");
 }
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_incomplete_window_and_failed_policy_remain_analyzable
 void test_incomplete_window_and_failed_policy_remain_analyzable() {
   Directory const directory;
@@ -274,7 +274,7 @@ void test_incomplete_window_and_failed_policy_remain_analyzable() {
     invalid_with([&] { (void)bike::replay::load_replay_input(path); }, "incomplete-prefix");
 }
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_policy_failure_before_first_request_seals_zero_step_evidence
 void test_policy_failure_before_first_request_seals_zero_step_evidence() {
   Directory const directory;
@@ -304,7 +304,7 @@ void test_policy_failure_before_first_request_seals_zero_step_evidence() {
               "only the startup observation is retained");
 }
 
-// tests/reference/test_research_capture.py::
+// tests/reference/test_research_capture.py:
 //   test_interruption_drains_only_the_already_accepted_control
 void test_interruption_drains_only_the_already_accepted_control() {
   Directory const directory;

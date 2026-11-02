@@ -55,10 +55,12 @@ using runtime::EncodedTable;
 using runtime::SamplePtr;
 using bike::io::Value;
 
-const char *const NODE_FILE = "tests/reference/test_native_encode_columns.py";
+const char *const NODE_SUITE = "native_encode_columns";
 
 std::string node_id(std::string_view test) {
-    return std::string(NODE_FILE) + "::" + std::string(test);
+    auto name = std::string(test);
+    if (name.starts_with("test_")) name.erase(0, 5);
+    return std::string(NODE_SUITE) + "/" + name;
 }
 
 // The exception contract pytest.raises(..., match=...) expresses: type
@@ -887,7 +889,7 @@ EncodedTable concat_tables(const std::vector<EncodedTable> &fragments) {
     return merged;
 }
 
-// ---- derived scan (recording/native.py::iter_derived_events) --------------
+// ---- derived scan (recording/native.py:iter_derived_events) --------------
 
 // The _DERIVED_FIELDS (kind, path) table the Python module authors.
 const std::pair<const char *, std::vector<const char *>> DERIVED_FIELDS[] = { // NOLINT(bugprone-throwing-static-initialization,cert-err58-cpp,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) static fixture table built once at startup; a throw is a fatal defect; bounded label buffer for snprintf
@@ -972,7 +974,7 @@ std::vector<WireObject> derived_events(const runtime::OwnedNativeEpisode &episod
     return out;
 }
 
-// test_native_encode_columns.py::_freeze — the typed-tree serializer the
+// native_encode_columns/_freeze — the typed-tree serializer the
 // captured 'events' blobs are written in.
 void freeze_into(std::string &out, const Wire &value) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
     if (std::holds_alternative<std::monostate>(value.value)) { out += 'n'; return; }

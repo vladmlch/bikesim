@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "span entry concave",
+  "nbytes": 8,
+  "node": "contact_safety/concave_span_counts_a_steep_entry_join",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

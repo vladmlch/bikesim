@@ -1,0 +1,2797 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 96,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 112,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 184,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 224,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 296,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 320,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 336,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 408,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 432,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 448,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 520,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 544,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 560,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 632,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 656,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 672,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 744,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 768,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 784,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 856,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 880,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 896,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 968,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 992,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1008,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1080,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1104,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1120,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1192,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1216,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1232,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1304,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1328,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1344,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1416,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1440,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1456,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1528,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1552,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1568,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1640,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1664,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1680,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1752,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1776,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1792,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1864,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1888,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1904,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 1976,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2000,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2016,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2088,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2112,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2128,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2200,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2224,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2240,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2312,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2336,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2352,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2424,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2448,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2464,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2536,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2560,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2576,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2648,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2672,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2688,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2760,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2784,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2800,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2872,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2896,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2912,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 2984,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3008,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3024,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3096,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3120,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3136,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3208,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3232,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3248,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3320,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3344,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3360,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3432,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3456,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3472,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3544,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3568,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3584,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3656,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3680,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3696,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3768,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3792,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3808,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3880,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3904,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3920,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 3992,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4016,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4032,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4104,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4128,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4144,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4216,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4240,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4256,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4328,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4352,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4368,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4440,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4464,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4480,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4552,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4576,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4592,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4664,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4688,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4704,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4776,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4800,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4816,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4888,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4912,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 4928,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5000,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5024,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5040,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5112,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5136,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5152,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5224,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5248,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5264,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5336,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5360,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5376,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5448,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5472,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5488,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5560,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5584,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5600,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5672,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5696,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5712,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5784,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5808,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5824,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5896,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5920,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 5936,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6008,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6032,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6048,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6120,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6144,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6160,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6232,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6256,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6272,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6344,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6368,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6384,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6456,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6480,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6496,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6568,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6592,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6608,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6680,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6704,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6720,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6792,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6816,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6832,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6904,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6928,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 6944,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7016,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7040,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7056,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7128,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7152,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7168,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 24,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7240,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "rider mat_t_vec_xz 3-D",
+  "nbytes": 16,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/mat_t_vec_xz",
+  "offset": 7264,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ }
+]

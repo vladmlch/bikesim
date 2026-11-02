@@ -62,7 +62,7 @@ double crank_radius(const rider::SpindlePose &p) {
     return std::sqrt(squared) / 2.;
 }
 
-// test_lean_limit.py::test_lean_limit_is_geometric_and_elbow_rom_can_lower_it
+// lean_limit/lean_limit_is_geometric_and_elbow_rom_can_lower_it
 void test_lean_limit_is_geometric_and_elbow_rom_can_lower_it() {
     const auto p = pose();
     const auto base = envelopes();
@@ -82,7 +82,7 @@ void test_lean_limit_is_geometric_and_elbow_rom_can_lower_it() {
                 "tighter elbow ROM lowers the geometric lean limit");
 }
 
-// test_lean_limit.py::test_torso_rom_caps_the_limit
+// lean_limit/torso_rom_caps_the_limit
 void test_torso_rom_caps_the_limit() {
     const auto p = pose();
     auto tight = envelopes();

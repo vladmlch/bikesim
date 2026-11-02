@@ -296,7 +296,7 @@ was added after this table was computed and has no row.)
 - `κ = −V_s / |V_x|` is the longitudinal slip: positive when driving, −1 for a locked wheel.
 
 **Transient slip.** `σ · dκ'/dt + |V_x| · κ' = −V_s`, with relaxation length σ = 60 mm
-[est]. It is integrated with its exact exponential solution (`brush.py::relax`), which is
+[est]. It is integrated with its exact exponential solution (`brush.py:relax`), which is
 stable for any timestep and finite at `V_x = 0`. At rest with no torque, `κ'` holds its
 value like a deflected tread, so a parked bike does not creep. Under a torque at rest, the
 force builds over a distance rolled, not instantaneously. That is the property that makes a

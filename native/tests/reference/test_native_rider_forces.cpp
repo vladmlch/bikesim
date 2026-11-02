@@ -56,7 +56,7 @@ namespace trn = bike::terrain;
 using bike::io::repr_binary64;
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_rider_forces.py::";
+    "native_rider_forces/";
 
 std::filesystem::path repo_file(std::string_view relative) {
     // tests/fixtures/golden -> repo root is three levels up.
@@ -269,14 +269,14 @@ void rider_forces_sweep(bt::oracle::Node &golden) {
 }
 
 void test_rider_forces_qfrc_bitwise() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     rider_forces_sweep(golden);
 }
 
 // ---- test_project_emits_resolved_paths ----------------------------------
 
 void test_project_emits_resolved_paths() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const std::vector<double> dims = golden.f64_input("input.dims");
     // RideSimulation(): the default seated ride plant, projected through
     // the same tools.native_config.project seam.
@@ -380,7 +380,7 @@ nativecfg::WriterConfig rf_cfg(
 }
 
 void test_rider_forces_hand_built_smoke() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Stepper const st(bench_mjb(), rf_cfg());
     const std::vector<double> got = st.rider_forces_qfrc();
     bt::require(got.size() == static_cast<std::size_t>(st.model()->nv),
@@ -465,7 +465,7 @@ std::vector<double> total_of(Stepper const &st,
 }
 
 void test_accumulator_order_bitwise() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const Stepper st(bench_mjb());
     const std::size_t nv = static_cast<std::size_t>(st.model()->nv);
     const std::vector<double> a(nv, 1e20), b(nv, 1.), c(nv, -1e20);
@@ -528,8 +528,8 @@ void test_accumulator_total_validates() {
 
 void conversion_case(const char *dtype, const char *layout) {
     const std::string node = std::string(kFile) +
-        "test_accumulator_total_accepts_array_conversion[" + dtype + "-" +
-        layout + "]";
+        "accumulator_total_accepts_array_conversion/" + dtype + "-" +
+        layout;
     bt::oracle::Node golden(node);
     const Stepper st(bench_mjb());
     const std::size_t nv = static_cast<std::size_t>(st.model()->nv);
@@ -586,7 +586,7 @@ OwnedSide side_input(const TireSnapshot &snapshot) {
 }
 
 void test_accumulator_order_golden() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     // Platform-captured oracle artifact (freeze path): shared inputs
     // (request.toml) live under root/episode/, the npz under
     // root/<platform>/episode/.

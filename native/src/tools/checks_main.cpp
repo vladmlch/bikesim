@@ -1,5 +1,5 @@
 // checks_main.cpp — bike-native-checks entry point (task T56). Ports the
-// argparse contract of tools/native_checks.py::main plus the
+// argparse contract of tools/native_checks.py:main plus the
 // check_native_contracts.py runner, extended with the produced `scripts`
 // and `contracts` kinds and the --check-child exec wrapper that replaces
 // the oracle's subprocess preexec_fn (RLIMIT_CORE=0 for the real child).

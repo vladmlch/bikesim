@@ -39,7 +39,7 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
         io::canonical_json(cfg::detail::as_object(cfg::detail::kTyreSpecsSchema, &expected)), "all stock tyre fields agree");
 }
 [[gnu::noinline]] void test_pneumatic_section_defaults_to_fast_stock_tyres() {
-    // test_pneumatic_tire_config.py::test_pneumatic_section_defaults_to_fast_stock_tyres
+    // pneumatic_tire_config/pneumatic_section_defaults_to_fast_stock_tyres
     cfg::PneumaticTireConfig config;
     cfg::detail::post_init(config);
     bt::require(config.tier == "fast" && !config.surface, "default fast, no named surface");
@@ -47,27 +47,27 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
     bt::require(cfg::find_tire_tier(config.tier) != nullptr, "default tier is registered");
 }
 [[gnu::noinline]] void test_pneumatic_is_opt_in_and_the_section_always_resolves() {
-    // test_pneumatic_tire_config.py::test_pneumatic_is_opt_in_and_the_section_always_resolves
+    // pneumatic_tire_config/pneumatic_is_opt_in_and_the_section_always_resolves
     cfg::TireBackendConfig config; cfg::detail::post_init(config);
     bt::require(config.backend == "native_reference", "pneumatic is opt in");
     bt::require((std::is_same_v<decltype(config.pneumatic), cfg::PneumaticTireConfig>), "section always has resolved type");
     stock(config.pneumatic.front, cfg::kFrontTyre);
 }
 [[gnu::noinline]] void test_pneumatic_backend_resolves_from_toml() {
-    // test_pneumatic_tire_config.py::test_pneumatic_backend_resolves_from_toml
+    // pneumatic_tire_config/pneumatic_backend_resolves_from_toml
     const auto config = resolve(R"({"physics_mode":"physical","tires":{"backend":"pneumatic","pneumatic":{"surface":"asphalt"}}})");
     bt::require(config.tires.backend == "pneumatic" && config.tires.pneumatic.surface == "asphalt" &&
         config.tires.pneumatic.tier == "fast", "pneumatic section resolves");
     stock(config.tires.pneumatic.front, cfg::kFrontTyre); stock(config.tires.pneumatic.rear, cfg::kRearTyre);
 }
 [[gnu::noinline]] void test_pneumatic_backend_resolves_under_track_surface_mode() {
-    // test_pneumatic_tire_config.py::test_pneumatic_backend_resolves_under_track_surface_mode
+    // pneumatic_tire_config/pneumatic_backend_resolves_under_track_surface_mode
     const auto config = resolve(R"({"physics_mode":"physical","timestep_s":0.00025,"tires":{"backend":"pneumatic","surface_mode":"track","pneumatic":{"tier":"detailed"}}})");
     bt::require(config.tires.surface_mode == "track" && !config.tires.pneumatic.surface &&
         config.tires.pneumatic.tier == "detailed", "detailed track material resolution");
 }
 [[gnu::noinline]] void test_detailed_pneumatic_requires_the_tier_timestep() {
-    // test_pneumatic_tire_config.py::test_detailed_pneumatic_requires_the_tier_timestep
+    // pneumatic_tire_config/detailed_pneumatic_requires_the_tier_timestep
     rejects([] { (void)resolve(R"({"physics_mode":"physical","tires":{"backend":"pneumatic","surface_mode":"track","pneumatic":{"tier":"detailed"}}})"); },
         "detailed pneumatic tyre requires timestep_s");
     // Multi-kilobyte resolved configs live on the heap; this frame stays
@@ -80,7 +80,7 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
     bt::require(fast->tires.pneumatic.tier == "fast", "fast tier accepts a different timestep");
 }
 [[gnu::noinline]] void test_partial_tyre_tables_extend_the_default_specs() {
-    // test_pneumatic_tire_config.py::test_partial_tyre_tables_extend_the_default_specs
+    // pneumatic_tire_config/partial_tyre_tables_extend_the_default_specs
     const auto config = resolve(R"({"physics_mode":"physical","tires":{"backend":"pneumatic","pneumatic":{"surface":"asphalt","front":{"pressure_bar":1.9},"rear":{"pressure_bar":2.1,"name":"custom rear"}}}})");
     const auto &front = config.tires.pneumatic.front, &rear = config.tires.pneumatic.rear;
     bt::require(front.pressure_bar == 1.9 && front.name == cfg::kFrontTyre.name &&
@@ -90,22 +90,22 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
         "rear partial table extends stock");
 }
 [[gnu::noinline]] void test_pneumatic_rejects_configured_mode_without_a_surface() {
-    // test_pneumatic_tire_config.py::test_pneumatic_rejects_configured_mode_without_a_surface
+    // pneumatic_tire_config/pneumatic_rejects_configured_mode_without_a_surface
     rejects([] { (void)resolve(R"({"tires":{"backend":"pneumatic"}})"); }, "pneumatic");
     rejects([] { (void)resolve(R"({"tires":{"backend":"pneumatic","surface_mode":"configured","pneumatic":{"tier":"fast"}}})"); }, "surface");
 }
 [[gnu::noinline]] void test_pneumatic_rejects_an_unknown_tier() {
-    // test_pneumatic_tire_config.py::test_pneumatic_rejects_an_unknown_tier
+    // pneumatic_tire_config/pneumatic_rejects_an_unknown_tier
     rejects([] { (void)resolve(R"({"tires":{"backend":"pneumatic","pneumatic":{"surface":"asphalt","tier":"ultra"}}})"); }, "tier");
     rejects([] { cfg::PneumaticTireConfig config; config.tier = "ultra"; cfg::detail::post_init(config); }, "tier");
 }
 [[gnu::noinline]] void test_pneumatic_rejects_an_unknown_surface_name() {
-    // test_pneumatic_tire_config.py::test_pneumatic_rejects_an_unknown_surface_name
+    // pneumatic_tire_config/pneumatic_rejects_an_unknown_surface_name
     rejects([] { (void)resolve(R"({"tires":{"backend":"pneumatic","pneumatic":{"surface":"ice"}}})"); }, "surface");
     rejects([] { cfg::PneumaticTireConfig config; config.surface = "ice"; cfg::detail::post_init(config); }, "surface");
 }
 [[gnu::noinline]] void test_pneumatic_rejects_an_unresolved_section() {
-    // test_pneumatic_tire_config.py::test_pneumatic_rejects_an_unresolved_section
+    // pneumatic_tire_config/pneumatic_rejects_an_unresolved_section
     static_assert(!std::is_assignable_v<cfg::PneumaticTireConfig &, std::nullptr_t>);
     static_assert(!std::is_assignable_v<cfg::PneumaticTireConfig &, io::Value>);
     bt::require((!std::is_assignable_v<cfg::PneumaticTireConfig &, io::Value>), "Python None/dict cannot inhabit typed pneumatic member");
@@ -113,11 +113,11 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
     rejects([] { (void)resolve(R"({"tires":{"backend":"pneumatic","pneumatic":null}})"); }, "requires a TOML table");
 }
 [[gnu::noinline]] void test_pneumatic_rejects_unknown_tyre_keys() {
-    // test_pneumatic_tire_config.py::test_pneumatic_rejects_unknown_tyre_keys
+    // pneumatic_tire_config/pneumatic_rejects_unknown_tyre_keys
     rejects([] { (void)resolve(R"({"tires":{"backend":"pneumatic","pneumatic":{"surface":"asphalt","front":{"pressure_baar":1.9}}}})"); }, "unknown TyreSpecs parameter");
 }
 [[gnu::noinline]] void test_research_environment_rejects_a_named_pneumatic_surface() {
-    // test_pneumatic_tire_config.py::test_research_environment_rejects_a_named_pneumatic_surface
+    // pneumatic_tire_config/research_environment_rejects_a_named_pneumatic_surface
     const auto request = [](bool named) {
         auto input = std::make_unique<bike::research::ResearchRequest>();
         // control_period_s keeps the config-level integer-step gate satisfied
@@ -141,7 +141,7 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
     rejects([&] { (void)bike::research::prepare_environment(request(false)); }, "control period must be an integer multiple");
 }
 [[gnu::noinline]] void test_existing_backend_gates_are_unchanged() {
-    // test_pneumatic_tire_config.py::test_existing_backend_gates_are_unchanged
+    // pneumatic_tire_config/existing_backend_gates_are_unchanged
     rejects([] { cfg::TireBackendConfig config; config.backend = "pneumtic"; cfg::detail::post_init(config); }, "unknown physical tire backend");
     rejects([] { cfg::TireBackendConfig config; config.surface_mode = "track"; cfg::detail::post_init(config); },
         "track material resolution requires a compliant_2d, distributed_2d_reference or pneumatic tire backend");

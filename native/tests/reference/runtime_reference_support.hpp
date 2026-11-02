@@ -4,7 +4,7 @@
 //
 // The Python sources construct NativeRideRuntime from a fresh
 // capture_bootstrap() of the welded-physics + rough_uphill_savage ride
-// (tests/reference/_native_runtime_support.py::make_python_ride). The C++
+// (tests/reference/_native_runtime_support.py:make_python_ride). The C++
 // ports run the identical boundary against the recorded welded capture
 // tests/fixtures/bootstrap/welded — the same model, config
 // envelope (dt .00125, control period 4 steps, decimation 1, non-strict)

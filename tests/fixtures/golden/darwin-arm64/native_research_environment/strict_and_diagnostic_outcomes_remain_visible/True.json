@@ -1,0 +1,30 @@
+[
+ {
+  "atol": 1e-09,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "close",
+  "label": "first_failure.values",
+  "nbytes": 8,
+  "node": "native_research_environment/strict_and_diagnostic_outcomes_remain_visible/True",
+  "offset": 0,
+  "rtol": 1e-09,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "first_failure.other",
+  "nbytes": 86,
+  "node": "native_research_environment/strict_and_diagnostic_outcomes_remain_visible/True",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   86
+  ]
+ }
+]

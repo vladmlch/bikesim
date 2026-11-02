@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 136,
+  "node": "native_numeric_portability/interp_matches_np_interp_general_table/n17-random",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 136,
+  "node": "native_numeric_portability/interp_matches_np_interp_general_table/n17-random",
+  "offset": 136,
+  "rtol": null,
+  "shape": [
+   17
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.queries",
+  "nbytes": 952,
+  "node": "native_numeric_portability/interp_matches_np_interp_general_table/n17-random",
+  "offset": 272,
+  "rtol": null,
+  "shape": [
+   119
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "np.interp n17-random",
+  "nbytes": 952,
+  "node": "native_numeric_portability/interp_matches_np_interp_general_table/n17-random",
+  "offset": 1224,
+  "rtol": null,
+  "shape": [
+   119
+  ]
+ }
+]

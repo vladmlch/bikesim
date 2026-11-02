@@ -30,13 +30,13 @@ void test_frictionloss_writes_match_python() {
     const auto written = probe.friction();
     bt::require(std::abs(written[static_cast<std::size_t>(probe.brake.front_dof())] - 80.) <= 80e-6, "front frictionloss matches original approx assertion");
     bt::require(std::abs(written[static_cast<std::size_t>(probe.brake.rear_dof())] - 140.) <= 140e-6, "rear frictionloss matches original approx assertion");
-    bt::oracle::Node node("tests/reference/test_native_static_brake.py::test_frictionloss_writes_match_python");
+    bt::oracle::Node node("native_static_brake/frictionloss_writes_match_python");
     node.f64(written, std::array<std::size_t, 1>{written.size()}, "static brake frictionloss"); node.done();
 }
 void test_solved_components_match_python() {
     Probe probe; (void)probe.brake.apply(probe.model.get(), .4, .7); probe.loads(60., -45.);
     const auto solved = probe.brake.solved_components(probe.model.get(), probe.data.get());
-    bt::oracle::Node node("tests/reference/test_native_static_brake.py::test_solved_components_match_python");
+    bt::oracle::Node node("native_static_brake/solved_components_match_python");
     node.f64_close(solved.first, std::array<std::size_t, 1>{solved.first.size()}, "front static brake solved");
     node.f64_close(solved.second, std::array<std::size_t, 1>{solved.second.size()}, "rear static brake solved"); node.done();
     bt::require(std::abs(solved.first.at(static_cast<std::size_t>(probe.brake.front_dof()))) > 1., "solved friction row actually holds the applied wheel load");

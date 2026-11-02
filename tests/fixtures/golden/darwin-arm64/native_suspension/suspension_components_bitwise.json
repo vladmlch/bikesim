@@ -1,0 +1,4482 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "fork_spring step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "fork_damper step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "shock_coil step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "shock_bumper step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 624,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "shock_damper step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 832,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "shock_top_out step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 1040,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 1248,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "shock_hbo step 0",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 1456,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "fork_spring step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 1664,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "fork_damper step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 1872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "shock_coil step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 2080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "shock_bumper step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 2288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "shock_damper step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 2496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "shock_top_out step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 2704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 2912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "shock_hbo step 1",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 3120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "fork_spring step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 3328,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "fork_damper step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 3536,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "shock_coil step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 3744,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "shock_bumper step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 3952,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "shock_damper step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 4160,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "shock_top_out step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 4368,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 4576,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "shock_hbo step 2",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 4784,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "fork_spring step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 4992,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "fork_damper step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 5200,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "shock_coil step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 5408,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "shock_bumper step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 5616,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "shock_damper step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 5824,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "shock_top_out step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 6032,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 6240,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "shock_hbo step 3",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 6448,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "fork_spring step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 6656,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "fork_damper step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 6864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "shock_coil step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 7072,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "shock_bumper step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 7280,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "shock_damper step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 7488,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "shock_top_out step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 7696,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 7904,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "shock_hbo step 4",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 8112,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "fork_spring step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 8320,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "fork_damper step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 8528,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "shock_coil step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 8736,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "shock_bumper step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 8944,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "shock_damper step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 9152,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "shock_top_out step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 9360,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 9568,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "shock_hbo step 5",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 9776,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "fork_spring step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 9984,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "fork_damper step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 10192,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "shock_coil step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 10400,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "shock_bumper step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 10608,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "shock_damper step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 10816,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "shock_top_out step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 11024,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 11232,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "shock_hbo step 6",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 11440,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "fork_spring step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 11648,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "fork_damper step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 11856,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "shock_coil step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 12064,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "shock_bumper step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 12272,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "shock_damper step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 12480,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "shock_top_out step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 12688,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 12896,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "shock_hbo step 7",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 13104,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "fork_spring step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 13312,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "fork_damper step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 13520,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "shock_coil step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 13728,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "shock_bumper step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 13936,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "shock_damper step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 14144,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "shock_top_out step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 14352,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 14560,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "shock_hbo step 8",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 14768,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "fork_spring step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 14976,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "fork_damper step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 15184,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "shock_coil step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 15392,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "shock_bumper step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 15600,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "shock_damper step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 15808,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "shock_top_out step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 16016,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 16224,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "shock_hbo step 9",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 16432,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "fork_spring step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 16640,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "fork_damper step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 16848,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "shock_coil step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 17056,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "shock_bumper step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 17264,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "shock_damper step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 17472,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "shock_top_out step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 17680,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 17888,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "shock_hbo step 10",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 18096,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "fork_spring step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 18304,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "fork_damper step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 18512,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "shock_coil step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 18720,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "shock_bumper step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 18928,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "shock_damper step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 19136,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "shock_top_out step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 19344,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 19552,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "shock_hbo step 11",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 19760,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "fork_spring step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 19968,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "fork_damper step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 20176,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "shock_coil step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 20384,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "shock_bumper step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 20592,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "shock_damper step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 20800,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "shock_top_out step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 21008,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 21216,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "shock_hbo step 12",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 21424,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "fork_spring step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 21632,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "fork_damper step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 21840,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "shock_coil step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 22048,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "shock_bumper step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 22256,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "shock_damper step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 22464,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "shock_top_out step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 22672,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 22880,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "shock_hbo step 13",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 23088,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "fork_spring step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 23296,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "fork_damper step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 23504,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "shock_coil step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 23712,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "shock_bumper step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 23920,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "shock_damper step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 24128,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "shock_top_out step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 24336,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 24544,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "shock_hbo step 14",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 24752,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "fork_spring step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 24960,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "fork_damper step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 25168,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "shock_coil step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 25376,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "shock_bumper step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 25584,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "shock_damper step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 25792,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "shock_top_out step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 26000,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 26208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "shock_hbo step 15",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 26416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "fork_spring step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 26624,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "fork_damper step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 26832,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "shock_coil step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 27040,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "shock_bumper step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 27248,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "shock_damper step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 27456,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "shock_top_out step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 27664,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 27872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "shock_hbo step 16",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 28080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "fork_spring step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 28288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "fork_damper step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 28496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "shock_coil step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 28704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "shock_bumper step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 28912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "shock_damper step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 29120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "shock_top_out step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 29328,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 29536,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "shock_hbo step 17",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 29744,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "fork_spring step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 29952,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "fork_damper step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 30160,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "shock_coil step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 30368,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "shock_bumper step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 30576,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "shock_damper step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 30784,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "shock_top_out step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 30992,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 31200,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "shock_hbo step 18",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 31408,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "fork_spring step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 31616,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "fork_damper step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 31824,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "shock_coil step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 32032,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "shock_bumper step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 32240,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "shock_damper step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 32448,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "shock_top_out step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 32656,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 32864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "shock_hbo step 19",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 33072,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "fork_spring step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 33280,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "fork_damper step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 33488,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "shock_coil step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 33696,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "shock_bumper step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 33904,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "shock_damper step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 34112,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "shock_top_out step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 34320,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 34528,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "shock_hbo step 20",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 34736,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "fork_spring step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 34944,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "fork_damper step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 35152,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "shock_coil step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 35360,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "shock_bumper step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 35568,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "shock_damper step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 35776,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "shock_top_out step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 35984,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 36192,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "shock_hbo step 21",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 36400,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "fork_spring step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 36608,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "fork_damper step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 36816,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "shock_coil step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 37024,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "shock_bumper step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 37232,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "shock_damper step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 37440,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "shock_top_out step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 37648,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 37856,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "shock_hbo step 22",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 38064,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "fork_spring step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 38272,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "fork_damper step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 38480,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "shock_coil step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 38688,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "shock_bumper step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 38896,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "shock_damper step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 39104,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "shock_top_out step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 39312,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 39520,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "shock_hbo step 23",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 39728,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "fork_spring step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 39936,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "fork_damper step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 40144,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "shock_coil step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 40352,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "shock_bumper step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 40560,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "shock_damper step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 40768,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "shock_top_out step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 40976,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 41184,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "shock_hbo step 24",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 41392,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "fork_spring step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 41600,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "fork_damper step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 41808,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "shock_coil step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 42016,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "shock_bumper step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 42224,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "shock_damper step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 42432,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "shock_top_out step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 42640,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 42848,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "shock_hbo step 25",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 43056,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "fork_spring step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 43264,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "fork_damper step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 43472,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "shock_coil step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 43680,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "shock_bumper step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 43888,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "shock_damper step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 44096,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "shock_top_out step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 44304,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 44512,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "shock_hbo step 26",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 44720,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "fork_spring step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 44928,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "fork_damper step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 45136,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "shock_coil step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 45344,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "shock_bumper step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 45552,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "shock_damper step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 45760,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "shock_top_out step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 45968,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 46176,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "shock_hbo step 27",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 46384,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "fork_spring step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 46592,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "fork_damper step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 46800,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "shock_coil step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 47008,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "shock_bumper step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 47216,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "shock_damper step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 47424,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "shock_top_out step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 47632,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 47840,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "shock_hbo step 28",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 48048,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "fork_spring step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 48256,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "fork_damper step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 48464,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "shock_coil step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 48672,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "shock_bumper step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 48880,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "shock_damper step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 49088,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "shock_top_out step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 49296,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 49504,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "shock_hbo step 29",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 49712,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "fork_spring step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 49920,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "fork_damper step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 50128,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "shock_coil step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 50336,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "shock_bumper step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 50544,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "shock_damper step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 50752,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "shock_top_out step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 50960,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 51168,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "shock_hbo step 30",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 51376,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "fork_spring step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 51584,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "fork_damper step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 51792,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "shock_coil step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 52000,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "shock_bumper step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 52208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "shock_damper step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 52416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "shock_top_out step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 52624,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 52832,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "shock_hbo step 31",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 53040,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "fork_spring step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 53248,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "fork_damper step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 53456,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "shock_coil step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 53664,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "shock_bumper step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 53872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "shock_damper step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 54080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "shock_top_out step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 54288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 54496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "shock_hbo step 32",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 54704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "fork_spring step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 54912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "fork_damper step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 55120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "shock_coil step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 55328,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "shock_bumper step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 55536,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "shock_damper step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 55744,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "shock_top_out step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 55952,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 56160,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "shock_hbo step 33",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 56368,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "fork_spring step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 56576,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "fork_damper step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 56784,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "shock_coil step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 56992,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "shock_bumper step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 57200,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "shock_damper step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 57408,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "shock_top_out step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 57616,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 57824,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "shock_hbo step 34",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 58032,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "fork_spring step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 58240,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 281,
+  "kind": "bitwise",
+  "label": "fork_damper step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 58448,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "shock_coil step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 58656,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "shock_bumper step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 58864,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "bitwise",
+  "label": "shock_damper step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 59072,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "shock_top_out step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 59280,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 59488,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "shock_hbo step 35",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 59696,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "fork_spring step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 59904,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "fork_damper step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 60112,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 290,
+  "kind": "bitwise",
+  "label": "shock_coil step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 60320,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "shock_bumper step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 60528,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "shock_damper step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 60736,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 293,
+  "kind": "bitwise",
+  "label": "shock_top_out step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 60944,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 61152,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "shock_hbo step 36",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 61360,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "bitwise",
+  "label": "fork_spring step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 61568,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "fork_damper step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 61776,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "shock_coil step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 61984,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "shock_bumper step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 62192,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "shock_damper step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 62400,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "shock_top_out step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 62608,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 62816,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "shock_hbo step 37",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 63024,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "fork_spring step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 63232,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "fork_damper step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 63440,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "bitwise",
+  "label": "shock_coil step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 63648,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "shock_bumper step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 63856,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "shock_damper step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 64064,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "shock_top_out step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 64272,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 310,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 64480,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 311,
+  "kind": "bitwise",
+  "label": "shock_hbo step 38",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 64688,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 312,
+  "kind": "bitwise",
+  "label": "fork_spring step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 64896,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "fork_damper step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 65104,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 314,
+  "kind": "bitwise",
+  "label": "shock_coil step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 65312,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 315,
+  "kind": "bitwise",
+  "label": "shock_bumper step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 65520,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 316,
+  "kind": "bitwise",
+  "label": "shock_damper step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 65728,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 317,
+  "kind": "bitwise",
+  "label": "shock_top_out step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 65936,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "shock_upper_stop step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 66144,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 319,
+  "kind": "bitwise",
+  "label": "shock_hbo step 39",
+  "nbytes": 208,
+  "node": "native_suspension/suspension_components_bitwise",
+  "offset": 66352,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

@@ -1,0 +1,2927 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 72,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 144,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 216,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 288,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 360,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 432,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 504,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 576,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 648,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 720,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 792,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 864,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 936,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1008,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1080,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1152,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1224,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1296,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1368,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1440,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1512,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1584,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1656,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1728,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1800,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1872,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 1944,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2016,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2088,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2160,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2232,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2304,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2376,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2448,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2520,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2592,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2664,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2736,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2808,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2880,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 2952,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3024,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3096,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3168,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3240,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3312,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3384,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3456,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3528,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3600,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3672,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3744,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3816,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3888,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 3960,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4032,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4104,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4176,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4248,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4320,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4392,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4464,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4536,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4608,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4680,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4752,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4824,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4896,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 4968,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5040,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5112,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5184,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5256,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5328,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5400,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5472,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5544,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5616,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5688,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5760,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5832,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5904,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 5976,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6048,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6120,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6192,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6264,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6336,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6408,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6480,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6552,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6624,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6696,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6768,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6840,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6912,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 6984,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7056,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7128,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7200,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7272,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7344,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7416,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7488,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7560,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7632,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7704,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7776,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7848,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7920,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 7992,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8064,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8136,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8208,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8280,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8352,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8424,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8496,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8568,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8640,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8712,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8784,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8856,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 8928,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9000,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9072,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9144,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9216,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9288,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9360,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9432,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9504,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9576,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9648,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9720,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9792,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9864,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 9936,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10008,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10080,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10152,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10224,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10296,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10368,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10440,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10512,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10584,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10656,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10728,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10800,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10872,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 10944,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11016,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11088,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11160,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11232,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11304,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11376,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11448,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11520,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11592,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11664,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11736,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11808,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11880,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 11952,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12024,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12096,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12168,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12240,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12312,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12384,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12456,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12528,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12600,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12672,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12744,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12816,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12888,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 12960,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13032,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13104,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13176,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13248,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13320,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13392,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13464,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13536,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13608,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13680,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13752,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13824,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13896,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "rider matmul 3-D",
+  "nbytes": 72,
+  "node": "native_numeric_portability/rider_linalg_3d_matches_numpy/matmul",
+  "offset": 13968,
+  "rtol": null,
+  "shape": [
+   3,
+   3
+  ]
+ }
+]

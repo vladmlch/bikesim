@@ -1,0 +1,226 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 208,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 416,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 624,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 832,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 1040,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 1248,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 1456,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 1664,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 1872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 2080,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 2288,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 2496,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 2704,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "road_rolling strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 2912,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "aerodynamic strided",
+  "nbytes": 208,
+  "node": "native_brake_resistance/resistance_snapshot_array_conversion_lifetime/False-strided",
+  "offset": 3120,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ }
+]

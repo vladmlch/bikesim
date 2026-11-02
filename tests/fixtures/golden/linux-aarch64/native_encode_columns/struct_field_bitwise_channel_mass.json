@@ -1,0 +1,324 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "channel_mass/rows",
+  "nbytes": 8,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/episode_id",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/interval_id",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/mass_kg",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 56,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/com_m",
+  "nbytes": 89,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 80,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/com_velocity_mps",
+  "nbytes": 89,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 169,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/com_velocity_mps_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 258,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/linear_momentum_kg_mps",
+  "nbytes": 89,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 261,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/linear_momentum_kg_mps_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 350,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/angular_momentum_kg_m2_s",
+  "nbytes": 89,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 353,
+  "rtol": null,
+  "shape": [
+   89
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/angular_momentum_kg_m2_s_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 442,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/kinetic_energy_j",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 445,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/kinetic_energy_j_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 469,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/gravitational_energy_j",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 472,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/gravitational_energy_j_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 496,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/endpoint_mass",
+  "nbytes": 268,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 499,
+  "rtol": null,
+  "shape": [
+   268
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/endpoint_mass_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 767,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/measurement_scope",
+  "nbytes": 15,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 770,
+  "rtol": null,
+  "shape": [
+   15
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/measurement_scope_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 785,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__endpoint_mass_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 788,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__endpoint_mass_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 791,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__mass_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 794,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "channel_mass/bits/__mass_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_field_bitwise_channel_mass",
+  "offset": 797,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

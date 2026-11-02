@@ -1,0 +1,170 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 128,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 128,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 128,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "np.tanh f_order_column",
+  "nbytes": 128,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "np.hypot f_order_column",
+  "nbytes": 128,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 384,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 512,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 1792,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "np.tanh offset",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 3072,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "np.hypot offset",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 4352,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 5632,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 6912,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "np.tanh misaligned",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 8192,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "np.hypot misaligned",
+  "nbytes": 1280,
+  "node": "native_numeric_portability/tanh_and_hypot_layout_views",
+  "offset": 9472,
+  "rtol": null,
+  "shape": [
+   160
+  ]
+ }
+]

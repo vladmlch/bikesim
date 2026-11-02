@@ -25,7 +25,7 @@ using runtime_reference::bitwise_equal;
 using runtime_reference::require_bitwise;
 
 constexpr std::string_view kNode =
-    "tests/reference/test_native_runtime_step.py::";
+    "native_runtime_step/";
 
 // The FT-2 ride capture: make_python_ride(strict=False, decimation=1)
 // frozen at the oracle boundary — the identical recipe to
@@ -145,7 +145,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_first_step_uses_settled_material_state() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_first_step_uses_settled_material_state");
+        "native_first_step_uses_settled_material_state");
     const auto native = ride();
     const runtime::RideControl command;
     static_cast<void>(native->advance(1, command, 0., 0., std::nullopt));
@@ -159,7 +159,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_step_sequence_matches_python_state() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_step_sequence_matches_python_state");
+        "native_step_sequence_matches_python_state");
     const auto native = ride();
     const runtime::RideControl command;
     char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
@@ -181,7 +181,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_force_fold_matches_python_recorded_inputs() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_force_fold_matches_python_recorded_inputs");
+        "native_force_fold_matches_python_recorded_inputs");
     const auto native = ride();
     const runtime::RideControl command;
     const std::array<std::pair<double, double>, 3> demands{
@@ -224,7 +224,8 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_advance_tracks_python_under_load() {
     bt::oracle::Node node(
-        std::string(kNode) + "test_native_advance_tracks_python_under_load");
+        std::string(kNode) +
+        "native_advance_tracks_python_under_load");
     const auto native = ride();
     const runtime::RideControl command;
     char label[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
@@ -244,7 +245,8 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_sensor_channels_read_sensordata_rows() {
     bt::oracle::Node node(
-        std::string(kNode) + "test_sensor_channels_read_sensordata_rows");
+        std::string(kNode) +
+        "sensor_channels_read_sensordata_rows");
     const auto native = ride();
     const runtime::RideControl command;
     char label[64]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
@@ -284,7 +286,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_intent_lanes_match_python_past_reaction_delay() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_intent_lanes_match_python_past_reaction_delay");
+        "native_intent_lanes_match_python_past_reaction_delay");
     const auto native = ride();
     const runtime::RideControl command;
     for (std::int64_t target = 1; target <= 160; ++target)

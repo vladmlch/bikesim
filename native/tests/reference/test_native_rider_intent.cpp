@@ -35,7 +35,7 @@ namespace {
 namespace bio = bike::io;
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_rider_intent.py::";
+    "native_rider_intent/";
 
 // Per-tag counters mirror the source file's _SEQ — a label mismatch is
 // itself a contract failure.
@@ -334,7 +334,7 @@ bool approx12(double actual, double expected) {
 // ---- the 26 source nodes ---------------------------------------------------
 
 void test_resolve_matches_oracle_over_mixed_steps() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -346,7 +346,7 @@ void test_resolve_matches_oracle_over_mixed_steps() {
 }
 
 void test_resolve_disabled_passthrough() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);
@@ -357,7 +357,7 @@ void test_resolve_disabled_passthrough() {
 }
 
 void test_resolve_merges_only_unset_fields() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);
@@ -372,7 +372,7 @@ void test_resolve_merges_only_unset_fields() {
 }
 
 void test_resolve_partial_merge() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);
@@ -385,7 +385,7 @@ void test_resolve_partial_merge() {
 }
 
 void test_resolve_rider_disabled_keeps_control_but_ticks() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);
@@ -398,7 +398,7 @@ void test_resolve_rider_disabled_keeps_control_but_ticks() {
 }
 
 void test_resolve_inactive_returns_control() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);
@@ -408,7 +408,7 @@ void test_resolve_inactive_returns_control() {
 }
 
 void test_probe_advance_preserves_state() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);                    // adapter
@@ -425,7 +425,7 @@ void test_probe_advance_preserves_state() {
 }
 
 void test_resolve_step_validation() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -435,7 +435,7 @@ void test_resolve_step_validation() {
 }
 
 void test_resolve_skipped_acquisition() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);
@@ -443,7 +443,7 @@ void test_resolve_skipped_acquisition() {
 }
 
 void test_resolve_rewind_requires_reset() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -456,7 +456,7 @@ void test_resolve_rewind_requires_reset() {
 }
 
 void test_period_must_be_integer_multiple() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // enabled resolver rejects period_s
@@ -465,7 +465,7 @@ void test_period_must_be_integer_multiple() {
 }
 
 void test_config_validation() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     for (int i = 0; i < 9; ++i)
@@ -474,7 +474,7 @@ void test_config_validation() {
 }
 
 void test_signals_validation() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -484,7 +484,7 @@ void test_signals_validation() {
 }
 
 void test_control_validation() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -494,7 +494,7 @@ void test_control_validation() {
 }
 
 void test_road_grade_validation_is_lazy() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -505,7 +505,7 @@ void test_road_grade_validation_is_lazy() {
 }
 
 void test_update_validates_before_enabled_check() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);
@@ -513,7 +513,7 @@ void test_update_validates_before_enabled_check() {
 }
 
 void test_policy_update_parity_with_delays() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -524,7 +524,7 @@ void test_policy_update_parity_with_delays() {
 }
 
 void test_resolve_enabled_delayed_none_front_load() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -549,7 +549,7 @@ void test_resolve_enabled_delayed_none_front_load() {
 }
 
 void test_policy_inclination_norm_gate() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -562,7 +562,7 @@ void test_policy_inclination_norm_gate() {
 }
 
 void test_surge_budget_spend_and_recovery() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -573,7 +573,7 @@ void test_surge_budget_spend_and_recovery() {
 }
 
 void test_program_update_parity() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -584,7 +584,7 @@ void test_program_update_parity() {
 }
 
 void test_program_validation() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -594,7 +594,7 @@ void test_program_validation() {
 }
 
 void test_schedule_pulse_and_reset() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -611,7 +611,7 @@ void test_schedule_pulse_and_reset() {
 }
 
 void test_state_roundtrip() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -634,7 +634,7 @@ void test_state_roundtrip() {
 }
 
 void test_state_rejects_malformed() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     event(plant, golden, seq);  // adapter
@@ -645,7 +645,7 @@ void test_state_rejects_malformed() {
 }
 
 void test_state_unknown_signals_keys_rejected() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     Plant plant;
     Seq seq;
     drain(plant, golden, seq);

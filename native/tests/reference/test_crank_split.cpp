@@ -19,7 +19,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_split_delivers_requested_torque_within_capacity() {
-    // tests/reference/test_crank_split.py::test_split_delivers_requested_torque_within_capacity
+    // crank_split/split_delivers_requested_torque_within_capacity
     const auto cap = [](int joint, double) {
         return joint == 0 ? 180. : 140.;
     };
@@ -30,7 +30,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_split_prefers_stronger_joint() {
-    // tests/reference/test_crank_split.py::test_split_prefers_stronger_joint
+    // crank_split/split_prefers_stronger_joint
     const auto cap = [](int joint, double) {
         return joint == 0 ? 200. : 50.;
     };
@@ -43,7 +43,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_split_uses_directional_capacity_and_clips() {
-    // tests/reference/test_crank_split.py::test_split_uses_directional_capacity_and_clips
+    // crank_split/split_uses_directional_capacity_and_clips
     const auto cap = [](int, double sign) { return sign > 0. ? 100. : 50.; };
     const auto [th, tk] =
         spindle::split_joint_torques(1000., {-1., 1.}, cap);
@@ -52,7 +52,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_singular_and_zero_capacity_deliver_zero() {
-    // tests/reference/test_crank_split.py::test_singular_and_zero_capacity_deliver_zero
+    // crank_split/singular_and_zero_capacity_deliver_zero
     const auto hundred = [](int, double) { return 100.; };
     const auto zero = [](int, double) { return 0.; };
     const auto singular =
@@ -65,7 +65,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_shares_sum_to_one() {
-    // tests/reference/test_crank_split.py::test_shares_sum_to_one
+    // crank_split/shares_sum_to_one
     for (const double phi : {0., .3, 1.2, std::numbers::pi / 2., 2.,
                              std::numbers::pi, 4.}) {
         const auto shares = spindle::leg_shares(phi);
@@ -75,7 +75,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_vertical_handover_and_opposite_power_strokes() {
-    // tests/reference/test_crank_split.py::test_vertical_handover_and_opposite_power_strokes
+    // crank_split/vertical_handover_and_opposite_power_strokes
     const auto top = spindle::leg_shares(std::numbers::pi / 2.);
     bt::require(approx(top[0], .5) && approx(top[1], .5),
                 "the vertical handover splits the stroke evenly");
@@ -88,7 +88,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_preload_is_downward_virtual_work_in_native_plus_y() {
-    // tests/reference/test_crank_split.py::test_preload_is_downward_virtual_work_in_native_plus_y
+    // crank_split/preload_is_downward_virtual_work_in_native_plus_y
     bt::require(approx(spindle::preload_torque_nm(40., {.17, 0.}, {0., 0.}),
                        6.8),
                 "preload on the +x spindle is positive crank work");
@@ -103,7 +103,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_handover_splits_without_preload() {
-    // tests/reference/test_crank_split.py::test_handover_splits_without_preload
+    // crank_split/handover_splits_without_preload
     const auto targets =
         spindle::leg_crank_targets(60., std::numbers::pi / 2., {0., -.17},
                                    {0., .17}, {0., 0.}, 40.);
@@ -112,7 +112,7 @@ bool approx(double actual, double expected, double rtol = 1e-6,
 }
 
 [[gnu::noinline]] void test_power_budget_scales_positive_work_only() {
-    // tests/reference/test_crank_split.py::test_power_budget_scales_positive_work_only
+    // crank_split/power_budget_scales_positive_work_only
     // Dict order {'a','b','eccentric','still'} is the array order here.
     const std::vector<double> torques{100., 100., -100., 20.};
     const std::vector<double> velocities{4., 4., 4., 0.};

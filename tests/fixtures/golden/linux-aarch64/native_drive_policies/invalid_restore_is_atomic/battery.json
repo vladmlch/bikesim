@@ -1,0 +1,7680 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 94,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   94
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 151,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 94,
+  "rtol": null,
+  "shape": [
+   151
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "$.assist.cutoff_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 245,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "$.assist.engage_torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 253,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "$.assist.gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 261,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "$.assist.gate_min_crank_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 269,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "$.assist.max_power",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 277,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "$.assist.max_torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 285,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.assist.mode",
+  "nbytes": 7,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 293,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.assist.profile",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 300,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.assist.slew",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 304,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.assist.taper_width_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 312,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.assist.tau",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 320,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "$.assist.torque_curve",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 328,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 71,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 332,
+  "rtol": null,
+  "shape": [
+   71
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.battery.copper_w_per_nm2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 403,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.battery.enabled",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 411,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 415,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.battery.idle_w",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 423,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.battery.speed_w_per_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 431,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.gearing#keys",
+  "nbytes": 44,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 439,
+  "rtol": null,
+  "shape": [
+   44
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "$.gearing.chain_pitch_m",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 483,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "$.gearing.front_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 491,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "$.gearing.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 493,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "$.hub_damping_nm_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 495,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "$.hub_stiffness_nm_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 503,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 219,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 511,
+  "rtol": null,
+  "shape": [
+   219
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.pedaling.coast_above_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 730,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.pedaling.coast_cadence_tau_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 738,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.pedaling.effort_slew_nm_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 746,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.pedaling.enabled",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 754,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.pedaling.mash_cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 758,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.pedaling.mash_torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 766,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.pedaling.resume_below_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 774,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_brake",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 782,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_demand",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 786,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_engage_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 794,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_release_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 802,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.pedaling.stop_time_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 810,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 201,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 818,
+  "rtol": null,
+  "shape": [
+   201
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_smoothing_tau_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1019,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette#length",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1027,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[0]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1029,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[1]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1031,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[2]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1033,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[3]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1035,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[4]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1037,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[5]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1039,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[6]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1041,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[7]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1043,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[8]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1045,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[9]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1047,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[10]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1049,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[11]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1051,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.shifting.enabled",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1053,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1057,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_cut_duration_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1065,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "$.shifting.target_cadence_max_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1073,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "$.shifting.target_cadence_min_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1081,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "$.shifting.torque_factor",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1089,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "$.shifting.upshift_slip_limit_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1097,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.shifting.upshift_slip_mode",
+  "nbytes": 15,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1105,
+  "rtol": null,
+  "shape": [
+   15
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1120,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1168,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1201,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1209,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1214,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1222,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1270,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1278,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1286,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1294,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1329,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1333,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1341,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1349,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1447,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1451,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1459,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1464,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1472,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1476,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1484,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1597,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1601,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1609,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1617,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1623,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1625,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1627,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1631,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1632,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1680,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1713,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1721,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1726,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1734,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1782,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1790,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 99,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1798,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 100,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1806,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 101,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1841,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 102,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1845,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 103,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1853,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 104,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1861,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1959,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1963,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1971,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1976,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1984,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1988,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 1996,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2109,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2113,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2121,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2129,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2135,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2137,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2139,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2143,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2144,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2192,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 122,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2225,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2233,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2238,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2246,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2294,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2302,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2310,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2318,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2353,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 131,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2357,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 132,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2365,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 133,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2373,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 134,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2471,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 135,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2475,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 136,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2483,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 137,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2488,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 138,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2496,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 139,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2500,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 140,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2508,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 141,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2621,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 142,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2625,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 143,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2633,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2641,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 145,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2647,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2649,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2651,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2655,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 149,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2656,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 150,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2704,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 151,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2737,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 152,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2745,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2750,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 154,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2758,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2806,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2814,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2822,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2830,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2865,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2869,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2877,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2885,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2983,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2987,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 165,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 2995,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 166,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3000,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3008,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 168,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3012,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 169,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3020,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 170,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3133,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3137,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3145,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3153,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3159,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3161,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3163,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3167,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3168,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 179,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3216,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3249,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 181,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3257,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 182,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3262,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 183,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3270,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 184,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3318,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 185,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3326,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 186,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3334,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 187,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3342,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3377,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 189,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3381,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 190,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3389,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 191,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3397,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 192,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3495,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 193,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3499,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 194,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3507,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 195,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3512,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 196,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3520,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 197,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3524,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 198,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3532,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 199,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3645,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 200,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3649,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 201,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3657,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 202,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3665,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 203,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3671,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 204,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3673,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 205,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3675,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 206,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3679,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 207,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3680,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 208,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3728,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 209,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3761,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 210,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3769,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 211,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3774,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 212,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3782,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 213,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3830,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 214,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3838,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 215,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3846,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 216,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3854,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 217,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3889,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 218,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3893,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 219,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3901,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 220,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 3909,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 221,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4007,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 222,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4011,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 223,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4019,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 224,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4024,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 225,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4032,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 226,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4036,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 227,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4044,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 228,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4157,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 229,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4161,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 230,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4169,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 231,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4177,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 232,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4183,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 233,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4185,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 234,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4187,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 235,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4191,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 236,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4192,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 237,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4240,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 238,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4273,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 239,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4281,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 240,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4286,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 241,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4294,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 242,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4342,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 243,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4350,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 244,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4358,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 245,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4366,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 246,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4401,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 247,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4405,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 248,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4413,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 249,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4421,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 250,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4519,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 251,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4523,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 252,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4531,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 253,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4536,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 254,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4544,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 255,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4548,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 256,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4556,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 257,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4669,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 258,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4673,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 259,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4681,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 260,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4689,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 261,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4695,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 262,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4697,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 263,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4699,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 264,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4703,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 265,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4704,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 266,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4752,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 267,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4785,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 268,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4793,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 269,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4798,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 270,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4806,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 271,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4854,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 272,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4862,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 273,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4870,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 274,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4878,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 275,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4913,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 276,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4917,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 277,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4925,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 278,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 4933,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 279,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5031,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 280,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5035,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 281,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5043,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 282,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5048,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 283,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5056,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 284,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5060,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 285,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5068,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 286,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5181,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 287,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5185,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 288,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5193,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 289,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5201,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 290,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5207,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 291,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5209,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 292,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5211,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 293,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5215,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 294,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5216,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 295,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5264,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 296,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5297,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 297,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5305,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 298,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5310,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 299,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5318,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 300,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5366,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 301,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5374,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 302,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5382,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 303,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5390,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 304,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5425,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 305,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5429,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 306,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5437,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 307,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5445,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 308,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5543,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 309,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5547,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 310,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5555,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 311,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5560,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 312,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5568,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 313,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5572,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 314,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5580,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 315,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5693,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 316,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5697,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 317,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5705,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 318,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5713,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 319,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5719,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 320,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5721,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 321,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5723,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 322,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5727,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 323,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5728,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 324,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5776,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 325,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5809,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 326,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5817,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 327,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5822,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 328,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5830,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 329,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5878,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 330,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5886,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 331,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5894,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 332,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5902,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 333,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5937,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 334,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5941,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 335,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5949,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 336,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 5957,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 337,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6055,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 338,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6059,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 339,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6067,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 340,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6072,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 341,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6080,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 342,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6084,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 343,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6092,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 344,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6205,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 345,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6209,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 346,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6217,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 347,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6225,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 348,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6231,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 349,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6233,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 350,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6235,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 351,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6239,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 352,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6240,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 353,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6288,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 354,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6321,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 355,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6329,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 356,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6334,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 357,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6342,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 358,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6390,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 359,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6398,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 360,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6406,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 361,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6414,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 362,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6449,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 363,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6453,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 364,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6461,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 365,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6469,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 366,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6567,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 367,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6571,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 368,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6579,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 369,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6584,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 370,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6592,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 371,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6596,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 372,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6604,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 373,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6717,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 374,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6721,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 375,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6729,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 376,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6737,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 377,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6743,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 378,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6745,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 379,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6747,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 380,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6751,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 381,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6752,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 382,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6800,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 383,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6833,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 384,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6841,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 385,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6846,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 386,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6854,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 387,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6902,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 388,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6910,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 389,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6918,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 390,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6926,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 391,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6961,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 392,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6965,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 393,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6973,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 394,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 6981,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 395,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7079,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 396,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7083,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 397,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7091,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 398,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7096,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 399,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7104,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 400,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7108,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 401,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7116,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 402,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7229,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 403,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7233,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 404,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7241,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 405,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7249,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 406,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7255,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 407,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7257,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 408,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7259,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 409,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7263,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 410,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7264,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 411,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7312,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 412,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7345,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 413,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7353,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 414,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7358,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 415,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7366,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 416,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7414,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 417,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7422,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 418,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7430,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 419,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7438,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 420,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7473,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 421,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7477,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 422,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7485,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 423,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7493,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 424,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7591,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 425,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7595,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 426,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7603,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 427,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7608,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 428,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7616,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 429,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7620,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 430,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7628,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 431,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7741,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 432,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7745,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 433,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7753,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 434,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7761,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 435,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7767,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 436,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7769,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 437,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7771,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 438,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7775,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 439,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7776,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 440,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7824,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 441,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7857,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 442,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7865,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 443,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7870,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 444,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7878,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 445,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7926,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 446,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7934,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 447,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7942,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 448,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7950,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 449,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7985,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 450,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7989,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 451,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 7997,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 452,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8005,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 453,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8103,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 454,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8107,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 455,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8115,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 456,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8120,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 457,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8128,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 458,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8132,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 459,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8140,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 460,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8253,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 461,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8257,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 462,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8265,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 463,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8273,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 464,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8279,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 465,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8281,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 466,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8283,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 467,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8287,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 468,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8288,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 469,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8336,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 470,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8369,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 471,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8377,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 472,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8382,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 473,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8390,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 474,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8438,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 475,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8446,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 476,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8454,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 477,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8462,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 478,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8497,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 479,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8501,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 480,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8509,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 481,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8517,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 482,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8615,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 483,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8619,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 484,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8627,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 485,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8632,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 486,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8640,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 487,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8644,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 488,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8652,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 489,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8765,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 490,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8769,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 491,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8777,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 492,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8785,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 493,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8791,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 494,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8793,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 495,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8795,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 496,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8799,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 497,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8800,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 498,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8848,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 499,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8881,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 500,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8889,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 501,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8894,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 502,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8902,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 503,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8950,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 504,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8958,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 505,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8966,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 506,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 8974,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 507,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9009,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 508,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9013,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 509,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9021,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 510,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9029,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 511,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9127,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 512,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9131,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 513,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9139,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 514,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9144,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 515,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9152,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 516,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9156,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 517,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9164,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 518,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9277,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 519,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9281,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 520,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9289,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 521,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9297,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 522,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9303,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 523,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9305,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 524,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9307,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 525,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9311,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 526,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9312,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 527,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9360,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 528,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9393,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 529,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9401,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 530,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9406,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 531,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9414,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 532,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9462,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 533,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9470,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 534,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9478,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 535,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9486,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 536,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9521,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 537,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9525,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 538,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9533,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 539,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9541,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 540,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9639,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 541,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9643,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 542,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9651,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 543,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9656,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 544,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9664,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 545,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9668,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 546,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9676,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 547,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9789,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 548,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9793,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 549,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9801,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 550,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9809,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 551,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9815,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 552,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9817,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 553,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9819,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 554,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9823,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 555,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9824,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 556,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 33,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9872,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 557,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9905,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 558,
+  "kind": "bitwise",
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9913,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 559,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9918,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 560,
+  "kind": "bitwise",
+  "label": "$.battery#keys",
+  "nbytes": 48,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9926,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 561,
+  "kind": "bitwise",
+  "label": "$.battery.drawn_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9974,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 562,
+  "kind": "bitwise",
+  "label": "$.battery.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9982,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 563,
+  "kind": "bitwise",
+  "label": "$.battery.initial_energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9990,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 564,
+  "kind": "bitwise",
+  "label": "$.hub#keys",
+  "nbytes": 35,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 9998,
+  "rtol": null,
+  "shape": [
+   35
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 565,
+  "kind": "bitwise",
+  "label": "$.hub.boundary",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10033,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 566,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10037,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 567,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10045,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 568,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10053,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 569,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10151,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 570,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10155,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 571,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10163,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 572,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10168,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 573,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10176,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 574,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10180,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 575,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 113,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10188,
+  "rtol": null,
+  "shape": [
+   113
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 576,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10301,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 577,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10305,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 578,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10313,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 579,
+  "kind": "bitwise",
+  "label": "$.shifting.direction",
+  "nbytes": 6,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10321,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 580,
+  "kind": "bitwise",
+  "label": "$.shifting.from_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10327,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 581,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10329,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 582,
+  "kind": "bitwise",
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10331,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 583,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_count",
+  "nbytes": 1,
+  "node": "native_drive_policies/invalid_restore_is_atomic/battery",
+  "offset": 10335,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ }
+]

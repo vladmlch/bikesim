@@ -1,0 +1,44 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3928,
+  "node": "native_rider_intent/period_must_be_integer_multiple",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   491
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "error.adapter.0",
+  "nbytes": 0,
+  "node": "native_rider_intent/period_must_be_integer_multiple",
+  "offset": 3928,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "input.adapter.1",
+  "nbytes": 3936,
+  "node": "native_rider_intent/period_must_be_integer_multiple",
+  "offset": 3928,
+  "rtol": null,
+  "shape": [
+   492
+  ]
+ }
+]

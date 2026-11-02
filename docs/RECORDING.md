@@ -121,7 +121,7 @@ publication/cleanup failures attached as notes. Publication failure after an
 otherwise successful run is an error exit.
 
 Stream encoding runs through a catalog-driven columnar projector on sealed
-`OwnedNativeEpisode` evidence: `recording/native_encode.py::compile_plan`
+`OwnedNativeEpisode` evidence: `recording/native_encode.py:compile_plan`
 compiles each table spec into an extraction plan that
 `OwnedNativeEpisode.encode_table` executes over retained samples, emitting flat
 column pieces that assemble into the same Arrow batches (and bytes) the Python

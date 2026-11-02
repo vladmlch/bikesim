@@ -38,7 +38,7 @@ namespace rw = rider;
 using rider::DenseMatrix;
 
 constexpr std::string_view kFile =
-    "tests/reference/test_attachment_wrench.py::";
+    "attachment_wrench/";
 
 void scalar(bt::oracle::Node &golden, double actual, std::string_view label) {
     const std::array<double, 1> value{actual};
@@ -106,7 +106,7 @@ std::vector<double> recover(const DenseMatrix &jac,
 }
 
 void test_wrench_preserves_virtual_work() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const DenseMatrix jac{
         .rows = 3,
         .columns = 4,
@@ -125,7 +125,7 @@ void test_wrench_preserves_virtual_work() {
 }
 
 void test_rank_deficiency_is_not_silently_reported_as_zero_force() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const DenseMatrix jac{
         .rows = 2, .columns = 4, .values = std::vector<double>(8, 0.)};
     const std::vector<double> qfrc(4, 0.);
@@ -140,7 +140,7 @@ void test_rank_deficiency_is_not_silently_reported_as_zero_force() {
 }
 
 void test_unexplainable_generalized_force_is_not_a_wrench() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const DenseMatrix jac{
         .rows = 2, .columns = 4, .values = {1., 0., 0., -1., 0., 1., 0., 0.}};
     const std::vector<double> qfrc{1., 0., 0., 1.};
@@ -255,14 +255,12 @@ void weld_case(bt::oracle::Node &golden, const std::array<double, 2> &force) {
 void test_weld_recovers_solved_wrench_and_work() {
     {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_weld_recovers_solved_wrench_and_work"
-                                "[force0]");
+        "weld_recovers_solved_wrench_and_work/force0");
         weld_case(golden, {30., -80.});
     }
     {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_weld_recovers_solved_wrench_and_work"
-                                "[force1]");
+        "weld_recovers_solved_wrench_and_work/force1");
         weld_case(golden, {-45., 120.});
     }
 }
@@ -297,18 +295,18 @@ void connect_case(bt::oracle::Node &golden,
 void test_connect_recovers_force_only() {
     {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_connect_recovers_force_only[force0]");
+        "connect_recovers_force_only/force0");
         connect_case(golden, {60., 40.});
     }
     {
         bt::oracle::Node golden(std::string(kFile) +
-                                "test_connect_recovers_force_only[force1]");
+        "connect_recovers_force_only/force1");
         connect_case(golden, {-25., -95.});
     }
 }
 
 void test_contact_rows_do_not_corrupt_equality_selection() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(R"(
 <mujoco><option gravity="0 0 0" timestep="0.0005"/>
 <worldbody>
@@ -353,7 +351,7 @@ void test_contact_rows_do_not_corrupt_equality_selection() {
 }
 
 void test_prepared_attachment_raw_matches_interval_state_recovery() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     bt::ModelFixture const fixture(
         pair_xml(R"(<weld name="w" body1="rider" body2="bike"/>)"));
     mjModel const *m = fixture.model.get();

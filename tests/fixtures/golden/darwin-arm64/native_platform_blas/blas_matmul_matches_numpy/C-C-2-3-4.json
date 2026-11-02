@@ -1,0 +1,45 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.a",
+  "nbytes": 48,
+  "node": "native_platform_blas/blas_matmul_matches_numpy/C-C-2-3-4",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.b",
+  "nbytes": 96,
+  "node": "native_platform_blas/blas_matmul_matches_numpy/C-C-2-3-4",
+  "offset": 48,
+  "rtol": null,
+  "shape": [
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 64,
+  "node": "native_platform_blas/blas_matmul_matches_numpy/C-C-2-3-4",
+  "offset": 144,
+  "rtol": null,
+  "shape": [
+   2,
+   4
+  ]
+ }
+]

@@ -35,14 +35,13 @@
 namespace {
 
 constexpr std::string_view kFile =
-    "tests/reference/test_native_platform_blas.py::";
+    "native_platform_blas/";
 
 [[nodiscard]] std::string node(std::string_view name, std::string_view param) {
     std::string out{kFile};
-    out += name;
-    out += '[';
-    out += param;
-    out += ']';
+    out += name.starts_with("test_") ? name.substr(5) : name;
+    out += '/';
+    out += bt::oracle::key(param);
     return out;
 }
 
@@ -171,7 +170,7 @@ void dot_nodes() {
         node_.done();
     }
     {
-        bt::oracle::Node node_{std::string{kFile} + "test_blas_dot_zero_size"};
+        bt::oracle::Node node_{std::string{kFile} + "blas_dot_zero_size"};
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(
@@ -257,8 +256,7 @@ void transposed_and_rectangular() {
     {
         // test_blas_matmul_transposed_view_matches_numpy — local (4,3) C
         // times r.T (3,3) F: the row-major NT dgemm call shape.
-        bt::oracle::Node node_{std::string{kFile} +
-            "test_blas_matmul_transposed_view_matches_numpy"};
+        bt::oracle::Node node_{std::string{kFile} + "blas_matmul_transposed_view_matches_numpy"};
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(
@@ -270,8 +268,7 @@ void transposed_and_rectangular() {
     }
     {
         // test_blas_rectangular_matmul_matches_selected_numpy.
-        bt::oracle::Node node_{std::string{kFile} +
-            "test_blas_rectangular_matmul_matches_selected_numpy"};
+        bt::oracle::Node node_{std::string{kFile} + "blas_rectangular_matmul_matches_selected_numpy"};
         const auto a = node_.f64_input("input.a");
         const auto b = node_.f64_input("input.b");
         const auto actual = platform_blas(

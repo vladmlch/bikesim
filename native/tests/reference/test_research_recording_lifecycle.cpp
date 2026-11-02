@@ -114,7 +114,7 @@ private:
 };
 InterruptingPublication::~InterruptingPublication() = default;
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_research_parser_defaults_off_and_resolves_check_policy
 void test_research_parser_defaults_off_and_resolves_check_policy() {
     // research.resolve_check_policy(args): the explicit-policy value, or the
@@ -142,7 +142,7 @@ void test_research_parser_defaults_off_and_resolves_check_policy() {
                  "conflicts with --check-policy strict");
 }
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_policy_import_failure_publishes_zero_step_evidence
 void test_policy_import_failure_publishes_zero_step_evidence() {
   Directory const directory;
@@ -180,7 +180,7 @@ void test_policy_import_failure_publishes_zero_step_evidence() {
               "only the startup observation is retained");
 }
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_out_without_record_never_publishes
 void test_out_without_record_never_publishes() {
   Directory const directory;
@@ -210,7 +210,7 @@ void test_out_without_record_never_publishes() {
   env->close();
 }
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_finish_second_ctrl_c_during_seal_journals_and_publishes — child mode.
 void test_finish_second_ctrl_c_during_seal_journals_and_publishes() {
   Directory const directory;
@@ -245,7 +245,7 @@ void test_finish_second_ctrl_c_during_seal_journals_and_publishes() {
     session.close();
 }
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes — child.
 void test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes() {
   Directory const directory;
@@ -274,7 +274,7 @@ void test_finish_second_ctrl_c_during_finalize_is_noted_and_publishes() {
     env->close();
 }
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_finish_off_main_thread_shield_degrades_but_records
 void test_finish_off_main_thread_shield_degrades_but_records() {
     // created[0]._previous is None: off the main thread the shield is a flag
@@ -317,7 +317,7 @@ void test_finish_off_main_thread_shield_degrades_but_records() {
     env->close();
 }
 
-// tests/reference/test_research_recording_lifecycle.py::
+// tests/reference/test_research_recording_lifecycle.py:
 //   test_frontend_failure_between_windows_is_not_replay_eligible
 void test_frontend_failure_between_windows_is_not_replay_eligible() {
   Directory const directory;

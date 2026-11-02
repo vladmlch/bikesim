@@ -6,14 +6,14 @@
 namespace {
 using namespace policy_reference;
 
-// tests/reference/test_native_drive_policies.py::test_native_policy_api_exists
+// native_drive_policies/native_policy_api_exists
 [[gnu::noinline]] void test_native_policy_api_exists(const Value& baseline) {
     auto policy = policies(baseline);
     bt::require(sorted_keys(state(policy)) == std::vector<std::string>{"assist", "battery", "hub", "pedaling", "shifting"},
                 "native policy owner exposes all five complete snapshots");
 }
 
-// tests/reference/test_native_drive_policies.py::test_crank_torque
+// native_drive_policies/crank_torque
 [[gnu::noinline]] void test_crank_torque() {
     auto golden = node("test_crank_torque");
     for (double const mean : {-10., -0., 0., 30.})
@@ -23,7 +23,7 @@ using namespace policy_reference;
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_battery_draw_matches_python
+// native_drive_policies/battery_draw_matches_python
 [[gnu::noinline]] void test_battery_draw_matches_python(const Value& baseline) {
     auto golden = node("test_battery_draw_matches_python"); tree(golden, baseline);
     auto policy = policies(baseline);
@@ -40,7 +40,7 @@ void pedal_case(bt::oracle::Node& golden, PolicySet& policy, const PedalCase& it
     tree(golden, state(policy));
 }
 
-// tests/reference/test_native_drive_policies.py::test_pedaling_sequences
+// native_drive_policies/pedaling_sequences
 [[gnu::noinline]] void test_pedaling_sequences(const Value& baseline) {
     auto golden = node("test_pedaling_sequences"); tree(golden, baseline);
     auto policy = policies(baseline);
@@ -70,7 +70,7 @@ void shift_case(bt::oracle::Node& golden, PolicySet& policy, const ShiftCase& it
     tree(golden, shifting_result(policy)); tree(golden, state(policy));
 }
 
-// tests/reference/test_native_drive_policies.py::test_shifting[raw/ema-signed/magnitude]
+// native_drive_policies/shifting/raw_ema-signed_magnitude
 [[gnu::noinline]] void test_shifting() {
     for (double const tau : {0., .35}) for (auto mode : {"legacy_signed", "magnitude"}) {
         const auto id = std::string(tau == 0. ? "raw-" : "ema-") + (std::string_view(mode) == "legacy_signed" ? "signed" : "magnitude");
@@ -105,7 +105,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     tree(golden, state(policy));
 }
 
-// tests/reference/test_native_drive_policies.py::test_assist[custom/eco/tour/emtb/turbo]
+// native_drive_policies/assist/custom_eco_tour_emtb_turbo
 [[gnu::noinline]] void test_assist() {
     for (auto mode : {"custom", "eco", "tour", "emtb", "turbo"}) {
         auto golden = node("test_assist", mode);
@@ -131,7 +131,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_energy_helpers[disabled/enabled-lossless/copper]
+// native_drive_policies/energy_helpers/disabled_enabled-lossless_copper
 [[gnu::noinline]] void test_energy_helpers(const Value& baseline) {
     for (bool enabled : {false, true}) for (double const copper : {0., .02}) {
         const auto id = std::string(enabled ? "enabled-" : "disabled-") + (copper == 0. ? "lossless" : "copper");
@@ -148,7 +148,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_freehub
+// native_drive_policies/freehub
 [[gnu::noinline]] void test_freehub(const Value& baseline) {
     auto golden = node("test_freehub"); tree(golden, baseline);
     auto policy = policies(baseline);
@@ -161,7 +161,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_replay_reset_and_ownership
+// native_drive_policies/replay_reset_and_ownership
 [[gnu::noinline]] void test_replay_reset_and_ownership(const Value& baseline) {
     auto golden = node("test_replay_reset_and_ownership"); tree(golden, baseline);
     auto input = baseline; auto policy = policies(input); auto old = state(policy);
@@ -174,7 +174,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_invalid_restore_is_atomic[section]
+// native_drive_policies/invalid_restore_is_atomic/section
 [[gnu::noinline]] void test_invalid_restore_is_atomic(const Value& baseline) {
     for (auto section : {"pedaling", "shifting", "assist", "battery", "hub"}) {
         auto golden = node("test_invalid_restore_is_atomic", section); tree(golden, baseline);
@@ -199,7 +199,7 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
 }
 
 struct Mutation { std::string_view id, section, key, json; };
-// tests/reference/test_native_drive_policies.py::test_invalid_restore_values[case]
+// native_drive_policies/invalid_restore_values/case
 [[gnu::noinline]] void test_invalid_restore_values(const Value& baseline) {
     constexpr std::array cases{
         Mutation{.id="battery-negative", .section="battery", .key="energy_j", .json="-1.0"}, Mutation{.id="hub-negative", .section="hub", .key="energy_j", .json="-1.0"},
@@ -216,7 +216,7 @@ struct Mutation { std::string_view id, section, key, json; };
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_config_validation
+// native_drive_policies/config_validation
 [[gnu::noinline]] void test_config_validation(const Value& baseline) {
     auto golden = node("test_config_validation"); tree(golden, baseline);
     for (auto section : {"gearing", "pedaling", "shifting", "assist", "battery"})
@@ -233,7 +233,7 @@ struct Mutation { std::string_view id, section, key, json; };
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_projection_resolves_runtime
+// native_drive_policies/projection_resolves_runtime
 [[gnu::noinline]] void test_projection_resolves_runtime() {
     auto input = source(); input.assist.profile = "bosch_cx_gen4"; input.assist.mode = "emtb";
     auto policy = policies(config(input)); const auto& a = policy.config.assist;
@@ -251,7 +251,7 @@ struct Mutation { std::string_view id, section, key, json; };
     bt::require(policy.assist.step(30., 80., 0., false, .01) > 0., "projected owner survives source destruction");
 }
 
-// tests/reference/test_native_drive_policies.py::test_projection_normalizes_numeric_leaves
+// native_drive_policies/projection_normalizes_numeric_leaves
 [[gnu::noinline]] void test_projection_normalizes_numeric_leaves() {
     auto input = source(false); input.battery.energy_j = 123.; input.battery.copper_w_per_nm2 = .02;
     input.shifting.shift_cooldown_s = .4;
@@ -269,7 +269,7 @@ struct Mutation { std::string_view id, section, key, json; };
     bt::require(policy.battery.state().energy_j == 123., "plain projected numeric value is preserved");
 }
 
-// tests/reference/test_native_drive_policies.py::test_complete_reset_and_atomic_multi_policy_restore
+// native_drive_policies/complete_reset_and_atomic_multi_policy_restore
 [[gnu::noinline]] void test_complete_reset_and_atomic_multi_policy_restore(const Value& baseline) {
     auto golden = node("test_complete_reset_and_atomic_multi_policy_restore"); tree(golden, baseline);
     auto policy = policies(baseline);
@@ -286,7 +286,7 @@ struct Mutation { std::string_view id, section, key, json; };
     tree(golden, state(policy)); policy.reset(); tree(golden, state(policy)); golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_restored_finite_snapshots_preserve_bits
+// native_drive_policies/restored_finite_snapshots_preserve_bits
 [[gnu::noinline]] void test_restored_finite_snapshots_preserve_bits(const Value& baseline) {
     auto golden = node("test_restored_finite_snapshots_preserve_bits"); tree(golden, baseline);
     auto policy = policies(baseline); auto document = state(policy);
@@ -306,7 +306,7 @@ struct Mutation { std::string_view id, section, key, json; };
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_disabled_shifter_initial_teeth_outside_cassette
+// native_drive_policies/disabled_shifter_initial_teeth_outside_cassette
 [[gnu::noinline]] void test_disabled_shifter_initial_teeth_outside_cassette() {
     auto golden = node("test_disabled_shifter_initial_teeth_outside_cassette");
     auto input = source(false); input.gearing.rear_teeth = 31;
@@ -314,7 +314,7 @@ struct Mutation { std::string_view id, section, key, json; };
     tree(golden, state(policy)); golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_invalid_config_values[case]
+// native_drive_policies/invalid_config_values/case
 [[gnu::noinline]] void test_invalid_config_values(const Value& baseline) {
     constexpr std::array cases{
         Mutation{.id="front-bool", .section="gearing", .key="front_teeth", .json="true"}, Mutation{.id="rear-fractional", .section="gearing", .key="rear_teeth", .json="3.1"},
@@ -337,7 +337,7 @@ struct Mutation { std::string_view id, section, key, json; };
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_missing_config_sections[key]
+// native_drive_policies/missing_config_sections/key
 [[gnu::noinline]] void test_missing_config_sections(const Value& baseline) {
     for (auto key : {"gearing", "pedaling", "shifting", "assist", "battery", "hub_stiffness_nm_rad", "hub_damping_nm_s"}) {
         auto golden = node("test_missing_config_sections", key); tree(golden, baseline);
@@ -345,7 +345,7 @@ struct Mutation { std::string_view id, section, key, json; };
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_random_curve_interpolation
+// native_drive_policies/random_curve_interpolation
 [[gnu::noinline]] void test_random_curve_interpolation(const Value& baseline) {
     auto golden = node("test_random_curve_interpolation"); tree(golden, baseline);
     auto input = baseline; put(input, "assist", "max_torque", real(1e6)); put(input, "assist", "max_power", real(1e9));
@@ -357,7 +357,7 @@ struct Mutation { std::string_view id, section, key, json; };
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_battery_nonzero_idle_remainder
+// native_drive_policies/battery_nonzero_idle_remainder
 [[gnu::noinline]] void test_battery_nonzero_idle_remainder(const Value& baseline) {
     auto golden = node("test_battery_nonzero_idle_remainder"); tree(golden, baseline);
     auto policy = policies(baseline); auto restored = policy.snapshot(); restored.battery.energy_j = .001; policy.restore(restored);
@@ -365,7 +365,7 @@ struct Mutation { std::string_view id, section, key, json; };
     bt::require(policy.battery.state().energy_j == .001, "energy-limit query does not debit battery"); golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_config_and_python_object_deletion
+// native_drive_policies/config_and_python_object_deletion
 [[gnu::noinline]] void test_config_and_python_object_deletion() {
     auto golden = node("test_config_and_python_object_deletion");
     auto policy = [] {
@@ -376,7 +376,7 @@ struct Mutation { std::string_view id, section, key, json; };
     scalar(golden, policy.assist.step(27., 72., 6.7, false, .01)); tree(golden, state(policy)); golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_pedaling_parameter_branches[raw/mash/filtered]
+// native_drive_policies/pedaling_parameter_branches/raw_mash_filtered
 [[gnu::noinline]] void test_pedaling_parameter_branches() {
     struct Parameters { std::string_view id; double tau, slew, mash; };
     constexpr std::array parameters{Parameters{.id="raw", .tau=0., .slew=0., .mash=0.}, Parameters{.id="mash", .tau=0., .slew=0., .mash=60.}, Parameters{.id="filtered", .tau=.03, .slew=300., .mash=0.}};
@@ -393,7 +393,7 @@ struct Mutation { std::string_view id, section, key, json; };
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_optional_config_sections
+// native_drive_policies/optional_config_sections
 [[gnu::noinline]] void test_optional_config_sections(const Value& baseline) {
     auto golden = node("test_optional_config_sections"); tree(golden, baseline);
     auto input = baseline; erase(member(input, "assist"), "profile"); erase(member(input, "assist"), "torque_curve");
@@ -402,7 +402,7 @@ struct Mutation { std::string_view id, section, key, json; };
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_extra_and_missing_state_sections
+// native_drive_policies/extra_and_missing_state_sections
 [[gnu::noinline]] void test_extra_and_missing_state_sections(const Value& baseline) {
     auto golden = node("test_extra_and_missing_state_sections"); tree(golden, baseline);
     auto policy = policies(baseline); const auto old = state(policy); const auto before = state_text(policy);
@@ -415,7 +415,7 @@ struct Mutation { std::string_view id, section, key, json; };
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_invalid_calls_preserve_state[case]
+// native_drive_policies/invalid_calls_preserve_state/case
 [[gnu::noinline]] void test_invalid_calls_preserve_state(const Value& baseline) {
     struct Case { std::string_view id; std::function<void(PolicySet&)> invoke; };
     const double nan = std::numeric_limits<double>::quiet_NaN(), inf = std::numeric_limits<double>::infinity();
@@ -439,7 +439,7 @@ struct Mutation { std::string_view id, section, key, json; };
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_invalid_human_torque[nan/infinite/negative/one]
+// native_drive_policies/invalid_human_torque/nan_infinite_negative_one
 [[gnu::noinline]] void test_invalid_human_torque() {
     const double nan = std::numeric_limits<double>::quiet_NaN(), inf = std::numeric_limits<double>::infinity();
     const std::array<std::array<double, 3>, 4> cases{{{nan, 0., .35}, {1., inf, .35}, {1., 0., -1.}, {1., 0., 1.}}};
@@ -447,7 +447,7 @@ struct Mutation { std::string_view id, section, key, json; };
         bt::invalid([&] { (void)drivetrain::human_crank_torque(item[0], item[1], item[2]); });
 }
 
-// tests/reference/test_native_drive_policies.py::test_shifter_count_boundary_rejects_successful_increment_atomically
+// native_drive_policies/shifter_count_boundary_rejects_successful_increment_atomically
 [[gnu::noinline]] void test_shifter_count_boundary_rejects_successful_increment_atomically(const Value& baseline) {
     auto golden = node("test_shifter_count_boundary_rejects_successful_increment_atomically"); tree(golden, baseline);
     auto policy = policies(baseline); auto restored = policy.snapshot();
@@ -460,7 +460,7 @@ struct Mutation { std::string_view id, section, key, json; };
     golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_unrepresentable_count_restore_is_atomic
+// native_drive_policies/unrepresentable_count_restore_is_atomic
 [[gnu::noinline]] void test_unrepresentable_count_restore_is_atomic(const Value& baseline) {
     auto golden = node("test_unrepresentable_count_restore_is_atomic"); tree(golden, baseline);
     auto policy = policies(baseline); auto bad = state(policy); const auto before = state_text(policy);
@@ -469,7 +469,7 @@ struct Mutation { std::string_view id, section, key, json; };
     bt::require(state_text(policy) == before, "unrepresentable restore count is atomic"); tree(golden, state(policy)); golden.done();
 }
 
-// tests/reference/test_native_drive_policies.py::test_assist_computed_crank_overflow_matches_python_state[shaft-cadence-profile]
+// native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-cadence-profile
 [[gnu::noinline]] void test_assist_computed_crank_overflow_matches_python_state() {
     for (bool shaft_override : {false, true}) for (double cadence : {-1e308, 1e308}) for (bool const profiled : {false, true}) {
         const auto id = std::string(shaft_override ? "shaft-" : "crank-") + (cadence < 0. ? "negative-" : "positive-") + (profiled ? "emtb" : "plain");
@@ -490,7 +490,7 @@ struct Mutation { std::string_view id, section, key, json; };
     }
 }
 
-// tests/reference/test_native_drive_policies.py::test_assist_braking_resets_before_computed_crank_overflow
+// native_drive_policies/assist_braking_resets_before_computed_crank_overflow
 [[gnu::noinline]] void test_assist_braking_resets_before_computed_crank_overflow(const Value& baseline) {
     auto golden = node("test_assist_braking_resets_before_computed_crank_overflow"); tree(golden, baseline);
     auto policy = policies(baseline);

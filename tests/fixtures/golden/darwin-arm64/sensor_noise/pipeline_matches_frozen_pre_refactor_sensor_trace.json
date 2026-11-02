@@ -1,0 +1,31 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "reads",
+  "nbytes": 5760,
+  "node": "sensor_noise/pipeline_matches_frozen_pre_refactor_sensor_trace",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   60,
+   12
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "counters",
+  "nbytes": 16,
+  "node": "sensor_noise/pipeline_matches_frozen_pre_refactor_sensor_trace",
+  "offset": 5760,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ }
+]

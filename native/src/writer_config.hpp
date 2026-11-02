@@ -733,7 +733,7 @@ namespace nativecfg {
             return t;
         }
 
-        // tire.pneumatic (native/config.py::_pneumatic_section): the tier
+        // tire.pneumatic (native/config.py:_pneumatic_section): the tier
         // name plus its resolved TIERS row, the presence-optional resolved
         // surface, both TyreSpecs sides and the road profile. The section's
         // domain rules (tier row equality, TyreSpecs and profile domains)
@@ -842,7 +842,7 @@ namespace nativecfg {
                 }
                 c.surface_map = std::move(map);
             }
-            // tire.pneumatic follows the presence rule schema.py::
+            // tire.pneumatic follows the presence rule schema.py:
             // validate_config applies (tire.distributed's mirror): required
             // iff the backend selects it, forbidden otherwise; under a
             // non-'track' surface mode the resolved surface must ship inside

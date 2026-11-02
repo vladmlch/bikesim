@@ -1,5 +1,5 @@
 // Catalog-plan column projector for the native recording encoder — the
-// Python-free half (task T11). recording/native_encode.py::compile_plan
+// Python-free half (task T11). recording/native_encode.py:compile_plan
 // stays the source of truth for which tables are eligible; this side
 // validates a staged plan document (bike::io::Value — the binding
 // materializes the Python plan into it first) and runs the fixed
@@ -102,7 +102,7 @@ struct EncodePlan {
     std::vector<EncodePlanMask> masks;
     std::vector<std::string> roots;       // this table's claimed roots
     std::set<std::string> all_roots;      // every catalog channel root
-    // Routing indexes mirroring encoding.py::_distribute's lookups: full
+    // Routing indexes mirroring encoding.py:_distribute's lookups: full
     // leaf paths and each internal prefix's routed member components
     // (the parse-time shadowed/except_keys checks read these).
     std::set<std::vector<std::string>> leaf_paths;
@@ -170,7 +170,7 @@ encode_table_native(const OwnedNativeEpisode &episode,
 // ---- native row records ----------------------------------------------------
 
 // One commands_applied row — the ordinary_commands mirror in
-// recording/native.py::NativePhysicalSource.tables: emitted on each
+// recording/native.py:NativePhysicalSource.tables: emitted on each
 // interval whose (control, brake demands) tuple differs from the
 // previous interval's. application_id counts changes from the retained
 // episode start; rows [0, start) are replayed to seed the compare, so
@@ -188,7 +188,7 @@ struct AppliedCommandRow {
 };
 
 // One derived_transition event row — the channel diff inside
-// recording/native.py::iter_derived_events: emitted for each
+// recording/native.py:iter_derived_events: emitted for each
 // (interval, kind) whose tracked labels changed against the previous
 // retained interval. `changes` keeps the labels' first-insertion order
 // and carries only the changed values; kind=="derived_transition" and the

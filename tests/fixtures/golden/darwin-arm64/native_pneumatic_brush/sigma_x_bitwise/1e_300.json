@@ -1,0 +1,14 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "sigma_x(1e+300)",
+  "nbytes": 8,
+  "node": "native_pneumatic_brush/sigma_x_bitwise/1e_300",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ }
+]

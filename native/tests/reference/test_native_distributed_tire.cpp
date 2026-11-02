@@ -71,7 +71,7 @@ void set_array(io::Value::Object &o, std::string_view key,
 }
 
 // ---------------------------------------------------------------------
-// tests/reference/test_native_distributed_tire.py::test_signed_distance_matches_python_bitwise
+// native_distributed_tire/signed_distance_matches_python_bitwise
 // ---------------------------------------------------------------------
 [[gnu::noinline]] void test_signed_distance_matches_python_bitwise() {
     auto golden = node("test_native_distributed_tire.py",
@@ -121,7 +121,7 @@ void set_array(io::Value::Object &o, std::string_view key,
 }
 
 // ---------------------------------------------------------------------
-// tests/reference/test_native_distributed_tire.py::test_config_projection_carries_the_distributed_section
+// native_distributed_tire/config_projection_carries_the_distributed_section
 // ---------------------------------------------------------------------
 [[gnu::noinline]] void test_config_projection_carries_the_distributed_section() {
     const auto wire = io::parse_json(fixture_text(bundle("env") / "wire.json"));
@@ -163,7 +163,7 @@ void set_array(io::Value::Object &o, std::string_view key,
     Stepper const st(mjb_path(), config);
 }
 
-// tests/reference/test_native_distributed_tire.py::test_config_rejects_bad_distributed_sections
+// native_distributed_tire/config_rejects_bad_distributed_sections
 [[gnu::noinline]] void test_config_rejects_bad_distributed_sections() {
     const auto base = io::parse_json(fixture_text(bundle("env") / "wire.json"));
     const auto mutate = [&](auto &&edit) {
@@ -195,7 +195,7 @@ void set_array(io::Value::Object &o, std::string_view key,
     });
 }
 
-// tests/reference/test_native_distributed_tire.py::test_distributed_state_wire_round_trip
+// native_distributed_tire/distributed_state_wire_round_trip
 [[gnu::noinline]] void test_distributed_state_wire_round_trip() {
     auto golden = node("test_native_distributed_tire.py",
                        "test_distributed_state_wire_round_trip");
@@ -239,7 +239,7 @@ void set_array(io::Value::Object &o, std::string_view key,
 }
 
 // ---------------------------------------------------------------------
-// tests/reference/test_native_distributed_tire.py::test_distributed_qfrc_bitwise
+// native_distributed_tire/distributed_qfrc_bitwise
 // Golden leaf order per step k: 'tires golden step k', 'tires live-oracle
 // step k', 'tire_state evolve step k', then per side the recorded float
 // leaves (time_s, effective_radius_m, per-patch normal/tangent/slip) and
@@ -281,7 +281,7 @@ void set_array(io::Value::Object &o, std::string_view key,
     golden.done();
 }
 
-// tests/reference/test_native_distributed_tire.py::test_distributed_probe_and_clock
+// native_distributed_tire/distributed_probe_and_clock
 // The source record drops (D14): its runtime probe half is binding-only —
 // NativeRideDriver.probe_step_inputs -> apply_forces(advance=False) — and
 // the create_native_ride integration-state parity it gates is a documented
@@ -332,7 +332,7 @@ void set_array(io::Value::Object &o, std::string_view key,
                                    "increasing timestamp");
 }
 
-// tests/reference/test_native_distributed_tire.py::test_distributed_observations_declare_multi_contact
+// native_distributed_tire/distributed_observations_declare_multi_contact
 [[gnu::noinline]] void test_distributed_observations_declare_multi_contact() {
     const auto env = bike::research::make_environment(
             bundle("env_request") / "request.toml");
@@ -368,7 +368,7 @@ void set_array(io::Value::Object &o, std::string_view key,
     }
 }
 
-// tests/reference/test_native_distributed_tire.py::test_distributed_trajectory_matches_python_channel_wise_bitwise
+// native_distributed_tire/distributed_trajectory_matches_python_channel_wise_bitwise
 // DROPPED — the one-second env-pair channel-wise gate has no fixture
 // form: the oracle compares the live Python reference env's per-step
 // transition trees against the native env's. The native runtime has no

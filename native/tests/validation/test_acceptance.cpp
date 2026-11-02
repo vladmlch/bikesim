@@ -277,7 +277,7 @@ void actual_stand_checks(){
             const auto result=benchmark_case(name,.0005);const auto checks=check_bounds(result.metrics,result.bounds);
             bt::require(!io::as_object(checks,"checks").empty()&&checks_passed(checks),"drive-suspension fixture bounds: "+name);
         }
-    // rigs.py::native_radial_rig is the declared diagnostic stand: it carries
+    // rigs.py:native_radial_rig is the declared diagnostic stand: it carries
     // no acceptance bounds, so the contract is the produced metric fields.
     const auto reference=benchmark_case("radial_native_reference",.0005);
     for(const char* key:{"deflection_at_100n_m","deflection_at_300n_m","deflection_at_600n_m","deflection_at_1000n_m"})
@@ -291,7 +291,7 @@ void actual_stand_checks(){
         "overload torque spins the wheel against the dissipated brake work");
 }
 void contact_and_environment_checks(){
-    // contact_acceptance.py::contact_matrix — one declared (dt, stations)
+    // contact_acceptance.py:contact_matrix — one declared (dt, stations)
     // cell still evaluates the flat/step/incline rig pipeline and its own
     // per-case bounds; the full sweep is the same code with more axis levels.
     const auto matrix=contact_matrix(json(R"({"dts":[0.000625],"station_counts":[128],
@@ -300,7 +300,7 @@ void contact_and_environment_checks(){
     bt::require(cells.size()==3,"minimal matrix evaluates the flat, step and incline stands");
     for(const auto& cell:cells)
         bt::require(flag(cell,"accepted")&&checks_passed(get(cell,"checks")),"declared stand bounds accept the minimal matrix cell");
-    // contact_manifold_rigs.py::contact_case_vertices — the analytic road
+    // contact_manifold_rigs.py:contact_case_vertices — the analytic road
     // rasterization retains uniform spacing, extent and case shapes.
     for(const char* name:{"step","two_support","edge_unload","recontact","bump","incline"}){
         const auto vertices=contact_case_vertices(name,.01);
@@ -310,7 +310,7 @@ void contact_and_environment_checks(){
             bt::require(std::abs((vertices[i][0]-vertices[i-1][0])-dx)<1e-12+1e-9*std::abs(dx),"contact road is uniformly rasterized");
     }
     bt::invalid([&]{(void)contact_case_vertices("missing",.01);});
-    // contact_resolution.py::_events — a state must dwell for the declared
+    // contact_resolution.py:_events — a state must dwell for the declared
     // persistence before it is accepted as an event; bounces never confirm.
     const auto events=persistent_events(json(R"([
         {"time_s":0.0,"end_time_s":0.001,"normal_load_n":0.0},
@@ -322,7 +322,7 @@ void contact_and_environment_checks(){
     bt::require(list.size()==2&&text(list[0],"state")=="loaded"&&real(list[0],"time_s")==.001&&
         text(list[1],"state")=="unloaded"&&real(list[1],"time_s")==.008,
         "load/unload events confirm only after the dwell persists");
-    // contact_resolution.py::contact_comparison — impulse/event/energy and
+    // contact_resolution.py:contact_comparison — impulse/event/energy and
     // native-contact criteria gate pairwise convergence independently.
     auto coarse=json(R"({"normal_impulse_ns":102.0,"vertical_impulse_ns":101.0,
         "contact_events":[{"state":"loaded","time_s":0.01}],"energy_residual_ratio":0.01,"native_wheel_contact_count":0.0})");
@@ -348,7 +348,7 @@ void contact_and_environment_checks(){
     bt::invalid([&]{(void)source_fingerprint(repo/"native/does-not-exist");});
 }
 void python_coercion_and_density_contract(){
-    // contact_acceptance.py::check_bounds — float(metrics[name]) coercion:
+    // contact_acceptance.py:check_bounds — float(metrics[name]) coercion:
     // Python accepts numeric strings, bools and float-parseable literals;
     // everything float() would reject fails closed.
     const auto bounds=run_case("contact_bounds",json(R"({"metrics":{"text":"1.5","truth":true,"not_a_number":"nan","junk":"x","vector":[1],"padded":" 1_000.5 "},
@@ -358,7 +358,7 @@ void python_coercion_and_density_contract(){
         "float() coercion accepts parseable strings and bools like the oracle");
     bt::require(!flag(bounds.evidence,"not_a_number")&&!flag(bounds.evidence,"junk")&&!flag(bounds.evidence,"vector"),
         "non-finite, unparseable and non-scalar metrics fail closed");
-    // datasets.py::holdout_metrics — np.asarray(dtype=float) accepts
+    // datasets.py:holdout_metrics — np.asarray(dtype=float) accepts
     // same-shaped multidimensional inputs and reduces them in C order;
     // ragged trees, shape mismatches and non-numeric leaves reject.
     const auto holdout=run_case("holdout_metrics",json(R"({"measured":[[1.0,2.0],[3.0,4.0]],"predicted":[[1.5,2.0],[2.5,4.5]]})"));
@@ -369,7 +369,7 @@ void python_coercion_and_density_contract(){
     bt::invalid([&]{(void)run_case("holdout_metrics",json(R"({"measured":[null,2],"predicted":[1,2]})"));});
     const auto strings=run_case("holdout_metrics",json(R"({"measured":["1.5","2.0"],"predicted":[1.0,2.5]})"));
     bt::require(real(strings.evidence,"rmse")==.5,"float-parseable string leaves coerce like np.asarray");
-    // experiment_acceptance.py::is_synthetic — str(source).strip().lower()
+    // experiment_acceptance.py:is_synthetic — str(source).strip().lower()
     // prefix matching plus the strict boolean synthetic declaration.
     for(const char* source:{"synthetic"," Synthetic-2 ","SIMULATION: v3","fixture:gold"})
         bt::require(is_synthetic(json(std::string(R"({"source":")")+source+R"("})")),"str() source prefixes survive strip/lower");
@@ -380,7 +380,7 @@ void python_coercion_and_density_contract(){
         "Python str() over non-string JSON values cannot produce a synthetic prefix");
     bt::require(is_synthetic(json(R"({"synthetic":true,"source":"lab"})")),"explicit declaration marks synthetic regardless of source");
     bt::invalid([&]{(void)is_synthetic(json(R"({"synthetic":"yes"})"));});
-    // antiwheelie_reports.py::paired_summary — Python `or` truthiness over
+    // antiwheelie_reports.py:paired_summary — Python `or` truthiness over
     // operator_intervention: a truthy container flags the exclusion while
     // numeric zero and the empty string do not.
     const auto records=json(R"([{"scenario_id":"s","seed":1,"plant_and_inputs_sha256":"p","policy_id":"passthrough","operator_intervention":[0],
@@ -396,7 +396,7 @@ void python_coercion_and_density_contract(){
     const auto& why=io::as_array(get(excluded[0],"reasons"),"reasons");
     bt::require(std::ranges::any_of(why,[](const Value& r){return io::as_string(r,"reason")=="operator_intervention";}),
         "the exclusion names operator_intervention as its reason");
-    // contact_manifold_rigs.py::wheel_stand — arbitrary density/mu inputs:
+    // contact_manifold_rigs.py:wheel_stand — arbitrary density/mu inputs:
     // a stiffer declared density compresses less under the same load and
     // mu/density both reach the distributed material record.
     const nativecfg::HingeDensity stiff{.knots_m={0.,.004,.012},.stiffness_n_m={600000.,0.,0.},.damping_ns_m=2000.,.provenance="doubled synthetic density"};

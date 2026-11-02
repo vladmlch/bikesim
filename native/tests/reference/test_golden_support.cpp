@@ -11,7 +11,7 @@
 #include <string>
 
 namespace {
-constexpr std::string_view node_name = "tests/reference/test_synthetic_reader.py::case[1.5]";
+constexpr std::string_view node_name = "synthetic_reader/case/1.5";
 struct Scratch {
     std::filesystem::path root = std::filesystem::current_path() / "golden-support-scratch";
     Scratch() { std::filesystem::remove_all(root); std::filesystem::create_directories(root); }
@@ -46,18 +46,15 @@ std::string entry(int index, std::string_view label, int offset, int size,
         ",\"rtol\":" + std::string(tolerance) + ",\"atol\":" + std::string(tolerance) + "}";
 }
 void path_contract() {
-    bt::require(bt::oracle::node_path("tests/reference/test_a.py::test_b[x/y z]") ==
-        "tests_reference_test_a.py/test_b_x_y_z_", "Python node-key contract");
-    bt::require(bt::oracle::node_path("tests/a.py::t[1.5]") == "tests_a.py/t_1.5_", "dotted parameters");
-    bt::require(bt::oracle::node_path("tests/a.py::t[\xf0\x9f\x98\x80]") == "tests_a.py/t___", "Unicode uses one underscore per code point");
-    std::string repeated;
-    for (int i = 0; i < 40; ++i) repeated += "a/b (c) ";
-    const auto value = bt::oracle::node_path("tests/reference/test_x.py::test_y[" + repeated + "]");
-    bt::require(value.size() == std::string("tests_reference_test_x.py/").size() + 149,
-        "long key bounded at 140 + separator + eight SHA256 hex digits");
-    bt::require(value.ends_with("-edc0213d"), "long-key hash matches Python hashlib SHA256");
-    fails([] { (void)bt::oracle::node_path("../.."); }, "missing node separator rejects");
-    fails([] { (void)bt::oracle::node_path("..::x"); }, "traversal component rejects");
+    bt::require(bt::oracle::node_path("a/b") == "a/b", "two-component key passes through");
+    bt::require(bt::oracle::node_path("a/b/c d") == "a/b/c_d", "parameter component sanitizes");
+    bt::require(bt::oracle::node_path("a/b/\xf0\x9f\x98\x80") == "a/b/_", "Unicode uses one underscore per code point");
+    fails([] { (void)bt::oracle::node_path("a::b"); }, "pytest file::test syntax rejects");
+    fails([] { (void)bt::oracle::node_path("a/b[c]"); }, "pytest parameter syntax rejects");
+    fails([] { (void)bt::oracle::node_path("a"); }, "single component rejects");
+    fails([] { (void)bt::oracle::node_path("a/b/c/d/e"); }, "five components reject");
+    fails([] { (void)bt::oracle::node_path("a//b"); }, "empty component rejects");
+    fails([] { (void)bt::oracle::node_path("a/../b"); }, "traversal component rejects");
 }
 void ordered_bitwise_contract() {
     Scratch scratch;
@@ -73,7 +70,7 @@ void ordered_bitwise_contract() {
     node.f64(std::span(values).subspan(1), "zero");
     node.done();
     fails([&] { node.f64(positive_zero, "extra"); }, "over-consumption fails");
-    fails([&] { bt::oracle::Node const missing("tests/no.py::missing", scratch.root); }, "missing data fails closed");
+    fails([&] { bt::oracle::Node const missing("no/missing", scratch.root); }, "missing data fails closed");
 }
 void close_and_nan_contract() {
     Scratch const scratch;

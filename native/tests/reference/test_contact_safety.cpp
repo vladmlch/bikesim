@@ -25,7 +25,7 @@ namespace {
 using namespace bike::terrain;
 
 constexpr std::string_view kFile =
-    "tests/reference/test_contact_safety.py::";
+    "contact_safety/";
 
 void scalar(bt::oracle::Node &golden, double actual, std::string_view label) {
     const std::array<double, 1> value{actual};
@@ -39,7 +39,7 @@ RockGarden garden(double amp, double corr, int seed, double length = 8.,
 }
 
 void test_bump_length_floor_matches_spike() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const double floor_10 = min_bump_length_m(0.10);
     const double floor_05 = min_bump_length_m(0.05);
     const double floor_15 = min_bump_length_m(0.15);
@@ -53,7 +53,7 @@ void test_bump_length_floor_matches_spike() {
 }
 
 void test_bowl_depth_ceiling_matches_spike() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const double depth_08 = max_bowl_depth_m(0.8);
     const double depth_12 = max_bowl_depth_m(1.2);
     const double depth_15 = max_bowl_depth_m(1.5);
@@ -78,7 +78,7 @@ double garden_span(bt::oracle::Node &golden, const std::string &label) {
 }
 
 void test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     // The source's comprehensions record every input pair before a single
     // span output lands: consume all 20 (s, z) pairs first.
     const double dirty = garden_span(golden, "dirty");
@@ -109,7 +109,7 @@ void test_concave_span_flags_the_dirty_spike_seed_and_passes_clean_ones() {
 }
 
 void test_concave_span_ignores_convex_crests() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const double span = garden_span(golden, "crest");
     scalar(golden, span, "span crest");
     bt::require(span < 20., "crest stays clean");
@@ -123,7 +123,7 @@ const std::vector<double> kSExit{0.0, 0.6, 1.4, 2.0, 2.6, 3.0}; // NOLINT(bugpro
 double deg_of_atan(double slope) { return std::atan(slope) * 180. / std::numbers::pi; }
 
 void test_concave_span_counts_a_steep_entry_join() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const std::vector<double> z{0.0, 0.08, 0.10, 0.10, 0.10, 0.05, 0.0};
     const double span = concave_span_deg(kS, z);
     scalar(golden, span, "span entry concave");
@@ -134,7 +134,7 @@ void test_concave_span_counts_a_steep_entry_join() {
 }
 
 void test_concave_span_ignores_a_convex_entry_join() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const std::vector<double> z{0.0, -0.08, -0.10, -0.10, -0.10, -0.05, 0.0};
     const double span = concave_span_deg(kS, z);
     scalar(golden, span, "span entry convex");
@@ -143,7 +143,7 @@ void test_concave_span_ignores_a_convex_entry_join() {
 }
 
 void test_concave_span_control_gentle_facets_stay_clean() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const std::vector<double> z{0.0, 0.01, 0.02, 0.02, 0.02, 0.01, 0.0};
     const double span = concave_span_deg(kS, z);
     scalar(golden, span, "span gentle");
@@ -152,7 +152,7 @@ void test_concave_span_control_gentle_facets_stay_clean() {
 }
 
 void test_concave_span_counts_a_steep_exit_join_and_ignores_a_convex_one() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     const std::vector<double> z_c{0.0, 0.02, 0.16, 0.16, 0.16, 0.0};
     const double concave = concave_span_deg(kSExit, z_c);
     scalar(golden, concave, "span exit concave");
@@ -175,7 +175,7 @@ void hazard_bytes(bt::oracle::Node &golden, const std::string &text,
 }
 
 void test_hazards_report_every_unsafe_obstacle_kind() {
-    bt::oracle::Node golden(std::string(kFile) + __func__);
+    bt::oracle::Node golden(std::string(kFile) + std::string(__func__).substr(5));
     TrackSpec track;
     track.name = "t";
     track.length_m = 60.;

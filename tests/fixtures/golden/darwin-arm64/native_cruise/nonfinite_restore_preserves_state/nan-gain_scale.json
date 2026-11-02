@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "",
+  "nbytes": 32,
+  "node": "native_cruise/nonfinite_restore_preserves_state/nan-gain_scale",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ }
+]

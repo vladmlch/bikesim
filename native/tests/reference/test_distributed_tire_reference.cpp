@@ -36,7 +36,7 @@ namespace numerics = bike::numerics;
     return vertices;
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_step_rig_matches_the_pinned_trace_to_reordering_tolerance
+// distributed_tire_reference/step_rig_matches_the_pinned_trace_to_reordering_tolerance
 // Pinned from the vectorised implementation before the portable rewrite;
 // rows[::8] compared to literal pins at 1e-9 relative tolerance.
 [[gnu::noinline]] void test_step_rig_matches_the_pinned_trace_to_reordering_tolerance() {
@@ -74,7 +74,7 @@ namespace numerics = bike::numerics;
                 "no MuJoCo wheel contacts");
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_scalar_station_formulas_equal_the_vectorised_ones_bitwise
+// distributed_tire_reference/scalar_station_formulas_equal_the_vectorised_ones_bitwise
 // Capture: the four vectorised response rows; the C++ port replays the
 // scalar twins per index and compares bitwise against them AND the
 // native vectorised result.
@@ -126,7 +126,7 @@ namespace numerics = bike::numerics;
     golden.done();
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_station_count_ceiling
+// distributed_tire_reference/station_count_ceiling
 [[gnu::noinline]] void test_station_count_ceiling() {
     const auto ceiling = biketyre::station_angles(512);
     bt::require(ceiling.angles.size() == 512 &&
@@ -144,7 +144,7 @@ namespace numerics = bike::numerics;
     });
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_state_wire_names_and_round_trip
+// distributed_tire_reference/state_wire_names_and_round_trip
 [[gnu::noinline]] void test_state_wire_names_and_round_trip() {
     auto stand = validation::wheel_stand(.00125, 32, flat_vertices());
     auto &tire = *stand.tire;
@@ -199,7 +199,7 @@ namespace numerics = bike::numerics;
     }, "front.s000.bogus");
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_distributed_state_arrays_round_trip_through_the_cache_codec
+// distributed_tire_reference/distributed_state_arrays_round_trip_through_the_cache_codec
 // DROPPED — the equilibrium cache's per-side state_tire_* array
 // assembly rides a Python-only SimpleNamespace runtime shim
 // (_state_arrays/restore_state in sim/ride/equilibrium_cache.py); the
@@ -207,7 +207,7 @@ namespace numerics = bike::numerics;
 // initialization's material codec, and the wire round-trip is covered
 // by test_state_wire_names_and_round_trip.
 
-// tests/reference/test_distributed_tire_reference.py::test_diagnostics_are_scalar_only_and_multi_contact_is_informational
+// distributed_tire_reference/diagnostics_are_scalar_only_and_multi_contact_is_informational
 [[gnu::noinline]] void test_diagnostics_are_scalar_only_and_multi_contact_is_informational() {
     const auto [rows_v, metrics] = validation::distributed_road_trace(
             .00125, 64, .005, "two_support", .05);
@@ -225,7 +225,7 @@ namespace numerics = bike::numerics;
                 "distributed diagnostics declare the capability");
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_compute_is_deterministic_and_states_are_station_states
+// distributed_tire_reference/compute_is_deterministic_and_states_are_station_states
 [[gnu::noinline]] void test_compute_is_deterministic_and_states_are_station_states() {
     auto a = validation::wheel_stand(.00125, 64, flat_vertices());
     auto b = validation::wheel_stand(.00125, 64, flat_vertices());
@@ -248,7 +248,7 @@ namespace numerics = bike::numerics;
                     "state rows equal with NaN tolerance");
 }
 
-// tests/reference/test_distributed_tire_reference.py::test_probe_leaves_state_and_clock_untouched
+// distributed_tire_reference/probe_leaves_state_and_clock_untouched
 [[gnu::noinline]] void test_probe_leaves_state_and_clock_untouched() {
     auto stand = validation::wheel_stand(.00125, 64, flat_vertices());
     model_access::mutable_buffer(stand.stand->data->qpos,

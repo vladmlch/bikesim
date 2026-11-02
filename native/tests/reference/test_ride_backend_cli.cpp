@@ -140,7 +140,7 @@ struct CliResult {
 }
 
 // ---------------------------------------------------------------------------
-// tests/reference/test_ride_backend_cli.py::test_default_backend_and_profile_timestep
+// ride_backend_cli/default_backend_and_profile_timestep
 void test_default_backend_and_profile_timestep() {
     const auto args = resolve({"--physics-config", PROFILE});
     bt::require(args->arguments.text("backend") == "native",
@@ -157,7 +157,7 @@ void test_default_backend_and_profile_timestep() {
     bt::invalid([] { (void)parse("bike-ride", {"--backend", "python"}); });
 }
 
-// tests/reference/test_ride_backend_cli.py::test_native_visual_scale_keeps_all_physics_settings
+// ride_backend_cli/native_visual_scale_keeps_all_physics_settings
 void test_native_visual_scale_keeps_all_physics_settings() {
     const auto normal = resolve({"--physics-config", PROFILE});
     const auto fast = resolve({"--backend", "native", "--physics-config",
@@ -169,7 +169,7 @@ void test_native_visual_scale_keeps_all_physics_settings() {
                 "resolved physics setting is unchanged");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_explicit_scale_is_invalid_headless_even_one[scale]
+// ride_backend_cli/explicit_scale_is_invalid_headless_even_one/scale
 void test_explicit_scale_is_invalid_headless_even_one(std::string_view scale) {
   throws<cli::ArgumentError>(
       [&] {
@@ -181,7 +181,7 @@ void test_explicit_scale_is_invalid_headless_even_one(std::string_view scale) {
           " is invalid for a headless run");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_legacy_scale_and_native_rejected
+// ride_backend_cli/legacy_scale_and_native_rejected
 void test_legacy_scale_and_native_rejected() {
     throws<cli::ArgumentError>(
         [] { (void)resolve({"--physics", "legacy", "--time-scale", "1"}); },
@@ -193,7 +193,7 @@ void test_legacy_scale_and_native_rejected() {
         "legacy physics rejects the native backend");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_headless_native_profile_does_not_replace_timestep
+// ride_backend_cli/headless_native_profile_does_not_replace_timestep
 void test_headless_native_profile_does_not_replace_timestep() {
     const auto args = resolve({"--backend", "native", "--physics-config",
                                PROFILE, "--headless", "--duration", "1",
@@ -205,7 +205,7 @@ void test_headless_native_profile_does_not_replace_timestep() {
                 "timestep");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_research_cli_has_backend_but_no_playback_scale
+// ride_backend_cli/research_cli_has_backend_but_no_playback_scale
 void test_research_cli_has_backend_but_no_playback_scale() {
     bt::require(parse("bike-research", {}).text("backend") == "native",
                 "research resolves its only spellable backend by default");
@@ -220,7 +220,7 @@ void test_research_cli_has_backend_but_no_playback_scale() {
         "the research command has no playback-scale option");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_replay_requires_viewer_for_explicit_scale
+// ride_backend_cli/replay_requires_viewer_for_explicit_scale
 void test_replay_requires_viewer_for_explicit_scale() {
     // Oracle: replay.main(['missing-recording', '--time-scale', '1']) exits
     // SystemExit(2) — validation precedes opening the recording. Natively
@@ -243,7 +243,7 @@ void test_replay_requires_viewer_for_explicit_scale() {
                 "missing recording");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_native_preflight_failure_precedes_ride_setup
+// ride_backend_cli/native_preflight_failure_precedes_ride_setup
 void test_native_preflight_failure_precedes_ride_setup() {
     // Oracle: a refused native-artifact preflight propagates before
     // build_physical_simulation. Natively the preflight is resolve_ride's
@@ -277,7 +277,7 @@ void test_native_preflight_failure_precedes_ride_setup() {
                 "validation message");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_missing_artifact_names_directory_commands_and_code
+// ride_backend_cli/missing_artifact_names_directory_commands_and_code
 void test_missing_artifact_names_directory_commands_and_code() {
     // Oracle: BIKE_NATIVE_BUILD_PATH=<empty dir> exits 2 and stderr names
     // the directory plus the dev.py doctor/configure/build repair commands
@@ -298,7 +298,7 @@ void test_missing_artifact_names_directory_commands_and_code() {
                 "stderr names the missing input path");
 }
 
-// tests/reference/test_ride_backend_cli.py::test_cli_dispatches_every_live_and_headless_route
+// ride_backend_cli/cli_dispatches_every_live_and_headless_route
 void test_cli_dispatches_every_live_and_headless_route() {
   bt::TemporaryDirectory const temporary("ride-cli-dispatch");
   const auto out = (temporary.path() / "out").string();

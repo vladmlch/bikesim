@@ -1,0 +1,44 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 1536,
+  "node": "native_numeric_portability/minmax_scalar_broadcast_shape/minimum",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   192
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 1536,
+  "node": "native_numeric_portability/minmax_scalar_broadcast_shape/minimum",
+  "offset": 1536,
+  "rtol": null,
+  "shape": [
+   192
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "np.minimum(a, 0.0) broadcast",
+  "nbytes": 1536,
+  "node": "native_numeric_portability/minmax_scalar_broadcast_shape/minimum",
+  "offset": 3072,
+  "rtol": null,
+  "shape": [
+   192
+  ]
+ }
+]

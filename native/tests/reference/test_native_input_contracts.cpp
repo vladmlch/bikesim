@@ -155,9 +155,10 @@ std::unique_ptr<Stepper> resolved_stepper(const Value& wire) {
 
 // ---- golden plumbing --------------------------------------------------------
 bt::oracle::Node node(std::string_view function, std::string_view id = {}) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    auto name = "tests/reference/test_native_input_contracts.py::" +
-                std::string(function);
-    if (!id.empty()) name += "[" + std::string(id) + "]";
+    std::string name = "native_input_contracts/" +
+        (function.starts_with("test_") ? std::string(function.substr(5))
+                                       : std::string(function));
+    if (!id.empty()) name += "/" + bt::oracle::key(id);
     return bt::oracle::Node(name);
 }
 void scalar(bt::oracle::Node& golden, double value) {
@@ -165,7 +166,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     golden.f64(values, std::span<const std::size_t>{}, "");
 }
 
-// Source: test_native_input_contracts.py::test_recursive_config_key_contract
+// Source: native_input_contracts/recursive_config_key_contract
 [[gnu::noinline]] void test_recursive_config_key_contract() {
     // mutations unknown/nonstring/missing over every object-valued location.
     // 'nonstring' (key=7) has no wire spelling — Value::Object keys are
@@ -211,7 +212,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_present_empty_writer_requires_its_schema
+// Source: native_input_contracts/present_empty_writer_requires_its_schema
 [[gnu::noinline]] void test_present_empty_writer_requires_its_schema() {
     for (const std::string_view section :
          {"drive", "cruise", "suspension", "brake", "resistance", "tire",
@@ -228,7 +229,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_schema_is_closed_integer
+// Source: native_input_contracts/schema_is_closed_integer
 [[gnu::noinline]] void test_schema_is_closed_integer() {
     // bad ∈ {True, np.bool_(False), '2', 2.5, 0, 3}: np.bool_ marshals as a
     // wire bool, so the two Python bool spellings are one Value arm each of
@@ -241,7 +242,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_boolean_flags_are_exact
+// Source: native_input_contracts/boolean_flags_are_exact
 [[gnu::noinline]] void test_boolean_flags_are_exact() {
     // bad ∈ {1, 0., 'no', np.bool_(True)}: np.bool_(True) fails the binding's
     // exact-Py_True gate, but on the wire a bool IS the accepted spelling —
@@ -262,7 +263,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_numeric_types_precede_conversion
+// Source: native_input_contracts/numeric_types_precede_conversion
 [[gnu::noinline]] void test_numeric_types_precede_conversion() {
     // bad ∈ {True, np.bool_(True), '1', nan, inf}: the bool covers both
     // spellings; nonfinite Python floats arrive as repr() lexemes.
@@ -285,7 +286,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_numpy_numeric_scalars_and_ordered_vectors
+// Source: native_input_contracts/numpy_numeric_scalars_and_ordered_vectors
 [[gnu::noinline]] void test_numpy_numeric_scalars_and_ordered_vectors() {
     // np.int64/np.int32 arrive as integer lexemes, np.float32/np.float64 as
     // real lexemes; a tuple of them is the same ordered wire array.
@@ -298,7 +299,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     (void)resolved_stepper(config);
 }
 
-// Source: test_native_input_contracts.py::test_vectors_reject_unordered_wrong_width_and_boolean
+// Source: native_input_contracts/vectors_reject_unordered_wrong_width_and_boolean
 [[gnu::noinline]] void test_vectors_reject_unordered_wrong_width_and_boolean() {
     // bad ∈ {set{0,1,2}, iter([0,0,0]), [0,True,0], [0,0]}: a set's closest
     // wire kin is an unordered mapping; a bare iterator has no wire spelling
@@ -319,7 +320,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_schema_migration_preserves_resolved_fork_force
+// Source: native_input_contracts/schema_migration_preserves_resolved_fork_force
 // GOLDEN — schema ∈ {1,2} × (travel,legacy) ∈ {(150,T),(180,F),(150,F)}:
 // the C++ ids are the pytest parameter spellings; each node consumes the
 // two bitwise fork_damper scalars (compression travel-1 then travel+15 mm).
@@ -400,7 +401,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_schema_two_requires_explicit_fork_flag
+// Source: native_input_contracts/schema_two_requires_explicit_fork_flag
 [[gnu::noinline]] void test_schema_two_requires_explicit_fork_flag() {
     Value config = resolved_wire();
     policy_reference::erase(
@@ -409,7 +410,7 @@ void scalar(bt::oracle::Node& golden, double value) {
         [&] { (void)resolved_stepper(config); }, "fork_damper.legacy_behavior");
 }
 
-// Source: test_native_input_contracts.py::test_projection_emits_schema_two_and_persisted_flag
+// Source: native_input_contracts/projection_emits_schema_two_and_persisted_flag
 [[gnu::noinline]] void test_projection_emits_schema_two_and_persisted_flag() {
     // The welded_pinned bootstrap's writer_config is the verbatim capture of
     // project(env) for exactly this env (tools/migration/capture_reference.py).
@@ -427,7 +428,7 @@ void scalar(bt::oracle::Node& golden, double value) {
                 "projection persists fork_damper.legacy_behavior as false");
 }
 
-// Source: test_native_input_contracts.py::test_closed_discriminators_have_full_field_paths
+// Source: native_input_contracts/closed_discriminators_have_full_field_paths
 [[gnu::noinline]] void test_closed_discriminators_have_full_field_paths() {
     const Value original = resolved_wire();
     for (const std::vector<std::string>& location :
@@ -448,7 +449,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_schema_one_rejects_schema_two_fork_metadata
+// Source: native_input_contracts/schema_one_rejects_schema_two_fork_metadata
 [[gnu::noinline]] void test_schema_one_rejects_schema_two_fork_metadata() {
     Value candidate = resolved_wire();
     set(candidate, "schema", integer(1));
@@ -496,7 +497,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_resistance_snapshot_patch_schema_is_complete
+// Source: native_input_contracts/resistance_snapshot_patch_schema_is_complete
 [[gnu::noinline]] void test_resistance_snapshot_patch_schema_is_complete() {
     // Stepper(path, config) is the same-path valid control; the snapshots
     // dict itself is the nb-boundary input side_input reads — see the mirror
@@ -536,7 +537,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_zero_dimensional_arrays_are_not_wire_sequences
+// Source: native_input_contracts/zero_dimensional_arrays_are_not_wire_sequences
 [[gnu::noinline]] void test_zero_dimensional_arrays_are_not_wire_sequences() {
     // np.array(1.) is a 0-d array — a scalar, not a sequence; its wire value
     // is the scalar itself.
@@ -557,7 +558,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_ordered_dictionary_collections_match_python
+// Source: native_input_contracts/ordered_dictionary_collections_match_python
 [[gnu::noinline]] void test_ordered_dictionary_collections_match_python() {
     // OrderedRows (Sequence of dicts) and np.array(rows, dtype=object) both
     // marshal as an ordered array of mappings — the identical wire value,
@@ -579,7 +580,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_mapping_is_not_a_numeric_sequence
+// Source: native_input_contracts/mapping_is_not_a_numeric_sequence
 [[gnu::noinline]] void test_mapping_is_not_a_numeric_sequence() {
     // UserDict({0: 0., 1: 100.}) — iterating it would give a valid
     // width-2 load range, so accidental mapping-as-sequence would be
@@ -595,7 +596,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         "tire.front.material.valid_load_range_n");
 }
 
-// Source: test_native_input_contracts.py::test_scalar_conversion_memory_error_keeps_its_meaning
+// Source: native_input_contracts/scalar_conversion_memory_error_keeps_its_meaning
 [[gnu::noinline]] void test_scalar_conversion_memory_error_keeps_its_meaning() {
     // The injected-__float__ MemoryError is the nb adapter's conversion_error
     // passthrough (binding_readers.hpp) — a Python-side channel with no wire
@@ -614,7 +615,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         "config.drive.assist.gain");
 }
 
-// Source: test_native_input_contracts.py::test_control_and_recursive_state_keys_are_value_errors
+// Source: native_input_contracts/control_and_recursive_state_keys_are_value_errors
 [[gnu::noinline]] void test_control_and_recursive_state_keys_are_value_errors() {
     // Python parametrizes key over {'misspelled', 7}; a non-string dict key
     // is a Python-marshalling concept — the Value object's keys are strings
@@ -645,7 +646,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_state_numeric_arrays_reject_boolean_before_cast
+// Source: native_input_contracts/state_numeric_arrays_reject_boolean_before_cast
 [[gnu::noinline]] void test_state_numeric_arrays_reject_boolean_before_cast() {
     auto owner = pair();
     auto candidate = state(*owner);
@@ -655,7 +656,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     error<std::invalid_argument>([&] { restore(*owner, candidate); }, "ideal_hub.coefficients");
 }
 
-// Source: test_native_input_contracts.py::test_public_config_requires_mapping_before_model_load
+// Source: native_input_contracts/public_config_requires_mapping_before_model_load
 [[gnu::noinline]] void test_public_config_requires_mapping_before_model_load() {
     // validate_config(bad), Stepper('missing.mjb', bad), DrivePolicies(bad)
     // all reject non-mapping configs naming 'config'; the model-load
@@ -668,7 +669,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_projection_canonicalizes_valid_real_integer_after_validation
+// Source: native_input_contracts/projection_canonicalizes_valid_real_integer_after_validation
 [[gnu::noinline]] void test_projection_canonicalizes_valid_real_integer_after_validation() {
     // The projection emits typed wire lexemes: real fields carry a real
     // spelling ("2.0" — real_value's ".0" marker keeps whole magnitudes
@@ -685,7 +686,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
                 "gearing.front_teeth projects as an integer lexeme");
 }
 
-// Source: test_native_input_contracts.py::test_standalone_projection_checks_closed_discriminators
+// Source: native_input_contracts/standalone_projection_checks_closed_discriminators
 [[gnu::noinline]] void test_standalone_projection_checks_closed_discriminators() {
     // project_drive rejects a bad closed discriminator naming 'config.drive':
     // drive_mode, transmission_model and the policy modes all have closed
@@ -722,7 +723,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_projection_does_not_turn_unordered_or_scalar_cassette_into_sequence
+// Source: native_input_contracts/projection_does_not_turn_unordered_or_scalar_cassette_into_sequence
 [[gnu::noinline]] void test_projection_does_not_turn_unordered_or_scalar_cassette_into_sequence() {
     // Python feeds set/iter/0-d ndarray; the wire-level contract is that a
     // non-sequence cassette is rejected naming the field — mapping, scalar
@@ -735,7 +736,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     }
 }
 
-// Source: test_native_input_contracts.py::test_huge_integer_real_conversion_and_large_finite_control
+// Source: native_input_contracts/huge_integer_real_conversion_and_large_finite_control
 [[gnu::noinline]] void test_huge_integer_real_conversion_and_large_finite_control() {
     // human_crank_torque(1e300, 0., 0.) == 1e300 bitwise: a huge-but-finite
     // mean keeps its value. The 10**1000 Python-int rejection reaches the
@@ -748,7 +749,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         "mean");
 }
 
-// Source: test_native_input_contracts.py::test_wire_string_encoding_matches_native
+// Source: native_input_contracts/wire_string_encoding_matches_native
 [[gnu::noinline]] void test_wire_string_encoding_matches_native() {
     // 'custom' and the non-ASCII mode are accepted wire strings; the lone
     // surrogate's rejection is the Python str→UTF-8 boundary check in the

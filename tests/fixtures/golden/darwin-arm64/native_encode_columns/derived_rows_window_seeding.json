@@ -1,0 +1,74 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "chunked[4]['changes']['front_brake_demand']",
+  "nbytes": 8,
+  "node": "native_encode_columns/derived_rows_window_seeding",
+  "offset": 0,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "chunked[4]['changes']['rear_brake_demand']",
+  "nbytes": 8,
+  "node": "native_encode_columns/derived_rows_window_seeding",
+  "offset": 8,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "chunked[5]['changes']['front_brake_demand']",
+  "nbytes": 8,
+  "node": "native_encode_columns/derived_rows_window_seeding",
+  "offset": 16,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "chunked[5]['changes']['rear_brake_demand']",
+  "nbytes": 8,
+  "node": "native_encode_columns/derived_rows_window_seeding",
+  "offset": 24,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "chunked[6]['changes']['front_brake_demand']",
+  "nbytes": 8,
+  "node": "native_encode_columns/derived_rows_window_seeding",
+  "offset": 32,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "chunked[6]['changes']['rear_brake_demand']",
+  "nbytes": 8,
+  "node": "native_encode_columns/derived_rows_window_seeding",
+  "offset": 40,
+  "rtol": null,
+  "shape": []
+ }
+]

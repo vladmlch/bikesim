@@ -54,7 +54,7 @@ io::Value first_failure(const runtime::NativeResearchRuntime &environment) {
     return state.first_failure ? bike::research::wire_value(state.first_failure->as_wire()) : io::Value{};
 }
 
-// tests/reference/test_golden_episode.py::test_capture_is_deterministic
+// golden_episode/capture_is_deterministic
 void test_capture_is_deterministic() {
     auto first = fresh(), second = fresh();
     const auto a = capture(*first, 50), b = capture(*second, 50);
@@ -67,7 +67,7 @@ void test_capture_is_deterministic() {
     bt::require(golden::same_failure(a.first_failure, b.first_failure, 0., 0.), "first monitor failure is exactly deterministic");
 }
 
-// tests/reference/test_golden_episode.py::test_saved_artifact_roundtrips
+// golden_episode/saved_artifact_roundtrips
 void test_saved_artifact_roundtrips() {
     bt::TemporaryDirectory const temporary("golden-fifty-roundtrip");
     auto environment = fresh(); const auto episode = capture(*environment, 50);
@@ -80,7 +80,7 @@ void test_saved_artifact_roundtrips() {
     bt::require(std::filesystem::is_regular_file(path / "model.mjb") && !loaded.model_image.empty(), "saved artifact contains actual model image");
 }
 
-// tests/reference/test_episode_compare.py::test_replay_matches_golden_bitwise
+// episode_compare/replay_matches_golden_bitwise
 void test_replay_matches_golden_bitwise() {
     auto original = fresh(); const auto episode = capture(*original, 50);
     auto replay = fresh(); const auto rows = golden::replay_episode(*replay, episode);
@@ -88,7 +88,7 @@ void test_replay_matches_golden_bitwise() {
     bt::require(golden::same_failure(first_failure(*original), first_failure(*replay), 0., 0.), "replay has exactly the same first monitor failure");
 }
 
-// tests/reference/test_episode_compare.py::test_compare_episode_on_saved_artifact
+// episode_compare/compare_episode_on_saved_artifact
 void test_compare_episode_on_saved_artifact() {
     bt::TemporaryDirectory const temporary("golden-fifty-compare");
     auto original = fresh(); const auto episode = capture(*original, 50);
@@ -98,7 +98,7 @@ void test_compare_episode_on_saved_artifact() {
         "saved fifty-step artifact replays through the full comparison entry point");
 }
 
-// tests/reference/test_episode_compare.py::test_compare_reports_first_divergence
+// episode_compare/compare_reports_first_divergence
 void test_compare_reports_first_divergence() {
     const std::vector<golden::Row> a{{{"x", 1.}, {"y", 2.}}};
     const std::vector<golden::Row> b{{{"x", 1.}, {"y", 2. + 1e-9}}};
@@ -107,7 +107,7 @@ void test_compare_reports_first_divergence() {
         differences.front().find("channel=y") != std::string::npos, "first divergence identifies the original step and channel");
 }
 
-// tests/reference/test_golden_episode_v2.py::test_v2_state_and_forces_recorded
+// golden_episode_v2/v2_state_and_forces_recorded
 void test_v2_state_and_forces_recorded() {
     auto environment = fresh();
     const auto empty = capture(*environment, 0);
@@ -137,7 +137,7 @@ void test_v2_state_and_forces_recorded() {
     }
 }
 
-// tests/reference/test_golden_episode_v2.py::test_v2_roundtrip_and_determinism
+// golden_episode_v2/v2_roundtrip_and_determinism
 void test_v2_roundtrip_and_determinism() {
     bt::TemporaryDirectory const temporary("golden-v2-roundtrip");
     auto first = fresh(), second = fresh();
@@ -149,7 +149,7 @@ void test_v2_roundtrip_and_determinism() {
     bt::require(loaded.force_names == episode.force_names, "all saved force component names retain order");
 }
 
-// tests/reference/test_golden_episode_v2.py::test_exit_total_is_captured_independently_of_components
+// golden_episode_v2/exit_total_is_captured_independently_of_components
 void test_exit_total_is_captured_independently_of_components() {
     bt::TemporaryDirectory const temporary("golden-live-exit");
     auto environment = fresh();
@@ -197,7 +197,7 @@ void test_exit_total_is_captured_independently_of_components() {
     same(golden::load_episode(path).qfrc_applied, episode.qfrc_applied, "saved live changed exit");
 }
 
-// tests/reference/test_golden_episode_v2.py::test_load_old_artifact_without_exit_total[version]
+// golden_episode_v2/load_old_artifact_without_exit_total/version
 void test_load_old_artifact_without_exit_total(std::string_view version) {
     bt::TemporaryDirectory const temporary("golden-old-artifact");
     bt::ModelFixture model(R"(<mujoco><worldbody><body><joint type="slide"/><geom size=".1"/></body></worldbody></mujoco>)");

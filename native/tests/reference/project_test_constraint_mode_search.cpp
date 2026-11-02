@@ -64,7 +64,7 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 [[gnu::noinline]] void test_command_crosses_mode_boundaries_and_matches_current_forward() {
-    // project/tests/reference/test_constraint_mode_search.py::test_command_crosses_mode_boundaries_and_matches_current_forward
+    // project/constraint_mode_search/command_crosses_mode_boundaries_and_matches_current_forward
     struct Param { const char *kind; double wish, boundary; };
     for (const auto &param :
          {Param{.kind = "tendon", .wish = 20., .boundary = -20.},
@@ -137,7 +137,7 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 [[gnu::noinline]] void test_exact_mode_budget_distinguishes_exhaustion_from_truncation() {
-    // project/tests/reference/test_constraint_mode_search.py::test_exact_mode_budget_distinguishes_exhaustion_from_truncation
+    // project/constraint_mode_search/exact_mode_budget_distinguishes_exhaustion_from_truncation
     struct Param { const char *kind; std::size_t mode_count; bool truncate; };
     for (const auto &param :
          {Param{.kind = "tendon", .mode_count = 2, .truncate = false},
@@ -198,7 +198,7 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 [[gnu::noinline]] void test_feasible_first_mode_stops_without_exploring_neighbors() {
-    // project/tests/reference/test_constraint_mode_search.py::test_feasible_first_mode_stops_without_exploring_neighbors
+    // project/constraint_mode_search/feasible_first_mode_stops_without_exploring_neighbors
     auto const rig = stand("tendon");
     std::vector<int> dof{0};
     rider::ConstraintDynamics const dynamics(*rig.model, *rig.data, dof);
@@ -222,7 +222,7 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 [[gnu::noinline]] void test_invalid_mode_budget_fails_before_evaluating_dynamics() {
-    // project/tests/reference/test_constraint_mode_search.py::test_invalid_mode_budget_fails_before_evaluating_dynamics
+    // project/constraint_mode_search/invalid_mode_budget_fails_before_evaluating_dynamics
     // 0 is the only parameter expressible in a std::size_t budget; the
     // remaining source rows (-1, 1.5, True, None) are compile-time type
     // rejections. The empty solver proves the budget check precedes every
@@ -244,7 +244,7 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 [[gnu::noinline]] void test_guarded_grip_branch_preserves_sign_and_circle_budgets() {
-    // project/tests/reference/test_constraint_mode_search.py::test_guarded_grip_branch_preserves_sign_and_circle_budgets
+    // project/constraint_mode_search/guarded_grip_branch_preserves_sign_and_circle_budgets
     for (const bool pulling : {false, true}) {
         const auto constraints = rider::allocation_grip_constraints(
             d::identity(2), {1., 0.}, pulling, 300.);
@@ -284,7 +284,7 @@ void allclose(std::span<const double> actual, std::span<const double> expected,
 }
 
 [[gnu::noinline]] void test_guarded_grip_search_falls_back_from_remembered_pull_to_press() {
-    // project/tests/reference/test_constraint_mode_search.py::test_guarded_grip_search_falls_back_from_remembered_pull_to_press
+    // project/constraint_mode_search/guarded_grip_search_falls_back_from_remembered_pull_to_press
     std::vector<std::array<bool, 2>> calls;
     const Vector target{100., 100.};
     const auto solve = [&](const std::array<bool, 2> &branch,

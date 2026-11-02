@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "static brake frictionloss",
+  "nbytes": 64,
+  "node": "native_static_brake/frictionloss_writes_match_python",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ }
+]

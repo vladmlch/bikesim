@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "outcome.message",
+  "nbytes": 36,
+  "node": "native_rider_contact_math/planar_model_validation_oracle/_joint_type__hinge__axis__0_1_0___-sphere-1_0_0_0",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   36
+  ]
+ }
+]

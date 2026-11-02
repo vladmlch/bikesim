@@ -22,7 +22,7 @@ namespace terrain = bike::terrain;
     return bike::io::sha256(std::as_bytes(std::span{dump}));
 }
 
-// tests/reference/test_terrain_placement_regression.py::test_default_terrain_spec_hash_is_pinned
+// terrain_placement_regression/default_terrain_spec_hash_is_pinned
 void test_default_terrain_spec_hash_is_pinned() {
     bt::require(
             terrain::TerrainGenSpec{}.sha256() ==
@@ -30,7 +30,7 @@ void test_default_terrain_spec_hash_is_pinned() {
             "default TerrainGenSpec sha256 pinned");
 }
 
-// tests/reference/test_terrain_placement_regression.py::test_generated_tracks_are_byte_identical[seed]
+// terrain_placement_regression/generated_tracks_are_byte_identical/seed
 void test_generated_tracks_are_byte_identical() {
     const std::map<std::uint64_t, std::string> want{
             {0, "b298d8170a8391daf50b671f41b9dc7e33855354fe770d3cb894af70400f544d"},
@@ -44,7 +44,7 @@ void test_generated_tracks_are_byte_identical() {
                             " byte-identical");
 }
 
-// tests/reference/test_terrain_placement_regression.py::test_road_presets_are_byte_identical[name]
+// terrain_placement_regression/road_presets_are_byte_identical/name
 void test_road_presets_are_byte_identical() {
     const std::map<std::string, std::string> want{
             {"road_broken",

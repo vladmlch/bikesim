@@ -1709,7 +1709,7 @@ namespace {
                same(a.tendon_length0, b.tendon_length0);
     }
 
-    // Mirrors tests/reference/test_native_drivetrain.py::model_xml for the
+    // Mirrors native_drivetrain/model_xml for the
     // crank_effort physical chain: scalar planar joints plus each auxiliary
     // one-way hub topology. The spec wrapper keeps the two same-typed
     // selector strings from silently swapping at call sites.

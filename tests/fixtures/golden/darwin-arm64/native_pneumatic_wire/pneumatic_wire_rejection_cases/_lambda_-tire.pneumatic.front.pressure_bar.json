@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.match",
+  "nbytes": 264,
+  "node": "native_pneumatic_wire/pneumatic_wire_rejection_cases/_lambda_-tire.pneumatic.front.pressure_bar",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ }
+]

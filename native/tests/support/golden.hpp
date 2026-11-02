@@ -15,6 +15,7 @@ struct Entry {
     std::vector<std::byte> bytes;
     double rtol = 0., atol = 0.;
 };
+[[nodiscard]] std::string key(std::string_view source);
 [[nodiscard]] std::string node_path(std::string_view node);
 [[nodiscard]] std::filesystem::path root();
 [[nodiscard]] std::string_view platform();

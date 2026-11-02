@@ -114,7 +114,7 @@ void slide_and_forward(Stepper &st) {
 }
 
 // ---------------------------------------------------------------------
-// tests/reference/test_native_tire.py::test_tire_qfrc_bitwise — the
+// native_tire/tire_qfrc_bitwise — the
 // golden episode replay. Artifact rows are the oracle goldens.
 // ---------------------------------------------------------------------
 [[gnu::noinline]] void test_tire_qfrc_bitwise() {
@@ -183,7 +183,7 @@ void slide_and_forward(Stepper &st) {
 }
 
 // ---------------------------------------------------------------------
-// tests/reference/test_native_tire.py::test_tire_state_roundtrip_and_clock
+// native_tire/tire_state_roundtrip_and_clock
 // ---------------------------------------------------------------------
 [[gnu::noinline]] void test_tire_state_roundtrip_and_clock() {
     auto golden = node("test_native_tire.py",
@@ -233,7 +233,7 @@ void slide_and_forward(Stepper &st) {
 // Config + state contracts on the pinned bench model.
 // ---------------------------------------------------------------------
 
-// tests/reference/test_native_tire.py::test_tire_requires_config
+// native_tire/tire_requires_config
 [[gnu::noinline]] void test_tire_requires_config() {
     std::vector<double> row(22, 0.);
     const auto names = canonical_names();
@@ -250,7 +250,7 @@ void slide_and_forward(Stepper &st) {
     }
 }
 
-// tests/reference/test_native_tire.py::test_tire_config_missing_key_names_it
+// native_tire/tire_config_missing_key_names_it
 // Stepper construction holds the writer decode + engine image — over the
 // 8192-byte frame budget this file otherwise keeps.
 NATIVE_DIAG_PUSH
@@ -271,7 +271,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_tire.py::test_tire_set_state_validation
+// native_tire/tire_set_state_validation
 [[gnu::noinline]] void test_tire_set_state_validation() {
     Stepper st(mjb(), cfg());
     const auto names = canonical_names();
@@ -291,7 +291,7 @@ NATIVE_DIAG_POP
             [&] { st.set_tire_state(bogus, row); }, "front.xi");
 }
 
-// tests/reference/test_native_tire.py::test_tire_segment_rejects_invalid_without_mutation[14]
+// native_tire/tire_segment_rejects_invalid_without_mutation/14
 [[gnu::noinline]] void test_tire_segment_rejects_invalid_without_mutation() {
     const std::array<std::pair<double, std::string_view>, 7> segments{{
             {std::numeric_limits<double>::infinity(), "inf"},
@@ -329,7 +329,7 @@ NATIVE_DIAG_POP
         }
 }
 
-// tests/reference/test_native_tire.py::test_tire_segment_int_boundaries_and_unset_roundtrip[10]
+// native_tire/tire_segment_int_boundaries_and_unset_roundtrip/10
 [[gnu::noinline]] void test_tire_segment_int_boundaries_and_unset_roundtrip() {
     const std::array<std::pair<double, std::string_view>, 5> segments{{
             {-2147483648., "-2147483648.0"},
@@ -361,7 +361,7 @@ NATIVE_DIAG_POP
         }
 }
 
-// tests/reference/test_native_tire.py::test_tire_qfrc_happy_path_and_clock
+// native_tire/tire_qfrc_happy_path_and_clock
 [[gnu::noinline]] void test_tire_qfrc_happy_path_and_clock() {
     Stepper st(mjb(), cfg());
     slide_and_forward(st);
@@ -396,7 +396,7 @@ NATIVE_DIAG_POP
                                    "once per increasing timestamp");
 }
 
-// tests/reference/test_native_tire.py::test_tire_partial_sentinel_group_rejects_atomically[4]
+// native_tire/tire_partial_sentinel_group_rejects_atomically/4
 [[gnu::noinline]] void test_tire_partial_sentinel_group_rejects_atomically() {
     const auto names = canonical_names();
     for (const char *side : {"front", "rear"})
@@ -431,7 +431,7 @@ NATIVE_DIAG_POP
         }
 }
 
-// tests/reference/test_native_tire.py::test_tire_xi_and_mixed_vector_rejections_preserve_state
+// native_tire/tire_xi_and_mixed_vector_rejections_preserve_state
 [[gnu::noinline]] void test_tire_xi_and_mixed_vector_rejections_preserve_state() {
     auto golden = node(
             "test_native_tire.py",
@@ -456,7 +456,7 @@ NATIVE_DIAG_POP
     golden.done();
 }
 
-// tests/reference/test_native_tire.py::test_tire_all_unset_state_accepted_and_first_advance_works
+// native_tire/tire_all_unset_state_accepted_and_first_advance_works
 [[gnu::noinline]] void test_tire_all_unset_state_accepted_and_first_advance_works() {
     Stepper st(mjb(), cfg());
     slide_and_forward(st);

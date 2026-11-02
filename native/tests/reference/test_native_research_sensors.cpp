@@ -103,13 +103,13 @@ unflatten_state(std::span<const double> row) {
         {"human_torque_nm", runtime::Wire{obs.values[8]}}};
 }
 
-// tests/reference/test_native_research_sensors.py::
+// tests/reference/test_native_research_sensors.py:
 //   test_noise_latency_dropout_and_stale_match_python
 void test_noise_latency_dropout_and_stale_match_python(
     const char *node_suffix, bool imu, double dropout, double latency) {
     oracle::Node node(
-        "tests/reference/test_native_research_sensors.py::"
-        "test_noise_latency_dropout_and_stale_match_python" +
+        "native_research_sensors/"
+        "noise_latency_dropout_and_stale_match_python" +
         std::string(node_suffix));
     auto native = pipeline(delivery(latency, dropout, imu, .015, kAccelBias, .02),
                            default_noise(), 41, 32);
@@ -134,12 +134,12 @@ void test_noise_latency_dropout_and_stale_match_python(
     node.done();
 }
 
-// tests/reference/test_native_research_sensors.py::
+// tests/reference/test_native_research_sensors.py:
 //   test_imported_startup_row_is_not_drawn_twice
 void test_imported_startup_row_is_not_drawn_twice() {
     oracle::Node node(
-        "tests/reference/test_native_research_sensors.py::"
-        "test_imported_startup_row_is_not_drawn_twice");
+        "native_research_sensors/"
+        "imported_startup_row_is_not_drawn_twice");
     // reference.state_dict() after reset+read(0.), recorded on the oracle
     // side — import_state decodes the same state dict binding-side.
     const auto recorded = unflatten_state(node.f64_input("input.state"));
@@ -157,12 +157,12 @@ void test_imported_startup_row_is_not_drawn_twice() {
     node.done();
 }
 
-// tests/reference/test_native_research_sensors.py::
+// tests/reference/test_native_research_sensors.py:
 //   test_irregular_delivery_schedule_matches_python
 void test_irregular_delivery_schedule_matches_python() {
     oracle::Node node(
-        "tests/reference/test_native_research_sensors.py::"
-        "test_irregular_delivery_schedule_matches_python");
+        "native_research_sensors/"
+        "irregular_delivery_schedule_matches_python");
     auto native = pipeline(delivery(.004, .15, true, .02,
                                     std::array<double, 3>{.05, -.01, .02}, .003),
                            default_noise(), 11, 8);
@@ -180,12 +180,12 @@ void test_irregular_delivery_schedule_matches_python() {
     node.done();
 }
 
-// tests/reference/test_native_research_sensors.py::
+// tests/reference/test_native_research_sensors.py:
 //   test_same_seed_reset_repeats_and_different_seeds_differ
 void test_same_seed_reset_repeats_and_different_seeds_differ() {
     oracle::Node node(
-        "tests/reference/test_native_research_sensors.py::"
-        "test_same_seed_reset_repeats_and_different_seeds_differ");
+        "native_research_sensors/"
+        "same_seed_reset_repeats_and_different_seeds_differ");
     const auto sequence = [](runtime::SensorPipeline &pipe) {
         pipe.reset(raw_sensor());
         std::vector<double> flat;
@@ -209,7 +209,7 @@ void test_same_seed_reset_repeats_and_different_seeds_differ() {
     node.done();
 }
 
-// tests/reference/test_native_research_sensors.py::
+// tests/reference/test_native_research_sensors.py:
 //   test_invalid_operations_and_exhaustion_preserve_state
 void test_invalid_operations_and_exhaustion_preserve_state() {
     auto native = pipeline(delivery(0., 0., true, .1), ideal_noise(), 41, 2);
@@ -257,7 +257,7 @@ void test_invalid_operations_and_exhaustion_preserve_state() {
   return {config, std::move(tape)};
 }
 
-// tests/reference/test_native_research_sensors.py::
+// tests/reference/test_native_research_sensors.py:
 //   test_native_owns_noise_and_validates_empty_shape
 void test_native_owns_noise_and_validates_empty_shape() {
     runtime::NoiseTape tape{.noise = std::vector<std::array<double, 9>>(2),
@@ -287,24 +287,24 @@ int main() {
     // cppcheck-suppress throwInEntryPoint // test failures propagate as exceptions into bt::run's FAIL catch — the harness entry-point contract, not an unhandled throw
     return bt::run([] {
         for (const auto &[suffix, imu, dropout, latency] : {
-            std::tuple{"[False-0.0-0.0]", false, 0., 0.},
-            std::tuple{"[False-0.0-0.003]", false, 0., .003},
-            std::tuple{"[False-0.0-0.02]", false, 0., .02},
-            std::tuple{"[False-0.4-0.0]", false, .4, 0.},
-            std::tuple{"[False-0.4-0.003]", false, .4, .003},
-            std::tuple{"[False-0.4-0.02]", false, .4, .02},
-            std::tuple{"[False-1.0-0.0]", false, 1., 0.},
-            std::tuple{"[False-1.0-0.003]", false, 1., .003},
-            std::tuple{"[False-1.0-0.02]", false, 1., .02},
-            std::tuple{"[True-0.0-0.0]", true, 0., 0.},
-            std::tuple{"[True-0.0-0.003]", true, 0., .003},
-            std::tuple{"[True-0.0-0.02]", true, 0., .02},
-            std::tuple{"[True-0.4-0.0]", true, .4, 0.},
-            std::tuple{"[True-0.4-0.003]", true, .4, .003},
-            std::tuple{"[True-0.4-0.02]", true, .4, .02},
-            std::tuple{"[True-1.0-0.0]", true, 1., 0.},
-            std::tuple{"[True-1.0-0.003]", true, 1., .003},
-            std::tuple{"[True-1.0-0.02]", true, 1., .02}})
+            std::tuple{"/False-0.0-0.0", false, 0., 0.},
+            std::tuple{"/False-0.0-0.003", false, 0., .003},
+            std::tuple{"/False-0.0-0.02", false, 0., .02},
+            std::tuple{"/False-0.4-0.0", false, .4, 0.},
+            std::tuple{"/False-0.4-0.003", false, .4, .003},
+            std::tuple{"/False-0.4-0.02", false, .4, .02},
+            std::tuple{"/False-1.0-0.0", false, 1., 0.},
+            std::tuple{"/False-1.0-0.003", false, 1., .003},
+            std::tuple{"/False-1.0-0.02", false, 1., .02},
+            std::tuple{"/True-0.0-0.0", true, 0., 0.},
+            std::tuple{"/True-0.0-0.003", true, 0., .003},
+            std::tuple{"/True-0.0-0.02", true, 0., .02},
+            std::tuple{"/True-0.4-0.0", true, .4, 0.},
+            std::tuple{"/True-0.4-0.003", true, .4, .003},
+            std::tuple{"/True-0.4-0.02", true, .4, .02},
+            std::tuple{"/True-1.0-0.0", true, 1., 0.},
+            std::tuple{"/True-1.0-0.003", true, 1., .003},
+            std::tuple{"/True-1.0-0.02", true, 1., .02}})
             test_noise_latency_dropout_and_stale_match_python(suffix, imu, dropout, latency);
         test_imported_startup_row_is_not_drawn_twice();
         test_invalid_operations_and_exhaustion_preserve_state();

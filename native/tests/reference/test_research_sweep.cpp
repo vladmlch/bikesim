@@ -33,7 +33,7 @@ namespace rd = bike::recording::detail;
         "bin" / "bike-research-sweep";
 }
 
-// tests/reference/test_research_sweep.py::test_dry_run_lists_one_command_per_seed
+// research_sweep/dry_run_lists_one_command_per_seed
 void test_dry_run_lists_one_command_per_seed() {
   Directory const directory;
   const auto sweep = sweep_binary();
@@ -67,7 +67,7 @@ void test_dry_run_lists_one_command_per_seed() {
                 "the seed fan-out preserves range order");
 }
 
-// tests/reference/test_research_sweep.py::test_seed_ranges_and_lists_parse
+// research_sweep/seed_ranges_and_lists_parse
 void test_seed_ranges_and_lists_parse() {
     bt::require(bike::batch::parse_seeds("1-3,7") ==
                     std::vector<std::string>({"1", "2", "3", "7"}),
@@ -76,7 +76,7 @@ void test_seed_ranges_and_lists_parse() {
                 "a lone seed parses");
 }
 
-// tests/reference/test_research_sweep.py::test_summary_records_return_codes
+// research_sweep/summary_records_return_codes
 void test_summary_records_return_codes() {
   Directory const directory;
   // run_one twin: exit 0 iff the child command line names --seed 2.

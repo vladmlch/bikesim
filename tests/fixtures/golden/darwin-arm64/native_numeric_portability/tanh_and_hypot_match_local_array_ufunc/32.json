@@ -1,0 +1,58 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.xs",
+  "nbytes": 256,
+  "node": "native_numeric_portability/tanh_and_hypot_match_local_array_ufunc/32",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   32
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.ys",
+  "nbytes": 256,
+  "node": "native_numeric_portability/tanh_and_hypot_match_local_array_ufunc/32",
+  "offset": 256,
+  "rtol": null,
+  "shape": [
+   32
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "tanh",
+  "nbytes": 256,
+  "node": "native_numeric_portability/tanh_and_hypot_match_local_array_ufunc/32",
+  "offset": 512,
+  "rtol": null,
+  "shape": [
+   32
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "hypot",
+  "nbytes": 256,
+  "node": "native_numeric_portability/tanh_and_hypot_match_local_array_ufunc/32",
+  "offset": 768,
+  "rtol": null,
+  "shape": [
+   32
+  ]
+ }
+]

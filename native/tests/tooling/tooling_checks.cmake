@@ -2059,7 +2059,7 @@ endif()
 
 # ---------------------------------------------------------------------------
 # Structural contract checks on scratch repositories
-# (test_native_contract_checks.py::_write_contract_fixture port).
+# (native_contract_checks/_write_contract_fixture port).
 
 # b29_contract_fixture(<name>) writes the oracle's scratch repository +
 # build pair: a bindings-style schema-1 context, source manifest, compile

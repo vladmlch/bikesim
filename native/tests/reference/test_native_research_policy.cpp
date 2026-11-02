@@ -43,7 +43,7 @@ session_of(CountingPolicy *&handle, const Knobs &knobs = {}) {
         environment(knobs), std::move(policy));
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_one_act_per_window_and_queued_pause_brakes
 void test_one_act_per_window_and_queued_pause_brakes() {
   CountingPolicy *policy = nullptr;
@@ -90,7 +90,7 @@ void test_one_act_per_window_and_queued_pause_brakes() {
               "accepted brake demands record operator intervention");
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_one_act_per_window_across_budget_yields
 void test_one_act_per_window_across_budget_yields() {
   CountingPolicy *policy = nullptr;
@@ -112,7 +112,7 @@ void test_one_act_per_window_across_budget_yields() {
   }
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_pause_and_resume_do_not_advance_simulated_time
 void test_pause_and_resume_do_not_advance_simulated_time() {
   CountingPolicy *policy = nullptr;
@@ -139,7 +139,7 @@ void test_pause_and_resume_do_not_advance_simulated_time() {
               "the next window costs exactly one act call");
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_stop_and_reset_are_deferred_to_external_boundary
 void test_stop_and_reset_are_deferred_to_external_boundary() {
   CountingPolicy *policy = nullptr;
@@ -180,7 +180,7 @@ void test_stop_and_reset_are_deferred_to_external_boundary() {
               "three windows, three act calls — resets never call act");
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_invalid_operator_values_do_not_call_policy
 void test_invalid_operator_values_do_not_call_policy() {
   CountingPolicy *policy = nullptr;
@@ -199,7 +199,7 @@ void test_invalid_operator_values_do_not_call_policy() {
               "rejected operator actions leave the session idle");
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_policy_failure_has_no_manufactured_transition
 void test_policy_failure_has_no_manufactured_transition() {
     class BrokenPolicy final : public CountingPolicy {
@@ -233,7 +233,7 @@ void test_policy_failure_has_no_manufactured_transition() {
     (void)broken;
 }
 
-// tests/reference/test_native_research_policy.py::
+// tests/reference/test_native_research_policy.py:
 //   test_policy_cannot_smuggle_rider_inputs
 void test_policy_cannot_smuggle_rider_inputs() {
     class RiderPolicy final : public CountingPolicy {

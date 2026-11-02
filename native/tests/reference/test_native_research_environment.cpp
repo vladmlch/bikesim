@@ -46,7 +46,7 @@ namespace sw = runtime::sample_wire;
   return contents.str();
 }
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_native_loop_never_calls_python_interval_or_rng
 void test_native_loop_never_calls_python_interval_or_rng() {
     auto env = environment();
@@ -55,7 +55,7 @@ void test_native_loop_never_calls_python_interval_or_rng() {
                 "one external step commits exactly control_steps physics steps");
 }
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_invalid_boundary_calls_do_not_change_state
 void test_invalid_boundary_calls_do_not_change_state() {
     auto env = environment();
@@ -88,7 +88,7 @@ void test_invalid_boundary_calls_do_not_change_state() {
                 "the queued stop resolves to operator_stop at the boundary");
 }
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_zero_budget_retains_single_window_and_no_tail_flush
 void test_zero_budget_retains_single_window_and_no_tail_flush() {
     auto env = environment();
@@ -122,7 +122,7 @@ void test_zero_budget_retains_single_window_and_no_tail_flush() {
                    "begin_control must precede advance_control");
 }
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_stop_on_ended_episode_preserves_original_reason
 void test_stop_on_ended_episode_preserves_original_reason() {
     auto env = environment({.duration_s = .02});
@@ -139,7 +139,7 @@ void test_stop_on_ended_episode_preserves_original_reason() {
                 "an operator stop after the episode keeps the real outcome");
 }
 
-// tests/reference/test_native_research_environment.py::BoundaryRider —
+// native_research_environment/BoundaryRider —
 // reset() records the seed and clears the call log; act() appends the
 // staged observation time. The oracle twin returns RiderPosture() for the
 // welded plant; the lumped recipe cannot carry posture commands, so the
@@ -165,7 +165,7 @@ public:
     std::vector<double> times;
 };
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_custom_rider_callback_runs_once_per_external_boundary
 // The staged-command contract of PolicySession::begin_advance
 // (policy_session.cpp): the rider behavior's act() fires exactly once while
@@ -223,7 +223,7 @@ test_custom_rider_callback_runs_once_per_external_boundary() {
 // trees captured under the pinned oracle kernels.
 // ===========================================================================
 constexpr std::string_view kNode =
-    "tests/reference/test_native_research_environment.py::";
+    "native_research_environment/";
 
 [[nodiscard]] bool done(const runtime::NativeResearchRuntime &env) {
     const auto status = env.status();
@@ -300,7 +300,7 @@ constexpr std::string_view kNode =
     return out;
 }
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_native_research_matches_every_external_transition
 // The paired gate on the rough-track assist fixture: every external
 // transition consumes its recorded tree boundary-for-boundary.
@@ -309,7 +309,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_native_research_matches_every_external_transition() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_native_research_matches_every_external_transition");
+        "native_research_matches_every_external_transition");
     const auto env = ft2_reference::research("research_savage");
     ft2_reference::consume_tree(
         node, sw::required(env->status(), "observation"),
@@ -336,7 +336,7 @@ void test_native_research_matches_every_external_transition() {
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_one_second_pair_with_one_e_minus_nine_gate
 // The release gate: 800 physics steps, transition + integration-state rows
 // at every boundary, then commands/metrics/columns trailers.
@@ -345,7 +345,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_one_second_pair_with_one_e_minus_nine_gate() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_one_second_pair_with_one_e_minus_nine_gate");
+        "one_second_pair_with_one_e_minus_nine_gate");
     const auto env = ft2_reference::research_variant(
         "research_flat", std::nullopt, 20, 800);
     ft2_reference::consume_tree(
@@ -378,7 +378,7 @@ void test_one_second_pair_with_one_e_minus_nine_gate() {
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_one_second_pair_complete_episode_gate
 // The same episode under the raised 1e9 residual tolerance — the measured
 // residual still lands under the default .05, so the relaxed gate ran the
@@ -388,7 +388,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_one_second_pair_complete_episode_gate() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_one_second_pair_complete_episode_gate");
+        "one_second_pair_complete_episode_gate");
     const auto env = ft2_reference::research_variant(
         "research_flat", std::nullopt, 20, 800, std::nullopt,
         std::nullopt, std::nullopt, std::nullopt, 1e9);
@@ -432,7 +432,7 @@ void test_one_second_pair_complete_episode_gate() {
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_delay_full_commands_immediate_brakes_and_recording[decimation]
 // The four-command delay/delayed-motor leg under each recorded decimation.
 NATIVE_DIAG_PUSH
@@ -441,8 +441,8 @@ void test_delay_full_commands_immediate_brakes_and_recording(
     int decimation) {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_delay_full_commands_immediate_brakes_and_recording[" +
-        std::to_string(decimation) + "]");
+        "delay_full_commands_immediate_brakes_and_recording/" +
+        std::to_string(decimation));
     const auto env = ft2_reference::research_variant(
         "research_flat", std::nullopt, decimation);
     // RideControl(motor_torque_nm=None, motor_limit_nm=0., human_torque_nm=0.,
@@ -509,7 +509,7 @@ void test_delay_full_commands_immediate_brakes_and_recording(
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_scripted_rider_and_demand_are_sampled_at_physics_rate
 // RiderProgram/DemandProgram keyframes replay through the physics-rate
 // sampler; demand_nm is the program's value at the current sim time.
@@ -518,7 +518,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_scripted_rider_and_demand_are_sampled_at_physics_rate() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_scripted_rider_and_demand_are_sampled_at_physics_rate");
+        "scripted_rider_and_demand_are_sampled_at_physics_rate");
     runtime::ResearchPrograms programs;
     programs.reaction_delay_s = .0025;
     rider::RiderPosture leaned{};
@@ -560,7 +560,7 @@ void test_scripted_rider_and_demand_are_sampled_at_physics_rate() {
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_reset_seed_generation_snapshot_and_facade_ownership
 // reset(seed=73) reseats tape/startup/metadata through the reseed seam;
 // the facade legs (immutable snapshot view, read-only sim/terminated
@@ -571,7 +571,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_reset_seed_generation_snapshot_and_facade_ownership() {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_reset_seed_generation_snapshot_and_facade_ownership");
+        "reset_seed_generation_snapshot_and_facade_ownership");
     const auto env = ft2_reference::research("research_flat");
     const auto before = env->snapshot();
     auto caller_copy = before;
@@ -620,7 +620,7 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
                           std::string(bt::oracle::platform()) /
                           bt::oracle::node_path(
                               std::string(kNode) +
-                              "test_reset_seed_generation_snapshot_and_"
+        "reset_seed_generation_snapshot_and_"
                               "facade_ownership");
         const auto index = bike::io::parse_json(
             read_bytes(base.string() + ".json"));
@@ -718,7 +718,7 @@ void test_reset_seed_generation_snapshot_and_facade_ownership() {
 }
 NATIVE_DIAG_POP
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_strict_and_diagnostic_outcomes_remain_visible[strict]
 // strict=False replays four diagnostic transitions; strict=True pins the
 // weld-floor violation (weld_foot_min_normal_n=100) so the first window
@@ -726,8 +726,8 @@ NATIVE_DIAG_POP
 void test_strict_and_diagnostic_outcomes_remain_visible(bool strict) {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_strict_and_diagnostic_outcomes_remain_visible[" +
-        std::string(strict ? "True" : "False") + "]");
+        "strict_and_diagnostic_outcomes_remain_visible/" +
+        std::string(strict ? "True" : "False"));
     const auto env =
         strict ? ft2_reference::research_variant(
                      "research_flat", std::nullopt, std::nullopt,
@@ -762,7 +762,7 @@ void test_strict_and_diagnostic_outcomes_remain_visible(bool strict) {
     node.done();
 }
 
-// tests/reference/test_native_research_environment.py::
+// tests/reference/test_native_research_environment.py:
 //   test_differing_control_and_sensor_periods_match_python[params]
 // Each (control_steps, sensor_steps) pair runs the full flat episode;
 // pipeline.counters pins the acquisition gate arithmetic.
@@ -773,8 +773,8 @@ void test_differing_control_and_sensor_periods_match_python(
     std::string_view params) {
     bt::oracle::Node node(
         std::string(kNode) +
-        "test_differing_control_and_sensor_periods_match_python[" +
-        std::string(params) + "]");
+        "differing_control_and_sensor_periods_match_python/" +
+        std::string(params));
     const auto env = ft2_reference::research_variant(
         "research_flat", std::nullopt, std::nullopt, std::nullopt,
         control_steps, sensor_steps);

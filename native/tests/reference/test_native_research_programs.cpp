@@ -114,7 +114,7 @@ void flatten_result(const runtime::RideControl &control,
     out.push_back(demand.value_or(0.));
 }
 
-// tests/reference/test_native_research_programs.py::
+// tests/reference/test_native_research_programs.py:
 //   test_program_knots_optional_fields_and_association
 void test_program_knots_optional_fields_and_association(
     const char *node_suffix, std::optional<std::array<double, 2>> offsets,
@@ -140,15 +140,15 @@ void test_program_knots_optional_fields_and_association(
                     "motor torque stays absent and the limit stays zero");
     }
     bt::oracle::Node node(
-        "tests/reference/test_native_research_programs.py::"
-        "test_program_knots_optional_fields_and_association" +
+        "native_research_programs/"
+        "program_knots_optional_fields_and_association" +
         std::string(node_suffix));
     const std::vector<std::size_t> shape{10, 18};
     node.f64(rows, shape, "program_at");
     node.done();
 }
 
-// tests/reference/test_native_research_programs.py::
+// tests/reference/test_native_research_programs.py:
 //   test_no_program_preserves_none_and_explicit_zero
 void test_no_program_preserves_none_and_explicit_zero() {
     const runtime::ResearchPrograms programs{};
@@ -175,7 +175,7 @@ void test_no_program_preserves_none_and_explicit_zero() {
                 "an empty program reports no demand");
 }
 
-// tests/reference/test_native_research_programs.py::
+// tests/reference/test_native_research_programs.py:
 //   test_reject_mixed_effort_and_policy_posture
 void test_reject_mixed_effort_and_policy_posture() {
     // RiderProgram((0., effort 0.), (1., effort 2.)) — effort-owning program.
@@ -208,17 +208,17 @@ void test_reject_mixed_effort_and_policy_posture() {
 int main() {
     return bt::run([] {
         test_program_knots_optional_fields_and_association(
-            "[None-None]", std::nullopt, std::nullopt);
+            "/None-None", std::nullopt, std::nullopt);
         test_program_knots_optional_fields_and_association(
-            "[None-offsets1]", std::array<double, 2>{0., 0.}, std::nullopt);
+            "/None-offsets1", std::array<double, 2>{0., 0.}, std::nullopt);
         test_program_knots_optional_fields_and_association(
-            "[0.0-None]", std::nullopt, 0.);
+            "/0.0-None", std::nullopt, 0.);
         test_program_knots_optional_fields_and_association(
-            "[0.0-offsets1]", std::array<double, 2>{0., 0.}, 0.);
+            "/0.0-offsets1", std::array<double, 2>{0., 0.}, 0.);
         test_program_knots_optional_fields_and_association(
-            "[12.5-None]", std::nullopt, 12.5);
+            "/12.5-None", std::nullopt, 12.5);
         test_program_knots_optional_fields_and_association(
-            "[12.5-offsets1]", std::array<double, 2>{0., 0.}, 12.5);
+            "/12.5-offsets1", std::array<double, 2>{0., 0.}, 12.5);
         test_no_program_preserves_none_and_explicit_zero();
         test_reject_mixed_effort_and_policy_posture();
     });

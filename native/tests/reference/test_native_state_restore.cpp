@@ -160,7 +160,7 @@ void require_live_buffers(const Stepper &st, const LiveBuffers &before) {
 // Stepper aliasing + atomicity (lines 17-235 of the source)
 // ---------------------------------------------------------------------------
 
-// tests/reference/test_native_state_restore.py::test_set_state_snapshots_own_views_before_reset
+// native_state_restore/set_state_snapshots_own_views_before_reset
 void test_set_state_snapshots_own_views_before_reset() {
     const std::string mjb = bench_model_path();
     bike::model::ModelOwner ref_model{engine::load_model(mjb.c_str())};
@@ -224,7 +224,7 @@ episode_row(const std::vector<double> &flat, std::size_t row,
     return std::span<const double>{flat}.subspan(row * width, width);
 }
 
-// tests/reference/test_native_state_restore.py::test_forward_on_stored_state_is_bitwise
+// native_state_restore/forward_on_stored_state_is_bitwise
 // The source generated a fresh episode through the research CLI and
 // compared st.forward() against a live mj_forward — the MuJoCo oracle. The
 // port replays the frozen 40-row pinned_savage_40_f2 episode (the
@@ -293,7 +293,7 @@ void test_forward_on_stored_state_is_bitwise() {
     }
 }
 
-// tests/reference/test_native_state_restore.py::test_set_state_size_mismatch_raises_and_keeps_state
+// native_state_restore/set_state_size_mismatch_raises_and_keeps_state
 void test_set_state_size_mismatch_raises_and_keeps_state() {
     const auto dir = tyre_reference::platform_fixture("episode", "pinned_savage_40_f2");
     const auto episode = bike::golden::load_episode(dir);
@@ -324,7 +324,7 @@ void test_set_state_size_mismatch_raises_and_keeps_state() {
     require_bitwise(st.qacc(), before, "qacc after rejected set_state");
 }
 
-// tests/reference/test_native_state_restore.py::test_state_rejection_preserves_buffers
+// native_state_restore/state_rejection_preserves_buffers
 void test_state_rejection_preserves_buffers() {
     const std::string mjb = bench_model_path();
     bike::model::ModelOwner ref_model{engine::load_model(mjb.c_str())};
@@ -366,7 +366,7 @@ void test_state_rejection_preserves_buffers() {
     require_live_buffers(st, before);
 }
 
-// tests/reference/test_native_state_restore.py::test_set_state_nonfinite_span_rejects_atomically[field-bad_value]
+// native_state_restore/set_state_nonfinite_span_rejects_atomically/field-bad_value
 void test_set_state_nonfinite_span_rejects_atomically() {
     for (const std::string_view field_name : {"qvel", "act", "warmstart"})
         for (const double bad_value :
@@ -393,7 +393,7 @@ void test_set_state_nonfinite_span_rejects_atomically() {
         }
 }
 
-// tests/reference/test_native_state_restore.py::test_set_state_bad_time_rejects_atomically[bad_time]
+// native_state_restore/set_state_bad_time_rejects_atomically/bad_time
 void test_set_state_bad_time_rejects_atomically() {
     for (const double bad_time :
          {-.5, std::numeric_limits<double>::quiet_NaN(),
@@ -415,7 +415,7 @@ void test_set_state_bad_time_rejects_atomically() {
     }
 }
 
-// tests/reference/test_native_state_restore.py::test_set_inputs_nonfinite_rejects_atomically[field-bad_value]
+// native_state_restore/set_inputs_nonfinite_rejects_atomically/field-bad_value
 void test_set_inputs_nonfinite_rejects_atomically() {
     for (const std::string_view field_name : {"ctrl", "qfrc_applied"})
         for (const double bad_value :
@@ -436,7 +436,7 @@ void test_set_inputs_nonfinite_rejects_atomically() {
         }
 }
 
-// tests/reference/test_native_state_restore.py::test_set_state_accepts_cross_buffer_alias
+// native_state_restore/set_state_accepts_cross_buffer_alias
 void test_set_state_accepts_cross_buffer_alias() {
     const std::string mjb = bench_model_path();
     bike::model::ModelOwner ref_model{engine::load_model(mjb.c_str())};
@@ -483,7 +483,7 @@ void test_set_state_accepts_cross_buffer_alias() {
     bt::require(st.time() == .5, "aliased restore advances the clock");
 }
 
-// tests/reference/test_native_state_restore.py::test_set_state_rejection_with_aliased_buffers_preserves_state
+// native_state_restore/set_state_rejection_with_aliased_buffers_preserves_state
 void test_set_state_rejection_with_aliased_buffers_preserves_state() {
     const std::string mjb = bench_model_path();
     bike::model::ModelOwner ref_model{engine::load_model(mjb.c_str())};
@@ -614,7 +614,7 @@ void apply_spec(Value &leaf, std::string_view spec,
     }
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_relational_rejection_is_atomic[kind-path-spec]
+// native_state_restore/drive_restore_relational_rejection_is_atomic/kind-path-spec
 void test_drive_restore_relational_rejection_is_atomic() {
     struct Case {
         const char *path;
@@ -676,7 +676,7 @@ void test_drive_restore_relational_rejection_is_atomic() {
         }
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_coefficient_drift[kind-match]
+// native_state_restore/drive_restore_rejects_coefficient_drift/kind-match
 void test_drive_restore_rejects_coefficient_drift() {
     for (const auto &[kind, match] :
          {std::pair{"ideal_mid_drive", "coefficient/ratio"},
@@ -701,7 +701,7 @@ void test_drive_restore_rejects_coefficient_drift() {
     }
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_geometric_prepared_jacobian_drift
+// native_state_restore/drive_restore_rejects_geometric_prepared_jacobian_drift
 void test_drive_restore_rejects_geometric_prepared_jacobian_drift() {
     const auto owner =
         drivetrain_reference::pair("geometric_ideal_mid_drive");
@@ -721,7 +721,7 @@ void test_drive_restore_rejects_geometric_prepared_jacobian_drift() {
         "coefficients/prepared Jacobian");
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_pending_actuation_without_interval
+// native_state_restore/drive_restore_rejects_pending_actuation_without_interval
 void test_drive_restore_rejects_pending_actuation_without_interval() {
     const auto owner = drivetrain_reference::pair();
     const Value initial = drivetrain_reference::state(*owner);
@@ -753,7 +753,7 @@ void test_drive_restore_rejects_pending_actuation_without_interval() {
         "live interval");
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_nonpositive_pending_dt[dt]
+// native_state_restore/drive_restore_rejects_nonpositive_pending_dt/dt
 void test_drive_restore_rejects_nonpositive_pending_dt() {
     for (const double dt : {0., -.002}) {
         const auto owner = drivetrain_reference::pair();
@@ -772,7 +772,7 @@ void test_drive_restore_rejects_nonpositive_pending_dt() {
     }
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub
+// native_state_restore/drive_restore_rejects_orphaned_shift_pending_on_ideal_hub
 void test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub() {
     const auto owner = drivetrain_reference::pair();
     reject_drive_state(
@@ -784,7 +784,7 @@ void test_drive_restore_rejects_orphaned_shift_pending_on_ideal_hub() {
         "shift_pending");
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_geometric_shift_pending_accepted
+// native_state_restore/drive_restore_geometric_shift_pending_accepted
 void test_drive_restore_geometric_shift_pending_accepted() {
     const auto owner =
         drivetrain_reference::pair("geometric_ideal_mid_drive");
@@ -799,7 +799,7 @@ void test_drive_restore_geometric_shift_pending_accepted() {
                 "accepted geometric shift_pending round-trips");
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_cassette_membership_when_shifter_enabled
+// native_state_restore/drive_restore_cassette_membership_when_shifter_enabled
 void test_drive_restore_cassette_membership_when_shifter_enabled() {
     auto source = drivetrain_reference::source("ideal_mid_drive");
     source.shifting.enabled = true;
@@ -821,7 +821,7 @@ void test_drive_restore_cassette_membership_when_shifter_enabled() {
             "cassette");
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_restore_rejects_auxiliary_transmission_drift[topology-name-key-value]
+// native_state_restore/drive_restore_rejects_auxiliary_transmission_drift/topology-name-key-value
 void test_drive_restore_rejects_auxiliary_transmission_drift() {
     // Clutch/freewheel transmissions are fixed 1:1 one-way clutches with a
     // single unit coefficient — the snapshot cannot retopologize them.
@@ -857,7 +857,7 @@ void test_drive_restore_rejects_auxiliary_transmission_drift() {
         }
 }
 
-// tests/reference/test_native_state_restore.py::test_drive_policies_set_state_relational_rejections
+// native_state_restore/drive_policies_set_state_relational_rejections
 void test_drive_policies_set_state_relational_rejections() {
     // The standalone policy binding repeats the same relational guards:
     // shift clock/count, cassette membership, battery bounds.

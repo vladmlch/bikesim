@@ -1,0 +1,100 @@
+[
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "channel_tires/rows",
+  "nbytes": 8,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/episode_id",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 8,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/interval_id",
+  "nbytes": 24,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 32,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/front",
+  "nbytes": 1336,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 56,
+  "rtol": null,
+  "shape": [
+   1336
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/rear",
+  "nbytes": 1068,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 1392,
+  "rtol": null,
+  "shape": [
+   1068
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/__tires_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 2460,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "channel_tires/bits/__tires_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/struct_list_patches_channel_tires",
+  "offset": 2463,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ }
+]

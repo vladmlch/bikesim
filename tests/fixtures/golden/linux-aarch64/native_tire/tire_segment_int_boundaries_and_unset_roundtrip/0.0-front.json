@@ -1,0 +1,16 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "segment roundtrip",
+  "nbytes": 176,
+  "node": "native_tire/tire_segment_int_boundaries_and_unset_roundtrip/0.0-front",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   22
+  ]
+ }
+]

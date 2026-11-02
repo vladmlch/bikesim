@@ -1,0 +1,212 @@
+[
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "input.adapter.0",
+  "nbytes": 3912,
+  "node": "native_rider_intent/program_validation",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   489
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "input.program.0",
+  "nbytes": 1184,
+  "node": "native_rider_intent/program_validation",
+  "offset": 3912,
+  "rtol": null,
+  "shape": [
+   148
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "error.program.0",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 5096,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "input.program.1",
+  "nbytes": 1184,
+  "node": "native_rider_intent/program_validation",
+  "offset": 5096,
+  "rtol": null,
+  "shape": [
+   148
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "error.program.1",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 6280,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "input.program.2",
+  "nbytes": 856,
+  "node": "native_rider_intent/program_validation",
+  "offset": 6280,
+  "rtol": null,
+  "shape": [
+   107
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "error.program.2",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 7136,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "input.program.3",
+  "nbytes": 872,
+  "node": "native_rider_intent/program_validation",
+  "offset": 7136,
+  "rtol": null,
+  "shape": [
+   109
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "error.program.3",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 8008,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "input.program.4",
+  "nbytes": 856,
+  "node": "native_rider_intent/program_validation",
+  "offset": 8008,
+  "rtol": null,
+  "shape": [
+   107
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "error.program.4",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 8864,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "input.program.5",
+  "nbytes": 864,
+  "node": "native_rider_intent/program_validation",
+  "offset": 8864,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "error.program.5",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 9728,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "input.program.6",
+  "nbytes": 864,
+  "node": "native_rider_intent/program_validation",
+  "offset": 9728,
+  "rtol": null,
+  "shape": [
+   108
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "error.program.6",
+  "nbytes": 0,
+  "node": "native_rider_intent/program_validation",
+  "offset": 10592,
+  "rtol": null,
+  "shape": [
+   0
+  ]
+ }
+]

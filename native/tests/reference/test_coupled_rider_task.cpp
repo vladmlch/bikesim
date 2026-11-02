@@ -57,7 +57,7 @@ double time_s(const rr::EnvRig &rig) {
 
 [[gnu::noinline]] void
 test_passive_damping_defaults_to_the_legacy_gain_coupling() {
-    // tests/reference/test_coupled_rider_task.py::test_passive_damping_defaults_to_the_legacy_gain_coupling
+    // coupled_rider_task/passive_damping_defaults_to_the_legacy_gain_coupling
     const cfg::ArticulatedConfig base;
     bt::require(base.passive_damping_nms_rad() == base.joint_kd_nms_rad,
                 "nullopt keeps the dof damping == joint_kd coupling");
@@ -72,7 +72,7 @@ test_passive_damping_defaults_to_the_legacy_gain_coupling() {
 }
 
 [[gnu::noinline]] void test_coupled_task_control_is_opt_in() {
-    // tests/reference/test_coupled_rider_task.py::test_coupled_task_control_is_opt_in
+    // coupled_rider_task/coupled_task_control_is_opt_in
     // ArticulatedConfig(coupled_task_control=1) is a compile-time bool
     // rejection; the oracle's runtime ValueError is the same boundary.
     const cfg::ArticulatedConfig base;
@@ -82,7 +82,7 @@ test_passive_damping_defaults_to_the_legacy_gain_coupling() {
 
 [[gnu::noinline]] void
 test_crank_task_coordinate_is_appended_and_weighted() {
-    // tests/reference/test_coupled_rider_task.py::test_crank_task_coordinate_is_appended_and_weighted
+    // coupled_rider_task/crank_task_coordinate_is_appended_and_weighted
     bt::require(bike::rider::crank_task_scale_nm == 1.,
                 "the soft task is measured in newton metres");
     Matrix g = d::zeros(1, 2);
@@ -110,7 +110,7 @@ test_crank_task_coordinate_is_appended_and_weighted() {
 // ~18 control periods.
 [[gnu::noinline]] void
 test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step() {
-    // tests/reference/test_coupled_rider_task.py::test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step
+    // coupled_rider_task/planned_crank_torque_is_the_solved_weld_torque_of_the_first_step
     auto rig = coupled_rig();
     auto &physical = *rig->physical;
     {
@@ -163,7 +163,7 @@ test_planned_crank_torque_is_the_solved_weld_torque_of_the_first_step() {
 
 [[gnu::noinline]] void
 test_tissue_damping_does_not_eat_the_muscle_budget() {
-    // tests/reference/test_coupled_rider_task.py::test_tissue_damping_does_not_eat_the_muscle_budget
+    // coupled_rider_task/tissue_damping_does_not_eat_the_muscle_budget
     auto rig = coupled_rig();
     auto &physical = *rig->physical;
     double positive_sum = 0., passive_sum = 0.;

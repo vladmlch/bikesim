@@ -43,7 +43,7 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 }
 
 [[gnu::noinline]] void test_build_pose_gives_zero_q() {
-    // tests/reference/test_leg_loop.py::test_build_pose_gives_zero_q
+    // leg_loop/build_pose_gives_zero_q
     const auto g = geometry();
     const auto q = spindle::leg_joint_q(g, kHip, kPedal, 0.);
     bt::require(rr::approx(q[0], 0., 1e-6, 1e-9) &&
@@ -52,7 +52,7 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 }
 
 [[gnu::noinline]] void test_pelvis_pitch_shifts_hip_only() {
-    // tests/reference/test_leg_loop.py::test_pelvis_pitch_shifts_hip_only
+    // leg_loop/pelvis_pitch_shifts_hip_only
     const auto g = geometry();
     const auto q = spindle::leg_joint_q(g, kHip, kPedal, .1);
     bt::require(rr::approx(q[0], -.1, 1e-6, 1e-9) &&
@@ -61,7 +61,7 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 }
 
 [[gnu::noinline]] void test_jacobian_matches_finite_difference_of_ik() {
-    // tests/reference/test_leg_loop.py::test_jacobian_matches_finite_difference_of_ik
+    // leg_loop/jacobian_matches_finite_difference_of_ik
     const auto g = geometry();
     const Vec2 crank{0., 0.};
     const double phi = .7, d = 1e-5;
@@ -78,7 +78,7 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 }
 
 [[gnu::noinline]] void test_unreachable_raises() {
-    // tests/reference/test_leg_loop.py::test_unreachable_raises
+    // leg_loop/unreachable_raises
     const auto g = geometry();
     for (const Vec2 point : {Vec2{0., -5.}, Vec2{0., .7}})
         rr::expect_invalid(
@@ -87,7 +87,7 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 }
 
 [[gnu::noinline]] void test_ik_derivative_unwraps_near_angle_branch_cut() {
-    // tests/reference/test_leg_loop.py::test_ik_derivative_unwraps_near_angle_branch_cut
+    // leg_loop/ik_derivative_unwraps_near_angle_branch_cut
     const spindle::LegLoopGeometry g{.thigh_m = 1.,
                                      .link_m = 1.,
                                      .knee_sign = 1.,
@@ -104,7 +104,7 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
 
 [[gnu::noinline]] void
 test_native_spindle_and_leg_pose_including_bike_pitch() {
-    // tests/reference/test_leg_loop.py::test_native_spindle_and_leg_pose_including_bike_pitch
+    // leg_loop/native_spindle_and_leg_pose_including_bike_pitch
     auto const plant = rr::pinned_model();
     mjModel *m = plant.model.get();
     mjData *d = plant.data.get();
@@ -191,7 +191,7 @@ test_native_spindle_and_leg_pose_including_bike_pitch() {
 }
 
 [[gnu::noinline]] void test_leg_ik_matches_settled_native_joints() {
-    // tests/reference/test_leg_loop.py::test_leg_ik_matches_settled_native_joints
+    // leg_loop/leg_ik_matches_settled_native_joints
     auto rig = rr::pinned_rig();
     mjModel const *m = rig->stepper->model();
     mjData const *d = rig->stepper->data();

@@ -9,7 +9,7 @@ namespace {
 using namespace research_reference;
 namespace sw = runtime::sample_wire;
 
-// tests/reference/test_native_research_frontend.py::
+// tests/reference/test_native_research_frontend.py:
 //   test_native_partial_ticks_latch_policy_until_external_boundary
 void test_native_partial_ticks_latch_policy_until_external_boundary() {
     auto env = environment();

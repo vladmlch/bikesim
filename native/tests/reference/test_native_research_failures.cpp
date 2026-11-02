@@ -14,7 +14,7 @@ namespace {
 using namespace research_reference;
 namespace sw = runtime::sample_wire;
 
-// tests/reference/test_native_research_failures.py::
+// tests/reference/test_native_research_failures.py:
 //   test_engine_failure_preserves_prefix_and_reset_recovers
 void test_engine_failure_preserves_prefix_and_reset_recovers() {
     auto env = environment();

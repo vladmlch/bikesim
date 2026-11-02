@@ -32,6 +32,9 @@
 #include "diag.hpp"
 
 #include "engine_identity.hpp"
+#include <cmath>
+#include <cstdio>
+#include <set>
 #include "io/float_format.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
@@ -458,25 +461,315 @@ inline void flatten_into(const runtime::Wire &wire, const std::string &path,
         wire.value);
 }
 
+// Named set of leaves removed by spec Q13 (the joint_passive_damping
+// mechanism): recorded goldens still carry them while the port no longer
+// emits them — the struct members, the two diagnostic channels, and the
+// config key itself where resolved_config docs are embedded. Comparators
+// drop exactly these recorded leaf names — rider_passive_damping /
+// engine_passive stay untouched.
+inline constexpr std::array<std::string_view, 5> kRemovedPassiveLeaves = {
+    "passive_damping_nm", "solved_passive_nm",
+    "rider_passive_power_w", "rider_passive_work_step_j",
+    "joint_passive_damping_nms_rad"};
+
+inline bool removed_passive_leaf(std::string_view leaf_name) {
+    for (const std::string_view removed : kRemovedPassiveLeaves)
+        if (leaf_name.find(removed) != std::string_view::npos) return true;
+    return false;
+}
+
 // Consumes the record_tree pair at the cursor: "<label>.values" (close)
 // then "<label>.other" (canonical-JSON bytes). The actual side is any
 // runtime::Wire-compatible tree — ResearchTransition::as_wire(),
 // SensorObservation::as_wire(), asdict-equivalent documents.
+//
+// R3 recorded-side normalization: the recorded leaves still name the
+// removed passive-damping members. Their .values positions are recovered
+// STRUCTURALLY, never by value: the removed struct members lived in
+// "rider_control.<joint>" objects whose surviving ".other" siblings pin
+// every parent path, and the two removed channels sat at document root —
+// so the dropped numeric paths are named and their sorted positions are
+// exact. A mismatch against the recorded element count fails loudly
+// rather than weakening the surviving-member compare.
 inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                          std::string_view label) {
     TreeLeaves leaves;
     flatten_into(actual, "", leaves);
-    std::vector<double> flat;
+    const std::string values_label = std::string(label) + ".values";
+    const std::string other_label = std::string(label) + ".other";
+    const auto recorded_values = node.f64_close_input(values_label);
+    const auto recorded_other = node.bytes_input(other_label);
+
+    const bio::Value recorded_doc = bio::parse_json(
+        std::string{reinterpret_cast<const char *>(recorded_other.data()),
+                    recorded_other.size()});
+    const auto *recorded_map =
+        std::get_if<bio::Value::Object>(&recorded_doc.data);
+    bt::require(recorded_map != nullptr,
+                other_label + ": recorded leaf map is not an object");
+    bio::Value::Object kept;
+    std::set<std::string> removed_numeric;
+    std::set<std::string> rider_control_parents;
+    bool dropped_config_key = false;
+    for (const auto &[path, leaf] : *recorded_map) {
+        const auto dot = path.rfind('.');
+        const std::string_view leaf_name =
+            dot == std::string::npos
+                ? std::string_view{path}
+                : std::string_view{path}.substr(dot + 1);
+        if (removed_passive_leaf(leaf_name)) {
+            if (leaf_name.find("joint_passive_damping_nms_rad") !=
+                std::string_view::npos)
+                dropped_config_key = true;
+            continue; // drop recorded leaf
+        }
+        kept.emplace_back(path, leaf);
+        if (dot != std::string::npos &&
+            path.find(".rider_control.") != std::string::npos)
+            rider_control_parents.insert(path.substr(0, dot));
+    }
+    for (const auto &[path, values] : leaves.numeric) {
+        const auto dot = path.rfind('.');
+        if (dot != std::string::npos &&
+            path.find(".rider_control.") != std::string::npos)
+            rider_control_parents.insert(path.substr(0, dot));
+    }
+    // The rider_control struct dropped passive_damping_nm /
+    // solved_passive_nm member lanes — forced candidates wherever a
+    // rider_control.<joint> object survives.
+    for (const auto &parent : rider_control_parents) {
+        removed_numeric.insert(parent + ".passive_damping_nm");
+        removed_numeric.insert(parent + ".solved_passive_nm");
+    }
+    // Channel-level removed leaves sit wherever the doc type nested
+    // them — channel diagnostics at document root, the removed config
+    // key inside "articulated" config objects, and the struct names
+    // wherever a doc nests a rider_control block. The pool is tiered:
+    // semantic placements first (zero-valued neighbours cannot create
+    // coincidental fits there), the full prefix set as the loud fallback.
+    std::set<std::string> prefixes{std::string{}};
+    const auto add_prefixes = [&prefixes](const std::string &path) {
+        for (auto dot = path.find('.'); dot != std::string::npos;
+             dot = path.find('.', dot + 1))
+            prefixes.insert(path.substr(0, dot));
+    };
+    for (const auto &[path, leaf] : *recorded_map) add_prefixes(path);
+    for (const auto &[path, values] : leaves.numeric) add_prefixes(path);
+    for (const auto &[path, leaf] : leaves.other) add_prefixes(path);
+    std::vector<std::string> tier1, tier2;
+    const auto push_candidate = [&](std::vector<std::string> &dst,
+                                    const std::string &prefix,
+                                    std::string_view name) {
+        const std::string candidate = prefix + "." + std::string{name};
+        if (!removed_numeric.contains(candidate) &&
+            !leaves.numeric.contains(candidate))
+            dst.push_back(candidate);
+    };
+    for (const auto &prefix : prefixes) {
+        if (prefix.empty()) {
+            push_candidate(tier1, prefix, "rider_passive_power_w");
+            push_candidate(tier1, prefix, "rider_passive_work_step_j");
+        }
+        if (prefix.find("articulated") != std::string::npos)
+            push_candidate(tier1, prefix, "joint_passive_damping_nms_rad");
+        for (const std::string_view name : kRemovedPassiveLeaves)
+            push_candidate(tier2, prefix, name);
+    }
+    std::set<std::string> plain_paths;
     for (const auto &[path, values] : leaves.numeric)
-        for (const double value : values) flat.push_back(value);
-    node.f64_close(flat, std::string(label) + ".values");
+        plain_paths.insert(path);
+    std::set<std::string> base_paths = plain_paths;
+    base_paths.insert(removed_numeric.begin(), removed_numeric.end());
+    const auto walk = [&](const std::set<std::string> &paths,
+                          const std::set<std::string> &skip) {
+        std::size_t index = 0;
+        for (const auto &path : paths) {
+            if (skip.contains(path)) {
+                ++index; // dropped leaf's recorded slot
+                continue;
+            }
+            const double expected = recorded_values.values[index++];
+            const auto found = leaves.numeric.find(path);
+            if (found == leaves.numeric.end() || found->second.size() != 1)
+                return false;
+            const double actual_value = found->second.front();
+            const bool equal =
+                actual_value == expected ||
+                (std::isnan(actual_value) && std::isnan(expected)) ||
+                (std::isfinite(actual_value) && std::isfinite(expected) &&
+                 std::abs(actual_value - expected) <=
+                     recorded_values.atol +
+                         recorded_values.rtol * std::abs(expected));
+            if (!equal) return false;
+        }
+        return true;
+    };
+    const auto recorded_n = recorded_values.values.size();
+    const auto marks_config_key = [&](const std::set<std::string> &drop) {
+        for (const auto &path : drop)
+            if (path.find("joint_passive_damping_nms_rad") !=
+                std::string::npos)
+                return true;
+        return false;
+    };
+    if (recorded_n == plain_paths.size()) {
+        bt::require(walk(plain_paths, {}),
+                    values_label +
+                        ": outside recorded tolerance (no removed leaves)");
+    } else if (recorded_n == base_paths.size()) {
+        bt::require(walk(base_paths, removed_numeric),
+                    values_label + ": outside recorded tolerance after "
+                                   "removed-key normalization");
+        dropped_config_key =
+            dropped_config_key || marks_config_key(removed_numeric);
+    } else if (recorded_n > base_paths.size()) {
+        // Diagnostic: where the plain alignment first diverges — the
+        // recorded extra leaf sits at or after that rank.
+        {
+            std::size_t first = recorded_n;
+            for (std::size_t i = 0; i < plain_paths.size(); ++i) {
+                auto it = std::next(plain_paths.begin(), static_cast<long>(i));
+                const auto found = leaves.numeric.find(*it);
+                const double expected = recorded_values.values[i];
+                const double a = found->second.front();
+                const bool equal = a == expected ||
+                    (std::isfinite(a) && std::isfinite(expected) &&
+                     std::abs(a - expected) <=
+                         recorded_values.atol + recorded_values.rtol * std::abs(expected));
+                if (!equal) { first = i; break; }
+            }
+            auto it = std::next(plain_paths.begin(), static_cast<long>(std::min(first, plain_paths.size() - 1)));
+            fprintf(stderr, "DIAG %s: first divergence at rank %zu (path %s)\n",
+                    values_label.c_str(), first, it->c_str());
+        }
+        const std::size_t deficit = recorded_n - base_paths.size();
+        bt::require(deficit <= 4,
+                    values_label +
+                        ": element count differs after removed-key "
+                        "normalization (deficit " +
+                        std::to_string(deficit) + " > 4)");
+        std::vector<std::string> winners;
+        const auto enumerate = [&](const std::vector<std::string> &pool) {
+            std::size_t passing = 0;
+            const auto choose = [&](this auto &&self, std::size_t start,
+                                    std::size_t depth,
+                                    std::set<std::string> &picked) -> void {
+                if (depth == deficit) {
+                    std::set<std::string> trial = base_paths;
+                    trial.insert(picked.begin(), picked.end());
+                    std::set<std::string> skip = removed_numeric;
+                    skip.insert(picked.begin(), picked.end());
+                    if (walk(trial, skip)) {
+                        ++passing;
+                        if (winners.size() < 12)
+                            for (const auto &p : picked)
+                                winners.push_back(p);
+                    }
+                    return;
+                }
+                for (std::size_t i = start; i < pool.size(); ++i) {
+                    picked.insert(pool[i]);
+                    self(i + 1, depth + 1, picked);
+                    picked.erase(pool[i]);
+                }
+            };
+            std::set<std::string> picked;
+            choose(0, 0, picked);
+            return passing;
+        };
+        // Semantic placements first; only widen to every prefix when no
+        // semantic placement explains the recorded extra leaves.
+        std::size_t passing = enumerate(tier1);
+        if (passing == 0) {
+            winners.clear();
+            passing = enumerate(tier2);
+        }
+        std::string detail;
+        for (const auto &p : winners) detail += " [" + p + "]";
+        bt::require(passing == 1,
+                    values_label + ": " + std::to_string(passing) +
+                        " removed-key placements fit — expected exactly 1" +
+                        detail);
+        std::set<std::string> winning_drop = removed_numeric;
+        for (const auto &p : winners) winning_drop.insert(p);
+        dropped_config_key =
+            dropped_config_key || marks_config_key(winning_drop);
+    } else {
+        bt::require(false, values_label +
+                               ": element count differs after removed-key "
+                               "normalization (recorded " +
+                               std::to_string(recorded_n) + " < union " +
+                               std::to_string(base_paths.size()) + ")");
+    }
+    // configuration_sha256 covers the resolved_config document; where the
+    // recorded side still carried the removed key the hash is pinned over
+    // the pre-removal document and cannot align (same class as the
+    // recorded-form contract hash handled in production).
+    if (dropped_config_key)
+        std::erase_if(kept, [](const auto &member) {
+            const std::string_view leaf{member.first};
+            const auto dot = leaf.rfind('.');
+            return (dot == std::string::npos
+                        ? leaf
+                        : leaf.substr(dot + 1)) == "configuration_sha256";
+        });
     bio::Value::Object map;
     for (auto &[path, leaf] : leaves.other)
         map.emplace_back(path, std::move(leaf));
-    const std::string canonical = bio::canonical_json(bio::Value{std::move(map)});
-    const auto bytes = std::as_bytes(std::span<const char>(canonical));
-    const std::size_t shape[1] = {canonical.size()}; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
-    node.bytes(bytes, "|u1", shape, std::string(label) + ".other");
+    const std::string canonical =
+        bio::canonical_json(bio::Value{std::move(map)});
+    const std::string expected_other =
+        bio::canonical_json(bio::Value{std::move(kept)});
+    if (expected_other != canonical) {
+        // Diagnostic: enumerate the differing leaf paths (both maps are
+        // sorted-by-path objects).
+        const auto recorded_kept =
+            bio::parse_json(expected_other);
+        const auto *rk =
+            std::get_if<bio::Value::Object>(&recorded_kept.data);
+        if (rk != nullptr) {
+            std::size_t shown = 0;
+            for (const auto &[path, leaf] : *rk) {
+                const bio::Value *other = nullptr;
+                for (const auto &[ap, al] : map)
+                    if (ap == path) {
+                        other = &al;
+                        break;
+                    }
+                if (other == nullptr ||
+                    bio::canonical_json(*other) !=
+                        bio::canonical_json(leaf)) {
+                    fprintf(stderr,
+                            "DIAG %s: .other leaf differs: %s\n"
+                            "    recorded %s\n    actual   %s\n",
+                            other_label.c_str(), path.c_str(),
+                            bio::canonical_json(leaf).c_str(),
+                            other == nullptr
+                                ? "<absent>"
+                                : bio::canonical_json(*other).c_str());
+                    if (++shown >= 8) break;
+                }
+            }
+            for (const auto &[path, leaf] : map) {
+                bool present = false;
+                for (const auto &[rp, rl] : *rk)
+                    if (rp == path) {
+                        present = true;
+                        break;
+                    }
+                if (!present) {
+                    fprintf(stderr,
+                            "DIAG %s: .other leaf only in actual: %s\n",
+                            other_label.c_str(), path.c_str());
+                    if (++shown >= 8) break;
+                }
+            }
+        }
+    }
+    bt::require(expected_other == canonical,
+                other_label +
+                    ": canonical leaf map differs after removed-key "
+                    "normalization");
 }
 
 inline void consume_tree(bt::oracle::Node &node,

@@ -37,7 +37,29 @@ void catalog_contract() {
     // the passive_damping_nm / solved_passive_nm rider_control children
     // (spec Q13 removal — each was a leaf descriptor).
     bt::require(count == 493, "full reviewed catalog retains all 493 repeated/nested descriptor occurrences");
-    const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
+    auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
+    // Spec Q13: the recorded catalog still lists the removed passive-
+    // damping channel leaves. Drop exactly the named entries from the
+    // expected side — the golden is never regenerated.
+    {
+        static constexpr std::array<std::string_view, 4> removed{
+            "passive_damping_nm", "solved_passive_nm",
+            "rider_passive_power_w", "rider_passive_work_step_j"};
+        const auto strip = [&](this auto &&self, io::Value &v) -> void {
+            if (auto *arr = std::get_if<io::Value::Array>(&v.data)) {
+                std::erase_if(*arr, [&](const io::Value &e) {
+                    const auto *s = std::get_if<std::string>(&e.data);
+                    if (!s) return false;
+                    for (const std::string_view name : removed)
+                        if (s->find(name) != std::string::npos) return true;
+                    return false;
+                });
+                for (auto &e : *arr) self(e);
+            } else if (auto *obj = std::get_if<io::Value::Object>(&v.data))
+                for (auto &[k, c] : *obj) self(c);
+        };
+        strip(golden);
+    }
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;
     for (const auto& coordinate : coordinates) {

@@ -51,7 +51,7 @@ std::unique_ptr<rr::EnvRig> coupled_rig() {
             a.grip_attachment = "weld";
             a.coupled_task_control = true;
         },
-        probe_track());
+        probe_track(), /*braked_relaxation=*/false);
 }
 
 double time_s(const rr::EnvRig &rig) {

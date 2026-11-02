@@ -338,6 +338,14 @@ void test_native_recorded_columns_match_scalar_recorder_without_row_roundtrip() 
         const std::string label(node.peek_label());
         if (!label.starts_with("columns.")) break;
         const std::string name = label.substr(std::string("columns.").size());
+        // R3: recorded columns naming the removed passive-damping members
+        // are consumed without comparing — spec Q13 removed their
+        // emitters; the port must not reproduce them (named set only:
+        // rider_passive_damping / engine_passive stay untouched).
+        if (ft2_reference::removed_passive_leaf(name)) {
+            static_cast<void>(node.f64_close_input(label));
+            continue;
+        }
         node.f64_close(actual.at(name), label);
     }
     native->close();

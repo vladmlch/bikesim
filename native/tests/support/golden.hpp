@@ -45,6 +45,16 @@ public:
     // other "|u1" payloads the port parses instead of comparing): consumes
     // the next entry and returns its recorded bytes untouched.
     [[nodiscard]] std::vector<std::byte> bytes_input(std::string_view label);
+    // Readback for kind="close" <f8 entries: consumes the next entry and
+    // returns the recorded values with the entry's comparison tolerances —
+    // for test-harness comparators that re-verify a subset of a recorded
+    // close array against a normalized expected side.
+    struct CloseReadback {
+        std::vector<double> values;
+        double rtol;
+        double atol;
+    };
+    [[nodiscard]] CloseReadback f64_close_input(std::string_view label);
     // The next unconsumed entry's label without advancing the cursor —
     // for replay branches (output tuple vs error capture) that choose
     // their consumer by the recorded kind. Empty at end of node.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "topology": "articulated_planar_two_arm",
-  "provenance": "Provisional engineering working sheet. Absolute isometric torques are order-of-magnitude adult sagittal norms; every curve is verified=false until its source table/row is extracted. See docs/research/joint-strength-evidence.md.",
+  "provenance": "Provisional engineering working sheet. Absolute isometric torques are order-of-magnitude adult sagittal norms; every curve is verified=false until its source table/row is extracted. See docs/reference/joint-strength-evidence.md.",
   "joints": {
     "rider_torso_hinge": {
       "coordinate": {"neutral_anatomical_rad": 0.732562, "direction": 1},

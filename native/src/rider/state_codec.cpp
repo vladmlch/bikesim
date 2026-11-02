@@ -1954,13 +1954,24 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d, kConfigRequiredKeys, kConfigOptionalKeys);
     // legacy recordings: the removed knob is accepted only when the
-    // recorded value is inert (null or 0.0); a nonzero value cannot be
+    // recorded value is inert — a recorded 0.0 left zero hinge damping.
+    // A recorded null is never inert in this payload: rider_controller
+    // documents exist only when an articulated rider ran, so the unset
+    // knob resolved through the nullopt -> joint_kd_nms_rad fallback
+    // (~15 Nms/rad) on live hinges — the same ruling
+    // replay/rebuild.cpp's drop_removed_passive_damping makes for
+    // recorded_rider_hinges. A non-inert recorded value cannot be
     // silently dropped — it would bless a different reconstruction.
-    if (d.contains("joint_passive_damping_nms_rad"))
-        if (const auto damping = d["joint_passive_damping_nms_rad"].optional_real(path);
-            damping.has_value() && *damping != 0.)
+    if (d.contains("joint_passive_damping_nms_rad")) {
+        const VNode recorded = d["joint_passive_damping_nms_rad"];
+        if (recorded.is_none())
+            invalid(std::string(path) + ".joint_passive_damping_nms_rad",
+                    "recorded null resolved to joint_kd_nms_rad fallback "
+                    "damping on the articulated rider");
+        else if (recorded.finite_real(path) != 0.)
             invalid(std::string(path) + ".joint_passive_damping_nms_rad",
                     "removed config knob carries a nonzero recorded value");
+    }
     SpindleConfig config;
     decode_actuation_scalars(d, path, config);
     decode_geometry_scalars(d, path, config);

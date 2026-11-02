@@ -906,6 +906,27 @@ void test_spindle_probe_rejects_bad_input() {
   bt::require(
       throws_std([&] { (void)rider::decode_spindle_config(rider_doc); }),
       "pedal_attachment=pin rejects");
+  // The removed joint_passive_damping_nms_rad knob is accepted only when
+  // the recorded value is inert: a recorded 0.0 decodes, but an explicit
+  // null is never inert in a rider_controller payload — the unset knob
+  // resolved through the joint_kd_nms_rad fallback on articulated
+  // hinges, so decode rejects it like a nonzero value.
+  bio::Value damping_doc = member(doc, "rider_controller");
+  auto &damping_members = std::get<bio::Value::Object>(damping_doc.data);
+  damping_members.emplace_back("joint_passive_damping_nms_rad",
+                               bio::Value{bio::Number{"0.0"}});
+  (void)rider::decode_spindle_config(damping_doc);
+  damping_members.back().second = bio::Value{};
+  try {
+    (void)rider::decode_spindle_config(damping_doc);
+    bt::require(false,
+                "recorded null joint_passive_damping_nms_rad rejects");
+  } catch (const std::invalid_argument &failure) {
+    bt::require(std::string_view(failure.what())
+                        .find("joint_passive_damping_nms_rad") !=
+                    std::string_view::npos,
+                "the null damping rejection names the removed key");
+  }
   bt::require(throws_std([&] {
                 (void)rider::decode_spindle_config(
                     bio::Value{bio::Value::Object{}});

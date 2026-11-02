@@ -33,7 +33,7 @@
 # Exports consumed by the rest of the build:
 #   BIKE_MODULE_REPO_ROOT / BIKE_DEPENDENCY_ROOT / BIKE_DEPENDENCY_LOCK —
 #     the single home for the .deps/lock defaults (previously duplicated
-#     inline in native/CMakeLists.txt).
+#     inline in the retired transition graph's native/CMakeLists.txt).
 #   BIKE_FIRST_PARTY_INCLUDE_DIR — engine_abi_312.hpp root for the TLS probe.
 #   BIKE_DEP_<name>_ROOT — verified extracted root per dependency.
 #   BIKE_DEP_mujoco_LIBRARY / BIKE_DEP_duckdb_LIBRARY — the sha256-verified

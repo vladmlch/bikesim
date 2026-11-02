@@ -25,14 +25,16 @@ elseif(CASE STREQUAL "test_native_contract_executable_lists_registered_cases")
     message(FATAL_ERROR "contract --list failed (${_result}): ${_err}")
   endif()
   # Literal expected order from the original assertion, not executable output
-  # used as its own expected value. CMake lists preserve the exact 46 names.
+  # used as its own expected value. CMake lists preserve the exact 45 names
+  # (T63 removed owned_staging_owner_failure_frees_storage with the wire
+  # owner-staging seam it covered).
   set(_expected
     human_crank_torque pedaling_policy_valid_transition pedaling_ctor_domain
     shifter_ctor_domain assist_ctor_domain battery_ctor_domain freehub_ctor_domain
     writer_config_domains transmission_lifecycle_invariants
     typed_ctor_matches_validator_domain engine_fatal_status_and_reuse
     nested_engine_frames thread_local_engine_frames previous_tls_handler_restored
-    owned_staging_owner_failure_frees_storage transmission_staged_ratio_atomicity
+    transmission_staged_ratio_atomicity
     interval_clock_contracts cruise_live_timestep model_access_contracts
     geometry_topology_and_ids geometry_nonfinite_transform profile_contract_boundaries
     support_geometry_parent_contracts settlement_sparse_last_atomicity

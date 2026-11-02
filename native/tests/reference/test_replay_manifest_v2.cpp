@@ -280,10 +280,12 @@ void execution_v2(std::string_view backend) {
 // name=sha256 manifest algorithm on a synthetic tree, plus the compiled
 // runtime identity matching a recompute over the live native/ tree.
 std::string fingerprint(const std::filesystem::path& root) {
-    // Same per-directory allowlists as native/CMakeLists.txt and
-    // artifact.native_source_fingerprint: src tracks code files; cmake
-    // tracks build scripts (a stray cmake/*.cpp is a probe, not a source).
-    std::vector<std::filesystem::path> inputs{root / "CMakeLists.txt"};
+    // Same per-directory allowlists as the root graph's Track-B identity
+    // block in CMakeLists.txt: src tracks code files; cmake tracks build
+    // scripts (a stray cmake/*.cpp is a probe, not a source). T63 retired
+    // the transition graph's own native/CMakeLists.txt, so the manifest no
+    // longer seeds a root list file.
+    std::vector<std::filesystem::path> inputs;
     const std::pair<std::string_view, std::set<std::string>> scopes[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {"src", {".cpp", ".hpp", ".h", ".in"}}, {"cmake", {".cmake", ".in"}}};
     for (const auto& [directory, extensions] : scopes)

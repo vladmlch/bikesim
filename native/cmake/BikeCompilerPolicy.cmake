@@ -5,7 +5,7 @@
 # In the real build BikePlatform.cmake has already fixed
 # BIKE_TARGET_SYSTEM; a standalone fixture project gets the host name.
 #
-# Exports consumed by native/CMakeLists.txt (and the portability fixture):
+# Exports consumed by the root CMakeLists.txt (and the portability fixture):
 #   bike_require_cxx_flag(flag var)     required flag probe — FATAL on
 #                                       an unsupported required flag
 #   bike_apply_native_policy(target)    applies the DIRECT (not

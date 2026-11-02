@@ -4327,7 +4327,9 @@ namespace {
                 "batch columns carry the energy channel projection");
     }
 
-    constexpr std::array<TestCase, 46> cases{{
+    // to_array deduces the element count — an explicit size once left a
+    // zero-initialized tail entry whose null run pointer crashed `all`.
+    constexpr auto cases = std::to_array<TestCase>({
         {.name = "human_crank_torque", .run = test_human_crank_torque},
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
@@ -4373,7 +4375,7 @@ namespace {
         {.name = "owned_episode_batch_ranges", .run = test_owned_episode_batch_ranges},
         {.name = "owned_episode_rejects_malformed_samples", .run = test_owned_episode_rejects_malformed_samples},
         {.name = "owned_episode_seal_batch_allocation_faults", .run = test_owned_episode_seal_batch_allocation_faults},
-    }};
+    });
 
     int run_case(const TestCase &test_case) {
         try {

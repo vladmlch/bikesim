@@ -2,7 +2,7 @@
 
 Bicycle suspension/kinematics, physical ride simulation, torque-control
 research and checked replay — a native C++ product (the Python runtime was
-removed at T63; `native/` holds the product and its migration evidence).
+removed at T63; `native/` holds the product).
 
 ## Development commands
 
@@ -22,14 +22,12 @@ guide for the host you are on:
 
 ## Documentation
 
-- [Native workflow](docs/native-workflow.md) and
-  [Python-to-C++ command map](docs/python-to-cpp-compatibility.md)
+- [Native workflow](docs/native-workflow.md)
 - [Physical ride, research and replay](docs/RIDE.md)
 - [Run recording, SQL analysis and replay formats](docs/RECORDING.md)
 - [Test profiles and native tooling](docs/TESTING.md)
 - [Installation modes](docs/development/install-modes.md) (binary/source archives and development checkouts)
-- [Historical wheel matrix](docs/development/dependency-matrix.md) and
-  [numerical provider profiles](docs/development/numerical-profiles.md)
+- [Numerical provider profiles](docs/agents/native-numerical-profiles.md)
 - [Engineering instructions](AGENTS.md)
 
 The command entrypoints include `bike-ride`, `bike-research`, `bike-replay`

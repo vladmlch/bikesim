@@ -1,5 +1,5 @@
 // value.hpp — the owned cold-path value tree (task T05;
-// migration/interface-contracts.md §2 verbatim shape). `Value` is a
+// the transition-era interface contract, verbatim shape). `Value` is a
 // lossless JSON/recording AST: numbers stay validated lexemes so integer
 // precision and integer-versus-float spelling survive; `Bytes` and
 // `Tagged` carry the decoded bike_recording.json.v1 tag payloads. This is

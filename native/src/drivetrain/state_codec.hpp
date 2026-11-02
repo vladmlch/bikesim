@@ -1,5 +1,5 @@
 // drivetrain/state_codec.hpp — the owned bike::io::Value state codec for
-// the drivetrain boundary (task T08; migration/interface-contracts.md
+// the drivetrain boundary (the drivetrain boundary
 // §1/§2).
 //
 // The wire document is the flattened `state.drive` object the bootstrap

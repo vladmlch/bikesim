@@ -14,7 +14,7 @@ namespace bike::io { struct Value; }
 
 namespace bike::rider {
 
-// migration/interface-contracts.md: owned row-major matrices, never views
+// the transition-era interface contract: owned row-major matrices, never views
 // into a callback or another controller's mutable scratch.
 struct Matrix {
     std::size_t rows = 0, cols = 0;

@@ -18,9 +18,7 @@ Historical binding lane (measured 2026-10-14/17; not qualification of the Phase 
 | Gate evidence | All static-analysis sweeps and headers/diagnostic/context controls green; CTest 10/10; native+golden pytest ~3,203 items (see limits below) |
 
 Recorded limits, not qualifications: macOS **Intel** has no measured lane
-and stays unqualified. Real desktop viewer sessions from this wave are
-pending on the acceptance matrix
-([viewer-platform-acceptance.md](viewer-platform-acceptance.md)); the dated
+and stays unqualified. The dated
 GUI numbers below in this repository's documents are historical. The
 measured `native` gate run recorded `3202 passed, 1 failed` — the retained
 failure
@@ -64,8 +62,7 @@ Configure points at the result with `-DBIKE_DEPENDENCY_ROOT=<checkout>/.deps`
 (the root presets already default there). The loaded MuJoCo image must
 expose the project's private ABI symbols and the numerical backend is the
 system
-Accelerate provider ([numerical-profiles.md](numerical-profiles.md),
-[dependency-matrix.md](dependency-matrix.md)). The transition oracle's
+Accelerate provider ([numerical-profiles.md](../agents/native-numerical-profiles.md). The transition oracle's
 `uv sync --frozen --group native` environment, `UV_PROJECT_ENVIRONMENT`
 override and `tools/dev.py bootstrap` helper were removed at T63; there
 is nothing to sync.

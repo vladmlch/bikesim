@@ -1,5 +1,5 @@
 // research_io.hpp — the owned research bootstrap boundary (task T10;
-// migration/interface-contracts.md §research).
+// the transition-era interface contract).
 //
 // A research bootstrap is one capture directory: the T09 ride trio
 // (config.json / state.json / model.mjb) plus research.json carrying the

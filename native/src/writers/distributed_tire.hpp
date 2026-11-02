@@ -1,7 +1,7 @@
 // writers/distributed_tire.hpp — native port of `DistributedTireForceApplier`
 // (src/bike_sim/sim/ride/distributed_tire_forces.py) — the distributed
 // per-station tyre backend. Tasks 4-5 of
-// docs/superpowers/plans/2026-10-11-distributed-tire-b-native-port.md:
+// the recorded distributed-tire design (pre-cleanup tag):
 // construction, the canonical state wire, stored energy, the
 // reset/clock/snapshot/diagnostic scaffolding, and the station tick
 // (`compute_into`/`try_compute_into`/`probe_*`). `Stepper` selects this

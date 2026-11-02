@@ -1,5 +1,5 @@
 // rider/state_codec.hpp — the owned bike::io::Value state codecs for the
-// rider boundary (task T08; migration/interface-contracts.md §1/§2).
+// rider boundary (the rider boundary).
 //
 // These are the Python-free twins of the nanobind wire readers in
 // spindle_wire.cpp, intent_wire.cpp, attachment_binding.cpp and

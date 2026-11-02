@@ -1,10 +1,4 @@
-1. There is no first-party Python: T63 removed the runtime, the uv
-   environment and the binding surface; do not reintroduce interpreter
-   invocations in tracked sources (the produced source audit gates this).
-   In documentation, live commands use ` ``` ` fences — the documentation
-   audit fails on interpreter tokens (`python`, `uv`, `pip`, `pytest`,
-   `mjpython`) in them; recorded/deferred commands use `~~~` fences.
-2. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
+1. Before native changes, mirrored physics changes, or verification-tool changes, read [native engineering rules](docs/agents/native-engineering.md).
 
 # Libraries source code (optional reference)
 
@@ -31,14 +25,13 @@ profile by what changed. `preset` names a configure preset from
 `native asan` runs the same stages on `build/asan`.
 
 - `quick` — one `cmake --workflow --preset <preset>` run: configure, build and
-  the test step, which excludes the `slow|audit|package` labels.
+  the test step, which excludes the `slow|package` labels.
 - `native` — configure + build, then every produced static-analysis sweep and
   the structural contracts check via `tools/run_native_checks.sh`, then CTest
-  without `slow|audit|package`. The gate for native code and
+  without `slow|package`. The gate for native code and
   build/analysis/sanitizer/coverage tooling (including `tools/*.sh`). Not done
   until green.
-- `full` — the `native` profile plus the explicit `slow`, `audit` and
-  `package` label gates (`--no-tests=error`). For physics or realtime paths.
+- `full` — the `native` profile plus the explicit `slow` and `package` label gates (`--no-tests=error`). For physics or realtime paths.
 
 A failed sweep names its kind; rerun it standalone with
 `build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`,
@@ -65,15 +58,6 @@ CTest). It is the outer gate, not the inner loop.
 - Compare a gate's failures against the documented baseline list. Reach for
   stash+rerun at HEAD only for a failure the baseline does not explain —
   proving pre-existing red costs a full gate.
-
-The numba caveat (cold `@njit(cache=True)` compiles overstating per-step cost)
-was removed with Python, see ADR-0003.
-
-Oracle parity ([ADR-0003](docs/adr/0003-native-authoritative-python-removal.md)):
-the Python oracle and its pytest comparison fixture were removed at T63.
-The gate is the C++ test suite against the captured goldens under
-`tests/fixtures/golden/<platform>/`.
-
 
 ## Behavioral Stability
 

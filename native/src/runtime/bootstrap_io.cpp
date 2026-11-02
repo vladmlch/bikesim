@@ -3,7 +3,7 @@
 //
 // Layout: <directory>/{config.json, state.json, model.mjb}. The JSON
 // documents carry the capture codec's externalized tags
-// (tools/migration/capture_reference.py::encode_tree):
+// (the captured reference encoder):
 //
 //   {"$array": rel, "dtype": ..., "shape": [...], "order": "C",
 //    "sha256": ...}        -> a (possibly nested) Value::Array of exact

@@ -1,5 +1,5 @@
 // runtime.hpp — the owned native ride runtime, pure C++ (task T09;
-// migration/interface-contracts.md §1).
+// the transition-era interface contract).
 //
 // NativeRideRuntime owns the model image + Stepper + the complete
 // captured bootstrap. It aliases nothing caller-side: the configuration

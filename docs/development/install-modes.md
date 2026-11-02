@@ -29,9 +29,8 @@ bash tools/run_native_checks.sh build/native-release
 ```
 
 On Linux the documented lane is aarch64 inside the checkout's container.
-That lane is not yet qualified on this tree (see the
-[release qualification checklist](../releases/python-free-qualification.md));
-the recorded container contract is:
+That lane is not yet qualified on this tree; the recorded container
+contract is:
 
 ~~~sh
 bash tools/linux/container.sh sync
@@ -86,5 +85,4 @@ carry their provider identity in the linked build record.
 The Phase 3 changes were implemented and inspected as source with
 compilation and execution prohibited. Actual preset builds, negative
 sanitizer controls, coverage, install/package smokes and offline rebuilds
-remain to be recorded in the
-[release qualification checklist](../releases/python-free-qualification.md).
+remain to be recorded on the Linux lane.

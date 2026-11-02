@@ -7,8 +7,7 @@ diagnosis lives in [troubleshooting.md](troubleshooting.md).
 **Qualification status:** post-T63 Linux qualification is **deferred** —
 no lane of the Python-free root graph has executed on this tree, so every
 "qualified" claim below is pre-removal historical evidence, not a current
-qualification. The authoritative status matrix is the
-[release qualification checklist](../releases/python-free-qualification.md).
+qualification.
 Commands in `~~~` fences are the recorded/deferred lane contract, not a
 run book for this checkout (the container driver currently exits 3 under
 the plan-change guard; Docker is unavailable on the Darwin-only host).
@@ -28,8 +27,7 @@ Historical qualified lane (measured 2026-10-17/18, before the completion changes
 Recorded limits, not qualifications: **Ubuntu 24.04 x86_64** has no real
 host evidence (wheel availability was cross-probed only). Decision D10 in
 the C++ + Linux completion plan makes Linux **aarch64** the required lane;
-x86_64 is optional, not qualified and not advertised. Desktop GUI sessions on X11/XWayland are pending real
-acceptance ([viewer-platform-acceptance.md](viewer-platform-acceptance.md)).
+x86_64 is optional, not qualified and not advertised. Desktop GUI sessions on X11/XWayland are pending real acceptance.
 The measured Linux pytest run reported `3221 passed, 3 failed`; the three
 retained failures
 (`tests/reference/test_native_platform_recording.py::test_publication_permission_denied_then_retry`,
@@ -139,9 +137,7 @@ no interpreter-side checker.
 
 The root graph uses the same `BikePlatform`,
 `BikeCompilerPolicy`, schema-2 dependency-lock selection and check-context
-emitter on every lane. See
-[`migration/cpp-linux-completion-evidence.md`](../../migration/cpp-linux-completion-evidence.md)
-for the source handoff and open checkpoints.
+emitter on every lane.
 
 The image command stages only the Dockerfile, acquisition helper and
 dependency lock. Its explicit acquisition stage verifies the selected
@@ -185,8 +181,7 @@ tools/linux/container.sh exec tools/linux/gui_smoke.sh /build/root-gui
 
 The smoke uses software GL and Xvfb, requests one simulated second, and
 limits wall time to 120 seconds plus ten seconds for forced cleanup. It
-propagates diagnostic exits and timeouts. It never closes a row in
-[`viewer-platform-acceptance.md`](viewer-platform-acceptance.md).
+propagates diagnostic exits and timeouts. 
 `bike-ride --close-on-finish` requires `--duration` and an interactive
 physical or research run; without the flag the terminal window still
 stays open as before.
@@ -216,8 +211,7 @@ root presets already default there). The loaded MuJoCo image must expose
 the project's private ABI symbols, and the locked provider archive
 supplies the qualified `NUMPY_OPENBLAS` numerics backend — an arbitrary
 distro OpenBLAS is not a substitute
-([numerical-profiles.md](numerical-profiles.md),
-[dependency-matrix.md](dependency-matrix.md)). The transition oracle's
+([numerical-profiles.md](../agents/native-numerical-profiles.md). The transition oracle's
 `uv sync --frozen --group native` environment and `UV_PROJECT_ENVIRONMENT`
 override were removed at T63; there is nothing to sync.
 

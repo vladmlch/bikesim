@@ -30,7 +30,7 @@ namespace {
     // Linux: /root/.local/bin/uv run --no-project --python
     // /opt/bike-venv/bin/python3 python /tmp/bike-sincos-probe.py (3.13.16).
     // Full reproducible probe, identities and outputs are retained in
-    // migration/cpp-linux-completion-evidence.md, Task 1.18's dated entry.
+    // the recorded linux-completion evidence (pre-cleanup tag).
 #if defined(__APPLE__) && defined(__arm64__)
     constexpr std::array<std::array<std::uint64_t, 2>, 4> expected_nonfinite{{
         {UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000000)},

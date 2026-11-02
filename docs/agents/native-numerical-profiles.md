@@ -340,3 +340,36 @@ never left to a flag default. No `-ffast-math`/`ffinite-math-only` —
   The aarch64 evidence says nothing about them. First x86_64 lane must
   re-run this suite plus the probe before any claim.
 * **macOS Intel** and any non-pinned NumPy/CPython/libm combination.
+
+## Numerical-provider ABI (merged from the removed development/numerical-profiles.md)
+
+The native build binds BLAS/LAPACK **only** through the qualified provider
+record — never `find_package(BLAS)`, never an assumed symbol name, never a
+width inferred from pointer size. A wrong integer width is memory
+corruption, not a rounding error.
+
+| Backend | Platform | Provider | BLAS int | LAPACK int |
+|---|---|---|---|---|
+| `ACCELERATE` | macOS arm64 | System Accelerate.framework (dyld cache) | 32-bit legacy CBLAS | 64-bit `NEWLAPACK$ILP64` |
+| `NUMPY_OPENBLAS` | Linux aarch64 | `numpy.libs/libscipy_openblas64_-*.so` inside the NumPy 2.5.2 wheel | 64-bit (ILP64) | 64-bit (ILP64) |
+
+The Python-free root configure consumes `native/numerics.lock.json` in
+`BIKE_NUMERICS_SOURCE=RECORD_ONLY` mode — it never re-measures and never
+probes. On Linux the measured NumPy wheel's OpenBLAS is replaced by the
+schema-2 `.deps` provider archive pinned in
+`native/dependencies.lock.json`. The consumer is
+`native/cmake/BikeNumerics.cmake` (`BIKE_NUMERICS_BACKEND`).
+
+### Darwin — `apple-system` identity
+
+Accelerate lives in the dyld shared cache; the framework paths are install
+names, not files on disk. The record carries `identity_kind:
+"apple-system"`, `sha256: null` (a dyld-cache image is never hashed) and a
+`build_id` composed of the macOS build, the loaded umbrella image's
+LC_UUID and the SDK build.
+
+### Linux — file identity
+
+The provider `.so` inside `.deps` is hashed and bound by exact soname;
+the record's `sha256` is the file digest an auditor reproduces
+byte-for-byte.

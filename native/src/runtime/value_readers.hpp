@@ -1,5 +1,5 @@
 // value_readers.hpp — the bike::io::Value twin of binding_readers.hpp
-// (task T09; migration/interface-contracts.md §2).
+// (the runtime boundary).
 //
 // The bootstrap/config decoders read owned Value documents with the same
 // acceptance set and the same "path: reason" diagnostics the nanobind

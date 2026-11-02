@@ -23,9 +23,7 @@ This table is the last measurement of the deleted binding lane, retained as
 dated evidence — the CPython/`.so`/pytest entries describe the removed
 runtime, not the current product. Post-T63 the artifact column is the
 produced `build/<preset>/bin/bike-*` executables and the gate is the native
-CTest suite; macOS arm64 evidence lives in the
-[release qualification checklist](releases/python-free-qualification.md)
-and post-T63 Linux qualification is deferred.
+CTest suite; post-removal Linux qualification is deferred.
 
 | Lane | Toolchain | Native artifact | Gate evidence |
 |---|---|---|---|
@@ -36,18 +34,12 @@ Setup and per-lane workflows: [linux.md](development/linux.md) and
 [macos.md](development/macos.md); failure diagnosis:
 [troubleshooting.md](development/troubleshooting.md). Machine evidence logs
 (including the retained pytest failures recorded verbatim in each guide's
-limits note) live under `output/portability/`; the consolidated
-[portability matrix](development/portability-test-matrix.md) tracks the
-release-level lane status. Wheel/provider qualification:
-[dependency-matrix.md](development/dependency-matrix.md) and
-[numerical-profiles.md](development/numerical-profiles.md).
+limits note) live under `output/portability/`; wheel/provider qualification:
+[numerical-profiles.md](agents/native-numerical-profiles.md).
 
-Not qualified: Linux x86_64 (the spec's release-blocking lane — no host yet),
-macOS Intel, native Wayland/EGL/OSMesa, cross-compilation. Interactive
-desktop sessions are pending real acceptance per
-[viewer-platform-acceptance.md](development/viewer-platform-acceptance.md);
-the macOS GUI results below are the 2026-10-10 historical record, not a new
-measurement.
+Not qualified: Linux x86_64, macOS Intel, native Wayland/EGL/OSMesa,
+cross-compilation. The macOS GUI results below are the 2026-10-10
+historical record, not a new measurement.
 
 ### Historical visual-runtime acceptance: 2026-10-10
 
@@ -146,7 +138,7 @@ preserves the legacy fade-only behaviour.
 The `pneumatic` tyre's model contract, fitted constants and literature targets —
 the sections the code cites as `RIDE.md §3.1`, `§4.1`, `§11.2` and `§12 item 10`,
 which this file no longer carries — live in
-[docs/reference/tyre-calibration.md](reference/tyre-calibration.md) under those
+[docs/reference/tyre-calibration.md](research/tyre-calibration.md) under those
 same section numbers.
 
 ## Interactive controls and rendering

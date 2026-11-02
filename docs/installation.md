@@ -1,8 +1,7 @@
 # Native installation and offline source distributions
 
 The root build produces C++ applications for macOS arm64 and Linux aarch64.
-Release qualification is recorded in
-[the release checklist](releases/python-free-qualification.md). The new
+The new
 Phase 3 packaging implementation has been inspected as source only; no
 package, offline rebuild, compiler or runtime gate was executed in this change.
 

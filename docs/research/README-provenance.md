@@ -55,7 +55,7 @@ they are read, never written, by the test suite.
   (per-platform `records[<platform>]`). Consumed `RECORD_ONLY`; the live
   probe that produced it was removed at T63. Its content rule and update
   discipline are documented in
-  [development/numerical-profiles.md](../development/numerical-profiles.md)
+  [development/numerical-profiles.md](../agents/native-numerical-profiles.md)
   §9.
 - `native/dependencies.lock.json` and `.deps/` — schema-2 native dependency
   archives (MuJoCo 3.12.0, DuckDB, GLFW, the NumPy-wheel OpenBLAS provider

@@ -1,5 +1,5 @@
 // writer_config.hpp — the owned typed writer-config boundary (task T07;
-// migration/interface-contracts.md §1/§3).
+// the transition-era interface contract).
 //
 // `tools.native_config.project(env)` emits {'schema': 2, '<writer>': {...}}
 // carrying ONLY the fields the ported writers read. That tree reaches the

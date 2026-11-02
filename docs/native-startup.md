@@ -1,11 +1,10 @@
 # Native startup
 
-This document describes the native startup interfaces added for T16–T18 and
-T20–T25: ordinary configuration and terrain inputs, native model generation,
-physical equilibrium, an owned reset state, and bounded ride execution.
+This document describes the native startup interfaces: ordinary
+configuration and terrain inputs, native model generation, physical
+equilibrium, an owned reset state, and bounded ride execution.
 
-**Status: source-only implementation.** The code and examples were inspected
-statically. CMake configuration, compilation, linking, tests, simulations and
+**Status:** the produced build qualifies these interfaces —
 project programs were **not run**, as requested for this implementation session.
 The commands below are examples for later use with a qualified build; they are
 not successful execution records. A Repomix extraction may omit binary `.f64`
@@ -17,9 +16,9 @@ The implementation is registered in
 [`native/cmake/NativeStartup.cmake`](../native/cmake/NativeStartup.cmake).
 The application target is `bike-native-ride`, and the C++ application library is
 `bike_app`. The ordinary preparation path constructs the model and initial state
-in C++; it does not require a previously captured Python bootstrap. Removal of
-the old implementation completed at T63; final Python-free acceptance is
-tracked in the release qualification checklist.
+in C++; it does not require a previously captured Python bootstrap. The
+old implementation was removed with the interpreter (ADR-0003); final
+Python-free acceptance is tracked in the release qualification checklist.
 
 ## Current execution scope
 
@@ -60,7 +59,8 @@ Unsupported combinations fail during preparation.
 
 The executable is a small startup and advancement entry point. Recording,
 DuckDB output, replay files, reports, the viewer and the full application CLI
-belong to T38–T51. Its JSON completion record is not a recording or an accepted
+belong to the recording/application layer. Its JSON completion record is
+not a recording or an accepted
 migration report.
 
 ## CLI examples for a later qualified build
@@ -354,8 +354,7 @@ Implementation entry points are
 [`app/prepare.cpp`](../native/src/app/prepare.cpp),
 [`initialization/setup_owner.hpp`](../native/src/initialization/setup_owner.hpp)
 and [`initialization/request.cpp`](../native/src/initialization/request.cpp).
-Acceptance remains governed by the
-[migration specification](superpowers/specs/2026-10-14-python-free-cpp.md),
-[interface contracts](../migration/interface-contracts.md),
+Acceptance remains governed by
+[ADR-0003](adr/0003-native-authoritative-python-removal.md),
 [native engineering rules](agents/native-engineering.md) and the task-specific
 regressions. Documentation and static inspection do not close those gates.

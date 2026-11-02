@@ -5,7 +5,7 @@
   "sources": [
     "docs/superpowers/audits/2026-10-14-linux-macos-baseline.md",
     "docs/development/dependency-matrix.md",
-    "docs/development/numerical-profiles.md",
+    "docs/agents/native-numerical-profiles.md",
     "docs/TESTING.md",
     "tools/run_tests.sh",
     "tools/dev.py",

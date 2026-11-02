@@ -33,7 +33,7 @@
 //     glibc 2.39 libm for +inf, -inf and both qNaN signs, so Linux keeps
 //     the plain libm calls. The frozen tables, probe commands and provider
 //     identities are in native/tests/test_platform_sincos.cpp and
-//     migration/cpp-linux-completion-evidence.md (Task 1.18).
+//     the recorded linux-completion evidence (pre-cleanup tag).
 //
 //   numeric::math_sin / math_cos — the math.sin / math.cos contract.
 //     CPython calls libm directly; there is no `x - x` path, so a

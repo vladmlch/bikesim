@@ -3,9 +3,8 @@
 BikeSim is a single native C++ product: one CMake graph configured from
 the repository root, no first-party Python runtime, binding or packaging
 surface (ADR-0003, removal completed at T63). This document is the
-canonical developer workflow. For the interpreter-era to native command
-mapping see docs/python-to-cpp-compatibility.md; for dependency provenance
-see native/dependencies.md and docs/reference/README-provenance.md.
+canonical developer workflow. For dependency provenance
+see native/dependencies.md and docs/research/README-provenance.md.
 
 ## Prerequisites and dependency roots
 
@@ -43,7 +42,7 @@ docs/TESTING.md. Installed layouts come from CPack packages
 `bike-sim`, `bike-playground`, `bike-export`, `bike-ride`, `bike-settle`,
 `bike-research`, `bike-batch`, `bike-replay`, `bike-recording` — plus the
 developer tools `bike-measure-realtime`, `bike-validate`,
-`bike-research-sweep`, `bike-native-checks` and `bike-python-audit`.
+`bike-research-sweep` and `bike-native-checks`.
 
 ## Test and verification gates
 
@@ -51,24 +50,15 @@ developer tools `bike-measure-realtime`, `bike-validate`,
 
 | Profile | Contents |
 |---|---|
-| `quick` | one `cmake --workflow --preset <preset>` run (configure, build, test step without `slow\|audit\|package`) |
-| `native` | configure + build, every produced static-analysis sweep and the structural contracts check via `tools/run_native_checks.sh`, then CTest without `slow\|audit\|package` |
-| `full` | `native` plus the explicit `slow`, `audit` and `package` label gates (`--no-tests=error`) |
+| `quick` | one `cmake --workflow --preset <preset>` run (configure, build, test step without `slow\|package`) |
+| `native` | configure + build, every produced static-analysis sweep and the structural contracts check via `tools/run_native_checks.sh`, then CTest without `slow\|package` |
+| `full` | `native` plus the explicit `slow` and `package` label gates (`--no-tests=error`) |
 
 Rerun one sweep standalone with
 `build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`,
 or `cmake --build build/native-release --target check_<name>` where
 `native/cmake/Checks.cmake` defines the target. Run one CTest node with
 `ctest --test-dir build/native-release -R '<pattern>' --output-on-failure`.
-
-The `audit` label gates the no-Python policy end to end:
-`python_audit_source`, `python_audit_documentation` (both required
-positive gates), `no_python` (installed-tree audit) and
-`audit_negative_controls` (per-class injection controls). The
-documentation audit scans active fenced command blocks in the
-documentation globs of `migration/no-python-policy.json`; recorded or
-deferred commands keep `~~~` fences so prose examples are not mistaken
-for live instructions.
 
 Gates serialize on one machine: run them sequentially, not in parallel
 against the same build tree.
@@ -78,8 +68,7 @@ against the same build tree.
 - **macOS arm64 (Darwin/aarch64)** — qualified lane; all gates in this
   document are measured here.
 - **Linux aarch64** — the required Linux lane; its container gate is
-  deferred (see docs/development/linux.md and
-  docs/releases/python-free-qualification.md for the recorded status).
+  deferred (see docs/development/linux.md for the recorded status).
 - Linux x86_64, macOS x86_64, Windows, musl, cross-compilation and native
   Wayland are outside the qualified lanes; documentation marks deferred
   workflows explicitly instead of claiming unexecuted qualification.
@@ -100,15 +89,11 @@ against the same build tree.
   `tests/fixtures/golden/<platform>/` are immutable references.
 - **Config and output.** Simulation, track, profile, experiment and
   policy TOML/JSON inputs keep the documented schemas; removed
-  interpreter-only flags and environment variables are listed in
-  docs/python-to-cpp-compatibility.md.
+  interpreter-only flags and environment variables were removed with the
+  interpreter (ADR-0003).
 
 ## Out of scope
 
-`.claude/skills/**`, `.agents/skills/**` and other agent-tooling files are outside the policy's
-`document_globs` (`*.md`, `docs/**/*.md`, `native/**/*.md`,
-`tools/**/*.md`, `.github/**/*.md` plus the top-level `*.md` entries in
-each directory). They may keep Python examples; the produced audits do
-not treat them as product surfaces. Retained offline research tooling
-under `tools/research/` is exempt ledger content — provenance, not a
-product runtime dependency (docs/reference/README-provenance.md).
+`.claude/skills/**`, `.agents/skills/**` and other agent-tooling files are
+outside the product surface — they may keep Python examples. Artifact
+provenance is recorded in docs/research/README-provenance.md.

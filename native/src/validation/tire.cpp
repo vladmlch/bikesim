@@ -153,6 +153,7 @@ void validate_split(const Value& fit,const Value& holdout) {
     if (a.empty()||b.empty()) throw std::invalid_argument("fit and holdout experiments are both required as lists");
     for (const auto& id:a) if (b.contains(id)) throw std::invalid_argument("fit/holdout leakage at experiment level");
 }
+namespace {
 // experiment_acceptance.py: str(payload.get('source','')) — Python str()
 // over whatever JSON value the field holds. Scalars stringify exactly;
 // arrays/objects can only ever render starting with a bracket, which no
@@ -170,6 +171,7 @@ std::string python_str(const Value& v) {
     if(const auto* s=std::get_if<std::string>(&v.data))return *s;
     return std::holds_alternative<Array>(v.data)?"[":"{";
 }
+} // namespace
 bool is_synthetic(const Value& payload) {
     bool synthetic=false;
     if (const auto* item=find(payload,"synthetic")) synthetic=io::as_bool(*item,"synthetic declaration");

@@ -126,7 +126,8 @@ std::pair<std::vector<std::size_t>,std::vector<double>> asarray_shape(const Valu
         if(const auto* a=std::get_if<Array>(&item.data)){
             if(depth==shape.size())shape.push_back(a->size());
             else if(a->size()!=shape[depth])throw std::invalid_argument(std::string(name)+": inhomogeneous holdout array");
-            for(const auto& x:*a)self(self,x,depth+1);return;}
+            for(const auto& x:*a)self(self,x,depth+1);
+            return;}
         if(leaf_depth==std::numeric_limits<std::size_t>::max())leaf_depth=depth;
         else if(depth!=leaf_depth)throw std::invalid_argument(std::string(name)+": inhomogeneous holdout array");
         // np.asarray(dtype=float) leaf coercion: numbers, bools and

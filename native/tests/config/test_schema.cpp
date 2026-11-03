@@ -905,6 +905,20 @@ void test_validation() {
                          c.seated_climb.enabled = false;
                          c.drive.rotor_inertia_kgm2 = 0.2;
                      });
+    case_from_welded(
+        "drive.pedaling.reposition_on_stall requires "
+        "articulated.pedal_attachment = 'spindle'",
+        [](cfg::SimulationPhysicsConfig& c) {
+            c.drive.pedaling.reposition_on_stall = true;
+            c.articulated.pedal_attachment = "flat";
+        });
+    // Control: the same request stays valid on the spindle-weld rider the
+    // welded profile already uses.
+    {
+        cfg::SimulationPhysicsConfig config = welded_profile();
+        config.drive.pedaling.reposition_on_stall = true;
+        cfg::validate(config);
+    }
 
     // ArticulatedConfig domain + field-name diagnostics.
     case_from_welded(

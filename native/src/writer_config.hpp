@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <numbers>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -955,7 +956,10 @@ namespace nativecfg {
             // ride projection folds into pedaling (native/config.py); a bare
             // drivetrain config omits them and they default to the Python values.
             exact(p, keys("enabled","coast_above_rpm","resume_below_rpm","stop_time_s","coast_cadence_tau_s","mash_cadence_rpm","mash_torque_nm","effort_slew_nm_s"),
-                    keys("rollback_brake","rollback_engage_mps","rollback_release_mps","rollback_demand"));
+                    keys("rollback_brake","rollback_engage_mps","rollback_release_mps","rollback_demand",
+                         "reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s",
+                         "reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s",
+                         "reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"));
             exact(s, keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), keys());
             exact(a, keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","gate_min_crank_rad_s","cutoff_mps","taper_width_mps","mode"), keys("profile","torque_curve"));
             out.gearing = {
@@ -977,11 +981,35 @@ namespace nativecfg {
                 .rollback_release_mps = p.contains("rollback_release_mps")
                     ? nonnegative(num(p, "rollback_release_mps"), p.child("rollback_release_mps")) : 0.,
                 .rollback_demand = p.contains("rollback_demand")
-                    ? nonnegative(num(p, "rollback_demand"), p.child("rollback_demand")) : 1.
+                    ? nonnegative(num(p, "rollback_demand"), p.child("rollback_demand")) : 1.,
+                // The reposition knobs are also ride-level folded fields; the
+                // ride projection emits only values that differ from the
+                // PedalingConfig defaults, and an absent key decodes to that
+                // same default.
+                .reposition_on_stall = p.contains("reposition_on_stall") && boolean(p, "reposition_on_stall"),
+                .reposition_min_effort_nm = p.contains("reposition_min_effort_nm")
+                    ? nonnegative(num(p, "reposition_min_effort_nm"), p.child("reposition_min_effort_nm")) : 20.,
+                .reposition_stall_window_s = p.contains("reposition_stall_window_s")
+                    ? positive(num(p, "reposition_stall_window_s"), p.child("reposition_stall_window_s")) : 1.,
+                .reposition_stall_progress_rad = p.contains("reposition_stall_progress_rad")
+                    ? positive(num(p, "reposition_stall_progress_rad"), p.child("reposition_stall_progress_rad")) : .5,
+                .reposition_cooldown_s = p.contains("reposition_cooldown_s")
+                    ? nonnegative(num(p, "reposition_cooldown_s"), p.child("reposition_cooldown_s")) : 1.,
+                .reposition_back_rate_rad_s = p.contains("reposition_back_rate_rad_s")
+                    ? positive(num(p, "reposition_back_rate_rad_s"), p.child("reposition_back_rate_rad_s")) : 3.,
+                .reposition_timeout_s = p.contains("reposition_timeout_s")
+                    ? positive(num(p, "reposition_timeout_s"), p.child("reposition_timeout_s")) : 3.,
+                .reposition_phase_tolerance_rad = p.contains("reposition_phase_tolerance_rad")
+                    ? positive(num(p, "reposition_phase_tolerance_rad"), p.child("reposition_phase_tolerance_rad")) : .05,
+                .reposition_noop_rad = p.contains("reposition_noop_rad")
+                    ? nonnegative(num(p, "reposition_noop_rad"), p.child("reposition_noop_rad")) : .12
             };
             if (out.pedaling.rollback_release_mps >= out.pedaling.rollback_engage_mps ||
                 out.pedaling.rollback_demand > 1.)
                 throw std::invalid_argument("pedaling rollback band");
+            if (out.pedaling.reposition_noop_rad >= .5 * std::numbers::pi ||
+                out.pedaling.reposition_stall_progress_rad >= std::numbers::pi)
+                throw std::invalid_argument("pedaling reposition band");
             if (out.pedaling.resume_below_rpm >= out.pedaling.coast_above_rpm || (
                     out.pedaling.mash_torque_nm > 0. && out.pedaling.mash_cadence_rpm <= 0.)) throw std::invalid_argument(
                 "pedaling cadence band");

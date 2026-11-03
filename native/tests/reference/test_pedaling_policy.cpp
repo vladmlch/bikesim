@@ -14,14 +14,18 @@ using drive_reference::pedaling_config;
 using drive_reference::rpm_to_rad_s;
 namespace cfg = bike::configuration;
 
-void test_reposition_knobs_and_mode_are_gone() {
-    const auto removed = bike::io::parse_json(R"({"drive":{"pedaling":{"reposition_on_stall":true}}})");
-    bt::invalid([&] { (void)cfg::detail::construct_config(removed); });
+// The reposition knobs are back (2026-11-03); the mode domain is not:
+// the manoeuvre reports as coasting with a reposition reason.
+void test_reposition_knobs_exist_and_mode_domain_is_unchanged() {
+    const auto doc = bike::io::parse_json(R"({"drive":{"pedaling":{"reposition_on_stall":true}}})");
+    bool found = false;
     for (const auto& field : cfg::detail::kPedalingConfigFields)
-        bt::require(field.name.find("reposition") == std::string_view::npos, "pedaling schema has no reposition knob");
-    bt::require(!drivetrain::pedal_mode("reposition"), "reposition is absent from native mode domain");
+        found = found || field.name == std::string_view("reposition_on_stall");
+    bt::require(found, "pedaling schema declares reposition_on_stall");
+    bt::require(!drivetrain::pedal_mode("reposition"), "reposition is not a pedaling mode");
     // Python's removed update(reposition=...) keyword is a signature-only
     // check. There is no C++ keyword argument or equivalent state field.
+    (void)doc;
 }
 void test_a_rocking_loaded_crank_simply_keeps_pedalling() {
     auto config = pedaling_config(); config.coast_above_rpm = 110.; config.resume_below_rpm = 90.;
@@ -91,7 +95,7 @@ void test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning() {
 }
 } // namespace
 int main() { return bt::run([] {
-    test_reposition_knobs_and_mode_are_gone();
+    test_reposition_knobs_exist_and_mode_domain_is_unchanged();
     test_a_rocking_loaded_crank_simply_keeps_pedalling();
     test_ride_control_has_no_reposition_field();
     test_rider_program_rejects_the_removed_reposition_command();

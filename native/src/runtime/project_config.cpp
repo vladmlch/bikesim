@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <initializer_list>
 #include <limits>
 #include <ranges>
 #include <stdexcept>
@@ -251,6 +252,34 @@ Value tire(const mdl::BuildRequest& request,
 Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& document) {
     const auto& input = field(document, "drive");
     Value out = select(input, {"gearing", "pedaling", "shifting", "assist"});
+    {
+        // The crank-reposition knobs (2026-11-03) are default-off mechanism
+        // fields: a wire that omits them decodes to the same PedalingConfig
+        // defaults, so only a value that differs crosses and the projected
+        // pedaling section keeps its historical 12-key shape while every knob
+        // is off (R6 byte-identical default output).
+        auto pedaling = field(out, "pedaling");
+        const auto& p = physics_config.drive.pedaling;
+        const cfg::PedalingConfig defaults{};
+        static const std::initializer_list<
+            std::pair<std::string_view, double cfg::PedalingConfig::*>> kReals{
+            {"reposition_min_effort_nm", &cfg::PedalingConfig::reposition_min_effort_nm},
+            {"reposition_stall_window_s", &cfg::PedalingConfig::reposition_stall_window_s},
+            {"reposition_stall_progress_rad", &cfg::PedalingConfig::reposition_stall_progress_rad},
+            {"reposition_cooldown_s", &cfg::PedalingConfig::reposition_cooldown_s},
+            {"reposition_back_rate_rad_s", &cfg::PedalingConfig::reposition_back_rate_rad_s},
+            {"reposition_timeout_s", &cfg::PedalingConfig::reposition_timeout_s},
+            {"reposition_phase_tolerance_rad", &cfg::PedalingConfig::reposition_phase_tolerance_rad},
+            {"reposition_noop_rad", &cfg::PedalingConfig::reposition_noop_rad}};
+        std::erase_if(std::get<Object>(pedaling.data), [&](const auto& entry) {
+            if (entry.first == "reposition_on_stall")
+                return p.reposition_on_stall == defaults.reposition_on_stall;
+            for (const auto& [name, member] : kReals)
+                if (entry.first == name) return p.*member == defaults.*member;
+            return false;
+        });
+        set(out, "pedaling", std::move(pedaling));
+    }
     auto assist = field(out, "assist");
     const auto& a = physics_config.drive.assist;
     if (a.profile) {

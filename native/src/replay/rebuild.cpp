@@ -116,6 +116,52 @@ void drop_removed_battery(Value& physics) {
     (void)pop(object, configuration::legacy::kBatteryKey);
     set(physics, "drive", std::move(drive));
 }
+// Mutable sibling of detail::find for in-place legacy-key drops: the
+// member of an Object value, or nullptr when the value is not an Object or
+// the key is absent.
+Value* find_mutable(Value& value, std::string_view name) {
+    auto* object = std::get_if<Object>(&value.data);
+    if (object == nullptr) return nullptr;
+    for (auto& member : *object)
+        if (member.first == name) return &member.second;
+    return nullptr;
+}
+// A reposition_* leaf still holding its PedalingConfig declared default is
+// inert under a knob-free recipe. The alternative is checked before the
+// value compare, so a member of the wrong kind never matches.
+bool at_default(const Value& value, bool expected) {
+    const auto* held = std::get_if<bool>(&value.data);
+    return held != nullptr && *held == expected;
+}
+bool at_default(const Value& value, double expected) {
+    const auto* held = std::get_if<io::Number>(&value.data);
+    if (held == nullptr) return false;
+    bool ok = false;
+    const double parsed = io::detail::float_from_lexeme(held->lexeme, ok);
+    return ok && parsed == expected;
+}
+void drop_if_default_reposition(Value& pedaling) {
+    const configuration::PedalingConfig defaults{};
+    static const std::initializer_list<
+        std::pair<std::string_view, double configuration::PedalingConfig::*>>
+        kReals{
+            {"reposition_min_effort_nm", &configuration::PedalingConfig::reposition_min_effort_nm},
+            {"reposition_stall_window_s", &configuration::PedalingConfig::reposition_stall_window_s},
+            {"reposition_stall_progress_rad", &configuration::PedalingConfig::reposition_stall_progress_rad},
+            {"reposition_cooldown_s", &configuration::PedalingConfig::reposition_cooldown_s},
+            {"reposition_back_rate_rad_s", &configuration::PedalingConfig::reposition_back_rate_rad_s},
+            {"reposition_timeout_s", &configuration::PedalingConfig::reposition_timeout_s},
+            {"reposition_phase_tolerance_rad", &configuration::PedalingConfig::reposition_phase_tolerance_rad},
+            {"reposition_noop_rad", &configuration::PedalingConfig::reposition_noop_rad}};
+    std::erase_if(std::get<Object>(pedaling.data), [&](const auto& entry) {
+        if (entry.first == "reposition_on_stall")
+            return at_default(entry.second, defaults.reposition_on_stall);
+        for (const auto& [name, member] : kReals)
+            if (entry.first == name)
+                return at_default(entry.second, defaults.*member);
+        return false;
+    });
+}
 // Semantic-equality form: the recorded-form digest document (shared with
 // the write side via research::configuration_digest_document) with the
 // removed inert knobs stripped. Each strip throws on a non-inert recorded
@@ -223,6 +269,16 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
             relaxation != nullptr && string(*relaxation) == "cycle")
             std::erase_if(std::get<io::Value::Object>(physics.data),
                           [](const auto& entry) { return entry.first == "equilibrium_relaxation"; });
+    }
+    // Recipes recorded before the reposition knobs (2026-11-03) carry none
+    // of them; such runs used the defaults, so a default reconstruction
+    // drops the keys and still verifies. A non-default value never matches.
+    if (const auto* rec_drive = find(field(expected, "physics"), "drive")) {
+        const auto* rec_pedaling = find(*rec_drive, "pedaling");
+        auto* drive = find_mutable(physics, "drive");
+        auto* pedaling = drive ? find_mutable(*drive, "pedaling") : nullptr;
+        if (rec_pedaling && pedaling && !find(*rec_pedaling, "reposition_on_stall"))
+            drop_if_default_reposition(*pedaling);
     }
     set(reconstructed, "physics", std::move(physics));
     const auto actual_hashable = configuration_hashable(reconstructed), expected_hashable = configuration_hashable(expected);

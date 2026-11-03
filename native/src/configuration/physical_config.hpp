@@ -244,6 +244,18 @@ struct PedalingConfig {
     double rollback_engage_mps = .25;
     double rollback_release_mps = 0.;
     double rollback_demand = 1.;
+    // Crank reposition (stall reflex + operator request): backpedal to the
+    // nearest lower horizontal crank pose so the leading leg gets its lever.
+    // Spindle-weld rider only. Python original: c809f12a^ pedaling.py.
+    bool reposition_on_stall = false;
+    double reposition_min_effort_nm = 20.;
+    double reposition_stall_window_s = 1.;
+    double reposition_stall_progress_rad = .5;
+    double reposition_cooldown_s = 1.;
+    double reposition_back_rate_rad_s = 3.;
+    double reposition_timeout_s = 3.;
+    double reposition_phase_tolerance_rad = .05;
+    double reposition_noop_rad = .12;
 };
 
 // drivetrain.py CASSETTE_12S_TEETH.
@@ -728,6 +740,15 @@ inline constexpr auto kPedalingConfigFields = std::to_array<FieldDecl>({
     REAL(PedalingConfig, rollback_engage_mps),
     REAL(PedalingConfig, rollback_release_mps),
     REAL(PedalingConfig, rollback_demand),
+    BOOL(PedalingConfig, reposition_on_stall),
+    REAL(PedalingConfig, reposition_min_effort_nm),
+    REAL(PedalingConfig, reposition_stall_window_s),
+    REAL(PedalingConfig, reposition_stall_progress_rad),
+    REAL(PedalingConfig, reposition_cooldown_s),
+    REAL(PedalingConfig, reposition_back_rate_rad_s),
+    REAL(PedalingConfig, reposition_timeout_s),
+    REAL(PedalingConfig, reposition_phase_tolerance_rad),
+    REAL(PedalingConfig, reposition_noop_rad),
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kPedalingConfigSchema{

@@ -580,6 +580,18 @@ void post_init(const PedalingConfig &config) {
     const double demand =
         scalar(config.rollback_demand, "rollback brake demand", 0.);
     if (demand > 1.) fail("rollback brake demand must not exceed one");
+    scalar(config.reposition_min_effort_nm, "reposition minimum effort", 0.);
+    scalar(config.reposition_cooldown_s, "reposition cooldown", 0.);
+    scalar(config.reposition_noop_rad, "reposition no-op band", 0.);
+    scalar(config.reposition_back_rate_rad_s, "reposition back rate", std::nullopt, true);
+    scalar(config.reposition_timeout_s, "reposition timeout", std::nullopt, true);
+    scalar(config.reposition_phase_tolerance_rad, "reposition phase tolerance", std::nullopt, true);
+    scalar(config.reposition_stall_window_s, "reposition stall window", std::nullopt, true);
+    scalar(config.reposition_stall_progress_rad, "reposition stall progress", std::nullopt, true);
+    if (config.reposition_noop_rad >= .5 * std::numbers::pi)
+        fail("reposition no-op band must be below a quarter crank turn");
+    if (config.reposition_stall_progress_rad >= std::numbers::pi)
+        fail("reposition stall progress must be below half a crank turn");
 }
 
 void post_init(ShiftingConfig &config) {
@@ -1082,6 +1094,8 @@ void post_init(SimulationPhysicsConfig &config) {
     if (config.equilibrium_state_file &&
         !nonblank(*config.equilibrium_state_file))
         fail("equilibrium_state_file must be a non-empty path or None");
+    if (config.drive.pedaling.reposition_on_stall && config.articulated.pedal_attachment != "spindle")
+        fail("drive.pedaling.reposition_on_stall requires articulated.pedal_attachment = 'spindle'");
     // The six isinstance(...immutable...) checks are type-enforced.
     const auto *detailed = find_tire_tier("detailed");
     if (config.tires.backend == "pneumatic" &&

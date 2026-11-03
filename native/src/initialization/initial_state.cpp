@@ -21,6 +21,7 @@
 #include <cmath>
 #include <format>
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <memory>
 #include <numbers>
@@ -66,6 +67,12 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // section (configuration/legacy_battery.hpp), so only that one is
     // re-injected — an enabled recorded battery never matches and fails closed.
     if(legacy_battery){auto drive=field(config,"drive");auto& members=std::get<bio::Value::Object>(drive.data);const auto it=std::ranges::find_if(members,[](const auto& p){return p.first=="assist";});if(it==members.end())throw std::invalid_argument("initial-state contract physics is missing drive.assist");members.insert(std::next(it),{std::string(configuration::legacy::kBatteryKey),configuration::legacy::disabled_battery_section()});put(config,"drive",std::move(drive));}
+    // mechanism knobs: the crank-reposition fields steer the runtime pedaling
+    // policy, never the compiled model or the rest pose — like the
+    // equilibrium selector and refine timing above they are dropped from the
+    // contract, so transfers recorded before the knobs keep validating and a
+    // configured value never changes the fingerprint (2026-11-03).
+    {auto drive=field(config,"drive");auto pedaling=field(std::get<bio::Value::Object>(drive.data),"pedaling");static const std::initializer_list<std::string_view> knobs={"reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s","reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s","reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"};std::erase_if(std::get<bio::Value::Object>(pedaling.data),[](const auto& p){return std::ranges::find(knobs,p.first)!=knobs.end();});put(std::get<bio::Value::Object>(drive.data),"pedaling",std::move(pedaling));put(config,"drive",std::move(drive));}
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
     auto const add=[&](std::string name,const double* pointer,mjtSize count,std::optional<std::size_t> columns=std::nullopt){const auto values=std::span<const double>{std::views::counted(pointer,count)};compiled.emplace_back(std::move(name),columns?matrix(values,*columns):numbers(values));};

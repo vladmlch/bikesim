@@ -616,7 +616,11 @@ bool schema_entry(std::string_view name, std::string_view &required,
           "coast_cadence_tau_s mash_cadence_rpm mash_torque_nm "
           "effort_slew_nm_s rollback_brake rollback_engage_mps "
           "rollback_release_mps rollback_demand",
-          .optional = ""}},
+          .optional = "reposition_on_stall reposition_min_effort_nm "
+          "reposition_stall_window_s reposition_stall_progress_rad "
+          "reposition_cooldown_s reposition_back_rate_rad_s "
+          "reposition_timeout_s reposition_phase_tolerance_rad "
+          "reposition_noop_rad"}},
         {.name = "drive.shifting", .entry =
          {.required = "enabled cassette target_cadence_min_rpm target_cadence_max_rpm "
           "shift_cooldown_s shift_cut_duration_s torque_factor "
@@ -666,7 +670,7 @@ bool in_words(std::string_view word, std::string_view list) {
 
 constexpr std::string_view kBoolean =
     "enabled lockout_firm legacy_behavior unilateral motor_clutch "
-    "rollback_brake discretised_brush";
+    "rollback_brake discretised_brush reposition_on_stall";
 constexpr std::string_view kInteger =
     "schema max_tokens num_tokens max_hsc max_lsc max_reb hsc_clicks "
     "lsc_clicks rebound_clicks max_hbo hbo_clicks front_teeth rear_teeth "

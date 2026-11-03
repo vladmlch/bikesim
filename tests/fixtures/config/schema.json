@@ -858,6 +858,60 @@
               "default_factory": null,
               "name": "rollback_demand",
               "type": "<class 'float'>"
+            },
+            {
+              "default": false,
+              "default_factory": null,
+              "name": "reposition_on_stall",
+              "type": "<class 'bool'>"
+            },
+            {
+              "default": 20.0,
+              "default_factory": null,
+              "name": "reposition_min_effort_nm",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 1.0,
+              "default_factory": null,
+              "name": "reposition_stall_window_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.5,
+              "default_factory": null,
+              "name": "reposition_stall_progress_rad",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 1.0,
+              "default_factory": null,
+              "name": "reposition_cooldown_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 3.0,
+              "default_factory": null,
+              "name": "reposition_back_rate_rad_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 3.0,
+              "default_factory": null,
+              "name": "reposition_timeout_s",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.05,
+              "default_factory": null,
+              "name": "reposition_phase_tolerance_rad",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": 0.12,
+              "default_factory": null,
+              "name": "reposition_noop_rad",
+              "type": "<class 'float'>"
             }
           ],
           "name": "pedaling",

@@ -42,11 +42,12 @@ constexpr std::string_view kFile =
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (name, param) order mirrors the oracle id
 [[nodiscard]] std::string node(std::string_view name, std::string_view param) {
+    // Native golden key <suite>/<case>/<param> (rekeyed in 92fcc0f7): no
+    // pytest "test_" prefix, the parameter is its own sanitized component.
     std::string out{kFile};
     out += name;
-    out += '[';
+    out += '/';
     out += bt::oracle::key(param);
-    out += ']';
     return out;
 }
 
@@ -190,7 +191,7 @@ void pneumatic_suites() {
     for (const char* length : {"1", "2", "3", "7", "8", "9", "31", "32",
                                "33", "65"}) {
         bt::oracle::Node node_{
-            node("test_tanh_and_hypot_match_local_array_ufunc", length)};
+            node("tanh_and_hypot_match_local_array_ufunc", length)};
         pneumatic(node_);
     }
     {
@@ -199,7 +200,7 @@ void pneumatic_suites() {
     }
     for (const char* stride : {"2", "3", "-1", "-2"}) {
         bt::oracle::Node node_{
-            node("test_tanh_and_hypot_strided_oracle", stride)};
+            node("tanh_and_hypot_strided_oracle", stride)};
         pneumatic(node_);
     }
     {
@@ -229,10 +230,10 @@ void contract_suites() {
     contract_node(std::string{kFile} + "python_hypot_scale_and_nan_edges",
                   "python_hypot");
     for (const char* name : {"minimum", "maximum"}) {
-        contract_node(node("test_minmax_matches_elementwise_ufunc", name), name);
-        contract_node(node("test_minmax_signed_zero_and_nan_fixture", name),
+        contract_node(node("minmax_matches_elementwise_ufunc", name), name);
+        contract_node(node("minmax_signed_zero_and_nan_fixture", name),
                       name);
-        contract_node(node("test_minmax_scalar_broadcast_shape", name), name);
+        contract_node(node("minmax_scalar_broadcast_shape", name), name);
     }
     contract_node(
         std::string{kFile} + "multiply_broadcast_matches_scalar_ufunc",
@@ -243,18 +244,18 @@ void contract_suites() {
              {"0", "1", "2", "3", "7", "8", "9", "15", "16", "17", "31", "32",
               "33", "63", "64", "65", "127", "128", "129", "130", "131", "135",
               "136", "255", "256", "257", "511", "512", "513"})
-        contract_node(node("test_sum_matches_np_sum", length), "sum");
+        contract_node(node("sum_matches_np_sum", length), "sum");
     contract_node(std::string{kFile} + "sum_cancellation_fixture", "sum");
     for (const char* name : {"sin", "cos"}) {
-        contract_node(node("test_sin_cos_match_local_ufunc", name), name);
-        contract_node(node("test_sin_cos_edge_fixture", name), name);
+        contract_node(node("sin_cos_match_local_ufunc", name), name);
+        contract_node(node("sin_cos_edge_fixture", name), name);
         // test_sin_cos_nonfinite_scalar_array_agreement — the source
         // collects all four cases' inputs first, then asserts both the
         // scalar-broadcast and array oracles per case: a block of
         // (xs, ys) inputs, then per-case oracle pairs the port must
         // each equal bitwise.
         bt::oracle::Node node_{
-            node("test_sin_cos_nonfinite_scalar_array_agreement", name)};
+            node("sin_cos_nonfinite_scalar_array_agreement", name)};
         std::vector<std::vector<double>> outs;
         while (node_.has_next() &&
                node_.peek_label() == "input.xs") {
@@ -275,18 +276,18 @@ void interp_suites() {
                               "n3-random", "n4-constant", "n4-inf-y",
                               "n5-random", "n9-random"})
         interp_node(
-            node("test_interp_matches_np_interp_general_table", label));
+            node("interp_matches_np_interp_general_table", label));
 }
 
 void rider_suites() {
     for (const char* op : {"mat_t_mul", "mat_t_vec", "mat_t_vec_xz",
                            "matmul", "matvec"})
-        rider_node(node("test_rider_linalg_3d_matches_numpy", op), op);
+        rider_node(node("rider_linalg_3d_matches_numpy", op), op);
     for (const char* op : {"mat_t_vec2", "matvec2"})
-        rider_node(node("test_rider_linalg_2d_matches_numpy", op), op);
+        rider_node(node("rider_linalg_2d_matches_numpy", op), op);
     for (const char* length : {"1", "2", "3", "5", "8"})
         rider_node(
-            node("test_rider_linalg_norm_matches_np_linalg_norm", length),
+            node("rider_linalg_norm_matches_np_linalg_norm", length),
             "norm");
 }
 

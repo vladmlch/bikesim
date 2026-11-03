@@ -196,7 +196,7 @@ set(_t03_audit_bins
 if(BIKE_HOST_IS_ROOT)
   list(APPEND _t03_audit_bins
     "${BIKE_HOST_BUILD}/native_distance_tests"
-    "${BIKE_HOST_BUILD}/native_station_tests"
+    "${BIKE_HOST_BUILD}/native_station_tests")
 endif()
 foreach(_bin IN LISTS _t03_audit_bins)
   if(NOT EXISTS "${_bin}")

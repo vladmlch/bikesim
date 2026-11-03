@@ -47,8 +47,10 @@ function(expect_file_lines name file)
   endif()
 endfunction()
 
-# A stub bike-native-checks: appends its --kind to calls.log and exits with
-# the code named by STUB_FAIL_<kind> (dashes become underscores), else 0.
+# A stub bike-native-checks: appends its --kind to calls.log — plus the
+# contents of the file named by --only-sources when that flag is present —
+# and exits with the code named by STUB_FAIL_<kind> (dashes become
+# underscores), else 0.
 set(_stub_dir "${SCRATCH_DIR}/stubs")
 file(MAKE_DIRECTORY "${_stub_dir}")
 # Shell ${...} inside these CMake strings is escaped as \${...} so CMake does
@@ -56,8 +58,14 @@ file(MAKE_DIRECTORY "${_stub_dir}")
 file(WRITE "${_stub_dir}/bike-native-checks"
   "#!/usr/bin/env bash\n"
   "kind=''\n"
-  "while (($#)); do [[ $1 == --kind ]] && kind=$2; shift; done\n"
+  "only=''\n"
+  "while (($#)); do\n"
+  "  [[ $1 == --kind ]] && kind=$2\n"
+  "  [[ $1 == --only-sources ]] && only=$2\n"
+  "  shift\n"
+  "done\n"
   "printf 'checks %s jobs=%s\\n' \"$kind\" \"\${BIKE_CHECK_JOBS:-unset}\" >> \"\${STUB_LOG}\"\n"
+  "[[ -n $only ]] && cat \"$only\" >> \"\${STUB_LOG}\"\n"
   "var=\"STUB_FAIL_\${kind//-/_}\"\n"
   "exit \"\${!var:-0}\"\n")
 file(CHMOD "${_stub_dir}/bike-native-checks"
@@ -230,6 +238,54 @@ string(FIND "${_calls}" "checks analyzer jobs=3" _override)
 if(_override EQUAL -1)
   set(_failures "${_failures}\n  gate_jobs_override: calls '${_calls}'")
 endif()
+
+# --- check_change.sh: level-1 gate against a scratch git history -----------
+# The scratch _repo gets a real history (empty base, then a C++ source plus
+# a docs file) so the script's merge-base selection sees committed changes.
+file(COPY "${REPO_ROOT}/tools/check_change.sh" DESTINATION "${_repo}/tools")
+file(MAKE_DIRECTORY "${_repo}/native/src" "${_repo}/docs")
+execute_process(COMMAND git init -b main
+  WORKING_DIRECTORY "${_repo}"
+  RESULT_VARIABLE _git_rc OUTPUT_QUIET ERROR_QUIET)
+if(NOT _git_rc EQUAL 0)
+  set(_failures "${_failures}\n  check_change: git init failed")
+endif()
+execute_process(COMMAND git -c user.name=t -c user.email=t@t
+  commit --allow-empty -m base
+  WORKING_DIRECTORY "${_repo}" OUTPUT_QUIET ERROR_QUIET)
+file(WRITE "${_repo}/native/src/x.cpp" "int x() { return 0; }\n")
+file(WRITE "${_repo}/docs/a.md" "# a\n")
+execute_process(COMMAND git add native/src/x.cpp docs/a.md
+  WORKING_DIRECTORY "${_repo}" OUTPUT_QUIET ERROR_QUIET)
+execute_process(COMMAND git -c user.name=t -c user.email=t@t
+  commit -m change
+  WORKING_DIRECTORY "${_repo}" OUTPUT_QUIET ERROR_QUIET)
+
+# A C++ change runs the incremental build, every ordinary test and the three
+# per-file kinds on the changed list only; docs/a.md never reaches the list.
+file(REMOVE "${_log}")
+gate_run(change_cpp EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "1 changed C++ file(s)"
+  COMMAND bash "${_repo}/tools/check_change.sh" HEAD~1)
+expect_file_lines(change_cpp "${_log}"
+  "cmake --build --preset release"
+  "ctest --preset release"
+  "checks cppcheck jobs=unset"
+  "${_repo}/native/src/x.cpp"
+  "checks frontends jobs=unset"
+  "${_repo}/native/src/x.cpp"
+  "checks tidy jobs=unset"
+  "${_repo}/native/src/x.cpp")
+
+# A docs-only change selects no C++ file; the analysis stage is skipped.
+file(APPEND "${_repo}/docs/a.md" "more\n")
+file(REMOVE "${_log}")
+gate_run(change_docs_only EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "no C++ source or header changed"
+  COMMAND bash "${_repo}/tools/check_change.sh")
+expect_file_lines(change_docs_only "${_log}"
+  "cmake --build --preset release"
+  "ctest --preset release")
 
 # (run_tests.sh cases are appended by later tasks above this line.)
 

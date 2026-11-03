@@ -339,7 +339,12 @@ void for_each_index(std::size_t count, std::size_t workers,
 
 // run_sweep() for the per-translation-unit kinds, plus the header and
 // scripts sweeps. Returns the process exit code (0 pass / 1 fail).
-[[nodiscard]] int run_sweep(const std::string &kind, const fs::path &build);
+// only_sources: a newline-separated file of .cpp sources and/or first-party
+// headers; the sweep runs on the listed TUs plus every TU whose include
+// walk reaches a listed header, and writes partial-<kind>.json with
+// "selection":"partial". An empty selection is an error.
+[[nodiscard]] int run_sweep(const std::string &kind, const fs::path &build,
+                            const std::optional<fs::path> &only_sources = std::nullopt);
 [[nodiscard]] int run_header_sweep(const fs::path &build);
 [[nodiscard]] int run_scripts(const fs::path &build,
                               const std::optional<fs::path> &tools_dir);

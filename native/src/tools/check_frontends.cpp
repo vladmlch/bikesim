@@ -353,6 +353,12 @@ void count_suppression(Value &summary, const std::string &checker) {
 
 } // namespace
 
+namespace {
+std::set<std::size_t> entries_reaching(const std::vector<CompileEntry> &entries,
+                                       const std::vector<fs::path> &header_roots,
+                                       const std::set<std::string> &headers);
+} // namespace
+
 bool inspect_sweep_tool(const std::string &kind, const fs::path &tool,
                         Value &summary) {
     Value inspection;
@@ -378,7 +384,8 @@ bool inspect_sweep_tool(const std::string &kind, const fs::path &tool,
     return false;
 }
 
-int run_sweep(const std::string &kind, const fs::path &build) {
+int run_sweep(const std::string &kind, const fs::path &build,
+              const std::optional<fs::path> &only_sources) {
     const fs::path build_dir = canonical_path(build);
     std::error_code ec;
     if (!fs::is_directory(build_dir, ec)) {
@@ -386,6 +393,10 @@ int run_sweep(const std::string &kind, const fs::path &build) {
                   << build_dir.string() << "\n";
         return 1;
     }
+    // A partial selection writes partial-<kind>.json so the full summary of
+    // record is never overwritten by a level-1 run.
+    const std::string summary_kind =
+        only_sources.has_value() ? "partial-" + kind : kind;
     const std::string run_id = new_run_id();
     // Bulk temporaries run inside lambda frames so this function's Debug -O0
     // stack stays under -Wframe-larger-than: the initializer_list backing
@@ -416,6 +427,31 @@ int run_sweep(const std::string &kind, const fs::path &build) {
             context = load_context(build_dir);
             const SourceManifest manifest = load_source_manifest(build_dir);
             entries = load_entries(build_dir, manifest.sources);
+            if (only_sources.has_value()) {
+                std::set<std::string> listed;
+                std::ifstream stream(*only_sources);
+                if (!stream)
+                    throw CheckError("cannot read --only-sources file: " +
+                                     only_sources->string());
+                // Deleted files (a change can remove a source) select nothing.
+                for (std::string line; std::getline(stream, line);)
+                    if (!line.empty() && fs::exists(fs::path(line), ec))
+                        listed.insert(canonical_path(fs::path(line)).string());
+                std::set<std::size_t> keep = entries_reaching(
+                    entries, standalone_header_roots(manifest.first_party_roots),
+                    listed);
+                for (std::size_t index = 0; index < entries.size(); ++index)
+                    if (listed.contains(entries[index].source.string()))
+                        keep.insert(index);
+                if (keep.empty())
+                    throw CheckError("--only-sources selects no translation unit");
+                std::vector<CompileEntry> selected;
+                selected.reserve(keep.size());
+                for (const std::size_t index: keep)
+                    selected.push_back(entries[index]);
+                entries = std::move(selected);
+                set_member(summary, "selection", vstr("partial"));
+            }
             if (kind == "analyzer" || kind == "tidy")
                 suppressions = load_suppressions(fs::path(std::get<std::string>(
                     member(context, "analysis_suppressions_manifest")->data)));
@@ -460,19 +496,19 @@ int run_sweep(const std::string &kind, const fs::path &build) {
         } catch (const CheckError &error) {
             auto *errors = member_mut(summary, "errors");
             std::get<Array>(errors->data).push_back(vstr(error.what()));
-            write_summary(build_dir, kind, summary);
+            write_summary(build_dir, summary_kind, summary);
             std::cerr << "native sweep failed: " << error.what() << "\n";
             return false;
         } catch (const std::invalid_argument &error) {
             auto *errors = member_mut(summary, "errors");
             std::get<Array>(errors->data).push_back(vstr(error.what()));
-            write_summary(build_dir, kind, summary);
+            write_summary(build_dir, summary_kind, summary);
             std::cerr << "native sweep failed: " << error.what() << "\n";
             return false;
         } catch (const std::exception &error) {
             auto *errors = member_mut(summary, "errors");
             std::get<Array>(errors->data).push_back(vstr(error.what()));
-            write_summary(build_dir, kind, summary);
+            write_summary(build_dir, summary_kind, summary);
             std::cerr << "native sweep failed: " << error.what() << "\n";
             return false;
         }
@@ -543,7 +579,7 @@ int run_sweep(const std::string &kind, const fs::path &build) {
             set_member(summary, "tool_health", vstr("failed"));
             set_member(summary, "log_directory",
                        vstr(log_directory.string()));
-            write_summary(build_dir, kind, summary);
+            write_summary(build_dir, summary_kind, summary);
             std::cerr << "native " << kind << " failed: " << error.what()
                       << "\n";
             return 1;
@@ -640,7 +676,7 @@ int run_sweep(const std::string &kind, const fs::path &build) {
                vstr(!tool_health_failed && !blocking_findings ? "passed"
                                                               : "failed"));
     set_member(summary, "log_directory", vstr(log_directory.string()));
-    write_summary(build_dir, kind, summary);
+    write_summary(build_dir, summary_kind, summary);
 
     const std::string tool_health =
         std::get<std::string>(member(summary, "tool_health")->data);
@@ -663,7 +699,8 @@ int run_sweep(const std::string &kind, const fs::path &build) {
         std::cout << "native " << kind << " suppressions: " << joined << "\n";
     }
     std::cout << "native " << kind << " summary: "
-              << (build_dir / "native_check_summaries" / (kind + ".json"))
+              << (build_dir / "native_check_summaries" /
+                  (summary_kind + ".json"))
                      .string()
               << "\n";
     if (std::get<std::string>(member(summary, "status")->data) != "passed") {
@@ -823,6 +860,41 @@ std::map<std::string, std::set<std::string>> reaching_targets(
         }
     }
     return reaching;
+}
+
+// Indexes of entries whose include walk reaches any of `headers` — the
+// walk reaching_targets() does, kept per entry instead of per target.
+std::set<std::size_t> entries_reaching(const std::vector<CompileEntry> &entries,
+                                       const std::vector<fs::path> &header_roots,
+                                       const std::set<std::string> &headers) {
+    std::map<std::string, std::vector<IncludeDirective>> cache;
+    std::set<std::size_t> selected;
+    for (std::size_t index = 0; index < entries.size(); ++index) {
+        const CompileEntry &entry = entries[index];
+        const std::vector<fs::path> dirs = entry_include_dirs(entry);
+        std::set<std::string> visited;
+        std::vector<fs::path> frontier{entry.source};
+        bool reached = false;
+        while (!frontier.empty() && !reached) {
+            const fs::path file = frontier.back();
+            frontier.pop_back();
+            if (!visited.insert(file.string()).second) continue;
+            for (const IncludeDirective &directive:
+                 scan_include_directives(file, cache)) {
+                const std::optional<fs::path> resolved =
+                    resolve_include(directive, file.parent_path(), dirs);
+                if (!resolved.has_value() || !is_under(*resolved, header_roots))
+                    continue;
+                if (headers.contains(resolved->string())) {
+                    reached = true;
+                    break;
+                }
+                frontier.push_back(*resolved);
+            }
+        }
+        if (reached) selected.insert(index);
+    }
+    return selected;
 }
 
 // The contexts one reachable header compiles under: the covering root's

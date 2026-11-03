@@ -7,6 +7,7 @@
 //   bike-native-checks --kind KIND --build BUILD
 //                      [--tools-dir DIR]      (scripts kind only)
 //                      [--repo-root DIR]      (contracts kind only)
+//                      [--only-sources FILE]  (cppcheck/frontends/tidy only)
 //                      [--validate-only | --list-controls] (context only)
 //   bike-native-checks --check-child PROGRAM [ARG...]   (internal)
 //
@@ -44,7 +45,8 @@ std::string usage_line(const std::string &prog) {
         kinds += kind;
     }
     return "usage: " + prog + " [-h] --kind {" + kinds + "} --build BUILD" +
-           " [--tools-dir DIR] [--repo-root DIR] [--validate-only | --list-controls]";
+           " [--tools-dir DIR] [--repo-root DIR] [--only-sources FILE]" +
+           " [--validate-only | --list-controls]";
 }
 
 int argparse_error(const std::string &prog, const std::string &message) {
@@ -117,6 +119,7 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
     std::string build;
     std::string tools_dir;
     std::string repo_root;
+    std::string only_sources;
     bool validate_only = false;
     bool list_controls = false;
 
@@ -131,6 +134,7 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
                       << "  --build BUILD\n"
                       << "  --tools-dir DIR\n"
                       << "  --repo-root DIR\n"
+                      << "  --only-sources FILE\n"
                       << "  --validate-only  validate context without running controls\n"
                       << "  --list-controls  list this platform's context controls\n";
             return 0;
@@ -164,6 +168,13 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
                     prog, "argument --repo-root: expected one argument");
         } else if (argument.starts_with("--repo-root=")) {
             repo_root = argument.substr(std::string("--repo-root=").size());
+        } else if (argument == "--only-sources") {
+            if (!take_value(only_sources))
+                return argparse_error(
+                    prog, "argument --only-sources: expected one argument");
+        } else if (argument.starts_with("--only-sources=")) {
+            only_sources =
+                argument.substr(std::string("--only-sources=").size());
         } else if (argument == "--validate-only") {
             validate_only = true;
         } else if (argument == "--list-controls") {
@@ -201,6 +212,9 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
         return argparse_error(prog, "--validate-only and --list-controls require --kind context");
     if (validate_only && list_controls)
         return argparse_error(prog, "--validate-only and --list-controls are mutually exclusive");
+    if (!only_sources.empty() && kind != "cppcheck" && kind != "frontends" &&
+        kind != "tidy")
+        return argparse_error(prog, "--only-sources requires --kind cppcheck, frontends or tidy");
 
     const bike::checks::fs::path build_path(build);
     try {
@@ -229,7 +243,10 @@ int main(int argc, char **argv) { // NOLINT(bugprone-exception-escape)
                 repo_root.empty()
                     ? std::nullopt
                     : std::optional<bike::checks::fs::path>(repo_root));
-        return bike::checks::run_sweep(kind, build_path);
+        return bike::checks::run_sweep(
+            kind, build_path,
+            only_sources.empty() ? std::nullopt
+                                 : std::optional<bike::checks::fs::path>(only_sources));
     } catch (const std::exception &error) {
         // A port-side invariant failure still fails closed; Python's runner
         // would propagate a traceback, the native binary reports cleanly.

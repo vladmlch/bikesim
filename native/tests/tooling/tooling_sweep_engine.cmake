@@ -21,8 +21,17 @@ b29_fixture_context("${_fx}/build" "${_fx}/native"
   "{\"bike_native\":${_b29_tc}}" "${_fx}/suppressions.json")
 set(_manifest_sources "")
 set(_ccdb "")
+# tu2 and tu7 share one first-party header; --only-sources reaches them
+# through the include walk.
+file(WRITE "${_fx}/native/src/common.hpp"
+  "#pragma once\ninline int common() { return 0; }\n")
 foreach(_i RANGE 1 8)
-  file(WRITE "${_fx}/native/src/tu${_i}.cpp" "int tu${_i}() { return ${_i}; }\n")
+  if(_i EQUAL 2 OR _i EQUAL 7)
+    file(WRITE "${_fx}/native/src/tu${_i}.cpp"
+      "#include \"common.hpp\"\nint tu${_i}() { return ${_i}; }\n")
+  else()
+    file(WRITE "${_fx}/native/src/tu${_i}.cpp" "int tu${_i}() { return ${_i}; }\n")
+  endif()
   if(NOT _manifest_sources STREQUAL "")
     string(APPEND _manifest_sources ",")
     string(APPEND _ccdb ",")
@@ -91,6 +100,35 @@ run_case(engine_finding EXPECT_EXIT FAIL
         "CLANG_TIDY=${_fx}/warn-one-tool"
         "${CHECKS_BINARY}" --kind tidy --build "${_fx}/build")
 expect_json(engine_finding "${_summary}" "blocking" finding_status)
+
+# --- --only-sources: selected TUs plus the TUs reaching a listed header ----
+# Listing tu3.cpp and common.hpp selects tu3 directly plus tu2 and tu7 (the
+# two units that include common.hpp). The partial summary never overwrites
+# the full kind summary.
+set(_partial "${_fx}/build/native_check_summaries/partial-tidy.json")
+file(WRITE "${_fx}/only.txt" "${_fx}/native/src/tu3.cpp\n${_fx}/native/src/common.hpp\n")
+run_case(only_sources EXPECT_EXIT 0
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env} "BIKE_CHECK_JOBS=4"
+        "CLANG_TIDY=${_fx}/slow-tool"
+        "${CHECKS_BINARY}" --kind tidy --build "${_fx}/build" --only-sources "${_fx}/only.txt")
+expect_json(only_sources "${_partial}" "partial" selection)
+expect_json_length(only_sources "${_partial}" 3 records)
+expect_json(only_sources "${_partial}" "${_fx}/native/src/tu2.cpp" records 0 source)
+expect_json(only_sources "${_partial}" "${_fx}/native/src/tu3.cpp" records 1 source)
+expect_json(only_sources "${_partial}" "${_fx}/native/src/tu7.cpp" records 2 source)
+
+# Nothing selected is an error, never a green zero-unit sweep.
+file(WRITE "${_fx}/none.txt" "${_fx}/README.md\n")
+run_case(only_sources_empty EXPECT_EXIT FAIL
+  EXPECT_STDERR "selects no translation unit"
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "CLANG_TIDY=${_fx}/slow-tool"
+        "${CHECKS_BINARY}" --kind tidy --build "${_fx}/build" --only-sources "${_fx}/none.txt")
+
+# Only the per-file kinds of level 1 accept a selection.
+run_case(only_sources_kind EXPECT_EXIT 2
+  EXPECT_STDERR "--only-sources requires --kind cppcheck, frontends or tidy"
+  COMMAND "${CHECKS_BINARY}" --kind odr --build "${_fx}/build" --only-sources "${_fx}/only.txt")
 
 # ---------------------------------------------------------------------------
 # Header-sweep context dedup: two targets whose compile contexts differ only

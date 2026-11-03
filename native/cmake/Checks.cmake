@@ -25,6 +25,7 @@ add_executable(bike-native-checks
   "${_checks_tools_dir}/check_context.cpp"
   "${_checks_tools_dir}/check_contracts.cpp"
   "${_checks_tools_dir}/check_frontends.cpp"
+  "${_checks_tools_dir}/check_pool.cpp"
   "${_checks_tools_dir}/check_reports.cpp"
   "${_checks_tools_dir}/checks_internal.hpp")
 set_target_properties(bike-native-checks PROPERTIES
@@ -167,6 +168,16 @@ if(BUILD_TESTING)
       -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/tooling_gate"
       -P "${_checks_native_dir}/tests/tooling/tooling_gate.cmake")
   set_tests_properties(tooling_gate PROPERTIES LABELS "tooling" TIMEOUT 120)
+endif()
+
+if(BUILD_TESTING)
+  add_test(NAME tooling_sweep_engine
+    COMMAND "${CMAKE_COMMAND}"
+      -D "CHECKS_BINARY=$<TARGET_FILE:bike-native-checks>"
+      -D "BUILD_DIR=${CMAKE_BINARY_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/tooling_sweep_engine"
+      -P "${_checks_native_dir}/tests/tooling/tooling_sweep_engine.cmake")
+  set_tests_properties(tooling_sweep_engine PROPERTIES LABELS "tooling" TIMEOUT 300)
 endif()
 
 # --- tooling_checks: fixture contract for the produced orchestrator ---------

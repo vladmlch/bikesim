@@ -336,6 +336,21 @@ std::vector<std::string> tool_argv(const std::string &kind,
     throw CheckError("unknown native sweep kind: " + kind);
 }
 
+// Increments summary.suppression_counts[checker] (insertion-ordered object).
+void count_suppression(Value &summary, const std::string &checker) {
+    Value *counts = member_mut(summary, "suppression_counts");
+    auto &counts_object = std::get<Object>(counts->data);
+    for (auto &[key, value]: counts_object) {
+        if (key == checker) {
+            const std::int64_t count =
+                parse_int64(std::get<io::Number>(value.data).lexeme).value_or(0);
+            value = vint(count + 1);
+            return;
+        }
+    }
+    counts_object.emplace_back(checker, vint(1));
+}
+
 } // namespace
 
 bool inspect_sweep_tool(const std::string &kind, const fs::path &tool,
@@ -542,67 +557,58 @@ int run_sweep(const std::string &kind, const fs::path &build) {
         }
     }
 
-    [&]() {
-        for (std::size_t index = 0; index < entries.size(); ++index) {
-            const CompileEntry &entry = entries[index];
-            const std::vector<std::string> argv =
-                tool_argv(kind, tool, entry, context, build_dir, run_id,
-                          index, frontend_flags);
-            std::string name = padded_index(index);
-            name += '-';
-            name += entry.source.stem().string();
-            name += '-';
-            name += "stable";
-            Value record =
-                run_process(argv, entry.directory, log_directory, name);
-            set_member(record, "pass", vstr("stable"));
-            set_member(record, "source", vstr(entry.source.string()));
-            set_member(record, "target",
-                       entry.target.has_value() ? vstr(*entry.target)
-                                                : vnull());
-            std::vector<std::string> unsuppressed;
-            if (kind == "analyzer" || kind == "tidy") {
-                const auto filtered = apply_suppressions(
-                    record_diagnostics(record), tool_version, suppressions);
-                unsuppressed = filtered.remaining;
-                set_member(record, "unsuppressed_diagnostics",
-                           varr([&]() {
-                               Array items;
-                               for (const auto &line: unsuppressed)
-                                   items.push_back(vstr(line));
-                               return items;
-                           }()));
-                set_member(record, "suppressed_diagnostics",
-                           varr(filtered.matched));
-                for (const Value &item: filtered.matched) {
-                    const std::string checker = std::get<std::string>(
-                        member(item, "checker")->data);
-                    Value *counts = member_mut(summary, "suppression_counts");
-                    auto &counts_object = std::get<Object>(counts->data);
-                    bool found = false;
-                    for (auto &[key, value]: counts_object) {
-                        if (key == checker) {
-                            const std::int64_t count =
-                                parse_int64(std::get<io::Number>(value.data)
-                                                .lexeme)
-                                    .value_or(0);
-                            value = vint(count + 1);
-                            found = true;
-                        }
-                    }
-                    if (!found)
-                        counts_object.emplace_back(checker, vint(1));
-                }
-            } else {
-                unsuppressed = record_diagnostics(record);
-            }
-            records.push_back(record);
-            if (!record_health_ok(record)) tool_health_failed = true;
-            const bool warning = has_warning(unsuppressed);
-            const bool error = has_error(unsuppressed);
-            if (warning || error) blocking_findings = true;
+    // Per-TU outcome slots: workers fill them in any order, the merge below
+    // walks them in entry order so records and counts stay deterministic.
+    struct TuOutcome {
+        Value record;
+        std::vector<std::string> suppressed_checkers;
+        bool health_failed = false;
+        bool blocking = false;
+    };
+    const std::size_t jobs = check_jobs(environ_copy());
+    set_member(summary, "jobs", vint(static_cast<std::int64_t>(jobs)));
+    std::vector<TuOutcome> outcomes(entries.size());
+    for_each_index(entries.size(), jobs, [&](std::size_t index) {
+        const CompileEntry &entry = entries[index];
+        TuOutcome &out = outcomes[index];
+        const std::vector<std::string> argv =
+            tool_argv(kind, tool, entry, context, build_dir, run_id, index,
+                      frontend_flags);
+        std::string name = padded_index(index);
+        name += '-';
+        name += entry.source.stem().string();
+        name += "-stable";
+        Value record = run_process(argv, entry.directory, log_directory, name);
+        set_member(record, "pass", vstr("stable"));
+        set_member(record, "source", vstr(entry.source.string()));
+        set_member(record, "target",
+                   entry.target.has_value() ? vstr(*entry.target) : vnull());
+        std::vector<std::string> unsuppressed;
+        if (kind == "analyzer" || kind == "tidy") {
+            const auto filtered = apply_suppressions(
+                record_diagnostics(record), tool_version, suppressions);
+            unsuppressed = filtered.remaining;
+            Array items;
+            for (const auto &line: unsuppressed) items.push_back(vstr(line));
+            set_member(record, "unsuppressed_diagnostics", varr(std::move(items)));
+            set_member(record, "suppressed_diagnostics", varr(filtered.matched));
+            for (const Value &item: filtered.matched)
+                out.suppressed_checkers.push_back(
+                    std::get<std::string>(member(item, "checker")->data));
+        } else {
+            unsuppressed = record_diagnostics(record);
         }
-    }();
+        out.health_failed = !record_health_ok(record);
+        out.blocking = has_warning(unsuppressed) || has_error(unsuppressed);
+        out.record = std::move(record);
+    });
+    for (TuOutcome &out: outcomes) {
+        for (const std::string &checker: out.suppressed_checkers)
+            count_suppression(summary, checker);
+        tool_health_failed = tool_health_failed || out.health_failed;
+        blocking_findings = blocking_findings || out.blocking;
+        records.push_back(std::move(out.record));
+    }
 
     [&]() {
         if (kind == "odr" && !tool_health_failed) {
@@ -1019,52 +1025,69 @@ int run_header_sweep(const fs::path &build) {
     Array records;
     bool tool_health_failed = false;
     bool blocking_findings = false;
-    [&]() {
-        std::size_t index = 0;
-        for (const fs::path &header: headers) {
-            const fs::path *root = nullptr;
-            for (const fs::path &candidate: header_roots)
-                if (is_under(header, {candidate})) {
-                    root = &candidate;
-                    break;
-                }
-            for (const auto &[target, entry]:
-                 header_contexts(header, *root, reaching, entries_by_root)) {
-                // tempfile.TemporaryDirectory(dir=work_root): a unique probe
-                // dir per header/target probe, removed after the record.
-                const fs::path probe_dir =
-                    work_root / ("header-" + std::to_string(index) + "-" +
-                                 new_run_id());
-                fs::create_directories(probe_dir, ec);
-                const fs::path probe = probe_dir / "header_probe.cpp";
-                {
-                    std::ofstream stream(probe,
-                                         std::ios::binary | std::ios::trunc);
-                    stream << "#include \"" << header.generic_string()
-                           << "\"\nint main() { return 0; }\n";
-                }
-                const std::vector<std::string> argv =
-                    replace_compile_source(*entry, probe, true);
-                std::string name = padded_index(index);
-                name += '-';
-                name += header.stem().string();
-                name += '-';
-                name += target;
-                Value record =
-                    run_process(argv, entry->directory, log_directory, name);
-                std::error_code rm_ec;
-                fs::remove_all(probe_dir, rm_ec);
-                set_member(record, "pass", vstr("header"));
-                set_member(record, "source", vstr(header.string()));
-                set_member(record, "target", vstr(target));
-                if (!record_health_ok(record)) tool_health_failed = true;
-                if (!record_diagnostics(record).empty())
-                    blocking_findings = true;
-                records.push_back(std::move(record));
-                ++index;
+    // One slot per (header, target context) probe in the old double-loop's
+    // enumeration order; workers fill slots concurrently and the merge below
+    // walks them in index order, so records stay deterministic.
+    struct HeaderProbe {
+        fs::path header; // by value — no pointers into `headers` storage
+        std::string target;
+        const CompileEntry *entry; // into `entries`
+    };
+    std::vector<HeaderProbe> probes;
+    for (const fs::path &header: headers) {
+        const fs::path *root = nullptr;
+        for (const fs::path &candidate: header_roots)
+            if (is_under(header, {candidate})) {
+                root = &candidate;
+                break;
             }
+        for (const auto &[target, entry]:
+             header_contexts(header, *root, reaching, entries_by_root))
+            probes.push_back(
+                {.header=header, .target=target, .entry=entry});
+    }
+    const std::size_t jobs = check_jobs(environ_copy());
+    set_member(summary, "jobs", vint(static_cast<std::int64_t>(jobs)));
+    std::vector<Value> slots(probes.size());
+    for_each_index(probes.size(), jobs, [&](std::size_t index) {
+        const HeaderProbe &probe_ref = probes[index];
+        const fs::path &header = probe_ref.header;
+        // tempfile.TemporaryDirectory(dir=work_root): a unique probe
+        // dir per header/target probe, removed after the record.
+        const fs::path probe_dir =
+            work_root / ("header-" + std::to_string(index) + "-" +
+                         new_run_id());
+        std::error_code probe_ec;
+        fs::create_directories(probe_dir, probe_ec);
+        const fs::path probe = probe_dir / "header_probe.cpp";
+        {
+            std::ofstream stream(probe,
+                                 std::ios::binary | std::ios::trunc);
+            stream << "#include \"" << header.generic_string()
+                   << "\"\nint main() { return 0; }\n";
         }
-    }();
+        const std::vector<std::string> argv =
+            replace_compile_source(*probe_ref.entry, probe, true);
+        std::string name = padded_index(index);
+        name += '-';
+        name += header.stem().string();
+        name += '-';
+        name += probe_ref.target;
+        Value record = run_process(argv, probe_ref.entry->directory,
+                                   log_directory, name);
+        std::error_code rm_ec;
+        fs::remove_all(probe_dir, rm_ec);
+        set_member(record, "pass", vstr("header"));
+        set_member(record, "source", vstr(header.string()));
+        set_member(record, "target", vstr(probe_ref.target));
+        slots[index] = std::move(record);
+    });
+    for (Value &record: slots) {
+        if (!record_health_ok(record)) tool_health_failed = true;
+        if (!record_diagnostics(record).empty())
+            blocking_findings = true;
+        records.push_back(std::move(record));
+    }
 
     set_member(summary, "records", varr(std::move(records)));
     set_member(summary, "tool_health",

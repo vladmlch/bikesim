@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <optional>
 #include <regex>
@@ -317,6 +318,22 @@ struct SourceManifest {
 // first-party root.
 [[nodiscard]] std::vector<fs::path> standalone_header_roots(
     const std::vector<fs::path> &first_party_roots);
+
+// ---- worker pool -------------------------------------------------------------
+
+// Concurrent child processes a sweep may run: BIKE_CHECK_JOBS when set (a
+// positive decimal integer; anything else is a CheckError so a typo never
+// silently serializes or overloads the gate), otherwise the online CPU
+// count. tools/run_tests.sh exports a share when other gates are running.
+[[nodiscard]] std::size_t check_jobs(
+    const std::map<std::string, std::string> &environment);
+
+// Runs task(0) … task(count - 1) on at most `workers` threads, each index
+// exactly once. Tasks write into per-index slots; callers merge in index
+// order afterwards so summaries stay deterministic. After the first
+// exception no new index starts; it is rethrown once all threads joined.
+void for_each_index(std::size_t count, std::size_t workers,
+                    const std::function<void(std::size_t)> &task);
 
 // ---- sweeps -----------------------------------------------------------------
 

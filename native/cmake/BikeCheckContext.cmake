@@ -516,7 +516,12 @@ function(bike_write_check_context)
   _native_json_quote(_native_compiler_path_json "${CMAKE_CXX_COMPILER}")
   _native_json_quote(_native_compiler_id_json "${CMAKE_CXX_COMPILER_ID}")
   _native_json_quote(_native_compiler_version_json "${CMAKE_CXX_COMPILER_VERSION}")
-  _native_json_array(_native_compiler_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
+  # compiler.launcher describes the argv prefix compile_commands.json carries
+  # before the compiler — CMake never writes CMAKE_CXX_COMPILER_LAUNCHER there
+  # (verified with CMake 4.4.3 + Ninja), so it is empty. The wrapper the build
+  # really runs through (e.g. ccache) is provenance only: build_launcher.
+  _native_json_array(_native_compiler_launcher_json)
+  _native_json_array(_native_compiler_build_launcher_json ${CMAKE_CXX_COMPILER_LAUNCHER})
   _native_json_quote(_native_suppressions_manifest_json
     "${_ctx_native_dir}/analysis_suppressions.json")
   # Since T63 the only graph is the Python-free root build: both schema-2
@@ -580,7 +585,7 @@ function(bike_write_check_context)
     "{\"schema_version\":1,\"first_party_roots\":${_native_source_roots_json},\"sources\":${_native_source_entries}}\n")
 
   set(_ctx_content
-    "{\"schema_version\":2,\"platform\":${_ctx_platform_json},\"sysroot\":${_ctx_sysroot_json},\"stdlib\":${_ctx_stdlib_json},\"numerics\":${_ctx_numerics_json},\"policy\":${_ctx_policy_json},\"capabilities\":${_ctx_capabilities_json},\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_ctx_sdk_json},\"sdk_requested\":${_ctx_sdk_requested_json},\"sdk_source\":${_ctx_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"python\":${_ctx_python_json},\"source_directory\":${_ctx_source_directory_json},\"build_directory\":${_ctx_build_directory_json}${_ctx_root_fields},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
+    "{\"schema_version\":2,\"platform\":${_ctx_platform_json},\"sysroot\":${_ctx_sysroot_json},\"stdlib\":${_ctx_stdlib_json},\"numerics\":${_ctx_numerics_json},\"policy\":${_ctx_policy_json},\"capabilities\":${_ctx_capabilities_json},\"compiler\":{\"path\":${_native_compiler_path_json},\"id\":${_native_compiler_id_json},\"version\":${_native_compiler_version_json},\"launcher\":${_native_compiler_launcher_json},\"build_launcher\":${_native_compiler_build_launcher_json}},\"compiler_policy\":${BIKE_POLICY_REPORT_JSON},\"sdk\":${_ctx_sdk_json},\"sdk_requested\":${_ctx_sdk_requested_json},\"sdk_source\":${_ctx_sdk_source_json},\"libcpp_hardening\":${_native_libcpp_hardening_json},\"analysis_suppressions_manifest\":${_native_suppressions_manifest_json},\"include_paths\":${_native_include_paths_json},\"library_paths\":${_native_library_paths_json},\"required_files\":${_native_required_files_json},\"source_roots\":${_native_source_roots_json},\"python_executable\":${_native_python_json},\"python\":${_ctx_python_json},\"source_directory\":${_ctx_source_directory_json},\"build_directory\":${_ctx_build_directory_json}${_ctx_root_fields},\"tool_defaults\":${_native_tool_defaults},\"tool_overrides\":${_native_tool_overrides},\"target_contexts\":${_native_target_contexts}}\n")
 
   if(CMAKE_CONFIGURATION_TYPES)
     # Multi-config generators cannot share one compile_commands.json; emit

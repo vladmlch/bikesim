@@ -205,6 +205,18 @@ if(NOT _probe_count EQUAL 2)
   set(_failures "${_failures}\n  headers_distinct: ${_probe_count} probe compiles, expected 2")
 endif()
 
+# The context's compiler.launcher names what compile_commands.json actually
+# prefixes to the compiler. CMake never writes CMAKE_CXX_COMPILER_LAUNCHER
+# there, so it is always empty; the build-time wrapper (ccache) is recorded
+# separately as compiler.build_launcher, for provenance only.
+expect_json_length(context_launcher "${BUILD_DIR}/native_check_context.json" 0
+  compiler launcher)
+string(JSON _build_launcher_type ERROR_VARIABLE _bl_err
+  TYPE "${_context_json}" compiler build_launcher)
+if(_bl_err OR NOT _build_launcher_type STREQUAL "ARRAY")
+  set(_failures "${_failures}\n  context_launcher: compiler.build_launcher must be an array")
+endif()
+
 # (later tasks append cases above this line)
 
 if(NOT _failures STREQUAL "")

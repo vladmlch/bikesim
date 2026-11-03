@@ -22,6 +22,18 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/BikeDependencyLock.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/native/cmake/Provenance.cmake")
 
 project(bike_sim VERSION 0.0.0 LANGUAGES CXX)
+
+# A compiler cache only speeds up rebuilds (shared across every worktree);
+# it never changes what is compiled, so a missing ccache is not an error.
+# It is recorded as compiler.build_launcher in native_check_context.json.
+option(BIKE_COMPILER_CACHE "Use ccache as the C++ compiler launcher when installed" ON)
+if(BIKE_COMPILER_CACHE AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
+  find_program(BIKE_CCACHE_PROGRAM ccache)
+  if(BIKE_CCACHE_PROGRAM)
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${BIKE_CCACHE_PROGRAM}")
+  endif()
+endif()
+
 if(CMAKE_CROSSCOMPILING)
   message(FATAL_ERROR "Cross-compilation is not supported by this native-build workflow")
 endif()

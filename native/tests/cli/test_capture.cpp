@@ -1,4 +1,5 @@
 #include "support/fixture_test.hpp"
+#include "support/temporary_directory.hpp"
 #include "cli/application.hpp"
 #include "cli/physical_capture.hpp"
 #include "cli/viewer_options.hpp"
@@ -11,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -86,6 +88,40 @@ void compiled_capture() {
     auto wrong=metadata;set(wrong,"terrain_sha256",text(std::string(64,'f')));
     bt::invalid([&]{(void)bike::cli::physical_assets(request,*prepared,wrong);});
 }
+void write_file(const std::filesystem::path& path, std::string_view body) {
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out << body;
+    bt::require(static_cast<bool>(out), "test writes " + path.string());
+}
+// The pose bike-settle publishes is the file a ride pins through
+// physics.equilibrium_state_file. The fingerprint binds the settle contract
+// (max_steps, tolerance), so bike-settle's defaults must be the ones a ride
+// settles with; otherwise every bike-settle pose is "another configuration".
+void settled_pose_loads_into_ride(const std::filesystem::path& bin) {
+    const bt::TemporaryDirectory dir("cli_settle_pose");
+    for (const auto* name : {"rider_joint_envelope_anatomical.json", "rider_strength_reference.json"})
+        std::filesystem::copy_file(bt::fixture(std::string("config/") + name), dir.path() / name);
+    // Cache off on both sides: the settle must solve and the ride must take
+    // the pose from the pinned file, never from a shared auto-cache entry.
+    auto physics = bt::text(bt::fixture("config/viewer_physics_welded.toml"));
+    const std::string cached = "equilibrium_cache_enabled = true";
+    const auto at = physics.find(cached);
+    bt::require(at != std::string::npos, "welded fixture declares the equilibrium cache switch");
+    physics.replace(at, cached.size(), "equilibrium_cache_enabled = false");
+    write_file(dir.path() / "settle.toml", physics);
+    write_file(dir.path() / "ride.toml", "equilibrium_state_file = \"pose.npz\"\n" + physics);
+
+    const auto settle = bike::platform::run({(bin / "bike-settle").string(),
+        "--physics-config", (dir.path() / "settle.toml").string(), "--out", (dir.path() / "pose.npz").string()}, dir.path());
+    bt::require(settle.exit_code == 0 && std::filesystem::exists(dir.path() / "pose.npz"),
+        "bike-settle publishes the pose (" + settle.err + ")");
+    const auto ride = bike::platform::run({(bin / "bike-ride").string(), "--backend", "native", "--physics", "physical",
+        "--headless", "--duration", "0.00125", "--no-plots", "--check-policy", "diagnostic",
+        "--physics-config", (dir.path() / "ride.toml").string(), "--out", (dir.path() / "ride").string()}, dir.path());
+    bt::require(ride.err.find("fingerprint mismatch") == std::string::npos,
+        "a ride accepts the pose bike-settle wrote for the same configuration (" + ride.err + ")");
+    bt::require(ride.exit_code == 0, "the pinned ride completes (" + ride.err + ")");
+}
 }
 int main(int argc, char** argv) {
     return bt::run([&] {
@@ -130,6 +166,7 @@ int main(int argc, char** argv) {
         }
         const auto rejected = bike::platform::run({(bin / "bike-research").string(), "--duration", "not-a-number"}, bin);
         bt::require(rejected.exit_code == 2 && !rejected.err.empty(), "configuration errors keep CLI exit 2");
+        settled_pose_loads_into_ride(bin);
         bike::BikeConfig first, second;
         first.damper_clicks.fork_hsc = 0;
         bt::require(second.damper_clicks.fork_hsc == 2, "BikeConfig owns independent nested defaults");

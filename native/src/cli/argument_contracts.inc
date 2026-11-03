@@ -1081,7 +1081,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
           "--max-steps"
         ],
         "dest": "max_steps",
-        "default": 400000,
+        "default": null,
         "type": "int",
         "choices": null,
         "flag": false,

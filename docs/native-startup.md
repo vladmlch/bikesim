@@ -266,6 +266,10 @@ state-file pointers are excluded from the physical fingerprint. The
 fingerprint (schema 2) also binds the settle contract actually used —
 `EquilibriumOptions::max_steps` and `tolerance` — so a pose settled under a
 looser contract is never served to a stricter request under the same name.
+`bike-settle` therefore settles with the ride's contract by default (no
+explicit budget, tolerance 0.05), so its pose loads through
+`equilibrium_state_file`; an explicit `--max-steps` or a `--tolerance` other
+than 0.05 writes a pose bound to that contract, which a ride does not accept.
 Every published entry still originates from the once-only setup settle, which
 runs from pristine t=0 state; runtime reset replays the sealed bootstrap and
 never re-settles into the cache. Native startup

@@ -1492,15 +1492,15 @@ _expect_absent(${_c} "${_ci}" "CMAKE_OSX_SYSROOT")
 _expect_absent(${_c} "${_ci}" "xcrun")
 _expect_absent(${_c} "${_ci}" "SDKROOT")
 
-# test_required_analysis_tools_checked — the produced sweep set and order
-# is a fixed contract inside run_native_checks.sh.
+# test_required_analysis_tools_checked — the produced sweep set is
+# unchanged; run_native_checks.sh orders it cheapest first.
 set(_c "ci_presets_runs_the_bounded_analysis_sweep_set")
 math(EXPR _case_count "${_case_count} + 1")
 _expect_needle(${_c} "${_ci}" "run_native_checks.sh \"$build\"")
 _expect_needle(${_c} "${_checks_sh}"
-  "frontends tidy analyzer cppcheck odr scripts headers")
-_expect_needle(${_c} "${_checks_sh}" "diagnostic-controls context")
-_expect_needle(${_c} "${_checks_sh}" "sweep contracts")
+  "kinds=(scripts cppcheck context diagnostic-controls contracts frontends")
+_expect_needle(${_c} "${_checks_sh}" "headers odr tidy analyzer)")
+_expect_needle(${_c} "${_checks_sh}" "contracts ]] && args+=(--repo-root")
 _expect_needle(${_c} "${_checks_sh}" "fails closed on missing tools")
 
 # test_offline_lane_uses_checked_in_offline_tools — the offline mode

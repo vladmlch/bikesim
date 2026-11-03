@@ -157,6 +157,18 @@ if(BUILD_TESTING)
   endif()
 endif()
 
+# --- tooling_gate: launcher contract on stub executables ---------------------
+# Fast (no compiler, no real sweep): stays in the ordinary CTest set so the
+# gate launchers are covered by every quick run.
+if(BUILD_TESTING)
+  add_test(NAME tooling_gate
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/tooling_gate"
+      -P "${_checks_native_dir}/tests/tooling/tooling_gate.cmake")
+  set_tests_properties(tooling_gate PROPERTIES LABELS "tooling" TIMEOUT 120)
+endif()
+
 # --- tooling_checks: fixture contract for the produced orchestrator ---------
 if(BUILD_TESTING)
   add_test(NAME tooling_checks

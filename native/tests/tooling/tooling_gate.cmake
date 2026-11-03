@@ -118,6 +118,82 @@ foreach(_line IN LISTS _timing_lines)
   endif()
 endforeach()
 
+# --- run_tests.sh against a scratch checkout with stub cmake/ctest --------
+# The launcher resolves REPO_ROOT from its own location, so copy the three
+# launcher files into a scratch tree and put stub cmake/ctest first on PATH.
+set(_repo "${SCRATCH_DIR}/repo")
+file(MAKE_DIRECTORY "${_repo}/tools" "${_repo}/build/native-release")
+file(COPY "${REPO_ROOT}/tools/run_tests.sh" "${REPO_ROOT}/tools/run_native_checks.sh"
+          "${REPO_ROOT}/tools/native_common.sh" DESTINATION "${_repo}/tools")
+foreach(_tool cmake ctest)
+  file(WRITE "${_stub_dir}/${_tool}"
+    "#!/usr/bin/env bash\n"
+    "printf '${_tool} %s\\n' \"$*\" >> \"\${STUB_LOG}\"\n"
+    "exit 0\n")
+  file(CHMOD "${_stub_dir}/${_tool}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
+endforeach()
+set(_state "${SCRATCH_DIR}/state")
+set(_gate_env ${_checks_env} "PATH=${_stub_dir}:$ENV{PATH}"
+  "BIKE_GATE_STATE_DIR=${_state}" "BIKE_CPU_COUNT=8")
+
+# native: configure, build, ordinary CTest, then every kind in order.
+file(REMOVE "${_log}")
+file(REMOVE_RECURSE "${_state}")
+gate_run(gate_native EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "stage" "total"
+  COMMAND bash "${_repo}/tools/run_tests.sh" native)
+file(STRINGS "${_log}" _calls)
+list(GET _calls 0 _c0)
+list(GET _calls 1 _c1)
+list(GET _calls 2 _c2)
+list(GET _calls 3 _c3)
+if(NOT _c0 MATCHES "^cmake --preset release$"
+   OR NOT _c1 MATCHES "^cmake --build --preset release --parallel 8$"
+   OR NOT _c2 MATCHES "^ctest --test-dir .* -LE slow\\|package "
+   OR NOT _c3 MATCHES "^checks scripts ")
+  set(_failures "${_failures}\n  gate_native: unexpected call order '${_calls}'")
+endif()
+file(STRINGS "${_state}/timings.tsv" _journal)
+list(LENGTH _journal _journal_count)
+if(NOT _journal_count EQUAL 1 OR NOT _journal MATCHES "\tnative\trelease\t-\t8\tpassed\t")
+  set(_failures "${_failures}\n  gate_native: journal '${_journal}'")
+endif()
+
+# --from tidy: configure and build still run, ordinary CTest is skipped.
+file(REMOVE "${_log}")
+gate_run(gate_from EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "PARTIAL"
+  COMMAND bash "${_repo}/tools/run_tests.sh" native release --from tidy)
+file(STRINGS "${_log}" _calls)
+string(FIND "${_calls}" "ctest " _ctest_pos)
+string(FIND "${_calls}" "checks cppcheck" _cpp_pos)
+string(FIND "${_calls}" "checks tidy" _tidy_pos)
+if(NOT _ctest_pos EQUAL -1 OR NOT _cpp_pos EQUAL -1 OR _tidy_pos EQUAL -1)
+  set(_failures "${_failures}\n  gate_from: unexpected calls '${_calls}'")
+endif()
+file(STRINGS "${_state}/timings.tsv" _journal)
+list(GET _journal -1 _last)
+if(NOT _last MATCHES "\tnative\trelease\ttidy\t8\tpassed\t")
+  set(_failures "${_failures}\n  gate_from: journal line '${_last}'")
+endif()
+
+# --from is meaningless for quick and must name a known stage.
+gate_run(gate_from_quick EXPECT_EXIT 2 ENV ${_gate_env}
+  COMMAND bash "${_repo}/tools/run_tests.sh" quick release --from tidy)
+gate_run(gate_from_bogus EXPECT_EXIT 2 ENV ${_gate_env}
+  COMMAND bash "${_repo}/tools/run_tests.sh" native release --from bogus)
+gate_run(gate_from_slow_native EXPECT_EXIT 2 ENV ${_gate_env}
+  COMMAND bash "${_repo}/tools/run_tests.sh" native release --from slow)
+
+# A failure is journaled as failed and keeps the exit code.
+gate_run(gate_failed EXPECT_EXIT 5 ENV ${_gate_env} "STUB_FAIL_odr=5"
+  COMMAND bash "${_repo}/tools/run_tests.sh" native)
+file(STRINGS "${_state}/timings.tsv" _journal)
+list(GET _journal -1 _last)
+if(NOT _last MATCHES "\tfailed\t")
+  set(_failures "${_failures}\n  gate_failed: journal line '${_last}'")
+endif()
+
 # (run_tests.sh cases are appended by later tasks above this line.)
 
 if(NOT _failures STREQUAL "")

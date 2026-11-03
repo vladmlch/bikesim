@@ -47,7 +47,8 @@ build/native-release/bin/bike-research \
   --scenario flat --duration 1 --check-policy diagnostic --record --out output/research
 
 # Interactive research: retain reset-separated episodes, publish on viewer close.
-build/native-release/bin/bike-ride \
+# Windowed: needs the gui preset (BIKE_BUILD_GUI=ON), see RIDE.md.
+build/gui/bin/bike-ride \
   --backend native --research --physics-config examples/research/viewer_physics_welded.toml \
   --track examples/research/rough_uphill_savage.toml --duration 1 --record
 ```
@@ -246,8 +247,8 @@ changing a published `summary.md` in place invalidates its manifest hash.
 
 ```bash
 build/native-release/bin/bike-replay "$RUN" --episode 0
-build/native-release/bin/bike-replay "$RUN" --episode 0 --viewer --time-scale 2
-build/native-release/bin/bike-replay "$RUN" --episode 0 --view        # unverified recorded playback
+build/gui/bin/bike-replay "$RUN" --episode 0 --viewer --time-scale 2   # windowed: gui preset
+build/gui/bin/bike-replay "$RUN" --episode 0 --view        # unverified recorded playback, gui preset
 ```
 
 Episode selection is optional only when the recording contains exactly one

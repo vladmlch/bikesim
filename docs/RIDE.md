@@ -72,6 +72,16 @@ cmake --workflow --preset release
 
 Executables land at `build/native-release/bin/` and run directly — there is
 no extension artifact, selector environment or interpreter to resolve.
+
+The `release` preset configures `BIKE_BUILD_GUI=OFF`, so its binaries are
+headless: an interactive launch from `build/native-release/bin/` exits with
+`viewer unavailable: configure BIKE_BUILD_GUI=ON`. Every windowed command
+below (interactive `bike-ride`, `bike-replay --viewer`/`--view`) runs from
+the `gui` preset:
+
+```bash
+cmake --preset gui && cmake --build build/gui   # windowed binaries in build/gui/bin/
+```
 Unsupported configuration, missing dependencies or a provider mismatch
 fails configure or launch; it never falls back to a Python path because
 none exists.
@@ -97,8 +107,8 @@ t=31.178750 s, 24943 steps, identical position).
 Exact profile/track examples:
 
 ```bash
-build/native-release/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
-build/native-release/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 2
+build/gui/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 1
+build/gui/bin/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --time-scale 2
 ```
 
 The `--backend python` reference path was removed at T63; the produced
@@ -106,7 +116,9 @@ binary is the only path. A headless
 physical run uses `--headless --duration 30 --no-plots`; it has no playback scale.
 Headless physical runs use strict checks — on this platform they terminate at
 the documented `energy.constraint_work` baseline violation (t=0.005 s) as
-`invalid_controller`, a retained diagnostic prefix rather than a defect;
+`invalid_controller`, a retained diagnostic prefix rather than a defect
+(add `--check-policy diagnostic` to run the full `--duration`, the violation
+then printing as a `WARNING`);
 interactive physical runs retain model-validity/failure diagnostics in the HUD
 (`[FIRST FAILURE]` banner) and exported summaries rather than hiding invalid
 intervals.
@@ -184,7 +196,7 @@ the interpreter at T63.
 `bike-research` remains headless and has no playback-scale switch. Example:
 
 ```bash
-build/native-release/bin/bike-ride --backend native --research --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 1 --time-scale 1 --record --out output/track-c-research
+build/gui/bin/bike-ride --backend native --research --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 1 --time-scale 1 --record --out output/track-c-research
 ```
 
 Space pauses/resumes; B toggles brakes; R seals the outgoing episode in RAM and
@@ -207,7 +219,7 @@ binary's `--physics-config` surface accepts.
 # Set RUN to the actual unique directory printed by a recorded research launch.
 RUN=/absolute/path/to/published/run
 build/native-release/bin/bike-replay "$RUN" --episode 0
-build/native-release/bin/bike-replay "$RUN" --episode 0 --viewer --time-scale 2
+build/gui/bin/bike-replay "$RUN" --episode 0 --viewer --time-scale 2
 ```
 
 There is no replay backend override. Legacy replay schema 1 selected the
@@ -248,8 +260,13 @@ historical only — post-T63 there is one native measurement per host, and
 `--compare` still accepts a previously captured report:
 
 ```bash
-build/native-release/bin/bike-measure-realtime --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 30 --warmup 1 --runs 3 --out output/track-c-rtf/native
+build/native-release/bin/bike-measure-realtime --physics-config examples/research/viewer_physics_welded.toml --track examples/research/rough_uphill_savage.toml --duration 30 --warmup 1 --runs 3 --benchmark --out output/track-c-rtf/native
 ```
+
+`--benchmark` runs the reference monitor non-strict, as the
+`reference.realtime_gate.*` CTest nodes do. Without it the strict monitor
+ends each run at the `energy.constraint_work` baseline violation after
+four steps (`invalid_controller`), so the report measures no usable window.
 
 Measured wall time surrounds the full advancement loop and final flush. Setup
 and export have separate times. Percentiles describe whole `advance` calls in

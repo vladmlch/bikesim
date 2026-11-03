@@ -848,6 +848,18 @@ std::vector<std::pair<std::string, const CompileEntry *>> header_contexts(
     return selected;
 }
 
+// Identical argv (with a fixed probe path) in the same directory is the
+// same compile: run it once, report every covered target.
+std::string context_key(const CompileEntry &entry) {
+    std::string key = entry.directory.string();
+    for (const std::string &argument:
+         replace_compile_source(entry, fs::path("/bike-header-probe.cpp"), true)) {
+        key += '\x1f';
+        key += argument;
+    }
+    return key;
+}
+
 } // namespace
 
 int run_header_sweep(const fs::path &build) {
@@ -872,7 +884,9 @@ int run_header_sweep(const fs::path &build) {
             {"finding_status", vstr("none")},
             {"status", vstr("failed")},
             {"header_count", vint(0)},
+            {"header_context_count", vint(0)},
             {"header_translation_unit_count", vint(0)},
+            {"header_duplicate_contexts", varr({})},
             {"records", varr({})},
             {"errors", varr({})},
         });
@@ -980,18 +994,20 @@ int run_header_sweep(const fs::path &build) {
                            vstr(std::get<std::string>(text->data)));
             set_member(summary, "header_count",
                        vint(static_cast<std::int64_t>(headers.size())));
-            std::size_t tu_count = 0;
+            // Every (header, target) pair — the pre-dedup context count;
+            // the real compile count is set once the job list exists.
+            std::size_t context_count = 0;
             for (const fs::path &header: headers) {
                 for (const fs::path &candidate: header_roots)
                     if (is_under(header, {candidate})) {
-                        tu_count += header_contexts(
+                        context_count += header_contexts(
                             header, candidate, reaching, entries_by_root)
                                         .size();
                         break;
                     }
             }
-            set_member(summary, "header_translation_unit_count",
-                       vint(static_cast<std::int64_t>(tu_count)));
+            set_member(summary, "header_context_count",
+                       vint(static_cast<std::int64_t>(context_count)));
             Array header_values;
             for (const fs::path &header: headers)
                 header_values.push_back(vstr(header.string()));
@@ -1025,15 +1041,21 @@ int run_header_sweep(const fs::path &build) {
     Array records;
     bool tool_health_failed = false;
     bool blocking_findings = false;
-    // One slot per (header, target context) probe in the old double-loop's
-    // enumeration order; workers fill slots concurrently and the merge below
-    // walks them in index order, so records stay deterministic.
+    // One slot per distinct (header, compile context) probe job in the old
+    // double-loop's enumeration order; workers fill slots concurrently and
+    // the merge below walks them in index order, so records stay
+    // deterministic.
     struct HeaderProbe {
         fs::path header; // by value — no pointers into `headers` storage
         std::string target;
         const CompileEntry *entry; // into `entries`
     };
     std::vector<HeaderProbe> probes;
+    // (header, context key) -> first covering target: identical argv in the
+    // same directory is the same compile, so a repeated key skips job
+    // creation and records the later target as covered instead.
+    std::map<std::pair<std::string, std::string>, std::string> seen;
+    Array duplicate_contexts;
     for (const fs::path &header: headers) {
         const fs::path *root = nullptr;
         for (const fs::path &candidate: header_roots)
@@ -1042,10 +1064,25 @@ int run_header_sweep(const fs::path &build) {
                 break;
             }
         for (const auto &[target, entry]:
-             header_contexts(header, *root, reaching, entries_by_root))
-            probes.push_back(
-                {.header=header, .target=target, .entry=entry});
+             header_contexts(header, *root, reaching, entries_by_root)) {
+            const std::pair<std::string, std::string> key{
+                header.string(), context_key(*entry)};
+            const auto [it, inserted] = seen.emplace(key, target);
+            if (!inserted) {
+                duplicate_contexts.push_back(vobj({
+                    {"source", vstr(header.string())},
+                    {"target", vstr(target)},
+                    {"covered_by", vstr(it->second)},
+                }));
+                continue;
+            }
+            probes.push_back({.header=header, .target=target, .entry=entry});
+        }
     }
+    set_member(summary, "header_translation_unit_count",
+               vint(static_cast<std::int64_t>(probes.size())));
+    set_member(summary, "header_duplicate_contexts",
+               varr(std::move(duplicate_contexts)));
     const std::size_t jobs = check_jobs(environ_copy());
     set_member(summary, "jobs", vint(static_cast<std::int64_t>(jobs)));
     std::vector<Value> slots(probes.size());
@@ -1106,7 +1143,15 @@ int run_header_sweep(const fs::path &build) {
               << std::get<io::Number>(
                      member(summary, "header_translation_unit_count")->data)
                      .lexeme
-              << " header translation units\n";
+              << " header translation units ("
+              << std::get<io::Number>(
+                     member(summary, "header_context_count")->data)
+                     .lexeme
+              << " contexts, "
+              << std::get<Array>(
+                     member(summary, "header_duplicate_contexts")->data)
+                     .size()
+              << " duplicates skipped)\n";
     std::cout << "native headers tool: " << compiler.string() << "\n";
     std::cout << "native headers tool health: "
               << std::get<std::string>(member(summary, "tool_health")->data)

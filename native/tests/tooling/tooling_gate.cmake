@@ -194,6 +194,43 @@ if(NOT _last MATCHES "\tfailed\t")
   set(_failures "${_failures}\n  gate_failed: journal line '${_last}'")
 endif()
 
+# --- another live gate halves the share; a stale entry is ignored ---------
+execute_process(COMMAND bash -c "sleep 60 >/dev/null 2>&1 & echo $!"
+  OUTPUT_VARIABLE _live_pid OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND bash -c "sleep 0 & p=$!; wait $p; echo $p"
+  OUTPUT_VARIABLE _dead_pid OUTPUT_STRIP_TRAILING_WHITESPACE)
+file(MAKE_DIRECTORY "${_state}/active")
+file(WRITE "${_state}/active/${_live_pid}" "${_live_pid}\t0\t/elsewhere\tnative\n")
+file(WRITE "${_state}/active/${_dead_pid}" "${_dead_pid}\t0\t/stale\tnative\n")
+file(REMOVE "${_log}")
+gate_run(gate_share EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "1 other native gate(s) running" "/elsewhere"
+  COMMAND bash "${_repo}/tools/run_tests.sh" native)
+execute_process(COMMAND kill "${_live_pid}")
+file(STRINGS "${_log}" _calls)
+string(FIND "${_calls}" "--parallel 4" _par)
+string(FIND "${_calls}" "checks tidy jobs=4" _tidy_jobs)
+if(_par EQUAL -1 OR _tidy_jobs EQUAL -1)
+  set(_failures "${_failures}\n  gate_share: expected 4 of 8 cores, calls '${_calls}'")
+endif()
+if(EXISTS "${_state}/active/${_dead_pid}")
+  set(_failures "${_failures}\n  gate_share: stale registry entry was not removed")
+endif()
+file(GLOB _left "${_state}/active/*")
+list(LENGTH _left _left_count)
+if(NOT _left_count EQUAL 1)
+  set(_failures "${_failures}\n  gate_share: own registry entry left behind: '${_left}'")
+endif()
+# An explicit BIKE_CHECK_JOBS wins over the computed share.
+file(REMOVE "${_log}")
+gate_run(gate_jobs_override EXPECT_EXIT 0 ENV ${_gate_env} "BIKE_CHECK_JOBS=3"
+  COMMAND bash "${_repo}/tools/run_tests.sh" native release --from analyzer)
+file(STRINGS "${_log}" _calls)
+string(FIND "${_calls}" "checks analyzer jobs=3" _override)
+if(_override EQUAL -1)
+  set(_failures "${_failures}\n  gate_jobs_override: calls '${_calls}'")
+endif()
+
 # (run_tests.sh cases are appended by later tasks above this line.)
 
 if(NOT _failures STREQUAL "")

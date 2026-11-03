@@ -161,7 +161,46 @@ if [[ -z "${BIKE_GATE_STATE_DIR:-}" ]]; then
 fi
 mkdir -p "$BIKE_GATE_STATE_DIR"
 cpu_count="${BIKE_CPU_COUNT:-$(getconf _NPROCESSORS_ONLN)}"
-jobs="$cpu_count"
+
+# Active-gate registry: one file per running native/full gate, named by its
+# pid. No queue — each gate takes an equal share of the cores, so parallel
+# gates slow each other down evenly instead of oversubscribing the machine.
+# Entries of dead processes are removed; live ones are reported.
+# The share is computed once, when the gate starts: a neighbour finishing
+# early leaves the rest of this run on its share. A deliberate
+# simplification.
+active_dir="$BIKE_GATE_STATE_DIR/active"
+mkdir -p "$active_dir"
+others=0
+for entry in "$active_dir"/*; do
+  [[ -e "$entry" ]] || continue
+  pid="${entry##*/}"
+  if [[ "$pid" == "$$" ]]; then continue; fi
+  if kill -0 "$pid" 2>/dev/null; then
+    others=$((others + 1))
+    IFS=$'\t' read -r _ started where kind_of < "$entry" || true
+    printf 'note: another %s gate is running: pid %s in %s (since %s)\n' \
+      "${kind_of:-native}" "$pid" "${where:-?}" \
+      "$(date -r "${started:-0}" '+%H:%M' 2>/dev/null || printf '?')" >&2
+  else
+    rm -f "$entry"
+  fi
+done
+if [[ "$profile" != quick ]]; then
+  printf '%s\t%s\t%s\t%s\n' "$$" "$(date +%s)" "$REPO_ROOT" "$profile" \
+    > "$active_dir/$$"
+fi
+if ((others > 0)); then
+  printf 'note: %s other native gate(s) running; using %s of %s cores\n' \
+    "$others" "$((cpu_count / (others + 1) > 0 ? cpu_count / (others + 1) : 1))" \
+    "$cpu_count" >&2
+fi
+jobs=$((cpu_count / (others + 1)))
+((jobs >= 1)) || jobs=1
+if [[ -n "${BIKE_CHECK_JOBS:-}" ]]; then
+  jobs="$BIKE_CHECK_JOBS"
+fi
+export BIKE_CHECK_JOBS="$jobs"
 
 timings_file="$(mktemp "${TMPDIR:-/tmp}/bike-gate-timings.XXXXXX")"
 export BIKE_GATE_TIMINGS_FILE="$timings_file"
@@ -178,6 +217,7 @@ stage() {
 
 finish() {
   local rc=$?
+  rm -f "$active_dir/$$"
   local total=$((SECONDS - gate_started)) status=passed summary=""
   ((rc == 0)) || status=failed
   printf '\n%-22s %8s %6s\n' stage seconds exit

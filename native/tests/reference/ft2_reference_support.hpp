@@ -77,6 +77,24 @@ namespace fs = std::filesystem;
            std::string(name);
 }
 
+// The research fixtures were captured in another worktree and record its
+// absolute examples/research/*.json paths. The end-of-run identity receipt
+// re-hashes those paths, so a capture-time path that no longer exists turns
+// the receipt into identity_check_error. Rebase the capture-time prefix onto
+// this checkout; the file bytes stay pinned by the assets.json sha256 set.
+// Paths without the examples/research/ anchor are returned unchanged.
+[[nodiscard]] inline std::string rebase_capture_path(std::string_view recorded) {
+    constexpr std::string_view kAnchor = "/examples/research/";
+    const auto at = recorded.rfind(kAnchor);
+    if (at == std::string_view::npos) return std::string(recorded);
+    // fixture("ft2") is <repo>/tests/fixtures/ft2.
+    const fs::path repo =
+        bt::fixture("ft2").parent_path().parent_path().parent_path();
+    return (repo / "examples" / "research" /
+            std::string(recorded.substr(at + kAnchor.size())))
+        .string();
+}
+
 // RuntimeBootstrap is several KB; materializing it by value on the
 // caller's frame trips -Wframe-larger-than, so the decode happens on the
 // heap like the T09 decode frames.
@@ -122,6 +140,25 @@ research_bootstrap(std::string_view name) {
     const auto *metadata = bio::find_member(object, "metadata");
     if (metadata != nullptr) {
         auto restored = *metadata;
+        // identity_receipt() re-hashes these two paths at the end of a run.
+        {
+            auto resolved = runtime_reference::member(restored, "resolved_config");
+            auto physics = runtime_reference::member(resolved, "physics");
+            auto articulated = runtime_reference::member(physics, "articulated");
+            for (const auto *key : {"joint_envelope_path", "joint_strength_path"}) {
+                const auto *path = bio::find_member(
+                    bio::as_object(articulated, "articulated"), key);
+                if (path != nullptr &&
+                    std::holds_alternative<std::string>(path->data))
+                    runtime_reference::set_member(
+                        articulated, key,
+                        bio::Value{rebase_capture_path(
+                            std::get<std::string>(path->data))});
+            }
+            runtime_reference::set_member(physics, "articulated", std::move(articulated));
+            runtime_reference::set_member(resolved, "physics", std::move(physics));
+            runtime_reference::set_member(restored, "resolved_config", std::move(resolved));
+        }
         // summarize()/identity_receipt()/the export's summary-vs-recipe
         // consistency gate read the same construction-time stamps
         // configuration_metadata seats in a real native env: the
@@ -525,7 +562,15 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                 dropped_config_key = true;
             continue; // drop recorded leaf
         }
-        kept.emplace_back(path, leaf);
+        // Recorded capture-time paths rebase exactly like the bootstrap's
+        // (rebase_capture_path) so both sides name this checkout's files.
+        bio::Value normalized = leaf;
+        if ((leaf_name == "joint_envelope_path" ||
+             leaf_name == "joint_strength_path") &&
+            std::holds_alternative<std::string>(leaf.data))
+            normalized = bio::Value{
+                rebase_capture_path(std::get<std::string>(leaf.data))};
+        kept.emplace_back(path, std::move(normalized));
         if (dot != std::string::npos &&
             path.find(".rider_control.") != std::string::npos)
             rider_control_parents.insert(path.substr(0, dot));
@@ -827,6 +872,58 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                         }
                     }
                 };
+            // Per-row scalar channels — a .jsonl-table/asdict-row doc
+            // carries each removed channel column as one scalar leaf per
+            // row element ("<row>.<name>"), a shape the array families
+            // cannot spell. The construction is deterministic: pair every
+            // top-level row prefix with each of `per` channel names when
+            // the arithmetic closes, trying each name combination.
+            const auto try_scalar_rows =
+                [&](const std::set<std::string> &seed_base,
+                    const std::set<std::string> &seed_skip) {
+                    if (recorded_n <= seed_base.size()) return;
+                    const std::size_t target =
+                        recorded_n - seed_base.size();
+                    std::vector<std::string> roots;
+                    for (const auto &p : prefixes)
+                        if (!p.empty() && p.front() == '[' &&
+                            p.find('.') == std::string::npos)
+                            roots.push_back(p);
+                    if (roots.empty() || target % roots.size() != 0) return;
+                    const std::size_t per = target / roots.size();
+                    if (per > channel_names.size()) return;
+                    std::vector<std::size_t> combo(per);
+                    for (std::size_t i = 0; i < per; ++i) combo[i] = i;
+                    while (true) {
+                        std::set<std::string> block;
+                        for (const std::size_t i : combo)
+                            for (const auto &row : roots)
+                                block.insert(row + "." +
+                                             channel_names[i]);
+                        std::set<std::string> trial = seed_base;
+                        trial.insert(block.begin(), block.end());
+                        if (trial.size() == recorded_n) {
+                            std::set<std::string> skip = seed_skip;
+                            skip.insert(block.begin(), block.end());
+                            if (walk(trial, skip)) {
+                                ++passing;
+                                if (winners.size() < 12)
+                                    for (const auto &b : block)
+                                        if (winners.size() < 12)
+                                            winners.push_back(b);
+                            }
+                        }
+                        std::size_t i = per;
+                        while (i != 0 &&
+                               combo[i - 1] ==
+                                   channel_names.size() - per + i - 1)
+                            --i;
+                        if (i == 0) break;
+                        ++combo[i - 1];
+                        for (std::size_t j = i; j < per; ++j)
+                            combo[j] = combo[j - 1] + 1;
+                    }
+                };
             const std::vector<std::string> root_only{std::string{}};
             // Semantic placements first — the removed channels sat at
             // document root in every recorded doc shape.
@@ -850,6 +947,11 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                 families(plain_paths, {}, all_prefixes);
                 try_tail(plain_paths, {});
             }
+            // Last resort: the per-row scalar channel shape, on both
+            // seed bases — only when every earlier placement failed so a
+            // doc that already found its unique fit is never re-cut.
+            if (passing == 0) try_scalar_rows(base_paths, removed_numeric);
+            if (passing == 0) try_scalar_rows(plain_paths, {});
         }
         std::string detail;
         for (const auto &p : winners) detail += " [" + p + "]";
@@ -881,8 +983,23 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                         : leaf.substr(dot + 1)) == "configuration_sha256";
         });
     bio::Value::Object map;
-    for (auto &[path, leaf] : leaves.other)
+    for (auto &[path, leaf] : leaves.other) {
+        // The actual side rebases exactly like the recorded side
+        // (rebase_capture_path) so both name this checkout's files —
+        // the compare stays meaningful when the caller re-seated the
+        // actual doc's capture-time path verbatim.
+        const auto dot = path.rfind('.');
+        const std::string_view leaf_name =
+            dot == std::string::npos
+                ? std::string_view{path}
+                : std::string_view{path}.substr(dot + 1);
+        if ((leaf_name == "joint_envelope_path" ||
+             leaf_name == "joint_strength_path") &&
+            std::holds_alternative<std::string>(leaf.data))
+            leaf = bio::Value{
+                rebase_capture_path(std::get<std::string>(leaf.data))};
         map.emplace_back(path, std::move(leaf));
+    }
     if (dropped_config_key)
         std::erase_if(map, [](const auto &member) {
             const std::string_view leaf{member.first};

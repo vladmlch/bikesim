@@ -86,8 +86,8 @@ io::Value strip_legacy_children(io::Value definition) {
         auto* children = std::get_if<Value::Array>(&member.data);
         if (children == nullptr) continue;
         std::erase_if(*children, [](const Value& child) {
-            const auto* object = std::get_if<Value::Object>(&child.data);
-            const auto* key_field = object == nullptr ? nullptr : io::find_member(*object, "key");
+            const auto* child_object = std::get_if<Value::Object>(&child.data);
+            const auto* key_field = child_object == nullptr ? nullptr : io::find_member(*child_object, "key");
             return key_field != nullptr && std::ranges::any_of(
                 kLegacyStructChildren, [&](std::string_view name) {
                     return io::as_string(*key_field, "key") == name;

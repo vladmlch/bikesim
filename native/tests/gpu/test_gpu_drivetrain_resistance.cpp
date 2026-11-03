@@ -3,12 +3,9 @@
 // and aerodynamic drag kernels, verifying default gear ratio (22/51), parity with
 // authoritative native drivetrain::Freehub, and single torque path modes.
 #include "../../src/drivetrain/freehub.hpp"
-// freehub.cpp is included textually on purpose: this test executable links
-// standalone (no bike_native_contract_core), the same arrangement as
-// test_gpu_tire.cpp/station.cpp and test_gpu_rider.cpp/spindle_math.cpp —
-// see the note above bike_add_gpu_test in native/CMakeLists.txt.
-// NOLINTNEXTLINE(bugprone-suspicious-include) deliberate standalone-link mechanism: freehub.cpp is compiled INTO this TU so the test links without bike_native_contract_core and avoids duplicate symbol definitions (native/CMakeLists.txt:543-547). Register: docs/TESTING.md GPU test cpp-include row.
-#include "../../src/drivetrain/freehub.cpp"
+// The freehub.cpp reference is linked from bike_core (the one compile of
+// that TU): the ODR sweep links every selected TU into one image, so a
+// textual #include of the .cpp here would define its symbols twice.
 #include "../../src/gpu/drivetrain_resistance_kernel.hpp"
 #include "../../src/platform/argv.hpp"
 

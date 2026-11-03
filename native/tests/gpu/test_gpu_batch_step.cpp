@@ -4,14 +4,10 @@
 // parameter sweep stepped on the host kernel path, and the extern "C" launch
 // wrappers' bounds validation.
 #include "../../src/gpu/batch_step.hpp"
-// cuda_kernels.cu is included textually on purpose: this test executable
-// links standalone (no bike_native_contract_core), the same arrangement as
-// test_gpu_tire.cpp/station.cpp,
-// test_gpu_drivetrain_resistance.cpp/freehub.cpp and
-// test_gpu_rider.cpp/spindle_math.cpp — see the note above bike_add_gpu_test
-// in native/CMakeLists.txt.
-// NOLINTNEXTLINE(bugprone-suspicious-include) deliberate standalone-link mechanism: cuda_kernels.cu is compiled INTO this TU so the test links without bike_native_contract_core and avoids duplicate symbol definitions (native/CMakeLists.txt:543-547). Register: docs/TESTING.md GPU test cpp-include row.
-#include "../../src/gpu/cuda_kernels.cu"
+// The extern "C" host entry points come from bike_gpu_kernels, the one
+// host compile of cuda_kernels.cu: the ODR sweep links every selected TU into
+// one image, so a textual #include of the .cu here would define them twice.
+#include "../../src/gpu/cuda_kernels_abi.hpp"
 #include "../../src/platform/argv.hpp"
 
 #include <array>

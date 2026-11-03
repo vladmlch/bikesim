@@ -497,7 +497,7 @@ bool removed_passive_name(std::string_view field) {
 // Recorded-side normalization for frozen JSON documents (violation lists,
 // channel-key inventories): drop string elements naming a removed member,
 // recursively. The golden is never regenerated.
-void strip_removed_strings(bike::io::Value &value) {
+void strip_removed_strings(bike::io::Value &value) { // NOLINT(misc-no-recursion) bounded by the JSON document depth
     if (auto *array =
             std::get_if<bike::io::Value::Array>(&value.data)) {
         std::erase_if(*array, [](const bike::io::Value &element) {
@@ -517,7 +517,7 @@ void normalized_doc_compare(bt_oracle::Node &node, std::string_view label,
                             std::string_view actual_json) {
     const auto recorded = node.bytes_input(label);
     auto doc = bike::io::parse_json(
-        std::string{reinterpret_cast<const char *>(recorded.data()),
+        std::string{reinterpret_cast<const char *>(recorded.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the JSON parser
                     recorded.size()});
     strip_removed_strings(doc);
     bt::require(bike::io::canonical_json(doc) == actual_json,
@@ -622,7 +622,7 @@ void test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms() {
     const auto recorded_bool =
         node.f64_input("expected/rider_control_bool");
     const auto keys_doc = bike::io::parse_json(
-        std::string{reinterpret_cast<const char *>(recorded_keys.data()),
+        std::string{reinterpret_cast<const char *>(recorded_keys.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the JSON parser
                     recorded_keys.size()});
     const auto &elements =
         std::get<bike::io::Value::Array>(keys_doc.data);

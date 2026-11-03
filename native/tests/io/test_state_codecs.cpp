@@ -139,7 +139,7 @@ bio::Value parse_fixture(std::string_view relative) {
 // were removed; recorded docs (both the decode inputs and the canonical
 // goldens) still carry them. R3 read-path tolerance normalizes the
 // RECORDED side by the named set — goldens are never regenerated.
-void strip_removed_passive_members(bio::Value &value) {
+void strip_removed_passive_members(bio::Value &value) { // NOLINT(misc-no-recursion) bounded by the JSON document depth
     static constexpr std::array<std::string_view, 4> removed{
         "passive_damping_nm", "solved_passive_nm",
         "rider_passive_power_w", "rider_passive_work_step_j"};
@@ -165,7 +165,7 @@ void strip_removed_passive_members(bio::Value &value) {
 // form; the signed-zero and integer/float distinctions are checked
 // bit-exactly by numbers_equal).
 void expect_round_trip(std::string_view golden_name,
-                       const bio::Value &input, const bio::Value &encoded) {
+                       const bio::Value &input, const bio::Value &encoded) { // NOLINT(bugprone-easily-swappable-parameters) input/encoded are the decode source and its expected re-encoding, named at every call
     bio::Value recorded =
         parse(bt::text(bt::fixture(golden_name)));
     strip_removed_passive_members(recorded);

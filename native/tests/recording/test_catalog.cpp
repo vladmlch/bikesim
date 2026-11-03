@@ -8,6 +8,12 @@
 namespace {
 namespace rec = bike::recording;
 namespace io = bike::io;
+// Spec Q13 removed these passive-damping channel leaves; the recorded
+// catalog golden still lists them. Namespace scope: GCC flags the former
+// function-local static as set-but-unused when only a nested lambda reads it.
+constexpr std::array<std::string_view, 4> kRemovedPassiveLeaves{
+    "passive_damping_nm", "solved_passive_nm",
+    "rider_passive_power_w", "rider_passive_work_step_j"};
 // NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::size_t descriptors(const rec::FieldSpec& field) {
     std::size_t count = 1;
@@ -42,15 +48,13 @@ void catalog_contract() {
     // damping channel leaves. Drop exactly the named entries from the
     // expected side — the golden is never regenerated.
     {
-        static constexpr std::array<std::string_view, 4> removed{
-            "passive_damping_nm", "solved_passive_nm",
-            "rider_passive_power_w", "rider_passive_work_step_j"};
+        // NOLINTNEXTLINE(misc-no-recursion) bounded by the JSON document depth
         const auto strip = [&](this auto &&self, io::Value &v) -> void {
             if (auto *arr = std::get_if<io::Value::Array>(&v.data)) {
                 std::erase_if(*arr, [&](const io::Value &e) {
                     const auto *s = std::get_if<std::string>(&e.data);
                     if (!s) return false;
-                    for (const std::string_view name : removed)
+                    for (const std::string_view name : kRemovedPassiveLeaves)
                         if (s->find(name) != std::string::npos) return true;
                     return false;
                 });

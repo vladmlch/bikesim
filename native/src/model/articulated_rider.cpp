@@ -63,7 +63,7 @@ void build_articulated_rider(Element& world,const ArticulatedPose& pose,const Se
 }
 void add_rider_actuators(Element& root) {
     auto& actuators=block(root,"actuator");
-    for(auto const* owner:root.descendants("body")) for(auto* value:owner->direct("joint")) {
+    for(auto const* owner:root.descendants("body")) for(auto const* value:owner->direct("joint")) {
         const auto name=value->get("name");
         if(name.starts_with("rider_") && !name.starts_with("rider_root_")) {
             actuators.add("motor",{{"name","act_"+name},{"joint",name},{"gear","1"},{"ctrllimited","false"},{"forcelimited","false"}});

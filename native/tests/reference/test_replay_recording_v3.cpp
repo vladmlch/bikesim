@@ -139,7 +139,7 @@ void checksum_before_plant() {
 void removed_passive_damping_gate() {
     auto input = rr::replay::load_legacy_input(bt::fixture("replay/legacy_v2"));
     {
-        rr::replay::FixedAssets assets(input);
+        const rr::replay::FixedAssets assets(input);
         bt::require(
             static_cast<bool>(rr::replay::request_from_input(input, assets)),
             "the recorded 0.0 damping stays inert on the articulated rider");
@@ -151,7 +151,7 @@ void removed_passive_damping_gate() {
     rr::set(physics, "articulated", std::move(articulated));
     rr::set(resolved, "physics", std::move(physics));
     rr::set(input.summary, "resolved_config", std::move(resolved));
-    rr::replay::FixedAssets assets(input);
+    const rr::replay::FixedAssets assets(input);
     rr::incompatible(
         [&] { (void)rr::replay::request_from_input(input, assets); },
         "joint_passive_damping_nms_rad");

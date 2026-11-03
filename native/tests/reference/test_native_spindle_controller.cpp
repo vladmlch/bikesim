@@ -63,7 +63,10 @@ std::string node_id(std::string_view symbol) {
     if (const auto bracket = key.find('['); bracket != std::string::npos) {
         auto param = std::string_view(key).substr(bracket + 1);
         if (param.ends_with(']')) param.remove_suffix(1);
-        key = key.substr(0, bracket) + "/" + bt::oracle::key(param);
+        // param views key's tail: build the suffix before truncating key.
+        const std::string suffix = "/" + bt::oracle::key(param);
+        key.resize(bracket);
+        key += suffix;
     }
     return std::string(kFile) + key;
 }

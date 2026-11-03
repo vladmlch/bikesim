@@ -21,6 +21,7 @@
 #include "runtime/encoding_values.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
+#include <format>
 #include <mujoco/mujoco.h>
 #include <algorithm>
 #include <array>
@@ -819,7 +820,7 @@ void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
                                               ? peeked
                                               : peeked.substr(slash + 1);
             if (!removed_passive_leaf(leaf)) break;
-            static_cast<void>(node.bytes_input(std::string{peeked}));
+            static_cast<void>(node.bytes_input(peeked));
         }
         // A struct column's recorded encoding still carries the removed
         // member lanes — its byte shape cannot align and the payload is
@@ -828,11 +829,11 @@ void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
         // goldens and the rollout row comparisons.
         if (field != nullptr && !field->children.empty() &&
             node.has_next() &&
-            node.peek_label() == prefix + "/bits/" + name) {
+            node.peek_label() == std::format("{}/bits/{}", prefix, name)) {
             const auto shape = node.peek_shape();
             if (shape.size() != 1 || shape[0] != bits.size()) {
                 static_cast<void>(
-                    node.bytes_input(std::string{node.peek_label()}));
+                    node.bytes_input(node.peek_label()));
                 ++covered;
                 continue;
             }

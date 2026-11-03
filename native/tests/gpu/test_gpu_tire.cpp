@@ -1,13 +1,10 @@
 // native/tests/gpu/test_gpu_tire.cpp — Standalone C++23 unit test suite for
 // native/src/gpu/tire_kernel.hpp.
 #include "../../src/gpu/tire_kernel.hpp"
-// station.cpp is included textually on purpose: this test executable links
-// standalone (no bike_native_contract_core), the same arrangement as
-// test_gpu_drivetrain_resistance.cpp/freehub.cpp and
-// test_gpu_rider.cpp/spindle_math.cpp — see the note above bike_add_gpu_test
-// in native/CMakeLists.txt.
-// NOLINTNEXTLINE(bugprone-suspicious-include) deliberate standalone-link mechanism: station.cpp is compiled INTO this TU so the test links without bike_native_contract_core and avoids duplicate symbol definitions (native/CMakeLists.txt:543-547). Register: docs/TESTING.md GPU test cpp-include row.
-#include "../../src/tyre/station.cpp"
+// The station.cpp reference is linked from bike_core (the one compile of
+// that TU): the ODR sweep links every selected TU into one image, so a
+// textual #include of the .cpp here would define its symbols twice.
+#include "../../src/tyre/station.hpp"
 #include "../../src/platform/argv.hpp"
 
 #include <algorithm>

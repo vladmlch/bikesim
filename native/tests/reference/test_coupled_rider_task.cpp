@@ -174,8 +174,8 @@ test_tissue_damping_does_not_eat_the_muscle_budget() {
             continue;
         const auto &effort =
             physical.rider_control().state().effort_diagnostics;
-        const auto &passive_row = component_row(raw,
-                                                "rider_passive_damping");
+        static const std::string passive_name = "rider_passive_damping";
+        const auto &passive_row = component_row(raw, passive_name);
         double passive_power = 0.;
         for (std::size_t i = 0; i < passive_row.size(); ++i)
             passive_power += passive_row[i] * raw.qvel[i];

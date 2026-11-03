@@ -234,8 +234,8 @@ Node::CloseReadback Node::f64_close_input(std::string_view label) {
     const auto &entry = next(label);
     bt::require(entry.kind == "close" && entry.dtype == "<f8",
                 context() + ": expected close binary64 input");
-    CloseReadback result{std::vector<double>(entry.bytes.size() / 8),
-                         entry.rtol, entry.atol};
+    CloseReadback result{.values = std::vector<double>(entry.bytes.size() / 8),
+                         .rtol = entry.rtol, .atol = entry.atol};
     for (std::size_t i = 0; i < result.values.size(); ++i)
         result.values[i] = std::bit_cast<double>(bits(entry, i));
     ++cursor_;

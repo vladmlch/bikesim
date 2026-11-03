@@ -2,7 +2,7 @@
 // executing `gpu_step_world_writers` + `mj_step` across all CPU cores with
 // zero per-step heap allocations and zero Python/GIL overhead.
 
-#include "cuda_kernels.cu"
+#include "batch_step.hpp"
 
 #include <mujoco/mujoco.h>
 

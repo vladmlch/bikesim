@@ -34,6 +34,8 @@
 #include "engine_identity.hpp"
 #include <cmath>
 #include <cstdio>
+#include <format>
+#include <print>
 #include <set>
 #include "io/float_format.hpp"
 #include "io/json.hpp"
@@ -501,7 +503,7 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
     const auto recorded_other = node.bytes_input(other_label);
 
     const bio::Value recorded_doc = bio::parse_json(
-        std::string{reinterpret_cast<const char *>(recorded_other.data()),
+        std::string{reinterpret_cast<const char *>(recorded_other.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the JSON parser; the sanctioned aliasing bridge
                     recorded_other.size()});
     const auto *recorded_map =
         std::get_if<bio::Value::Object>(&recorded_doc.data);
@@ -627,6 +629,7 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
         std::vector<std::string> winners;
         const auto enumerate = [&](const std::vector<std::string> &pool) {
             std::size_t passing = 0;
+            // NOLINTNEXTLINE(misc-no-recursion,bugprone-easily-swappable-parameters) bounded combination walk (depth <= 4); start/depth are cursor and depth of one recursion
             const auto choose = [&](this auto &&self, std::size_t start,
                                     std::size_t depth,
                                     std::set<std::string> &picked) -> void {
@@ -679,18 +682,15 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
             // rank run whatever the length split, so a single
             // representative split is exhaustive for that shape.
             const auto try_blocks =
+                // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) seed_base/seed_skip are the paired base and skip sets of one trial
                 [&](const std::set<std::string> &seed_base,
                     const std::set<std::string> &seed_skip,
                     const std::vector<
                         std::pair<std::string, std::size_t>> &blocks) {
                     std::set<std::string> block;
-                    char suffix[16]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
                     for (const auto &[path_prefix, len] : blocks)
-                        for (std::size_t i = 0; i < len; ++i) {
-                            std::snprintf(suffix, sizeof(suffix), "[%08zu]", // NOLINT(cert-err33-c,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer
-                                          i);
-                            block.insert(path_prefix + suffix);
-                        }
+                        for (std::size_t i = 0; i < len; ++i)
+                            block.insert(std::format("{}[{:08}]", path_prefix, i));
                     std::set<std::string> trial = seed_base;
                     trial.insert(block.begin(), block.end());
                     if (trial.size() != recorded_n) return false;
@@ -703,6 +703,7 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                     return true;
                 };
             std::vector<std::string> channel_names;
+            channel_names.reserve(kRemovedPassiveLeaves.size() + 2);
             for (const std::string_view n : kRemovedPassiveLeaves)
                 channel_names.emplace_back(n);
             channel_names.emplace_back("passive_power_w");
@@ -741,14 +742,14 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                                                 {prefixed(p,
                                                           channel_names[b]),
                                                  target - target / 2}})
-                                                   ? 1
-                                                   : 0;
+                                                   ? std::size_t{1}
+                                                   : std::size_t{0};
                         for (const auto &n : channel_names)
                             passing += try_blocks(seed_base, seed_skip,
                                                   {{prefixed(p, n),
                                                     target}})
-                                                   ? 1
-                                                   : 0;
+                                                   ? std::size_t{1}
+                                                   : std::size_t{0};
                     }
                     // rider_control member arrays alone, and the member
                     // arrays plus the two channel columns at one prefix —
@@ -768,8 +769,8 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                             }
                             passing += try_blocks(seed_base, seed_skip,
                                                   blocks)
-                                               ? 1
-                                               : 0;
+                                               ? std::size_t{1}
+                                               : std::size_t{0};
                         }
                         if (target % (2 * rc + 2) == 0) {
                             const std::size_t len = target / (2 * rc + 2);
@@ -792,8 +793,8 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                                     len);
                                 passing += try_blocks(seed_base, seed_skip,
                                                       blocks)
-                                                   ? 1
-                                                   : 0;
+                                                   ? std::size_t{1}
+                                                   : std::size_t{0};
                             }
                         }
                     }
@@ -809,13 +810,9 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                     for (std::size_t k = 1; k <= 4 && passing == 0; ++k) {
                         if (target != k * column_len.size()) continue;
                         std::set<std::string> block;
-                        char suffix[16]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
                         for (const auto &[name, len] : column_len)
-                            for (std::size_t j = 0; j < k; ++j) {
-                                std::snprintf(suffix, sizeof(suffix), "[%08zu]", // NOLINT(cert-err33-c,cppcoreguidelines-pro-type-vararg) sized label buffer
-                                              len + j);
-                                block.insert(name + suffix);
-                            }
+                            for (std::size_t j = 0; j < k; ++j)
+                                block.insert(std::format("{}[{:08}]", name, len + j));
                         std::set<std::string> trial = seed_base;
                         trial.insert(block.begin(), block.end());
                         if (trial.size() != recorded_n) continue;
@@ -842,14 +839,14 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
             // Loud fallback: widen to every prefix when no semantic
             // placement explains the recorded extra leaves.
             if (passing == 0) {
-                std::vector<std::string> all_prefixes(prefixes.begin(),
-                                                      prefixes.end());
+                const std::vector<std::string> all_prefixes(prefixes.begin(),
+                                                            prefixes.end());
                 families(base_paths, removed_numeric, all_prefixes);
                 try_tail(base_paths, removed_numeric);
             }
             if (passing == 0) {
-                std::vector<std::string> all_prefixes(prefixes.begin(),
-                                                      prefixes.end());
+                const std::vector<std::string> all_prefixes(prefixes.begin(),
+                                                            prefixes.end());
                 families(plain_paths, {}, all_prefixes);
                 try_tail(plain_paths, {});
             }
@@ -922,14 +919,12 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                 if (other == nullptr ||
                     bio::canonical_json(*other) !=
                         bio::canonical_json(leaf)) {
-                    fprintf(stderr,
-                            "DIAG %s: .other leaf differs: %s\n"
-                            "    recorded %s\n    actual   %s\n",
-                            other_label.c_str(), path.c_str(),
-                            bio::canonical_json(leaf).c_str(),
-                            other == nullptr
-                                ? "<absent>"
-                                : bio::canonical_json(*other).c_str());
+                    std::println(stderr,
+                                 "DIAG {}: .other leaf differs: {}\n"
+                                 "    recorded {}\n    actual   {}",
+                                 other_label, path, bio::canonical_json(leaf),
+                                 other == nullptr ? std::string{"<absent>"}
+                                                  : bio::canonical_json(*other));
                     if (++shown >= 8) break;
                 }
             }
@@ -941,9 +936,9 @@ inline void consume_tree(bt::oracle::Node &node, const runtime::Wire &actual,
                         break;
                     }
                 if (!present) {
-                    fprintf(stderr,
-                            "DIAG %s: .other leaf only in actual: %s\n",
-                            other_label.c_str(), path.c_str());
+                    std::println(stderr,
+                                 "DIAG {}: .other leaf only in actual: {}",
+                                 other_label, path);
                     if (++shown >= 8) break;
                 }
             }

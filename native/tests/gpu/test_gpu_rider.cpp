@@ -1,48 +1,10 @@
 // native/tests/gpu/test_gpu_rider.cpp — Standalone C++23 unit test for
 // native/src/gpu/rider_kernel.hpp and authoritative spindle_math.cpp parity.
 
-#ifndef BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED
-#define BIKE_NUMPY_DISTRIBUTIONS_CONTRACTED 1
-#endif
-#ifndef BIKE_NUMPY_INTERP_CONTRACTED
-#define BIKE_NUMPY_INTERP_CONTRACTED 1
-#endif
-#ifndef BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN
-#define BIKE_NUMPY_MUL_BROADCAST_ELEMENT_NAN 0
-#endif
-#ifndef BIKE_SCIPY_CORRELATE_CONTRACTED
-#define BIKE_SCIPY_CORRELATE_CONTRACTED 1
-#endif
-
-#include "../../src/cblas_abi.hpp"
-
-#include <iterator>
-
-namespace blas {
-    // Sequential stand-in for the seeded blas::ddot that rider::np_norm
-    // (spindle_linalg.hpp) calls: this test executable links standalone, so
-    // the typed face gets a local definition. std::advance keeps the strided
-    // element walk off raw-pointer arithmetic.
-    double ddot(int n, const double *x, int incx, const double *y, int incy) noexcept {
-        double sum = 0.0;
-        const double *xi = x;
-        const double *yi = y;
-        for (int i = 0; i < n; ++i) {
-            sum += *xi * *yi;
-            std::advance(xi, incx);
-            std::advance(yi, incy);
-        }
-        return sum;
-    }
-}
-
-// spindle_math.cpp is included textually on purpose: this test executable
-// links standalone (no bike_native_contract_core / bike_rider_math), the same
-// arrangement as test_gpu_tire.cpp/station.cpp and
-// test_gpu_drivetrain_resistance.cpp/freehub.cpp — see the note above
-// bike_add_gpu_test in native/CMakeLists.txt.
-// NOLINTNEXTLINE(bugprone-suspicious-include) deliberate standalone-link mechanism: spindle_math.cpp is compiled INTO this TU so the test links without bike_native_contract_core/bike_rider_math and avoids duplicate symbol definitions (native/CMakeLists.txt:543-547). Register: docs/TESTING.md GPU test cpp-include row.
-#include "../../src/rider/spindle_math.cpp"
+// The spindle_math.cpp reference is linked from bike_rider_math (the one
+// compile of that TU): the ODR sweep links every selected TU into one image,
+// so a textual #include of the .cpp here would define its symbols twice.
+#include "../../src/rider/spindle_math.hpp"
 #include "../../src/gpu/rider_kernel.hpp"
 #include "../../src/platform/argv.hpp"
 
@@ -248,10 +210,10 @@ void test_write_rider_qfrc_and_ctrl() {
 
     // 2. Verify GpuRiderParams defaults aligned with paired model.xml
     GpuRiderParams rp{};
-    const std::span<const GpuJointEnvelopeSpec> joints{rp.joints};
-    const std::span<const float> kp_posture{rp.kp_posture};
-    const std::span<const float> kd_posture{rp.kd_posture};
-    const std::span<const float> target_qpos{rp.target_qpos_rad};
+    const std::span<const GpuJointEnvelopeSpec> joints(rp.joints);
+    const std::span<const float> kp_posture(rp.kp_posture);
+    const std::span<const float> kd_posture(rp.kd_posture);
+    const std::span<const float> target_qpos(rp.target_qpos_rad);
     require(std::abs(joints[1].min_deg - (-139.80f)) < 1e-4f && joints[1].max_deg == 0.0f &&
             std::abs(joints[1].ref_deg - (-76.27f)) < 1e-4f, "joints[1] knee_front ROM default mismatch");
     require(joints[2].min_deg == -120.0f && std::abs(joints[2].max_deg - 35.27f) < 1e-4f &&
@@ -303,7 +265,7 @@ void test_write_rider_qfrc_and_ctrl() {
 
     const GpuRiderOutput step_out =
         gpu_compute_rider_step(rp, idx, qpos.data(), qvel.data());
-    const std::span<const float> step_envelope_torque{step_out.envelope_torque_nm};
+    const std::span<const float> step_envelope_torque(step_out.envelope_torque_nm);
     require(
         gpu_isfinite(step_out.envelope_energy_j) && step_out.envelope_energy_j > 0.0f,
         "envelope_energy_j must be finite and positive when joints are past limits");
@@ -420,8 +382,8 @@ void test_leg_joints_do_not_drive_crank() {
     const auto rider_ctrl = std::span{idx.rider_ctrl};
     const auto rider_dof = std::span{idx.rider_dof};
     const auto rider_qpos = std::span{idx.rider_qpos};
-    const std::span<const GpuJointEnvelopeSpec> joints{rp.joints};
-    const std::span<const float> target_qpos{rp.target_qpos_rad};
+    const std::span<const GpuJointEnvelopeSpec> joints(rp.joints);
+    const std::span<const float> target_qpos(rp.target_qpos_rad);
 
     std::array<float, kMaxNq> qpos{};
     std::array<float, kMaxNv> qvel{};
@@ -458,8 +420,8 @@ void test_leg_joints_do_not_drive_crank() {
         }
         gpu_write_rider_qfrc_and_ctrl(rp, idx, qpos.data(), qvel.data(), qfrc.data(), ctrl.data());
         const GpuRiderOutput out = gpu_compute_rider_step(rp, idx, qpos.data(), qvel.data());
-        const std::span<const float> envelope_torque{out.envelope_torque_nm};
-        const std::span<const float> actuator_ctrl{out.actuator_ctrl_nm};
+        const std::span<const float> envelope_torque(out.envelope_torque_nm);
+        const std::span<const float> actuator_ctrl(out.actuator_ctrl_nm);
 
         for (std::size_t j = 0; j < kFirstUpperBodyJoint; ++j) {
             require(envelope_torque[j] == 0.0f,

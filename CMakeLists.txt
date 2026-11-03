@@ -631,9 +631,26 @@ if(BUILD_TESTING)
     set_tests_properties(${target_name} PROPERTIES LABELS "gpu;unit")
   endfunction()
 
-  # The three sources that #include a first-party .cpp (tyre/station.cpp,
-  # drivetrain/freehub.cpp, rider/spindle_math.cpp) take no link edge to the
-  # libraries defining those symbols: a second definition would collide.
+  # bike_gpu_kernels: the single host compile of gpu/cuda_kernels.cu (through
+  # cuda_kernels_host.cpp, a C++-family TU the check-context manifest carries).
+  # The ODR sweep relocatable-links every selected TU into one image, so each
+  # first-party definition has exactly one compile: GPU tests link the library
+  # that owns a reference TU (bike_core for tyre/station.cpp and
+  # drivetrain/freehub.cpp, bike_rider_math for rider/spindle_math.cpp,
+  # bike_gpu_kernels for the extern "C" entry points) instead of including it.
+  add_library(bike_gpu_kernels STATIC
+    "${_bike_native_dir}/src/gpu/cuda_kernels_host.cpp")
+  bike_apply_native_policy(bike_gpu_kernels)
+  target_compile_options(bike_gpu_kernels PRIVATE
+    -include "${_bike_gpu_config_header}")
+  target_include_directories(bike_gpu_kernels SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+
+  function(bike_link_gpu_reference_core target_name)
+    target_link_libraries(${target_name} PRIVATE bike_core bike_engine)
+    bike_rewrite_mujoco_load_name(${target_name} "${BIKE_DEP_mujoco_LIBRARY}")
+  endfunction()
+
   bike_add_gpu_unit_test(bike_test_gpu_suspension
     "${_bike_native_tests_dir}/gpu/test_gpu_suspension.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_tire
@@ -644,6 +661,10 @@ if(BUILD_TESTING)
     "${_bike_native_tests_dir}/gpu/test_gpu_rider.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_batch_step
     "${_bike_native_tests_dir}/gpu/test_gpu_batch_step.cpp")
+  bike_link_gpu_reference_core(bike_test_gpu_tire)
+  bike_link_gpu_reference_core(bike_test_gpu_drivetrain_resistance)
+  target_link_libraries(bike_test_gpu_rider PRIVATE bike_rider_math)
+  target_link_libraries(bike_test_gpu_batch_step PRIVATE bike_gpu_kernels)
 
   # Model-asset and model-geometry tests call MuJoCo directly and nothing else
   # from the engine image, so they take the narrow linkage: the MuJoCo image
@@ -687,7 +708,7 @@ if(BUILD_TESTING)
   endif()
   bike_add_gpu_unit_test(bike_test_gpu_batch_runners ${_bike_gpu_runner_sources})
   target_link_libraries(bike_test_gpu_batch_runners PRIVATE
-    Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+    bike_gpu_kernels Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
   bike_rewrite_mujoco_load_name(bike_test_gpu_batch_runners "${BIKE_DEP_mujoco_LIBRARY}")
   if(APPLE)
     target_link_libraries(bike_test_gpu_batch_runners PRIVATE

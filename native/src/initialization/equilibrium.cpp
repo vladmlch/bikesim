@@ -42,7 +42,7 @@ constexpr double kKineticMinSegmentS=.002,kKineticMaxSegmentS=.25,kKineticPeakDr
 // stops once the kinetic energy has dropped clearly below its running peak.
 struct Segments{
     bool kinetic=false;std::int64_t cycle=1,min_segment=1,max_segment=1;std::vector<double> momentum;
-    Segments(SetupContext const& context,double dt,std::int64_t cycle_steps,bool kinetic_schedule)
+    Segments(SetupContext const& context,double dt,std::int64_t cycle_steps,bool kinetic_schedule) // NOLINT(bugprone-easily-swappable-parameters) dt [s] and cycle_steps [steps] differ in unit; the single call site names both
         :kinetic(kinetic_schedule),cycle(cycle_steps){
         if(!kinetic)return;
         min_segment=std::max<std::int64_t>(1,round_even(kKineticMinSegmentS/dt));
@@ -51,7 +51,7 @@ struct Segments{
         if(nv<0||nv>std::numeric_limits<int>::max())throw std::invalid_argument("kinetic damping: nv exceeds the BLAS int range");
         momentum.assign(static_cast<std::size_t>(nv),0.);
     }
-    template<typename Step>std::int64_t run(SetupContext& context,Step&& step,std::int64_t budget){
+    template<typename Step>std::int64_t run(SetupContext& context,Step& step,std::int64_t budget){
         if(!kinetic){const auto count=std::min(cycle,budget);for(std::int64_t i=0;i<count;++i)step();return count;}
         // qM after mj_step belongs to the step's start pose: one step stale,
         // which only shifts the detected peak by one step.

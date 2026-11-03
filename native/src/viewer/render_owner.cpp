@@ -109,10 +109,15 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     p.frame = std::move(staged);
 }
 void RenderOwner::draw(int width, int height) {
-    auto const& p = *impl_; p.require_live();
+    impl_->require_live();
     if (width < 0 || height < 0) throw std::invalid_argument("negative framebuffer dimension");
     if (width == 0 || height == 0) return; // minimized window, no division by zero
 #if defined(BIKE_BUILD_GUI) && BIKE_BUILD_GUI
+    // Bound only in the GUI branch, where it is mutated (the engine callback
+    // builds the scene/context through &p; failure sets p.poisoned). Binding
+    // it above the #if made it read-only in the default GUI=OFF build, so a
+    // const-correctness fix there broke the GUI build.
+    auto& p = *impl_;
     if (!p.frame) throw std::runtime_error("render owner has no frame");
     struct Draw { Impl* p; int width, height; } draw{&p, width, height};
     engine::ErrorBuffer error;

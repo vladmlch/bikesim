@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <limits>
 #include <memory>
+#include <numbers>
 #include <ranges>
 #include <span>
 #include <string>
@@ -159,6 +160,33 @@ void physical_profiles_and_topology() {
     double total=0.;for(double const mass:weighted_masses.subspan(1)) total+=mass;
     bt::require(std::abs(total-(request->masses.total_bike_mass()+request->rider->mass_kg))<1e-11,"physical component and rider mass budgets close"); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
 }
+// Crank qpos 0 is a power position: the two spindles sit level (same
+// height) and 180 degrees apart. PedalingPolicy's reposition goal
+// (multiples of pi from kPowerPhaseOffsetRad) depends on it.
+void crank_zero_is_horizontal() {
+    const auto request = physical("viewer_physics_welded.toml");
+    const auto model = mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    auto data = std::unique_ptr<mjData, decltype(&mj_deleteData)>(mj_makeData(model.get()), mj_deleteData);
+    const int crank = mj_name2id(model.get(), mjOBJ_JOINT, "crank_spin");
+    const int front = mj_name2id(model.get(), mjOBJ_BODY, "pedal_front");
+    const int rear = mj_name2id(model.get(), mjOBJ_BODY, "pedal_rear");
+    bt::require(crank >= 0 && front >= 0 && rear >= 0, "crank and both pedal bodies exist");
+    const auto crank_i = static_cast<std::size_t>(crank);
+    const auto front_i = static_cast<std::size_t>(front);
+    const auto rear_i = static_cast<std::size_t>(rear);
+    const auto qposadr = std::views::counted(model->jnt_qposadr, model->njnt);
+    const auto qpos = std::views::counted(data->qpos, model->nq);
+    const auto xpos = std::views::counted(data->xpos, model->nbody * 3);
+    for (const double angle : {0., std::numbers::pi}) {
+        mj_resetData(model.get(), data.get());
+        qpos[static_cast<std::size_t>(qposadr[crank_i])] = angle;
+        mj_kinematics(model.get(), data.get());
+        const double dz = xpos[3 * front_i + 2] - xpos[3 * rear_i + 2];
+        const double dx = xpos[3 * front_i + 0] - xpos[3 * rear_i + 0];
+        bt::require(std::abs(dz) < 1e-6, "spindles level at a power phase (dz=" + std::to_string(dz) + ")");
+        bt::require(std::abs(dx) > .2, "spindles a crank diameter apart along x");
+    }
+}
 void errors_and_ownership() {
     auto request=physical();request->mode="stand";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
@@ -185,4 +213,4 @@ void errors_and_ownership() {
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }
 } // namespace
-int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();errors_and_ownership();});}
+int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();crank_zero_is_horizontal();errors_and_ownership();});}

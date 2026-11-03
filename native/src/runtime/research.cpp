@@ -387,7 +387,7 @@ WireObject NativeResearchRuntime::status_unlocked() const {
     const auto &balance = runtime_->committed_balance_;
     const auto &crash = runtime_->committed_crash_;
     WireObject result{{"step", runtime_->committed_step_}, {"time_s", runtime_->committed_time_s_},
-        {"position_m", runtime_->committed_position_m_}, {"battery_energy_j", runtime_->committed_battery_energy_j_},
+        {"position_m", runtime_->committed_position_m_},
         {"observation", e.observation.as_wire()}, {"demand_nm", opt(e.demand_nm)},
         {"truth", e.truth ? Wire(e.truth->as_wire()) : Wire(nullptr)}, {"contact_state", e.tracker.state()},
         {"terminated", e.terminated}, {"truncated", e.truncated}, {"reason", opt(e.reason)}, {"error", opt(e.error)},

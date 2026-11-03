@@ -95,8 +95,6 @@ struct RawStep {
     // period close forwards the closing measured datum to the rest.
     std::optional<double> mechanical_energy_j;
     std::optional<WireObject> elastic_energy_j;
-    double battery_energy_j = 0.;
-    Wire electrical_power_w{};
     bool invalid_controller = false;
     WireObject effort_base;
     // The typed baseline accompanies the wire channels, so accounting a
@@ -455,7 +453,6 @@ private:
         WireObject sensors{}, tires{}, drive{};
         writers::RiderContactsDiagnostics rider_diag{};
         double loss_step = 0., linkage_error = 0., shock_limit_power = 0.;
-        Wire electrical_power_w{};
         std::vector<double> solved_actuator{};
         std::vector<double> solved_passive{}; // oracle parity; currently unread
     };

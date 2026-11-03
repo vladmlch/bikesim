@@ -341,12 +341,12 @@
   "index": 24,
   "kind": "close",
   "label": "recorder.columns.values",
-  "nbytes": 232448,
+  "nbytes": 230912,
   "node": "native_research_environment/delay_full_commands_immediate_brakes_and_recording/1",
   "offset": 9488,
   "rtol": 1e-09,
   "shape": [
-   29056
+   28864
   ]
  },
  {
@@ -357,7 +357,7 @@
   "label": "recorder.columns.other",
   "nbytes": 2,
   "node": "native_research_environment/delay_full_commands_immediate_brakes_and_recording/1",
-  "offset": 241936,
+  "offset": 240400,
   "rtol": null,
   "shape": [
    2
@@ -371,7 +371,7 @@
   "label": "episode_metrics.values",
   "nbytes": 216,
   "node": "native_research_environment/delay_full_commands_immediate_brakes_and_recording/1",
-  "offset": 241938,
+  "offset": 240402,
   "rtol": 1e-09,
   "shape": [
    27
@@ -385,7 +385,7 @@
   "label": "episode_metrics.other",
   "nbytes": 481,
   "node": "native_research_environment/delay_full_commands_immediate_brakes_and_recording/1",
-  "offset": 242154,
+  "offset": 240618,
   "rtol": null,
   "shape": [
    481
@@ -399,7 +399,7 @@
   "label": "first_sample.control",
   "nbytes": 16,
   "node": "native_research_environment/delay_full_commands_immediate_brakes_and_recording/1",
-  "offset": 242635,
+  "offset": 241099,
   "rtol": null,
   "shape": [
    2

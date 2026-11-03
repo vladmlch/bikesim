@@ -42,7 +42,11 @@ void catalog_contract() {
     // 493 = 497 minus rider_passive_power_w, rider_passive_work_step_j and
     // the passive_damping_nm / solved_passive_nm rider_control children
     // (spec Q13 removal — each was a leaf descriptor).
-    bt::require(count == 493, "full reviewed catalog retains all 493 repeated/nested descriptor occurrences");
+    // 487 = 493 minus the battery energy model's leaf descriptors:
+    // channel_drive.{battery_energy_j, battery_empty, energy_limited,
+    // electrical_power_w} and channel_energy.{electrical_work_j,
+    // electrical_residual_j}.
+    bt::require(count == 487, "full reviewed catalog retains all 487 repeated/nested descriptor occurrences");
     auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     // Spec Q13: the recorded catalog still lists the removed passive-
     // damping channel leaves. Drop exactly the named entries from the

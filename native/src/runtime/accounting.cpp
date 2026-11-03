@@ -157,7 +157,7 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
                            bool measured,
                            const std::optional<MeasurementSource> &source) {
     auto &e = state.energy;
-    if (!e.initial_energy_j.has_value() || !e.initial_battery_j.has_value())
+    if (!e.initial_energy_j.has_value())
         throw std::invalid_argument("accounting requires initialized energy baselines");
     e.loss_j += raw.loss_step_j;
     e.muscle_signed_j += work.muscle_signed_j;
@@ -170,7 +170,6 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
     e.closure_absolute_j += work.closure_absolute_j;
     e.active_work_j += work.muscle_signed_j + work.motor_signed_j;
     e.external_work_j += external_work(raw, config.timestep_s);
-    e.electrical_work_j += number(raw.electrical_power_w) * config.timestep_s;
     e.mechanical_energy_j = total_j;
     e.elastic_energy_j = elastic;
     e.residual_j = total_j - *e.initial_energy_j - e.active_work_j -
@@ -191,9 +190,6 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
         {"closure_absolute_j", Wire(e.closure_absolute_j)},
         {"constraint_work_ratio", source_positive > 0. ? Wire(e.constraint_absolute_j / source_positive) : Wire(nullptr)},
         {"constraint_work_ok", Wire(work_ok)}, {"residual_j", Wire(e.residual_j)},
-        {"electrical_work_j", Wire(e.electrical_work_j)},
-        {"electrical_residual_j", Wire(config.battery_enabled
-            ? *e.initial_battery_j - raw.battery_energy_j - e.electrical_work_j : 0.)},
         {"measured", Wire(measured)},
         {"source_interval_id", source.has_value() ? Wire(source->interval_id)
                                                   : Wire(nullptr)},
@@ -427,7 +423,7 @@ PeriodAccounting::PeriodAccounting(AccountingConfig config, AccountingState init
     finite(config_.timestep_s, "accounting timestep");
     if (config_.timestep_s <= 0. || config_.measurement_decimation < 1 || generation_ < 1)
         throw std::invalid_argument("invalid accounting configuration");
-    if (!state_.energy.initial_energy_j.has_value() || !state_.energy.initial_battery_j.has_value())
+    if (!state_.energy.initial_energy_j.has_value())
         throw std::invalid_argument("accounting bootstrap requires initialized energy baselines");
     if (state_.energy_channels.empty())
         state_.energy_channels = {{"mechanical_energy_j", Wire(state_.energy.mechanical_energy_j)},

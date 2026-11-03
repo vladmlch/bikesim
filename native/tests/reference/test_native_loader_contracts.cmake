@@ -30,7 +30,7 @@ elseif(CASE STREQUAL "test_native_contract_executable_lists_registered_cases")
   # owner-staging seam it covered).
   set(_expected
     human_crank_torque pedaling_policy_valid_transition pedaling_ctor_domain
-    shifter_ctor_domain assist_ctor_domain battery_ctor_domain freehub_ctor_domain
+    shifter_ctor_domain assist_ctor_domain freehub_ctor_domain
     writer_config_domains transmission_lifecycle_invariants
     typed_ctor_matches_validator_domain engine_fatal_status_and_reuse
     nested_engine_frames thread_local_engine_frames previous_tls_handler_restored

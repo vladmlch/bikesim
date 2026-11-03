@@ -622,8 +622,6 @@ const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone
     {{"drive", "assist", "gain"}}, {{"drive", "assist", "max_torque"}},
     {{"drive", "assist", "max_power"}}, {{"drive", "assist", "engage_torque_nm"}},
     {{"drive", "assist", "gate_min_crank_rad_s"}}, {{"drive", "assist", "cutoff_mps"}},
-    {{"drive", "battery", "energy_j"}}, {{"drive", "battery", "copper_w_per_nm2"}},
-    {{"drive", "battery", "speed_w_per_rad_s2"}}, {{"drive", "battery", "idle_w"}},
 };
 
 Value without_profile() {
@@ -803,7 +801,6 @@ void test_chain_dissipation_overflow_before_telemetry() {
     std::println(stderr, ">> test_chain_dissipation_overflow_before_telemetry");
     auto source = drivetrain_reference::source("elastic_chain");
     source.chain_k_n_m = 1e308; source.chain_c_ns_m = 1e108;
-    source.battery.enabled = false;
     auto owner = drivetrain_reference::pair(source);
     const auto crank = bike::model::joint_address(*owner->model(), "crank_spin");
     drivetrain_reference::position(*owner, "crank_spin",
@@ -949,17 +946,6 @@ void test_air_calibration_and_curve_valid_controls() {
                 "reported maximum is the terminal energy");
 }
 
-// test_battery_cap_numerator_overflow_before_saturation[native]
-void test_battery_cap_numerator_overflow_before_saturation() {
-    std::println(stderr, ">> test_battery_cap_numerator_overflow_before_saturation");
-    auto wire = policy_reference::config(policy_reference::source());
-    put(wire, "battery", "copper_w_per_nm2", real(1e-306));
-    put(wire, "battery", "speed_w_per_rad_s2", real(0.));
-    put(wire, "battery", "idle_w", real(0.));
-    const auto policies = policy_reference::policies(wire);
-    overflow([&] { (void)policy_reference::energy_limit(policies, 1e308, 0., 1e308); });
-}
-
 // test_mutated_zero_dimensional_cassette_is_value_error[native]
 void test_mutated_zero_dimensional_cassette_is_value_error() {
     std::println(stderr, ">> test_mutated_zero_dimensional_cassette_is_value_error");
@@ -1070,8 +1056,6 @@ void test_zero_disable_policy_fields_remain_bitwise_valid() {
     source.shifting.enabled = true;
     source.shifting.shift_cooldown_s = 0.; source.shifting.shift_cut_duration_s = 0.;
     source.shifting.cadence_smoothing_tau_s = 0.; source.shifting.upshift_slip_limit_mps = 0.;
-    source.battery.energy_j = 0.; source.battery.copper_w_per_nm2 = 0.;
-    source.battery.speed_w_per_rad_s2 = 0.; source.battery.idle_w = 0.;
     source.assist.gain = 0.; source.assist.max_torque = 0.; source.assist.max_power = 0.;
     source.assist.engage_torque_nm = 0.; source.assist.gate_min_crank_rad_s = 0.;
     source.bearing_c_nms_rad = 0.; source.freehub_c_nms_rad = 0.; source.chain_c_ns_m = 0.;
@@ -1142,7 +1126,7 @@ void test_tire_channel_parity_across_backends() {
 }
 
 // test_python_free_typed_numeric_validators — the source compiles and runs
-// this exact validator battery; the port keeps it inline.
+// this exact validator set; the port keeps it inline.
 void test_python_free_typed_numeric_validators() {
     std::println(stderr, ">> test_python_free_typed_numeric_validators");
     const auto invalid_config = [](const auto& config) {
@@ -1174,10 +1158,8 @@ void test_python_free_typed_numeric_validators() {
     invalid_config(drivetrain::AssistConfig{});
     invalid_config(drivetrain::DrivePolicyConfig{});
     invalid_config(drivetrain::DriveConfig{});
-    invalid_config(drivetrain::BatteryConfig{.energy_j = -1.});
     nativecfg::validate(nativecfg::EndStopConfig{});
     nativecfg::validate(nativecfg::BrakeConfig{.torque_ceiling_nm = 0., .taper_radps = 1.});
-    drivetrain::validate(drivetrain::BatteryConfig{});
 }
 
 } // namespace
@@ -1221,7 +1203,6 @@ int main() { return bt::run([] {
     test_air_calibration_denominator_overflow_before_pressure_commit();
     test_air_force_curve_energy_overflow_before_publication();
     test_air_calibration_and_curve_valid_controls();
-    test_battery_cap_numerator_overflow_before_saturation();
     test_mutated_zero_dimensional_cassette_is_value_error();
     test_brake_and_cruise_numpy_numeric_controls();
     test_end_stop_unloading_overflow_before_clamp();

@@ -231,12 +231,12 @@
   "index": 17,
   "kind": "bitwise",
   "label": "$.last#keys",
-  "nbytes": 1066,
+  "nbytes": 993,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
   "offset": 400,
   "rtol": null,
   "shape": [
-   1066
+   993
   ]
  },
  {
@@ -247,7 +247,7 @@
   "label": "$.last.assist_demand_gated",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1466,
+  "offset": 1393,
   "rtol": null,
   "shape": [
    4
@@ -261,7 +261,7 @@
   "label": "$.last.assist_gain",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1470,
+  "offset": 1397,
   "rtol": null,
   "shape": []
  },
@@ -273,7 +273,7 @@
   "label": "$.last.assist_mode",
   "nbytes": 7,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1478,
+  "offset": 1405,
   "rtol": null,
   "shape": [
    7
@@ -287,30 +287,152 @@
   "label": "$.last.assist_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1485,
+  "offset": 1412,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.last.battery_empty",
-  "nbytes": 5,
+  "label": "$.last.cadence_rpm",
+  "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1493,
+  "offset": 1420,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.last.battery_energy_j",
+  "label": "$.last.chain_dissipation_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1428,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "$.last.chain_energy_j",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1436,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_m",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1444,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_rate_mps",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1452,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.last.chain_tension_n",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1460,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.last.coasting_reason",
+  "nbytes": 2,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1468,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.last.crank_rad_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1470,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.last.crank_target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1478,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.last.crank_target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1482,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.last.drive_shaft_rad_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1490,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.last.freehub_deflection_rad",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
   "offset": 1498,
@@ -320,9 +442,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 24,
+  "index": 34,
   "kind": "bitwise",
-  "label": "$.last.cadence_rpm",
+  "label": "$.last.freehub_dissipation_power_w",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
   "offset": 1506,
@@ -332,9 +454,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 25,
+  "index": 35,
   "kind": "bitwise",
-  "label": "$.last.chain_dissipation_power_w",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
   "offset": 1514,
@@ -343,137 +465,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 26,
-  "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1522,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 27,
-  "kind": "bitwise",
-  "label": "$.last.chain_extension_m",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1530,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.last.chain_extension_rate_mps",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1538,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.last.chain_tension_n",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1546,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.last.coasting_reason",
-  "nbytes": 2,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1554,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 31,
-  "kind": "bitwise",
-  "label": "$.last.crank_rad_s",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1556,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.last.crank_target_phase_rad",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1564,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "$.last.crank_target_rate_rad_s",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1568,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.last.drive_shaft_rad_s",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1576,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1584,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
   "index": 36,
   "kind": "bitwise",
-  "label": "$.last.energy_limited",
+  "label": "$.last.freehub_engaged",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1592,
+  "offset": 1522,
   "rtol": null,
   "shape": [
    5
@@ -484,34 +482,36 @@
   "dtype": "<f8",
   "index": 37,
   "kind": "bitwise",
-  "label": "$.last.freehub_deflection_rad",
+  "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1597,
+  "offset": 1527,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "$.last.freehub_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.last.gear_front_teeth",
+  "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1605,
+  "offset": 1535,
   "rtol": null,
-  "shape": []
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 39,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
+  "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1613,
+  "offset": 1537,
   "rtol": null,
   "shape": []
  },
@@ -520,13 +520,13 @@
   "dtype": "|u1",
   "index": 40,
   "kind": "bitwise",
-  "label": "$.last.freehub_engaged",
-  "nbytes": 5,
+  "label": "$.last.gear_rear_teeth",
+  "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1621,
+  "offset": 1545,
   "rtol": null,
   "shape": [
-   5
+   2
   ]
  },
  {
@@ -534,86 +534,34 @@
   "dtype": "<f8",
   "index": 41,
   "kind": "bitwise",
-  "label": "$.last.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1626,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 42,
-  "kind": "bitwise",
-  "label": "$.last.gear_front_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1634,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 43,
-  "kind": "bitwise",
-  "label": "$.last.gear_ratio",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1636,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.last.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1644,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 45,
-  "kind": "bitwise",
   "label": "$.last.human_command_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1646,
+  "offset": 1547,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 46,
+  "index": 42,
   "kind": "bitwise",
   "label": "$.last.human_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1654,
+  "offset": 1555,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 43,
   "kind": "bitwise",
   "label": "$.last.human_setpoint_nm",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1662,
+  "offset": 1563,
   "rtol": null,
   "shape": [
    4
@@ -622,24 +570,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 48,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.last.human_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1666,
+  "offset": 1567,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.last.motor_control_source",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1674,
+  "offset": 1575,
   "rtol": null,
   "shape": [
    8
@@ -648,15 +596,67 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 50,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.last.motor_enabled",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1682,
+  "offset": 1583,
   "rtol": null,
   "shape": [
    5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1588,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1596,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1601,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "$.last.motor_limit_nm",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1609,
+  "rtol": null,
+  "shape": [
+   4
   ]
  },
  {
@@ -664,124 +664,72 @@
   "dtype": "<f8",
   "index": 51,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "label": "$.last.motor_limited_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1687,
+  "offset": 1613,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.last.motor_request_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 1621,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 53,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
+  "label": "$.last.motor_setpoint_nm",
+  "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1695,
+  "offset": 1629,
   "rtol": null,
   "shape": [
-   5
+   4
   ]
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1700,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 54,
   "kind": "bitwise",
-  "label": "$.last.motor_limit_nm",
-  "nbytes": 4,
+  "label": "$.last.motor_shaft_power_w",
+  "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1708,
+  "offset": 1633,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 55,
   "kind": "bitwise",
-  "label": "$.last.motor_limited_request_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1712,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 56,
-  "kind": "bitwise",
-  "label": "$.last.motor_request_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1720,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 57,
-  "kind": "bitwise",
-  "label": "$.last.motor_setpoint_nm",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1728,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 58,
-  "kind": "bitwise",
-  "label": "$.last.motor_shaft_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1732,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 59,
-  "kind": "bitwise",
   "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1740,
+  "offset": 1641,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 60,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.last.omits_suspension_coupling",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1748,
+  "offset": 1649,
   "rtol": null,
   "shape": [
    4
@@ -790,24 +738,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 61,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.last.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1752,
+  "offset": 1653,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 62,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.last.rider_mode",
   "nbytes": 10,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1760,
+  "offset": 1661,
   "rtol": null,
   "shape": [
    10
@@ -816,12 +764,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 63,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.last.safety_limited",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1770,
+  "offset": 1671,
   "rtol": null,
   "shape": [
    5
@@ -830,12 +778,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 64,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1775,
+  "offset": 1676,
   "rtol": null,
   "shape": [
    5
@@ -844,12 +792,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 61,
   "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1780,
+  "offset": 1681,
   "rtol": null,
   "shape": [
    1
@@ -858,12 +806,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 62,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1781,
+  "offset": 1682,
   "rtol": null,
   "shape": [
    6
@@ -872,12 +820,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1787,
+  "offset": 1688,
   "rtol": null,
   "shape": [
    2
@@ -886,12 +834,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 68,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1789,
+  "offset": 1690,
   "rtol": null,
   "shape": [
    4
@@ -900,24 +848,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 69,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1793,
+  "offset": 1694,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 70,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.last.transmission_model",
   "nbytes": 17,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1801,
+  "offset": 1702,
   "rtol": null,
   "shape": [
    17
@@ -926,24 +874,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 71,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1818,
+  "offset": 1719,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 72,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.pending_actuation#keys",
   "nbytes": 36,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1826,
+  "offset": 1727,
   "rtol": null,
   "shape": [
    36
@@ -952,24 +900,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 73,
+  "index": 69,
   "kind": "bitwise",
   "label": "$.pending_actuation.dt",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1862,
+  "offset": 1763,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 74,
+  "index": 70,
   "kind": "bitwise",
   "label": "$.pending_actuation.enabled",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1870,
+  "offset": 1771,
   "rtol": null,
   "shape": [
    5
@@ -978,50 +926,50 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 75,
+  "index": 71,
   "kind": "bitwise",
   "label": "$.pending_actuation.omega",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1875,
+  "offset": 1776,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 76,
+  "index": 72,
   "kind": "bitwise",
   "label": "$.pending_actuation.requested",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1883,
+  "offset": 1784,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 77,
+  "index": 73,
   "kind": "bitwise",
   "label": "$.policies#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1891,
+  "offset": 1792,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 78,
+  "index": 74,
   "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1939,
+  "offset": 1830,
   "rtol": null,
   "shape": [
    33
@@ -1030,24 +978,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 79,
+  "index": 75,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1972,
+  "offset": 1863,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 76,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1980,
+  "offset": 1871,
   "rtol": null,
   "shape": [
    5
@@ -1056,74 +1004,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 81,
+  "index": 77,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1985,
+  "offset": 1876,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 82,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 1993,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 83,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2041,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 84,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2049,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 85,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2057,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 86,
+  "index": 78,
   "kind": "bitwise",
   "label": "$.policies.hub",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2065,
+  "offset": 1884,
   "rtol": null,
   "shape": [
    4
@@ -1132,12 +1030,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 87,
+  "index": 79,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2069,
+  "offset": 1888,
   "rtol": null,
   "shape": [
    98
@@ -1146,36 +1044,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 88,
+  "index": 80,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2167,
+  "offset": 1986,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 89,
+  "index": 81,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2175,
+  "offset": 1994,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 90,
+  "index": 82,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2183,
+  "offset": 2002,
   "rtol": null,
   "shape": [
    5
@@ -1184,24 +1082,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 91,
+  "index": 83,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2188,
+  "offset": 2007,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 92,
+  "index": 84,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2196,
+  "offset": 2015,
   "rtol": null,
   "shape": [
    4
@@ -1210,24 +1108,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 93,
+  "index": 85,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2200,
+  "offset": 2019,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 94,
+  "index": 86,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2208,
+  "offset": 2027,
   "rtol": null,
   "shape": [
    113
@@ -1236,12 +1134,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 95,
+  "index": 87,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2321,
+  "offset": 2140,
   "rtol": null,
   "shape": [
    4
@@ -1250,36 +1148,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 96,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2325,
+  "offset": 2144,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 97,
+  "index": 89,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2333,
+  "offset": 2152,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 98,
+  "index": 90,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2341,
+  "offset": 2160,
   "rtol": null,
   "shape": [
    6
@@ -1288,12 +1186,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 99,
+  "index": 91,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2347,
+  "offset": 2166,
   "rtol": null,
   "shape": [
    2
@@ -1302,12 +1200,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 100,
+  "index": 92,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2349,
+  "offset": 2168,
   "rtol": null,
   "shape": [
    2
@@ -1316,12 +1214,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 101,
+  "index": 93,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2351,
+  "offset": 2170,
   "rtol": null,
   "shape": [
    4
@@ -1330,12 +1228,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 102,
+  "index": 94,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2355,
+  "offset": 2174,
   "rtol": null,
   "shape": [
    1
@@ -1344,12 +1242,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 103,
+  "index": 95,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2356,
+  "offset": 2175,
   "rtol": null,
   "shape": [
    4
@@ -1358,12 +1256,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 104,
+  "index": 96,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2360,
+  "offset": 2179,
   "rtol": null,
   "shape": [
    4
@@ -1372,24 +1270,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 105,
+  "index": 97,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2364,
+  "offset": 2183,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 106,
+  "index": 98,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2372,
+  "offset": 2191,
   "rtol": null,
   "shape": [
    4
@@ -1398,12 +1296,12 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 107,
+  "index": 99,
   "kind": "bitwise",
   "label": "",
   "nbytes": 64,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2376,
+  "offset": 2195,
   "rtol": null,
   "shape": [
    8
@@ -1412,12 +1310,12 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 108,
+  "index": 100,
   "kind": "bitwise",
   "label": "",
   "nbytes": 64,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2440,
+  "offset": 2259,
   "rtol": null,
   "shape": [
    8
@@ -1426,12 +1324,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 109,
+  "index": 101,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 141,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2504,
+  "offset": 2323,
   "rtol": null,
   "shape": [
    141
@@ -1440,12 +1338,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 110,
+  "index": 102,
   "kind": "bitwise",
   "label": "$.angles#length",
   "nbytes": 1,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2645,
+  "offset": 2464,
   "rtol": null,
   "shape": [
    1
@@ -1454,24 +1352,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 111,
+  "index": 103,
   "kind": "bitwise",
   "label": "$.angles[0]",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2646,
+  "offset": 2465,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 112,
+  "index": 104,
   "kind": "bitwise",
   "label": "$.clutch",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2654,
+  "offset": 2473,
   "rtol": null,
   "shape": [
    4
@@ -1480,12 +1378,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 113,
+  "index": 105,
   "kind": "bitwise",
   "label": "$.freewheel",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2658,
+  "offset": 2477,
   "rtol": null,
   "shape": [
    4
@@ -1494,12 +1392,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 114,
+  "index": 106,
   "kind": "bitwise",
   "label": "$.ideal_hub#keys",
   "nbytes": 165,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2662,
+  "offset": 2481,
   "rtol": null,
   "shape": [
    165
@@ -1508,24 +1406,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 115,
+  "index": 107,
   "kind": "bitwise",
   "label": "$.ideal_hub.boundary",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2827,
+  "offset": 2646,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 116,
+  "index": 108,
   "kind": "bitwise",
   "label": "$.ideal_hub.coefficients",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2835,
+  "offset": 2654,
   "rtol": null,
   "shape": [
    1
@@ -1534,12 +1432,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 117,
+  "index": 109,
   "kind": "bitwise",
   "label": "$.ideal_hub.diagnostics#keys",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2843,
+  "offset": 2662,
   "rtol": null,
   "shape": [
    2
@@ -1548,24 +1446,130 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 118,
+  "index": 110,
   "kind": "bitwise",
   "label": "$.ideal_hub.last_tension_n",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2845,
+  "offset": 2664,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 119,
+  "index": 111,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2853,
+  "offset": 2672,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.range",
+  "nbytes": 16,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2676,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.ratio",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2692,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2700,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_constraint_work_j",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2702,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 116,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_parameter_work_j",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2710,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_pending",
+  "nbytes": 5,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2718,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 118,
+  "kind": "bitwise",
+  "label": "$.last#keys",
+  "nbytes": 993,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 2723,
+  "rtol": null,
+  "shape": [
+   993
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "$.last.assist_demand_gated",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3716,
   "rtol": null,
   "shape": [
    4
@@ -1576,128 +1580,22 @@
   "dtype": "<f8",
   "index": 120,
   "kind": "bitwise",
-  "label": "$.ideal_hub.range",
-  "nbytes": 16,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2857,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 121,
-  "kind": "bitwise",
-  "label": "$.ideal_hub.ratio",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2873,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 122,
-  "kind": "bitwise",
-  "label": "$.ideal_hub.rear_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2881,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 123,
-  "kind": "bitwise",
-  "label": "$.ideal_hub.shift_constraint_work_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2883,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 124,
-  "kind": "bitwise",
-  "label": "$.ideal_hub.shift_parameter_work_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2891,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 125,
-  "kind": "bitwise",
-  "label": "$.ideal_hub.shift_pending",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2899,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 126,
-  "kind": "bitwise",
-  "label": "$.last#keys",
-  "nbytes": 1066,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 2904,
-  "rtol": null,
-  "shape": [
-   1066
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 127,
-  "kind": "bitwise",
-  "label": "$.last.assist_demand_gated",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 3970,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 128,
-  "kind": "bitwise",
   "label": "$.last.assist_gain",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 3974,
+  "offset": 3720,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 129,
+  "index": 121,
   "kind": "bitwise",
   "label": "$.last.assist_mode",
   "nbytes": 7,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 3982,
+  "offset": 3728,
   "rtol": null,
   "shape": [
    7
@@ -1706,12 +1604,110 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 130,
+  "index": 122,
   "kind": "bitwise",
   "label": "$.last.assist_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 3989,
+  "offset": 3735,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 123,
+  "kind": "bitwise",
+  "label": "$.last.cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3743,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "$.last.chain_dissipation_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3751,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 125,
+  "kind": "bitwise",
+  "label": "$.last.chain_energy_j",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3759,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 126,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_m",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3767,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 127,
+  "kind": "bitwise",
+  "label": "$.last.chain_extension_rate_mps",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3775,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 128,
+  "kind": "bitwise",
+  "label": "$.last.chain_tension_n",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3783,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 129,
+  "kind": "bitwise",
+  "label": "$.last.coasting_reason",
+  "nbytes": 2,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3791,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 130,
+  "kind": "bitwise",
+  "label": "$.last.crank_rad_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3793,
   "rtol": null,
   "shape": []
  },
@@ -1720,13 +1716,13 @@
   "dtype": "|u1",
   "index": 131,
   "kind": "bitwise",
-  "label": "$.last.battery_empty",
-  "nbytes": 5,
+  "label": "$.last.crank_target_phase_rad",
+  "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 3997,
+  "offset": 3801,
   "rtol": null,
   "shape": [
-   5
+   4
   ]
  },
  {
@@ -1734,10 +1730,10 @@
   "dtype": "<f8",
   "index": 132,
   "kind": "bitwise",
-  "label": "$.last.battery_energy_j",
+  "label": "$.last.crank_target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4002,
+  "offset": 3805,
   "rtol": null,
   "shape": []
  },
@@ -1746,10 +1742,10 @@
   "dtype": "<f8",
   "index": 133,
   "kind": "bitwise",
-  "label": "$.last.cadence_rpm",
+  "label": "$.last.drive_shaft_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4010,
+  "offset": 3813,
   "rtol": null,
   "shape": []
  },
@@ -1758,10 +1754,10 @@
   "dtype": "<f8",
   "index": 134,
   "kind": "bitwise",
-  "label": "$.last.chain_dissipation_power_w",
+  "label": "$.last.freehub_deflection_rad",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4018,
+  "offset": 3821,
   "rtol": null,
   "shape": []
  },
@@ -1770,10 +1766,10 @@
   "dtype": "<f8",
   "index": 135,
   "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
+  "label": "$.last.freehub_dissipation_power_w",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4026,
+  "offset": 3829,
   "rtol": null,
   "shape": []
  },
@@ -1782,34 +1778,36 @@
   "dtype": "<f8",
   "index": 136,
   "kind": "bitwise",
-  "label": "$.last.chain_extension_m",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4034,
+  "offset": 3837,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 137,
   "kind": "bitwise",
-  "label": "$.last.chain_extension_rate_mps",
-  "nbytes": 8,
+  "label": "$.last.freehub_engaged",
+  "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4042,
+  "offset": 3845,
   "rtol": null,
-  "shape": []
+  "shape": [
+   5
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 138,
   "kind": "bitwise",
-  "label": "$.last.chain_tension_n",
+  "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4050,
+  "offset": 3850,
   "rtol": null,
   "shape": []
  },
@@ -1818,10 +1816,10 @@
   "dtype": "|u1",
   "index": 139,
   "kind": "bitwise",
-  "label": "$.last.coasting_reason",
+  "label": "$.last.gear_front_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4058,
+  "offset": 3858,
   "rtol": null,
   "shape": [
    2
@@ -1832,10 +1830,10 @@
   "dtype": "<f8",
   "index": 140,
   "kind": "bitwise",
-  "label": "$.last.crank_rad_s",
+  "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4060,
+  "offset": 3860,
   "rtol": null,
   "shape": []
  },
@@ -1844,13 +1842,13 @@
   "dtype": "|u1",
   "index": 141,
   "kind": "bitwise",
-  "label": "$.last.crank_target_phase_rad",
-  "nbytes": 4,
+  "label": "$.last.gear_rear_teeth",
+  "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4068,
+  "offset": 3868,
   "rtol": null,
   "shape": [
-   4
+   2
   ]
  },
  {
@@ -1858,10 +1856,10 @@
   "dtype": "<f8",
   "index": 142,
   "kind": "bitwise",
-  "label": "$.last.crank_target_rate_rad_s",
+  "label": "$.last.human_command_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4072,
+  "offset": 3870,
   "rtol": null,
   "shape": []
  },
@@ -1870,34 +1868,62 @@
   "dtype": "<f8",
   "index": 143,
   "kind": "bitwise",
-  "label": "$.last.drive_shaft_rad_s",
+  "label": "$.last.human_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4080,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 144,
-  "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4088,
+  "offset": 3878,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
+  "index": 144,
+  "kind": "bitwise",
+  "label": "$.last.human_setpoint_nm",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3886,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
   "index": 145,
   "kind": "bitwise",
-  "label": "$.last.energy_limited",
+  "label": "$.last.human_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3890,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 146,
+  "kind": "bitwise",
+  "label": "$.last.motor_control_source",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3898,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 147,
+  "kind": "bitwise",
+  "label": "$.last.motor_enabled",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4096,
+  "offset": 3906,
   "rtol": null,
   "shape": [
    5
@@ -1906,36 +1932,12 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 146,
-  "kind": "bitwise",
-  "label": "$.last.freehub_deflection_rad",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4101,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 147,
-  "kind": "bitwise",
-  "label": "$.last.freehub_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4109,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 148,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4117,
+  "offset": 3911,
   "rtol": null,
   "shape": []
  },
@@ -1944,10 +1946,10 @@
   "dtype": "|u1",
   "index": 149,
   "kind": "bitwise",
-  "label": "$.last.freehub_engaged",
+  "label": "$.last.motor_freewheel_engaged",
   "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4125,
+  "offset": 3919,
   "rtol": null,
   "shape": [
    5
@@ -1958,10 +1960,10 @@
   "dtype": "<f8",
   "index": 150,
   "kind": "bitwise",
-  "label": "$.last.freehub_torque_nm",
+  "label": "$.last.motor_freewheel_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4130,
+  "offset": 3924,
   "rtol": null,
   "shape": []
  },
@@ -1970,13 +1972,13 @@
   "dtype": "|u1",
   "index": 151,
   "kind": "bitwise",
-  "label": "$.last.gear_front_teeth",
-  "nbytes": 2,
+  "label": "$.last.motor_limit_nm",
+  "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4138,
+  "offset": 3932,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -1984,22 +1986,168 @@
   "dtype": "<f8",
   "index": 152,
   "kind": "bitwise",
-  "label": "$.last.gear_ratio",
+  "label": "$.last.motor_limited_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4140,
+  "offset": 3936,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 153,
+  "kind": "bitwise",
+  "label": "$.last.motor_request_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3944,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 153,
+  "index": 154,
   "kind": "bitwise",
-  "label": "$.last.gear_rear_teeth",
+  "label": "$.last.motor_setpoint_nm",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3952,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 155,
+  "kind": "bitwise",
+  "label": "$.last.motor_shaft_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3956,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "$.last.motor_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3964,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 157,
+  "kind": "bitwise",
+  "label": "$.last.omits_suspension_coupling",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3972,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 158,
+  "kind": "bitwise",
+  "label": "$.last.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3976,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 159,
+  "kind": "bitwise",
+  "label": "$.last.rider_mode",
+  "nbytes": 10,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3984,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 160,
+  "kind": "bitwise",
+  "label": "$.last.safety_limited",
+  "nbytes": 5,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3994,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 161,
+  "kind": "bitwise",
+  "label": "$.last.shift_active",
+  "nbytes": 5,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 3999,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 162,
+  "kind": "bitwise",
+  "label": "$.last.shift_count",
+  "nbytes": 1,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4004,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 163,
+  "kind": "bitwise",
+  "label": "$.last.shift_direction",
+  "nbytes": 6,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4005,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 164,
+  "kind": "bitwise",
+  "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4148,
+  "offset": 4011,
   "rtol": null,
   "shape": [
    2
@@ -2007,167 +2155,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 154,
-  "kind": "bitwise",
-  "label": "$.last.human_command_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4150,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 155,
-  "kind": "bitwise",
-  "label": "$.last.human_sensor_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4158,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 156,
-  "kind": "bitwise",
-  "label": "$.last.human_setpoint_nm",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4166,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 157,
-  "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4170,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 158,
-  "kind": "bitwise",
-  "label": "$.last.motor_control_source",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4178,
-  "rtol": null,
-  "shape": [
-   8
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 159,
-  "kind": "bitwise",
-  "label": "$.last.motor_enabled",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4186,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 160,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4191,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 161,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4199,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 162,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4204,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 163,
-  "kind": "bitwise",
-  "label": "$.last.motor_limit_nm",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4212,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 164,
-  "kind": "bitwise",
-  "label": "$.last.motor_limited_request_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4216,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 165,
   "kind": "bitwise",
-  "label": "$.last.motor_request_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4224,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 166,
-  "kind": "bitwise",
-  "label": "$.last.motor_setpoint_nm",
+  "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4232,
+  "offset": 4013,
   "rtol": null,
   "shape": [
    4
@@ -2176,24 +2170,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 167,
+  "index": 166,
   "kind": "bitwise",
-  "label": "$.last.motor_shaft_power_w",
+  "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4236,
+  "offset": 4017,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 167,
+  "kind": "bitwise",
+  "label": "$.last.transmission_model",
+  "nbytes": 17,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4025,
+  "rtol": null,
+  "shape": [
+   17
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 168,
   "kind": "bitwise",
-  "label": "$.last.motor_torque_nm",
+  "label": "$.last_time_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4244,
+  "offset": 4042,
   "rtol": null,
   "shape": []
  },
@@ -2202,10 +2210,10 @@
   "dtype": "|u1",
   "index": 169,
   "kind": "bitwise",
-  "label": "$.last.omits_suspension_coupling",
+  "label": "$.pending_actuation",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4252,
+  "offset": 4050,
   "rtol": null,
   "shape": [
    4
@@ -2213,10 +2221,116 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 170,
   "kind": "bitwise",
-  "label": "$.last.required_cadence_rpm",
+  "label": "$.policies#keys",
+  "nbytes": 38,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4054,
+  "rtol": null,
+  "shape": [
+   38
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 171,
+  "kind": "bitwise",
+  "label": "$.policies.assist#keys",
+  "nbytes": 33,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4092,
+  "rtol": null,
+  "shape": [
+   33
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 172,
+  "kind": "bitwise",
+  "label": "$.policies.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4125,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 173,
+  "kind": "bitwise",
+  "label": "$.policies.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4133,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 174,
+  "kind": "bitwise",
+  "label": "$.policies.assist.torque",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4138,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 175,
+  "kind": "bitwise",
+  "label": "$.policies.hub",
+  "nbytes": 4,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4146,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 176,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4150,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 177,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
+  "offset": 4248,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 178,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
   "offset": 4256,
@@ -2226,125 +2340,15 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 171,
+  "index": 179,
   "kind": "bitwise",
-  "label": "$.last.rider_mode",
-  "nbytes": 10,
+  "label": "$.policies.pedaling.coasting",
+  "nbytes": 5,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
   "offset": 4264,
   "rtol": null,
   "shape": [
-   10
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 172,
-  "kind": "bitwise",
-  "label": "$.last.safety_limited",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4274,
-  "rtol": null,
-  "shape": [
    5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 173,
-  "kind": "bitwise",
-  "label": "$.last.shift_active",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4279,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 174,
-  "kind": "bitwise",
-  "label": "$.last.shift_count",
-  "nbytes": 1,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4284,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 175,
-  "kind": "bitwise",
-  "label": "$.last.shift_direction",
-  "nbytes": 6,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4285,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 176,
-  "kind": "bitwise",
-  "label": "$.last.shift_from_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4291,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 177,
-  "kind": "bitwise",
-  "label": "$.last.shift_time_s",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4293,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 178,
-  "kind": "bitwise",
-  "label": "$.last.shift_torque_factor",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4297,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 179,
-  "kind": "bitwise",
-  "label": "$.last.transmission_model",
-  "nbytes": 17,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4305,
-  "rtol": null,
-  "shape": [
-   17
   ]
  },
  {
@@ -2352,10 +2356,10 @@
   "dtype": "<f8",
   "index": 180,
   "kind": "bitwise",
-  "label": "$.last_time_s",
+  "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4322,
+  "offset": 4269,
   "rtol": null,
   "shape": []
  },
@@ -2364,10 +2368,10 @@
   "dtype": "|u1",
   "index": 181,
   "kind": "bitwise",
-  "label": "$.pending_actuation",
+  "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4330,
+  "offset": 4277,
   "rtol": null,
   "shape": [
    4
@@ -2375,233 +2379,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 182,
   "kind": "bitwise",
-  "label": "$.policies#keys",
-  "nbytes": 48,
+  "label": "$.policies.pedaling.target_rate_rad_s",
+  "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4334,
+  "offset": 4281,
   "rtol": null,
-  "shape": [
-   48
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 183,
   "kind": "bitwise",
-  "label": "$.policies.assist#keys",
-  "nbytes": 33,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4382,
-  "rtol": null,
-  "shape": [
-   33
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 184,
-  "kind": "bitwise",
-  "label": "$.policies.assist.last_gain",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4415,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 185,
-  "kind": "bitwise",
-  "label": "$.policies.assist.pedaling",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4423,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 186,
-  "kind": "bitwise",
-  "label": "$.policies.assist.torque",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4428,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 187,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4436,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 188,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4484,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 189,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4492,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 190,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4500,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 191,
-  "kind": "bitwise",
-  "label": "$.policies.hub",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4508,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 192,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling#keys",
-  "nbytes": 98,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4512,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 193,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling._cadence_ema",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4610,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 194,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling._effort",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4618,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 195,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.coasting",
-  "nbytes": 5,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4626,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 196,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4631,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 197,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4639,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 198,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4643,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 199,
-  "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4651,
+  "offset": 4289,
   "rtol": null,
   "shape": [
    113
@@ -2610,12 +2406,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 200,
+  "index": 184,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4764,
+  "offset": 4402,
   "rtol": null,
   "shape": [
    4
@@ -2624,36 +2420,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 201,
+  "index": 185,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4768,
+  "offset": 4406,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 202,
+  "index": 186,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4776,
+  "offset": 4414,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 203,
+  "index": 187,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4784,
+  "offset": 4422,
   "rtol": null,
   "shape": [
    6
@@ -2662,12 +2458,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 204,
+  "index": 188,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4790,
+  "offset": 4428,
   "rtol": null,
   "shape": [
    2
@@ -2676,12 +2472,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 205,
+  "index": 189,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4792,
+  "offset": 4430,
   "rtol": null,
   "shape": [
    2
@@ -2690,12 +2486,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 206,
+  "index": 190,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4794,
+  "offset": 4432,
   "rtol": null,
   "shape": [
    4
@@ -2704,12 +2500,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 207,
+  "index": 191,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4798,
+  "offset": 4436,
   "rtol": null,
   "shape": [
    1
@@ -2718,12 +2514,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 208,
+  "index": 192,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4799,
+  "offset": 4437,
   "rtol": null,
   "shape": [
    4
@@ -2732,12 +2528,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 209,
+  "index": 193,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4803,
+  "offset": 4441,
   "rtol": null,
   "shape": [
    4
@@ -2746,77 +2542,27 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 210,
+  "index": 194,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4807,
+  "offset": 4445,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 211,
+  "index": 195,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4815,
+  "offset": 4453,
   "rtol": null,
   "shape": [
    4
   ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 212,
-  "kind": "bitwise",
-  "label": "$#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4819,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 213,
-  "kind": "bitwise",
-  "label": "$.drawn_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4867,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 214,
-  "kind": "bitwise",
-  "label": "$.energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4875,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 215,
-  "kind": "bitwise",
-  "label": "$.initial_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/pending_and_duplicate_settlement_guards/ideal_mid_drive",
-  "offset": 4883,
-  "rtol": null,
-  "shape": []
  }
 ]

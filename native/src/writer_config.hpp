@@ -945,11 +945,11 @@ namespace nativecfg {
         [[nodiscard]] drivetrain::DrivePolicyConfig decode_drive_policies(
             const Dict<N> &input,
             std::span<const std::string_view> extra_root_keys) {
-            constexpr auto root = keys("gearing", "pedaling", "shifting", "assist", "battery", "hub_stiffness_nm_rad", "hub_damping_nm_s");
+            constexpr auto root = keys("gearing", "pedaling", "shifting", "assist", "hub_stiffness_nm_rad", "hub_damping_nm_s");
             exact(input, root, extra_root_keys);
             drivetrain::DrivePolicyConfig out;
             const auto g = section(input, "gearing"), p = section(input, "pedaling"), s = section(input, "shifting"),
-                    a = section(input, "assist"), b = section(input, "battery");
+                    a = section(input, "assist");
             exact(g, keys("front_teeth","rear_teeth","chain_pitch_m"), keys());
             // The hill-hold reflex fields are ride-level PhysicalConfig members the
             // ride projection folds into pedaling (native/config.py); a bare
@@ -958,7 +958,6 @@ namespace nativecfg {
                     keys("rollback_brake","rollback_engage_mps","rollback_release_mps","rollback_demand"));
             exact(s, keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), keys());
             exact(a, keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","gate_min_crank_rad_s","cutoff_mps","taper_width_mps","mode"), keys("profile","torque_curve"));
-            exact(b, keys("enabled","energy_j","copper_w_per_nm2","speed_w_per_rad_s2","idle_w"), keys());
             out.gearing = {
                 .front_teeth = integer(g, "front_teeth"), .rear_teeth = integer(g, "rear_teeth"),
                 .chain_pitch_m = positive(num(g, "chain_pitch_m"), g.child("chain_pitch_m"))
@@ -1057,12 +1056,6 @@ namespace nativecfg {
                 if (ac.profile->emtb_low > ac.profile->emtb_high)
                     invalid(gains.child("emtb"), "unordered mode gains");
             }
-            out.battery = {
-                .enabled = boolean(b, "enabled"), .energy_j = nonnegative(num(b, "energy_j"), b.child("energy_j")),
-                .copper_w_per_nm2 = nonnegative(num(b, "copper_w_per_nm2"), b.child("copper_w_per_nm2")),
-                .speed_w_per_rad_s2 = nonnegative(num(b, "speed_w_per_rad_s2"), b.child("speed_w_per_rad_s2")),
-                .idle_w = nonnegative(num(b, "idle_w"), b.child("idle_w"))
-            };
             out.hub_stiffness_nm_rad = positive(num(input, "hub_stiffness_nm_rad"), input.child("hub_stiffness_nm_rad"));
             out.hub_damping_nm_s = nonnegative(num(input, "hub_damping_nm_s"), input.child("hub_damping_nm_s"));
             return out;

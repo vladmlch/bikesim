@@ -19,20 +19,6 @@ void kernel_properties() {
             "unilateral chain cannot push and stored energy grows with extension");
         previous_energy = response.second;
     }
-    for (double const request : {0., 1., 20., 100.}) {
-        for (double const omega : {-3., 0., 7.}) {
-            for (double const budget : {0., 1., 50., 1000.}) {
-                const double torque = drivetrain::limit_torque_by_energy(request, omega, .3, .2, 1., budget);
-                bt::require(torque >= 0. && torque <= request,
-                    "energy-limited motor torque stays within the requested interval");
-                if (torque > 0.) {
-                    const double used = drivetrain::motor_electrical_power(torque, omega, .3, .2, 1., true);
-                    bt::require(used <= budget + 1e-10,
-                        "delivered motor power fits the independently checked energy budget");
-                }
-            }
-        }
-    }
     for (double const slip : {-2., -.1, 0., .1, 2.}) {
         const auto brush = tirecommon::brush_step(0., slip, 2., 500., 10000., .8, .04, .001);
         bt::require(std::abs(brush.force) <= 400. + 1e-12 && brush.loss >= 0.,
@@ -41,10 +27,6 @@ void kernel_properties() {
     const auto airborne = tirecommon::brush_step(.01, 1., 2., 0., 10000., .8, .04, .001);
     bt::require(airborne.force == 0. && airborne.xi == 0. && airborne.loss >= 0.,
         "airborne contact releases stored brush state without force");
-    drivetrain::Battery battery(20.);
-    bt::invalid([&] { (void)battery.debit(1., -1.); });
-    bt::require(battery.state().energy_j == 20. && battery.state().drawn_energy_j == 0.,
-        "invalid debit cannot change energy");
     bt::invalid([&] {
         (void)drivetrain::chain_tension(std::numeric_limits<double>::quiet_NaN(), 0., 1., 0.);
     });

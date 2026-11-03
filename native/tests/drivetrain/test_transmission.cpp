@@ -129,7 +129,9 @@ void native_topologies() {
             for (double const value : component.values) bt::require(std::isfinite(value), "finite staged force");
         }
         auto malformed = std::make_unique<drivetrain::DriveSnapshot>(*initial);
-        malformed->battery.energy_j = -1.;
+        // A shift count without its shift clock and direction is rejected
+        // by the snapshot validation that runs before any state moves.
+        malformed->shifting.shift_count = 1;
         bt::invalid([&] { writer->restore(*malformed); });
         bt::require(before == bike::io::canonical_json(drivetrain::encode_drive_snapshot(writer->state())),
             "failed state restore leaves the writer unchanged");

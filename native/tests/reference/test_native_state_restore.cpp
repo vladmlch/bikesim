@@ -584,8 +584,7 @@ void reject_drive_state(const Stepper &owner, const std::function<void(Value &)>
 }
 
 // The source's mutate spec language, applied to the leaf value.
-void apply_spec(Value &leaf, std::string_view spec,
-                const Value &whole_for_over) {
+void apply_spec(Value &leaf, std::string_view spec) {
     if (spec == "x1.5") {
         leaf = real(bike::io::as_double(leaf, "leaf") * 1.5);
     } else if (spec == "short") {
@@ -604,11 +603,6 @@ void apply_spec(Value &leaf, std::string_view spec,
         leaf = text("up");
     } else if (spec == "half") {
         leaf = real(.5);
-    } else if (spec == "over") {
-        const double initial = bike::io::as_double(
-            at(whole_for_over, "policies.battery.initial_energy_j"),
-            "battery.initial_energy_j");
-        leaf = real(initial + 1.);
     } else {
         bt::require(false, "unknown mutation spec");
     }
@@ -652,16 +646,6 @@ void test_drive_restore_relational_rejection_is_atomic() {
         Case{.path = "shift_time_s",
              .spec = "half",
              .match = "shift clock/count"},
-        // The store is sized by the config and only ever drains.
-        Case{.path = "policies.battery.energy_j",
-             .spec = "over",
-             .match = "battery energy"},
-        Case{.path = "policies.battery.drawn_energy_j",
-             .spec = "over",
-             .match = "battery energy"},
-        Case{.path = "policies.battery.initial_energy_j",
-             .spec = "over",
-             .match = "battery energy"},
     };
     for (const std::string_view kind :
          {"ideal_mid_drive", "geometric_ideal_mid_drive"})
@@ -670,7 +654,7 @@ void test_drive_restore_relational_rejection_is_atomic() {
             reject_drive_state(
                 *owner,
                 [&](Value &bad) {
-                    apply_spec(at(bad, path), spec, bad);
+                    apply_spec(at(bad, path), spec);
                 },
                 match);
         }
@@ -860,7 +844,7 @@ void test_drive_restore_rejects_auxiliary_transmission_drift() {
 // native_state_restore/drive_policies_set_state_relational_rejections
 void test_drive_policies_set_state_relational_rejections() {
     // The standalone policy binding repeats the same relational guards:
-    // shift clock/count, cassette membership, battery bounds.
+    // shift clock/count and cassette membership.
     auto policy = policy_reference::policies(
         policy_reference::config(policy_reference::source(true)));
     const Value before = policy_reference::state(policy);
@@ -873,13 +857,7 @@ void test_drive_policies_set_state_relational_rejections() {
         Case{.section = "shifting", .key = "cooldown_s"},
         Case{.section = "shifting", .key = "cut_remaining_s"},
         Case{.section = "shifting", .key = "rear_teeth"},
-        Case{.section = "battery", .key = "energy_j"},
-        Case{.section = "battery", .key = "drawn_energy_j"},
-        Case{.section = "battery", .key = "initial_energy_j"},
     };
-    const double over = bike::io::as_double(
-        field(field(before, "battery"), "initial_energy_j"),
-        "battery.initial_energy_j") + 1.;
     for (const auto &[section, key] : cases) {
         Value bad = before;
         Value replacement;
@@ -892,10 +870,8 @@ void test_drive_policies_set_state_relational_rejections() {
         else if (section == std::string_view("shifting") &&
                  key == std::string_view("cut_remaining_s"))
             replacement = real(.1);
-        else if (section == std::string_view("shifting"))
-            replacement = integer(25);
         else
-            replacement = real(over);
+            replacement = integer(25);
         set(policy_reference::member(bad, section), key,
             std::move(replacement));
         drivetrain_reference::error<std::invalid_argument>(

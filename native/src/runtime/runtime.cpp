@@ -213,8 +213,7 @@ parse_energy(const vread::Dict &d) {
                         "muscle_signed_j", "muscle_positive_j",
                         "motor_signed_j", "motor_positive_j",
                         "constraint_absolute_j", "closure_signed_j",
-                        "closure_absolute_j", "initial_battery_j",
-                        "electrical_work_j", "mechanical_energy_j",
+                        "closure_absolute_j", "mechanical_energy_j",
                         "elastic_energy_j", "residual_j"));
     runtime::EnergyState out;
     out.initial_energy_j = optional_field(d, "initial_energy_j");
@@ -230,8 +229,6 @@ parse_energy(const vread::Dict &d) {
     out.constraint_absolute_j = real_field(d, "constraint_absolute_j");
     out.closure_signed_j = real_field(d, "closure_signed_j");
     out.closure_absolute_j = real_field(d, "closure_absolute_j");
-    out.initial_battery_j = optional_field(d, "initial_battery_j");
-    out.electrical_work_j = real_field(d, "electrical_work_j");
     out.mechanical_energy_j = real_field(d, "mechanical_energy_j");
     const runtime::Wire elastic =
         vread::wire_from_value(*vread::field(d, "elastic_energy_j").value,
@@ -616,7 +613,6 @@ void NativeRideRuntime::initialize_accounting() {
     accounting_config_.measurement_decimation = config_.measurement_decimation;
     accounting_config_.retention = config_.record_retention;
     accounting_config_.async_telemetry = config_.async_telemetry;
-    accounting_config_.battery_enabled = stepper_->drive().config().policies.battery.enabled;
     const mjModel *const model = stepper_->model();
     accounting_config_.max_dofs = static_cast<std::size_t>(model->nv);
     accounting_config_.max_qpos = static_cast<std::size_t>(model->nq);
@@ -675,7 +671,6 @@ std::optional<std::string> NativeRideRuntime::outcome_reason() const {
 void NativeRideRuntime::cache_research_boundary() {
     const auto qpos = stepper_->qpos();
     committed_position_m_ = qpos[accounting_config_.columns.root_x_qpos];
-    committed_battery_energy_j_ = stepper_->drive().battery_energy_j();
     committed_crash_ = physical_->crash();
     committed_balance_ = physical_->balance_event();
 }

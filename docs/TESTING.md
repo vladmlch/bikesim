@@ -376,8 +376,9 @@ UV_CACHE_DIR=/tmp/cpp-port-p3-uv uv run cmake --build native/build --target chec
 The policy test asserts that `bike_native` came from `native/build`; a missing
 extension or API fails visibly. Coverage includes sequential coasting/mash/slew,
 shifting/landing/slip filters, all four profile modes and the eMTB ramp, motor
-curve/power/speed ceilings, lag and gates, electrical losses/energy caps, battery
-depletion, elastic freehub overrun, configuration ownership and atomic replay.
+curve/power/speed ceilings, lag and gates, elastic freehub overrun,
+configuration ownership and atomic replay. There is no battery energy model:
+the battery is bike mass only (mass budget and the battery-pack geom).
 Every mutable policy field is checked after each mutating oracle call.
 
 `DrivePolicies.state()` returns exactly these nested sections and keys:
@@ -387,7 +388,6 @@ Every mutable policy field is checked after each mutating oracle call.
 | `pedaling` | `coasting`, `target_phase_rad`, `target_rate_rad_s`, `deceleration_rad_s2`, `_effort`, `_cadence_ema` |
 | `shifting` | `rear_teeth`, `from_teeth`, `cooldown_s`, `cut_remaining_s`, `shift_count`, `direction`, `cadence_ema`, `required_ema` |
 | `assist` | `torque`, `pedaling`, `last_gain` |
-| `battery` | `initial_energy_j`, `energy_j`, `drawn_energy_j` |
 | `hub` | `boundary`, `energy_j`, `torque_nm` |
 
 Optional values retain `None`. State dictionaries own their values, and complete
@@ -396,9 +396,12 @@ contain signed rates, signed zero, an arbitrary finite hub boundary and shifter
 EMAs, and positive torques/energy beyond configured ceilings. Tooth counts are
 integers in `[3, 2147483647]`; shift counts are integers in `[0, 2147483647]`
 on this platform. A successful shift at the count maximum raises `OverflowError`
-without changing policy state. The diagnostic
-battery draw mirrors `Battery.draw` directly; the battery `enabled` flag is for
-the drivetrain writer to decide whether to reserve/debit energy.
+without changing policy state.
+
+Legacy documents written before the battery energy model was removed still
+carry `physics.drive.battery`. Replay and initial-state transfer accept that
+section only when it is disabled (`configuration/legacy_battery.hpp`); a
+recorded enabled battery is rejected as an incompatible execution.
 
 Bitwise curve interpolation depends on this platform's NumPy build. Its scalar
 interpolation uses a fused multiply/add: for the segment `(0,80)` to `(43,71)`
@@ -444,7 +447,7 @@ gearing; it does not serialize the shifter's changed rear sprocket as reset gear
 `drive_state()` has exactly these top-level fields:
 `policies`, `shift_time_s`, `last_time_s`, `reference`, `psi`, `angles`, `last`,
 `probe_last`, `pending_actuation`, `ideal_hub`, `clutch`, and `freewheel`.
-`policies` uses the five scalar schemas above; its `hub` is `None` for ideal
+`policies` uses the four scalar schemas above; its `hub` is `None` for ideal
 models. Angles are `None` before initialization, otherwise one crank angle for
 ideal models or crank/cassette angles for elastic models. Optional clocks,
 reference, psi, pending actuation, probe diagnostics, and absent transmissions
@@ -965,7 +968,7 @@ force, control, energy or geometry publication.
 | Resistance | Nonnegative coefficients, positive taper, finite planar vectors, physical resolved body IDs; finite mapped point and forces | Body-ID controls, rolling/drag overflow, bitwise resistance goldens |
 | Tire/surface | Positive material/brush coefficients, valid loads/provenance, surface bounds, nonoverlapping intervals; mutable material/map revalidation; finite accumulated energy/loss/force | Field/relationship matrices, Unicode blank provenance, mutated tire/map controls, two-wheel loss overflow, tire goldens |
 | Pedaling/shifting/gearing | Positive required denominators, ordered thresholds/timings, unique integer cassette, enabled-gear membership, closed slip modes; finite filter/slew/coast/landing results | Paired policies, 0-D cassette rejection, zero-disable and historical NumPy controls |
-| Assist/battery/freehub | Positive lag/slew/taper/full-gain denominators, nonnegative physical limits/losses, ordered curves/profile bounds, positive hub stiffness; finite demand/filter/cap/energy results | Battery cap numerator overflow, mutated profile/assist controls, crank conversion and freehub overflow |
+| Assist/freehub | Positive lag/slew/taper/full-gain denominators, nonnegative physical limits, ordered curves/profile bounds, positive hub stiffness; finite demand/filter/cap/energy results | Mutated profile/assist controls, crank conversion and freehub overflow |
 | Topology | Cruise slide about local +X; physical wheel/drivetrain spin hinges about local +Y; brake/human/motor actuators target the corresponding joint; generic ideal one-way coupling retains scalar hinge/slide coordinates | Wrong kind/axis/target models plus valid plain/clutch/rotor, generic +Z-hinge/+X-slide preload and solved bitwise controls |
 
 Integer click/token clipping remains intentional normalization. Air pressure

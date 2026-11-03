@@ -559,14 +559,6 @@ void post_init(AssistConfig &config) {
     }
 }
 
-void post_init(const BatteryConfig &config) {
-    // 'enabled' is a typed bool — the isinstance check is vacuous.
-    scalar(config.energy_j, "energy_j", 0.);
-    scalar(config.copper_w_per_nm2, "copper_w_per_nm2", 0.);
-    scalar(config.speed_w_per_rad_s2, "speed_w_per_rad_s2", 0.);
-    scalar(config.idle_w, "idle_w", 0.);
-}
-
 void post_init(const PedalingConfig &config) {
     scalar(config.coast_above_rpm, "coasting cadence", std::nullopt, true);
     scalar(config.resume_below_rpm, "resume cadence", 0.);
@@ -622,13 +614,12 @@ void post_init(ShiftingConfig &config) {
 }
 
 void post_init(PhysicalDriveConfig &config) {
-    // Python order: gearing/assist/battery then pedaling, the transmission
+    // Python order: gearing/assist then pedaling, the transmission
     // and rotor/clutch gates, THEN shifting.__post_init__ (line order in
     // physical_config.py) — a bad cassette cannot mask an unknown
     // transmission model.
     post_init(config.gearing);
     post_init(config.assist);
-    post_init(config.battery);
     post_init(config.pedaling);
     if (config.transmission_model != "elastic_chain" &&
         config.transmission_model != "ideal_mid_drive" &&

@@ -250,7 +250,7 @@ Value tire(const mdl::BuildRequest& request,
 
 Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& document) {
     const auto& input = field(document, "drive");
-    Value out = select(input, {"gearing", "pedaling", "shifting", "assist", "battery"});
+    Value out = select(input, {"gearing", "pedaling", "shifting", "assist"});
     auto assist = field(out, "assist");
     const auto& a = physics_config.drive.assist;
     if (a.profile) {

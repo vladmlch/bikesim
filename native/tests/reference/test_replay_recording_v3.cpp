@@ -156,6 +156,36 @@ void removed_passive_damping_gate() {
         [&] { (void)rr::replay::request_from_input(input, assets); },
         "joint_passive_damping_nms_rad");
 }
+
+// The battery energy model was removed; legacy recordings still carry a
+// resolved drive.battery section. The shipped disabled section is inert and
+// replays, but an enabled one could have clamped assist torque once its
+// energy ran out, so the legacy-bundle rebuild refuses it.
+void removed_battery_gate() {
+    auto input = rr::replay::load_legacy_input(bt::fixture("replay/legacy_v2"));
+    const auto& recorded_drive = field(field(field(input.summary, "resolved_config"), "physics"), "drive");
+    bt::require(rr::io::find_member(rr::io::as_object(recorded_drive, "drive"), "battery") != nullptr,
+                "the legacy fixture still records a drive.battery section");
+    {
+        const rr::replay::FixedAssets assets(input);
+        bt::require(
+            static_cast<bool>(rr::replay::request_from_input(input, assets)),
+            "a recorded disabled battery is inert and replays");
+    }
+    auto resolved = field(input.summary, "resolved_config");
+    auto physics = field(resolved, "physics");
+    auto drive = field(physics, "drive");
+    auto battery = field(drive, "battery");
+    rr::set(battery, "enabled", rr::io::Value{true});
+    rr::set(drive, "battery", std::move(battery));
+    rr::set(physics, "drive", std::move(drive));
+    rr::set(resolved, "physics", std::move(physics));
+    rr::set(input.summary, "resolved_config", std::move(resolved));
+    const rr::replay::FixedAssets assets(input);
+    rr::incompatible(
+        [&] { (void)rr::replay::request_from_input(input, assets); },
+        "drive.battery");
+}
 } // namespace
 int main() {
     return bt::run([] {
@@ -166,5 +196,6 @@ int main() {
         final_state_boundary();
         checksum_before_plant();
         removed_passive_damping_gate();
+        removed_battery_gate();
     });
 }

@@ -307,12 +307,12 @@
   "index": 23,
   "kind": "bitwise",
   "label": "$.last#keys",
-  "nbytes": 359,
+  "nbytes": 338,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
   "offset": 629,
   "rtol": null,
   "shape": [
-   359
+   338
   ]
  },
  {
@@ -323,7 +323,7 @@
   "label": "$.last.chain_energy_j",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 988,
+  "offset": 967,
   "rtol": null,
   "shape": []
  },
@@ -332,10 +332,10 @@
   "dtype": "<f8",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 996,
+  "offset": 975,
   "rtol": null,
   "shape": []
  },
@@ -344,34 +344,22 @@
   "dtype": "<f8",
   "index": 26,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1004,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 27,
-  "kind": "bitwise",
   "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1012,
+  "offset": 983,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.last.gear_front_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1020,
+  "offset": 991,
   "rtol": null,
   "shape": [
    2
@@ -380,35 +368,85 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 29,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1022,
+  "offset": 993,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 30,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.last.gear_rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1030,
+  "offset": 1001,
   "rtol": null,
   "shape": [
    2
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.last.human_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
+  "offset": 1003,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 31,
   "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
+  "offset": 1011,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
+  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
+  "offset": 1019,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
+  "offset": 1024,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
   "offset": 1032,
@@ -417,77 +455,27 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1040,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 33,
+  "index": 35,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
+  "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1048,
+  "offset": 1040,
   "rtol": null,
   "shape": [
    5
   ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1053,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.last.motor_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1061,
-  "rtol": null,
-  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 36,
   "kind": "bitwise",
-  "label": "$.last.shift_active",
-  "nbytes": 5,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1069,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1074,
+  "offset": 1045,
   "rtol": null,
   "shape": [
    1
@@ -496,12 +484,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 38,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1075,
+  "offset": 1046,
   "rtol": null,
   "shape": [
    6
@@ -510,12 +498,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 39,
+  "index": 38,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1081,
+  "offset": 1052,
   "rtol": null,
   "shape": [
    2
@@ -524,12 +512,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 40,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1083,
+  "offset": 1054,
   "rtol": null,
   "shape": [
    4
@@ -538,24 +526,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 40,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1087,
+  "offset": 1058,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1095,
+  "offset": 1066,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.pending_actuation",
+  "nbytes": 4,
+  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
+  "offset": 1070,
   "rtol": null,
   "shape": [
    4
@@ -566,13 +568,13 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.pending_actuation",
-  "nbytes": 4,
+  "label": "$.policies#keys",
+  "nbytes": 38,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1099,
+  "offset": 1074,
   "rtol": null,
   "shape": [
-   4
+   38
   ]
  },
  {
@@ -580,24 +582,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "$.policies#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1103,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1151,
+  "offset": 1112,
   "rtol": null,
   "shape": [
    33
@@ -606,24 +594,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 46,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1184,
+  "offset": 1145,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1192,
+  "offset": 1153,
   "rtol": null,
   "shape": [
    5
@@ -632,74 +620,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 48,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1197,
+  "offset": 1158,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1205,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1253,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1261,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1269,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.policies.hub",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1277,
+  "offset": 1166,
   "rtol": null,
   "shape": [
    4
@@ -708,12 +646,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1281,
+  "offset": 1170,
   "rtol": null,
   "shape": [
    98
@@ -722,12 +660,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1379,
+  "offset": 1268,
   "rtol": null,
   "shape": [
    4
@@ -736,24 +674,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1383,
+  "offset": 1272,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1391,
+  "offset": 1280,
   "rtol": null,
   "shape": [
    5
@@ -762,24 +700,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 58,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1396,
+  "offset": 1285,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1404,
+  "offset": 1293,
   "rtol": null,
   "shape": [
    4
@@ -788,24 +726,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1408,
+  "offset": 1297,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1416,
+  "offset": 1305,
   "rtol": null,
   "shape": [
    113
@@ -814,12 +752,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 62,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1529,
+  "offset": 1418,
   "rtol": null,
   "shape": [
    4
@@ -828,36 +766,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 63,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1533,
+  "offset": 1422,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 64,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1541,
+  "offset": 1430,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1549,
+  "offset": 1438,
   "rtol": null,
   "shape": [
    6
@@ -866,12 +804,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 61,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1555,
+  "offset": 1444,
   "rtol": null,
   "shape": [
    2
@@ -880,12 +818,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 62,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1557,
+  "offset": 1446,
   "rtol": null,
   "shape": [
    2
@@ -894,12 +832,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 68,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1559,
+  "offset": 1448,
   "rtol": null,
   "shape": [
    4
@@ -908,12 +846,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 69,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1563,
+  "offset": 1452,
   "rtol": null,
   "shape": [
    1
@@ -922,12 +860,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 70,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1564,
+  "offset": 1453,
   "rtol": null,
   "shape": [
    4
@@ -936,12 +874,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 71,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1568,
+  "offset": 1457,
   "rtol": null,
   "shape": [
    4
@@ -950,24 +888,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 72,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1572,
+  "offset": 1461,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 73,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_restoration_is_atomic/angles-width",
-  "offset": 1580,
+  "offset": 1469,
   "rtol": null,
   "shape": [
    4

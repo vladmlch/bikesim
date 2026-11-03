@@ -2,6 +2,7 @@
 #include "session.hpp"
 #include "input_detail.hpp"
 #include "../configuration/load.hpp"
+#include "../configuration/legacy_battery.hpp"
 #include "../engine_identity.hpp"
 #include "../platform/files.hpp"
 #include "../platform/provenance.hpp"
@@ -100,15 +101,32 @@ void drop_removed_passive_damping(Value& articulated, bool rider_hinges) {
             "recorded damping cannot be replayed — the mechanism no longer exists");
     (void)pop(object, "joint_passive_damping_nms_rad");
 }
+// legacy recordings: the removed [drive.battery] section is tolerated only
+// when it was disabled (configuration/legacy_battery.hpp). An enabled
+// battery could have clamped assist torque, so the run is not replayable.
+void drop_removed_battery(Value& physics) {
+    auto drive = field(physics, "drive");
+    auto& object = std::get<Object>(drive.data);
+    const auto* section = find(object, configuration::legacy::kBatteryKey);
+    if (section == nullptr) return;
+    if (!configuration::legacy::battery_inert(*section))
+        throw IncompatibleExecution(
+            "resolved_config.physics.drive.battery: an enabled battery cannot be "
+            "replayed — the battery energy model no longer exists");
+    (void)pop(object, configuration::legacy::kBatteryKey);
+    set(physics, "drive", std::move(drive));
+}
 // Semantic-equality form: the recorded-form digest document (shared with
 // the write side via research::configuration_digest_document) with the
-// removed inert knob stripped. The strip throws on a nonzero recorded value
-// before any equality comparison can run.
-Value configuration_hashable(Value resolved) {
+// removed inert knobs stripped. Each strip throws on a non-inert recorded
+// value before any equality comparison can run.
+Value configuration_hashable(const Value& resolved) {
     auto hashable = research::configuration_digest_document(resolved);
     auto physics = field(hashable, "physics"), articulated = field(physics, "articulated");
     drop_removed_passive_damping(articulated, recorded_rider_hinges(resolved));
-    set(physics, "articulated", std::move(articulated)); set(hashable, "physics", std::move(physics)); return hashable;
+    set(physics, "articulated", std::move(articulated));
+    drop_removed_battery(physics);
+    set(hashable, "physics", std::move(physics)); return hashable;
 }
 } // namespace
 FixedAssets::FixedAssets(const ReplayInput& input) {
@@ -136,6 +154,7 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     }
     drop_removed_passive_damping(articulated, recorded_rider_hinges(resolved));
     set(physics, "articulated", std::move(articulated));
+    drop_removed_battery(physics);
     if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file))
         throw IncompatibleExecution("recording startup depends on an unbundled initial-state file; recorded paths are never followed");
     // Fresh deterministic setup: neither a recorded external cache pathname

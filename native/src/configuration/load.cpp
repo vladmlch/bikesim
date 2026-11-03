@@ -601,7 +601,6 @@ construct_record(const RecordSchema& schema, const Value::Object& obj,
     BIKE_T13_RECORD(PhysicalDriveConfig, kPhysicalDriveConfigSchema)
     BIKE_T13_RECORD(DrivetrainSpecs, kDrivetrainSpecsSchema)
     BIKE_T13_RECORD(AssistConfig, kAssistConfigSchema)
-    BIKE_T13_RECORD(BatteryConfig, kBatteryConfigSchema)
     BIKE_T13_RECORD(PedalingConfig, kPedalingConfigSchema)
     BIKE_T13_RECORD(ShiftingConfig, kShiftingConfigSchema)
     BIKE_T13_RECORD(ResistanceConfig, kResistanceConfigSchema)

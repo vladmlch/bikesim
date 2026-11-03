@@ -180,7 +180,6 @@ private:
     void cache_research_boundary();
     void flush_accounting();
     double committed_position_m_ = 0.;
-    double committed_battery_energy_j_ = 0.;
     std::optional<CrashEvent> committed_crash_;
     std::optional<BalanceLostEvent> committed_balance_;
     void require_open() const;

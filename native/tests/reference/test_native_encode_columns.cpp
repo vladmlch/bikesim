@@ -167,8 +167,6 @@ WireObject energy_channels(const WireObject &energy_over = {},
         {"constraint_work_ratio", Wire{0.0}},
         {"constraint_work_ok", Wire{true}},
         {"residual_j", Wire{-0.001}},
-        {"electrical_work_j", Wire{0.5}},
-        {"electrical_residual_j", Wire{0.0}},
         {"measured", Wire{true}},
         {"source_interval_id", Wire{std::int64_t{0}}},
         {"source_time_s", Wire{0.001}},
@@ -225,12 +223,8 @@ WireObject drive_channels(double speed = 0., const WireObject &drive_over = {},
     drive.emplace_back("motor_torque_nm", Wire{6.0 + speed});
     drive.emplace_back("motor_control_source", Wire{"assist"});
     drive.emplace_back("safety_limited", Wire{false});
-    drive.emplace_back("energy_limited", Wire{false});
     drive.emplace_back("motor_enabled", Wire{true});
-    drive.emplace_back("battery_empty", Wire{false});
-    drive.emplace_back("battery_energy_j", Wire{4100.0 - speed});
     drive.emplace_back("motor_shaft_power_w", Wire{150.0});
-    drive.emplace_back("electrical_power_w", Wire{151.5});
     drive.emplace_back("motor_freewheel_engaged", Wire{true});
     drive.emplace_back("motor_freewheel_torque_nm", Wire{0.4});
     drive.emplace_back("motor_freewheel_dissipation_power_w", Wire{-0.05});
@@ -943,9 +937,7 @@ const std::pair<const char *, std::vector<const char *>> DERIVED_FIELDS[] = { //
     {"freehub_coast", {"drive", "coasting_reason"}},
     {"freehub_coast", {"drive", "freehub_engaged"}},
     {"drive_limits", {"drive", "safety_limited"}},
-    {"drive_limits", {"drive", "energy_limited"}},
     {"drive_limits", {"drive", "motor_enabled"}},
-    {"drive_limits", {"drive", "battery_empty"}},
     {"brake_gate", {"drive", "front_brake_demand"}},
     {"brake_gate", {"drive", "rear_brake_demand"}},
     {"brake_gate", {"drive", "rollback_brake_demand"}},

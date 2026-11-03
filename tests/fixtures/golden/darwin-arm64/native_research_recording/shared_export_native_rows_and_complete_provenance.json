@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "close",
   "label": "export.summary.values",
-  "nbytes": 4200,
+  "nbytes": 4144,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
   "offset": 798,
   "rtol": 1e-09,
   "shape": [
-   525
+   518
   ]
  },
  {
@@ -75,12 +75,12 @@
   "index": 5,
   "kind": "bitwise",
   "label": "export.summary.other",
-  "nbytes": 11892,
+  "nbytes": 11837,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 4998,
+  "offset": 4942,
   "rtol": null,
   "shape": [
-   11892
+   11837
   ]
  },
  {
@@ -91,7 +91,7 @@
   "label": "export.observations.jsonl.values",
   "nbytes": 264,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 16890,
+  "offset": 16779,
   "rtol": 1e-09,
   "shape": [
    33
@@ -105,7 +105,7 @@
   "label": "export.observations.jsonl.other",
   "nbytes": 74,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 17154,
+  "offset": 17043,
   "rtol": null,
   "shape": [
    74
@@ -119,7 +119,7 @@
   "label": "export.transitions.jsonl.values",
   "nbytes": 448,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 17228,
+  "offset": 17117,
   "rtol": 1e-09,
   "shape": [
    56
@@ -133,7 +133,7 @@
   "label": "export.transitions.jsonl.other",
   "nbytes": 509,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 17676,
+  "offset": 17565,
   "rtol": null,
   "shape": [
    509
@@ -147,7 +147,7 @@
   "label": "export.commands_requested.jsonl.values",
   "nbytes": 80,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18185,
+  "offset": 18074,
   "rtol": 1e-09,
   "shape": [
    10
@@ -161,7 +161,7 @@
   "label": "export.commands_requested.jsonl.other",
   "nbytes": 415,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18265,
+  "offset": 18154,
   "rtol": null,
   "shape": [
    415
@@ -175,7 +175,7 @@
   "label": "export.commands_applied.jsonl.values",
   "nbytes": 24,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18680,
+  "offset": 18569,
   "rtol": 1e-09,
   "shape": [
    3
@@ -189,7 +189,7 @@
   "label": "export.commands_applied.jsonl.other",
   "nbytes": 208,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18704,
+  "offset": 18593,
   "rtol": null,
   "shape": [
    208
@@ -201,12 +201,12 @@
   "index": 14,
   "kind": "close",
   "label": "export.intervals.jsonl.values",
-  "nbytes": 31144,
+  "nbytes": 30952,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18912,
+  "offset": 18801,
   "rtol": 1e-09,
   "shape": [
-   3893
+   3869
   ]
  },
  {
@@ -215,12 +215,12 @@
   "index": 15,
   "kind": "bitwise",
   "label": "export.intervals.jsonl.other",
-  "nbytes": 33866,
+  "nbytes": 33392,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 50056,
+  "offset": 49753,
   "rtol": null,
   "shape": [
-   33866
+   33392
   ]
  },
  {
@@ -231,7 +231,7 @@
   "label": "export.episode_metrics.values",
   "nbytes": 184,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 83922,
+  "offset": 83145,
   "rtol": 1e-09,
   "shape": [
    23
@@ -245,7 +245,7 @@
   "label": "export.episode_metrics.other",
   "nbytes": 534,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 84106,
+  "offset": 83329,
   "rtol": null,
   "shape": [
    534
@@ -259,7 +259,7 @@
   "label": "states.npz initial",
   "nbytes": 2336,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 84640,
+  "offset": 83863,
   "rtol": null,
   "shape": [
    292
@@ -273,7 +273,7 @@
   "label": "states.npz final",
   "nbytes": 2336,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 86976,
+  "offset": 86199,
   "rtol": null,
   "shape": [
    292

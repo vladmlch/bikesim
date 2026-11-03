@@ -17,12 +17,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 48,
+  "nbytes": 38,
   "node": "native_drive_policies/config_and_python_object_deletion",
   "offset": 8,
   "rtol": null,
   "shape": [
-   48
+   38
   ]
  },
  {
@@ -33,7 +33,7 @@
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 56,
+  "offset": 46,
   "rtol": null,
   "shape": [
    33
@@ -47,7 +47,7 @@
   "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 89,
+  "offset": 79,
   "rtol": null,
   "shape": []
  },
@@ -59,7 +59,7 @@
   "label": "$.assist.pedaling",
   "nbytes": 4,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 97,
+  "offset": 87,
   "rtol": null,
   "shape": [
    4
@@ -73,7 +73,7 @@
   "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 101,
+  "offset": 91,
   "rtol": null,
   "shape": []
  },
@@ -82,60 +82,10 @@
   "dtype": "|u1",
   "index": 6,
   "kind": "bitwise",
-  "label": "$.battery#keys",
-  "nbytes": 48,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 109,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 7,
-  "kind": "bitwise",
-  "label": "$.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 157,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 8,
-  "kind": "bitwise",
-  "label": "$.battery.energy_j",
-  "nbytes": 8,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 165,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 9,
-  "kind": "bitwise",
-  "label": "$.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 173,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 10,
-  "kind": "bitwise",
   "label": "$.hub#keys",
   "nbytes": 35,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 181,
+  "offset": 99,
   "rtol": null,
   "shape": [
    35
@@ -144,12 +94,64 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 11,
+  "index": 7,
   "kind": "bitwise",
   "label": "$.hub.boundary",
   "nbytes": 4,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 216,
+  "offset": 134,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.hub.energy_j",
+  "nbytes": 8,
+  "node": "native_drive_policies/config_and_python_object_deletion",
+  "offset": 138,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.hub.torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/config_and_python_object_deletion",
+  "offset": 146,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/config_and_python_object_deletion",
+  "offset": 154,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/config_and_python_object_deletion",
+  "offset": 252,
   "rtol": null,
   "shape": [
    4
@@ -160,48 +162,48 @@
   "dtype": "<f8",
   "index": 12,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 220,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 13,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 228,
+  "offset": 256,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 14,
+  "index": 13,
   "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 236,
+  "offset": 264,
   "rtol": null,
   "shape": [
-   98
+   5
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/config_and_python_object_deletion",
+  "offset": 269,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 15,
   "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
+  "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 334,
+  "offset": 277,
   "rtol": null,
   "shape": [
    4
@@ -212,10 +214,10 @@
   "dtype": "<f8",
   "index": 16,
   "kind": "bitwise",
-  "label": "$.pedaling._effort",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 338,
+  "offset": 281,
   "rtol": null,
   "shape": []
  },
@@ -224,62 +226,10 @@
   "dtype": "|u1",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.pedaling.coasting",
-  "nbytes": 5,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 346,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 18,
-  "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 351,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 359,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 20,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 363,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 21,
-  "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 371,
+  "offset": 289,
   "rtol": null,
   "shape": [
    113
@@ -288,12 +238,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 22,
+  "index": 18,
   "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 484,
+  "offset": 402,
   "rtol": null,
   "shape": [
    4
@@ -302,36 +252,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 23,
+  "index": 19,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 488,
+  "offset": 406,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 24,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 496,
+  "offset": 414,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 25,
+  "index": 21,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 504,
+  "offset": 422,
   "rtol": null,
   "shape": [
    6
@@ -340,12 +290,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 26,
+  "index": 22,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 510,
+  "offset": 428,
   "rtol": null,
   "shape": [
    2
@@ -354,12 +304,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 27,
+  "index": 23,
   "kind": "bitwise",
   "label": "$.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 512,
+  "offset": 430,
   "rtol": null,
   "shape": [
    2
@@ -368,12 +318,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 514,
+  "offset": 432,
   "rtol": null,
   "shape": [
    4
@@ -382,12 +332,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 29,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/config_and_python_object_deletion",
-  "offset": 518,
+  "offset": 436,
   "rtol": null,
   "shape": [
    1

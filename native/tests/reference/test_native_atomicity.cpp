@@ -451,7 +451,7 @@ Value solved_fixture(Stepper& owner, std::vector<double>& control) {
 void test_rejected_settle_keeps_everything() {
     // A settle rejection publishes nothing — not even transmission solve
     // telemetry: pending validation runs ahead of every solve, so a refused
-    // settle leaves battery, pending, diagnostics and hub state frozen.
+    // settle leaves assist, pending, diagnostics and hub state frozen.
     for (auto const kind : kinds) {
       auto owner = pair(kind);
       std::vector<double> control;
@@ -492,40 +492,12 @@ void test_rejected_settle_keeps_everything() {
     }
 }
 
-// Source: native_atomicity/battery_budget_rejection_is_atomic
-void test_battery_budget_rejection_is_atomic() {
-    // The store check rejects before any publication too — and the retry
-    // with an honest reservation debits exactly once.
-    auto owner = pair();
-    std::vector<double> control;
-    const auto armed = solved_fixture(*owner, control);
-    auto corrupted = armed;
-    set(corrupted, "pending_actuation",
-        Value{Value::Object{{"requested", real(1000.)}, {"omega", real(4.)},
-                            {"dt", real(.002)}, {"enabled", Value{true}}}});
-    set(member(member(corrupted, "policies"), "battery"), "energy_j", real(.001));
-    restore(*owner, corrupted);
-    const auto before = frozen(*owner);
-    (void)rejected<drivetrain::ArithmeticError>([&] { (void)owner->drive().settle(); },
-                                              "battery storage");
-    bt::require(frozen(*owner) == before, "battery rejection publishes nothing");
-    restore(*owner, armed);
-    (void)owner->drive().settle();
-    const auto settled = state(*owner);
-    const double debit =
-        bike::io::as_double(field(field(field(settled, "policies"), "battery"), "drawn_energy_j"),
-                            "drawn_energy_j") -
-        bike::io::as_double(field(field(field(armed, "policies"), "battery"), "drawn_energy_j"),
-                            "drawn_energy_j");
-    bt::require(debit > 0. && bike::io::is_null(field(settled, "pending_actuation")),
-                "honest retry debits exactly once and consumes pending");
-}
-
 // Source: native_atomicity/sparse_last_settle_debits_once
 void test_sparse_last_settle_debits_once() {
     // The A12 shape at the FFI: a restored sparse last={} cannot change
     // exactly-once settlement — the detached map republishes the telemetry,
-    // the battery moves exactly once, and a second settle debits nothing.
+    // the solved assist torque publishes once, and a second settle changes
+    // nothing.
     const std::array<std::pair<std::string_view, std::string_view>, 7> combos{{
         {"elastic_chain", "plain"},
         {"ideal_mid_drive", "plain"}, {"ideal_mid_drive", "clutch"}, {"ideal_mid_drive", "rotor"},
@@ -541,17 +513,14 @@ void test_sparse_last_settle_debits_once() {
                     "restored sparse diagnostics stay sparse");
         (void)owner->drive().settle();
         const auto settled = state(*owner);
-        const double debit =
-            bike::io::as_double(field(field(field(settled, "policies"), "battery"), "drawn_energy_j"),
-                                "drawn_energy_j") -
-            bike::io::as_double(field(field(field(armed, "policies"), "battery"), "drawn_energy_j"),
-                                "drawn_energy_j");
-        bt::require(debit > 0., "sparse settle debits the battery once");
+        bt::require(bike::io::as_double(field(field(field(settled, "policies"), "assist"), "torque"),
+                                        "torque") > 0.,
+                    "sparse settle publishes the solved assist torque");
         bt::require(bike::io::is_null(field(settled, "pending_actuation")), "sparse settle consumes pending");
         bt::require(!policy_reference::sorted_keys(field(settled, "last")).empty(),
                     "sparse settle republishes telemetry through the detached map");
         // Control: the same armed snapshot with full diagnostics settles
-        // into the same battery/pending/hub outcome.
+        // into the same assist/pending/hub outcome.
         auto control_owner = pair(kind, "crank_effort", topology);
         restore(*control_owner, armed);
         control_owner->set_inputs(control, std::vector<double>(control_owner->qvel().size()));
@@ -565,18 +534,18 @@ void test_sparse_last_settle_debits_once() {
             bt::require(canonical_json(field(settled, name)) ==
                             canonical_json(field(control_state, name)),
                         "sparse settle lands identical transmission state");
-        // Exactly once: settling again moves the battery by nothing at all.
+        // Exactly once: settling again changes no policy state at all.
         (void)owner->drive().settle();
         const auto again = state(*owner);
-        bt::require(canonical_json(field(field(again, "policies"), "battery")) ==
-                        canonical_json(field(field(settled, "policies"), "battery")),
-                    "second settle cannot debit the battery twice");
+        bt::require(canonical_json(field(again, "policies")) ==
+                        canonical_json(field(settled, "policies")),
+                    "second settle cannot publish the settlement twice");
         bt::require(bike::io::is_null(field(again, "pending_actuation")), "second settle stays consumed");
     }
 }
 } // namespace
 
-// The 16 test bodies inline into this one lambda; the aggregate frame
+// The 15 test bodies inline into this one lambda; the aggregate frame
 // exceeds the 8 KiB policy under clang even though each callee stays
 // within budget, so the suppression wraps the dispatcher only.
 NATIVE_DIAG_PUSH
@@ -597,7 +566,6 @@ int main() {
         test_probe_atomicity();
         test_prepare_then_components_matches_internal_prepare();
         test_rejected_settle_keeps_everything();
-        test_battery_budget_rejection_is_atomic();
         test_sparse_last_settle_debits_once();
     });
 }

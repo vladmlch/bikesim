@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "close",
   "label": "metadata.values",
-  "nbytes": 3176,
+  "nbytes": 3144,
   "node": "native_research_environment/reset_seed_generation_snapshot_and_facade_ownership",
   "offset": 104,
   "rtol": 0.0,
   "shape": [
-   397
+   393
   ]
  },
  {
@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "metadata.other",
-  "nbytes": 10182,
+  "nbytes": 10127,
   "node": "native_research_environment/reset_seed_generation_snapshot_and_facade_ownership",
-  "offset": 3280,
+  "offset": 3248,
   "rtol": null,
   "shape": [
-   10182
+   10127
   ]
  },
  {
@@ -63,7 +63,7 @@
   "label": "post_reset.transition.values",
   "nbytes": 224,
   "node": "native_research_environment/reset_seed_generation_snapshot_and_facade_ownership",
-  "offset": 13462,
+  "offset": 13375,
   "rtol": 1e-09,
   "shape": [
    28
@@ -77,7 +77,7 @@
   "label": "post_reset.transition.other",
   "nbytes": 175,
   "node": "native_research_environment/reset_seed_generation_snapshot_and_facade_ownership",
-  "offset": 13686,
+  "offset": 13599,
   "rtol": null,
   "shape": [
    175

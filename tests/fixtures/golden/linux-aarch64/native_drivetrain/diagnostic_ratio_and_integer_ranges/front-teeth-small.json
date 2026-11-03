@@ -255,12 +255,12 @@
   "index": 19,
   "kind": "bitwise",
   "label": "$.last#keys",
-  "nbytes": 359,
+  "nbytes": 338,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
   "offset": 401,
   "rtol": null,
   "shape": [
-   359
+   338
   ]
  },
  {
@@ -271,7 +271,7 @@
   "label": "$.last.chain_energy_j",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 760,
+  "offset": 739,
   "rtol": null,
   "shape": []
  },
@@ -280,10 +280,10 @@
   "dtype": "<f8",
   "index": 21,
   "kind": "bitwise",
-  "label": "$.last.electrical_power_w",
+  "label": "$.last.freehub_energy_j",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 768,
+  "offset": 747,
   "rtol": null,
   "shape": []
  },
@@ -292,34 +292,22 @@
   "dtype": "<f8",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 776,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 23,
-  "kind": "bitwise",
   "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 784,
+  "offset": 755,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 24,
+  "index": 23,
   "kind": "bitwise",
   "label": "$.last.gear_front_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 792,
+  "offset": 763,
   "rtol": null,
   "shape": [
    2
@@ -328,35 +316,85 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 25,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 794,
+  "offset": 765,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 26,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.last.gear_rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 802,
+  "offset": 773,
   "rtol": null,
   "shape": [
    2
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.last.human_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
+  "offset": 775,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 27,
   "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
+  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
+  "offset": 783,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_engaged",
+  "nbytes": 5,
+  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
+  "offset": 791,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.last.motor_freewheel_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
+  "offset": 796,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
   "offset": 804,
@@ -365,77 +403,27 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 812,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 29,
+  "index": 31,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
+  "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 820,
+  "offset": 812,
   "rtol": null,
   "shape": [
    5
   ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 825,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 31,
-  "kind": "bitwise",
-  "label": "$.last.motor_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 833,
-  "rtol": null,
-  "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 32,
   "kind": "bitwise",
-  "label": "$.last.shift_active",
-  "nbytes": 5,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 841,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 33,
-  "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 846,
+  "offset": 817,
   "rtol": null,
   "shape": [
    1
@@ -444,12 +432,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 34,
+  "index": 33,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 847,
+  "offset": 818,
   "rtol": null,
   "shape": [
    6
@@ -458,12 +446,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 35,
+  "index": 34,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 853,
+  "offset": 824,
   "rtol": null,
   "shape": [
    2
@@ -472,12 +460,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 36,
+  "index": 35,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 855,
+  "offset": 826,
   "rtol": null,
   "shape": [
    4
@@ -486,24 +474,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 37,
+  "index": 36,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 859,
+  "offset": 830,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 38,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 867,
+  "offset": 838,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.pending_actuation",
+  "nbytes": 4,
+  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
+  "offset": 842,
   "rtol": null,
   "shape": [
    4
@@ -514,13 +516,13 @@
   "dtype": "|u1",
   "index": 39,
   "kind": "bitwise",
-  "label": "$.pending_actuation",
-  "nbytes": 4,
+  "label": "$.policies#keys",
+  "nbytes": 38,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 871,
+  "offset": 846,
   "rtol": null,
   "shape": [
-   4
+   38
   ]
  },
  {
@@ -528,24 +530,10 @@
   "dtype": "|u1",
   "index": 40,
   "kind": "bitwise",
-  "label": "$.policies#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 875,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 41,
-  "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 923,
+  "offset": 884,
   "rtol": null,
   "shape": [
    33
@@ -554,24 +542,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 42,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 956,
+  "offset": 917,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 43,
+  "index": 42,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 964,
+  "offset": 925,
   "rtol": null,
   "shape": [
    5
@@ -580,74 +568,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 44,
+  "index": 43,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 969,
+  "offset": 930,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.policies.battery#keys",
-  "nbytes": 48,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 977,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.policies.battery.drawn_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1025,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.policies.battery.energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1033,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.policies.battery.initial_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1041,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 49,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.policies.hub",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1049,
+  "offset": 938,
   "rtol": null,
   "shape": [
    4
@@ -656,12 +594,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 50,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1053,
+  "offset": 942,
   "rtol": null,
   "shape": [
    98
@@ -670,12 +608,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1151,
+  "offset": 1040,
   "rtol": null,
   "shape": [
    4
@@ -684,24 +622,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 52,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1155,
+  "offset": 1044,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1163,
+  "offset": 1052,
   "rtol": null,
   "shape": [
    5
@@ -710,24 +648,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 54,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1168,
+  "offset": 1057,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1176,
+  "offset": 1065,
   "rtol": null,
   "shape": [
    4
@@ -736,24 +674,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1180,
+  "offset": 1069,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1188,
+  "offset": 1077,
   "rtol": null,
   "shape": [
    113
@@ -762,12 +700,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 58,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1301,
+  "offset": 1190,
   "rtol": null,
   "shape": [
    4
@@ -776,36 +714,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 59,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1305,
+  "offset": 1194,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1313,
+  "offset": 1202,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1321,
+  "offset": 1210,
   "rtol": null,
   "shape": [
    6
@@ -814,12 +752,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 62,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1327,
+  "offset": 1216,
   "rtol": null,
   "shape": [
    2
@@ -828,12 +766,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 63,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1329,
+  "offset": 1218,
   "rtol": null,
   "shape": [
    2
@@ -842,12 +780,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 64,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1331,
+  "offset": 1220,
   "rtol": null,
   "shape": [
    4
@@ -856,12 +794,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1335,
+  "offset": 1224,
   "rtol": null,
   "shape": [
    1
@@ -870,12 +808,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 61,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1336,
+  "offset": 1225,
   "rtol": null,
   "shape": [
    4
@@ -884,12 +822,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 62,
   "kind": "bitwise",
   "label": "$.psi",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1340,
+  "offset": 1229,
   "rtol": null,
   "shape": [
    4
@@ -898,24 +836,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 68,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.reference",
   "nbytes": 8,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1344,
+  "offset": 1233,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 69,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/diagnostic_ratio_and_integer_ranges/front-teeth-small",
-  "offset": 1352,
+  "offset": 1241,
   "rtol": null,
   "shape": [
    4

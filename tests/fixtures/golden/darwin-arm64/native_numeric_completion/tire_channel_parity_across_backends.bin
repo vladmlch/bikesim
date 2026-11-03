@@ -1,4 +1,4 @@
-[{"name":"config.json","bytes":26416},{"name":"state.json","bytes":32851},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":176},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]{
+[{"name":"config.json","bytes":26240},{"name":"state.json","bytes":32489},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":176},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]{
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -694,13 +694,6 @@
           ]
         ]
       },
-      "battery": {
-        "copper_w_per_nm2": 0.02,
-        "enabled": false,
-        "energy_j": 1800000.0,
-        "idle_w": 5.0,
-        "speed_w_per_rad_s2": 0.0
-      },
       "bearing_c_nms_rad": 0.03,
       "brake_ceiling_nm": 200.0,
       "brake_hold_damping_nms_rad": 10.0,
@@ -973,7 +966,6 @@
     },
     "last": {
       "chain_energy_j": 0.0,
-      "electrical_power_w": 0.0,
       "freehub_energy_j": 0.0,
       "freehub_torque_nm": 0.0,
       "gear_front_teeth": 22,
@@ -998,11 +990,6 @@
         "last_gain": 0.0,
         "pedaling": false,
         "torque": 0.0
-      },
-      "battery": {
-        "drawn_energy_j": 0.0,
-        "energy_j": 1800000.0,
-        "initial_energy_j": 1800000.0
       },
       "hub": null,
       "pedaling": {
@@ -1029,8 +1016,6 @@
       "assist_gain": 0.0,
       "assist_mode": "turbo",
       "assist_sensor_nm": 0.0,
-      "battery_empty": false,
-      "battery_energy_j": 1800000.0,
       "cadence_rpm": 0.0,
       "chain_dissipation_power_w": 0.0,
       "chain_energy_j": 0.0,
@@ -1042,8 +1027,6 @@
       "crank_target_phase_rad": null,
       "crank_target_rate_rad_s": 0.0,
       "drive_shaft_rad_s": 0.0,
-      "electrical_power_w": 0.0,
-      "energy_limited": false,
       "freehub_deflection_rad": 0.0,
       "freehub_dissipation_power_w": 0.0,
       "freehub_energy_j": 0.0,
@@ -2034,10 +2017,8 @@
         "shock_upper_stop": 0.0,
         "tires": 2.067316747353973
       },
-      "electrical_work_j": 0.0,
       "energy_scale_j": 26.018248131975707,
       "external_work_j": 0.0,
-      "initial_battery_j": 1800000.0,
       "initial_energy_j": 652.9126930906235,
       "loss_j": 0.0,
       "mechanical_energy_j": 652.9126930906235,
@@ -2168,9 +2149,9 @@
     }
   }
 }
-             ß5ÀoÙ @i,®>«¿ªÛœsTw?À\Ş˜pİ¡¿0sÏKnx’?J“ñ{nx’?˜p"‹±¯?-Ê”W?]².—í	À?×¶Î5`±¿ËZ#i¿’Ha†9Ì?ofµğ\×Ç¿˜(ÙæŸ?C'OlI: @z´³á%À«¿Ã0tÆüYĞ?¼—öıı½Ï¿qïºÈĞ¿?_ËW\{´É¿_ïºÈĞ¿?WËW\{´É¿«º±›
+               ß5ÀoÙ @i,®>«¿ªÛœsTw?À\Ş˜pİ¡¿0sÏKnx’?J“ñ{nx’?˜p"‹±¯?-Ê”W?]².—í	À?×¶Î5`±¿ËZ#i¿’Ha†9Ì?ofµğ\×Ç¿˜(ÙæŸ?C'OlI: @z´³á%À«¿Ã0tÆüYĞ?¼—öıı½Ï¿qïºÈĞ¿?_ËW\{´É¿_ïºÈĞ¿?WËW\{´É¿«º±›
 Ñ¿R½Ÿ/=O©?9ğ1\"—Ì¿ d=‹¿                                                                                                                                                                                                                                                                                                                                                                                                                                                        „mˆÍwHD@£/X Àù4>ƒeg@O/X Àc4>ƒeg@ùµ¾ùÄ=À\F[LÀ@.`rP¬(À mB˜ø±ğ?4W´³¯? äCØH @±M%TÀ                        À|Hbm@A@¨š¯$~Y¿¼Òe¯n@·Õ$ûD@\3ĞÊµ"Y¿                1†õÆÑæ™À                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ğ?      ğ?      ğ?      ğ?      ğ?      ğ?      ğ?XØ¿9(³?ÈDıw¾Hã>A	>?ÑMå?fÍÛœcRŒ¾      ğ?               €,ÕòÔk‡@        È °J5^Ö¿     ˜@,ÕòÔk‡@        À³bÀ-¥“?†Iü¡¾      ğ?               €á+ïø?        È °J5^Ö¿     ps@á+ïø?        XEìíä`¿   ¢”mÂã´_'sˆ¿œ›››››Û?                                                €î v¦Ğ‰¿š™™™™™¹¿x¦Ğy]À?€î v¦Ğ‰¿š™™™™™¹?x¦Ğy]À?                                                                                                                                                „mˆÍwHD@£/X Àù4>ƒeg@O/X Àc4>ƒeg@ùµ¾ùÄ=À\F[LÀ@.`rP¬(À mB˜ø±ğ?„mˆÍwHD@£/X Àù4>ƒeg@O/X Àc4>ƒeg@ùµ¾ùÄ=À\F[LÀ@.`rP¬(À mB˜ø±ğ?["front","rear"]["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        `ãÛÈé(a=true`.¨>ˆ˜×? ÔhÌÌğ?truefalse%‹øyïz@ü R„NÛ>%‹øyïz@„¤×Ä3àú¾¼E|½X¿false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ğ?%‹øyïz@3ÎÍpÏk‡@        È °J5^Ö¿$6}üOn×¾"terrain"0=§ı®r?30=§ı®r?        %‹øyïz@ Q~ïk(k?nS$7'Üæ?true“Œwfß>$6}üOn×¾­ƒœûãI?false"asphalt"ƒB—hˆï¾0=§ı®r?+‡ÙÎ×?%‹øyïz@3ÎÍpÏk‡@        €Ù€?/¥“?·ş²"ª[¿30=§ı®r?        %‹øyïz@["backend","branch_release_loss_j","brush_loss_j","controller_grounded","effective_radius_m","friction_coefficient","geometric_contact","multi_support","normal_load_n","normal_speed_mps","normal_vertical_n","omega_abs_rad_s","omega_rel_rad_s","outside_material_load_range","patches","penetration_m","radial_energy_j","raw_contact","shear_energy_j","slip_mps","slip_ratio","supports_multiple_contacts","surface","tangent_center_speed_mps","tangent_force_n","unloaded_radius_m","vertical_force_n","wheel_axis_m","wheel_axis_moment_nm","world_force_n"]"compliant_2d"        ›´tõ:3=trueÅâ qk<Ö?ÔÖc§ÌÌğ?truefalseHBÀQÃˆ‚@ ı!q
-•>HBÀQÃˆ‚@ØUÏdãœè¾FŒÍŠø¯÷¾false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ğ?HBÀQÃˆ‚@3ğüïø?        È °J5^Ö¿kV‘3‰Á¾"terrain"TàÈbç‡r?3TàÈbç‡r?        HBÀQÃˆ‚@@½Ùä¯r?äI×iœ¥õ?trueèd¼ì”>kV‘3‰Á¾Ñ¬u€ëõ>false"asphalt"9àTìîŞÙ¾TàÈbç‡r?ºI+‡Ö?HBÀQÃˆ‚@3ğüïø?        œŸ‡ìä`¿32ü;ØÀY¿3TàÈbç‡r?        HBÀQÃˆ‚@[{"name":"config.json","bytes":28493},{"name":"state.json","bytes":64633},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":8192},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]       {
+•>HBÀQÃˆ‚@ØUÏdãœè¾FŒÍŠø¯÷¾false1["couple_world_nm","normal","normal_load_n","point_m","slip_mps","source_geom","tangent_force_n","world_force_n"]3                        3                      ğ?HBÀQÃˆ‚@3ğüïø?        È °J5^Ö¿kV‘3‰Á¾"terrain"TàÈbç‡r?3TàÈbç‡r?        HBÀQÃˆ‚@@½Ùä¯r?äI×iœ¥õ?trueèd¼ì”>kV‘3‰Á¾Ñ¬u€ëõ>false"asphalt"9àTìîŞÙ¾TàÈbç‡r?ºI+‡Ö?HBÀQÃˆ‚@3ğüïø?        œŸ‡ìä`¿32ü;ØÀY¿3TàÈbç‡r?        HBÀQÃˆ‚@[{"name":"config.json","bytes":28317},{"name":"state.json","bytes":64173},{"name":"state.arrays/a000.f64","bytes":2336},{"name":"state.arrays/a001.f64","bytes":24},{"name":"state.arrays/a002.f64","bytes":8192},{"name":"state.arrays/a003.f64","bytes":16},{"name":"state.arrays/a004.f64","bytes":8},{"name":"state.arrays/a005.f64","bytes":24},{"name":"state.arrays/a006.f64","bytes":24},{"name":"state.arrays/a007.f64","bytes":24},{"name":"state.arrays/a008.f64","bytes":24},{"name":"state.arrays/a009.f64","bytes":24},{"name":"state.arrays/a010.f64","bytes":24},{"name":"state.arrays/a011.f64","bytes":24},{"name":"state.arrays/a012.f64","bytes":24},{"name":"state.arrays/a013.f64","bytes":24},{"name":"state.arrays/a014.f64","bytes":24},{"name":"state.arrays/a015.f64","bytes":72},{"name":"state.arrays/a016.f64","bytes":72}]       {
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -2866,13 +2847,6 @@
           ]
         ]
       },
-      "battery": {
-        "copper_w_per_nm2": 0.02,
-        "enabled": false,
-        "energy_j": 1800000.0,
-        "idle_w": 5.0,
-        "speed_w_per_rad_s2": 0.0
-      },
       "bearing_c_nms_rad": 0.03,
       "brake_ceiling_nm": 200.0,
       "brake_hold_damping_nms_rad": 10.0,
@@ -3231,8 +3205,6 @@
       "assist_gain": 3.4,
       "assist_mode": "turbo",
       "assist_sensor_nm": 0.0,
-      "battery_empty": false,
-      "battery_energy_j": 1800000.0,
       "cadence_rpm": -0.00845811227970077,
       "chain_dissipation_power_w": 0.0,
       "chain_energy_j": 0.0,
@@ -3244,8 +3216,6 @@
       "crank_target_phase_rad": -0.030722129775180455,
       "crank_target_rate_rad_s": 0.0,
       "drive_shaft_rad_s": -0.0008857314467048519,
-      "electrical_power_w": 0.0,
-      "energy_limited": false,
       "freehub_deflection_rad": 0.0,
       "freehub_dissipation_power_w": 0.0,
       "freehub_energy_j": 0.0,
@@ -3289,11 +3259,6 @@
         "pedaling": false,
         "torque": 0.0
       },
-      "battery": {
-        "drawn_energy_j": 0.0,
-        "energy_j": 1800000.0,
-        "initial_energy_j": 1800000.0
-      },
       "hub": null,
       "pedaling": {
         "_cadence_ema": null,
@@ -3319,8 +3284,6 @@
       "assist_gain": 3.4,
       "assist_mode": "turbo",
       "assist_sensor_nm": 0.0,
-      "battery_empty": false,
-      "battery_energy_j": 1800000.0,
       "cadence_rpm": 0.0,
       "chain_dissipation_power_w": 0.0,
       "chain_energy_j": 0.0,
@@ -3332,8 +3295,6 @@
       "crank_target_phase_rad": -0.030722129775180455,
       "crank_target_rate_rad_s": 0.0,
       "drive_shaft_rad_s": 0.0,
-      "electrical_power_w": 0.0,
-      "energy_limited": false,
       "freehub_deflection_rad": 0.0,
       "freehub_dissipation_power_w": 0.0,
       "freehub_energy_j": 0.0,
@@ -4355,10 +4316,8 @@
         "shock_upper_stop": 0.0,
         "tires": 2.830771370875935
       },
-      "electrical_work_j": 0.0,
       "energy_scale_j": 26.539985112726832,
       "external_work_j": 0.0,
-      "initial_battery_j": 1800000.0,
       "initial_energy_j": 650.883699972883,
       "loss_j": 0.0,
       "mechanical_energy_j": 650.883699972883,
@@ -5501,7 +5460,7 @@
     }
   }
 }
-               SZ^
+           SZ^
  @ÖõãC¬¿Ä‹h¡q?®j—:ŸuŸ¿p„à¯?IÖê¸õË?²ôoˆT®?#]F
 ËË¿HÅ*©.À?ŞÆ­:w†±¿¼]&¤J3I¿+Zè¸$zÌ?ò`ZáÈ¿Ùf(è?ä"´ğR/ @2#òà)­¿n\ø@Ğ?ìÃJ¶Ï¿#ŒÒĞ/É¿?ÛX‹
  ®É¿ñ‹ÒĞ/É¿?ŞX‹

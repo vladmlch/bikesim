@@ -34,7 +34,7 @@ inline bike::configuration::PhysicalDriveConfig source(bool fixture = true) {
 }
 inline Value config(const bike::configuration::PhysicalDriveConfig& input) {
     const auto writer = drive_reference::projected_writer(input);
-    return select(field(writer, "drive"), {"gearing", "pedaling", "shifting", "assist", "battery",
+    return select(field(writer, "drive"), {"gearing", "pedaling", "shifting", "assist",
                                           "hub_stiffness_nm_rad", "hub_damping_nm_s"});
 }
 inline PolicySet policies(const Value& value) { return PolicySet(nativecfg::decode_policy_config(value)); }
@@ -125,14 +125,6 @@ inline bt::oracle::Node node(std::string_view function, std::string_view paramet
                                        : std::string(function));
     if (!parameter.empty()) name += "/" + bt::oracle::key(parameter);
     return bt::oracle::Node(name);
-}
-inline double electrical(const PolicySet& policy, double torque, double omega, bool enabled) {
-    const auto& b = policy.config.battery;
-    return drivetrain::motor_electrical_power(torque, omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2, b.idle_w, enabled);
-}
-inline double energy_limit(const PolicySet& policy, double torque, double omega, double budget) {
-    const auto& b = policy.config.battery;
-    return drivetrain::limit_torque_by_energy(torque, omega, b.copper_w_per_nm2, b.speed_w_per_rad_s2, b.idle_w, budget);
 }
 template<class F> void overflow(F&& action) {
     bool rejected = false;

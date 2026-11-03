@@ -4,7 +4,7 @@
 
 namespace bike::research {
 struct EnergyQuality {
-    double residual_ratio = 0., electrical_residual_j = 0.;
+    double residual_ratio = 0.;
     bool acceptable = true;
 };
 [[nodiscard]] EnergyQuality energy_quality(const runtime::WireObject&, double maximum_ratio = .05);

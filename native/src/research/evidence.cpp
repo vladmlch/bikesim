@@ -47,7 +47,6 @@ io::Value physical_summary(const runtime::OwnedResearchEpisode& episode) {
     set(out, "first_failure", episode.final_snapshot.first_failure ? wire_value(episode.final_snapshot.first_failure->as_wire()) : Value{});
     set(out, "energy", wire_value(wire::required(accounting, "energy")));
     set(out, "model_status", wire_value(runtime::Wire{episode.final_snapshot.model_status}));
-    set(out, "battery_energy_j", wire_value(wire::required(s, "battery_energy_j")));
     for (const auto& [source, destination] : {std::pair{"work_j", "component_work_j"},
                                            std::pair{"airtime_s", "airtime_threshold_s"}, std::pair{"duration_s", "duration_s"}})
         if (const auto* value = wire::find(history, source)) set(out, destination, wire_value(*value));

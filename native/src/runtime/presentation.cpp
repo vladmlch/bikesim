@@ -141,7 +141,6 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
     out.rear_load_n = contacts_.rear_load_n;
     out.drive = stepper_->drive().diagnostics(false);
     out.assist_pedaling = stepper_->drive().assist_pedaling();
-    out.battery_energy_j = stepper_->drive().battery_energy_j();
     const auto balance = balance_event();
     out.balance_lost_at_m = balance ? std::optional<double>(balance->position_m) : std::nullopt;
     // rider_present was initialized from rider_control_ and cannot diverge.
@@ -267,7 +266,7 @@ WireObject PresentationState::as_wire() const {
     WireObject endpoint{{"time_s", time_s}, {"position_m", position_m}, {"speed_mps", speed_mps},
         {"pitch_rad", pitch_rad}, {"z_m", z_m}, {"root_x_dofadr", static_cast<std::int64_t>(root_x_dofadr)},
         {"torso_pitch_deg", rider_present ? Wire{torso_pitch_deg} : Wire{nullptr}},
-        {"rider_joint_angles_rad", Wire{std::move(angles)}}, {"battery_energy_j", battery_energy_j},
+        {"rider_joint_angles_rad", Wire{std::move(angles)}},
         {"balance_lost_at_m", balance_lost_at_m ? Wire{*balance_lost_at_m} : Wire{nullptr}}};
     WireObject fields;
     for (std::size_t i = 0; i < model_fields.size(); ++i)

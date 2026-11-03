@@ -216,7 +216,6 @@ void unmeasured_partial_period_keeps_previous_energy_datum() {
     config.retention = runtime::RetentionMode::legacy;
     runtime::AccountingState initial;
     initial.energy.initial_energy_j = 0.;
-    initial.energy.initial_battery_j = 0.;
     initial.energy.energy_scale_j = 1.;
     initial.energy.mechanical_energy_j = 42.;
     initial.energy.elastic_energy_j = {{"x", runtime::Wire(1.)}};

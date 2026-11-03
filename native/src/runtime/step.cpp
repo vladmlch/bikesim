@@ -686,14 +686,6 @@ Wire diag_wire(const drivetrain::DiagnosticValue &v) {
     return Wire{nullptr};
 }
 
-// drive.last.get(key, 0.) — absent yields the float default; a present
-// None stays None (the wire dict's own rule).
-Wire diag_wire_default_zero(const drivetrain::Diagnostics &m,
-                            const std::string &key) {
-    const auto it = m.find(key);
-    return it == m.end() ? Wire(0.) : diag_wire(it->second);
-}
-
 // drive.last.get(key, 0.) under float() — the sensor-channel readers and
 // the loss ledger's `*dt` terms; non-numeric/absent is 0.
 double diag_number(const drivetrain::Diagnostics &m, const char *key) {
@@ -1792,8 +1784,6 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             require_component(last_constraint_snapshot_.components,
                               "shock_solver_limit"),
             v);
-        in.electrical_power_w =
-            diag_wire_default_zero(drive_last, "electrical_power_w");
         in.solved_actuator = buffer_copy(d->actuator_force, m->nu);
         in.solved_passive = buffer_copy(d->qfrc_passive, m->nv);
         // Deliberately a FULL forward: this refreshes the pos/vel caches
@@ -2030,8 +2020,6 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.loss_step_j = loss_step;
         raw.mechanical_energy_j = total;
         raw.elastic_energy_j = std::move(elastic);
-        raw.battery_energy_j = stepper_->drive().battery_energy_j();
-        raw.electrical_power_w = in.electrical_power_w;
         raw.invalid_controller =
             rider_state.has_value() &&
             rider_state->allocation_diagnostics.invalid_controller;

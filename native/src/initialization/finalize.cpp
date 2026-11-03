@@ -116,7 +116,7 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         // the compensated float branch is the oracle's whole path.
         for(const auto& [name,value]:elastic){(void)name;sum.add(std::get<double>(value.value));}
         physical.energy_.initial_energy_j=total;physical.energy_.energy_scale_j=std::max(1.,mass.kinetic_energy_j+sum.total());
-        physical.energy_.initial_battery_j=stepper.drive().state().battery.energy_j;physical.energy_.mechanical_energy_j=total;physical.energy_.elastic_energy_j=std::move(elastic);physical.energy_.residual_j=0.;
+        physical.energy_.mechanical_energy_j=total;physical.energy_.elastic_energy_j=std::move(elastic);physical.energy_.residual_j=0.;
         physical.update_compiled_com_marker();
         if(context.physics.seated_climb.enabled){auto sensors=physical.sensor_channels(stepper.qvel(),stepper.drive().diagnostics(true).to_map());auto tires=physical.tire_channels(physical.snapshots_,stepper.qvel());sensors.emplace_back("tires",runtime::Wire{std::move(tires)});physical.update_intent_signals(sensors);}
     });

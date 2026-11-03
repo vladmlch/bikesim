@@ -277,8 +277,8 @@ void checks_drive_roundtrip() {
     // The policies object's dict-literal order is part of the wire shape.
     if (const bio::Value *const policies =
             bio::find_member(object_of(encoded), "policies")) {
-        constexpr std::array<std::string_view, 5> kPolicyOrder{
-            "pedaling", "shifting", "assist", "battery", "hub"};
+        constexpr std::array<std::string_view, 4> kPolicyOrder{
+            "pedaling", "shifting", "assist", "hub"};
         bt::require(member_names(object_of(*policies)) ==
                         std::vector<std::string_view>(kPolicyOrder.begin(),
                                                       kPolicyOrder.end()),
@@ -337,8 +337,7 @@ void checks_drive_invalid() {
              "cooldown_s":0.0,"cut_remaining_s":0.0,"direction":"none",
              "cadence_ema":null,"required_ema":null},
              "assist":{"torque":0.0,"pedaling":false,"last_gain":0.0},
-             "battery":{"initial_energy_j":0.0,"energy_j":0.0,
-             "drawn_energy_j":0.0},"hub":null},
+             "hub":null},
              "shift_time_s":null,"last_time_s":null,"reference":0.0,
              "psi":null,"angles":null,"last":{},"probe_last":null,
              "pending_actuation":null,"ideal_hub":null,"clutch":null,

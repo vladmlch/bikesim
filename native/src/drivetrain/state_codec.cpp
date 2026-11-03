@@ -266,10 +266,9 @@ namespace {
     }
 
     void decode_policies(const Dict &d, DriveSnapshot &out) {
-        exact(d, ncd::keys("pedaling", "shifting", "assist", "battery",
-                              "hub"));
+        exact(d, ncd::keys("pedaling", "shifting", "assist", "hub"));
         const auto p = section(d, "pedaling"), s = section(d, "shifting"),
-                   a = section(d, "assist"), b = section(d, "battery");
+                   a = section(d, "assist");
         exact(p, ncd::keys("coasting", "target_phase_rad",
                               "target_rate_rad_s", "deceleration_rad_s2",
                               "_effort", "_cadence_ema"));
@@ -277,8 +276,6 @@ namespace {
                               "cut_remaining_s", "shift_count", "direction",
                               "cadence_ema", "required_ema"));
         exact(a, ncd::keys("torque", "pedaling", "last_gain"));
-        exact(b, ncd::keys("initial_energy_j", "energy_j",
-                              "drawn_energy_j"));
         out.pedaling = {
             .coasting = boolean(p, "coasting"),
             .target_phase_rad = optional_num(p, "target_phase_rad"),
@@ -298,9 +295,6 @@ namespace {
         out.assist = {.torque = num(a, "torque"),
                       .last_gain = num(a, "last_gain"),
                       .pedaling = boolean(a, "pedaling")};
-        out.battery = {.initial_energy_j = num(b, "initial_energy_j"),
-                       .energy_j = num(b, "energy_j"),
-                       .drawn_energy_j = num(b, "drawn_energy_j")};
         if (!field(d, "hub").is_none()) {
             const auto h = section(d, "hub");
             exact(h, ncd::keys("boundary", "energy_j", "torque_nm"));
@@ -407,7 +401,7 @@ namespace {
     }
 
     [[nodiscard]] bio::Value policy_value(const DriveSnapshot &s) {
-        bio::Value::Object p, sh, a, b;
+        bio::Value::Object p, sh, a;
         p.emplace_back("coasting", bio::Value{s.pedaling.coasting});
         p.emplace_back("target_phase_rad",
                        optional_value(s.pedaling.target_phase_rad));
@@ -434,16 +428,10 @@ namespace {
         a.emplace_back("torque", real_value(s.assist.torque));
         a.emplace_back("pedaling", bio::Value{s.assist.pedaling});
         a.emplace_back("last_gain", real_value(s.assist.last_gain));
-        b.emplace_back("initial_energy_j",
-                       real_value(s.battery.initial_energy_j));
-        b.emplace_back("energy_j", real_value(s.battery.energy_j));
-        b.emplace_back("drawn_energy_j",
-                       real_value(s.battery.drawn_energy_j));
         bio::Value::Object out;
         out.emplace_back("pedaling", bio::Value{std::move(p)});
         out.emplace_back("shifting", bio::Value{std::move(sh)});
         out.emplace_back("assist", bio::Value{std::move(a)});
-        out.emplace_back("battery", bio::Value{std::move(b)});
         if (s.hub.has_value()) {
             bio::Value::Object h;
             h.emplace_back("boundary", optional_value(s.hub->boundary));
@@ -494,13 +482,13 @@ PolicySnapshot decode_policy_snapshot(const bio::Value& value) {
     decode_policies(mapping(VNode{&value}, "state"), *decoded);
     if (!decoded->hub) throw std::invalid_argument("state.hub: expected dict");
     return {.pedaling = decoded->pedaling, .shifting = decoded->shifting, .assist = decoded->assist,
-            .battery = decoded->battery, .hub = *decoded->hub};
+            .hub = *decoded->hub};
 }
 
 bio::Value encode_policy_snapshot(const PolicySnapshot& state) {
     auto source = std::make_unique<DriveSnapshot>();
     source->pedaling = state.pedaling; source->shifting = state.shifting;
-    source->assist = state.assist; source->battery = state.battery; source->hub = state.hub;
+    source->assist = state.assist; source->hub = state.hub;
     return policy_value(*source);
 }
 

@@ -17,7 +17,7 @@ inline runtime::AccountingConfig config(bool asynchronous) {
 inline runtime::AccountingState state(bool strict=false) {
     runtime::AccountingState result;
     result.energy.initial_energy_j=100.;result.energy.energy_scale_j=100.;
-    result.energy.initial_battery_j=0.;result.energy.mechanical_energy_j=100.;
+    result.energy.mechanical_energy_j=100.;
     result.monitor.strict=strict;
     return result;
 }
@@ -27,7 +27,7 @@ inline runtime::RawStep raw(std::int64_t id) {
     result.interval_id=id;result.time_s=static_cast<double>(id)*.001;
     result.end_time_s=static_cast<double>(id+1)*.001;
     result.qpos={-0.};result.qvel={1.};result.qfrc_passive={0.};
-    result.components={{"chain",{2.}}};result.electrical_power_w=0.;
+    result.components={{"chain",{2.}}};
     result.full=id%2==0;
     if(result.full){result.mechanical_energy_j=100.;result.elastic_energy_j=runtime::WireObject{};}
     result.constraint_snapshot={.interval_start_s=result.time_s,.interval_end_s=result.end_time_s,.qvel_start=result.qvel,.components={}};

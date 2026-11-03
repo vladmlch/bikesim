@@ -44,8 +44,6 @@ using runtime::RawStep;
     step.loss_step_j = .1;
     step.mechanical_energy_j = 99.5;
     step.elastic_energy_j = runtime::WireObject{};
-    step.battery_energy_j = 0.;
-    step.electrical_power_w = runtime::Wire{0.};
     step.numerical_constraint_power_w = {{"equality:0", .01}};
     step.diagnostics = {
         {"rider", runtime::Wire{runtime::WireObject{}}},
@@ -92,8 +90,6 @@ using runtime::RawStep;
     state.energy.initial_energy_j = 100.;
     state.energy.mechanical_energy_j = 100.;
     state.energy.energy_scale_j = 50.;
-    state.energy.initial_battery_j = 0.;
-    state.energy.electrical_work_j = 0.;
     state.energy.loss_j = 0.;
     state.energy.active_work_j = 0.;
     state.energy.external_work_j = 0.;

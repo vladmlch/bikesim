@@ -356,29 +356,6 @@ namespace {
     }
     NATIVE_DIAG_POP
 
-    void test_battery_ctor_domain() {
-        {
-            const drivetrain::Battery battery(500.);
-            require(battery.state().energy_j == 500. &&
-                    battery.state().initial_energy_j == 500. &&
-                    battery.state().drawn_energy_j == 0.,
-                    "battery starts from its configured store");
-        }
-        {   // Zero-disable control: an empty store is a legal (nonnegative) config.
-            const drivetrain::Battery battery(0.);
-            require(battery.state().energy_j == 0., "empty battery store is valid");
-        }
-        require_throws_invalid_argument(
-            [] { [[maybe_unused]] const drivetrain::Battery b(-1.); },
-            "negative battery energy must be rejected");
-        require_throws_invalid_argument(
-            [] {
-                [[maybe_unused]] const drivetrain::Battery b(
-                    std::numeric_limits<double>::quiet_NaN());
-            },
-            "nonfinite battery energy must be rejected");
-    }
-
     void test_freehub_ctor_domain() {
         {
             const drivetrain::Freehub hub(3000., 15.);
@@ -1649,12 +1626,6 @@ namespace {
         return same(a.torque, b.torque) && same(a.last_gain, b.last_gain) &&
                a.pedaling == b.pedaling;
     }
-    bool same(const drivetrain::BatterySnapshot &a,
-              const drivetrain::BatterySnapshot &b) {
-        return same(a.initial_energy_j, b.initial_energy_j) &&
-               same(a.energy_j, b.energy_j) &&
-               same(a.drawn_energy_j, b.drawn_energy_j);
-    }
     bool same(const drivetrain::FreehubSnapshot &a,
               const drivetrain::FreehubSnapshot &b) {
         return same(a.boundary, b.boundary) && same(a.energy_j, b.energy_j) &&
@@ -1672,7 +1643,7 @@ namespace {
     bool same(const drivetrain::DriveSnapshot &a,
               const drivetrain::DriveSnapshot &b) {
         return same(a.pedaling, b.pedaling) && same(a.shifting, b.shifting) &&
-               same(a.assist, b.assist) && same(a.battery, b.battery) &&
+               same(a.assist, b.assist) &&
                same(a.hub, b.hub) && same(a.shift_time_s, b.shift_time_s) &&
                same(a.last_time_s, b.last_time_s) &&
                same(a.reference, b.reference) && same(a.psi, b.psi) &&
@@ -1832,9 +1803,6 @@ namespace {
                 .pedaling = valid_pedaling_config(),
                 .shifting = std::move(shifting),
                 .assist = std::move(assist),
-                .battery = {.enabled = true, .energy_j = 1800000.,
-                            .copper_w_per_nm2 = .02, .speed_w_per_rad_s2 = 0.,
-                            .idle_w = 5.},
                 .hub_stiffness_nm_rad = 1000., .hub_damping_nm_s = .5},
             .drive_mode = "crank_effort",
             .transmission_model = std::string(kind),
@@ -2060,8 +2028,8 @@ namespace {
     // The A12 reproduction: restore a state whose `last` is the sparse {} a
     // partial restore leaves, with the pending actuation still reserved, then
     // sweep every settlement allocation position. The failed settles publish
-    // nothing — battery, pending, telemetry, transmissions — and the retry
-    // debits exactly once, never twice.
+    // nothing — assist torque, pending, telemetry, transmissions — and the
+    // retry publishes the settlement exactly once.
     void test_settlement_sparse_last_atomicity() {
         // Heap — a full writer plus several snapshots exceeds the frame
         // budget several times over.
@@ -2070,30 +2038,29 @@ namespace {
             drive_config("ideal_mid_drive", "plain", true, false));
         prime_pending(*fixture);
         drivetrain::DriveSnapshot armed = fixture->writer.state();
-        require(armed.pending_actuation && armed.battery.drawn_energy_j == 0.,
-                "fixture primes a pending actuation on a full battery");
+        require(armed.pending_actuation.has_value(),
+                "fixture primes a pending actuation");
         armed.last.clear();
         fixture->writer.restore(armed);
         require(fixture->writer.state().last.empty() &&
                 fixture->writer.state().pending_actuation,
                 "sparse restore leaves last={} with the pending reserved");
-        // The clean control: one settlement, one debit, pending released.
+        // The clean control: one settlement publishes the solved assist
+        // torque and releases the pending actuation.
         Digest digest;
         settle_op(*fixture, digest);
         const drivetrain::DriveSnapshot settled = fixture->writer.state();
-        require(settled.battery.drawn_energy_j > 0. &&
-                !settled.pending_actuation && !settled.last.empty(),
-                "control settlement debits once and releases pending");
-        const double drawn_once = settled.battery.drawn_energy_j;
+        require(!settled.pending_actuation && !settled.last.empty(),
+                "control settlement releases pending");
         settle_op(*fixture, digest);
-        require(fixture->writer.state().battery.drawn_energy_j == drawn_once,
-                "a settlement with no pending actuation debits nothing");
+        require(!fixture->writer.state().pending_actuation &&
+                    same(fixture->writer.state().assist, settled.assist),
+                "a settlement with no pending actuation publishes nothing");
         sweep_allocations("sparse last settlement", *fixture, armed,
                           settle_op);
         const drivetrain::DriveSnapshot post = fixture->writer.state();
-        require(post.battery.energy_j == settled.battery.energy_j &&
-                post.battery.drawn_energy_j == settled.battery.drawn_energy_j,
-                "injected-failure retries debit the battery exactly once");
+        require(!post.pending_actuation && same(post.assist, settled.assist),
+                "injected-failure retries publish the settlement exactly once");
     }
 
     // Every supported drivetrain topology, every transaction shape: each
@@ -4335,7 +4302,6 @@ namespace {
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
         {.name = "shifter_ctor_domain", .run = test_shifter_ctor_domain},
         {.name = "assist_ctor_domain", .run = test_assist_ctor_domain},
-        {.name = "battery_ctor_domain", .run = test_battery_ctor_domain},
         {.name = "freehub_ctor_domain", .run = test_freehub_ctor_domain},
         {.name = "writer_config_domains", .run = test_writer_config_domains},
         {.name = "transmission_lifecycle_invariants", .run = test_transmission_lifecycle_invariants},

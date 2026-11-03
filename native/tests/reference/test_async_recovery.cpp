@@ -44,8 +44,6 @@ using runtime::ReferenceFailure;
     step.loss_step_j = .1;
     step.mechanical_energy_j = 99.5;
     step.elastic_energy_j = runtime::WireObject{};
-    step.battery_energy_j = 0.;
-    step.electrical_power_w = runtime::Wire{0.};
     step.numerical_constraint_power_w = {{"equality:0", .01}};
     step.diagnostics = {
         {"rider", runtime::Wire{runtime::WireObject{}}},
@@ -91,8 +89,6 @@ using runtime::ReferenceFailure;
     initial.energy.initial_energy_j = 100.;
     initial.energy.mechanical_energy_j = 100.;
     initial.energy.energy_scale_j = 50.;
-    initial.energy.initial_battery_j = 0.;
-    initial.energy.electrical_work_j = 0.;
     initial.energy.loss_j = 0.;
     initial.energy.active_work_j = 0.;
     initial.energy.external_work_j = 0.;

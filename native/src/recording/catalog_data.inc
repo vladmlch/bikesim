@@ -1140,46 +1140,6 @@ R"CATALOG({
           "frame": "n/a",
           "path": [
             "energy",
-            "electrical_work_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "electrical_work_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "episode",
-          "optional": false,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "cumulative electrical work drawn from the battery model"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "energy",
-            "electrical_residual_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "electrical_residual_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "episode",
-          "optional": false,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "battery bookkeeping residual (0 when the battery is disabled)"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "energy",
             "measured"
           ],
           "aliases": [],
@@ -1953,14 +1913,14 @@ R"CATALOG({
           "phase": "control_period",
           "optional": false,
           "measurement": "declared",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
+)CATALOG",
+R"CATALOG(          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
           "description": "pedaling-effort mean request handed to the rider/drive policy"
         },
         {
           "frame": "n/a",
           "path": [
-)CATALOG",
-R"CATALOG(            "drive",
+            "drive",
             "human_active_power_w"
           ],
           "aliases": [],
@@ -2321,26 +2281,6 @@ R"CATALOG(            "drive",
           "frame": "n/a",
           "path": [
             "drive",
-            "energy_limited"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "energy_limited",
-          "dtype": "boolean",
-          "unit": "n/a",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "diagnostic",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
-          "description": "the battery power budget clamped this interval request"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
             "motor_enabled"
           ],
           "aliases": [],
@@ -2356,46 +2296,6 @@ R"CATALOG(            "drive",
           "measurement": "solved",
           "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
           "description": "motor delivered nonzero torque this interval"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "battery_empty"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "battery_empty",
-          "dtype": "boolean",
-          "unit": "n/a",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "battery energy exhausted"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "battery_energy_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "battery_energy_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "remaining battery energy (battery-enabled drivetrains)"
         },
         {
           "frame": "mid-drive shaft",
@@ -2416,26 +2316,6 @@ R"CATALOG(            "drive",
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
           "description": "mechanical shaft power of the motor"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "electrical_power_w"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "electrical_power_w",
-          "dtype": "double",
-          "unit": "W",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "settled electrical draw including losses"
         },
         {
           "frame": "n/a",
@@ -3795,8 +3675,7 @@ R"CATALOG(            "drive",
               "shape": null,
               "axes": null,
               "except_keys": [],
-)CATALOG",
-R"CATALOG(              "children": [],
+              "children": [],
               "key": "tangent_center_speed_mps",
               "dtype": "double",
               "unit": "m/s",
@@ -3860,7 +3739,8 @@ R"CATALOG(              "children": [],
               "phase": "interval",
               "optional": true,
               "measurement": "measured",
-              "source": "src/bike_sim/sim/ride/physical_observations.py::tire_channels",
+)CATALOG",
+R"CATALOG(              "source": "src/bike_sim/sim/ride/physical_observations.py::tire_channels",
               "description": "effective friction coefficient of the material"
             },
             {
@@ -5583,8 +5463,7 @@ R"CATALOG(              "children": [],
           "measurement": "declared",
           "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
           "description": "accounted physics interval identifier, consecutive per episode"
-)CATALOG",
-R"CATALOG(        }
+        }
       ],
       "fields": [
         {
@@ -5661,7 +5540,8 @@ R"CATALOG(        }
               ],
               "aliases": [],
               "shape": null,
-              "axes": null,
+)CATALOG",
+R"CATALOG(              "axes": null,
               "except_keys": [],
               "children": [],
               "key": "normal_load_n",
@@ -7305,8 +7185,7 @@ R"CATALOG(        }
                       "phase": "control_period",
                       "optional": true,
                       "measurement": "diagnostic",
-)CATALOG",
-R"CATALOG(                      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
+                      "source": "src/bike_sim/sim/ride/rider_control.py::ArticulatedRiderController",
                       "description": "sole-goal radial request"
                     },
                     {
@@ -7392,7 +7271,8 @@ R"CATALOG(                      "source": "src/bike_sim/sim/ride/rider_control.p
                       ],
                       "aliases": [],
                       "shape": null,
-                      "axes": null,
+)CATALOG",
+R"CATALOG(                      "axes": null,
                       "except_keys": [],
                       "children": [],
                       "key": "limiting_reasons",
@@ -9058,8 +8938,7 @@ R"CATALOG(                      "source": "src/bike_sim/sim/ride/rider_control.p
                   "axes": null,
                   "except_keys": [],
                   "children": [],
-)CATALOG",
-R"CATALOG(                  "key": "pelvis_offset_m",
+                  "key": "pelvis_offset_m",
                   "dtype": "double[]",
                   "unit": "m",
                   "phase": "control_period",
@@ -9210,7 +9089,8 @@ R"CATALOG(                  "key": "pelvis_offset_m",
           "optional": false,
           "measurement": "declared",
           "source": "sim/research/environment.py; native/src/runtime/research.cpp",
-          "description": "episode id"
+)CATALOG",
+R"CATALOG(          "description": "episode id"
         },
         {
           "frame": "n/a",

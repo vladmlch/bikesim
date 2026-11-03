@@ -1096,46 +1096,6 @@
           "frame": "n/a",
           "path": [
             "energy",
-            "electrical_work_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "electrical_work_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "episode",
-          "optional": false,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "cumulative electrical work drawn from the battery model"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "energy",
-            "electrical_residual_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "electrical_residual_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "episode",
-          "optional": false,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "battery bookkeeping residual (0 when the battery is disabled)"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "energy",
             "measured"
           ],
           "aliases": [],
@@ -2276,26 +2236,6 @@
           "frame": "n/a",
           "path": [
             "drive",
-            "energy_limited"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "energy_limited",
-          "dtype": "boolean",
-          "unit": "n/a",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "diagnostic",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
-          "description": "the battery power budget clamped this interval request"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
             "motor_enabled"
           ],
           "aliases": [],
@@ -2311,46 +2251,6 @@
           "measurement": "solved",
           "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
           "description": "motor delivered nonzero torque this interval"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "battery_empty"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "battery_empty",
-          "dtype": "boolean",
-          "unit": "n/a",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "battery energy exhausted"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "battery_energy_j"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "battery_energy_j",
-          "dtype": "double",
-          "unit": "J",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "remaining battery energy (battery-enabled drivetrains)"
         },
         {
           "frame": "mid-drive shaft",
@@ -2371,26 +2271,6 @@
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
           "description": "mechanical shaft power of the motor"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "electrical_power_w"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "electrical_power_w",
-          "dtype": "double",
-          "unit": "W",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "settled electrical draw including losses"
         },
         {
           "frame": "n/a",

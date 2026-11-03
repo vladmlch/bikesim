@@ -2,6 +2,7 @@
 #include "../diag.hpp"
 #include "state_file.hpp"
 #include "source_json.hpp"
+#include "../configuration/legacy_battery.hpp"
 #include "../drivetrain/state_codec.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
@@ -45,7 +46,7 @@ bio::Value optional(std::optional<double> value){return value?real(*value):bio::
 double height(std::span<const std::array<double,2>> vertices,double x){if(x<=vertices.front()[0])return vertices.front()[1];if(x>=vertices.back()[0])return vertices.back()[1];const auto it=std::ranges::lower_bound(vertices,x,{},[](const auto& a){return a[0];});const auto i=static_cast<std::size_t>(std::ranges::distance(vertices.begin(),it))-1;return biketyre::np_interp(x,std::array{vertices[i][0],vertices[i+1][0]},std::array{vertices[i][1],vertices[i+1][1]});}
 void guard(const SetupContext& context){if(context.physical.step()!=0||context.stepper.time()!=0.)throw std::invalid_argument("physical initial states may only be transferred before the first step");}
 
-std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_damping=false){
+std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_damping=false,bool legacy_battery=false){
     bio::Value physics=plain(configuration::to_value(context.physics));auto& config=std::get<bio::Value::Object>(physics.data);
     if(station_count){auto tires=field(config,"tires");auto distributed=field(std::get<bio::Value::Object>(tires.data),"distributed");put(std::get<bio::Value::Object>(distributed.data),"station_count",integer(*station_count));put(std::get<bio::Value::Object>(tires.data),"distributed",std::move(distributed));put(config,"tires",std::move(tires));}
     std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s"||p.first=="equilibrium_relaxation";});
@@ -60,6 +61,11 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // documents intent rather than changing the hash input).
     if(legacy_damping){const auto it=std::ranges::find_if(section,[](const auto& p){return p.first=="joint_kd_nms_rad";});if(it==section.end())throw std::invalid_argument("initial-state contract physics is missing articulated.joint_kd_nms_rad");section.insert(std::next(it),{"joint_passive_damping_nms_rad",real(0.)});}
     put(config,"articulated",std::move(articulated));
+    // legacy artifacts: pre-removal configs serialized drive.battery between
+    // assist and pedaling; every stored transfer carried the shipped disabled
+    // section (configuration/legacy_battery.hpp), so only that one is
+    // re-injected — an enabled recorded battery never matches and fails closed.
+    if(legacy_battery){auto drive=field(config,"drive");auto& members=std::get<bio::Value::Object>(drive.data);const auto it=std::ranges::find_if(members,[](const auto& p){return p.first=="assist";});if(it==members.end())throw std::invalid_argument("initial-state contract physics is missing drive.assist");members.insert(std::next(it),{std::string(configuration::legacy::kBatteryKey),configuration::legacy::disabled_battery_section()});put(config,"drive",std::move(drive));}
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
     auto const add=[&](std::string name,const double* pointer,mjtSize count,std::optional<std::size_t> columns=std::nullopt){const auto values=std::span<const double>{std::views::counted(pointer,count)};compiled.emplace_back(std::move(name),columns?matrix(values,*columns):numbers(values));};
@@ -98,10 +104,12 @@ bio::Value equilibrium_value(const EquilibriumResult& r){return bio::Value{bio::
 EquilibriumResult equilibrium(const bio::Value& value){const auto& o=bio::as_object(value,"equilibrium");EquilibriumResult r;r.fork_travel_mm=bio::as_double(field(o,"fork_travel_mm"),"fork travel");r.shock_stroke_mm=bio::as_double(field(o,"shock_stroke_mm"),"shock stroke");r.rear_travel_mm=bio::as_double(field(o,"rear_travel_mm"),"rear travel");r.root_z_m=bio::as_double(field(o,"root_z_m"),"root z");r.pitch_rad=bio::as_double(field(o,"pitch_rad"),"pitch");r.steps=bio::as_int64(field(o,"steps"),"steps");r.residual_qacc=bio::as_double(field(o,"residual_qacc"),"residual");if(r.steps<=0||r.residual_qacc<0.)throw std::invalid_argument("invalid transferred equilibrium evidence");if(const auto* p=bio::find_member(o,"initial_crank_phase_rad"))r.initial_crank_phase_rad=bio::as_double(*p,"crank phase");if(const auto* p=bio::find_member(o,"settled_crank_phase_rad"))r.settled_crank_phase_rad=bio::as_double(*p,"settled crank phase");return r;}
 void validated(const SetupContext& context,const bio::Value::Object& p){
     guard(context);const auto stored_sha=bio::as_string(field(p,"contract_sha256"),"contract_sha256");
-    // legacy artifacts: the contract over the pre-removal serialization
-    // (joint_passive_damping_nms_rad present as 0.0) is also accepted; any
-    // other divergence — including a nonzero recorded value — fails closed.
-    if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||(stored_sha!=contract(context)&&stored_sha!=contract(context,std::nullopt,true)))throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
+    // legacy artifacts: the contracts over the pre-removal serializations
+    // (joint_passive_damping_nms_rad present as 0.0, and/or the disabled
+    // drive.battery section) are also accepted; any other divergence —
+    // including a non-inert recorded value — fails closed.
+    const auto matches=[&]{for(const bool damping:{false,true})for(const bool battery:{false,true})if(stored_sha==contract(context,std::nullopt,damping,battery))return true;return false;};
+    if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||!matches())throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
     (void)vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());(void)vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
     const auto x=vector(field(p,"road_x"),"road_x"),z=vector(field(p,"road_z"),"road_z",x.size());if(x.empty()||x.size()>1048576)throw std::invalid_argument("invalid initial support road");
     for(std::size_t i=0;i<x.size();++i)if((i>0&&x[i]<=x[i-1])||std::abs(height(context.physical.terrain_vertices(),x[i])-z[i])>2e-7)throw std::invalid_argument("initial support road differs; solve an independent equilibrium");

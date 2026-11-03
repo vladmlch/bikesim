@@ -58,8 +58,6 @@ Object energy_object() {
             {"constraint_work_ratio", real(0.)},
             {"constraint_work_ok", io::Value{true}},
             {"residual_j", real(-.001)},
-            {"electrical_work_j", real(.5)},
-            {"electrical_residual_j", real(0.)},
             {"measured", io::Value{true}},
             {"source_interval_id", integer(0)},
             {"source_time_s", real(.001)}}}},

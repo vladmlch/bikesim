@@ -368,13 +368,13 @@
   "dtype": "|u1",
   "index": 26,
   "kind": "bitwise",
-  "label": "channel_energy/bits/electrical_work_j",
-  "nbytes": 26,
+  "label": "channel_energy/bits/measured",
+  "nbytes": 5,
   "node": "native_encode_columns/map_channel_tables_bitwise",
   "offset": 578,
   "rtol": null,
   "shape": [
-   26
+   5
   ]
  },
  {
@@ -382,10 +382,10 @@
   "dtype": "|u1",
   "index": 27,
   "kind": "bitwise",
-  "label": "channel_energy/bits/electrical_residual_j",
+  "label": "channel_energy/bits/source_interval_id",
   "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 604,
+  "offset": 583,
   "rtol": null,
   "shape": [
    26
@@ -396,13 +396,13 @@
   "dtype": "|u1",
   "index": 28,
   "kind": "bitwise",
-  "label": "channel_energy/bits/measured",
-  "nbytes": 5,
+  "label": "channel_energy/bits/source_interval_id_present",
+  "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 630,
+  "offset": 609,
   "rtol": null,
   "shape": [
-   5
+   3
   ]
  },
  {
@@ -410,10 +410,10 @@
   "dtype": "|u1",
   "index": 29,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_interval_id",
+  "label": "channel_energy/bits/source_time_s",
   "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 635,
+  "offset": 612,
   "rtol": null,
   "shape": [
    26
@@ -424,10 +424,10 @@
   "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_interval_id_present",
+  "label": "channel_energy/bits/source_time_s_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 661,
+  "offset": 638,
   "rtol": null,
   "shape": [
    3
@@ -438,13 +438,13 @@
   "dtype": "|u1",
   "index": 31,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_time_s",
-  "nbytes": 26,
+  "label": "channel_energy/bits/component_work_j",
+  "nbytes": 48,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 664,
+  "offset": 641,
   "rtol": null,
   "shape": [
-   26
+   48
   ]
  },
  {
@@ -452,10 +452,10 @@
   "dtype": "|u1",
   "index": 32,
   "kind": "bitwise",
-  "label": "channel_energy/bits/source_time_s_present",
+  "label": "channel_energy/bits/component_work_j_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 690,
+  "offset": 689,
   "rtol": null,
   "shape": [
    3
@@ -466,13 +466,13 @@
   "dtype": "|u1",
   "index": 33,
   "kind": "bitwise",
-  "label": "channel_energy/bits/component_work_j",
-  "nbytes": 48,
+  "label": "channel_energy/bits/__component_work_j_present",
+  "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 693,
+  "offset": 692,
   "rtol": null,
   "shape": [
-   48
+   3
   ]
  },
  {
@@ -480,10 +480,10 @@
   "dtype": "|u1",
   "index": 34,
   "kind": "bitwise",
-  "label": "channel_energy/bits/component_work_j_present",
+  "label": "channel_energy/bits/__component_work_j_valid",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 741,
+  "offset": 695,
   "rtol": null,
   "shape": [
    3
@@ -494,10 +494,10 @@
   "dtype": "|u1",
   "index": 35,
   "kind": "bitwise",
-  "label": "channel_energy/bits/__component_work_j_present",
+  "label": "channel_energy/bits/__energy_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 744,
+  "offset": 698,
   "rtol": null,
   "shape": [
    3
@@ -508,38 +508,10 @@
   "dtype": "|u1",
   "index": 36,
   "kind": "bitwise",
-  "label": "channel_energy/bits/__component_work_j_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 747,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "channel_energy/bits/__energy_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 750,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 38,
-  "kind": "bitwise",
   "label": "channel_energy/bits/__energy_valid",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 753,
+  "offset": 701,
   "rtol": null,
   "shape": [
    3
@@ -548,12 +520,12 @@
  {
   "atol": null,
   "dtype": "<i8",
-  "index": 39,
+  "index": 37,
   "kind": "bitwise",
   "label": "channel_suspension/rows",
   "nbytes": 8,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 756,
+  "offset": 704,
   "rtol": null,
   "shape": [
    1
@@ -562,15 +534,43 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 40,
+  "index": 38,
   "kind": "bitwise",
   "label": "channel_suspension/bits/episode_id",
   "nbytes": 24,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 764,
+  "offset": 712,
   "rtol": null,
   "shape": [
    24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/interval_id",
+  "nbytes": 24,
+  "node": "native_encode_columns/map_channel_tables_bitwise",
+  "offset": 736,
+  "rtol": null,
+  "shape": [
+   24
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "channel_suspension/bits/fork_travel_m",
+  "nbytes": 26,
+  "node": "native_encode_columns/map_channel_tables_bitwise",
+  "offset": 760,
+  "rtol": null,
+  "shape": [
+   26
   ]
  },
  {
@@ -578,13 +578,13 @@
   "dtype": "|u1",
   "index": 41,
   "kind": "bitwise",
-  "label": "channel_suspension/bits/interval_id",
-  "nbytes": 24,
+  "label": "channel_suspension/bits/shock_stroke_m",
+  "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 788,
+  "offset": 786,
   "rtol": null,
   "shape": [
-   24
+   26
   ]
  },
  {
@@ -592,7 +592,7 @@
   "dtype": "|u1",
   "index": 42,
   "kind": "bitwise",
-  "label": "channel_suspension/bits/fork_travel_m",
+  "label": "channel_suspension/bits/fork_velocity_mps",
   "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
   "offset": 812,
@@ -606,7 +606,7 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "channel_suspension/bits/shock_stroke_m",
+  "label": "channel_suspension/bits/shock_velocity_mps",
   "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
   "offset": 838,
@@ -620,7 +620,7 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "channel_suspension/bits/fork_velocity_mps",
+  "label": "channel_suspension/bits/shock_solver_limit_power_w",
   "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
   "offset": 864,
@@ -634,7 +634,7 @@
   "dtype": "|u1",
   "index": 45,
   "kind": "bitwise",
-  "label": "channel_suspension/bits/shock_velocity_mps",
+  "label": "channel_suspension/bits/linkage_closure_max_m",
   "nbytes": 26,
   "node": "native_encode_columns/map_channel_tables_bitwise",
   "offset": 890,
@@ -648,38 +648,10 @@
   "dtype": "|u1",
   "index": 46,
   "kind": "bitwise",
-  "label": "channel_suspension/bits/shock_solver_limit_power_w",
-  "nbytes": 26,
-  "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 916,
-  "rtol": null,
-  "shape": [
-   26
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "channel_suspension/bits/linkage_closure_max_m",
-  "nbytes": 26,
-  "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 942,
-  "rtol": null,
-  "shape": [
-   26
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
   "label": "channel_suspension/bits/generalized_force_components_n",
   "nbytes": 59,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 968,
+  "offset": 916,
   "rtol": null,
   "shape": [
    59
@@ -688,12 +660,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
+  "index": 47,
   "kind": "bitwise",
   "label": "channel_suspension/bits/__suspension_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 1027,
+  "offset": 975,
   "rtol": null,
   "shape": [
    3
@@ -702,12 +674,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 50,
+  "index": 48,
   "kind": "bitwise",
   "label": "channel_suspension/bits/__suspension_valid",
   "nbytes": 3,
   "node": "native_encode_columns/map_channel_tables_bitwise",
-  "offset": 1030,
+  "offset": 978,
   "rtol": null,
   "shape": [
    3

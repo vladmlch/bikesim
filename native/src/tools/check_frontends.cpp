@@ -1,10 +1,10 @@
 // check_frontends.cpp — the translation-unit sweeps plus the standalone
 // header and shell-script sweeps for the native check orchestrator
 // (task T56). Ports tools/native_checks.py: run_sweep for tidy/analyzer/
-// cppcheck/frontends/odr (including the stable/alpha pass split and the
-// report-only alpha contract), run_header_sweep, _tool_argv,
-// _report_alpha_findings; and tools/check_scripts.sh (find tools/*.sh |
-// sort | xargs shellcheck) as the `scripts` kind.
+// cppcheck/frontends/odr (single stable analyzer pass — alpha checkers
+// removed 2026-11-03), run_header_sweep, _tool_argv; and
+// tools/check_scripts.sh (find tools/*.sh | sort | xargs shellcheck) as
+// the `scripts` kind.
 #include "checks_internal.hpp"
 
 #include <algorithm>
@@ -216,7 +216,6 @@ std::vector<std::string> tool_argv(const std::string &kind,
                                    const CompileEntry &entry,
                                    const Value &context, const fs::path &build,
                                    const std::string &run_id, std::size_t index,
-                                   const std::string &pass_name,
                                    const std::vector<std::string> &frontend_flags) {
     const fs::path &source = entry.source;
     const std::vector<std::string> launcher = compiler_launcher(context);
@@ -263,18 +262,10 @@ std::vector<std::string> tool_argv(const std::string &kind,
             position += 1;
         }
         if (cleaned.empty()) cleaned.push_back(tool.string());
-        std::vector<std::string> extra = {"-Xanalyzer", "-analyzer-output=text"};
-        if (pass_name == "stable") {
-            extra.insert(extra.end(),
-                         {"-Xanalyzer", "-analyzer-checker=optin", "-Xanalyzer",
-                          "-analyzer-checker=cplusplus.Move"});
-        } else {
-            extra.insert(extra.end(),
-                         {"-Xanalyzer", "-analyzer-checker=alpha", "-Xanalyzer",
-                          "-analyzer-config", "-Xanalyzer",
-                          "aggressive-binary-operation-simplification=true",
-                          "-Wno-error"});
-        }
+        std::vector<std::string> extra = {"-Xanalyzer", "-analyzer-output=text",
+                                          "-Xanalyzer", "-analyzer-checker=optin",
+                                          "-Xanalyzer",
+                                          "-analyzer-checker=cplusplus.Move"};
         cleaned.emplace_back("--analyze");
         cleaned.insert(cleaned.end(), extra.begin(), extra.end());
         return cleaned;
@@ -343,27 +334,6 @@ std::vector<std::string> tool_argv(const std::string &kind,
         return argv;
     }
     throw CheckError("unknown native sweep kind: " + kind);
-}
-
-// _report_alpha_findings: alpha-pass warnings are report-only — printed to
-// stderr, never blocking.
-void report_alpha_findings(const Value &record, const fs::path &source) {
-    std::vector<std::string> lines;
-    if (const Value *unsuppressed = member(record, "unsuppressed_diagnostics");
-        unsuppressed != nullptr) {
-        for (const Value &item: std::get<Array>(unsuppressed->data))
-            lines.push_back(std::get<std::string>(item.data));
-    } else {
-        lines = record_diagnostics(record);
-    }
-    std::vector<std::string> warnings;
-    for (const auto &line: lines)
-        if (has_warning({line})) warnings.push_back(line);
-    if (!warnings.empty()) {
-        std::cerr << "== alpha findings (report-only): " << source.string()
-                  << "\n";
-        for (const auto &line: warnings) std::cerr << line << "\n";
-    }
 }
 
 } // namespace
@@ -529,7 +499,6 @@ int run_sweep(const std::string &kind, const fs::path &build) {
             .push_back(vobj(std::move(version_record_members)));
     }
     bool blocking_findings = false;
-    bool report_only_findings = false;
     bool tool_health_failed = !record_health_ok(version);
     // Tool identity/capability evidence: the version banner must name the
     // expected toolchain family for this kind (wrong-family tools are a
@@ -576,85 +545,62 @@ int run_sweep(const std::string &kind, const fs::path &build) {
     [&]() {
         for (std::size_t index = 0; index < entries.size(); ++index) {
             const CompileEntry &entry = entries[index];
-            const std::vector<std::string> passes =
-                kind == "analyzer" ? std::vector<std::string>{"stable", "alpha"}
-                                   : std::vector<std::string>{"stable"};
-            bool stable_failed = false;
-            for (const std::string &pass_name: passes) {
-                if (kind == "analyzer" && pass_name == "alpha" && stable_failed)
-                    continue;
-                const std::vector<std::string> argv =
-                    tool_argv(kind, tool, entry, context, build_dir, run_id,
-                              index, pass_name, frontend_flags);
-                std::string name = padded_index(index);
-                name += '-';
-                name += entry.source.stem().string();
-                name += '-';
-                name += pass_name;
-                Value record =
-                    run_process(argv, entry.directory, log_directory, name);
-                set_member(record, "pass", vstr(pass_name));
-                set_member(record, "source", vstr(entry.source.string()));
-                set_member(record, "target",
-                           entry.target.has_value() ? vstr(*entry.target)
-                                                    : vnull());
-                std::vector<std::string> unsuppressed;
-                if (kind == "analyzer" || kind == "tidy") {
-                    const auto filtered = apply_suppressions(
-                        record_diagnostics(record), tool_version, suppressions);
-                    unsuppressed = filtered.remaining;
-                    set_member(record, "unsuppressed_diagnostics",
-                               varr([&]() {
-                                   Array items;
-                                   for (const auto &line: unsuppressed)
-                                       items.push_back(vstr(line));
-                                   return items;
-                               }()));
-                    set_member(record, "suppressed_diagnostics",
-                               varr(filtered.matched));
-                    for (const Value &item: filtered.matched) {
-                        const std::string checker = std::get<std::string>(
-                            member(item, "checker")->data);
-                        Value *counts = member_mut(summary, "suppression_counts");
-                        auto &counts_object = std::get<Object>(counts->data);
-                        bool found = false;
-                        for (auto &[key, value]: counts_object) {
-                            if (key == checker) {
-                                const std::int64_t count =
-                                    parse_int64(std::get<io::Number>(value.data)
-                                                    .lexeme)
-                                        .value_or(0);
-                                value = vint(count + 1);
-                                found = true;
-                            }
+            const std::vector<std::string> argv =
+                tool_argv(kind, tool, entry, context, build_dir, run_id,
+                          index, frontend_flags);
+            std::string name = padded_index(index);
+            name += '-';
+            name += entry.source.stem().string();
+            name += '-';
+            name += "stable";
+            Value record =
+                run_process(argv, entry.directory, log_directory, name);
+            set_member(record, "pass", vstr("stable"));
+            set_member(record, "source", vstr(entry.source.string()));
+            set_member(record, "target",
+                       entry.target.has_value() ? vstr(*entry.target)
+                                                : vnull());
+            std::vector<std::string> unsuppressed;
+            if (kind == "analyzer" || kind == "tidy") {
+                const auto filtered = apply_suppressions(
+                    record_diagnostics(record), tool_version, suppressions);
+                unsuppressed = filtered.remaining;
+                set_member(record, "unsuppressed_diagnostics",
+                           varr([&]() {
+                               Array items;
+                               for (const auto &line: unsuppressed)
+                                   items.push_back(vstr(line));
+                               return items;
+                           }()));
+                set_member(record, "suppressed_diagnostics",
+                           varr(filtered.matched));
+                for (const Value &item: filtered.matched) {
+                    const std::string checker = std::get<std::string>(
+                        member(item, "checker")->data);
+                    Value *counts = member_mut(summary, "suppression_counts");
+                    auto &counts_object = std::get<Object>(counts->data);
+                    bool found = false;
+                    for (auto &[key, value]: counts_object) {
+                        if (key == checker) {
+                            const std::int64_t count =
+                                parse_int64(std::get<io::Number>(value.data)
+                                                .lexeme)
+                                    .value_or(0);
+                            value = vint(count + 1);
+                            found = true;
                         }
-                        if (!found)
-                            counts_object.emplace_back(checker, vint(1));
                     }
-                } else {
-                    unsuppressed = record_diagnostics(record);
+                    if (!found)
+                        counts_object.emplace_back(checker, vint(1));
                 }
-                records.push_back(record);
-                if (!record_health_ok(record)) tool_health_failed = true;
-                const bool warning = has_warning(unsuppressed);
-                const bool error = has_error(unsuppressed);
-                if (kind == "analyzer" && pass_name == "alpha") {
-                    if (warning) {
-                        report_only_findings = true;
-                        report_alpha_findings(record, entry.source);
-                    }
-                    if (error)
-                        // An alpha finding may be noisy, but an error
-                        // diagnostic is a broken analysis run.
-                        tool_health_failed = true;
-                    continue;
-                }
-                if (warning || error) {
-                    blocking_findings = true;
-                    if (kind == "analyzer" && pass_name == "stable")
-                        stable_failed = true;
-                }
+            } else {
+                unsuppressed = record_diagnostics(record);
             }
+            records.push_back(record);
+            if (!record_health_ok(record)) tool_health_failed = true;
+            const bool warning = has_warning(unsuppressed);
+            const bool error = has_error(unsuppressed);
+            if (warning || error) blocking_findings = true;
         }
     }();
 
@@ -683,9 +629,7 @@ int run_sweep(const std::string &kind, const fs::path &build) {
     set_member(summary, "tool_health",
                vstr(tool_health_failed ? "failed" : "ok"));
     set_member(summary, "finding_status",
-               vstr(blocking_findings ? "blocking"
-                    : report_only_findings ? "report-only"
-                                           : "none"));
+               vstr(blocking_findings ? "blocking" : "none"));
     set_member(summary, "status",
                vstr(!tool_health_failed && !blocking_findings ? "passed"
                                                               : "failed"));

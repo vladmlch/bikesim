@@ -1401,7 +1401,10 @@ run_case(b29_stable_warn EXPECT_EXIT FAIL
 expect_json(b29_stable_warn "${_sweep_summary}" "ok" tool_health)
 expect_json(b29_stable_warn "${_sweep_summary}" "blocking" finding_status)
 
-# alpha findings are report-only; an alpha crash still fails tool health
+# The analyzer runs one stable pass per TU; the experimental (alpha)
+# checkers were removed from every gate level on 2026-11-03 (thousands of
+# never-blocking, unread findings for ~34 min per gate). A tool that would
+# crash on -analyzer-checker=alpha must therefore never be asked to.
 set(_fx_alpha "${SCRATCH_DIR}/b29-alpha")
 file(MAKE_DIRECTORY "${_fx_alpha}/build")
 file(COPY "${_fx}/build/native_check_context.json"
@@ -1409,24 +1412,16 @@ file(COPY "${_fx}/build/native_check_context.json"
           "${_fx}/build/compile_commands.json"
      DESTINATION "${_fx_alpha}/build")
 set(_alpha_summary "${_fx_alpha}/build/native_check_summaries/analyzer.json")
-
-b29_mock_tool("${_fx_alpha}/report-tool"
-  ALPHA_TEXT "warning: experimental finding")
-run_case(b29_alpha_report EXPECT_EXIT 0
-  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
-        "ANALYZER_CLANG=${_fx_alpha}/report-tool"
-        "${CHECKS_BINARY}" --kind analyzer --build "${_fx_alpha}/build")
-expect_json(b29_alpha_report "${_alpha_summary}" "ok" tool_health)
-expect_json(b29_alpha_report "${_alpha_summary}" "report-only" finding_status)
-expect_json(b29_alpha_report "${_alpha_summary}" 1 translation_unit_count)
-
-b29_mock_tool("${_fx_alpha}/crash-tool" ALPHA_RC 139
+b29_mock_tool("${_fx_alpha}/alpha-crash-tool" ALPHA_RC 139
   ALPHA_TEXT "segmentation fault")
-run_case(b29_alpha_crash EXPECT_EXIT FAIL
+run_case(b29_analyzer_single_pass EXPECT_EXIT 0
   COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
-        "ANALYZER_CLANG=${_fx_alpha}/crash-tool"
+        "ANALYZER_CLANG=${_fx_alpha}/alpha-crash-tool"
         "${CHECKS_BINARY}" --kind analyzer --build "${_fx_alpha}/build")
-expect_json(b29_alpha_crash "${_alpha_summary}" "failed" tool_health)
+expect_json(b29_analyzer_single_pass "${_alpha_summary}" "ok" tool_health)
+expect_json(b29_analyzer_single_pass "${_alpha_summary}" "none" finding_status)
+expect_json_length(b29_analyzer_single_pass "${_alpha_summary}" 1 records)
+expect_json(b29_analyzer_single_pass "${_alpha_summary}" "stable" records 0 pass)
 
 # positive control: one selected translation unit, clean records
 b29_mock_tool("${_fx_sweep}/clean-tool")

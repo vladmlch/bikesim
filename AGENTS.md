@@ -48,7 +48,7 @@ Three levels; pick the cheapest that covers the moment.
    (≤5 min): incremental build, every ordinary test, cppcheck/frontends/
    clang-tidy on the changed TUs and the TUs including a changed header.
 2. **Full** — `bash tools/run_tests.sh native` **once per merge into the
-   main branch**, not per task or per parallel lane (measured ~16 min on an
+   main branch**, not per task or per parallel lane (measured ~11 min on an
    idle 16-core machine; see `<git-common-dir>/bike-gate/timings.tsv`). After a
    fix, `--from <stage>` re-checks from the failed stage; that run is
    PARTIAL and never the final verification. The completion criterion is

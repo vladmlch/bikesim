@@ -88,6 +88,33 @@ ctest --test-dir build/native-release -R 'native_suspension' --output-on-failure
 ctest --test-dir build/native-release -N                # list registered tests
 ```
 
+The `native` and `full` profiles run stages cheapest-signal first: after
+configure and build, `ctest` (the ordinary ~1 min suite) runs before the
+sweep kinds, which `tools/run_native_checks.sh` executes in the fixed
+contract order `scripts cppcheck context diagnostic-controls contracts
+frontends headers odr tidy analyzer`; `full` then adds the `slow` and
+`package` label gates.
+
+`--from <stage>` (native/full only) is an intermediate re-check after a fix:
+configure and build still run, earlier stages are skipped, and the run is
+marked PARTIAL — it is never a final verification; only one complete run
+that exits 0 counts.
+
+Every run ends with a per-stage seconds/exit table and appends one journal
+line to `<git-common-dir>/bike-gate/timings.tsv` (`BIKE_GATE_STATE_DIR`
+overrides the location; outside git it falls back to
+`<repo>/build/bike-gate`). Concurrent native/full gates do not queue: each
+takes cpu/(running gates) workers and reports the other live gates
+registered under `<git-common-dir>/bike-gate/active`. `BIKE_CHECK_JOBS`
+overrides the worker share; `BIKE_CPU_COUNT` overrides the detected CPU
+count.
+
+`tools/check_change.sh [base]` is the level-1 per-edit check (measured ~77 s
+on a warm tree): an incremental release build, every ordinary test, then
+cppcheck, frontends and clang-tidy on the changed translation units plus
+every unit that includes a changed first-party header. It complements and
+never replaces the level-2 `native` gate before a merge.
+
 ## Native prerequisite
 
 `native` and `full` configure and build the selected preset before checking.
@@ -152,15 +179,17 @@ visible as multiple contexts.
 Every run writes `native/build/native_check_summaries/<kind>.json`; complete
 stdout and stderr are retained under `native/build/native_check_logs/<kind>/`.
 The summary separates tool health from findings. Stable diagnostics block even
-when the analyzer exits zero. Alpha findings are marked `report-only`, while an
-alpha tool crash or other nonzero exit fails tool health. Tool executables can
+when the analyzer exits zero, while a tool crash or other nonzero exit fails
+tool health. The analyzer runs one stable pass — the experimental alpha half
+was removed 2026-11-03: it printed ~4650 unread report-only findings per run,
+never blocked, and cost ~34 min per gate. Tool executables can
 be overridden with `CLANG_TIDY`, `ANALYZER_CLANG`, `CPPCHECK`, and `GXX`; each
 override is resolved and checked before the sweep runs.
 
 ~~~bash
 cmake --build build/native-release --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
 cmake --build build/native-release --target check_tidy        # clang-tidy, checks in native/.clang-tidy
-cmake --build build/native-release --target check_analyzer    # clang --analyze, stable+optin block; alpha report-only
+cmake --build build/native-release --target check_analyzer    # clang --analyze, stable+optin block (single pass)
 cmake --build build/native-release --target check_cppcheck    # cppcheck third engine
 cmake --build build/native-release --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
 cmake --build build/native-release --target check_scripts     # shellcheck over tools/*.sh
@@ -253,8 +282,8 @@ on the qualified macOS arm64 host they resolve to the keg-only brew LLVM
 (`/opt/homebrew/opt/llvm/bin`, discovered per machine via `brew --prefix
 llvm`), and on the qualified Linux aarch64 lane to the distro clang-18
 tools. Missing tools are an error, not a skip. The
-analyzer's alpha pass prints findings without failing; they are unstable by
-upstream contract, so review them when they appear instead of gating on them.
+analyzer runs a single stable pass — the experimental alpha half was removed
+2026-11-03 (thousands of unread report-only findings per run, ~34 min).
 `check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
 phase that can see a type defined differently across translation units.
 
@@ -1056,7 +1085,8 @@ selected Xcode SDK. The locked native group and
 Final `bash tools/run_tests.sh native` passed 1,654 tests with 17 warnings in
 122.26 seconds. All mandatory sweeps selected 23 translation units and
 reported healthy execution; headers 35/105, diagnostic/context controls,
-shellcheck and CTest passed. Alpha analyzer findings remained report-only.
+shellcheck and CTest passed. Alpha analyzer findings remained report-only
+(the experimental pass was later removed, 2026-11-03).
 The test process imported the selected
 `native/build/bike_native.cpython-314-darwin.so`; log
 `/private/tmp/f2-native-preload-final.log`. The 17 warnings include the two deliberate

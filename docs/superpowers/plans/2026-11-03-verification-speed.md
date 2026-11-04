@@ -101,7 +101,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Файлы:**
 - Изменить: `native/tests/reference/test_native_numeric_portability.cpp:43-51` и 13 мест вызова `node("test_…"`
 
-- [ ] **Шаг 1: Убедись, что тест красный по названной причине**
+- [x] **Шаг 1: Убедись, что тест красный по названной причине**
 
 ```bash
 ctest --test-dir build/native-release -R '^reference.native_numeric_portability$' --output-on-failure 2>&1 | grep -E 'FAIL|Passed|Failed'
@@ -109,7 +109,7 @@ ctest --test-dir build/native-release -R '^reference.native_numeric_portability$
 
 Ожидаемо: `FAIL golden node: pytest node syntax is not a native key`.
 
-- [ ] **Шаг 2: Перепиши `node()`**
+- [x] **Шаг 2: Перепиши `node()`**
 
 Замени тело помощника (строки 43–51) на:
 
@@ -126,7 +126,7 @@ ctest --test-dir build/native-release -R '^reference.native_numeric_portability$
 }
 ```
 
-- [ ] **Шаг 3: Убери приставку `test_` в местах вызова**
+- [x] **Шаг 3: Убери приставку `test_` в местах вызова**
 
 ```bash
 sed -i '' 's/node("test_/node("/g' native/tests/reference/test_native_numeric_portability.cpp
@@ -143,7 +143,7 @@ done
 
 Ожидаемо: пустой вывод.
 
-- [ ] **Шаг 4: Собери и прогони тест**
+- [x] **Шаг 4: Собери и прогони тест**
 
 ```bash
 cmake --build --preset release --target reference.native_numeric_portability
@@ -152,7 +152,7 @@ ctest --test-dir build/native-release -R '^reference.native_numeric_portability$
 
 Ожидаемо: `100% tests passed`. Если упадёт на другом ключе — значит, ещё одно место строит ключ вручную. Найди его через `git grep -n '\[' -- native/tests/reference/test_native_numeric_portability.cpp` и исправь так же.
 
-- [ ] **Шаг 5: Проверь, что проходы анализа не возражают**
+- [x] **Шаг 5: Проверь, что проходы анализа не возражают**
 
 ```bash
 build/native-release/bin/bike-native-checks --kind tidy --build build/native-release 2>&1 | tail -3
@@ -166,7 +166,7 @@ build/native-release/bin/bike-native-checks --kind tidy --build build/native-rel
 
 Ожидаемо: нет новых предупреждений.
 
-- [ ] **Шаг 6: Коммит**
+- [x] **Шаг 6: Коммит**
 
 ```bash
 git add native/tests/reference/test_native_numeric_portability.cpp
@@ -192,7 +192,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Файлы:**
 - Изменить: `native/tests/reference/ft2_reference_support.hpp` (новый помощник рядом с `dir()`; `research_bootstrap()` около строки 120; `consume_tree()` около строки 515)
 
-- [ ] **Шаг 1: Убедись, что тест красный по названной причине**
+- [x] **Шаг 1: Убедись, что тест красный по названной причине**
 
 ```bash
 ctest --test-dir build/native-release -R '^reference.native_research_recording$' --output-on-failure 2>&1 | grep FAIL
@@ -201,7 +201,7 @@ jq '.research | {execution_changed_during_run, identity_check_error}' "$(cd "$TM
 
 Ожидаемо: `FAIL an unmodified run keeps its startup execution identity`, а в `identity_check_error` — путь с `pfc-lane-f`.
 
-- [ ] **Шаг 2: Добавь помощник переноса пути**
+- [x] **Шаг 2: Добавь помощник переноса пути**
 
 Сразу после функции `dir()` (около строки 78):
 
@@ -225,7 +225,7 @@ jq '.research | {execution_changed_during_run, identity_check_error}' "$(cd "$TM
 }
 ```
 
-- [ ] **Шаг 3: Перенеси пути в `research_bootstrap()`**
+- [x] **Шаг 3: Перенеси пути в `research_bootstrap()`**
 
 В `research_bootstrap()` сразу после строки `auto restored = *metadata;` вставь:
 
@@ -253,7 +253,7 @@ jq '.research | {execution_changed_during_run, identity_check_error}' "$(cd "$TM
 
 Хеш настроек (`configuration_sha256`) от этого не меняется: при его подсчёте пути заменяются хешами файлов. Так устроено в этом же файле на строках 156–176 и в `metadata.cpp`.
 
-- [ ] **Шаг 4: Перенеси пути в записанных эталонах при сравнении**
+- [x] **Шаг 4: Перенеси пути в записанных эталонах при сравнении**
 
 В `consume_tree()`, в цикле `for (const auto &[path, leaf] : *recorded_map)`, замени строку `kept.emplace_back(path, leaf);` на:
 
@@ -269,7 +269,7 @@ jq '.research | {execution_changed_during_run, identity_check_error}' "$(cd "$TM
         kept.emplace_back(path, std::move(normalized));
 ```
 
-- [ ] **Шаг 5: Собери и прогони все тесты, которые пользуются этим файлом**
+- [x] **Шаг 5: Собери и прогони все тесты, которые пользуются этим файлом**
 
 ```bash
 cmake --build --preset release
@@ -280,7 +280,7 @@ ctest --test-dir build/native-release -R 'native_research_(capture|environment|r
 
 Если какой-то тест упадёт на сравнении через `consume_canonical()` и в различии видны `joint_*_path`, значит путь попадает ещё и в побайтовое сравнение документа. Тогда в `consume_canonical()` перед вызовом `node.bytes(...)` верни записанное начало пути в тексте `canonical`: заменой строки, где ищется результат `rebase_capture_path(x)`, а подставляется исходный `x`. Для этого заведи в `research_bootstrap()` статический список пар «исходный путь → перенесённый» (`inline std::vector<std::pair<std::string,std::string>> &rebased_paths()`), пополняй его на шаге 3 и обходи в `consume_canonical()`. После этого прогони снова.
 
-- [ ] **Шаг 6: Убедись, что все обычные тесты зелёные**
+- [x] **Шаг 6: Убедись, что все обычные тесты зелёные**
 
 ```bash
 ctest --test-dir build/native-release -LE 'slow|package' -j8 --output-on-failure 2>&1 | tail -4
@@ -288,7 +288,7 @@ ctest --test-dir build/native-release -LE 'slow|package' -j8 --output-on-failure
 
 Ожидаемо: `100% tests passed, 0 tests failed out of 183`. Это первая зелёная отметка обычных тестов на `main3`.
 
-- [ ] **Шаг 7: Коммит**
+- [x] **Шаг 7: Коммит**
 
 ```bash
 git add native/tests/reference/ft2_reference_support.hpp
@@ -322,7 +322,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Если задана переменная `BIKE_GATE_TIMINGS_FILE`, на каждый вид в этот файл дописывается строка `<вид>\t<секунды>\t<код выхода>`.
 - В выводе есть строка `native launcher: PARTIAL run: …`, если был `--from`.
 
-- [ ] **Шаг 1: Напиши тест на заглушке**
+- [x] **Шаг 1: Напиши тест на заглушке**
 
 Создай `native/tests/tooling/tooling_gate.cmake`:
 
@@ -471,7 +471,7 @@ if(BUILD_TESTING)
 endif()
 ```
 
-- [ ] **Шаг 2: Убедись, что тест красный**
+- [x] **Шаг 2: Убедись, что тест красный**
 
 ```bash
 cmake --preset release >/dev/null
@@ -480,7 +480,7 @@ ctest --test-dir build/native-release -R '^tooling_gate$' --output-on-failure 2>
 
 Ожидаемо: FAIL. В `checks_order` порядок другой, `checks_from` и `checks_timings` не находят `--from`.
 
-- [ ] **Шаг 3: Перепиши `tools/run_native_checks.sh`**
+- [x] **Шаг 3: Перепиши `tools/run_native_checks.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -564,7 +564,7 @@ fi
 bike_log "all produced sweeps passed: ${build_dir}"
 ```
 
-- [ ] **Шаг 4: Обнови строку порядка в `tooling_platform.cmake`**
+- [x] **Шаг 4: Обнови строку порядка в `tooling_platform.cmake`**
 
 Замени два `_expect_needle` на строках 1500–1502:
 
@@ -576,7 +576,7 @@ _expect_needle(${_c} "${_checks_sh}" "headers odr tidy analyzer)")
 
 Поправь и комментарий над ними: «порядок — от дешёвого к дорогому; набор не меняется».
 
-- [ ] **Шаг 5: Прогони тесты**
+- [x] **Шаг 5: Прогони тесты**
 
 ```bash
 cmake --preset release >/dev/null
@@ -586,7 +586,7 @@ build/native-release/bin/bike-native-checks --kind scripts --build build/native-
 
 Ожидаемо: оба теста зелёные; `scripts` (shellcheck) зелёный. Неудачи `tooling_platform`, записанные в задаче 0, могут остаться, но новых быть не должно.
 
-- [ ] **Шаг 6: Коммит**
+- [x] **Шаг 6: Коммит**
 
 ```bash
 git add tools/run_native_checks.sh native/tests/tooling/tooling_gate.cmake native/tests/tooling/tooling_platform.cmake native/cmake/Checks.cmake
@@ -613,7 +613,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Каталог состояния `BIKE_GATE_STATE_DIR`. По умолчанию это `<git common dir>/bike-gate`, а вне git — `<repo>/build/bike-gate`.
 - Журнал: `$BIKE_GATE_STATE_DIR/timings.tsv`, одна строка на прогон.
 
-- [ ] **Шаг 1: Допиши тесты в `tooling_gate.cmake`**
+- [x] **Шаг 1: Допиши тесты в `tooling_gate.cmake`**
 
 Вставь перед строкой `# (run_tests.sh cases are appended …)`:
 
@@ -695,7 +695,7 @@ if(NOT _last MATCHES "\tfailed\t")
 endif()
 ```
 
-- [ ] **Шаг 2: Убедись, что новые случаи красные**
+- [x] **Шаг 2: Убедись, что новые случаи красные**
 
 ```bash
 ctest --test-dir build/native-release -R '^tooling_gate$' --output-on-failure 2>&1 | grep -E 'gate_' | head
@@ -703,7 +703,7 @@ ctest --test-dir build/native-release -R '^tooling_gate$' --output-on-failure 2>
 
 Ожидаемо: `gate_native` (нет `--parallel 8`, нет журнала), `gate_from*`, `gate_failed`.
 
-- [ ] **Шаг 3: Перепиши разбор ключей и стадии в `run_tests.sh`**
+- [x] **Шаг 3: Перепиши разбор ключей и стадии в `run_tests.sh`**
 
 Сохрани верхний комментарий и `usage()`. Дополни комментарий абзацем о стадиях, `--from`, журнале. В `usage()` добавь строки:
 
@@ -904,7 +904,7 @@ esac
 
 `--from slow` для `native` отвергается проверкой «известная стадия»: `slow` есть в списке стадий только для `full`.
 
-- [ ] **Шаг 4: Прогони тесты и shellcheck**
+- [x] **Шаг 4: Прогони тесты и shellcheck**
 
 ```bash
 ctest --test-dir build/native-release -R '^(tooling_gate|tooling_platform)$' --output-on-failure 2>&1 | tail -6
@@ -915,7 +915,7 @@ bash tools/run_tests.sh native release --from bogus; echo "rc=$?"
 
 Ожидаемо: оба теста зелёные; `scripts` зелёный; обе последние команды печатают `rc=2`.
 
-- [ ] **Шаг 5: Коммит**
+- [x] **Шаг 5: Коммит**
 
 ```bash
 git add tools/run_tests.sh native/tests/tooling/tooling_gate.cmake
@@ -938,7 +938,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Изменить: `native/src/tools/check_frontends.cpp`: `tool_argv()` (строки 260–278), функция `report_alpha_findings` (348–370), цикл `run_sweep` (574–660), переменная `report_only_findings` (532, 643, 687), комментарий в шапке (строки 4–5)
 - Изменить: `native/tests/tooling/tooling_checks.cmake`: случаи `b29_alpha_report` и `b29_alpha_crash` (строки 1404–1430)
 
-- [ ] **Шаг 1: Замени случаи про экспериментальную половину тестом «одна половина»**
+- [x] **Шаг 1: Замени случаи про экспериментальную половину тестом «одна половина»**
 
 В `tooling_checks.cmake` замени блок от `# alpha findings are report-only; …` до `expect_json(b29_alpha_crash …)` включительно на:
 
@@ -966,7 +966,7 @@ expect_json_length(b29_analyzer_single_pass "${_alpha_summary}" 1 records)
 expect_json(b29_analyzer_single_pass "${_alpha_summary}" "stable" records 0 pass)
 ```
 
-- [ ] **Шаг 2: Убедись, что случай красный**
+- [x] **Шаг 2: Убедись, что случай красный**
 
 `tooling_checks` долгий (задача 0, шаг 3). Чтобы проверить один случай, повтори его команду руками:
 
@@ -978,7 +978,7 @@ ANALYZER_CLANG="$PWD/$S/alpha-crash-tool" build/native-release/bin/bike-native-c
 
 Если каталога нет, создай заглушку по образцу `b29_mock_tool` руками (sh-сценарий: `--version` → строка; `*-analyzer-checker=alpha*` → код 139; иначе 0). Ожидаемо сейчас: `rc=1` (экспериментальный проход падает).
 
-- [ ] **Шаг 3: Оставь одну половину в `tool_argv()`**
+- [x] **Шаг 3: Оставь одну половину в `tool_argv()`**
 
 Для `analyzer` замени разветвление `if (pass_name == "stable") {…} else {…}` на безусловное добавление основных настроек:
 
@@ -991,7 +991,7 @@ ANALYZER_CLANG="$PWD/$S/alpha-crash-tool" build/native-release/bin/bike-native-c
 
 Параметр `pass_name` у `tool_argv()` теперь не нужен: удали его из объявления, определения и единственного вызова.
 
-- [ ] **Шаг 4: Упрости цикл в `run_sweep()`**
+- [x] **Шаг 4: Упрости цикл в `run_sweep()`**
 
 - Убери вектор `passes` и внутренний цикл `for (const std::string &pass_name: passes)`. Тело выполняется один раз с `pass_name` = `"stable"`; имя журнала по-прежнему `<index>-<stem>-stable`.
 - Убери `stable_failed`, ветку `if (kind == "analyzer" && pass_name == "alpha")`, переменную `report_only_findings` и функцию `report_alpha_findings`.
@@ -1006,7 +1006,7 @@ git grep -n -i 'alpha' -- native/src/tools
 
 Ожидаемо: только `check_contracts.cpp:265` — это комментарий о `cplusplus.Move`; уточни его, если он описывает удалённую половину.
 
-- [ ] **Шаг 5: Собери и проверь**
+- [x] **Шаг 5: Собери и проверь**
 
 ```bash
 cmake --build --preset release --target bike-native-checks
@@ -1024,7 +1024,7 @@ time build/native-release/bin/bike-native-checks --kind analyzer --build build/n
 
 Ожидаемо: `tool health: ok`, `findings: none`, время примерно вдвое меньше прежних 60 минут. Запиши время в отчёт задачи 0 (раздел «после задачи 5»).
 
-- [ ] **Шаг 6: Коммит**
+- [x] **Шаг 6: Коммит**
 
 ```bash
 git add native/src/tools/check_frontends.cpp native/tests/tooling/tooling_checks.cmake
@@ -1047,11 +1047,11 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Создать: `native/tests/tooling/fixture_support.cmake`
 - Изменить: `native/tests/tooling/tooling_checks.cmake`
 
-- [ ] **Шаг 1: Перенеси функции проверки итогов**
+- [x] **Шаг 1: Перенеси функции проверки итогов**
 
 Перенеси **дословно**, вместе с комментариями над ними, функции из `tooling_checks.cmake`: `run_case`, `expect_json`, `expect_json_item_names`, `expect_json_contains`, `expect_json_length`, `expect_json_member_set`, `expect_json_equal`, `expect_json_nonzero`, `expect_json_type`, `expect_json_substring`. Это все функции `expect_json*` в файле; найди их через `grep -n '^function' native/tests/tooling/tooling_checks.cmake`.
 
-- [ ] **Шаг 2: Перенеси сведения b29 и помощники учебной сборки**
+- [x] **Шаг 2: Перенеси сведения b29 и помощники учебной сборки**
 
 Перенеси **дословно** блок от комментария `# Facts mirrored from the produced context so fixture entries validate the` до конца определения `set(_b29_clean_env …)` включительно. Это вычисление `_b29_*`, функции `b29_fixture_context`, `b29_ccdb_entry`, `b29_ccdb_args`, `b29_mock_tool`. Этому блоку нужна переменная `_context_json`. Добавь в начало модуля:
 
@@ -1068,7 +1068,7 @@ endif()
 file(READ "${_fs_ctx}" _context_json)
 ```
 
-- [ ] **Шаг 3: Подключи модуль в `tooling_checks.cmake`**
+- [x] **Шаг 3: Подключи модуль в `tooling_checks.cmake`**
 
 На месте перенесённых функций (сразу после `set(_failures "")`) поставь:
 
@@ -1078,7 +1078,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/fixture_support.cmake")
 
 Строку `file(READ "${_ctx}" _context_json)` около строки 347 оставь: она перечитывает тот же файл, результат тот же.
 
-- [ ] **Шаг 4: Проверь, что `tooling_checks` ведёт себя как в задаче 0**
+- [x] **Шаг 4: Проверь, что `tooling_checks` ведёт себя как в задаче 0**
 
 ```bash
 cmake --preset release >/dev/null
@@ -1087,7 +1087,7 @@ ctest --test-dir build/native-release -R '^tooling_checks$' --output-on-failure 
 
 Ожидаемо: тот же список неудач, что записан в задаче 0, плюс зелёный `b29_analyzer_single_pass`. Новых неудач быть не должно. Этот прогон долгий; он нужен, потому что перенос затрагивает каждый случай.
 
-- [ ] **Шаг 5: Коммит**
+- [x] **Шаг 5: Коммит**
 
 ```bash
 git add native/tests/tooling/fixture_support.cmake native/tests/tooling/tooling_checks.cmake
@@ -1117,7 +1117,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - `void for_each_index(std::size_t count, std::size_t workers, const std::function<void(std::size_t)> &task);`
 - В итоге каждого вида появляется поле `"jobs"`.
 
-- [ ] **Шаг 1: Напиши быстрый тест**
+- [x] **Шаг 1: Напиши быстрый тест**
 
 Создай `native/tests/tooling/tooling_sweep_engine.cmake`:
 
@@ -1240,7 +1240,7 @@ endif()
 
 Если запуск поддельного инструмента не проходит проверку контекста (например, `tidy` требует ещё полей в учебной сборке), сравни свою учебную сборку со сборкой `b29-entries` в `tooling_checks.cmake` (строки около 1036–1056) и добавь недостающее. Менять проверку контекста нельзя.
 
-- [ ] **Шаг 2: Убедись, что тест красный**
+- [x] **Шаг 2: Убедись, что тест красный**
 
 ```bash
 cmake --preset release >/dev/null
@@ -1250,7 +1250,7 @@ ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-fa
 
 Ожидаемо: `engine_parallel` (≈8 с; нет поля `jobs`), `engine_jobs_invalid` (`zero` не отвергается).
 
-- [ ] **Шаг 3: Добавь набор исполнителей**
+- [x] **Шаг 3: Добавь набор исполнителей**
 
 В `checks_internal.hpp` перед разделом `// ---- sweeps` добавь:
 
@@ -1341,7 +1341,7 @@ void for_each_index(std::size_t count, std::size_t workers,
 
 Добавь `"${_checks_tools_dir}/check_pool.cpp"` в список `add_executable(bike-native-checks …)` в `Checks.cmake`. Файл первичный, поэтому попадёт в `native_sources.json`, и его проверят все виды.
 
-- [ ] **Шаг 4: Перестрой цикл `run_sweep()` на исполнителей**
+- [x] **Шаг 4: Перестрой цикл `run_sweep()` на исполнителей**
 
 Ниже — цикл после задачи 5 (одна половина). Замени лямбду `[&]() { for (std::size_t index = 0; …) {…} }();` на:
 
@@ -1421,11 +1421,11 @@ void count_suppression(Value &summary, const std::string &checker) {
 
 Проверь, что `tool_argv()` для каждого вида пишет только в пути со своим `index`: временная база данных компиляции `entry-<index>` для `tidy`/`cppcheck`, объект `<index>.o` для `odr`. Если какой-то вид пишет общий файл, его надо сделать своим для каждого номера.
 
-- [ ] **Шаг 5: То же для `run_header_sweep()`**
+- [x] **Шаг 5: То же для `run_header_sweep()`**
 
 Сначала собери список заданий: пары (заголовок, условие компиляции), как в нынешнем двойном цикле, с номером. Затем выполни их через `for_each_index` в слоты `std::vector<Value>` и слей по порядку. Временный каталог `header-<index>-<run_id>` и имя журнала уже уникальны по номеру. `jobs` возьми так же: `check_jobs(environ_copy())`, и запиши в итог.
 
-- [ ] **Шаг 6: Прогони тесты**
+- [x] **Шаг 6: Прогони тесты**
 
 ```bash
 cmake --preset release >/dev/null
@@ -1435,7 +1435,7 @@ ctest --test-dir build/native-release -R '^(tooling_sweep_engine|tooling_gate)$'
 
 Ожидаемо: оба зелёные.
 
-- [ ] **Шаг 7: Замерь настоящие виды**
+- [x] **Шаг 7: Замерь настоящие виды**
 
 ```bash
 for k in cppcheck frontends headers odr tidy analyzer; do
@@ -1445,7 +1445,7 @@ done
 
 Ожидаемо: везде `tool health: ok` и `findings: none`. Запиши время по каждому виду в отчёт. Сумма должна быть порядка 15–25 минут против прежних ~137. Если машина начинает задыхаться (своп, `vm_stat` показывает много pageouts), попробуй `BIKE_CHECK_JOBS=8`, запиши оба замера и сообщи владельцу. Значение по умолчанию без согласия не меняй.
 
-- [ ] **Шаг 8: Долгий тест `tooling_checks`**
+- [x] **Шаг 8: Долгий тест `tooling_checks`**
 
 ```bash
 ctest --test-dir build/native-release -R '^tooling_checks$' --output-on-failure 2>&1 | tail -30
@@ -1453,7 +1453,7 @@ ctest --test-dir build/native-release -R '^tooling_checks$' --output-on-failure 
 
 Ожидаемо: список неудач как в задаче 6, шаг 4. Теперь он идёт быстрее, потому что настоящие виды внутри стали одновременными.
 
-- [ ] **Шаг 9: Коммит**
+- [x] **Шаг 9: Коммит**
 
 ```bash
 git add native/src/tools/check_pool.cpp native/src/tools/checks_internal.hpp native/src/tools/check_frontends.cpp native/cmake/Checks.cmake native/tests/tooling/tooling_sweep_engine.cmake
@@ -1477,7 +1477,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Изменить: `tools/run_tests.sh`
 - Изменить: `native/tests/tooling/tooling_gate.cmake`
 
-- [ ] **Шаг 1: Допиши тесты**
+- [x] **Шаг 1: Допиши тесты**
 
 Перед строкой `# (run_tests.sh cases are appended …)` в `tooling_gate.cmake`:
 
@@ -1522,13 +1522,13 @@ endif()
 
 После `kill` в каталоге остаётся только запись живого (уже убитого) соседа. Своя запись удаляется при выходе. Поэтому ожидается одна запись — запись соседа. Чужие записи проверка удаляет только тогда, когда процесс точно мёртв, и только при следующем запуске.
 
-- [ ] **Шаг 2: Убедись, что тест красный**
+- [x] **Шаг 2: Убедись, что тест красный**
 
 ```bash
 ctest --test-dir build/native-release -R '^tooling_gate$' --output-on-failure 2>&1 | grep gate_share
 ```
 
-- [ ] **Шаг 3: Реализуй учёт в `run_tests.sh`**
+- [x] **Шаг 3: Реализуй учёт в `run_tests.sh`**
 
 Замени строку `jobs="$cpu_count"` на:
 
@@ -1575,7 +1575,7 @@ export BIKE_CHECK_JOBS="$jobs"
 
 Доля считается один раз, при запуске проверки. Если сосед закончит раньше, оставшееся время проверка идёт на своей доле. Это осознанное упрощение. Запиши его в комментарий.
 
-- [ ] **Шаг 4: Прогони тесты**
+- [x] **Шаг 4: Прогони тесты**
 
 ```bash
 ctest --test-dir build/native-release -R '^tooling_gate$' --output-on-failure 2>&1 | tail -4
@@ -1584,7 +1584,7 @@ build/native-release/bin/bike-native-checks --kind scripts --build build/native-
 
 Ожидаемо: зелёные.
 
-- [ ] **Шаг 5: Коммит**
+- [x] **Шаг 5: Коммит**
 
 ```bash
 git add tools/run_tests.sh native/tests/tooling/tooling_gate.cmake
@@ -1609,7 +1609,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Что получают следующие задачи:** в итоге `headers.json` появляются поля `header_context_count` (все пары «заголовок — цель», как раньше `header_translation_unit_count`), `header_duplicate_contexts` (массив `{source, target, covered_by}`). Поле `header_translation_unit_count` теперь — число реальных компиляций.
 
-- [ ] **Шаг 1: Напиши тест**
+- [x] **Шаг 1: Напиши тест**
 
 Сценарий учебной сборки для заголовков — `b29_header_fixture` в `tooling_checks.cmake` (строка около 1543). Посмотри, как он строит сборку: заголовок под корнем, две цели. Сделай такую же сборку в `tooling_sweep_engine.cmake`: один заголовок `native/src/shared.hpp`, две цели `bike_a` и `bike_b` с **одинаковыми** условиями компиляции, по одному `.cpp` в каждой, оба подключают `shared.hpp`. Поддельный компилятор через `GXX` пишет строку в журнал вызовов при каждом вызове с `header_probe.cpp`. Проверки:
 
@@ -1626,13 +1626,13 @@ endif()
 
 Добавь второй случай: у `bike_b` добавлено определение `-DVARIANT=1`. Тогда ожидаются 2 компиляции и пустой `header_duplicate_contexts`.
 
-- [ ] **Шаг 2: Убедись, что тест красный**
+- [x] **Шаг 2: Убедись, что тест красный**
 
 ```bash
 ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-failure 2>&1 | grep headers_
 ```
 
-- [ ] **Шаг 3: Реализуй**
+- [x] **Шаг 3: Реализуй**
 
 При сборке списка заданий (задача 7, шаг 5) для каждой пары считай ключ:
 
@@ -1652,7 +1652,7 @@ std::string context_key(const CompileEntry &entry) {
 
 Заведи `std::map<std::pair<std::string, std::string>, std::string> seen;` — ключ (заголовок, `context_key`), значение — первая цель. Если ключ уже есть, задание не создавай, а добавь `{source, target, covered_by}` в `header_duplicate_contexts`. `header_context_count` — прежнее число пар, `header_translation_unit_count` — число созданных заданий. Обнови строку вывода: `native headers selection: N headers, M header translation units (K contexts, D duplicates skipped)`.
 
-- [ ] **Шаг 4: Прогони тесты и настоящий вид**
+- [x] **Шаг 4: Прогони тесты и настоящий вид**
 
 ```bash
 cmake --build --preset release --target bike-native-checks
@@ -1662,7 +1662,7 @@ ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-fa
 
 Ожидаемо: тест зелёный; около 751 компиляции из около 2380; `ok`, `none`.
 
-- [ ] **Шаг 5: Коммит**
+- [x] **Шаг 5: Коммит**
 
 ```bash
 git add native/src/tools/check_frontends.cpp native/tests/tooling/tooling_sweep_engine.cmake
@@ -1694,7 +1694,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 - [x] **Шаг 1: Установка `ccache`** — сделано владельцем.
 
-- [ ] **Шаг 2: Напиши тест на описание сборки**
+- [x] **Шаг 2: Напиши тест на описание сборки**
 
 В `tooling_sweep_engine.cmake` перед строкой `# (later tasks append cases above this line)`:
 
@@ -1721,7 +1721,7 @@ ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-fa
 
 Ожидаемо: FAIL. В `launcher` записан `ccache`, а `build_launcher` нет.
 
-- [ ] **Шаг 3: Исправь запись в `BikeCheckContext.cmake`**
+- [x] **Шаг 3: Исправь запись в `BikeCheckContext.cmake`**
 
 Замени строку 519:
 
@@ -1738,7 +1738,7 @@ ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-fa
 
 В строке 583 после `\"launcher\":${_native_compiler_launcher_json}` добавь `,\"build_launcher\":${_native_compiler_build_launcher_json}`.
 
-- [ ] **Шаг 4: Включи `ccache` по умолчанию, если он установлен**
+- [x] **Шаг 4: Включи `ccache` по умолчанию, если он установлен**
 
 В `CMakeLists.txt` сразу после `project(bike_sim …)`:
 
@@ -1757,7 +1757,7 @@ endif()
 
 Проба системных файлов Apple (`BikeAppleSDK.cmake:75-92`) тоже пойдёт через `ccache`. На её результат это не влияет.
 
-- [ ] **Шаг 5: Проверь настройку, сборку, базу и виды проверки**
+- [x] **Шаг 5: Проверь настройку, сборку, базу и виды проверки**
 
 Сначала убери ключ `-DCMAKE_CXX_COMPILER_LAUNCHER`, оставшийся с шага 2 в кэше, чтобы проверить именно включение по умолчанию:
 
@@ -1777,7 +1777,7 @@ ctest --test-dir build/native-release -R '^(tooling_sweep_engine|tooling_toolcha
 
 Если `frontends` или другой вид отвергнет базу по иной причине, не ослабляй проверку: запиши сообщение и остановись.
 
-- [ ] **Шаг 6: Убедись, что кэш работает**
+- [x] **Шаг 6: Убедись, что кэш работает**
 
 ```bash
 ccache -z
@@ -1790,7 +1790,7 @@ rm -rf /tmp/bike-ccache-second
 
 Ожидаемо: почти всё — попадания (`Hits` близко к числу файлов). Запиши время второй сборки в отчёт.
 
-- [ ] **Шаг 7: Коммит**
+- [x] **Шаг 7: Коммит**
 
 ```bash
 git add native/cmake/BikeCheckContext.cmake CMakeLists.txt native/tests/tooling/tooling_sweep_engine.cmake
@@ -1813,14 +1813,14 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Файлы:**
 - Создать: `docs/superpowers/audits/2026-11-03-analyzer-vs-tidy.md`
 
-- [ ] **Шаг 1: Полные прогоны обоих видов на одном коде**
+- [x] **Шаг 1: Полные прогоны обоих видов на одном коде**
 
 ```bash
 build/native-release/bin/bike-native-checks --kind tidy --build build/native-release | tail -2
 build/native-release/bin/bike-native-checks --kind analyzer --build build/native-release | tail -2
 ```
 
-- [ ] **Шаг 2: Сравни находки по месту и виду**
+- [x] **Шаг 2: Сравни находки по месту и виду**
 
 Учитывай **все** находки, включая подавленные (`diagnostics`, а не `unsuppressed_diagnostics`): сравнивается способность находить, а не нынешние подавления.
 
@@ -1834,7 +1834,7 @@ comm -13 /tmp/an.txt /tmp/tidy-an.txt > /tmp/only-tidy.txt
 wc -l /tmp/an.txt /tmp/tidy-an.txt /tmp/only-analyzer.txt /tmp/only-tidy.txt
 ```
 
-- [ ] **Шаг 3: Сравни включённые наборы проверок**
+- [x] **Шаг 3: Сравни включённые наборы проверок**
 
 ```bash
 LLVM="$(brew --prefix llvm)/bin"
@@ -1846,7 +1846,7 @@ cat /tmp/analyzer-only-checkers.txt
 
 Это проверки, которые включены в отдельном проходе, но не в `clang-tidy`.
 
-- [ ] **Шаг 4: Напиши отчёт**
+- [x] **Шаг 4: Напиши отчёт**
 
 В отчёте:
 - время обоих видов;
@@ -1864,7 +1864,7 @@ cat /tmp/analyzer-only-checkers.txt
 
 Решение не принимай.
 
-- [ ] **Шаг 5: Коммит**
+- [x] **Шаг 5: Коммит**
 
 ```bash
 git add docs/superpowers/audits/2026-11-03-analyzer-vs-tidy.md
@@ -1893,7 +1893,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - `bike-native-checks --kind {cppcheck|frontends|tidy} --build B --only-sources LIST`. `LIST` — файл, по одному абсолютному или относительному к рабочему каталогу пути в строке; это `.cpp` или первичные заголовки.
 - Итог пишется в `native_check_summaries/partial-<вид>.json`, в нём `"selection": "partial"`. Полный итог `<вид>.json` не затирается.
 
-- [ ] **Шаг 1: Тесты на `--only-sources`**
+- [x] **Шаг 1: Тесты на `--only-sources`**
 
 В `tooling_sweep_engine.cmake` используй сборку из задачи 7. Добавь в неё заголовок `native/src/common.hpp` (`#pragma once` и `inline int common() { return 0; }`) и перепиши `tu2.cpp` и `tu7.cpp` так, чтобы первой строкой в них было `#include "common.hpp"`. Остальные файлы его не подключают.
 
@@ -1926,7 +1926,7 @@ run_case(only_sources_kind EXPECT_EXIT 2
 
 Красный прогон: `ctest -R '^tooling_sweep_engine$'`. Ожидаемо: `unrecognized arguments: --only-sources`.
 
-- [ ] **Шаг 2: Ключ в `checks_main.cpp`**
+- [x] **Шаг 2: Ключ в `checks_main.cpp`**
 
 По образцу `--repo-root`: разбор `--only-sources` и `--only-sources=`. После проверки вида:
 
@@ -1956,7 +1956,7 @@ run_case(only_sources_kind EXPECT_EXIT 2
                             const std::optional<fs::path> &only_sources = std::nullopt);
 ```
 
-- [ ] **Шаг 3: Отбор в `run_sweep()`**
+- [x] **Шаг 3: Отбор в `run_sweep()`**
 
 Над `run_sweep` объяви:
 
@@ -2045,14 +2045,14 @@ std::set<std::size_t> entries_reaching(const std::vector<CompileEntry> &entries,
 
 Строку вывода с путём итога поправь так же. `#include <fstream>` добавь, если его нет.
 
-- [ ] **Шаг 4: Тесты `bike-native-checks` зелёные**
+- [x] **Шаг 4: Тесты `bike-native-checks` зелёные**
 
 ```bash
 cmake --build --preset release --target bike-native-checks
 ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-failure 2>&1 | tail -3
 ```
 
-- [ ] **Шаг 5: Тест на `check_change.sh`**
+- [x] **Шаг 5: Тест на `check_change.sh`**
 
 В `tooling_gate.cmake`, рядом с остальными случаями `run_tests.sh`: скопируй `tools/check_change.sh` в `${_repo}/tools`. Сделай `${_repo}` репозиторием git: `git init -b main`, `git -c user.name=t -c user.email=t@t commit --allow-empty -m base`. Затем вторая фиксация добавляет `native/src/x.cpp` и `docs/a.md`. Все команды git выполняй через `execute_process(… WORKING_DIRECTORY "${_repo}")`. Заглушка `bike-native-checks` должна дописывать в журнал ещё и содержимое файла после `--only-sources`. Для этого в заглушке рядом с `--kind` разбери `--only-sources` и выведи `cat` списка.
 
@@ -2064,7 +2064,7 @@ ctest --test-dir build/native-release -R '^tooling_sweep_engine$' --output-on-fa
 
 `docs/a.md` в списке нет. Отдельный случай: изменён только `docs/a.md` — тогда `checks` не вызывается вовсе, а в выводе `no C++ source or header changed`.
 
-- [ ] **Шаг 6: Напиши `tools/check_change.sh`**
+- [x] **Шаг 6: Напиши `tools/check_change.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -2122,7 +2122,7 @@ printf 'check_change: passed in %ss (level 1; run tools/run_tests.sh native once
   "$((SECONDS - started))"
 ```
 
-- [ ] **Шаг 7: Тесты и настоящий прогон**
+- [x] **Шаг 7: Тесты и настоящий прогон**
 
 ```bash
 ctest --test-dir build/native-release -R '^(tooling_gate|tooling_sweep_engine)$' --output-on-failure 2>&1 | tail -4
@@ -2132,7 +2132,7 @@ time bash tools/check_change.sh main3~3
 
 Ожидаемо: тесты зелёные; `scripts` зелёный; настоящий прогон укладывается в 5 минут. Запиши время в отчёт. Если не укладывается, запиши, какая часть сколько заняла.
 
-- [ ] **Шаг 8: Коммит**
+- [x] **Шаг 8: Коммит**
 
 ```bash
 git add native/src/tools/checks_main.cpp native/src/tools/checks_internal.hpp native/src/tools/check_frontends.cpp tools/check_change.sh native/tests/tooling/tooling_sweep_engine.cmake native/tests/tooling/tooling_gate.cmake
@@ -2154,7 +2154,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Изменить: `docs/TESTING.md` (строки около 155–163 и 250–258 про экспериментальную половину; описание `run_tests.sh`)
 - Изменить: `docs/agents/native-engineering.md` (строка «experimental findings remain report-only…»)
 
-- [ ] **Шаг 1: `AGENTS.md`**
+- [x] **Шаг 1: `AGENTS.md`**
 
 Замени `### Verification speed` целиком. Числа возьми из своих замеров (задачи 7–9 и шаг 3 ниже), не из этого плана:
 
@@ -2184,7 +2184,7 @@ disabled with a reason and a tracking task.
 
 В разделе `## Verification` убери предложение `Alpha analyzer findings print but never block.`
 
-- [ ] **Шаг 2: `docs/TESTING.md` и `native-engineering.md`**
+- [x] **Шаг 2: `docs/TESTING.md` и `native-engineering.md`**
 
 Найди упоминания:
 
@@ -2196,7 +2196,7 @@ git grep -n -i 'alpha\|15–30\|report-only' -- AGENTS.md docs/TESTING.md docs/a
 - В `native-engineering.md` фразу «experimental findings remain report-only while execution health is visible» замени на «sweeps report tool execution health separately from findings».
 - В `TESTING.md` в описании `run_tests.sh` опиши `--from`, журнал времени, новый порядок, `BIKE_CHECK_JOBS`, `tools/check_change.sh`.
 
-- [ ] **Шаг 3: Итоговая полная проверка — один раз**
+- [x] **Шаг 3: Итоговая полная проверка — один раз**
 
 Убедись, что других полных проверок в этой рабочей копии нет (`ls "$(git rev-parse --git-common-dir)/bike-gate/active"`).
 
@@ -2208,7 +2208,7 @@ bash tools/run_tests.sh native 2>&1 | tee /tmp/verification-speed-final.log | ta
 
 Если упала стадия, исправь причину. Повтори с `--from <стадия>`, затем ещё раз полностью, без `--from`. Итоговым считается только полный прогон.
 
-- [ ] **Шаг 4: Отчёт**
+- [x] **Шаг 4: Отчёт**
 
 Допиши в `docs/superpowers/audits/2026-11-03-verification-speed-baseline.md` раздел «После»:
 - таблица «стадия — было — стало»;
@@ -2216,7 +2216,7 @@ bash tools/run_tests.sh native 2>&1 | tee /tmp/verification-speed-final.log | ta
 - строка журнала `timings.tsv` итогового прогона;
 - что отложено и почему (задача 10, вариант Б; решение по задаче 11; распараллеливание `slow`).
 
-- [ ] **Шаг 5: Коммит**
+- [x] **Шаг 5: Коммит**
 
 ```bash
 git add AGENTS.md docs/TESTING.md docs/agents/native-engineering.md docs/superpowers/audits/2026-11-03-verification-speed-baseline.md

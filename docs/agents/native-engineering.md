@@ -53,8 +53,8 @@ launcher code, not from a prior assistant message.
 
 For sanitizers, RTSan, or coverage, follow [TESTING.md](../TESTING.md) and verify the selected build tree and tool
 runtime in the produced check context. A green test of a regular build is not a sanitizer result. A sweep must report selected
-translation units, tool exit health, and diagnostic outcome. Resolve missing mandatory tools; experimental findings
-remain report-only while execution health is visible.
+translation units, tool exit health, and diagnostic outcome. Resolve missing mandatory tools; sweeps report tool
+execution health separately from findings.
 
 Run the focused regression first, then required profiles once the task's implementation stabilizes. Re-run broader
 profiles after subsequent relevant changes. Record commands, selected build, compiler/library versions, counts,

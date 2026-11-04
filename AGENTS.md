@@ -36,28 +36,31 @@ profile by what changed. `preset` names a configure preset from
 A failed sweep names its kind; rerun it standalone with
 `build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`,
 or `cmake --build build/native-release --target check_<name>` where
-`native/cmake/Checks.cmake` defines one. Alpha analyzer findings print but
-never block. A missing sweep tool fails the run on purpose — install the tool
-rather than skipping the target. For sanitizer/RTSan/coverage presets and
-sweep internals, reach `docs/TESTING.md`.
+`native/cmake/Checks.cmake` defines one. A missing sweep tool fails the run
+on purpose — install the tool rather than skipping the target. For
+sanitizer/RTSan/coverage presets and sweep internals, reach `docs/TESTING.md`.
 
-### Verification speed
+### Verification levels
 
-The `native` profile costs ~15–30 min (build + 9 static-analysis sweeps +
-CTest). It is the outer gate, not the inner loop.
+Three levels; pick the cheapest that covers the moment.
 
-- Iterate **red→green** on the smallest scope: the targeted CTest node for the
-  behavior you changed, plus `cmake --build <selected-build> --target
-  check_<name>` for the one sweep that covers it (a failed sweep names its own
-  target).
-- Run `bash tools/run_tests.sh native` **once**, as the final step before
-  reporting a task done. The completion criterion: that run exits 0.
-- Pick the cheapest covering profile: `quick` outside the native scope,
-  `native` for native/build/verification tooling, `full` only for physics or
-  realtime paths (profiles: docs/TESTING.md).
-- Compare a gate's failures against the documented baseline list. Reach for
-  stash+rerun at HEAD only for a failure the baseline does not explain —
-  proving pre-existing red costs a full gate.
+1. **Change** — `bash tools/check_change.sh [base]` after every edit
+   (≤5 min): incremental build, every ordinary test, cppcheck/frontends/
+   clang-tidy on the changed TUs and the TUs including a changed header.
+2. **Full** — `bash tools/run_tests.sh native` **once per merge into the
+   main branch**, not per task or per parallel lane (measured ~16 min on an
+   idle 16-core machine; see `<git-common-dir>/bike-gate/timings.tsv`). After a
+   fix, `--from <stage>` re-checks from the failed stage; that run is
+   PARTIAL and never the final verification. The completion criterion is
+   one complete run that exits 0.
+3. **Extended** — `bash tools/run_tests.sh full`: daily or before a large
+   merge (adds the slow label set, ~46 min serial).
+
+Linux runs only on explicit request (`tools/linux/container.sh`).
+Concurrent gates do not queue; each takes cpu/(running gates) workers and
+prints who else is running. `BIKE_CHECK_JOBS` overrides the share.
+There is no baseline of tolerated failures: a red test is fixed, or
+disabled with a reason and a tracking task.
 
 ## Behavioral Stability
 

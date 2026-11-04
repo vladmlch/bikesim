@@ -1340,7 +1340,7 @@ std::vector<std::string> sibling_candidates(const Value &compiler, const std::st
     if (!std::regex_match(basename, match, driver)) return {};
     const std::string prefix = match[1].str();
     const std::string version = match[2].str();
-    const std::string stem = kind == "tidy" ? "clang-tidy" : kind == "analyzer" ? "clang++" : "g++";
+    const std::string stem = kind == "tidy" ? "clang-tidy" : "g++";
     std::vector<std::string> names;
     const auto append = [&](const std::string &name) {
         const std::string candidate = (path.parent_path() / name).string();
@@ -1358,8 +1358,6 @@ std::vector<std::string> sibling_candidates(const Value &compiler, const std::st
 std::vector<std::string> darwin_tool_candidates(const std::string &kind) {
     if (kind == "tidy")
         return {"/opt/homebrew/opt/llvm/bin/clang-tidy", "/usr/local/opt/llvm/bin/clang-tidy"};
-    if (kind == "analyzer")
-        return {"/opt/homebrew/opt/llvm/bin/clang++", "/usr/local/opt/llvm/bin/clang++"};
     if (kind == "cppcheck")
         return {"/opt/homebrew/bin/cppcheck", "/usr/local/bin/cppcheck"};
     return {"g++-16", "g++-15", "g++-14", "g++-13", "g++",
@@ -1398,7 +1396,6 @@ std::pair<fs::path, std::string> resolve_tool(
     static const std::map<std::string, std::pair<std::string, std::string>>
         configuration = {
             {"tidy", {"CLANG_TIDY", "tidy"}},
-            {"analyzer", {"ANALYZER_CLANG", "analyzer"}},
             {"cppcheck", {"CPPCHECK", "cppcheck"}},
             {"frontends", {"GXX", "gxx"}},
             {"odr", {"GXX", "gxx"}},

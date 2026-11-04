@@ -420,14 +420,12 @@ function(b29_ccdb_args entry out_var)
   set(${out_var} "${_out}" PARENT_SCOPE)
 endfunction()
 
-# b29_mock_tool(<path> VERSION <v> STABLE_RC <rc> STABLE_TEXT <t>
-#               ALPHA_RC <rc> ALPHA_TEXT <t>)
-# The stable/alpha split mirrors the reference write_fake_tool: --version
-# prints the configured string; -analyzer-checker=alpha arguments take the
-# alpha branch; every other invocation takes the stable branch.
+# b29_mock_tool(<path> VERSION <v> STABLE_RC <rc> STABLE_TEXT <t>)
+# Mirrors the reference write_fake_tool: --version prints the configured
+# string; every other invocation prints STABLE_TEXT on stderr and exits
+# STABLE_RC.
 function(b29_mock_tool path)
-  cmake_parse_arguments(T "" "VERSION;STABLE_RC;STABLE_TEXT;ALPHA_RC;ALPHA_TEXT"
-    "" ${ARGN})
+  cmake_parse_arguments(T "" "VERSION;STABLE_RC;STABLE_TEXT" "" ${ARGN})
   if(NOT DEFINED T_VERSION)
     set(T_VERSION "mock analysis tool 1")
   endif()
@@ -437,19 +435,11 @@ function(b29_mock_tool path)
   if(NOT DEFINED T_STABLE_TEXT)
     set(T_STABLE_TEXT "")
   endif()
-  if(NOT DEFINED T_ALPHA_RC)
-    set(T_ALPHA_RC 0)
-  endif()
-  if(NOT DEFINED T_ALPHA_TEXT)
-    set(T_ALPHA_TEXT "")
-  endif()
   file(WRITE "${path}"
     "#!/bin/sh\n"
     "if [ \"\${1:-}\" = \"--version\" ]; then printf '%s\\n' \"${T_VERSION}\"; exit 0; fi\n"
-    "case \"\$*\" in\n"
-    "  *-analyzer-checker=alpha*) printf '%s' \"${T_ALPHA_TEXT}\" >&2; exit ${T_ALPHA_RC} ;;\n"
-    "  *) printf '%s' \"${T_STABLE_TEXT}\" >&2; exit ${T_STABLE_RC} ;;\n"
-    "esac\n")
+    "printf '%s' \"${T_STABLE_TEXT}\" >&2\n"
+    "exit ${T_STABLE_RC}\n")
   file(CHMOD "${path}"
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 endfunction()
@@ -457,6 +447,6 @@ endfunction()
 # Unset every environment override the sweeps honor so resolution/order and
 # leak-through behave deterministically in run_case commands.
 set(_b29_clean_env
-  --unset=CLANG_TIDY --unset=ANALYZER_CLANG --unset=CPPCHECK --unset=GXX
+  --unset=CLANG_TIDY --unset=CPPCHECK --unset=GXX
   --unset=NATIVE_TEST_BUILD_PATH --unset=NATIVE_TEST_PROVENANCE_PATH
   --unset=NATIVE_TEST_SANITIZER_RUNTIME)

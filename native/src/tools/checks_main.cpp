@@ -27,8 +27,8 @@
 
 namespace {
 
-constexpr std::array<std::string_view, 10> kKinds{
-    "tidy",      "analyzer",    "cppcheck", "frontends", "odr",
+constexpr std::array<std::string_view, 9> kKinds{
+    "tidy",      "cppcheck",    "frontends", "odr",
     "headers",   "diagnostic-controls", "context", "scripts", "contracts",
 };
 

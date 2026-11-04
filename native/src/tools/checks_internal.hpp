@@ -305,6 +305,15 @@ struct SourceManifest {
                                           std::size_t index,
                                           const CompileEntry &entry);
 
+// The clang-tidy argv for one translation unit: the single-entry `database`
+// from temporary_database(), the project policy (native/.clang-tidy, found
+// via the context's first source root) and --extra-arg=-Wno-error. Shared by
+// the tidy sweep and the diagnostic controls so both run the same policy.
+[[nodiscard]] std::vector<std::string> tidy_command(const fs::path &tool,
+                                                    const fs::path &database,
+                                                    const fs::path &source,
+                                                    const Value &context);
+
 // Ports _replace_compile_source(): drop -o/-MF/-MT/-MQ pairs and
 // -c/-MD/-MMD/-MP flags, substitute `replacement` for the entry source.
 [[nodiscard]] std::vector<std::string> replace_compile_source(

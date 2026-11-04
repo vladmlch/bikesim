@@ -71,7 +71,7 @@ Usage: bash tools/run_tests.sh [quick|native|full] [preset] [--from STAGE]
                 Configure and build always run; earlier stages are skipped
                 and the run is marked PARTIAL. Stages: ctest scripts cppcheck
                 context diagnostic-controls contracts frontends headers odr
-                tidy analyzer, plus slow package for full.
+                tidy, plus slow package for full.
 
 preset selects a configure preset from CMakePresets.json (default: release).
 Its binaryDir is the build directory: build/<preset>; release keeps
@@ -115,7 +115,7 @@ esac
 # Stages after configure+build, in execution order. The sweep kinds are
 # owned by tools/run_native_checks.sh; keep this list in the same order.
 sweep_kinds=(scripts cppcheck context diagnostic-controls contracts
-  frontends headers odr tidy analyzer)
+  frontends headers odr tidy)
 stages=(ctest "${sweep_kinds[@]}")
 [[ "$profile" == full ]] && stages+=(slow package)
 if [[ -n "$from" ]]; then

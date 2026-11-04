@@ -214,17 +214,15 @@ function(bike_write_check_context)
   # ---------------------------------------------------------------
   if(BIKE_TARGET_SYSTEM STREQUAL "Darwin")
     set(_ctx_tool_default_tidy "/opt/homebrew/opt/llvm/bin/clang-tidy")
-    set(_ctx_tool_default_analyzer "/opt/homebrew/opt/llvm/bin/clang++")
     set(_ctx_tool_default_cppcheck "cppcheck")
     set(_ctx_tool_default_gxx "g++-16")
   else()
     set(_ctx_tool_default_tidy "clang-tidy")
-    set(_ctx_tool_default_analyzer "clang++")
     set(_ctx_tool_default_cppcheck "cppcheck")
     set(_ctx_tool_default_gxx "g++")
   endif()
   set(_native_tool_defaults
-    "{\"tidy\":\"${_ctx_tool_default_tidy}\",\"analyzer\":\"${_ctx_tool_default_analyzer}\",\"cppcheck\":\"${_ctx_tool_default_cppcheck}\",\"gxx\":\"${_ctx_tool_default_gxx}\"}")
+    "{\"tidy\":\"${_ctx_tool_default_tidy}\",\"cppcheck\":\"${_ctx_tool_default_cppcheck}\",\"gxx\":\"${_ctx_tool_default_gxx}\"}")
 
   # ---------------------------------------------------------------
   # Frontend-tool resolution evidence: the configured spelling (env
@@ -234,8 +232,7 @@ function(bike_write_check_context)
   # ---------------------------------------------------------------
   set(_ctx_frontend_tools_json "{")
   set(_ctx_tool_sep "")
-  foreach(_tool_pair "tidy:CLANG_TIDY" "analyzer:ANALYZER_CLANG"
-          "cppcheck:CPPCHECK" "gxx:GXX")
+  foreach(_tool_pair "tidy:CLANG_TIDY" "cppcheck:CPPCHECK" "gxx:GXX")
     string(REPLACE ":" ";" _tool_fields "${_tool_pair}")
     list(GET _tool_fields 0 _tool_key)
     list(GET _tool_fields 1 _tool_env)
@@ -548,7 +545,7 @@ function(bike_write_check_context)
 
   set(_native_tool_overrides "{")
   set(_native_tool_separator "")
-  foreach(_tool_override CLANG_TIDY ANALYZER_CLANG CPPCHECK GXX)
+  foreach(_tool_override CLANG_TIDY CPPCHECK GXX)
     if(DEFINED ENV{${_tool_override}} AND NOT "$ENV{${_tool_override}}" STREQUAL "")
       _native_json_quote(_tool_name_json "${_tool_override}")
       _native_json_quote(_tool_value_json "$ENV{${_tool_override}}")

@@ -75,7 +75,7 @@ set(_build "${SCRATCH_DIR}/build")
 file(MAKE_DIRECTORY "${_build}")
 set(_log "${SCRATCH_DIR}/calls.log")
 set(_order scripts cppcheck context diagnostic-controls contracts
-  frontends headers odr tidy analyzer)
+  frontends headers odr tidy)
 set(_expected "")
 foreach(_k IN LISTS _order)
   list(APPEND _expected "checks ${_k} jobs=unset")
@@ -94,9 +94,9 @@ expect_file_lines(checks_order "${_log}" ${_expected})
 file(REMOVE "${_log}")
 gate_run(checks_from EXPECT_EXIT 0 ENV ${_checks_env}
   EXPECT_OUTPUT "PARTIAL run"
-  COMMAND bash "${REPO_ROOT}/tools/run_native_checks.sh" --from odr "${_build}")
+  COMMAND bash "${REPO_ROOT}/tools/run_native_checks.sh" --from headers "${_build}")
 expect_file_lines(checks_from "${_log}"
-  "checks odr jobs=unset" "checks tidy jobs=unset" "checks analyzer jobs=unset")
+  "checks headers jobs=unset" "checks odr jobs=unset" "checks tidy jobs=unset")
 
 gate_run(checks_from_unknown EXPECT_EXIT FAIL ENV ${_checks_env}
   EXPECT_OUTPUT "unknown --from kind: bogus"
@@ -114,14 +114,14 @@ set(_timings "${SCRATCH_DIR}/timings.tsv")
 file(REMOVE "${_timings}")
 gate_run(checks_timings EXPECT_EXIT 0
   ENV ${_checks_env} "BIKE_GATE_TIMINGS_FILE=${_timings}"
-  COMMAND bash "${REPO_ROOT}/tools/run_native_checks.sh" --from tidy "${_build}")
+  COMMAND bash "${REPO_ROOT}/tools/run_native_checks.sh" --from odr "${_build}")
 file(STRINGS "${_timings}" _timing_lines)
 list(LENGTH _timing_lines _timing_count)
 if(NOT _timing_count EQUAL 2)
   set(_failures "${_failures}\n  checks_timings: expected 2 lines, got '${_timing_lines}'")
 endif()
 foreach(_line IN LISTS _timing_lines)
-  if(NOT _line MATCHES "^(tidy|analyzer)\t[0-9]+\t0$")
+  if(NOT _line MATCHES "^(odr|tidy)\t[0-9]+\t0$")
     set(_failures "${_failures}\n  checks_timings: malformed line '${_line}'")
   endif()
 endforeach()
@@ -232,9 +232,9 @@ endif()
 # An explicit BIKE_CHECK_JOBS wins over the computed share.
 file(REMOVE "${_log}")
 gate_run(gate_jobs_override EXPECT_EXIT 0 ENV ${_gate_env} "BIKE_CHECK_JOBS=3"
-  COMMAND bash "${_repo}/tools/run_tests.sh" native release --from analyzer)
+  COMMAND bash "${_repo}/tools/run_tests.sh" native release --from tidy)
 file(STRINGS "${_log}" _calls)
-string(FIND "${_calls}" "checks analyzer jobs=3" _override)
+string(FIND "${_calls}" "checks tidy jobs=3" _override)
 if(_override EQUAL -1)
   set(_failures "${_failures}\n  gate_jobs_override: calls '${_calls}'")
 endif()

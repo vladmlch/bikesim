@@ -135,7 +135,7 @@ int run_diagnostic_controls(const fs::path &build) {
     std::vector<CompileEntry> entries;
     std::vector<Suppression> suppressions;
     fs::path compiler;
-    fs::path analyzer;
+    fs::path tidy;
     const bool setup_ok = [&]() -> bool {
         try {
             context = load_context(build_dir);
@@ -145,7 +145,7 @@ int run_diagnostic_controls(const fs::path &build) {
                 member(context, "analysis_suppressions_manifest")->data)));
             compiler = fs::path(std::get<std::string>(
                 member(*member(context, "compiler"), "path")->data));
-            analyzer = resolve_tool("analyzer", context, environ_copy()).first;
+            tidy = resolve_tool("tidy", context, environ_copy()).first;
         } catch (const std::exception &error) {
             std::get<Array>(member_mut(summary, "errors")->data)
                 .push_back(vstr(error.what()));
@@ -161,19 +161,19 @@ int run_diagnostic_controls(const fs::path &build) {
     const fs::path version_logs =
         build_dir / "native_check_logs" / kind / run_id;
     const Value compiler_version = version_record(compiler, version_logs);
-    const Value analyzer_version = version_record(analyzer, version_logs);
+    const Value tidy_version = version_record(tidy, version_logs);
     set_member(summary, "compiler", vstr(compiler.string()));
     set_member(summary, "compiler_version",
                member(compiler_version, "version") != nullptr
                    ? *member(compiler_version, "version")
                    : vstr(""));
-    set_member(summary, "analyzer", vstr(analyzer.string()));
-    set_member(summary, "analyzer_version",
-               member(analyzer_version, "version") != nullptr
-                   ? *member(analyzer_version, "version")
+    set_member(summary, "tidy", vstr(tidy.string()));
+    set_member(summary, "tidy_version",
+               member(tidy_version, "version") != nullptr
+                   ? *member(tidy_version, "version")
                    : vstr(""));
     bool tool_health_failed = !record_health_ok(compiler_version) ||
-                              !record_health_ok(analyzer_version);
+                              !record_health_ok(tidy_version);
 
     const fs::path control_root =
         build_dir / "native_check_work" / kind / run_id;
@@ -262,8 +262,11 @@ int run_diagnostic_controls(const fs::path &build) {
         {"-Wsign-conversion", "-Wno-error=sign-conversion"},
         {"sign-conversion", "signedness"});
 
-    // cplusplus.Move positive control: alpha-adjacent checker kept stable by
-    // the dedicated checker flag, with suppression filtering active.
+    // cplusplus.Move positive control: clang-tidy under the project policy
+    // (native/.clang-tidy, the same --config-file the tidy sweep passes)
+    // must report a planted first-party use-after-move, with suppression
+    // filtering active. clang-tidy is the only gate that runs the clang
+    // static analyzer since the standalone analyzer kind was removed.
     [&]() {
         const fs::path move_source =
             control_root / "first_party_use_after_move.cpp";
@@ -275,26 +278,29 @@ int run_diagnostic_controls(const fs::path &build) {
                       "std::string destination{std::move(source)}; "
                       "(void)source.size(); }\n";
         }
-        std::vector<std::string> move_argv =
+        CompileEntry move_entry;
+        move_entry.source = move_source;
+        move_entry.directory = entry.directory;
+        move_entry.arguments =
             replace_compile_source(entry, move_source, false);
-        if (!move_argv.empty()) move_argv[0] = analyzer.string();
-        move_argv.insert(move_argv.end(),
-                         {"--analyze", "-Xanalyzer", "-analyzer-output=text",
-                          "-Xanalyzer", "-analyzer-checker=cplusplus.Move",
-                          "-Wno-error"});
+        move_entry.target = entry.target;
+        move_entry.raw = vobj({});
+        const std::vector<std::string> move_argv = tidy_command(
+            tidy, temporary_database(build_dir, kind, run_id, 0, move_entry),
+            move_source, context);
         Value move_record = run_process(move_argv, entry.directory,
                                         log_directory,
                                         "first_party_use_after_move");
-        const std::string analyzer_version_text =
-            member(analyzer_version, "version") != nullptr
-                ? std::get<std::string>(member(analyzer_version, "version")->data)
+        const std::string tidy_version_text =
+            member(tidy_version, "version") != nullptr
+                ? std::get<std::string>(member(tidy_version, "version")->data)
                 : std::string{};
         const auto filtered = apply_suppressions(
-            record_diagnostics(move_record), analyzer_version_text,
+            record_diagnostics(move_record), tidy_version_text,
             suppressions);
         std::vector<std::string> move_matched;
         for (const auto &line: filtered.remaining)
-            if (line.find("cplusplus.Move") != std::string::npos)
+            if (line.find("clang-analyzer-cplusplus.Move") != std::string::npos)
                 move_matched.push_back(line);
         for (const Value &item: filtered.matched) {
             const std::string checker = std::get<std::string>(
@@ -334,7 +340,8 @@ int run_diagnostic_controls(const fs::path &build) {
             Object control = {
                 {"name", vstr("first_party_use_after_move")},
                 {"status", vstr(move_status ? "passed" : "failed")},
-                {"expected_markers", varr({vstr("cplusplus.Move")})},
+                {"expected_markers",
+                 varr({vstr("clang-analyzer-cplusplus.Move")})},
                 {"matched_diagnostics", varr(std::move(matched_values))},
                 {"suppressed_diagnostics", varr(filtered.matched)},
             };

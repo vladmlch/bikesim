@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # tools/run_native_checks.sh [--from KIND] <build_dir> — run the produced
 # native check sweeps through bike-native-checks, cheapest first, so a
-# failure surfaces before the expensive kinds run (measured 2026-11-03:
-# cppcheck ~1 min, frontends ~9, headers ~15, odr ~19, tidy ~33,
-# analyzer the longest):
+# failure surfaces before the expensive kinds run (measured 2026-11-04 on
+# 16 cores: cppcheck ~11 s, frontends ~1 min, headers ~40 s, odr ~2.5 min,
+# tidy ~4 min, the longest):
 #   scripts cppcheck context diagnostic-controls contracts frontends
-#   headers odr tidy analyzer
+#   headers odr tidy
+# There is no standalone clang --analyze kind: clang-tidy's
+# clang-analyzer-* glob runs every one of its checkers (removed 2026-11-04).
 #
 # --from KIND skips every kind before KIND. A --from run is an
 # intermediate re-check after a fix and says so (PARTIAL); the final
@@ -16,15 +18,15 @@
 #
 # Each produced kind fails closed on missing tools, malformed contexts,
 # stale manifests, or blocking findings. Tool overrides are picked up from
-# the emitted context (configure-time CLANG_TIDY / ANALYZER_CLANG /
-# CPPCHECK / GXX environment).
+# the emitted context (configure-time CLANG_TIDY / CPPCHECK / GXX
+# environment).
 set -euo pipefail
 
 # shellcheck source=/dev/null
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)/native_common.sh"
 
 kinds=(scripts cppcheck context diagnostic-controls contracts frontends
-    headers odr tidy analyzer)
+    headers odr tidy)
 
 from=""
 if [[ "${1:-}" == "--from" ]]; then

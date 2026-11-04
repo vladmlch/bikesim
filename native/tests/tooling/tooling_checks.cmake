@@ -444,20 +444,20 @@ run_case(t56_tool_missing EXPECT_EXIT FAIL
         "${CHECKS_BINARY}" --kind frontends --build "${_fixture}")
 
 # ---------------------------------------------------------------------------
-# Mandatory negative controls: crashed analyzer, malformed diagnostics,
+# Mandatory negative controls: crashed analysis tool, malformed diagnostics,
 # failed diagnostic control, stale/wrong contract artifacts and a direct
 # no-interpreter reach check.
 
-# crashed analyzer — a planted tool that dies on every invocation surfaces
-# as tool-health failure, never a silent pass
-set(_crash_tool "${SCRATCH_DIR}/crash-analyzer.sh")
+# crashed analysis tool — a planted clang-tidy that dies on every
+# invocation surfaces as tool-health failure, never a silent pass
+set(_crash_tool "${SCRATCH_DIR}/crash-tidy.sh")
 file(WRITE "${_crash_tool}" "#!/bin/sh\nexit 139\n")
 file(CHMOD "${_crash_tool}"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
-run_case(t56_analyzer_crash EXPECT_EXIT FAIL
+run_case(t56_tidy_crash EXPECT_EXIT FAIL
   EXPECT_STDERR "tool health: failed"
-  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_crash_tool}"
-        "${CHECKS_BINARY}" --kind analyzer --build "${BUILD_DIR}")
+  COMMAND "${CMAKE_COMMAND}" -E env "CLANG_TIDY=${_crash_tool}"
+        "${CHECKS_BINARY}" --kind tidy --build "${BUILD_DIR}")
 
 # malformed diagnostics — the analysis suppression manifest is the
 # diagnostics-control input; a malformed file must fail closed
@@ -471,17 +471,17 @@ file(COPY "${_sources}" DESTINATION "${_fixture}")
 file(COPY "${_ccdb}" DESTINATION "${_fixture}")
 run_case(t56_diagnostics_malformed EXPECT_EXIT FAIL
   EXPECT_STDERR "malformed analysis suppression manifest"
-  COMMAND "${CHECKS_BINARY}" --kind analyzer --build "${_fixture}")
+  COMMAND "${CHECKS_BINARY}" --kind tidy --build "${_fixture}")
 
-# failed diagnostic control — a silent-exit analyzer passes version health
-# but emits no cplusplus.Move marker, so the alpha control must fail
-set(_silent_tool "${SCRATCH_DIR}/silent-analyzer.sh")
+# failed diagnostic control — a silent-exit clang-tidy emits no
+# clang-analyzer-cplusplus.Move marker, so the use-after-move control fails
+set(_silent_tool "${SCRATCH_DIR}/silent-tidy.sh")
 file(WRITE "${_silent_tool}" "#!/bin/sh\nexit 0\n")
 file(CHMOD "${_silent_tool}"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 run_case(t56_diag_control_failed EXPECT_EXIT FAIL
   EXPECT_STDERR "first_party_use_after_move"
-  COMMAND "${CMAKE_COMMAND}" -E env "ANALYZER_CLANG=${_silent_tool}"
+  COMMAND "${CMAKE_COMMAND}" -E env "CLANG_TIDY=${_silent_tool}"
         "${CHECKS_BINARY}" --kind diagnostic-controls --build "${BUILD_DIR}")
 
 # contracts on the produced build — positive contract control
@@ -985,28 +985,6 @@ run_case(b29_stable_warn EXPECT_EXIT FAIL
         "${CHECKS_BINARY}" --kind tidy --build "${_fx_sweep}/build")
 expect_json(b29_stable_warn "${_sweep_summary}" "ok" tool_health)
 expect_json(b29_stable_warn "${_sweep_summary}" "blocking" finding_status)
-
-# The analyzer runs one stable pass per TU; the experimental (alpha)
-# checkers were removed from every gate level on 2026-11-03 (thousands of
-# never-blocking, unread findings for ~34 min per gate). A tool that would
-# crash on -analyzer-checker=alpha must therefore never be asked to.
-set(_fx_alpha "${SCRATCH_DIR}/b29-alpha")
-file(MAKE_DIRECTORY "${_fx_alpha}/build")
-file(COPY "${_fx}/build/native_check_context.json"
-          "${_fx}/build/native_sources.json"
-          "${_fx}/build/compile_commands.json"
-     DESTINATION "${_fx_alpha}/build")
-set(_alpha_summary "${_fx_alpha}/build/native_check_summaries/analyzer.json")
-b29_mock_tool("${_fx_alpha}/alpha-crash-tool" ALPHA_RC 139
-  ALPHA_TEXT "segmentation fault")
-run_case(b29_analyzer_single_pass EXPECT_EXIT 0
-  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
-        "ANALYZER_CLANG=${_fx_alpha}/alpha-crash-tool"
-        "${CHECKS_BINARY}" --kind analyzer --build "${_fx_alpha}/build")
-expect_json(b29_analyzer_single_pass "${_alpha_summary}" "ok" tool_health)
-expect_json(b29_analyzer_single_pass "${_alpha_summary}" "none" finding_status)
-expect_json_length(b29_analyzer_single_pass "${_alpha_summary}" 1 records)
-expect_json(b29_analyzer_single_pass "${_alpha_summary}" "stable" records 0 pass)
 
 # positive control: one selected translation unit, clean records
 b29_mock_tool("${_fx_sweep}/clean-tool")
@@ -2513,8 +2491,7 @@ endfunction()
 
 # A deliberately nonexistent required override fails at resolution — before
 # an empty sweep could be labeled passing (the oracle's five-kind matrix).
-foreach(_pair "tidy CLANG_TIDY" "analyzer ANALYZER_CLANG" "cppcheck CPPCHECK"
-        "frontends GXX" "odr GXX")
+foreach(_pair "tidy CLANG_TIDY" "cppcheck CPPCHECK" "frontends GXX" "odr GXX")
   string(REPLACE " " ";" _kv "${_pair}")
   list(GET _kv 0 _kind)
   list(GET _kv 1 _env)

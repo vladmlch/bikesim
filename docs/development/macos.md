@@ -42,7 +42,7 @@ macOS.
   compatibility with the chosen compiler. An unsupported probe fails
   configure rather than degrading to a "close enough" toolchain.
 - Analysis/sanitizer lanes need a full LLVM toolchain, not only AppleClang:
-  clang-tidy, the clang analyzer and the RTSan runtime live in the keg-only
+  clang-tidy and the RTSan runtime live in the keg-only
   Homebrew LLVM install (`brew install llvm`). Discover it per machine with
   `brew --prefix llvm` — `/opt/homebrew/opt/llvm` on Apple Silicon,
   `/usr/local/opt/llvm` on Intel — never a single hard-coded prefix.
@@ -144,18 +144,18 @@ absolute build directory for the produced checks; the retired
 The `native`/`full` sweep stage runs the produced checks — also standalone
 CMake targets where defined: `check_frontends` (second-frontend
 syntax+analyzer), `check_tidy`
-(clang-tidy), `check_analyzer` (clang `--analyze`; alpha findings print but
-never block), `check_cppcheck`, `check_odr`, `check_scripts` (shellcheck),
+(clang-tidy, which also runs the clang static analyzer), `check_cppcheck`,
+`check_odr`, `check_scripts` (shellcheck),
 plus `headers`, `diagnostic-controls`, `context` and the contracts sweep.
 Each failed sweep names its kind; rerun it standalone with
 `build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`.
 **A missing required
 analysis tool is an error, not a skip.** Tools resolve through the
-configure-recorded check context — explicit `CLANG_TIDY`, `ANALYZER_CLANG`,
-`CPPCHECK`, `GXX`, `LLVM_PROFDATA`, `LLVM_COV` overrides first, then the
+configure-recorded check context — explicit `CLANG_TIDY`, `CPPCHECK`, `GXX`,
+`LLVM_PROFDATA`, `LLVM_COV` overrides first, then the
 configured compiler's toolchain siblings, qualified PATH candidates, and —
 on macOS only — `xcrun --find` inside the selected Xcode toolchain. The
-qualified tidy/analyzer set is the Homebrew LLVM toolchain discovered via
+qualified clang-tidy is the Homebrew LLVM toolchain discovered via
 `brew --prefix llvm` (AppleClang lacks several checkers); the GCC frontend
 for `check_frontends`/`check_odr` was the Homebrew `g++-16` on the measured
 host.

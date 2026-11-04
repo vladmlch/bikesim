@@ -100,8 +100,7 @@
     "note": "The native/full profiles run every configured sweep; a missing required tool is a failed gate, never a skip (AGENTS.md/native-engineering.md).",
     "sweep_to_tool": {
       "check_frontends": "g++ (real GNU frontend; second frontend -fsyntax-only + -fanalyzer)",
-      "check_tidy": "clang-tidy (upstream LLVM; keg-only brew LLVM on macOS)",
-      "check_analyzer": "clang++ --analyze (upstream LLVM; alpha findings report-only)",
+      "check_tidy": "clang-tidy (upstream LLVM; keg-only brew LLVM on macOS); also the only clang static analyzer pass (clang-analyzer-* glob)",
       "check_cppcheck": "cppcheck",
       "check_odr": "g++ -flto -Wodr",
       "check_scripts": "shellcheck over tools/*.sh (SHELLCHECK override honored)",
@@ -113,7 +112,7 @@
       "ninja (generator used by the qualified builds)",
       "make"
     ],
-    "overrides": "CLANG_TIDY, ANALYZER_CLANG, CPPCHECK, GXX, SHELLCHECK, LLVM_PROFDATA, LLVM_COV; invalid explicit overrides are hard errors"
+    "overrides": "CLANG_TIDY, CPPCHECK, GXX, SHELLCHECK, LLVM_PROFDATA, LLVM_COV; invalid explicit overrides are hard errors"
   },
   "sanitizer_lanes": {
     "asan": "NATIVE_SANITIZE=ON; clang set address,undefined,local-bounds,float-cast-overflow -fno-sanitize-recover=all (GCC keeps the address,undefined core); runtime resolved by compiler identity via tools/native_runtime.py",

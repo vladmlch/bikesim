@@ -1,8 +1,9 @@
 // check_frontends.cpp — the translation-unit sweeps plus the standalone
 // header and shell-script sweeps for the native check orchestrator
-// (task T56). Ports tools/native_checks.py: run_sweep for tidy/analyzer/
-// cppcheck/frontends/odr (single stable analyzer pass — alpha checkers
-// removed 2026-11-03), run_header_sweep, _tool_argv; and
+// (task T56). Ports tools/native_checks.py: run_sweep for tidy/cppcheck/
+// frontends/odr (the standalone clang --analyze kind was removed
+// 2026-11-04: clang-tidy's clang-analyzer-* glob already runs every one of
+// its checkers), run_header_sweep, _tool_argv; and
 // tools/check_scripts.sh (find tools/*.sh | sort | xargs shellcheck) as
 // the `scripts` kind.
 #include "checks_internal.hpp"
@@ -192,11 +193,9 @@ FrontendFlagProbe probe_frontend_warning_flags(
 // identify as; anything else is a selection error.
 const std::vector<std::string> &expected_tool_family(const std::string &kind) {
     static const std::vector<std::string> tidy{"clang-tidy"};
-    static const std::vector<std::string> analyzer{"clang"};
     static const std::vector<std::string> cppcheck{"cppcheck"};
     static const std::vector<std::string> gcc{"gcc"};
     if (kind == "tidy") return tidy;
-    if (kind == "analyzer") return analyzer;
     if (kind == "cppcheck") return cppcheck;
     if (kind == "frontends" || kind == "odr") return gcc;
     throw CheckError("unknown native sweep kind: " + kind);
@@ -219,57 +218,10 @@ std::vector<std::string> tool_argv(const std::string &kind,
                                    const std::vector<std::string> &frontend_flags) {
     const fs::path &source = entry.source;
     const std::vector<std::string> launcher = compiler_launcher(context);
-    if (kind == "tidy") {
-        const fs::path database =
-            temporary_database(build, kind, run_id, index, entry);
-        std::vector<std::string> argv = {tool.string(), "-p", database.string(),
-                                         "--extra-arg=-Wno-error", "--quiet"};
-        // First-party sources outside native/
-        // do not inherit native/.clang-tidy through parent-directory
-        // discovery — without it clang-tidy reports "no checks enabled".
-        const auto &roots_array =
-            std::get<Array>(member(context, "source_roots")->data);
-        const fs::path policy =
-            fs::path(std::get<std::string>(roots_array.front().data)) /
-            ".clang-tidy";
-        std::error_code ec;
-        if (fs::is_regular_file(policy, ec))
-            argv.push_back("--config-file=" + policy.string());
-        argv.push_back(source.string());
-        return argv;
-    }
-    if (kind == "analyzer") {
-        // Entries begin with [*launcher, compiler]: preserve the launcher
-        // spelling and replace the compiler slot with the analyzer driver.
-        std::vector<std::string> arguments(entry.arguments.begin(),
-                                           entry.arguments.end());
-        arguments.at(launcher.size()) = tool.string();
-        std::vector<std::string> cleaned;
-        cleaned.reserve(arguments.size());
-        std::size_t position = 0;
-        while (position < arguments.size()) {
-            const std::string &argument = arguments[position];
-            if (argument == "-o") {
-                position += 2;
-                continue;
-            }
-            if (argument == "-c" || argument == "-MD" ||
-                argument == "-MMD" || argument == "-MP") {
-                position += 1;
-                continue;
-            }
-            cleaned.push_back(argument);
-            position += 1;
-        }
-        if (cleaned.empty()) cleaned.push_back(tool.string());
-        std::vector<std::string> extra = {"-Xanalyzer", "-analyzer-output=text",
-                                          "-Xanalyzer", "-analyzer-checker=optin",
-                                          "-Xanalyzer",
-                                          "-analyzer-checker=cplusplus.Move"};
-        cleaned.emplace_back("--analyze");
-        cleaned.insert(cleaned.end(), extra.begin(), extra.end());
-        return cleaned;
-    }
+    if (kind == "tidy")
+        return tidy_command(tool,
+                            temporary_database(build, kind, run_id, index, entry),
+                            source, context);
     if (kind == "cppcheck") {
         const fs::path database =
             temporary_database(build, kind, run_id, index, entry);
@@ -352,6 +304,28 @@ void count_suppression(Value &summary, const std::string &checker) {
 }
 
 } // namespace
+
+std::vector<std::string> tidy_command(const fs::path &tool,
+                                      const fs::path &database,
+                                      const fs::path &source,
+                                      const Value &context) {
+    std::vector<std::string> argv = {tool.string(), "-p", database.string(),
+                                     "--extra-arg=-Wno-error", "--quiet"};
+    // First-party sources outside native/ (and the diagnostic controls'
+    // scratch sources) do not inherit native/.clang-tidy through
+    // parent-directory discovery — without it clang-tidy reports "no checks
+    // enabled".
+    const auto &roots_array =
+        std::get<Array>(member(context, "source_roots")->data);
+    const fs::path policy =
+        fs::path(std::get<std::string>(roots_array.front().data)) /
+        ".clang-tidy";
+    std::error_code ec;
+    if (fs::is_regular_file(policy, ec))
+        argv.push_back("--config-file=" + policy.string());
+    argv.push_back(source.string());
+    return argv;
+}
 
 namespace {
 std::set<std::size_t> entries_reaching(const std::vector<CompileEntry> &entries,
@@ -452,7 +426,7 @@ int run_sweep(const std::string &kind, const fs::path &build,
                 entries = std::move(selected);
                 set_member(summary, "selection", vstr("partial"));
             }
-            if (kind == "analyzer" || kind == "tidy")
+            if (kind == "tidy")
                 suppressions = load_suppressions(fs::path(std::get<std::string>(
                     member(context, "analysis_suppressions_manifest")->data)));
             const auto environment = environ_copy();
@@ -463,7 +437,7 @@ int run_sweep(const std::string &kind, const fs::path &build,
             set_member(summary, "tool_override", vstr(override_name));
             Object overrides;
             for (const std::string_view name:
-                 {"CLANG_TIDY", "ANALYZER_CLANG", "CPPCHECK", "GXX"})
+                 {"CLANG_TIDY", "CPPCHECK", "GXX"})
                 if (const auto found =
                         environment.find(std::string(name));
                     found != environment.end())
@@ -620,7 +594,7 @@ int run_sweep(const std::string &kind, const fs::path &build,
         set_member(record, "target",
                    entry.target.has_value() ? vstr(*entry.target) : vnull());
         std::vector<std::string> unsuppressed;
-        if (kind == "analyzer" || kind == "tidy") {
+        if (kind == "tidy") {
             const auto filtered = apply_suppressions(
                 record_diagnostics(record), tool_version, suppressions);
             unsuppressed = filtered.remaining;

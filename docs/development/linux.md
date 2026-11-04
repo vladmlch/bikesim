@@ -49,7 +49,7 @@ list. macOS arm64 is a separately qualified lane, not evidence for Linux.
   candidates (Debian-style: `build-essential`/`clang`, `cmake`,
   `ninja-build`, `pkg-config`, plus GLFW/OpenGL development packages for
   the GUI lane), and the analysis tools used by the sweep lanes
-  (`clang-tidy`, the clang analyzer, `cppcheck`, `shellcheck`, LLVM
+  (`clang-tidy`, `cppcheck`, `shellcheck`, LLVM
   `llvm-profdata`/`llvm-cov` for coverage).
 - **The distribution compiler is a candidate, not a promise.** Configure
   runs real capability probes — strict ISO C++23, standard library
@@ -296,15 +296,15 @@ directory; on the host the preset selects it. The retired
 The `native`/`full` sweep stage runs the produced checks — also standalone
 CMake targets where defined: `check_frontends` (second-frontend
 syntax+analyzer), `check_tidy`
-(clang-tidy), `check_analyzer` (clang `--analyze`; alpha findings print but
-never block), `check_cppcheck`, `check_odr`, `check_scripts` (shellcheck),
+(clang-tidy, which also runs the clang static analyzer), `check_cppcheck`,
+`check_odr`, `check_scripts` (shellcheck),
 plus `headers`, `diagnostic-controls`, `context` and the contracts sweep.
 Each failed sweep names its kind; rerun it standalone with
 `build/native-release/bin/bike-native-checks --kind <kind> --build build/native-release`.
 **A missing required
 analysis tool is an error, not a skip.** Tools resolve through the
-configure-recorded check context — explicit `CLANG_TIDY`, `ANALYZER_CLANG`,
-`CPPCHECK`, `GXX`, `LLVM_PROFDATA`, `LLVM_COV` overrides first, then the
+configure-recorded check context — explicit `CLANG_TIDY`, `CPPCHECK`, `GXX`,
+`LLVM_PROFDATA`, `LLVM_COV` overrides first, then the
 configured compiler's toolchain siblings and qualified PATH candidates
 (Linux never invokes `xcrun`). Clang 18's packaged `clang-tidy`/`clang++`
 siblings were the qualified set; an override that names a different

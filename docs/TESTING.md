@@ -92,7 +92,7 @@ The `native` and `full` profiles run stages cheapest-signal first: after
 configure and build, `ctest` (the ordinary ~1 min suite) runs before the
 sweep kinds, which `tools/run_native_checks.sh` executes in the fixed
 contract order `scripts cppcheck context diagnostic-controls contracts
-frontends headers odr tidy analyzer`; `full` then adds the `slow` and
+frontends headers odr tidy`; `full` then adds the `slow` and
 `package` label gates.
 
 `--from <stage>` (native/full only) is an intermediate re-check after a fix:
@@ -178,18 +178,22 @@ visible as multiple contexts.
 
 Every run writes `native/build/native_check_summaries/<kind>.json`; complete
 stdout and stderr are retained under `native/build/native_check_logs/<kind>/`.
-The summary separates tool health from findings. Stable diagnostics block even
-when the analyzer exits zero, while a tool crash or other nonzero exit fails
-tool health. The analyzer runs one stable pass — the experimental alpha half
-was removed 2026-11-03: it printed ~4650 unread report-only findings per run,
-never blocked, and cost ~34 min per gate. Tool executables can
-be overridden with `CLANG_TIDY`, `ANALYZER_CLANG`, `CPPCHECK`, and `GXX`; each
+The summary separates tool health from findings. Diagnostics block even
+when the tool exits zero, while a tool crash or other nonzero exit fails
+tool health. The clang static analyzer runs only inside clang-tidy: the
+`clang-analyzer-*` glob in `native/.clang-tidy` enables every checker,
+`optin.*` and `cplusplus.Move` included. The standalone `clang --analyze`
+sweep was removed 2026-11-04 — on the full tree it found nothing clang-tidy
+missed (its one finding was the deliberate `sanitizer_control.cpp`
+use-after-free) and cost ~4 min per gate; its experimental alpha half had
+gone 2026-11-03. The `diagnostic-controls` kind proves clang-tidy under the
+project policy still reports a planted use-after-move. Tool executables can
+be overridden with `CLANG_TIDY`, `CPPCHECK`, and `GXX`; each
 override is resolved and checked before the sweep runs.
 
 ~~~bash
 cmake --build build/native-release --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
-cmake --build build/native-release --target check_tidy        # clang-tidy, checks in native/.clang-tidy
-cmake --build build/native-release --target check_analyzer    # clang --analyze, stable+optin block (single pass)
+cmake --build build/native-release --target check_tidy        # clang-tidy, checks in native/.clang-tidy (includes the clang static analyzer)
 cmake --build build/native-release --target check_cppcheck    # cppcheck third engine
 cmake --build build/native-release --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts
 cmake --build build/native-release --target check_scripts     # shellcheck over tools/*.sh
@@ -256,7 +260,7 @@ First-party Move findings remain blocking. The
 only current third-party exception is in
 `native/analysis_suppressions.json`: it matches the observed Move diagnostic
 from nanobind's fixed size `std::array` caster by checker, header path, message,
-and analyzer version. The controller prints each suppression count.
+and clang-tidy version. The controller prints each suppression count.
 
 `CMAKE_OSX_SYSROOT` and `CMAKE_CXX_COMPILER` cache values supplied by the
 caller are retained and checked during configuration. If no SDK is supplied,
@@ -277,13 +281,11 @@ and the empty build type. Read the current compiler, SDK, run ID, and measured
 values in `native/build/native_check_summaries/context.json`; these local
 measurements are evidence for the selected toolchain, not a performance floor.
 
-`check_analyzer` and `check_tidy` need a full LLVM toolchain, not AppleClang:
+`check_tidy` needs a full LLVM toolchain, not AppleClang:
 on the qualified macOS arm64 host they resolve to the keg-only brew LLVM
 (`/opt/homebrew/opt/llvm/bin`, discovered per machine via `brew --prefix
 llvm`), and on the qualified Linux aarch64 lane to the distro clang-18
-tools. Missing tools are an error, not a skip. The
-analyzer runs a single stable pass — the experimental alpha half was removed
-2026-11-03 (thousands of unread report-only findings per run, ~34 min).
+tools. Missing tools are an error, not a skip.
 `check_odr` compiles every TU with `-flto` and merges with `-Wodr` — the only
 phase that can see a type defined differently across translation units.
 

@@ -132,3 +132,19 @@ unsuppressed findings on the current code.
 | C | Keep the pass but gate it to the `full` profile only | ~4.1 min removed from `native` runs; same T15-evidence risk as B on the `native` lane — analyzer regressions would surface only under `full` |
 
 No option selected — owner decides.
+
+## Decision (2026-11-04)
+
+Owner chose B: the standalone `analyzer` kind is removed. Nothing is added to
+`native/.clang-tidy` — its `clang-analyzer-*` glob already enables every
+checker the pass ran, `optin.*` and `cplusplus.Move` included (131 checkers
+listed by `clang-tidy --list-checks`).
+
+Correction to the conclusion above: clang-tidy does surface the T15
+use-after-free. `native/tests/sanitizer_control.cpp:49` carries
+`NOLINT(clang-analyzer-cplusplus.NewDelete, ...)`, which silences it. On a
+copy with that NOLINT entry removed, clang-tidy under `native/.clang-tidy`
+reports `warning: Use of memory after it is released
+[clang-analyzer-cplusplus.NewDelete]` at line 49. Option B therefore loses no
+demonstrated detection. The `diagnostic-controls` use-after-move control now
+drives clang-tidy under the project policy instead of `clang --analyze`.

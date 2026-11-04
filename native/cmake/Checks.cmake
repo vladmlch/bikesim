@@ -48,7 +48,7 @@ bike_write_check_context(NATIVE_DIR "${_checks_native_dir}")
 # Each target is one produced kind. The legacy target names under native/
 # take precedence when they exist (bindings-on configure) so this block
 # never redefines an owned target.
-foreach(_check_kind IN ITEMS frontends tidy analyzer cppcheck odr headers
+foreach(_check_kind IN ITEMS frontends tidy cppcheck odr headers
     diagnostic-controls context scripts)
   string(REPLACE "-" "_" _check_target "check_${_check_kind}")
   if(NOT TARGET ${_check_target})

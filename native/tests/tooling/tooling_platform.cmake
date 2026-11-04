@@ -1499,7 +1499,7 @@ math(EXPR _case_count "${_case_count} + 1")
 _expect_needle(${_c} "${_ci}" "run_native_checks.sh \"$build\"")
 _expect_needle(${_c} "${_checks_sh}"
   "kinds=(scripts cppcheck context diagnostic-controls contracts frontends")
-_expect_needle(${_c} "${_checks_sh}" "headers odr tidy analyzer)")
+_expect_needle(${_c} "${_checks_sh}" "    headers odr tidy)")
 _expect_needle(${_c} "${_checks_sh}" "contracts ]] && args+=(--repo-root")
 _expect_needle(${_c} "${_checks_sh}" "fails closed on missing tools")
 

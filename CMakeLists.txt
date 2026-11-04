@@ -703,7 +703,7 @@ if(BUILD_TESTING)
     # sources to .cpp/.cc/.cxx/.C). It compiles in its own OBJECT library with
     # EXPORT_COMPILE_COMMANDS OFF so it never reaches compile_commands.json —
     # the frontends sweep requires the database to match the manifest exactly —
-    # while the clang-tidy/analyzer/cppcheck sweeps cannot process ObjC++.
+    # while the clang-tidy/cppcheck sweeps cannot process ObjC++.
     add_library(bike_gpu_metal_runner_obj OBJECT
       "${_bike_native_dir}/src/gpu/metal_batch_runner.mm")
     bike_apply_native_policy(bike_gpu_metal_runner_obj)

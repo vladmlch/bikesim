@@ -89,7 +89,6 @@ struct SpindleConfig {
     // consumes them.
     double weld_servo_gain = 0.;
     double weld_servo_limit_nm = 0.;
-    double leg_track_damping_nms_rad = 0.;
     double joint_envelope_soft_k_nm_rad = 0.;
     double joint_envelope_soft_margin_rad = 0.;
     double arm_reach_fraction = 0.;

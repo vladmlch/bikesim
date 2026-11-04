@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "ride.file::config.json",
-  "nbytes": 26256,
+  "nbytes": 26136,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
   "offset": 5809704,
   "rtol": null,
   "shape": [
-   3282
+   3267
   ]
  },
  {
@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "ride.file::state.json",
-  "nbytes": 32376,
+  "nbytes": 32016,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5835960,
+  "offset": 5835840,
   "rtol": null,
   "shape": [
-   4047
+   4002
   ]
  },
  {
@@ -63,7 +63,7 @@
   "label": "ride.file::state.arrays/a000.f64",
   "nbytes": 2336,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5868336,
+  "offset": 5867856,
   "rtol": null,
   "shape": [
    292
@@ -77,7 +77,7 @@
   "label": "ride.file::state.arrays/a001.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870672,
+  "offset": 5870192,
   "rtol": null,
   "shape": [
    3
@@ -91,7 +91,7 @@
   "label": "ride.file::state.arrays/a002.f64",
   "nbytes": 176,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870696,
+  "offset": 5870216,
   "rtol": null,
   "shape": [
    22
@@ -105,7 +105,7 @@
   "label": "ride.file::state.arrays/a003.f64",
   "nbytes": 16,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870872,
+  "offset": 5870392,
   "rtol": null,
   "shape": [
    2
@@ -119,7 +119,7 @@
   "label": "ride.file::state.arrays/a004.f64",
   "nbytes": 8,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870888,
+  "offset": 5870408,
   "rtol": null,
   "shape": [
    1
@@ -133,7 +133,7 @@
   "label": "ride.file::state.arrays/a005.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870896,
+  "offset": 5870416,
   "rtol": null,
   "shape": [
    3
@@ -147,7 +147,7 @@
   "label": "ride.file::state.arrays/a006.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870920,
+  "offset": 5870440,
   "rtol": null,
   "shape": [
    3
@@ -161,7 +161,7 @@
   "label": "ride.file::state.arrays/a007.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870944,
+  "offset": 5870464,
   "rtol": null,
   "shape": [
    3
@@ -175,7 +175,7 @@
   "label": "ride.file::state.arrays/a008.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870968,
+  "offset": 5870488,
   "rtol": null,
   "shape": [
    3
@@ -189,7 +189,7 @@
   "label": "ride.file::state.arrays/a009.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5870992,
+  "offset": 5870512,
   "rtol": null,
   "shape": [
    3
@@ -203,7 +203,7 @@
   "label": "ride.file::state.arrays/a010.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871016,
+  "offset": 5870536,
   "rtol": null,
   "shape": [
    3
@@ -217,7 +217,7 @@
   "label": "ride.file::state.arrays/a011.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871040,
+  "offset": 5870560,
   "rtol": null,
   "shape": [
    3
@@ -231,7 +231,7 @@
   "label": "ride.file::state.arrays/a012.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871064,
+  "offset": 5870584,
   "rtol": null,
   "shape": [
    3
@@ -245,7 +245,7 @@
   "label": "ride.file::state.arrays/a013.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871088,
+  "offset": 5870608,
   "rtol": null,
   "shape": [
    3
@@ -259,7 +259,7 @@
   "label": "ride.file::state.arrays/a014.f64",
   "nbytes": 24,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871112,
+  "offset": 5870632,
   "rtol": null,
   "shape": [
    3
@@ -273,7 +273,7 @@
   "label": "ride.file::state.arrays/a015.f64",
   "nbytes": 72,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871136,
+  "offset": 5870656,
   "rtol": null,
   "shape": [
    9
@@ -287,7 +287,7 @@
   "label": "ride.file::state.arrays/a016.f64",
   "nbytes": 72,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871208,
+  "offset": 5870728,
   "rtol": null,
   "shape": [
    9
@@ -301,7 +301,7 @@
   "label": "events",
   "nbytes": 5,
   "node": "native_encode_columns/derived_events_real_episode_bitwise",
-  "offset": 5871280,
+  "offset": 5870800,
   "rtol": null,
   "shape": [
    5

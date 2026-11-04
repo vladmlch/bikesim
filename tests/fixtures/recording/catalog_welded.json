@@ -884,8 +884,6 @@
     "rider_joint_speed_violations",
     "rider_joint_torques",
     "rider_lean_limit_rad",
-    "rider_passive_power_w",
-    "rider_passive_work_step_j",
     "rider_positive_power_w",
     "rider_positive_work_step_j",
     "rider_strength_limited",

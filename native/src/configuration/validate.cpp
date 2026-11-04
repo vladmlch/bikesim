@@ -710,7 +710,7 @@ void post_init(ArticulatedConfig &config) {
     // scalar carries minimum=0 with the bare field name as label.
     static const std::set<std::string_view> kSkipped{
         "joint_envelope_path", "joint_strength_path", "pedal_attachment",
-        "saddle_attachment", "grip_attachment", "coupled_task_control",
+        "saddle_attachment", "grip_attachment",
         // Weld normal bounds may be negative (tension retention); a set
         // bound is checked finite-only below, matching post_init's mirror
         // of the wire's optional_real gate.

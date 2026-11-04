@@ -1306,19 +1306,12 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                     std::string(side));
                 const auto dof =
                     static_cast<std::size_t>(joints_[slot].dof_adr);
-                // Velocity-domain tracking of the crank-imposed leg
-                // motion (rider_control.py:924-934): the weld pins the
-                // foot to the pedal, so a joint that lags J*rate is
-                // dragged through the weld and the constraint ledger
-                // counts the drag as numerical work. A bounded follow
-                // torque — muscle impedance about the imposed velocity,
-                // not a lock — lets the actuators carry their own
-                // imposed motion.
+                // Weld-imposed leg feedforward (rider_control.py:924-934):
+                // the actuators carry the bias and inertia of the motion
+                // the crank imposes. No velocity-damping term is added —
+                // the model has no joint damping in any form.
                 const double feedforward = bias[dof] + inertia[dof];
-                const double track =
-                    config_.leg_track_damping_nms_rad *
-                    (jacobians[s][i] * rate - qvel[dof]);
-                requested[slot] = torques[i] + feedforward + track;
+                requested[slot] = torques[i] + feedforward;
                 requested_filled[slot] = 1;
             }
         }

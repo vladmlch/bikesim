@@ -11,6 +11,7 @@
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 #include <initializer_list>
@@ -132,9 +133,37 @@ std::vector<double> read_f64(const std::filesystem::path &path) {
     return values;
 }
 
+bool recording() {
+    const char *flag = std::getenv("BIKE_GOLDEN_RECORD"); // NOLINT(concurrency-mt-unsafe) read in a single-threaded test process
+    return flag != nullptr && std::string_view(flag) == "1";
+}
+
+void write_text(const std::filesystem::path &path, std::string_view content) {
+    std::ofstream stream(path, std::ios::binary | std::ios::trunc);
+    require(stream.is_open(), "cannot open fixture for writing: " + path.string());
+    stream.write(content.data(), static_cast<std::streamsize>(content.size()));
+    stream.close();
+    require(!stream.fail(), "fixture write failed: " + path.string());
+}
+
+void write_f64(const std::filesystem::path &path, std::span<const double> values) {
+    std::string bytes;
+    bytes.reserve(values.size() * 8);
+    for (const double value : values) {
+        const auto bits = std::bit_cast<std::uint64_t>(value);
+        for (unsigned shift = 0; shift < 8; ++shift)
+            bytes.push_back(static_cast<char>((bits >> (8U * shift)) & 0xFFU));
+    }
+    write_text(path, bytes);
+}
+
 void golden_text(std::string_view relative, std::string_view actual) {
     const std::string expected = text(fixture(relative));
     const bool equal = expected == actual;
+    if (recording()) {
+        if (!equal) write_text(fixture(relative), actual);
+        return;
+    }
     std::string message;
     if (!equal) {
         const std::size_t shared = std::min(expected.size(), actual.size());
@@ -152,6 +181,14 @@ void golden_text(std::string_view relative, std::string_view actual) {
 
 void golden_f64(std::string_view relative, std::span<const double> actual) {
     const std::vector<double> expected = read_f64(fixture(relative));
+    if (recording()) {
+        const bool same = expected.size() == actual.size() &&
+            std::ranges::equal(expected, actual, {}, [](double v) {
+                return std::bit_cast<std::uint64_t>(v);
+            }, [](double v) { return std::bit_cast<std::uint64_t>(v); });
+        if (!same) write_f64(fixture(relative), actual);
+        return;
+    }
     bool equal = expected.size() == actual.size();
     std::string message;
     if (!equal) {

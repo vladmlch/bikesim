@@ -106,12 +106,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "decimated/last_channel_keys",
-  "nbytes": 819,
+  "nbytes": 767,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
   "offset": 903358,
   "rtol": null,
   "shape": [
-   819
+   767
   ]
  },
  {
@@ -122,7 +122,7 @@
   "label": "decimated/full_ids",
   "nbytes": 1816,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 904177,
+  "offset": 904125,
   "rtol": null,
   "shape": [
    227

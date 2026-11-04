@@ -229,12 +229,12 @@
   "index": 16,
   "kind": "bitwise",
   "label": "channel_rider/bits/rider_control",
-  "nbytes": 56,
+  "nbytes": 52,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
   "offset": 7943,
   "rtol": null,
   "shape": [
-   56
+   52
   ]
  },
  {
@@ -245,7 +245,7 @@
   "label": "channel_rider/bits/rider_control_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 7999,
+  "offset": 7995,
   "rtol": null,
   "shape": [
    5
@@ -259,7 +259,7 @@
   "label": "channel_rider/bits/rider_allocation",
   "nbytes": 166,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 8004,
+  "offset": 8000,
   "rtol": null,
   "shape": [
    166
@@ -273,7 +273,7 @@
   "label": "channel_rider/bits/rider_allocation_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 8170,
+  "offset": 8166,
   "rtol": null,
   "shape": [
    5
@@ -287,7 +287,7 @@
   "label": "channel_rider/bits/rider_ik_saturation",
   "nbytes": 28,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 8175,
+  "offset": 8171,
   "rtol": null,
   "shape": [
    28
@@ -301,7 +301,7 @@
   "label": "channel_rider/bits/rider_ik_saturation_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 8203,
+  "offset": 8199,
   "rtol": null,
   "shape": [
    5
@@ -315,7 +315,7 @@
   "label": "channel_rider/bits/rider_support_targets",
   "nbytes": 1248,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 8208,
+  "offset": 8204,
   "rtol": null,
   "shape": [
    1248
@@ -329,7 +329,7 @@
   "label": "channel_rider/bits/rider_support_targets_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9456,
+  "offset": 9452,
   "rtol": null,
   "shape": [
    5
@@ -343,7 +343,7 @@
   "label": "channel_rider/bits/rider_intent",
   "nbytes": 225,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9461,
+  "offset": 9457,
   "rtol": null,
   "shape": [
    225
@@ -357,7 +357,7 @@
   "label": "channel_rider/bits/rider_intent_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9686,
+  "offset": 9682,
   "rtol": null,
   "shape": [
    5
@@ -371,7 +371,7 @@
   "label": "channel_rider/bits/rider_joint_torques",
   "nbytes": 28,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9691,
+  "offset": 9687,
   "rtol": null,
   "shape": [
    28
@@ -385,7 +385,7 @@
   "label": "channel_rider/bits/rider_joint_torques_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9719,
+  "offset": 9715,
   "rtol": null,
   "shape": [
    5
@@ -399,7 +399,7 @@
   "label": "channel_rider/bits/rider_joint_capacity_nm",
   "nbytes": 28,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9724,
+  "offset": 9720,
   "rtol": null,
   "shape": [
    28
@@ -413,7 +413,7 @@
   "label": "channel_rider/bits/rider_joint_capacity_nm_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9752,
+  "offset": 9748,
   "rtol": null,
   "shape": [
    5
@@ -427,7 +427,7 @@
   "label": "channel_rider/bits/rider_lean_limit_rad",
   "nbytes": 42,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9757,
+  "offset": 9753,
   "rtol": null,
   "shape": [
    42
@@ -441,7 +441,7 @@
   "label": "channel_rider/bits/rider_lean_limit_rad_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9799,
+  "offset": 9795,
   "rtol": null,
   "shape": [
    5
@@ -455,7 +455,7 @@
   "label": "channel_rider/bits/rider_balance",
   "nbytes": 183,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9804,
+  "offset": 9800,
   "rtol": null,
   "shape": [
    183
@@ -469,7 +469,7 @@
   "label": "channel_rider/bits/rider_balance_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9987,
+  "offset": 9983,
   "rtol": null,
   "shape": [
    5
@@ -483,7 +483,7 @@
   "label": "channel_rider/bits/attachment_samples",
   "nbytes": 35,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 9992,
+  "offset": 9988,
   "rtol": null,
   "shape": [
    35
@@ -497,7 +497,7 @@
   "label": "channel_rider/bits/attachment_samples_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10027,
+  "offset": 10023,
   "rtol": null,
   "shape": [
    5
@@ -511,7 +511,7 @@
   "label": "channel_rider/bits/rider_active_request_nm",
   "nbytes": 28,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10032,
+  "offset": 10028,
   "rtol": null,
   "shape": [
    28
@@ -525,7 +525,7 @@
   "label": "channel_rider/bits/rider_active_request_nm_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10060,
+  "offset": 10056,
   "rtol": null,
   "shape": [
    5
@@ -539,7 +539,7 @@
   "label": "channel_rider/bits/rider_active_delivered_nm",
   "nbytes": 28,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10065,
+  "offset": 10061,
   "rtol": null,
   "shape": [
    28
@@ -553,7 +553,7 @@
   "label": "channel_rider/bits/rider_active_delivered_nm_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10093,
+  "offset": 10089,
   "rtol": null,
   "shape": [
    5
@@ -567,7 +567,7 @@
   "label": "channel_rider/bits/rider_joint_positive_power_w",
   "nbytes": 28,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10098,
+  "offset": 10094,
   "rtol": null,
   "shape": [
    28
@@ -581,7 +581,7 @@
   "label": "channel_rider/bits/rider_joint_positive_power_w_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10126,
+  "offset": 10122,
   "rtol": null,
   "shape": [
    5
@@ -595,7 +595,7 @@
   "label": "channel_rider/bits/rider_positive_power_w",
   "nbytes": 42,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10131,
+  "offset": 10127,
   "rtol": null,
   "shape": [
    42
@@ -609,7 +609,7 @@
   "label": "channel_rider/bits/rider_positive_power_w_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10173,
+  "offset": 10169,
   "rtol": null,
   "shape": [
    5
@@ -620,10 +620,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_passive_power_w",
+  "label": "channel_rider/bits/rider_positive_work_step_j",
   "nbytes": 42,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10178,
+  "offset": 10174,
   "rtol": null,
   "shape": [
    42
@@ -634,10 +634,10 @@
   "dtype": "|u1",
   "index": 45,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_passive_power_w_present",
+  "label": "channel_rider/bits/rider_positive_work_step_j_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10220,
+  "offset": 10216,
   "rtol": null,
   "shape": [
    5
@@ -648,13 +648,13 @@
   "dtype": "|u1",
   "index": 46,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_positive_work_step_j",
-  "nbytes": 42,
+  "label": "channel_rider/bits/rider_activation_saturated",
+  "nbytes": 7,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10225,
+  "offset": 10221,
   "rtol": null,
   "shape": [
-   42
+   7
   ]
  },
  {
@@ -662,10 +662,10 @@
   "dtype": "|u1",
   "index": 47,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_positive_work_step_j_present",
+  "label": "channel_rider/bits/rider_activation_saturated_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10267,
+  "offset": 10228,
   "rtol": null,
   "shape": [
    5
@@ -676,13 +676,13 @@
   "dtype": "|u1",
   "index": 48,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_passive_work_step_j",
-  "nbytes": 42,
+  "label": "channel_rider/bits/rider_strength_limited",
+  "nbytes": 27,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10272,
+  "offset": 10233,
   "rtol": null,
   "shape": [
-   42
+   27
   ]
  },
  {
@@ -690,10 +690,10 @@
   "dtype": "|u1",
   "index": 49,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_passive_work_step_j_present",
+  "label": "channel_rider/bits/rider_strength_limited_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10314,
+  "offset": 10260,
   "rtol": null,
   "shape": [
    5
@@ -704,13 +704,13 @@
   "dtype": "|u1",
   "index": 50,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_activation_saturated",
-  "nbytes": 7,
+  "label": "channel_rider/bits/rider_strength_violations",
+  "nbytes": 27,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10319,
+  "offset": 10265,
   "rtol": null,
   "shape": [
-   7
+   27
   ]
  },
  {
@@ -718,10 +718,10 @@
   "dtype": "|u1",
   "index": 51,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_activation_saturated_present",
+  "label": "channel_rider/bits/rider_strength_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10326,
+  "offset": 10292,
   "rtol": null,
   "shape": [
    5
@@ -732,10 +732,10 @@
   "dtype": "|u1",
   "index": 52,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_limited",
+  "label": "channel_rider/bits/rider_joint_power_violations",
   "nbytes": 27,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10331,
+  "offset": 10297,
   "rtol": null,
   "shape": [
    27
@@ -746,10 +746,10 @@
   "dtype": "|u1",
   "index": 53,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_limited_present",
+  "label": "channel_rider/bits/rider_joint_power_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10358,
+  "offset": 10324,
   "rtol": null,
   "shape": [
    5
@@ -760,10 +760,10 @@
   "dtype": "|u1",
   "index": 54,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_violations",
+  "label": "channel_rider/bits/rider_joint_speed_violations",
   "nbytes": 27,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10363,
+  "offset": 10329,
   "rtol": null,
   "shape": [
    27
@@ -774,10 +774,10 @@
   "dtype": "|u1",
   "index": 55,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_violations_present",
+  "label": "channel_rider/bits/rider_joint_speed_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10390,
+  "offset": 10356,
   "rtol": null,
   "shape": [
    5
@@ -788,13 +788,13 @@
   "dtype": "|u1",
   "index": 56,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_power_violations",
-  "nbytes": 27,
+  "label": "channel_rider/bits/rider_effort_budget_exceeded",
+  "nbytes": 7,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10395,
+  "offset": 10361,
   "rtol": null,
   "shape": [
-   27
+   7
   ]
  },
  {
@@ -802,10 +802,10 @@
   "dtype": "|u1",
   "index": 57,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_power_violations_present",
+  "label": "channel_rider/bits/rider_effort_budget_exceeded_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10422,
+  "offset": 10368,
   "rtol": null,
   "shape": [
    5
@@ -816,13 +816,13 @@
   "dtype": "|u1",
   "index": 58,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_speed_violations",
-  "nbytes": 27,
+  "label": "channel_rider/bits/rider_active_positive_power_limit_w",
+  "nbytes": 42,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10427,
+  "offset": 10373,
   "rtol": null,
   "shape": [
-   27
+   42
   ]
  },
  {
@@ -830,10 +830,10 @@
   "dtype": "|u1",
   "index": 59,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_speed_violations_present",
+  "label": "channel_rider/bits/rider_active_positive_power_limit_w_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10454,
+  "offset": 10415,
   "rtol": null,
   "shape": [
    5
@@ -844,10 +844,10 @@
   "dtype": "|u1",
   "index": 60,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_budget_exceeded",
+  "label": "channel_rider/bits/rider_effort_observation",
   "nbytes": 7,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10459,
+  "offset": 10420,
   "rtol": null,
   "shape": [
    7
@@ -858,10 +858,10 @@
   "dtype": "|u1",
   "index": 61,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_budget_exceeded_present",
+  "label": "channel_rider/bits/rider_effort_observation_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10466,
+  "offset": 10427,
   "rtol": null,
   "shape": [
    5
@@ -872,13 +872,13 @@
   "dtype": "|u1",
   "index": 62,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_positive_power_limit_w",
-  "nbytes": 42,
+  "label": "channel_rider/bits/__attachment_samples_present",
+  "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10471,
+  "offset": 10432,
   "rtol": null,
   "shape": [
-   42
+   5
   ]
  },
  {
@@ -886,10 +886,10 @@
   "dtype": "|u1",
   "index": 63,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_positive_power_limit_w_present",
+  "label": "channel_rider/bits/__attachment_samples_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10513,
+  "offset": 10437,
   "rtol": null,
   "shape": [
    5
@@ -900,13 +900,13 @@
   "dtype": "|u1",
   "index": 64,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_observation",
-  "nbytes": 7,
+  "label": "channel_rider/bits/__rider_present",
+  "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10518,
+  "offset": 10442,
   "rtol": null,
   "shape": [
-   7
+   5
   ]
  },
  {
@@ -914,10 +914,10 @@
   "dtype": "|u1",
   "index": 65,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_observation_present",
+  "label": "channel_rider/bits/__rider_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10525,
+  "offset": 10447,
   "rtol": null,
   "shape": [
    5
@@ -928,10 +928,10 @@
   "dtype": "|u1",
   "index": 66,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__attachment_samples_present",
+  "label": "channel_rider/bits/__rider_activation_saturated_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10530,
+  "offset": 10452,
   "rtol": null,
   "shape": [
    5
@@ -942,10 +942,10 @@
   "dtype": "|u1",
   "index": 67,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__attachment_samples_valid",
+  "label": "channel_rider/bits/__rider_activation_saturated_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10535,
+  "offset": 10457,
   "rtol": null,
   "shape": [
    5
@@ -956,10 +956,10 @@
   "dtype": "|u1",
   "index": 68,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_present",
+  "label": "channel_rider/bits/__rider_active_delivered_nm_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10540,
+  "offset": 10462,
   "rtol": null,
   "shape": [
    5
@@ -970,10 +970,10 @@
   "dtype": "|u1",
   "index": 69,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_valid",
+  "label": "channel_rider/bits/__rider_active_delivered_nm_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10545,
+  "offset": 10467,
   "rtol": null,
   "shape": [
    5
@@ -984,10 +984,10 @@
   "dtype": "|u1",
   "index": 70,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_activation_saturated_present",
+  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10550,
+  "offset": 10472,
   "rtol": null,
   "shape": [
    5
@@ -998,10 +998,10 @@
   "dtype": "|u1",
   "index": 71,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_activation_saturated_valid",
+  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10555,
+  "offset": 10477,
   "rtol": null,
   "shape": [
    5
@@ -1012,10 +1012,10 @@
   "dtype": "|u1",
   "index": 72,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_delivered_nm_present",
+  "label": "channel_rider/bits/__rider_active_request_nm_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10560,
+  "offset": 10482,
   "rtol": null,
   "shape": [
    5
@@ -1026,10 +1026,10 @@
   "dtype": "|u1",
   "index": 73,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_delivered_nm_valid",
+  "label": "channel_rider/bits/__rider_active_request_nm_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10565,
+  "offset": 10487,
   "rtol": null,
   "shape": [
    5
@@ -1040,10 +1040,10 @@
   "dtype": "|u1",
   "index": 74,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_present",
+  "label": "channel_rider/bits/__rider_allocation_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10570,
+  "offset": 10492,
   "rtol": null,
   "shape": [
    5
@@ -1054,10 +1054,10 @@
   "dtype": "|u1",
   "index": 75,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_valid",
+  "label": "channel_rider/bits/__rider_allocation_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10575,
+  "offset": 10497,
   "rtol": null,
   "shape": [
    5
@@ -1068,10 +1068,10 @@
   "dtype": "|u1",
   "index": 76,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_request_nm_present",
+  "label": "channel_rider/bits/__rider_balance_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10580,
+  "offset": 10502,
   "rtol": null,
   "shape": [
    5
@@ -1082,10 +1082,10 @@
   "dtype": "|u1",
   "index": 77,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_request_nm_valid",
+  "label": "channel_rider/bits/__rider_balance_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10585,
+  "offset": 10507,
   "rtol": null,
   "shape": [
    5
@@ -1096,10 +1096,10 @@
   "dtype": "|u1",
   "index": 78,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_allocation_present",
+  "label": "channel_rider/bits/__rider_control_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10590,
+  "offset": 10512,
   "rtol": null,
   "shape": [
    5
@@ -1110,10 +1110,10 @@
   "dtype": "|u1",
   "index": 79,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_allocation_valid",
+  "label": "channel_rider/bits/__rider_control_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10595,
+  "offset": 10517,
   "rtol": null,
   "shape": [
    5
@@ -1124,10 +1124,10 @@
   "dtype": "|u1",
   "index": 80,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_balance_present",
+  "label": "channel_rider/bits/__rider_effort_budget_exceeded_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10600,
+  "offset": 10522,
   "rtol": null,
   "shape": [
    5
@@ -1138,10 +1138,10 @@
   "dtype": "|u1",
   "index": 81,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_balance_valid",
+  "label": "channel_rider/bits/__rider_effort_budget_exceeded_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10605,
+  "offset": 10527,
   "rtol": null,
   "shape": [
    5
@@ -1152,10 +1152,10 @@
   "dtype": "|u1",
   "index": 82,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_control_present",
+  "label": "channel_rider/bits/__rider_effort_observation_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10610,
+  "offset": 10532,
   "rtol": null,
   "shape": [
    5
@@ -1166,10 +1166,10 @@
   "dtype": "|u1",
   "index": 83,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_control_valid",
+  "label": "channel_rider/bits/__rider_effort_observation_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10615,
+  "offset": 10537,
   "rtol": null,
   "shape": [
    5
@@ -1180,10 +1180,10 @@
   "dtype": "|u1",
   "index": 84,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_budget_exceeded_present",
+  "label": "channel_rider/bits/__rider_ik_saturation_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10620,
+  "offset": 10542,
   "rtol": null,
   "shape": [
    5
@@ -1194,10 +1194,10 @@
   "dtype": "|u1",
   "index": 85,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_budget_exceeded_valid",
+  "label": "channel_rider/bits/__rider_ik_saturation_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10625,
+  "offset": 10547,
   "rtol": null,
   "shape": [
    5
@@ -1208,10 +1208,10 @@
   "dtype": "|u1",
   "index": 86,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_observation_present",
+  "label": "channel_rider/bits/__rider_intent_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10630,
+  "offset": 10552,
   "rtol": null,
   "shape": [
    5
@@ -1222,10 +1222,10 @@
   "dtype": "|u1",
   "index": 87,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_observation_valid",
+  "label": "channel_rider/bits/__rider_intent_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10635,
+  "offset": 10557,
   "rtol": null,
   "shape": [
    5
@@ -1236,10 +1236,10 @@
   "dtype": "|u1",
   "index": 88,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_ik_saturation_present",
+  "label": "channel_rider/bits/__rider_joint_capacity_nm_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10640,
+  "offset": 10562,
   "rtol": null,
   "shape": [
    5
@@ -1250,10 +1250,10 @@
   "dtype": "|u1",
   "index": 89,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_ik_saturation_valid",
+  "label": "channel_rider/bits/__rider_joint_capacity_nm_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10645,
+  "offset": 10567,
   "rtol": null,
   "shape": [
    5
@@ -1264,10 +1264,10 @@
   "dtype": "|u1",
   "index": 90,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_intent_present",
+  "label": "channel_rider/bits/__rider_joint_positive_power_w_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10650,
+  "offset": 10572,
   "rtol": null,
   "shape": [
    5
@@ -1278,10 +1278,10 @@
   "dtype": "|u1",
   "index": 91,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_intent_valid",
+  "label": "channel_rider/bits/__rider_joint_positive_power_w_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10655,
+  "offset": 10577,
   "rtol": null,
   "shape": [
    5
@@ -1292,10 +1292,10 @@
   "dtype": "|u1",
   "index": 92,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_capacity_nm_present",
+  "label": "channel_rider/bits/__rider_joint_power_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10660,
+  "offset": 10582,
   "rtol": null,
   "shape": [
    5
@@ -1306,10 +1306,10 @@
   "dtype": "|u1",
   "index": 93,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_capacity_nm_valid",
+  "label": "channel_rider/bits/__rider_joint_power_violations_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10665,
+  "offset": 10587,
   "rtol": null,
   "shape": [
    5
@@ -1320,10 +1320,10 @@
   "dtype": "|u1",
   "index": 94,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_positive_power_w_present",
+  "label": "channel_rider/bits/__rider_joint_speed_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10670,
+  "offset": 10592,
   "rtol": null,
   "shape": [
    5
@@ -1334,10 +1334,10 @@
   "dtype": "|u1",
   "index": 95,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_positive_power_w_valid",
+  "label": "channel_rider/bits/__rider_joint_speed_violations_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10675,
+  "offset": 10597,
   "rtol": null,
   "shape": [
    5
@@ -1348,10 +1348,10 @@
   "dtype": "|u1",
   "index": 96,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_power_violations_present",
+  "label": "channel_rider/bits/__rider_joint_torques_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10680,
+  "offset": 10602,
   "rtol": null,
   "shape": [
    5
@@ -1362,10 +1362,10 @@
   "dtype": "|u1",
   "index": 97,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_power_violations_valid",
+  "label": "channel_rider/bits/__rider_joint_torques_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10685,
+  "offset": 10607,
   "rtol": null,
   "shape": [
    5
@@ -1376,10 +1376,10 @@
   "dtype": "|u1",
   "index": 98,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_speed_violations_present",
+  "label": "channel_rider/bits/__rider_lean_limit_rad_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10690,
+  "offset": 10612,
   "rtol": null,
   "shape": [
    5
@@ -1390,10 +1390,10 @@
   "dtype": "|u1",
   "index": 99,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_speed_violations_valid",
+  "label": "channel_rider/bits/__rider_lean_limit_rad_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10695,
+  "offset": 10617,
   "rtol": null,
   "shape": [
    5
@@ -1404,10 +1404,10 @@
   "dtype": "|u1",
   "index": 100,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_torques_present",
+  "label": "channel_rider/bits/__rider_positive_power_w_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10700,
+  "offset": 10622,
   "rtol": null,
   "shape": [
    5
@@ -1418,10 +1418,10 @@
   "dtype": "|u1",
   "index": 101,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_torques_valid",
+  "label": "channel_rider/bits/__rider_positive_power_w_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10705,
+  "offset": 10627,
   "rtol": null,
   "shape": [
    5
@@ -1432,10 +1432,10 @@
   "dtype": "|u1",
   "index": 102,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_lean_limit_rad_present",
+  "label": "channel_rider/bits/__rider_positive_work_step_j_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10710,
+  "offset": 10632,
   "rtol": null,
   "shape": [
    5
@@ -1446,10 +1446,10 @@
   "dtype": "|u1",
   "index": 103,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_lean_limit_rad_valid",
+  "label": "channel_rider/bits/__rider_positive_work_step_j_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10715,
+  "offset": 10637,
   "rtol": null,
   "shape": [
    5
@@ -1460,10 +1460,10 @@
   "dtype": "|u1",
   "index": 104,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_passive_power_w_present",
+  "label": "channel_rider/bits/__rider_strength_limited_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10720,
+  "offset": 10642,
   "rtol": null,
   "shape": [
    5
@@ -1474,10 +1474,10 @@
   "dtype": "|u1",
   "index": 105,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_passive_power_w_valid",
+  "label": "channel_rider/bits/__rider_strength_limited_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10725,
+  "offset": 10647,
   "rtol": null,
   "shape": [
    5
@@ -1488,10 +1488,10 @@
   "dtype": "|u1",
   "index": 106,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_passive_work_step_j_present",
+  "label": "channel_rider/bits/__rider_strength_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10730,
+  "offset": 10652,
   "rtol": null,
   "shape": [
    5
@@ -1502,10 +1502,10 @@
   "dtype": "|u1",
   "index": 107,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_passive_work_step_j_valid",
+  "label": "channel_rider/bits/__rider_strength_violations_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10735,
+  "offset": 10657,
   "rtol": null,
   "shape": [
    5
@@ -1516,10 +1516,10 @@
   "dtype": "|u1",
   "index": 108,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_power_w_present",
+  "label": "channel_rider/bits/__rider_support_targets_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10740,
+  "offset": 10662,
   "rtol": null,
   "shape": [
    5
@@ -1530,10 +1530,10 @@
   "dtype": "|u1",
   "index": 109,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_power_w_valid",
+  "label": "channel_rider/bits/__rider_support_targets_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10745,
+  "offset": 10667,
   "rtol": null,
   "shape": [
    5
@@ -1544,10 +1544,10 @@
   "dtype": "|u1",
   "index": 110,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_work_step_j_present",
+  "label": "channel_rider/bits/__rider_welds_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10750,
+  "offset": 10672,
   "rtol": null,
   "shape": [
    5
@@ -1558,10 +1558,10 @@
   "dtype": "|u1",
   "index": 111,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_work_step_j_valid",
+  "label": "channel_rider/bits/__rider_welds_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10755,
+  "offset": 10677,
   "rtol": null,
   "shape": [
    5
@@ -1569,16 +1569,16 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<i8",
   "index": 112,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_limited_present",
-  "nbytes": 5,
+  "label": "channel_model_status/rows",
+  "nbytes": 8,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10760,
+  "offset": 10682,
   "rtol": null,
   "shape": [
-   5
+   1
   ]
  },
  {
@@ -1586,13 +1586,13 @@
   "dtype": "|u1",
   "index": 113,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_limited_valid",
-  "nbytes": 5,
+  "label": "channel_model_status/bits/episode_id",
+  "nbytes": 40,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10765,
+  "offset": 10690,
   "rtol": null,
   "shape": [
-   5
+   40
   ]
  },
  {
@@ -1600,13 +1600,13 @@
   "dtype": "|u1",
   "index": 114,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_violations_present",
-  "nbytes": 5,
+  "label": "channel_model_status/bits/interval_id",
+  "nbytes": 40,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10770,
+  "offset": 10730,
   "rtol": null,
   "shape": [
-   5
+   40
   ]
  },
  {
@@ -1614,13 +1614,13 @@
   "dtype": "|u1",
   "index": 115,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_violations_valid",
-  "nbytes": 5,
+  "label": "channel_model_status/bits/model_status",
+  "nbytes": 161,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10775,
+  "offset": 10770,
   "rtol": null,
   "shape": [
-   5
+   161
   ]
  },
  {
@@ -1628,13 +1628,13 @@
   "dtype": "|u1",
   "index": 116,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_support_targets_present",
-  "nbytes": 5,
+  "label": "channel_model_status/bits/contact_crash_cause",
+  "nbytes": 7,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10780,
+  "offset": 10931,
   "rtol": null,
   "shape": [
-   5
+   7
   ]
  },
  {
@@ -1642,10 +1642,10 @@
   "dtype": "|u1",
   "index": 117,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_support_targets_valid",
+  "label": "channel_model_status/bits/contact_crash_cause_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10785,
+  "offset": 10938,
   "rtol": null,
   "shape": [
    5
@@ -1656,122 +1656,10 @@
   "dtype": "|u1",
   "index": 118,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_welds_present",
-  "nbytes": 5,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10790,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 119,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_welds_valid",
-  "nbytes": 5,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10795,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<i8",
-  "index": 120,
-  "kind": "bitwise",
-  "label": "channel_model_status/rows",
-  "nbytes": 8,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10800,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 121,
-  "kind": "bitwise",
-  "label": "channel_model_status/bits/episode_id",
-  "nbytes": 40,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10808,
-  "rtol": null,
-  "shape": [
-   40
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 122,
-  "kind": "bitwise",
-  "label": "channel_model_status/bits/interval_id",
-  "nbytes": 40,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10848,
-  "rtol": null,
-  "shape": [
-   40
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 123,
-  "kind": "bitwise",
-  "label": "channel_model_status/bits/model_status",
-  "nbytes": 161,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 10888,
-  "rtol": null,
-  "shape": [
-   161
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 124,
-  "kind": "bitwise",
-  "label": "channel_model_status/bits/contact_crash_cause",
-  "nbytes": 7,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11049,
-  "rtol": null,
-  "shape": [
-   7
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 125,
-  "kind": "bitwise",
-  "label": "channel_model_status/bits/contact_crash_cause_present",
-  "nbytes": 5,
-  "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11056,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 126,
-  "kind": "bitwise",
   "label": "channel_model_status/bits/attachment_violations",
   "nbytes": 27,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11061,
+  "offset": 10943,
   "rtol": null,
   "shape": [
    27
@@ -1780,12 +1668,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 127,
+  "index": 119,
   "kind": "bitwise",
   "label": "channel_model_status/bits/attachment_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11088,
+  "offset": 10970,
   "rtol": null,
   "shape": [
    5
@@ -1794,12 +1682,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 128,
+  "index": 120,
   "kind": "bitwise",
   "label": "channel_model_status/bits/__attachment_violations_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11093,
+  "offset": 10975,
   "rtol": null,
   "shape": [
    5
@@ -1808,12 +1696,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 129,
+  "index": 121,
   "kind": "bitwise",
   "label": "channel_model_status/bits/__attachment_violations_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11098,
+  "offset": 10980,
   "rtol": null,
   "shape": [
    5
@@ -1822,12 +1710,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 130,
+  "index": 122,
   "kind": "bitwise",
   "label": "channel_model_status/bits/__contact_crash_cause_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11103,
+  "offset": 10985,
   "rtol": null,
   "shape": [
    5
@@ -1836,12 +1724,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 131,
+  "index": 123,
   "kind": "bitwise",
   "label": "channel_model_status/bits/__contact_crash_cause_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11108,
+  "offset": 10990,
   "rtol": null,
   "shape": [
    5
@@ -1850,12 +1738,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 132,
+  "index": 124,
   "kind": "bitwise",
   "label": "channel_model_status/bits/__model_status_present",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11113,
+  "offset": 10995,
   "rtol": null,
   "shape": [
    5
@@ -1864,12 +1752,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 133,
+  "index": 125,
   "kind": "bitwise",
   "label": "channel_model_status/bits/__model_status_valid",
   "nbytes": 5,
   "node": "native_encode_columns/struct_fragments_respect_batch_rows_bound",
-  "offset": 11118,
+  "offset": 11000,
   "rtol": null,
   "shape": [
    5

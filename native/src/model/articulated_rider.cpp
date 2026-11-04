@@ -17,7 +17,7 @@ void build_articulated_rider(Element& world,const ArticulatedPose& pose,const Se
         auto& owner=parent.add("body",{{"name","rider_"+key},{"pos",vec17(sub(start,origin))}});
         origins[&owner]=start;
         if(!joint_name.empty() && !(lock_ankles && joint_name.starts_with("rider_ankle_"))) {
-            Attributes attributes{{"name",joint_name},{"type","hinge"},{"axis","0 1 0"},{"damping","0"}};
+            Attributes attributes{{"name",joint_name},{"type","hinge"},{"axis","0 1 0"}};
             if(envelopes) {
                 const auto it=std::ranges::find_if(*envelopes,[&](const auto& item){return item.first==joint_name;});
                 if(it==envelopes->end()) throw std::invalid_argument("missing joint envelope: "+joint_name);
@@ -34,9 +34,9 @@ void build_articulated_rider(Element& world,const ArticulatedPose& pose,const Se
         return owner;
     };
     auto& pelvis=segment("pelvis",world,pose.hip,add(pose.hip,{0.,0.,.12}),.085);
-    pelvis.add("joint",{{"name","rider_root_x"},{"type","slide"},{"axis","1 0 0"},{"damping","0"}});
-    pelvis.add("joint",{{"name","rider_root_z"},{"type","slide"},{"axis","0 0 1"},{"damping","0"}});
-    pelvis.add("joint",{{"name","rider_root_pitch"},{"type","hinge"},{"axis","0 1 0"},{"damping","0"}});
+    pelvis.add("joint",{{"name","rider_root_x"},{"type","slide"},{"axis","1 0 0"}});
+    pelvis.add("joint",{{"name","rider_root_z"},{"type","slide"},{"axis","0 0 1"}});
+    pelvis.add("joint",{{"name","rider_root_pitch"},{"type","hinge"},{"axis","0 1 0"}});
     site(pelvis,"site_rider_saddle","0 0 -0.060",".004");
     auto& torso=segment("torso",pelvis,pose.hip,pose.shoulder,.11,"rider_torso_hinge");
     auto& head=torso.add("body",{{"name","rider_head"},{"pos",vec17(sub(pose.head_center,pose.hip))}});

@@ -1,7 +1,8 @@
-// This gate requires a real Python-frozen artifact for the host platform.
-// Missing acquisition fails explicitly; it is never replaced by a native
-// self-golden or synthetic numeric values. Keep ADR-0003 parity until the
-// two-platform captures and cross-reads have actually been qualified.
+// This gate requires the frozen episode artifact for the host platform;
+// a missing artifact fails explicitly. The darwin-arm64 artifact was
+// Python-frozen until 2026-11-04, when the joint-damping removal changed the
+// model and it was re-frozen natively with `bike-recording golden freeze`
+// (a reviewed native self-golden, ADR-0003 rule 2).
 #include "support/golden.hpp"
 #include "support/fixture_test.hpp"
 #include "golden/episode.hpp"
@@ -44,7 +45,7 @@ void check() {
     bt::require(std::filesystem::is_regular_file(source / "episode.npz"),
         "task 3.03 oracle acquisition required: " + (source / "episode.npz").string());
     const auto episode = golden::load_episode(source);
-    bt::require(episode.rows.size() == 40 && episode.controls.size() == 40, "pinned Python artifact has forty rows and controls");
+    bt::require(episode.rows.size() == 40 && episode.controls.size() == 40, "frozen artifact has forty rows and controls");
     bt::require(episode.state_qpos.shape.size() == 2 && episode.state_qpos.shape[0] == 40, "forty force-entry qpos records");
     bt::require(episode.forces.shape.size() == 3 && episode.forces.shape[0] == 40 &&
         episode.forces.shape[1] == episode.force_names.size(), "complete force component matrix");
@@ -62,7 +63,7 @@ void check() {
     const auto captured = golden::capture_episode(*environment, 40, control);
     const auto differences = golden::compare_rows(episode.rows, captured.rows);
     for (const auto &difference : differences) std::cerr << difference << '\n';
-    bt::require(differences.empty(), "native recorder rows reproduce Python oracle");
+    bt::require(differences.empty(), "native recorder rows reproduce the frozen episode");
     fields(episode, captured);
     bt::require(golden::same_failure(episode.first_failure, captured.first_failure, 1e-12, 1e-12), "same first monitor failure");
     const auto replay = golden::compare_episode(episode, *environment);

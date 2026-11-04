@@ -439,8 +439,7 @@ bike::terrain::TrackSpec probe_track_30() {
 [[gnu::noinline]] void
 test_actuators_are_pure_motors_without_dof_damping() {
     // joint_strength/actuators_are_pure_motors_without_dof_damping
-    // Repurposed post-Q13: the dof-damping knob is removed — rider hinges
-    // must be pure motors carrying NO dof damping attribute at all.
+    // Rider hinges are pure motors carrying no dof damping at all.
     auto rig = rr::pinned_rig({}, probe_track_30());
     auto &physical = *rig->physical;
     const auto &controller = physical.rider_control();
@@ -517,11 +516,8 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
     bt::require(diagnostics.strength_violations.has_value() &&
                     diagnostics.strength_violations->empty(),
                 "no strength violation is reported");
-    // Spec Q13: no tissue-damping diagnostic survives — the kept
-    // rider_passive_damping row is the engine's raw qfrc_passive at rider
-    // DOFs, and engine_passive must keep excluding it exactly.
-    const auto passive_row =
-        component_row(last, "rider_passive_damping");
+    // Rider joints carry no damping or stiffness: the engine's passive
+    // row (raw qfrc_passive) is zero at every rider DOF.
     const auto engine_row = component_row(last, "engine_passive");
     for (const auto &j : controller.joints()) {
         const auto *terms = static_cast<const ::rider::JointTerms *>(
@@ -535,12 +531,10 @@ test_stepped_effort_respects_strength_and_the_power_budget() {
         bt::require(terms->solved_active_nm.has_value() &&
                         rr::approx(*terms->solved_active_nm, act_row[dof]),
                     j.name + ": solved active torque is the actuator row");
-        bt::require(
-            rr::approx(passive_row[dof], last.qfrc_passive[dof]),
-            j.name + ": the channel is raw qfrc_passive at the rider DOF");
+        bt::require(rr::approx(engine_row[dof], last.qfrc_passive[dof]),
+                    j.name + ": engine_passive is raw qfrc_passive");
         bt::require(rr::approx(engine_row[dof], 0., 1e-6, 1e-9),
-                    j.name + ": engine_passive never double-counts the "
-                              "rider passive row");
+                    j.name + ": no passive force acts on the rider DOF");
     }
 }
 

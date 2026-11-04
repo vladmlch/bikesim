@@ -283,9 +283,7 @@ namespace {
                    keys("command_nm", "posture_nm",
                         "pedaling_nm", "saturated"),
                    keys("requested_nm", "active_request_nm", "active_delivered_nm",
-                        "passive_damping_nm", // legacy recordings
                         "solved_force_nm", "solved_active_nm",
-                        "solved_passive_nm", // legacy recordings
                         "support_nm", "tracking_nm", "hip_posture_nm"));
         JointTerms out;
         out.requested_present = d.contains("requested_nm");
@@ -494,8 +492,6 @@ namespace {
         "rider_effort_budget_exceeded", "rider_active_positive_power_limit_w", "rider_effort_observation",
         "rider_joint_positive_power_w", "rider_joint_power_violations",
         "rider_joint_speed_violations", "rider_positive_work_step_j",
-        "rider_passive_power_w",     // legacy recordings
-        "rider_passive_work_step_j", // legacy recordings
         "rider_strength_violations");
 
     void decode_effort_solved_fields(const Dict &d, std::string_view path,
@@ -733,7 +729,6 @@ namespace {
         "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
         "balance_grace_s", "bar_support_fraction",
         "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
-        "coupled_task_control",
         "delivered_joint_power_budget_w", "delivered_positive_power_budget_w",
         "foot_mu", "grip_attachment",
         "grip_c_ns_m", "grip_capture_distance_m", "grip_capture_speed_mps",
@@ -743,7 +738,7 @@ namespace {
         "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
         "joint_power_limit_w",
         "joint_speed_limit_rad_s", "joint_strength_path",
-        "leg_track_damping_nms_rad", "link_max_gap_m",
+        "link_max_gap_m",
         "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
         "pedal_min_normal_n", "pedal_patch_half_length_m",
         "pedal_scrape_fraction", "pedal_support_fraction",
@@ -762,11 +757,6 @@ namespace {
         "weld_saddle_shear_n", "weld_servo_gain", "weld_servo_limit_nm",
         "strength", "strength_coordinates",
         "envelopes");
-
-    // Accepted-but-ignored keys: config envelopes written before the
-    // passive joint-damping removal still carry the knob.
-    constexpr auto kConfigOptionalKeys = keys(
-        "joint_passive_damping_nms_rad"); // legacy recordings
 
     constexpr std::array kUnmodeledScalarKeys{
         "pedal_support_fraction", "bar_support_fraction",
@@ -804,7 +794,6 @@ namespace {
         for (const char *key : {"weld_foot_min_normal_n", "weld_foot_max_normal_n",
                                 "weld_saddle_min_normal_n", "weld_saddle_max_normal_n"})
             (void)d[key].optional_real(path);
-        (void)d["coupled_task_control"].boolean(path);
     }
 
     // The class implements exactly the supported spindle plant; other
@@ -855,8 +844,6 @@ namespace {
         config.weld_servo_gain = d["weld_servo_gain"].finite_real(path);
         config.weld_servo_limit_nm =
             d["weld_servo_limit_nm"].finite_real(path);
-        config.leg_track_damping_nms_rad =
-            d["leg_track_damping_nms_rad"].finite_real(path);
         config.joint_envelope_soft_k_nm_rad =
             d["joint_envelope_soft_k_nm_rad"].finite_real(path);
         config.joint_envelope_soft_margin_rad =
@@ -1952,26 +1939,7 @@ bio::Value encode_sole_goal(const SoleGoalDiagnostics &goal) {
 SpindleConfig decode_spindle_config(const bio::Value &value) {
     const std::string path = "config.rider_controller";
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, kConfigRequiredKeys, kConfigOptionalKeys);
-    // legacy recordings: the removed knob is accepted only when the
-    // recorded value is inert — a recorded 0.0 left zero hinge damping.
-    // A recorded null is never inert in this payload: rider_controller
-    // documents exist only when an articulated rider ran, so the unset
-    // knob resolved through the nullopt -> joint_kd_nms_rad fallback
-    // (~15 Nms/rad) on live hinges — the same ruling
-    // replay/rebuild.cpp's drop_removed_passive_damping makes for
-    // recorded_rider_hinges. A non-inert recorded value cannot be
-    // silently dropped — it would bless a different reconstruction.
-    if (d.contains("joint_passive_damping_nms_rad")) {
-        const VNode recorded = d["joint_passive_damping_nms_rad"];
-        if (recorded.is_none())
-            invalid(std::string(path) + ".joint_passive_damping_nms_rad",
-                    "recorded null resolved to joint_kd_nms_rad fallback "
-                    "damping on the articulated rider");
-        else if (recorded.finite_real(path) != 0.)
-            invalid(std::string(path) + ".joint_passive_damping_nms_rad",
-                    "removed config knob carries a nonzero recorded value");
-    }
+    ncd::exact(d, kConfigRequiredKeys);
     SpindleConfig config;
     decode_actuation_scalars(d, path, config);
     decode_geometry_scalars(d, path, config);
@@ -1982,12 +1950,10 @@ SpindleConfig decode_spindle_config(const bio::Value &value) {
     decode_strength_tables(d, path, config);
     if (d["pedal_attachment"].string(path) != "spindle" ||
         d["saddle_attachment"].string(path) != "pin" ||
-        d["grip_attachment"].string(path) != "connect" ||
-        d["coupled_task_control"].boolean(path)) {
+        d["grip_attachment"].string(path) != "connect") {
         bio::Value::Object members;
         for (const auto& [key, member] : std::get<bio::Value::Object>(value.data))
-            if (key != "strength" && key != "strength_coordinates" && key != "envelopes" &&
-                key != "joint_passive_damping_nms_rad") // legacy recordings: inert-only, gated above
+            if (key != "strength" && key != "strength_coordinates" && key != "envelopes")
                 members.emplace_back(key,member);
         config.legacy = decode_articulated_config(bio::Value{std::move(members)});
     }

@@ -12,6 +12,17 @@
 > - Recording channels `battery_energy_j`, `battery_empty`, `energy_limited`,
 >   `electrical_power_w` and energy terms `electrical_work_j`,
 >   `electrical_residual_j` no longer exist.
+> - Joint damping was removed in every form (branch `no-joint-damping`,
+>   2026-11-04): stored `model.mjb` fixtures have `dof_damping = 0`; the
+>   recording channels `passive_damping_nm`, `solved_passive_nm`,
+>   `rider_passive_power_w`, `rider_passive_work_step_j`, the force
+>   component `rider_passive_damping` and the config keys
+>   `joint_passive_damping_nms_rad`, `leg_track_damping_nms_rad`,
+>   `coupled_task_control` no longer exist; the darwin-arm64 goldens under
+>   `tests/fixtures/golden/` were re-recorded natively (linux-aarch64 not yet).
+>   D2 and the "no golden re-capture" rule hold from that state on: every
+>   baseline episode and digest (D18, Stage 0) is captured after that branch
+>   is merged, never from a recording made with the damped model.
 > - Open question Q23 from the planning session (record every per-step model
 >   mutation: brake joint friction, motor tendon limit, solver warmstart) was
 >   never answered.
@@ -188,7 +199,7 @@ Tests and build:
   - `RuntimeRigAccess::inspect(NativeRideRuntime&, std::function<void(const Stepper&, const PhysicalStep&)>)` is in `bike_validation` (`validation/runtime_access.hpp:17`, `cmake/NativeValidation.cmake:3,10`).
 - F31. `io::tagged_double` maps `Number` lexemes and the `float64` sentinels `nan/+inf/-inf` to doubles (`io/value.hpp:427-444`). `io::Sha256::{update,finish}` is at `io/hash.hpp:17-20`; `io::sha256(span)` returns hex (`:34`). `Cursor::next_batch` is at `recording/duckdb.hpp:27`.
 - F32. The sweep kinds are `frontends tidy analyzer cppcheck odr scripts headers diagnostic-controls context` plus `contracts` (`tools/run_native_checks.sh:32-38`). The presets set `NATIVE_SANITIZE/NATIVE_RTSAN/NATIVE_COVERAGE` (`CMakePresets.json:36-38`, options at `BikeCompilerPolicy.cmake:52-54`).
-- F33. The existing committed sealed containers under `tests/fixtures/migration/recording/{good,value_cases,…}` (≈10 MB `run.duckdb`) are not opened by any C++ test (grep `native/tests`). They are Python-era evidence whose `field_catalog` may predate the current catalog.
+- F33. The existing committed sealed containers under `tests/fixtures/migration/recording/{good,value_cases,…}` (≈10 MB `run.duckdb`) are not opened by any C++ test (grep `native/tests`). They are Python-era evidence whose `field_catalog` may predate the current catalog. Deleted on 2026-11-04 (branch `no-joint-damping`): they carried the removed damping columns, and the full suite passed without them; the size precedent below refers to them historically.
 
 ## Ordering argument: where `controls` is sampled
 
@@ -1225,7 +1236,7 @@ Expected:
 - the published directory lists `manifest.json`, `run.duckdb` and possibly `summary.md`;
 - `du` prints a size in KiB.
 
-Stop condition: the published directory is larger than 16384 KiB. Stop and ask before committing it; the largest committed precedent is ≈10 MB, F33. One alternative to offer: first check whether `tests/fixtures/migration/recording/good` opens with the native reader (`build/native-release/bin/bike-recording overview tests/fixtures/migration/recording/good`). If it opens, it can serve as the v1 fixture instead.
+Stop condition: the published directory is larger than 16384 KiB. Stop and ask before committing it; the largest committed precedent is ≈10 MB, F33. There is no committed alternative: the old recording fixture (`tests/fixtures/recording/good`, formerly `migration/recording/good`) carried the removed damping columns and was deleted on 2026-11-04 as unused.
 
 ```bash
 mkdir -p tests/fixtures/recording-schema1/flat_5ms
@@ -2530,7 +2541,7 @@ Report:
    - `xfrc_applied`.
    The geometric hub records the bound but not a ratio.
 8. **Welded fixture coverage** (Task 4 Step 2). If the welded bootstrap has no ideal hub, or `nu = 0`, or a constant `ctrl` over 40 steps, the runtime test is weaker or cannot run. Stop and ask.
-9. **Fixture size** (Task 2 Step 7). The new v1 container may be several MB (bundled model asset). Stop above 16 MiB. The alternative is reusing `tests/fixtures/migration/recording/good`, if the native reader accepts it.
+9. **Fixture size** (Task 2 Step 7). The new v1 container may be several MB (bundled model asset). Stop above 16 MiB. There is no committed alternative fixture (the old `recording/good` was deleted on 2026-11-04).
 10. **Other tests pinning schema 1** (Task 3 Step 10). Only expectation-only edits are allowed. Anything that changes encoded bytes or physics is a stop.
 11. **Profile choice.** `docs/agents/native-engineering.md` §Verify asks for both `native` and `full` on a native physics/realtime change. The master plan's Global Constraints set `native` as the stage gate. This stage changes only recording code and a const sampling copy in the step path, with physics proven unchanged by gate B. Whether `bash tools/run_tests.sh full` must also run is the caller's decision. Ask before skipping it, or run it after Task 6 Step 2 if asked.
 12. **Per-step allocation.** `sample_controls` copies `nu` doubles each step, as `advance_body` already does for `qpos`/`qvel`. `advance_body` is not a marked warm-core entry (TESTING.md §R1), so no allocation contract applies. An RTF measurement is out of scope.

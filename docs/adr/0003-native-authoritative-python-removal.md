@@ -60,3 +60,19 @@ remain separate from that integration.
   in the same reviewed change.
 - No test is retired before its per-file two-platform capture and C++
   replacement. This ADR does not itself close qualification or deletion.
+
+## Note 2026-11-04: darwin-arm64 goldens re-recorded natively after the joint-damping removal
+
+Joint damping was removed from the model in every form (rider and bike
+joints). The stored `model.mjb` fixtures were patched to `dof_damping = 0`
+(the builder output with damping removed matches the patched models), and
+every darwin-arm64 golden whose values depend on the model was re-recorded
+by the native program in record mode (`BIKE_GOLDEN_RECORD=1`). Entries
+whose actual values still matched within their recorded tolerance were
+kept, so unrelated goldens are unchanged. These goldens now prove "native
+today equals native at re-recording", no longer "native equals the removed
+Python oracle". The episode golden `episode/pinned_savage_40` was re-frozen
+with `bike-recording golden freeze`; the before comparison (old golden
+against the new program) is kept in `docs/superpowers/audits/2026-11-04-no-joint-damping-episode-{before,after}.txt`. The
+linux-aarch64 goldens are not re-recorded yet and are stale until the
+container run.

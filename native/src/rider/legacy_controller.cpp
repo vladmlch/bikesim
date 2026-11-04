@@ -214,11 +214,7 @@ Vector LegacyController::upper_targets(const mjData& data,const ::rider::RiderPo
         Vec grip;
         if(cfg.grip_attachment=="connect")grip=add(vec(data.xpos,m.nbody,c_.steer_body_),mv(rot(data.xmat,m.nbody,c_.steer_body_),c_.weld_grip_offset_[s]));
         else {grip=add(vec(data.xpos,m.nbody,c_.frame_body_),mv(frame,add(c_.pose_.grip,{0.,(s?1.:-1.)*bike::model::ARM_LATERAL_OFFSET_M,0.})));if(grip_force)grip=add(grip,mul(*grip_force,1./(2.*cfg.grip_k_n_m)));}
-        Vec shoulder=vec(data.xpos,m.nbody,c_.upper_arm_bodies_[s]);Rot target_rotation=torso;
-        if(cfg.grip_attachment=="connect"&&cfg.coupled_task_control) {
-            const double delta=::spindle::wrap_angle(torso_q-qpos[static_cast<std::size_t>(c_.joints_[c_.joint_index("rider_torso_hinge")].qpos_adr)]),co=numeric::math_cos(delta),si=numeric::math_sin(delta);const Rot turn{co,0.,si,0.,1.,0.,-si,0.,co};const auto hinge=vec(data.xanchor,m.njnt,c_.torso_joint_);shoulder=add(hinge,mv(turn,sub(shoulder,hinge)));
-            for(std::size_t i=0;i<3;++i)for(std::size_t j=0;j<3;++j){target_rotation[3*i+j]=0.;for(std::size_t k=0;k<3;++k)target_rotation[3*i+j]+=turn[3*i+k]*torso[3*k+j];}
-        }
+        const Vec shoulder=vec(data.xpos,m.nbody,c_.upper_arm_bodies_[s]);const Rot& target_rotation=torso;
         const auto goal=mv(target_rotation,sub(grip,shoulder),true);const auto ik=::spindle::two_link_ik({goal[0],goal[2]},c_.arm_upper_m_,c_.arm_lower_m_,c_.arm_branch_);saturated=saturated||ik.saturated;
         const std::string side=s?"right":"left";result[c_.joint_index("rider_shoulder_"+side)]=c_.arm_upper_angle0_-ik.angles[0];result[c_.joint_index("rider_elbow_"+side)]=(c_.arm_lower_angle0_-c_.arm_upper_angle0_)-ik.angles[1];
     }
@@ -296,7 +292,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto qvel=model_access::readonly_buffer(data.qvel,m.nv,"qvel");
     const auto qfrc_bias=model_access::readonly_buffer(data.qfrc_bias,m.nv,"qfrc_bias");
     const auto body_mass=model_access::readonly_buffer(m.body_mass,m.nbody,"body_mass");
-    const auto body_subtreemass=model_access::readonly_buffer(m.body_subtreemass,m.nbody,"body_subtreemass");
     if(!std::isfinite(dt)||dt<0.||!std::isfinite(command.mean_crank_torque_nm)||command.mean_crank_torque_nm<0.||!std::isfinite(command.crank_target_rate_rad_s))throw std::invalid_argument("invalid articulated command");
     c_.command_enabled_=command.enabled&&c_.enabled_;::rider::NamedEntries<double> output;
     if(!c_.command_enabled_) {
@@ -318,9 +313,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const double pitch_error=::spindle::wrap_angle(std::atan2(-frame[6],frame[0])-std::atan2(-pelvis[6],pelvis[0])+command.posture.pelvis_pitch_rad);
     const double pitch=std::clamp(cfg.posture_pitch_k_nm_rad*pitch_error+cfg.posture_pitch_d_nms_rad*(qvel[static_cast<std::size_t>(c_.frame_pitch_dof_)]-qvel[static_cast<std::size_t>(c_.rider_pitch_dof_)]),-cfg.posture_pitch_limit_nm,cfg.posture_pitch_limit_nm);
     const auto crank_rotation=rot(data.xmat,m.nbody,c_.crank_body_);const double phase=std::atan2(-crank_rotation[6],crank_rotation[0]);
-    const bool coupled=cfg.coupled_task_control&&c_.welded()&&cfg.grip_attachment=="connect"&&cfg.saddle_attachment=="weld";
-    std::optional<double> crank_task;if(coupled&&command.mean_crank_torque_nm>0.)crank_task=command.mean_crank_torque_nm*(1.+cfg.pedal_torque_ripple*numeric::math_cos(2.*phase));
-    double coast=0.;if(command.crank_target_phase_rad&&!steady){coast=std::clamp(cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-qvel[static_cast<std::size_t>(c_.crank_spin_dof_)]),-cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm);if(coupled&&!crank_task)crank_task=coast;}
+    double coast=0.;if(command.crank_target_phase_rad&&!steady){coast=std::clamp(cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-qvel[static_cast<std::size_t>(c_.crank_spin_dof_)]),-cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm);}
     std::array<Vec,2> normals{};std::array<double,2> loads{};std::array<bool,2> recovered{};
     for(std::size_t s=0;s<2;++s){const auto g=c_.pedal_geoms_[s];normals[s]=::rider::upper_box_face(vec(data.geom_xpos,m.ngeom,g),rot(data.geom_xmat,m.ngeom,g),vec(m.geom_size,m.ngeom,g)).normal;loads[s]=c_.welded()?weight:std::max(estimates[s][0],0.);recovered[s]=get(c_.pedal_recovery_,s?"rear":"front").stage=="none";}
     PedalingRequests requests;if(command.mean_crank_torque_nm>0.)requests=pedal_requests(phase,command.mean_crank_torque_nm,c_.crank_length_m_,normals,loads,cfg.support_mu,cfg.pedal_torque_ripple,cfg.return_foot_preload_n,recovered);
@@ -356,12 +349,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         support_diagnostics.feet[s]=target_diagnostics_[s];support_diagnostics.feet[s].actual=vec(data.site_xpos,m.nsite,c_.sole_sites_[s]);
         const auto next=future!=target?targets(*future,s,depth,shear,&command.posture):goal,prev=previous!=target?targets(*previous,s,depth,shear,&command.posture):goal;c_.saturated_ik_=sat;c_.ik_reach_limited_=lim;
         const auto jp=jacobian(m,data,c_.feet_bodies_[s],vec(data.site_xpos,m.nsite,c_.sole_sites_[s]));const auto feed=d::multiply(d::transpose(jp),requests.force[s]);
-        for(std::size_t k=0;k<goal.size();++k){const auto i=c_.leg_joint_index_[s][k];const auto&j=c_.joints_[i];const double ahead=::spindle::wrap_angle(next[k]-goal[k]),behind=::spindle::wrap_angle(prev[k]-goal[k]);const double p=cfg.joint_kp_nm_rad*(goal[k]-qpos[static_cast<std::size_t>(j.qpos_adr)]),derivative=cfg.joint_kd_nms_rad*((ahead-behind)/(2.*c_.target_difference_s_)-qvel[static_cast<std::size_t>(j.dof_adr)]);posture[i]=p+derivative;set(c_.pd_split_,j.name,std::array<double,2>{p,derivative});desired_accel[static_cast<std::size_t>(j.dof_adr)]=(ahead+behind)/(c_.target_difference_s_*c_.target_difference_s_);pedaling[i]=coupled?0.:feed[static_cast<std::size_t>(j.dof_adr)];}
-        if(enabled[s+1]&&!coupled)support_force=d::add(std::move(support_force),d::multiply(d::transpose(jp),Vec{0.,0.,-support.diagnostics.vertical_forces_n[s+1]}));
+        for(std::size_t k=0;k<goal.size();++k){const auto i=c_.leg_joint_index_[s][k];const auto&j=c_.joints_[i];const double ahead=::spindle::wrap_angle(next[k]-goal[k]),behind=::spindle::wrap_angle(prev[k]-goal[k]);const double p=cfg.joint_kp_nm_rad*(goal[k]-qpos[static_cast<std::size_t>(j.qpos_adr)]),derivative=cfg.joint_kd_nms_rad*((ahead-behind)/(2.*c_.target_difference_s_)-qvel[static_cast<std::size_t>(j.dof_adr)]);posture[i]=p+derivative;set(c_.pd_split_,j.name,std::array<double,2>{p,derivative});desired_accel[static_cast<std::size_t>(j.dof_adr)]=(ahead+behind)/(c_.target_difference_s_*c_.target_difference_s_);pedaling[i]=feed[static_cast<std::size_t>(j.dof_adr)];}
+        if(enabled[s+1])support_force=d::add(std::move(support_force),d::multiply(d::transpose(jp),Vec{0.,0.,-support.diagnostics.vertical_forces_n[s+1]}));
     }
     if(enabled[3]) {
-        Vec grip_force=support.forces_on_bike[3];
-        if(coupled){const auto hinge=vec(data.xanchor,m.njnt,c_.torso_joint_),trunk=vec(data.subtree_com,m.nbody,c_.torso_body_);const double lever=grip[0]-hinge[0],floor=cfg.bar_support_fraction*weight,need=lever>.05?body_subtreemass[static_cast<std::size_t>(c_.torso_body_)]*d::norm(gravity)*(trunk[0]-hinge[0])/lever:floor;grip_force={0.,0.,-std::min(std::max(need,floor),2.*cfg.grip_pull_per_hand_n)};}
+        const Vec grip_force=support.forces_on_bike[3];
         for(std::size_t s=0;s<2;++s)support_force=d::add(std::move(support_force),d::multiply(d::transpose(jacobian(m,data,c_.forearm_bodies_[s],vec(data.site_xpos,m.nsite,c_.grip_sites_[s]))),mul(grip_force,.5)));
     }
     c_.support_diagnostics_.legacy=std::move(support_diagnostics);
@@ -369,13 +361,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     for(std::size_t i=0;i<nt;++i){const auto&j=c_.joints_[i];posture[i]+=qfrc_bias[static_cast<std::size_t>(j.dof_adr)]+support_force[static_cast<std::size_t>(j.dof_adr)]+inertia[static_cast<std::size_t>(j.dof_adr)];if(j.name.starts_with("rider_hip_"))posture[i]-=.5*pitch;requested[i]=posture[i]+pedaling[i];}
     const double gain=steady||cfg.activation_tau_s==0.?1.:-std::expm1(-dt/cfg.activation_tau_s);const auto target_torque=steady ? requested : ::spindle::activation_step(c_.active_state_,requested,dt,cfg.activation_tau_s);
     ResponseAllocation allocated;double used_scale=1.;
-    const Vector effort_ladder=crank_task ? Vector{1.,.5,.25,0.} : Vector{1.,.5,.25};
+    const Vector effort_ladder{1.,.5,.25};
     for(double const scale:effort_ladder) {
-        auto wish=target_torque;for(std::size_t i=0;i<nt;++i)wish[i]-=(1.-scale)*gain*pedaling[i];auto request=allocation_request(data,wish,dt,steady,crank_task&&scale>0.?std::optional<double>(*crank_task*scale):std::nullopt);request.effort_scale=scale;
+        auto wish=target_torque;for(std::size_t i=0;i<nt;++i)wish[i]-=(1.-scale)*gain*pedaling[i];auto request=allocation_request(data,wish,dt,steady,std::nullopt);request.effort_scale=scale;
         allocated=std::ranges::all_of(attachments_,[](const auto&a){return a.equality_id>=0;})?allocate_response(m,data,request,c_.allocation_memory_):allocate_uncoupled(data,request,support,estimates);used_scale=scale;if(allocated.allocation.feasible)break;
     }
     allocated.effort_scale=used_scale;allocated.qpos.assign(qpos.begin(),qpos.end());allocated.qvel.assign(qvel.begin(),qvel.end());allocated.time_s=data.time;
-    c_.allocation_diagnostics_={};c_.allocation_diagnostics_.present=true;c_.allocation_diagnostics_.invalid_controller=!allocated.allocation.feasible;c_.allocation_diagnostics_.crank_task_nm=crank_task.value_or(0.);c_.allocation_diagnostics_.crank_task_shortfall_nm=std::max(0.,crank_task.value_or(0.)-allocated.predicted_crank_torque_nm.value_or(0.));c_.allocation_diagnostics_.solution_excitation_nm=allocated.excitation;c_.allocation_diagnostics_.legacy=allocated;
+    c_.allocation_diagnostics_={};c_.allocation_diagnostics_.present=true;c_.allocation_diagnostics_.invalid_controller=!allocated.allocation.feasible;c_.allocation_diagnostics_.solution_excitation_nm=allocated.excitation;c_.allocation_diagnostics_.legacy=allocated;
     // Final actuator check uses exactly the solved excitation and preserves
     // latent (pre-clamp) state. An infeasible support fallback stays flagged.
     if(advance&&!steady&&cfg.activation_tau_s>0.&&c_.activation_time_s_&&data.time<=*c_.activation_time_s_)throw std::invalid_argument("rider activation advances once per timestamp");

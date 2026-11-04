@@ -13,7 +13,7 @@ void build_bb_and_motor(Element& frame,BuildContext& c) {
     if(c.physical()) spindle_mass=.10;
     if(spindle_mass<=0.) throw std::invalid_argument("crank_pedals_mass "+f(masses.crank_pedals_mass,3)+" kg does not cover two 0.200 kg arms and two 0.175 kg pedals");
     auto& crank=c.crank_joint? frame.add("body",{{"name","crank"},{"pos","0 0 0"}}):frame;
-    if(c.crank_joint) joint(crank,"crank_spin","hinge",{{"axis","0 1 0"},{"damping","0.030"}});
+    if(c.crank_joint) joint(crank,"crank_spin","hinge",{{"axis","0 1 0"}});
     geom(crank,"geom_crank_spindle","cylinder",{{"fromto","0 -0.075000 0 0 0.075000 0"},{"size","0.016"},{"mass",f(spindle_mass,3)},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
     const auto pedals=geometry::pedal_points(length);
     for(int index=0;index<2;++index) {
@@ -25,7 +25,7 @@ void build_bb_and_motor(Element& frame,BuildContext& c) {
             {"size","0.012"},{"mass","0.200"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
         if(c.crank_joint) {
             auto& platform=body(crank,"pedal_"+side,{pedal[0],ya,pedal[2]});
-            joint(platform,"pedal_spin_"+side,"hinge",{{"axis","0 1 0"},{"damping","0.005"}});
+            joint(platform,"pedal_spin_"+side,"hinge",{{"axis","0 1 0"}});
             const auto pos="0 "+f(yp-ya)+" 0";
             geom(platform,"geom_pedal_"+side,"box",{{"pos",pos},{"size","0.050 0.040 0.008"},{"mass","0.175"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
             site(platform,"site_pedal_"+side,pos,"0.006");
@@ -51,7 +51,7 @@ void build_chain_constraint(Element& root,double ratio) {
 }
 Element& build_rear_wheel(Element& parent,const Vec3& axle,BuildContext& c) {
     auto& wheel=body(parent,"rear_wheel",axle);
-    joint(wheel,"rear_wheel_spin","hinge",{{"axis","0 1 0"},{"damping","0.01"}});
+    joint(wheel,"rear_wheel_spin","hinge",{{"axis","0 1 0"}});
     geom(wheel,"geom_rear_hub","cylinder",{{"fromto","0 -0.074 0 0 0.074 0"},{"size","0.020"},{"mass",c.physical()?"0":"0.30"},{"material","mat_metal"}});
     geom(wheel,"geom_rear_rim","cylinder",{{"fromto","0 -0.015 0 0 0.015 0"},{"size","0.300"},{"mass",c.physical()?"0":"0.40"},{"material","mat_rim"},{"contype","0"},{"conaffinity","0"}});
     const auto radius=f(c.request.bike.rear_wheel_radius/1000.);

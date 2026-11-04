@@ -35,12 +35,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "expected/rider_control_keys",
-  "nbytes": 125401,
+  "nbytes": 103261,
   "node": "period_buffer/non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
   "offset": 24960,
   "rtol": null,
   "shape": [
-   125401
+   103261
   ]
  },
  {
@@ -49,12 +49,12 @@
   "index": 3,
   "kind": "close",
   "label": "expected/rider_control_num",
-  "nbytes": 43200,
+  "nbytes": 34560,
   "node": "period_buffer/non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
-  "offset": 150361,
+  "offset": 128221,
   "rtol": 0.0,
   "shape": [
-   5400
+   4320
   ]
  },
  {
@@ -65,7 +65,7 @@
   "label": "expected/rider_control_bool",
   "nbytes": 4320,
   "node": "period_buffer/non_aligned_flush_keeps_each_intervals_actual_held_command_terms",
-  "offset": 193561,
+  "offset": 162781,
   "rtol": null,
   "shape": [
    540

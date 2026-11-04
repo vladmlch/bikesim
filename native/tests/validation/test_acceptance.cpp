@@ -197,8 +197,8 @@ void intervals_and_dimensions(){
     const double front=quasistatic_front_load(100.,1.,.5,1.,0.);
     bt::require(front==490.5&&necessary_traction_margin(.8,.5,.2)==.2,"load balance is newtons; traction margin is dimensionless");
     bt::invalid([&]{(void)necessary_traction_margin(.8,1.01,.2);});
-    const auto ledger=rider_work_ledger(json(R"({"act_rider_knee":5,"act_rider_hip":-2,"rider_passive_damping":-1,"mid_drive":7,"other":99})"));
-    bt::require(real(ledger,"active_joint_work_j")==3.&&real(ledger,"net_joint_work_j")==2.&&real(ledger,"motor_mechanical_work_j")==7.,"rider and motor work remain separate physical channels");
+    const auto ledger=rider_work_ledger(json(R"({"act_rider_knee":5,"act_rider_hip":-2,"mid_drive":7,"other":99})"));
+    bt::require(real(ledger,"active_joint_work_j")==3.&&real(ledger,"net_joint_work_j")==3.&&real(ledger,"motor_mechanical_work_j")==7.,"rider and motor work remain separate physical channels");
     const auto timing=timing_metrics(std::array{1000000.,2000000.,3000000.,4000000.},.01);
     bt::require(real(timing,"p50_step_ms")==2.5&&real(timing,"real_time_factor")==4.,"latency milliseconds and simulated/wall throughput have explicit units");
     bt::invalid([&]{(void)timing_metrics(std::array{0.},.01);});

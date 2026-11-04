@@ -99,18 +99,23 @@ namespace fs = std::filesystem;
 // assert_tree_close's leaf rule (atol=rtol=1e-9) — the welded advance
 // oracle ran production numba kernels, which may sit ~1 ulp off the
 // pure-Python arithmetic the native port is bitwise-locked to.
+[[nodiscard]] bool close_enough(std::span<const double> actual,
+                                std::span<const double> expected) {
+    if (actual.size() != expected.size()) return false;
+    for (std::size_t i = 0; i < actual.size(); ++i) {
+        const double a = actual[i], e = expected[i];
+        if (!(std::isfinite(a) && std::isfinite(e) &&
+              std::abs(a - e) <= 1e-9 + 1e-9 * std::abs(e)))
+            return false;
+    }
+    return true;
+}
+
 void require_close(std::span<const double> actual,
                    std::span<const double> expected, std::string_view what) {
     bt::require(actual.size() == expected.size(),
                 "integration vector width differs from the oracle");
-    for (std::size_t i = 0; i < actual.size(); ++i) {
-        const double a = actual[i], e = expected[i];
-        const bool close =
-            std::isfinite(a) && std::isfinite(e) &&
-            std::abs(a - e) <= 1e-9 + 1e-9 * std::abs(e);
-        bt::require(close, what);
-        if (!close) return;
-    }
+    bt::require(close_enough(actual, expected), what);
 }
 
 void require_bitwise(std::span<const double> actual,
@@ -206,15 +211,21 @@ void checks_construct_and_advance() {
     bt::require(result.step == 4 && result.reason == "target" &&
                     !result.outcome.has_value(),
                 "advance commits to the target step");
-    const std::vector<double> oracle =
-        bt::read_f64(directory / "steps_control_integration.f64");
+    const fs::path oracle_path = directory / "steps_control_integration.f64";
+    const std::vector<double> oracle = bt::read_f64(oracle_path);
     const auto after =
         std::make_unique<const runtime::RuntimeSnapshot>(rt->snapshot());
     bt::require(after->step == 4 && after->time_s == 0.005 &&
                     after->generation == 1,
                 "post-advance snapshot reports the committed boundary");
-    require_close(after->integration_state, oracle,
-                  "post-advance integration vector matches the oracle");
+    // Record mode rewrites the oracle when it is no longer within tolerance.
+    if (bt::recording()) {
+        if (!close_enough(after->integration_state, oracle))
+            bt::write_f64(oracle_path, after->integration_state);
+    } else {
+        require_close(after->integration_state, oracle,
+                      "post-advance integration vector matches the oracle");
+    }
     // First-advance bytes are kept for the deterministic-replay check.
     const std::vector<double> first_run = after->integration_state;
 

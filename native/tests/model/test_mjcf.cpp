@@ -94,6 +94,13 @@ void compare(const mjModel& actual,const mjModel& expected) {
     bt::require(actual.opt.iterations==expected.opt.iterations,"solver iteration budget");
     bt::require(actual.opt.tolerance==expected.opt.tolerance,"solver tolerance");
 }
+// No joint in any built model carries damping (the model constraints in
+// AGENTS.md; suspension dampers are separate force elements).
+void require_no_joint_damping(const mjModel& model,std::string_view label) {
+    const auto damping=std::views::counted(model.dof_damping,model.nv);
+    for(int dof=0;dof<model.nv;++dof)
+        bt::require(damping[static_cast<std::size_t>(dof)]==0.,std::string(label)+": dof "+std::to_string(dof)+" carries joint damping");
+}
 void captured_welded() {
     auto request=physical();
     // RCP-02 was captured from rough_uphill_savage: 130 m field, 30.1 m
@@ -109,6 +116,7 @@ void physical_profiles_and_topology() {
     for(const auto* name:{"viewer_physics_welded.toml","viewer_physics_distributed.toml","viewer_physics_pneumatic.toml"}) {
         const auto request=physical(name);
         const auto model=mdl::compile_mjcf(mdl::generate_mjcf(*request));
+        require_no_joint_damping(*model,name);
         bt::require(model->nq==26 && model->nv==26 && model->nu==12,"physical spindle profile inventory");
         bt::require(mj_name2id(model.get(),mjOBJ_JOINT,"steer_joint")==-1,"physical steering is welded");
         bt::require(mj_name2id(model.get(),mjOBJ_JOINT,"rider_ankle_front")==-1,"spindle locks ankle hinge");
@@ -128,11 +136,13 @@ void physical_profiles_and_topology() {
     auto request=physical();request->physics.value().articulated.joint_envelope_path.reset(); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     request->physics->articulated.pedal_attachment="weld";request->physics->articulated.saddle_attachment="weld";request->physics->articulated.grip_attachment="spring"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto welded=mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    require_no_joint_damping(*welded,"weld/spring attachments");
     id(*welded,mjOBJ_JOINT,"rider_ankle_front");id(*welded,mjOBJ_EQUALITY,"weld_foot_front");id(*welded,mjOBJ_EQUALITY,"weld_saddle");
     bt::require(welded->nq==28,"welded foot preserves ankle DOFs");
     request->physics.value().drive.transmission_model="elastic_chain"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     request->physics->drive.shifting.enabled=false; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto elastic=mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    require_no_joint_damping(*elastic,"elastic chain");
     id(*elastic,mjOBJ_BODY,"cassette");
     bt::require(mj_name2id(elastic.get(),mjOBJ_TENDON,"ideal_mid_drive_freehub")==-1,"elastic chain has no ideal freehub constraint");
     const auto wheel_id=static_cast<std::size_t>(id(*elastic,mjOBJ_BODY,"rear_wheel"));
@@ -142,14 +152,17 @@ void physical_profiles_and_topology() {
     bt::require(masses[cassette_id]==request->masses.rear_wheel_mass*.1,"cassette transfers 10 percent budget");
     request=physical();request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto clutch=mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    require_no_joint_damping(*clutch,"motor clutch");
     id(*clutch,mjOBJ_JOINT,"drive_shaft_spin");id(*clutch,mjOBJ_TENDON,"crank_clutch");
     request=physical();request->physics->drive.rotor_inertia_kgm2=.2; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto rotor=mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    require_no_joint_damping(*rotor,"rotor inertia");
     id(*rotor,mjOBJ_JOINT,"rotor_spin");id(*rotor,mjOBJ_TENDON,"motor_freewheel");
     request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=physical();request->physics->drive.transmission_model="geometric_ideal_mid_drive"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto geometric=mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    require_no_joint_damping(*geometric,"geometric mid drive");
     const auto tendon=static_cast<std::size_t>(id(*geometric,mjOBJ_TENDON,"geometric_mid_drive_freehub"));
     bt::require(std::views::counted(geometric->tendon_num,geometric->ntendon)[tendon]==geometric->njnt,"geometric drive includes all scalar joints and rider zero rows");
     request=physical();request->masses.front_wheel_mass=3.1;request->masses.rear_wheel_mass=3.7;
@@ -159,6 +172,26 @@ void physical_profiles_and_topology() {
     bt::require(weighted_masses[static_cast<std::size_t>(id(*reweighted,mjOBJ_BODY,"front_wheel"))]==3.1,"front explicit inertial uses requested budget");
     double total=0.;for(double const mass:weighted_masses.subspan(1)) total+=mass;
     bt::require(std::abs(total-(request->masses.total_bike_mass()+request->rider->mass_kg))<1e-11,"physical component and rider mass budgets close"); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+}
+// The non-physical builder modes and rider variants: none emits joint damping.
+void no_joint_damping_in_any_mode() {
+    struct Case { const char* mode; const char* rider; const char* legs; bool crank; };
+    for(const Case c:{Case{.mode="standard",.rider="none",.legs="rigid",.crank=false},
+                      Case{.mode="standard",.rider="lumped",.legs="rigid",.crank=false},
+                      Case{.mode="stand",.rider="none",.legs="rigid",.crank=false},
+                      Case{.mode="stand",.rider="lumped",.legs="rigid",.crank=false},
+                      Case{.mode="playground",.rider="none",.legs="rigid",.crank=false},
+                      Case{.mode="ride",.rider="none",.legs="rigid",.crank=false},
+                      Case{.mode="ride",.rider="seated",.legs="rigid",.crank=false},
+                      Case{.mode="ride",.rider="seated",.legs="articulated",.crank=true}}) {
+        mdl::BuildRequest request;request.mode=c.mode;request.crank_joint=c.crank;
+        if(std::string_view(c.rider)!="none") {
+            request.include_rider=true;request.rider=cfg::RiderSpecs{};
+            request.rider->variant=c.rider;request.rider->legs=c.legs;
+        }
+        const auto model=mdl::compile_mjcf(mdl::generate_mjcf(request));
+        require_no_joint_damping(*model,std::string(c.mode)+"/"+c.rider+"/"+c.legs);
+    }
 }
 // Crank qpos 0 is a power position: the two spindles sit level (same
 // height) and 180 degrees apart. PedalingPolicy's reposition goal
@@ -213,4 +246,4 @@ void errors_and_ownership() {
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }
 } // namespace
-int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();crank_zero_is_horizontal();errors_and_ownership();});}
+int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();crank_zero_is_horizontal();errors_and_ownership();});}

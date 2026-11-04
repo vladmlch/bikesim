@@ -24,9 +24,11 @@
 #include "runtime/bootstrap_io.hpp"
 #include "diag.hpp"
 #include "engaged.hpp"
+#include "io/float_format.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
 
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <charconv>
@@ -99,13 +101,6 @@ namespace fs = std::filesystem;
     return *result;
 }
 
-[[nodiscard]] const bio::Value::Array &as_array(const bio::Value &value) {
-    const auto *const array = std::get_if<bio::Value::Array>(&value.data);
-    if (array == nullptr)
-        throw std::invalid_argument("expected an array document member");
-    return *array;
-}
-
 [[nodiscard]] bool doc_is_null(const bio::Value &value) {
     return std::holds_alternative<std::monostate>(value.data);
 }
@@ -147,6 +142,87 @@ template <class F> void require_throws(F &&action, std::string_view what) {
     bt::require(rejected, what);
 }
 
+[[nodiscard]] bio::Value &member(bio::Value &value, std::string_view key) {
+    return const_cast<bio::Value &>( // NOLINT(cppcoreguidelines-pro-type-const-cast) the const lookup above owns the checks; the tree is mutable here
+        member(std::as_const(value), key));
+}
+
+// A recorded tuple: {"$tuple": [...]} in the raw document, or the array it
+// lowers to in a resolved one.
+[[nodiscard]] bio::Value::Array &tuple_items(bio::Value &value) {
+    if (auto *const array = std::get_if<bio::Value::Array>(&value.data))
+        return *array;
+    auto *const items =
+        std::get_if<bio::Value::Array>(&member(value, "$tuple").data);
+    if (items == nullptr)
+        throw std::invalid_argument("expected a $tuple document member");
+    return *items;
+}
+
+// The oracle leaf comparison. With record set (BIKE_GOLDEN_RECORD=1 on the
+// transitions capture) it instead rewrites a leaf that is no longer close
+// with the actual value's Python repr, so an unchanged leaf keeps its
+// recorded spelling.
+void require_close(double actual, bio::Value &expected, std::string_view what,
+                   bool record) {
+    if (record) {
+        if (!close(actual, as_real(expected)))
+            expected.data = bio::Number{bio::repr_binary64(actual)};
+        return;
+    }
+    require_close(actual, as_real(expected), what);
+}
+
+// json.dumps(indent=2, sort_keys=True) of a plain document (the oracle
+// files' spelling): number lexemes verbatim, ASCII strings only.
+void python_json(const bio::Value &value, std::string &out, // NOLINT(misc-no-recursion) bounded by the document depth
+                 std::size_t depth) {
+    const std::string pad(2 * (depth + 1), ' ');
+    const std::string close_pad(2 * depth, ' ');
+    if (std::holds_alternative<std::monostate>(value.data)) out += "null";
+    else if (const auto *const flag = std::get_if<bool>(&value.data))
+        out += *flag ? "true" : "false";
+    else if (const auto *const number = std::get_if<bio::Number>(&value.data))
+        out += number->lexeme;
+    else if (const auto *const text = std::get_if<std::string>(&value.data)) {
+        out += '"';
+        for (const char c : *text) {
+            if (c == '"' || c == '\\' || static_cast<unsigned char>(c) < 0x20 ||
+                static_cast<unsigned char>(c) > 0x7e)
+                throw std::invalid_argument("python_json: unsupported string");
+            out += c;
+        }
+        out += '"';
+    } else if (const auto *const array =
+                   std::get_if<bio::Value::Array>(&value.data)) {
+        if (array->empty()) { out += "[]"; return; }
+        out += "[\n";
+        for (std::size_t i = 0; i < array->size(); ++i) {
+            out += pad;
+            python_json((*array)[i], out, depth + 1);
+            out += i + 1 < array->size() ? ",\n" : "\n";
+        }
+        out += close_pad + "]";
+    } else if (const auto *const object =
+                   std::get_if<bio::Value::Object>(&value.data)) {
+        if (object->empty()) { out += "{}"; return; }
+        std::vector<const std::pair<std::string, bio::Value> *> members;
+        for (const auto &entry : *object) members.push_back(&entry);
+        std::ranges::sort(members, {}, [](const auto *entry) {
+            return std::string_view(entry->first);
+        });
+        out += "{\n";
+        for (std::size_t i = 0; i < members.size(); ++i) {
+            out += pad + '"' + members[i]->first + "\": ";
+            python_json(members[i]->second, out, depth + 1);
+            out += i + 1 < members.size() ? ",\n" : "\n";
+        }
+        out += close_pad + "}";
+    } else {
+        throw std::invalid_argument("python_json: tagged value");
+    }
+}
+
 // The resolved (externalized tags already lowered) oracle documents.
 [[nodiscard]] bio::Value resolved_doc(std::string_view name) {
     return runtime::resolve_bootstrap_document(parse_doc(dir() / name),
@@ -155,28 +231,29 @@ template <class F> void require_throws(F &&action, std::string_view what) {
 
 // The 9-field SensorObservation <-> fixture dict comparison by wire name.
 void require_observation(const runtime::SensorObservation &actual,
-                         const bio::Value &expected, std::string_view what) {
-    require_close(actual.time_s, as_real(member(expected, "time_s")), what);
-    require_close(actual.source_time_s,
-                  as_real(member(expected, "source_time_s")), what);
+                         bio::Value &expected, std::string_view what,
+                         bool record = false) {
+    require_close(actual.time_s, member(expected, "time_s"), what, record);
+    require_close(actual.source_time_s, member(expected, "source_time_s"),
+                  what, record);
     bt::require(actual.valid == as_bool(member(expected, "valid")), what);
-    const auto &accel =
-        as_array(member(expected, "specific_force_body_mps2"));
+    auto &accel = tuple_items(member(expected, "specific_force_body_mps2"));
     static constexpr std::array<std::string_view, 6> names{
         "pitch_rate_up_rad_s", "front_wheel_rad_s", "rear_wheel_rad_s",
         "crank_rad_s", "motor_torque_nm", "human_torque_nm"};
     bt::require(accel.size() == 3, what);
     for (std::size_t i = 0; i < 3; ++i)
-        require_close(actual.values[i], as_real(accel.at(i)), what);
+        require_close(actual.values[i], accel.at(i), what, record);
     for (std::size_t i = 0; i < names.size(); ++i)
-        require_close(actual.values[i + 3],
-                      as_real(member(expected, names[i])), what);
+        require_close(actual.values[i + 3], member(expected, names[i]), what,
+                      record);
 }
 
 void require_transition(const runtime::ResearchTransition &actual,
-                        const bio::Value &expected, std::string_view what) {
+                        bio::Value &expected, std::string_view what,
+                        bool record) {
     require_observation(actual.observation, member(expected, "observation"),
-                        what);
+                        what, record);
     bt::require(actual.physics_steps ==
                     as_int(member(expected, "physics_steps")),
                 what);
@@ -199,7 +276,7 @@ void require_transition(const runtime::ResearchTransition &actual,
                     !actual.truth.has_value(),
                 what);
     if (actual.truth.has_value()) {
-        const bio::Value &truth = member(expected, "truth");
+        bio::Value &truth = member(expected, "truth");
         const auto &t = *actual.truth;
         const std::array<std::pair<double, std::string_view>, 16> fields{{
             {t.time_s, "time_s"},
@@ -219,8 +296,7 @@ void require_transition(const runtime::ResearchTransition &actual,
             {t.com_x_m, "com_x_m"},
             {t.com_z_m, "com_z_m"}}};
         for (const auto &[actual_value, key] : fields)
-            require_close(actual_value,
-                          as_real(member(truth, key)), what);
+            require_close(actual_value, member(truth, key), what, record);
     }
 }
 
@@ -316,13 +392,14 @@ void checks_read_bootstrap() {
     // The queued raw is exactly the first transition's observation (the
     // latency delivery the oracle recorded at t=0.01) — apart from
     // time_s, which read() restamps to the delivery clock.
-    const bio::Value oracle = resolved_doc("transitions.json");
+    bio::Value oracle = resolved_doc("transitions.json");
     const auto queued = std::make_unique<runtime::SensorObservation>(
         s.queue.front());
     queued->time_s = 0.01;
     require_observation(
         *queued,
-        member(as_array(member(oracle, "transitions")).front(),
+        member(std::get<bio::Value::Array>(member(oracle, "transitions").data)
+                   .front(),
                "observation"),
         "queued startup sample equals the oracle's first delivery");
 }
@@ -355,11 +432,16 @@ void checks_construct_and_transitions() {
                     "startup state imported without double-consuming");
     }
 
-    const bio::Value oracle = resolved_doc("transitions.json");
-    const auto &oracle_transitions =
-        as_array(member(oracle, "transitions"));
-    const auto &oracle_observations =
-        as_array(member(oracle, "observations"));
+    // The raw (unresolved) oracle document, so record mode can rewrite it
+    // in its recorded spelling; $tuple members are read through
+    // tuple_items().
+    const fs::path oracle_path = dir() / "transitions.json";
+    bio::Value oracle = parse_doc(oracle_path);
+    const bool record = bt::recording();
+    auto &oracle_transitions = std::get<bio::Value::Array>(
+        member(oracle, "transitions").data);
+    auto &oracle_observations = std::get<bio::Value::Array>(
+        member(oracle, "observations").data);
     bt::require(oracle_transitions.size() == 3 &&
                     oracle_observations.size() == 4,
                 "oracle fixture carries 3 windows / 4 observations");
@@ -382,11 +464,11 @@ void checks_construct_and_transitions() {
                 "the rejection drains at most once");
     run->acknowledge_control();
     require_transition(engaged(first_result), oracle_transitions.front(),
-                       "first transition matches the Python oracle");
+                       "first transition matches the Python oracle", record);
     for (std::size_t i = 1; i < oracle_transitions.size(); ++i) {
         const auto transition = step(*run, command);
         require_transition(transition, oracle_transitions.at(i),
-                           "transition matches the Python oracle");
+                           "transition matches the Python oracle", record);
     }
     // The recorded history matches the oracle's observation sequence.
     const auto history = run->observations();
@@ -398,7 +480,7 @@ void checks_construct_and_transitions() {
             runtime::SensorObservation::from_wire(
                 runtime::sample_wire::object(history[i])),
             oracle_observations.at(i),
-            "recorded observation matches the Python oracle");
+            "recorded observation matches the Python oracle", record);
     // The recorded transition prefix carries the completed windows — the
     // same wire rows the Python facade boxes into env.trace.
     const auto transitions = run->transitions();
@@ -411,7 +493,7 @@ void checks_construct_and_transitions() {
             runtime::SensorObservation::from_wire(runtime::sample_wire::object(
                 runtime::sample_wire::required(row, "observation"))),
             member(oracle_transitions.at(i), "observation"),
-            "recorded transition matches the Python oracle");
+            "recorded transition matches the Python oracle", record);
         bt::require(
             runtime::sample_wire::number(
                 runtime::sample_wire::required(row, "physics_steps")) ==
@@ -422,6 +504,11 @@ void checks_construct_and_transitions() {
     const auto snap = run->snapshot();
     bt::require(snap.step == 24 && close(snap.time_s, 0.03),
                 "three windows commit 24 physics steps");
+    if (record) {
+        std::string text;
+        python_json(oracle, text, 0);
+        bt::write_text(oracle_path, text + "\n");
+    }
     run->close();
     bt::require(run->closed(), "closed research owner");
     require_throws([&] { static_cast<void>(run->snapshot()); },

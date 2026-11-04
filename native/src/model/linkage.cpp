@@ -10,7 +10,7 @@ Element& tube(Element& parent,std::string name,std::string type,const Vec3& a,co
 }
 Element& front_wheel(Element& lower,const Vec3& axle,BuildContext const& c) {
     auto& wheel=body(lower,"front_wheel",axle);
-    joint(wheel,"front_wheel_spin","hinge",{{"axis","0 1 0"},{"damping","0.01"}});
+    joint(wheel,"front_wheel_spin","hinge",{{"axis","0 1 0"}});
     geom(wheel,"geom_front_hub","cylinder",{{"fromto","0 -0.055 0 0 0.055 0"},{"size","0.018"},{"mass",c.physical()?"0":"0.35"},{"material","mat_metal"}});
     geom(wheel,"geom_front_rim","cylinder",{{"fromto","0 -0.015 0 0 0.015 0"},{"size","0.320"},{"mass",c.physical()?"0":"0.45"},{"material","mat_rim"},{"contype","0"},{"conaffinity","0"}});
     const auto radius=f(c.request.bike.front_wheel_radius/1000.);
@@ -48,7 +48,7 @@ void shock_assembly(Element& yoke,const Vec3& p6,const Vec3& p7,BuildContext& c)
     geom(shaft,"geom_shock_travel_indicator","cylinder",{{"fromto",fromto(mul(up,.016),mul(up,.021))},{"size","0.0165"},{"mass","0.0"},{"material","mat_linkage"},{"contype","0"},{"conaffinity","0"}});
     auto& damper=body(shaft,"shock_body",p7);
     if(!c.physical()) damper.add("inertial",{{"pos","-0.033395 0.011400 -0.028962"},{"quat","-0.10166406 0.38183084 -0.06020627 0.91664870"},{"mass","0.400000"},{"diaginertia","0.00084836 0.00071226 0.00023249"}});
-    Attributes ja{{"axis",vec(axis)},{"range",range},{"stiffness","0"},{"damping","0"},{"springref","0"}};
+    Attributes ja{{"axis",vec(axis)},{"range",range},{"stiffness","0"},{"springref","0"}};
     if(c.request.mode=="ride") ja.emplace_back("solreflimit","0.01 1");
     joint(damper,"shock_stroke","slide",std::move(ja));
     tube(damper,"geom_shock_trunnion_boss_l","cylinder",{0.,.019,0.},{0.,.027,0.},"0.013","0.02","mat_metal");
@@ -72,8 +72,8 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     auto& steer=body(frame,"steer",ht);
     const auto& mode=c.request.mode;
     if(mode=="stand" || mode=="dynamic" || mode=="playground" || mode=="ride")
-        joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-0.01 0.01"},{"stiffness","50000"},{"damping","1000"}});
-    else joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-60 60"},{"damping","1.5"}});
+        joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-0.01 0.01"},{"stiffness","50000"}});
+    else joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-60 60"}});
     tube(steer,"geom_steerer_tube","cylinder",{},relative,"0.014","0.25","mat_metal");
     const auto stem=add(relative,{.04,0.,.02});
     tube(steer,"geom_stem","cylinder",relative,stem,"0.016","0.15","mat_handlebar");
@@ -85,7 +85,7 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     tube(steer,"geom_stanchion_l","cylinder",{0.,.065,0.},lateral(tip,.065),"0.019",f(each,3),"mat_kashima");
     tube(steer,"geom_stanchion_r","cylinder",{0.,-.065,0.},lateral(tip,-.065),"0.019",f(each,3),"mat_kashima");
     auto& lower=steer.add("body",{{"name","fork_lower"},{"pos","0 0 0"}});
-    Attributes ja{{"axis",vec(axis)},{"range","0 "+f(c.request.bike.fork_travel/1000.)},{"stiffness","0"},{"damping","0"},{"springref","0"}};
+    Attributes ja{{"axis",vec(axis)},{"range","0 "+f(c.request.bike.fork_travel/1000.)},{"stiffness","0"},{"springref","0"}};
     if(mode=="ride") ja.emplace_back("solreflimit","0.01 1");
     joint(lower,"fork_travel","slide",std::move(ja));
     const auto top=add(axle,mul(axis,.330));
@@ -116,7 +116,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     const auto d35=sub(p3,p5),d45=sub(p4,p5),d64=sub(p6,p4),d76=sub(p7,p6);
     const bool debug=c.request.debug_markers;
     auto& cs=body(frame,"chainstay",p0);
-    joint(cs,"main_pivot","hinge",{{"axis","0 1 0"},{"damping","0.5"}});
+    joint(cs,"main_pivot","hinge",{{"axis","0 1 0"}});
     tube(cs,"geom_cs_sleeve","cylinder",{0.,-.040,0.},{0.,.040,0.},"0.018","0.25","mat_metal");
     tube(cs,"geom_cs_left","capsule",{0.,.045,0.},lateral(d20,.074),"0.016","0.40","mat_frame");
     tube(cs,"geom_cs_right","capsule",{0.,-.045,0.},lateral(d20,-.074),"0.016","0.40","mat_frame");
@@ -126,7 +126,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     if(debug) marker(cs,"marker_p2",d20);
     register_component(c.mass_registry(),"chainstay",cs.direct("geom"));
     auto& ss=body(cs,"seatstay",d20);
-    joint(ss,"horst_pivot","hinge",{{"axis","0 1 0"},{"damping","0.3"}});
+    joint(ss,"horst_pivot","hinge",{{"axis","0 1 0"}});
     tube(ss,"geom_horst_sleeve_l","cylinder",{0.,.068,0.},{0.,.080,0.},"0.013","0.075","mat_metal");
     tube(ss,"geom_horst_sleeve_r","cylinder",{0.,-.080,0.},{0.,-.068,0.},"0.013","0.075","mat_metal");
     tube(ss,"geom_ss_left","capsule",lateral(d122,.074),lateral(d32,.045),"0.015","0.25","mat_frame");
@@ -147,7 +147,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     build_rear_wheel(ss,d12,c);
     register_component(c.mass_registry(),"seatstay",ss.direct("geom"));
     auto& rocker=body(frame,"rocker",p5);
-    joint(rocker,"rocker_frame_pivot","hinge",{{"axis","0 1 0"},{"damping","0.3"}});
+    joint(rocker,"rocker_frame_pivot","hinge",{{"axis","0 1 0"}});
     tube(rocker,"geom_rocker_sleeve","cylinder",{0.,-.045,0.},{0.,.045,0.},"0.016","0.16","mat_metal");
     for(int arm=1;arm<=3;++arm) for(int index=0;index<2;++index) {
         const double y=index==0?.045:-.045;const std::string side=index==0?"l":"r";
@@ -160,7 +160,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     if(debug) {marker(rocker,"marker_p4_l",lateral(d45,.045));marker(rocker,"marker_p4_r",lateral(d45,-.045));}
     register_component(c.mass_registry(),"rocker",rocker.direct("geom"));
     auto& yoke=body(rocker,"shock_yoke",d45);
-    joint(yoke,"yoke_pivot","hinge",{{"axis","0 1 0"},{"damping","0.2"}});
+    joint(yoke,"yoke_pivot","hinge",{{"axis","0 1 0"}});
     tube(yoke,"geom_yoke_pivot_p4","cylinder",{0.,-.044,0.},{0.,.044,0.},"0.011","0.06","mat_metal");
     tube(yoke,"geom_yoke_arm_l","capsule",{0.,.040,0.},lateral(d64,.038),"0.011","0.08","mat_yoke");
     tube(yoke,"geom_yoke_arm_r","capsule",{0.,-.040,0.},lateral(d64,-.038),"0.011","0.08","mat_yoke");

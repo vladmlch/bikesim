@@ -12,6 +12,17 @@
 > - Recording channels `battery_energy_j`, `battery_empty`, `energy_limited`,
 >   `electrical_power_w` and energy terms `electrical_work_j`,
 >   `electrical_residual_j` no longer exist.
+> - Joint damping was removed in every form (branch `no-joint-damping`,
+>   2026-11-04): stored `model.mjb` fixtures have `dof_damping = 0`; the
+>   recording channels `passive_damping_nm`, `solved_passive_nm`,
+>   `rider_passive_power_w`, `rider_passive_work_step_j`, the force
+>   component `rider_passive_damping` and the config keys
+>   `joint_passive_damping_nms_rad`, `leg_track_damping_nms_rad`,
+>   `coupled_task_control` no longer exist; the darwin-arm64 goldens under
+>   `tests/fixtures/golden/` were re-recorded natively (linux-aarch64 not yet).
+>   D2 and the "no golden re-capture" rule hold from that state on: every
+>   baseline episode and digest (D18, Stage 0) is captured after that branch
+>   is merged, never from a recording made with the damped model.
 > - Open question Q23 from the planning session (record every per-step model
 >   mutation: brake joint friction, motor tendon limit, solver warmstart) was
 >   never answered.

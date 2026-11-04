@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "compute.state",
-  "nbytes": 5056,
+  "nbytes": 4794,
   "node": "native_spindle_controller/spindle_steady_state_bypasses_activation",
   "offset": 72,
   "rtol": null,
   "shape": [
-   5056
+   4794
   ]
  }
 ]

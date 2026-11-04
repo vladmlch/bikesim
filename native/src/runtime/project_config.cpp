@@ -351,9 +351,8 @@ bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
                                     const mjModel& model) {
     auto const document = cfg::detail::plain_document(cfg::to_value(config));
     auto out = field(document, "articulated");
-    // weld_servo_gain/weld_servo_limit_nm/leg_track_damping_nms_rad cross
-    // this wire now: SpindleController::compute consumes them for the
-    // weld-press servo and weld-imposed leg feedforward
+    // weld_servo_gain/weld_servo_limit_nm cross this wire:
+    // SpindleController::compute consumes them for the weld-press servo
     // (rider_control.py:758-934). native/setup.py rider_controller_config
     // publishes the same keys.
     const auto* members = std::get_if<Object>(&out.data);

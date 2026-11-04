@@ -4331,12 +4331,12 @@
   "index": 309,
   "kind": "close",
   "label": "recorder.columns.values",
-  "nbytes": 285120,
+  "nbytes": 277120,
   "node": "native_research_environment/one_second_pair_complete_episode_gate",
   "offset": 299303,
   "rtol": 1e-09,
   "shape": [
-   35640
+   34640
   ]
  },
  {
@@ -4347,7 +4347,7 @@
   "label": "recorder.columns.other",
   "nbytes": 2,
   "node": "native_research_environment/one_second_pair_complete_episode_gate",
-  "offset": 584423,
+  "offset": 576423,
   "rtol": null,
   "shape": [
    2

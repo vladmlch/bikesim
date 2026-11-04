@@ -765,18 +765,6 @@ void rows_compare(bt_oracle::Node &node, std::int64_t rows,
 // `<prefix>/bits/<name>` per column_types(spec) member, in order. The
 // episode_id column is synthesized exactly like arrow_batch's injection
 // when the encoder did not emit it.
-// Named set of column/member names removed by spec Q13 (the
-// joint_passive_damping mechanism). Recorded goldens still carry their
-// entries; the port no longer emits them. rider_passive_damping /
-// engine_passive stay untouched — the "_nm" / "_power_w" / "_work_step_j"
-// spellings do not collide with them.
-bool removed_passive_leaf(std::string_view leaf_name) {
-    for (const std::string_view removed : {"passive_damping_nm", "solved_passive_nm",
-                                           "rider_passive_power_w", "rider_passive_work_step_j"})
-        if (leaf_name.find(removed) != std::string_view::npos) return true;
-    return false;
-}
-
 void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
                    const rec::TableSpec &spec, std::int64_t episode_id,
                    const std::string &prefix) {
@@ -804,37 +792,23 @@ void compare_batch(bt_oracle::Node &node, const EncodedTable &table,
         }
         const rec::FieldSpec *field = spec.field(name);
         const std::string bits = column_bits(*piece, field ? *field : BOOL_FIELD);
-        // R3: recorded entries for the removed passive-damping columns sit
-        // interleaved in the frozen label order — consume them without
-        // comparing (named set; rider_passive_damping stays untouched).
-        while (node.has_next()) {
-            const std::string_view peeked = node.peek_label();
-            const auto slash = peeked.rfind('/');
-            const std::string_view leaf = slash == std::string_view::npos
-                                              ? peeked
-                                              : peeked.substr(slash + 1);
-            if (!removed_passive_leaf(leaf)) break;
-            static_cast<void>(node.bytes_input(peeked));
+        const std::string label = std::format("{}/bits/{}", prefix, name);
+        // Record mode: recorded columns this encoder no longer emits sit
+        // before the next emitted one in the frozen label order (or after
+        // the last one, dropped below the loop); drop them.
+        while (bt_oracle::Node::recording() && node.has_next() &&
+               node.peek_label() != label &&
+               node.peek_label().starts_with(prefix + "/bits/")) {
+            static_cast<void>(node.bytes_input(node.peek_label()));
+            node.drop_consumed();
         }
-        // A struct column's recorded encoding still carries the removed
-        // member lanes — its byte shape cannot align and the payload is
-        // opaque (no positional normalization). Consume it unchecked;
-        // surviving member values stay pinned by the decode/state
-        // goldens and the rollout row comparisons.
-        if (field != nullptr && !field->children.empty() &&
-            node.has_next() &&
-            node.peek_label() == std::format("{}/bits/{}", prefix, name)) {
-            const auto shape = node.peek_shape();
-            if (shape.size() != 1 || shape[0] != bits.size()) {
-                static_cast<void>(
-                    node.bytes_input(node.peek_label()));
-                ++covered;
-                continue;
-            }
-        }
-        bytes_compare(node, bits, "|u1", bits.size(),
-                      prefix + "/bits/" + name); // NOLINT(performance-inefficient-string-concatenation) golden label assembly mirrors the Python oracle's label building
+        bytes_compare(node, bits, "|u1", bits.size(), label);
         ++covered;
+    }
+    while (bt_oracle::Node::recording() && node.has_next() &&
+           node.peek_label().starts_with(prefix + "/bits/")) {
+        static_cast<void>(node.bytes_input(node.peek_label()));
+        node.drop_consumed();
     }
     bt::require(covered == table.columns.size() +
                                (table.columns.contains("episode_id") ? 0 : 1),

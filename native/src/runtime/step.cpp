@@ -1697,15 +1697,6 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         in.sensors = sensor_channels(v, drive_last);
         for (auto &[name, f]: actuator_components(m, d))
             ordered_set(components, name, std::move(f));
-        if (rider_control_.has_value()) {
-            auto passive = zeros(m);
-            const auto qfrc_passive = buf(d->qfrc_passive, m->nv);
-            for (const auto &j: rider_control_->joints())
-                passive[static_cast<std::size_t>(j.dof_adr)] =
-                    qfrc_passive[static_cast<std::size_t>(j.dof_adr)];
-            ordered_set(components, "rider_passive_damping",
-                        std::move(passive));
-        }
         ForceMap constraints = constraint_components(m, d, mul_scratch_);
         if (stepper_->drive().transmission_storage() != nullptr) {
             // constraints['joint_limits'] -= transmission — the group
@@ -1733,12 +1724,6 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
                     brake_components.second);
         std::vector<double> passive = buffer_copy(d->qfrc_passive, m->nv);
         ordered_set(components, "engine_passive", std::move(passive));
-        if (rider_control_.has_value())
-            if (auto *ep = ordered_at(components, "engine_passive"))
-                if (const auto *rp =
-                        ordered_at(components, "rider_passive_damping"))
-                    for (std::size_t i = 0; i < nv; ++i)
-                        (*ep)[i] -= (*rp)[i];
         // The constraint snapshot reuses the already-computed rows —
         // solved_components is deterministic on the same solved state.
         ConstraintSnapshot snap{.interval_start_s = t,
@@ -1876,23 +1861,14 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         // n.startswith('act_rider_')) — CPython's float sum() is the
         // compensated loop, not a sequential +=.
         NeumaierSum human_active;
-        const std::vector<double> *rider_passive = nullptr;
-        for (const auto &[name, f]: components) {
+        for (const auto &[name, f]: components)
             if (name.starts_with("act_rider_"))
                 human_active.add(dot(f, v));
-            if (name == "rider_passive_damping")
-                rider_passive = &f;
-        }
         const double human_active_w = human_active.total();
-        // The human_joint term sums the generator a second time —
-        // identical inputs, identical compensated total — then adds the
-        // rider_passive_damping dot as a plain float add.
+        // Rider joints carry no passive damping, so the joint power is the
+        // active actuator power alone; the channel stays for its readers.
         wire_set(drive, "human_active_power_w", Wire(human_active_w));
-        wire_set(
-            drive, "human_joint_power_w",
-            Wire(human_active_w +
-                 (rider_passive != nullptr ? dot(*rider_passive, v)
-                                           : 0.)));
+        wire_set(drive, "human_joint_power_w", Wire(human_active_w));
         WireObject suspension;
         suspension.emplace_back(
             "fork_travel_m",
@@ -2466,8 +2442,7 @@ double PhysicalStep::loss_increment(
     const drivetrain::Diagnostics &last) const {
     NeumaierSum acc;
     for (const char *name:
-         {"fork_damper", "shock_damper", "shock_hbo", "drive_bearings",
-          "rider_passive_damping"})
+         {"fork_damper", "shock_damper", "shock_hbo", "drive_bearings"})
         if (const auto *f = ordered_at(components, name))
             acc.add(std::max(0., -dot(*f, velocity)) * dt);
     double loss = acc.total();

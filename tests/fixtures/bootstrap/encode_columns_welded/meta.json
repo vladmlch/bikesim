@@ -15,6 +15,6 @@
     "nv": 26,
     "nwrap": 2
   },
-  "model_sha256": "3f1d0d4123055298dcb7a6cb68a9e78b509608419023fecb804bda1c428245a7",
+  "model_sha256": "15d763f4a0220eb9ecbd85c6b753c27c58c38b23a93fd28b8eefbc55eb093bda",
   "note": "encode_columns_welded ride bootstrap: viewer_physics_welded + rough_uphill_savage, record_decimation=80, retention=full; captured t=0 for task 3.22a golden inputs"
 }

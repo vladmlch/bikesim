@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "reset_state",
-  "nbytes": 3993,
+  "nbytes": 3759,
   "node": "native_spindle_controller/spindle_reset_activation_matches_python",
   "offset": 0,
   "rtol": null,
   "shape": [
-   3993
+   3759
   ]
  }
 ]

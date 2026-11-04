@@ -38,17 +38,17 @@
     },
     {
       "crank_rad_s": 0.005372564847283159,
-      "front_wheel_rad_s": 0.020700592642640035,
-      "human_torque_nm": 0.04766470312229843,
+      "front_wheel_rad_s": 0.02070058896308954,
+      "human_torque_nm": 0.04766471045199262,
       "motor_torque_nm": 0.07126145465925203,
-      "pitch_rate_up_rad_s": -0.0022970475393601078,
-      "rear_wheel_rad_s": -0.00011505358892081383,
+      "pitch_rate_up_rad_s": -0.002297050910413357,
+      "rear_wheel_rad_s": -0.00011503375332237926,
       "source_time_s": 0.01,
       "specific_force_body_mps2": {
         "$tuple": [
-          -0.03621493532924096,
+          -0.03621519465437931,
           -0.050772586102524164,
-          9.9193872234859
+          9.91938703448266
         ]
       },
       "time_s": 0.02,
@@ -56,17 +56,17 @@
     },
     {
       "crank_rad_s": -0.005382714049559429,
-      "front_wheel_rad_s": 0.023836572551762275,
-      "human_torque_nm": 0.06286472007109062,
+      "front_wheel_rad_s": 0.02383655595561541,
+      "human_torque_nm": 0.06286473394021559,
       "motor_torque_nm": 0.03748002668581748,
-      "pitch_rate_up_rad_s": 0.00017926106138391762,
-      "rear_wheel_rad_s": -0.0024260077439374967,
+      "pitch_rate_up_rad_s": 0.00017925011959946262,
+      "rear_wheel_rad_s": -0.0024259909613384848,
       "source_time_s": 0.02,
       "specific_force_body_mps2": {
         "$tuple": [
-          -0.10261201104467768,
+          -0.10261249054370197,
           0.03123684989691408,
-          9.830555212563915
+          9.830554774862229
         ]
       },
       "time_s": 0.03000000000000001,
@@ -106,17 +106,17 @@
         "com_x_m": 2.0885550666521544,
         "com_z_m": 0.6121115466785227,
         "front_clearance_m": 0.0,
-        "front_load_n": 431.1214535454686,
-        "front_slip_mps": -7.75068658718351e-07,
-        "pitch_rate_up_rad_s": 1.5989397422801095e-05,
+        "front_load_n": 431.12145424681694,
+        "front_slip_mps": -7.765723420796111e-07,
+        "pitch_rate_up_rad_s": 1.5986812285353782e-05,
         "pitch_up_rad": -0.005669264786811098,
         "position_m": 2.009959680623586,
         "rear_clearance_m": 0.0,
-        "rear_load_n": 593.1505298335985,
-        "rear_slip_mps": -9.815047252114183e-07,
+        "rear_load_n": 593.1505489699055,
+        "rear_slip_mps": -9.82764836507327e-07,
         "relative_pitch_rad": 0.0009908081071836432,
         "road_pitch_rad": 0.0,
-        "speed_mps": 9.458274665540639e-06,
+        "speed_mps": 9.456696427854202e-06,
         "time_s": 0.00875
       }
     },
@@ -127,17 +127,17 @@
       "numerically_valid": true,
       "observation": {
         "crank_rad_s": 0.005372564847283159,
-        "front_wheel_rad_s": 0.020700592642640035,
-        "human_torque_nm": 0.04766470312229843,
+        "front_wheel_rad_s": 0.02070058896308954,
+        "human_torque_nm": 0.04766471045199262,
         "motor_torque_nm": 0.07126145465925203,
-        "pitch_rate_up_rad_s": -0.0022970475393601078,
-        "rear_wheel_rad_s": -0.00011505358892081383,
+        "pitch_rate_up_rad_s": -0.002297050910413357,
+        "rear_wheel_rad_s": -0.00011503375332237926,
         "source_time_s": 0.01,
         "specific_force_body_mps2": {
           "$tuple": [
-            -0.03621493532924096,
+            -0.03621519465437931,
             -0.050772586102524164,
-            9.9193872234859
+            9.91938703448266
           ]
         },
         "time_s": 0.02,
@@ -152,17 +152,17 @@
         "com_x_m": 2.0885550568931097,
         "com_z_m": 0.6121116936291827,
         "front_clearance_m": 0.0,
-        "front_load_n": 431.10681632316107,
-        "front_slip_mps": -1.7494996515889628e-06,
-        "pitch_rate_up_rad_s": 2.8150707003661527e-05,
+        "front_load_n": 431.106819190981,
+        "front_slip_mps": -1.753600691807007e-06,
+        "pitch_rate_up_rad_s": 2.8140978952099836e-05,
         "pitch_up_rad": -0.005669031925925042,
         "position_m": 2.009959826994195,
         "rear_clearance_m": 0.0,
-        "rear_load_n": 593.1490512694122,
-        "rear_slip_mps": 1.93174078858614e-06,
+        "rear_load_n": 593.1490865874398,
+        "rear_slip_mps": 1.927927931402452e-06,
         "relative_pitch_rad": 0.0009908455415521024,
         "road_pitch_rad": 0.0,
-        "speed_mps": 1.8229094318997106e-05,
+        "speed_mps": 1.8223381538482996e-05,
         "time_s": 0.01875
       }
     },
@@ -173,17 +173,17 @@
       "numerically_valid": true,
       "observation": {
         "crank_rad_s": -0.005382714049559429,
-        "front_wheel_rad_s": 0.023836572551762275,
-        "human_torque_nm": 0.06286472007109062,
+        "front_wheel_rad_s": 0.02383655595561541,
+        "human_torque_nm": 0.06286473394021559,
         "motor_torque_nm": 0.03748002668581748,
-        "pitch_rate_up_rad_s": 0.00017926106138391762,
-        "rear_wheel_rad_s": -0.0024260077439374967,
+        "pitch_rate_up_rad_s": 0.00017925011959946262,
+        "rear_wheel_rad_s": -0.0024259909613384848,
         "source_time_s": 0.02,
         "specific_force_body_mps2": {
           "$tuple": [
-            -0.10261201104467768,
+            -0.10261249054370197,
             0.03123684989691408,
-            9.830555212563915
+            9.830554774862229
           ]
         },
         "time_s": 0.03000000000000001,
@@ -198,17 +198,17 @@
         "com_x_m": 2.088555040506873,
         "com_z_m": 0.6121119284880254,
         "front_clearance_m": 0.0,
-        "front_load_n": 431.09138385112914,
-        "front_slip_mps": 2.400498861249351e-06,
-        "pitch_rate_up_rad_s": 3.572246661849454e-05,
+        "front_load_n": 431.09139040852625,
+        "front_slip_mps": 2.3935878949991975e-06,
+        "pitch_rate_up_rad_s": 3.570023588483068e-05,
         "pitch_up_rad": -0.005668705053305262,
         "position_m": 2.0099600433135767,
         "rear_clearance_m": 0.0,
-        "rear_load_n": 593.1467316547512,
-        "rear_slip_mps": 3.056968494528447e-06,
+        "rear_load_n": 593.146799418392,
+        "rear_slip_mps": 3.0499464463972258e-06,
         "relative_pitch_rad": 0.0009909170648353738,
         "road_pitch_rad": 0.0,
-        "speed_mps": 2.3789714357080734e-05,
+        "speed_mps": 2.3776157529033974e-05,
         "time_s": 0.028750000000000008
       }
     }

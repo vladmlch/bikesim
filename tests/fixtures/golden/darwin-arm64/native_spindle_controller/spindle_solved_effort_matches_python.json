@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "close",
   "label": "solved.powers",
-  "nbytes": 32,
+  "nbytes": 16,
   "node": "native_spindle_controller/spindle_solved_effort_matches_python",
   "offset": 72,
   "rtol": 1e-07,
   "shape": [
-   4
+   2
   ]
  },
  {
@@ -35,7 +35,7 @@
   "label": "solved.violations",
   "nbytes": 17,
   "node": "native_spindle_controller/spindle_solved_effort_matches_python",
-  "offset": 104,
+  "offset": 88,
   "rtol": null,
   "shape": [
    17
@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "solved.state",
-  "nbytes": 6472,
+  "nbytes": 5962,
   "node": "native_spindle_controller/spindle_solved_effort_matches_python",
-  "offset": 121,
+  "offset": 105,
   "rtol": null,
   "shape": [
-   6472
+   5962
   ]
  }
 ]

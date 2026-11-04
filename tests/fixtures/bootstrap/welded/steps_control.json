@@ -85,7 +85,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": 0.0,
         "shock_bumper": 0.0,
         "shock_coil": 0.0,
@@ -295,7 +294,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": 0.0,
         "shock_bumper": 0.0,
         "shock_coil": 0.0,
@@ -583,118 +581,100 @@
           "active_delivered_nm": 6.350973177596864,
           "active_request_nm": 6.350973177596864,
           "command_nm": 6.350973177596864,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596864,
           "requested_nm": 6.350973177596864,
           "saturated": false,
           "solved_active_nm": 6.350973177596864,
-          "solved_force_nm": 6.350973177596864,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596864
         },
         "rider_elbow_right": {
           "active_delivered_nm": 6.350973177596731,
           "active_request_nm": 6.350973177596731,
           "command_nm": 6.350973177596731,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596731,
           "requested_nm": 6.350973177596731,
           "saturated": false,
           "solved_active_nm": 6.350973177596731,
-          "solved_force_nm": 6.350973177596731,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596731
         },
         "rider_hip_front": {
           "active_delivered_nm": -29.664852342214036,
           "active_request_nm": -29.192497772675424,
           "command_nm": -29.664852342214036,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -29.192497772675424,
           "posture_nm": 0.0,
           "requested_nm": -29.192497772675424,
           "saturated": true,
           "solved_active_nm": -29.664852342214036,
-          "solved_force_nm": -29.664852342214036,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -29.664852342214036
         },
         "rider_hip_rear": {
           "active_delivered_nm": -12.336551260224155,
           "active_request_nm": -12.336551260224155,
           "command_nm": -12.336551260224155,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -12.336551260224155,
           "posture_nm": 0.0,
           "requested_nm": -12.336551260224155,
           "saturated": false,
           "solved_active_nm": -12.336551260224155,
-          "solved_force_nm": -12.336551260224155,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -12.336551260224155
         },
         "rider_knee_front": {
           "active_delivered_nm": -5.4340215056644166,
           "active_request_nm": -5.929832544415606,
           "command_nm": -5.4340215056644166,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -5.929832544415606,
           "posture_nm": 0.0,
           "requested_nm": -5.929832544415606,
           "saturated": true,
           "solved_active_nm": -5.4340215056644166,
-          "solved_force_nm": -5.4340215056644166,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -5.4340215056644166
         },
         "rider_knee_rear": {
           "active_delivered_nm": 1.043449969066252,
           "active_request_nm": 1.043449969066252,
           "command_nm": 1.043449969066252,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 1.043449969066252,
           "posture_nm": 0.0,
           "requested_nm": 1.043449969066252,
           "saturated": false,
           "solved_active_nm": 1.043449969066252,
-          "solved_force_nm": 1.043449969066252,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 1.043449969066252
         },
         "rider_shoulder_left": {
           "active_delivered_nm": -8.172006101698406,
           "active_request_nm": -8.172006101698406,
           "command_nm": -8.172006101698406,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698406,
           "requested_nm": -8.172006101698406,
           "saturated": false,
           "solved_active_nm": -8.172006101698406,
-          "solved_force_nm": -8.172006101698406,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698406
         },
         "rider_shoulder_right": {
           "active_delivered_nm": -8.172006101698257,
           "active_request_nm": -8.172006101698257,
           "command_nm": -8.172006101698257,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698257,
           "requested_nm": -8.172006101698257,
           "saturated": false,
           "solved_active_nm": -8.172006101698257,
-          "solved_force_nm": -8.172006101698257,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698257
         },
         "rider_torso_hinge": {
           "active_delivered_nm": 40.566156093230376,
           "active_request_nm": 40.566156093230376,
           "command_nm": 40.566156093230376,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 40.566156093230376,
           "requested_nm": 40.566156093230376,
           "saturated": false,
           "solved_active_nm": 40.566156093230376,
-          "solved_force_nm": 40.566156093230376,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 40.566156093230376
         }
       },
       "rider_effort_budget_exceeded": false,
@@ -749,8 +729,6 @@
         "rider_torso_hinge": 40.566156093230376
       },
       "rider_lean_limit_rad": 0.5671875000000001,
-      "rider_passive_power_w": 0.0,
-      "rider_passive_work_step_j": 0.0,
       "rider_positive_power_w": 0.0,
       "rider_positive_work_step_j": 0.0,
       "rider_strength_limited": [],
@@ -1065,7 +1043,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": -4.870836002727463e-11,
         "shock_bumper": 0.0,
         "shock_coil": 7.715372496295019e-06,
@@ -1275,7 +1252,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": -3.89666880218197e-08,
         "shock_bumper": 0.0,
         "shock_coil": 0.006172297997036016,
@@ -1563,118 +1539,100 @@
           "active_delivered_nm": 6.350973177596864,
           "active_request_nm": 6.350973177596864,
           "command_nm": 6.350973177596864,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596864,
           "requested_nm": 6.350973177596864,
           "saturated": false,
           "solved_active_nm": 6.350973177596864,
-          "solved_force_nm": 6.350973177596864,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596864
         },
         "rider_elbow_right": {
           "active_delivered_nm": 6.350973177596731,
           "active_request_nm": 6.350973177596731,
           "command_nm": 6.350973177596731,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596731,
           "requested_nm": 6.350973177596731,
           "saturated": false,
           "solved_active_nm": 6.350973177596731,
-          "solved_force_nm": 6.350973177596731,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596731
         },
         "rider_hip_front": {
           "active_delivered_nm": -29.664852342214036,
           "active_request_nm": -29.192497772675424,
           "command_nm": -29.664852342214036,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -29.192497772675424,
           "posture_nm": 0.0,
           "requested_nm": -29.192497772675424,
           "saturated": true,
           "solved_active_nm": -29.664852342214036,
-          "solved_force_nm": -29.664852342214036,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -29.664852342214036
         },
         "rider_hip_rear": {
           "active_delivered_nm": -12.336551260224155,
           "active_request_nm": -12.336551260224155,
           "command_nm": -12.336551260224155,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -12.336551260224155,
           "posture_nm": 0.0,
           "requested_nm": -12.336551260224155,
           "saturated": false,
           "solved_active_nm": -12.336551260224155,
-          "solved_force_nm": -12.336551260224155,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -12.336551260224155
         },
         "rider_knee_front": {
           "active_delivered_nm": -5.4340215056644166,
           "active_request_nm": -5.929832544415606,
           "command_nm": -5.4340215056644166,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -5.929832544415606,
           "posture_nm": 0.0,
           "requested_nm": -5.929832544415606,
           "saturated": true,
           "solved_active_nm": -5.4340215056644166,
-          "solved_force_nm": -5.4340215056644166,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -5.4340215056644166
         },
         "rider_knee_rear": {
           "active_delivered_nm": 1.043449969066252,
           "active_request_nm": 1.043449969066252,
           "command_nm": 1.043449969066252,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 1.043449969066252,
           "posture_nm": 0.0,
           "requested_nm": 1.043449969066252,
           "saturated": false,
           "solved_active_nm": 1.043449969066252,
-          "solved_force_nm": 1.043449969066252,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 1.043449969066252
         },
         "rider_shoulder_left": {
           "active_delivered_nm": -8.172006101698406,
           "active_request_nm": -8.172006101698406,
           "command_nm": -8.172006101698406,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698406,
           "requested_nm": -8.172006101698406,
           "saturated": false,
           "solved_active_nm": -8.172006101698406,
-          "solved_force_nm": -8.172006101698406,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698406
         },
         "rider_shoulder_right": {
           "active_delivered_nm": -8.172006101698257,
           "active_request_nm": -8.172006101698257,
           "command_nm": -8.172006101698257,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698257,
           "requested_nm": -8.172006101698257,
           "saturated": false,
           "solved_active_nm": -8.172006101698257,
-          "solved_force_nm": -8.172006101698257,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698257
         },
         "rider_torso_hinge": {
           "active_delivered_nm": 40.566156093230376,
           "active_request_nm": 40.566156093230376,
           "command_nm": 40.566156093230376,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 40.566156093230376,
           "requested_nm": 40.566156093230376,
           "saturated": false,
           "solved_active_nm": 40.566156093230376,
-          "solved_force_nm": 40.566156093230376,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 40.566156093230376
         }
       },
       "rider_effort_budget_exceeded": false,
@@ -1729,8 +1687,6 @@
         "rider_torso_hinge": 40.566156093230376
       },
       "rider_lean_limit_rad": 0.5671875000000001,
-      "rider_passive_power_w": 0.0,
-      "rider_passive_work_step_j": 0.0,
       "rider_positive_power_w": 0.0578382183237218,
       "rider_positive_work_step_j": 7.229777290465226e-05,
       "rider_strength_limited": [],
@@ -2045,7 +2001,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": -3.9311247279209293e-10,
         "shock_bumper": 0.0,
         "shock_coil": 2.2116562802317116e-05,
@@ -2255,7 +2210,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": -2.7552329021185463e-07,
         "shock_bumper": 0.0,
         "shock_coil": 0.01152095224481768,
@@ -2543,118 +2497,100 @@
           "active_delivered_nm": 6.350973177596864,
           "active_request_nm": 6.350973177596864,
           "command_nm": 6.350973177596864,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596864,
           "requested_nm": 6.350973177596864,
           "saturated": false,
           "solved_active_nm": 6.350973177596864,
-          "solved_force_nm": 6.350973177596864,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596864
         },
         "rider_elbow_right": {
           "active_delivered_nm": 6.350973177596731,
           "active_request_nm": 6.350973177596731,
           "command_nm": 6.350973177596731,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596731,
           "requested_nm": 6.350973177596731,
           "saturated": false,
           "solved_active_nm": 6.350973177596731,
-          "solved_force_nm": 6.350973177596731,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596731
         },
         "rider_hip_front": {
           "active_delivered_nm": -29.664852342214036,
           "active_request_nm": -29.192497772675424,
           "command_nm": -29.664852342214036,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -29.192497772675424,
           "posture_nm": 0.0,
           "requested_nm": -29.192497772675424,
           "saturated": true,
           "solved_active_nm": -29.664852342214036,
-          "solved_force_nm": -29.664852342214036,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -29.664852342214036
         },
         "rider_hip_rear": {
           "active_delivered_nm": -12.336551260224155,
           "active_request_nm": -12.336551260224155,
           "command_nm": -12.336551260224155,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -12.336551260224155,
           "posture_nm": 0.0,
           "requested_nm": -12.336551260224155,
           "saturated": false,
           "solved_active_nm": -12.336551260224155,
-          "solved_force_nm": -12.336551260224155,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -12.336551260224155
         },
         "rider_knee_front": {
           "active_delivered_nm": -5.4340215056644166,
           "active_request_nm": -5.929832544415606,
           "command_nm": -5.4340215056644166,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -5.929832544415606,
           "posture_nm": 0.0,
           "requested_nm": -5.929832544415606,
           "saturated": true,
           "solved_active_nm": -5.4340215056644166,
-          "solved_force_nm": -5.4340215056644166,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -5.4340215056644166
         },
         "rider_knee_rear": {
           "active_delivered_nm": 1.043449969066252,
           "active_request_nm": 1.043449969066252,
           "command_nm": 1.043449969066252,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 1.043449969066252,
           "posture_nm": 0.0,
           "requested_nm": 1.043449969066252,
           "saturated": false,
           "solved_active_nm": 1.043449969066252,
-          "solved_force_nm": 1.043449969066252,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 1.043449969066252
         },
         "rider_shoulder_left": {
           "active_delivered_nm": -8.172006101698406,
           "active_request_nm": -8.172006101698406,
           "command_nm": -8.172006101698406,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698406,
           "requested_nm": -8.172006101698406,
           "saturated": false,
           "solved_active_nm": -8.172006101698406,
-          "solved_force_nm": -8.172006101698406,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698406
         },
         "rider_shoulder_right": {
           "active_delivered_nm": -8.172006101698257,
           "active_request_nm": -8.172006101698257,
           "command_nm": -8.172006101698257,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698257,
           "requested_nm": -8.172006101698257,
           "saturated": false,
           "solved_active_nm": -8.172006101698257,
-          "solved_force_nm": -8.172006101698257,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698257
         },
         "rider_torso_hinge": {
           "active_delivered_nm": 40.566156093230376,
           "active_request_nm": 40.566156093230376,
           "command_nm": 40.566156093230376,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 40.566156093230376,
           "requested_nm": 40.566156093230376,
           "saturated": false,
           "solved_active_nm": 40.566156093230376,
-          "solved_force_nm": 40.566156093230376,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 40.566156093230376
         }
       },
       "rider_effort_budget_exceeded": false,
@@ -2709,8 +2645,6 @@
         "rider_torso_hinge": 40.566156093230376
       },
       "rider_lean_limit_rad": 0.5671875000000001,
-      "rider_passive_power_w": 0.0,
-      "rider_passive_work_step_j": 0.0,
       "rider_positive_power_w": 0.11287653085152467,
       "rider_positive_work_step_j": 0.00014109566356440583,
       "rider_strength_limited": [],
@@ -3025,7 +2959,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": -1.4513139823774335e-09,
         "shock_bumper": 0.0,
         "shock_coil": 4.2352961765993374e-05,
@@ -3235,7 +3168,6 @@
         "rear_static_brake": 0.0,
         "rider_interfaces": 0.0,
         "rider_joint_envelope": 0.0,
-        "rider_passive_damping": 0.0,
         "road_rolling": -8.465612076682724e-07,
         "shock_bumper": 0.0,
         "shock_coil": 0.016189119170941006,
@@ -3523,118 +3455,100 @@
           "active_delivered_nm": 6.350973177596864,
           "active_request_nm": 6.350973177596864,
           "command_nm": 6.350973177596864,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596864,
           "requested_nm": 6.350973177596864,
           "saturated": false,
           "solved_active_nm": 6.350973177596864,
-          "solved_force_nm": 6.350973177596864,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596864
         },
         "rider_elbow_right": {
           "active_delivered_nm": 6.350973177596731,
           "active_request_nm": 6.350973177596731,
           "command_nm": 6.350973177596731,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 6.350973177596731,
           "requested_nm": 6.350973177596731,
           "saturated": false,
           "solved_active_nm": 6.350973177596731,
-          "solved_force_nm": 6.350973177596731,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 6.350973177596731
         },
         "rider_hip_front": {
           "active_delivered_nm": -29.664852342214036,
           "active_request_nm": -29.192497772675424,
           "command_nm": -29.664852342214036,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -29.192497772675424,
           "posture_nm": 0.0,
           "requested_nm": -29.192497772675424,
           "saturated": true,
           "solved_active_nm": -29.664852342214036,
-          "solved_force_nm": -29.664852342214036,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -29.664852342214036
         },
         "rider_hip_rear": {
           "active_delivered_nm": -12.336551260224155,
           "active_request_nm": -12.336551260224155,
           "command_nm": -12.336551260224155,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -12.336551260224155,
           "posture_nm": 0.0,
           "requested_nm": -12.336551260224155,
           "saturated": false,
           "solved_active_nm": -12.336551260224155,
-          "solved_force_nm": -12.336551260224155,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -12.336551260224155
         },
         "rider_knee_front": {
           "active_delivered_nm": -5.4340215056644166,
           "active_request_nm": -5.929832544415606,
           "command_nm": -5.4340215056644166,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": -5.929832544415606,
           "posture_nm": 0.0,
           "requested_nm": -5.929832544415606,
           "saturated": true,
           "solved_active_nm": -5.4340215056644166,
-          "solved_force_nm": -5.4340215056644166,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -5.4340215056644166
         },
         "rider_knee_rear": {
           "active_delivered_nm": 1.043449969066252,
           "active_request_nm": 1.043449969066252,
           "command_nm": 1.043449969066252,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 1.043449969066252,
           "posture_nm": 0.0,
           "requested_nm": 1.043449969066252,
           "saturated": false,
           "solved_active_nm": 1.043449969066252,
-          "solved_force_nm": 1.043449969066252,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 1.043449969066252
         },
         "rider_shoulder_left": {
           "active_delivered_nm": -8.172006101698406,
           "active_request_nm": -8.172006101698406,
           "command_nm": -8.172006101698406,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698406,
           "requested_nm": -8.172006101698406,
           "saturated": false,
           "solved_active_nm": -8.172006101698406,
-          "solved_force_nm": -8.172006101698406,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698406
         },
         "rider_shoulder_right": {
           "active_delivered_nm": -8.172006101698257,
           "active_request_nm": -8.172006101698257,
           "command_nm": -8.172006101698257,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": -8.172006101698257,
           "requested_nm": -8.172006101698257,
           "saturated": false,
           "solved_active_nm": -8.172006101698257,
-          "solved_force_nm": -8.172006101698257,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": -8.172006101698257
         },
         "rider_torso_hinge": {
           "active_delivered_nm": 40.566156093230376,
           "active_request_nm": 40.566156093230376,
           "command_nm": 40.566156093230376,
-          "passive_damping_nm": -0.0,
           "pedaling_nm": 0.0,
           "posture_nm": 40.566156093230376,
           "requested_nm": 40.566156093230376,
           "saturated": false,
           "solved_active_nm": 40.566156093230376,
-          "solved_force_nm": 40.566156093230376,
-          "solved_passive_nm": 0.0
+          "solved_force_nm": 40.566156093230376
         }
       },
       "rider_effort_budget_exceeded": false,
@@ -3689,8 +3603,6 @@
         "rider_torso_hinge": 40.566156093230376
       },
       "rider_lean_limit_rad": 0.5671875000000001,
-      "rider_passive_power_w": 0.0,
-      "rider_passive_work_step_j": 0.0,
       "rider_positive_power_w": 0.16783096946479611,
       "rider_positive_work_step_j": 0.00020978871183099514,
       "rider_strength_limited": [],

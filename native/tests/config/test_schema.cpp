@@ -641,8 +641,7 @@ void test_defaults() {
                     c.articulated.saddle_attachment == "flat" &&
                     !c.articulated.joint_envelope_path.has_value() &&
                     !c.articulated.joint_strength_path.has_value() &&
-                    !c.articulated.grip_pair_force_limit_n.has_value() &&
-                    !c.articulated.coupled_task_control,
+                    !c.articulated.grip_pair_force_limit_n.has_value(),
                 "ArticulatedConfig defaults");
     bt::require(!c.seated_climb.enabled &&
                     c.seated_climb.surge_recovery_rate == 1. / 3.,
@@ -717,8 +716,9 @@ void test_schema() {
     const Value& drive = member(fields[7], "fields", "fields.drive");
     bt::require(io::as_array(drive, "fields.drive.fields").size() == 21,
                 "drive field count");
-    // 69 = 70 minus joint_passive_damping_nms_rad (spec Q13 removal).
-    bt::require(fields_named(fields[9], "articulated").size() == 69,
+    // 67 = 69 minus leg_track_damping_nms_rad (no joint damping in any
+    // form) and coupled_task_control (removed with its welded-rider mode).
+    bt::require(fields_named(fields[9], "articulated").size() == 67,
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 19,
                 "seated_climb field count");

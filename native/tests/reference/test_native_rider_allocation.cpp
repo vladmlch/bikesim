@@ -1134,9 +1134,8 @@ welded_attachments(const mjModel &model) {
     }
     const auto [envelope, stored] = controller.envelope_forces(data);
     (void)stored;
-    // The QP known-forces lane carries no passive term: spec Q13 removed
-    // the -kd*qvel damping contribution, so known[] is the joint envelope
-    // alone.
+    // Joints carry no damping, so the QP known-forces lane is the joint
+    // envelope alone.
     Vector known = envelope;
     std::size_t index = 0;
     Vector b_torque(nv, 0.);

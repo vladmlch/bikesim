@@ -70,37 +70,6 @@ configuration::RiderSpecs rider_specs(const Value& value) {
 #undef BIKE_RIDER
     configuration::detail::post_init(out); return out;
 }
-// The removed knob wrote MJCF damping onto articulated-rider hinges, which
-// exist iff the recorded rider variant is "articulated_planar"
-// (model/builder.cpp builds the articulated rider only for that variant).
-// The doc's own resolved_config.rider.variant decides whether recorded
-// damping had hinges to act on — drive_mode is not consulted because the
-// damping write was not conditioned on it.
-bool recorded_rider_hinges(const Value& resolved) {
-    return string(field(field(resolved, "rider"), "variant")) == "articulated_planar";
-}
-// legacy recordings: the removed joint_passive_damping_nms_rad knob is
-// tolerated only when the recorded value is inert. A recorded 0.0 is
-// always inert — the resolved hinge damping was zero. A recorded null is
-// inert only when the recorded physics had no rider hinges for it to act
-// on: on an articulated rider the unset knob resolved through the
-// nullopt -> joint_kd_nms_rad fallback (~15 Nms/rad), a real damping the
-// replay cannot reproduce. A non-inert recorded value cannot be replayed —
-// silently dropping it would let verify_configuration bless a physically
-// different reconstruction.
-void drop_removed_passive_damping(Value& articulated, bool rider_hinges) {
-    auto& object = std::get<Object>(articulated.data);
-    const auto* member = find(object, "joint_passive_damping_nms_rad");
-    if (member == nullptr) return;
-    const bool inert = io::is_null(*member)
-        ? !rider_hinges
-        : io::as_double(*member, "resolved_config.physics.articulated.joint_passive_damping_nms_rad") == 0.;
-    if (!inert)
-        throw IncompatibleExecution(
-            "resolved_config.physics.articulated.joint_passive_damping_nms_rad: "
-            "recorded damping cannot be replayed — the mechanism no longer exists");
-    (void)pop(object, "joint_passive_damping_nms_rad");
-}
 // legacy recordings: the removed [drive.battery] section is tolerated only
 // when it was disabled (configuration/legacy_battery.hpp). An enabled
 // battery could have clamped assist torque, so the run is not replayable.
@@ -168,9 +137,7 @@ void drop_if_default_reposition(Value& pedaling) {
 // value before any equality comparison can run.
 Value configuration_hashable(const Value& resolved) {
     auto hashable = research::configuration_digest_document(resolved);
-    auto physics = field(hashable, "physics"), articulated = field(physics, "articulated");
-    drop_removed_passive_damping(articulated, recorded_rider_hinges(resolved));
-    set(physics, "articulated", std::move(articulated));
+    auto physics = field(hashable, "physics");
     drop_removed_battery(physics);
     set(hashable, "physics", std::move(physics)); return hashable;
 }
@@ -198,7 +165,6 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         if (declared && !io::is_null(*declared) && !bundled) throw IncompatibleExecution(std::string("legacy recording lacks bundled ") + key);
         set(articulated, std::string(key) + "_path", bundled ? text((assets.path() / name).string()) : Value{});
     }
-    drop_removed_passive_damping(articulated, recorded_rider_hinges(resolved));
     set(physics, "articulated", std::move(articulated));
     drop_removed_battery(physics);
     if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file))

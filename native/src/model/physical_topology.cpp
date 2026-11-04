@@ -43,11 +43,10 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         add_tensor(tensor,parallel_axis(arm,{sign*length/2.,-sign*.075,0.}));
     }
     set_inertia(crank,spindle+2.*arm,{},tensor);
-    required(root,"joint","crank_spin").set("damping","0");
     auto& frame=required(root,"body","frame");
     if(drive.motor_clutch) {
         auto& shaft=frame.add("body",{{"name","drive_shaft"},{"pos","0 0 0"}});
-        joint(shaft,"drive_shaft_spin","hinge",{{"axis","0 1 0"},{"damping","0"}});
+        joint(shaft,"drive_shaft_spin","hinge",{{"axis","0 1 0"}});
         const double radius=drive.gearing.front_radius_m();
         geom(shaft,"geom_drive_shaft_ring","cylinder",{{"fromto","0 -0.015 0 0 0.015 0"},{"size",g(radius)},{"mass","0"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
         set_inertia(shaft,shaft_mass,{},ring_inertia(shaft_mass,.015,radius,.03));
@@ -55,14 +54,14 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
     const double rotor=drive.rotor_inertia_kgm2;
     if(rotor>0.) {
         auto& body_=frame.add("body",{{"name","motor_rotor"},{"pos","0 0 0"}});
-        joint(body_,"rotor_spin","hinge",{{"axis","0 1 0"},{"damping","0"}});
+        joint(body_,"rotor_spin","hinge",{{"axis","0 1 0"}});
         set_inertia(body_,.3,{},diagonal(rotor/2.,rotor,rotor/2.));
     }
     for(int index=0;index<2;++index) {
         const std::string side=index==0?"front":"rear";const double sign=index==0?-1.:1.;
         auto& pedal=required(root,"body","pedal_"+side);
         auto& hinge=required(pedal,"joint","pedal_spin_"+side);
-        hinge.set("name","pedal_"+side+"_spin");hinge.set("damping","0");
+        hinge.set("name","pedal_"+side+"_spin");
         const double scale=pedal_mass/3.;
         set_inertia(pedal,pedal_mass,{0.,sign*.04,0.},diagonal(scale*(.04*.04+.008*.008),scale*(.05*.05+.008*.008),scale*(.05*.05+.04*.04)));
     }
@@ -72,7 +71,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         for(auto* candidate:root.descendants("body")) for(const auto& value:candidate->children) if(value.get()==&wheel) parent=candidate;
         if(!parent) throw std::invalid_argument("rear wheel has no body parent");
         auto& cassette=parent->add("body",{{"name","cassette"},{"pos",wheel.get("pos","0 0 0")}});
-        cassette.add("joint",{{"name","cassette_spin"},{"type","hinge"},{"axis","0 1 0"},{"damping","0"}});
+        cassette.add("joint",{{"name","cassette_spin"},{"type","hinge"},{"axis","0 1 0"}});
         auto& cassette_geom=required(wheel,"geom","geom_rear_cassette");
         cassette.children.push_back(wheel.remove(&cassette_geom));
         auto profile=kRearWheelProfile;profile[0].mass_fraction=.75/.9;profile[1].mass_fraction=.15/.9;
@@ -88,7 +87,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         const std::string prefix=side;
         auto& owner=required(root,"body",prefix+"_wheel");
         auto& spin=required(owner,"joint",prefix+"_wheel_spin");
-        spin.set("damping","0");spin.set("frictionloss","0");spin.set("solreffriction","0.005 1");spin.set("solimpfriction","0.9999 0.9999 0.001 0.5 2");
+        spin.set("frictionloss","0");spin.set("solreffriction","0.005 1");spin.set("solimpfriction","0.9999 0.9999 0.001 0.5 2");
         auto& contact=required(owner,"geom","geom_"+prefix+"_contact");
         contact.set("priority","1");
         contact.set("friction",g(prefix=="front"?cfg.tires.front.mu:cfg.tires.rear.mu)+" 0.005 0.0001");

@@ -99,10 +99,8 @@ const bio::Value &member(const bio::Value &value, const char *key) {
     return *found;
 }
 
-// The _damped_config() fixture twin's surviving leg: rewrite the
-// activation_tau_s lexeme inside the decoded rider_controller document
-// (the TOML's 0.025 -> 0.05). The fixture's joint_passive_damping_nms_rad
-// rewrite has no surviving schema key — spec Q13 removed passive damping.
+// Rewrite one number lexeme inside the decoded rider_controller document
+// (the activation-filter fixture sets activation_tau_s 0.025 -> 0.05).
 void set_lexeme(bio::Value &value, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                 std::string_view lexeme) {
     auto &object = std::get<bio::Value::Object>(value.data);
@@ -299,42 +297,24 @@ bool json_close(const bio::Value &actual, const bio::Value &expected, // NOLINT(
     return true;
 }
 
-// Legacy-wire normalization mirroring the decode side's accepted-but-
-// ignored contract (R3): recordings captured before spec Q13 carry
-// passive_damping_nm / solved_passive_nm / rider_passive_power_w /
-// rider_passive_work_step_j members the current encoder no longer emits.
-// Strip them from the EXPECTED document so the comparison stays strict —
-// key set, order, array lengths and numeric leaves — on every surviving
-// member; a regression elsewhere still fails structure- or value-first.
-void strip_removed_passive_keys(bio::Value &value) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
-    if (auto *object = std::get_if<bio::Value::Object>(&value.data)) {
-        std::erase_if(*object, [](const auto &entry) {
-            return entry.first == "passive_damping_nm" ||
-                   entry.first == "solved_passive_nm" ||
-                   entry.first == "rider_passive_power_w" ||
-                   entry.first == "rider_passive_work_step_j";
-        });
-        for (auto &[name, child] : *object)
-            strip_removed_passive_keys(child);
-    } else if (auto *array =
-                   std::get_if<bio::Value::Array>(&value.data)) {
-        for (auto &child : *array) strip_removed_passive_keys(child);
-    }
-}
-
 void expect_state_close(bt::oracle::Node &node, const std::string &document,
                         std::string_view label) {
   const auto expected_bytes = node.bytes_input(label);
   const std::string_view source(
       reinterpret_cast<const char *>(expected_bytes.data()), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
       expected_bytes.size());
-  bio::Value expected = bio::parse_json(source);
-  strip_removed_passive_keys(expected);
   std::string path;
-  bt::require(
-      json_close(bio::parse_json(document), expected, path),
-      std::string(label) + ": state diverges beyond platform tolerance at" +
-          path);
+  const bool close =
+      json_close(bio::parse_json(document), bio::parse_json(source), path);
+  // Record mode keeps the recorded document while it still matches within
+  // tolerance, so an unchanged state does not churn the golden.
+  if (bt::oracle::Node::recording()) {
+    if (!close) node.record_consumed(byte_span(document));
+    return;
+  }
+  bt::require(close, std::string(label) +
+                         ": state diverges beyond platform tolerance at" +
+                         path);
 }
 
 // The recorded pair every compute-family node captures: the joint-ordered
@@ -571,12 +551,12 @@ void test_spindle_compute_posture_matches_python() {
     }
 }
 
-// ---- activation / damped fixture -------------------------------------------
+// ---- activation-filter fixture ---------------------------------------------
 
 void test_spindle_activation_rejects_repeated_timestamp() {
     Plant plant = make_plant(true);
     bt::require(plant.controller->config().activation_tau_s > 0.,
-                "damped fixture carries activation_tau_s > 0");
+                "activation fixture carries activation_tau_s > 0");
     stage(plant, .4, 5.);
     rider::RiderCommand command;
     command.mean_crank_torque_nm = 60.;
@@ -591,15 +571,6 @@ void test_spindle_activation_rejects_repeated_timestamp() {
     }
     bt::require(threw, "repeated timestamp must reject");
 }
-
-// tests/reference/test_native_spindle_controller.py::
-// test_spindle_activation_and_passive_damping_match_python is dropped, not
-// rescoped: the oracle node was captured at joint_passive_damping_nms_rad
-// = 2.5, so its pinned torques/state embed the passive term spec Q13
-// removed. With the damping leg gone the surviving assertions (activation
-// evolve + saw_damping) pin no oracle arithmetic — activation filtering is
-// already covered by test_spindle_activation_rejects_repeated_timestamp
-// and the compute-family state comparisons.
 
 // ---- initialize / envelope / write ----------------------------------------
 
@@ -667,22 +638,19 @@ void test_spindle_state_round_trip() {
     bt::oracle::Node node(node_id("test_spindle_state_round_trip"));
     // The recorded document is both the decode input and the re-encode
     // oracle: restore() then encode_spindle_state() must reproduce it
-    // byte-for-byte — modulo the pre-Q13 legacy members the tolerant
-    // decode accepts-and-ignores and the re-encode drops (R3). The
-    // surviving content is still a lossless round-trip.
+    // byte-for-byte (canonical spelling).
     const auto document = node.bytes_input("restored_state");
     const std::string_view source(
         reinterpret_cast<const char *>(document.data()), document.size()); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte buffer viewed as chars for the I/O API; the sanctioned aliasing bridge
     plant.controller->restore(rider::decode_spindle_state(
         bio::parse_json(source), "restored_state"));
     const std::string reencoded = state_document(*plant.controller);
-    bio::Value expected = bio::parse_json(source);
-    strip_removed_passive_keys(expected);
-    const std::string expected_text = bio::canonical_json(expected);
+    const std::string expected_text =
+        bio::canonical_json(bio::parse_json(source));
     bt::require(
         std::ranges::equal(
             byte_span(reencoded), byte_span(expected_text)),
-        "restore+encode reproduces the surviving wire byte-for-byte");
+        "restore+encode reproduces the recorded wire byte-for-byte");
     mj_resetData(plant.model, plant.data);
     plant.data->time = .00125;
     wbuf(plant.data->qpos, nq(plant.model))[joint_qposadr(
@@ -720,15 +688,9 @@ void test_spindle_solved_effort_matches_python() {
     const auto delivered =
         torque_vector(diagnostics.active_delivered_nm, *plant.controller);
     node.f64_close(delivered, "solved.delivered");
-    // The passive_power_w / passive_work_step_j fields are removed (spec
-    // Q13); the recorded solved.powers slots for them were captured at
-    // damping = 0 and pin 0.0, so literal zeroes preserve the 4-wide label
-    // byte-for-byte while asserting no passive power can ever emerge.
-    const double powers[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
+    const std::array<double, 2> powers{
         diagnostics.positive_power_w,
-        0.,
         diagnostics.positive_work_step_j.value_or(0.),
-        0.,
     };
     node.f64_close(powers, "solved.powers");
     bio::Value::Array names;
@@ -916,27 +878,15 @@ void test_spindle_probe_rejects_bad_input() {
   bt::require(
       throws_std([&] { (void)rider::decode_spindle_config(rider_doc); }),
       "pedal_attachment=pin rejects");
-  // The removed joint_passive_damping_nms_rad knob is accepted only when
-  // the recorded value is inert: a recorded 0.0 decodes, but an explicit
-  // null is never inert in a rider_controller payload — the unset knob
-  // resolved through the joint_kd_nms_rad fallback on articulated
-  // hinges, so decode rejects it like a nonzero value.
+  // The removed joint_passive_damping_nms_rad knob is an unknown key.
   bio::Value damping_doc = member(doc, "rider_controller");
-  auto &damping_members = std::get<bio::Value::Object>(damping_doc.data);
-  damping_members.emplace_back("joint_passive_damping_nms_rad",
-                               bio::Value{bio::Number{"0.0"}});
-  (void)rider::decode_spindle_config(damping_doc);
-  damping_members.back().second = bio::Value{};
-  try {
-    (void)rider::decode_spindle_config(damping_doc);
-    bt::require(false,
-                "recorded null joint_passive_damping_nms_rad rejects");
-  } catch (const std::invalid_argument &failure) {
-    bt::require(std::string_view(failure.what())
-                        .find("joint_passive_damping_nms_rad") !=
-                    std::string_view::npos,
-                "the null damping rejection names the removed key");
-  }
+  std::get<bio::Value::Object>(damping_doc.data)
+      .emplace_back("joint_passive_damping_nms_rad",
+                    bio::Value{bio::Number{"0.0"}});
+  bt::require(throws_std([&] {
+                (void)rider::decode_spindle_config(damping_doc);
+              }),
+              "the removed joint_passive_damping_nms_rad key rejects");
   bt::require(throws_std([&] {
                 (void)rider::decode_spindle_config(
                     bio::Value{bio::Value::Object{}});
@@ -965,8 +915,6 @@ int main() {
         test_spindle_coasting_command_matches_python();
         test_spindle_compute_posture_matches_python();
         test_spindle_activation_rejects_repeated_timestamp();
-        // test_spindle_activation_and_passive_damping_match_python —
-        // dropped above (spec Q13: the damped oracle is not reproducible).
         test_spindle_initialize_matches_python();
         test_spindle_initialize_velocity_matches_python();
         test_spindle_envelope_forces_match_python();

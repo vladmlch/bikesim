@@ -102,10 +102,8 @@ void test_rider_numbers() {
                     articulated.saddle_attachment == "pin" &&
                     articulated.grip_attachment == "connect",
                 "the pinned plant attachments are spindle/pin/connect");
-    // Spec Q13: joint_passive_damping_nms_rad is removed from the schema —
-    // "passive hinge damping is zeroed" is now enforced at parse time: a
-    // document that still carries the key fails to load rather than
-    // resolving a nonzero hinge damping.
+    // Joint damping does not exist in the model: a document that still
+    // carries the removed joint_passive_damping_nms_rad key fails to load.
     {
         const std::string source = bt::text(repo_file(
             "examples/research/viewer_physics_welded.toml"));

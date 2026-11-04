@@ -1251,12 +1251,6 @@
           "type": "<class 'float'>"
         },
         {
-          "default": false,
-          "default_factory": null,
-          "name": "coupled_task_control",
-          "type": "<class 'bool'>"
-        },
-        {
           "default": 100.0,
           "default_factory": null,
           "name": "joint_limit_nm",
@@ -1368,12 +1362,6 @@
           "default": 25.0,
           "default_factory": null,
           "name": "weld_servo_limit_nm",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 0.0,
-          "default_factory": null,
-          "name": "leg_track_damping_nms_rad",
           "type": "<class 'float'>"
         },
         {

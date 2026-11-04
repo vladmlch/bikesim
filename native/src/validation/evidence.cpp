@@ -193,9 +193,10 @@ double relative_change(double a,double b,double floor) {scalar(a,"value");scalar
 Value rider_work_ledger(const Value& work) {
     numeric::PythonSum active;
     for(const auto& [name,item]:io::as_object(work,"component work")){const auto x=io::as_double(item,name);if(name.starts_with("act_rider_"))active.add(x);}
-    const auto passive=real(work,"rider_passive_damping",0.);
-    return Value{Object{{"active_joint_work_j",value::real(active.total())},{"passive_joint_work_j",value::real(passive)},
-        {"net_joint_work_j",value::real(active.total()+passive)},{"motor_mechanical_work_j",value::real(real(work,"mid_drive",0.))}}};
+    // Rider joints have no passive damping: the net joint work is the
+    // active actuator work alone.
+    return Value{Object{{"active_joint_work_j",value::real(active.total())},
+        {"net_joint_work_j",value::real(active.total())},{"motor_mechanical_work_j",value::real(real(work,"mid_drive",0.))}}};
 }
 
 // climbing_evidence.py:7-111: unknown status and interrupted histories never become valid.

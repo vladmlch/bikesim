@@ -1,8 +1,0 @@
-{
-  "expected": {
-    "error": "RecordingError",
-    "kind": "invalid",
-    "message": "recording is unsealed: a regular manifest.json is required"
-  },
-  "omitted": "manifest.json"
-}

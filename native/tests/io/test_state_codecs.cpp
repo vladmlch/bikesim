@@ -135,30 +135,6 @@ bio::Value parse_fixture(std::string_view relative) {
     return at.kind == btt.kind && at.fields == btt.fields;
 }
 
-// Spec Q13: the joint_passive_damping mechanism and its wire members
-// were removed; recorded docs (both the decode inputs and the canonical
-// goldens) still carry them. R3 read-path tolerance normalizes the
-// RECORDED side by the named set — goldens are never regenerated.
-void strip_removed_passive_members(bio::Value &value) { // NOLINT(misc-no-recursion) bounded by the JSON document depth
-    static constexpr std::array<std::string_view, 4> removed{
-        "passive_damping_nm", "solved_passive_nm",
-        "rider_passive_power_w", "rider_passive_work_step_j"};
-    if (auto *object = std::get_if<bio::Value::Object>(&value.data)) {
-        std::erase_if(*object, [](const auto &member) {
-            const std::string_view name{member.first};
-            for (const std::string_view name_removed : removed)
-                if (name.find(name_removed) != std::string_view::npos)
-                    return true;
-            return false;
-        });
-        for (auto &[name, child] : *object)
-            strip_removed_passive_members(child);
-    } else if (auto *array =
-                   std::get_if<bio::Value::Array>(&value.data)) {
-        for (auto &item : *array) strip_removed_passive_members(item);
-    }
-}
-
 // Two round-trip proofs: golden_text byte-pins the canonical encode
 // output, and values_equal proves every member survives the decode→
 // encode path numerically (float spellings normalize to Python repr
@@ -166,17 +142,12 @@ void strip_removed_passive_members(bio::Value &value) { // NOLINT(misc-no-recurs
 // bit-exactly by numbers_equal).
 void expect_round_trip(std::string_view golden_name,
                        const bio::Value &input, const bio::Value &encoded) { // NOLINT(bugprone-easily-swappable-parameters) input/encoded are the decode source and its expected re-encoding, named at every call
-    bio::Value recorded =
+    const bio::Value recorded =
         parse(bt::text(bt::fixture(golden_name)));
-    strip_removed_passive_members(recorded);
     bt::require(
         bio::canonical_json(recorded) == bio::canonical_json(encoded),
-        "golden canonical drift beyond the removed passive-damping "
-        "members: " +
-            std::string(golden_name));
-    bio::Value normalized_input = input;
-    strip_removed_passive_members(normalized_input);
-    bt::require(values_equal(normalized_input, encoded),
+        "golden canonical drift: " + std::string(golden_name));
+    bt::require(values_equal(input, encoded),
                 "round-trip must reproduce every captured member exactly");
 }
 

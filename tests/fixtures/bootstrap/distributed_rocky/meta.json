@@ -15,6 +15,6 @@
   "nv": 26,
   "nwrap": 2
  },
- "model_sha256": "836e894a4720710f53f7d0ed23c4958ded97cd5562dc4c89546e1a7fe9fdf573",
+ "model_sha256": "79e7571d2c9c1cac8622257d4eb53f6bd1b665a59385caf726476533d698035d",
  "provenance": "test_native_distributed_tire._env: viewer_physics_distributed.toml + alpine_rocky.toml, decimation=1"
 }

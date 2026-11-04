@@ -389,8 +389,6 @@ struct ArticulatedConfig {
     double arm_reach_fraction = .92;
     double joint_kp_nm_rad = 600.;
     double joint_kd_nms_rad = 15.;
-    // Fully coupled rider (pelvis, soles and hands welded).
-    bool coupled_task_control = false;
     double joint_limit_nm = 100.;
     double joint_speed_limit_rad_s = 20.;
     double joint_power_limit_w = 250.;
@@ -413,14 +411,11 @@ struct ArticulatedConfig {
     double pedal_torque_ripple = .35;
     // Residual recovery-leg load on the rising flat pedal; zero disables it.
     double return_foot_preload_n = 0.;
-    // Weld-press servo gain/hold limit and weld-imposed leg-velocity follow
-    // damping — physical_config.py's same-named block. Declared and validated
-    // here so the mirror stays complete (schema()/to_value()/contract), but
-    // the native rider controller has not ported those knobs: the closed
-    // config.rider_controller wire drops them in project_rider_controller.
+    // Weld-press servo gain and hold limit — physical_config.py's
+    // same-named block; SpindleController::compute consumes them through
+    // config.rider_controller.
     double weld_servo_gain = .05;
     double weld_servo_limit_nm = 25.;
-    double leg_track_damping_nms_rad = 0.;
     double link_max_gap_m = .005;
     // F1 weld load envelope for the pinned plant (physical_config.py):
     // connect equalities are bidirectional soft springs carrying tension and
@@ -867,7 +862,6 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, arm_reach_fraction),
     REAL(ArticulatedConfig, joint_kp_nm_rad),
     REAL(ArticulatedConfig, joint_kd_nms_rad),
-    BOOL(ArticulatedConfig, coupled_task_control),
     REAL(ArticulatedConfig, joint_limit_nm),
     REAL(ArticulatedConfig, joint_speed_limit_rad_s),
     REAL(ArticulatedConfig, joint_power_limit_w),
@@ -892,7 +886,6 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, return_foot_preload_n),
     REAL(ArticulatedConfig, weld_servo_gain),
     REAL(ArticulatedConfig, weld_servo_limit_nm),
-    REAL(ArticulatedConfig, leg_track_damping_nms_rad),
     REAL(ArticulatedConfig, link_max_gap_m),
     {.name="weld_foot_min_normal_n", .type="float | None",
      .kind=FieldKind::OptionalReal,

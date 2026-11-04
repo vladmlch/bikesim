@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "compute.state",
-  "nbytes": 5119,
+  "nbytes": 4857,
   "node": "native_spindle_controller/spindle_compute_matches_python/0.0-0.0",
   "offset": 72,
   "rtol": null,
   "shape": [
-   5119
+   4857
   ]
  }
 ]

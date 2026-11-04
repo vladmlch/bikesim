@@ -8,12 +8,6 @@
 namespace {
 namespace rec = bike::recording;
 namespace io = bike::io;
-// Spec Q13 removed these passive-damping channel leaves; the recorded
-// catalog golden still lists them. Namespace scope: GCC flags the former
-// function-local static as set-but-unused when only a nested lambda reads it.
-constexpr std::array<std::string_view, 4> kRemovedPassiveLeaves{
-    "passive_damping_nm", "solved_passive_nm",
-    "rider_passive_power_w", "rider_passive_work_step_j"};
 // NOLINTNEXTLINE(misc-no-recursion) recursion mirrors the Python reference structure
 std::size_t descriptors(const rec::FieldSpec& field) {
     std::size_t count = 1;
@@ -47,27 +41,7 @@ void catalog_contract() {
     // electrical_power_w} and channel_energy.{electrical_work_j,
     // electrical_residual_j}.
     bt::require(count == 487, "full reviewed catalog retains all 487 repeated/nested descriptor occurrences");
-    auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
-    // Spec Q13: the recorded catalog still lists the removed passive-
-    // damping channel leaves. Drop exactly the named entries from the
-    // expected side — the golden is never regenerated.
-    {
-        // NOLINTNEXTLINE(misc-no-recursion) bounded by the JSON document depth
-        const auto strip = [&](this auto &&self, io::Value &v) -> void {
-            if (auto *arr = std::get_if<io::Value::Array>(&v.data)) {
-                std::erase_if(*arr, [&](const io::Value &e) {
-                    const auto *s = std::get_if<std::string>(&e.data);
-                    if (!s) return false;
-                    for (const std::string_view name : kRemovedPassiveLeaves)
-                        if (s->find(name) != std::string::npos) return true;
-                    return false;
-                });
-                for (auto &e : *arr) self(e);
-            } else if (auto *obj = std::get_if<io::Value::Object>(&v.data))
-                for (auto &[k, c] : *obj) self(c);
-        };
-        strip(golden);
-    }
+    const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;
     for (const auto& coordinate : coordinates) {

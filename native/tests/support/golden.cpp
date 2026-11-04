@@ -9,6 +9,8 @@
 #include <charconv>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <memory>
@@ -64,6 +66,55 @@ std::uint64_t bits(const Entry &entry, std::size_t index) {
         result |= static_cast<std::uint64_t>(std::to_integer<unsigned int>(entry.bytes[index * 8 + byte])) << (byte * 8);
     return result;
 }
+// Record-mode shape: keep the recorded shape when the element count still
+// fits it, otherwise rescale the leading dimension (row-major tables grow
+// or shrink by rows). A count no recorded shape can carry fails loudly.
+std::vector<std::size_t> reshape(const Entry &entry, std::size_t count) {
+    std::size_t recorded = 1;
+    for (const auto dimension : entry.shape) recorded *= dimension;
+    if (recorded == count) return entry.shape;
+    if (entry.shape.empty()) bad(entry.label, "record mode cannot store an array into a scalar entry");
+    std::size_t trailing = 1;
+    for (std::size_t i = 1; i < entry.shape.size(); ++i) trailing *= entry.shape[i];
+    if (trailing != 0 && count % trailing == 0) {
+        auto shape = entry.shape;
+        shape.front() = count / trailing;
+        return shape;
+    }
+    bad(entry.label, "record mode element count does not fit the recorded trailing shape");
+}
+// Python json.dumps(ensure_ascii=True) string spelling — the sidecars were
+// written by json.dumps(indent=1, sort_keys=True).
+std::string json_string(std::string_view text) {
+    std::string out = "\"";
+    std::size_t cursor = 0;
+    const auto unit = [&out](unsigned value) {
+        static constexpr std::string_view digits = "0123456789abcdef";
+        out += "\\u";
+        for (unsigned shift = 16U; shift != 0U;) {
+            shift -= 4U;
+            out.push_back(digits[(value >> shift) & 0xFU]);
+        }
+    };
+    while (cursor < text.size()) {
+        const auto cp = bike::io::detail::utf8_decode_one(text, cursor);
+        if (cp == bike::io::detail::kInvalidCodepoint) bad("golden label", "invalid UTF-8");
+        if (cp == U'"') out += "\\\"";
+        else if (cp == U'\\') out += "\\\\";
+        else if (cp == U'\n') out += "\\n";
+        else if (cp == U'\r') out += "\\r";
+        else if (cp == U'\t') out += "\\t";
+        else if (cp == U'\b') out += "\\b";
+        else if (cp == U'\f') out += "\\f";
+        else if (cp < 0x20 || (cp > 0x7f && cp < 0x10000)) unit(static_cast<unsigned>(cp));
+        else if (cp >= 0x10000) {
+            const auto v = static_cast<unsigned>(cp) - 0x10000U;
+            unit(0xD800U + (v >> 10U)); unit(0xDC00U + (v & 0x3FFU));
+        } else out.push_back(static_cast<char>(cp));
+    }
+    out += '"';
+    return out;
+}
 std::string hex(std::uint64_t value) {
     std::ostringstream out;
     out << "0x" << std::hex << std::setw(16) << std::setfill('0') << value;
@@ -115,7 +166,7 @@ std::string node_path(std::string_view node) {
     return path;
 }
 Node::Node(std::string_view node) : Node(node, root()) {}
-Node::Node(std::string_view node, const std::filesystem::path &directory) : node_(node) {
+Node::Node(std::string_view node, const std::filesystem::path &directory) : node_(node), root_(directory.string()) {
     const auto base = directory / platform() / node_path(node);
     const auto meta_path = std::filesystem::path(base.string() + ".json");
     const auto payload_path = std::filesystem::path(base.string() + ".bin");
@@ -159,6 +210,8 @@ Node::Node(std::string_view node, const std::filesystem::path &directory) : node
         offset += nbytes;
         const auto &rtol = required(object, "rtol", node_);
         const auto &atol = required(object, "atol", node_);
+        entry.rtol_text = bike::io::is_null(rtol) ? "null" : bike::io::as_number(rtol, node_).lexeme;
+        entry.atol_text = bike::io::is_null(atol) ? "null" : bike::io::as_number(atol, node_).lexeme;
         if (entry.kind == "close") {
             if (entry.dtype != "<f8") bad(node_, "close requires little-endian binary64");
             entry.rtol = bike::io::number_double(bike::io::as_number(rtol, node_), node_);
@@ -176,9 +229,64 @@ const Entry &Node::next(std::string_view label) const {
     bt::require(entry.label == label, context() + ": label expected '" + entry.label + "', received '" + std::string(label) + "'");
     return entry;
 }
+bool Node::recording() {
+    const char *flag = std::getenv("BIKE_GOLDEN_RECORD"); // NOLINT(concurrency-mt-unsafe) read once per comparison in a single-threaded test process
+    return flag != nullptr && std::string_view(flag) == "1";
+}
+// Record mode keeps a recorded binary64 payload the actual values still
+// match (bitwise for "bitwise" entries, within the entry's tolerances for
+// "close" ones), so an unchanged comparison does not churn its golden.
+bool Node::matches(const Entry &entry, std::span<const double> values) {
+    if (entry.bytes.size() != values.size() * 8) return false;
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        const auto recorded = bits(entry, i);
+        const auto observed = std::bit_cast<std::uint64_t>(values[i]);
+        if (recorded == observed) continue;
+        if (entry.kind != "close") return false;
+        const double expected = std::bit_cast<double>(recorded);
+        const double actual = values[i];
+        if (!((std::isnan(actual) && std::isnan(expected)) ||
+              (std::isfinite(actual) && std::isfinite(expected) &&
+               std::abs(actual - expected) <= entry.atol + entry.rtol * std::abs(expected))))
+            return false;
+    }
+    return true;
+}
+void Node::store(Entry &entry, std::span<const double> values) {
+    if (matches(entry, values) && entry.shape == reshape(entry, values.size())) return;
+    entry.shape = reshape(entry, values.size());
+    entry.bytes.resize(values.size() * 8);
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        const auto word = std::bit_cast<std::uint64_t>(values[i]);
+        for (std::size_t byte = 0; byte < 8; ++byte)
+            entry.bytes[i * 8 + byte] = static_cast<std::byte>((word >> (byte * 8)) & 0xFFU);
+    }
+}
+void Node::record_consumed(std::span<const double> values) {
+    bt::require(recording(), context() + ": record_consumed outside record mode");
+    bt::require(cursor_ > 0, context() + ": no consumed entry to record");
+    auto &entry = entries_[cursor_ - 1];
+    bt::require(entry.dtype == "<f8", context() + ": recorded entry is not binary64");
+    store(entry, values);
+}
+void Node::record_consumed(std::span<const std::byte> bytes) {
+    bt::require(recording(), context() + ": record_consumed outside record mode");
+    bt::require(cursor_ > 0, context() + ": no consumed entry to record");
+    auto &entry = entries_[cursor_ - 1];
+    bt::require(entry.dtype == "|u1", context() + ": recorded entry is not a byte document");
+    entry.shape = reshape(entry, bytes.size());
+    entry.bytes.assign(bytes.begin(), bytes.end());
+}
+void Node::drop_consumed() {
+    bt::require(recording(), context() + ": drop_consumed outside record mode");
+    bt::require(cursor_ > 0, context() + ": no consumed entry to drop");
+    entries_.erase(entries_.begin() + static_cast<std::ptrdiff_t>(cursor_ - 1));
+    --cursor_;
+}
 void Node::f64(std::span<const double> actual, std::string_view label) {
     const auto &entry = next(label);
     bt::require(entry.kind == "bitwise" && entry.dtype == "<f8", context() + ": expected bitwise binary64");
+    if (recording()) { store(entries_[cursor_], actual); ++cursor_; return; }
     bt::require(actual.size() == entry.bytes.size() / 8, context() + ": element count differs");
     for (std::size_t i = 0; i < actual.size(); ++i) {
         const auto observed = std::bit_cast<std::uint64_t>(actual[i]);
@@ -191,6 +299,7 @@ void Node::f64(std::span<const double> actual, std::string_view label) {
 void Node::f64_close(std::span<const double> actual, std::string_view label) {
     const auto &entry = next(label);
     bt::require(entry.kind == "close" && entry.dtype == "<f8", context() + ": expected close binary64");
+    if (recording()) { store(entries_[cursor_], actual); ++cursor_; return; }
     bt::require(actual.size() == entry.bytes.size() / 8, context() + ": element count differs");
     for (std::size_t i = 0; i < actual.size(); ++i) {
         const double expected = std::bit_cast<double>(bits(entry, i));
@@ -206,17 +315,39 @@ void Node::f64_close(std::span<const double> actual, std::string_view label) {
 }
 void Node::f64(std::span<const double> actual, std::span<const std::size_t> shape,
                std::string_view label) {
+    if (recording()) {
+        (void)next(label);
+        auto &entry = entries_[cursor_];
+        entry.shape.assign(shape.begin(), shape.end());
+        f64(actual, label);
+        return;
+    }
     bt::require(std::ranges::equal(next(label).shape, shape), context() + ": shape differs");
     f64(actual, label);
 }
 void Node::f64_close(std::span<const double> actual, std::span<const std::size_t> shape,
                      std::string_view label) {
+    if (recording()) {
+        (void)next(label);
+        auto &entry = entries_[cursor_];
+        entry.shape.assign(shape.begin(), shape.end());
+        f64_close(actual, label);
+        return;
+    }
     bt::require(std::ranges::equal(next(label).shape, shape), context() + ": shape differs");
     f64_close(actual, label);
 }
 void Node::bytes(std::span<const std::byte> actual, std::string_view dtype,
                  std::span<const std::size_t> shape, std::string_view label) {
     const auto &entry = next(label);
+    if (recording()) {
+        bt::require(entry.kind == "bitwise" && entry.dtype == dtype, context() + ": kind or dtype differs");
+        auto &stored = entries_[cursor_];
+        stored.shape.assign(shape.begin(), shape.end());
+        stored.bytes.assign(actual.begin(), actual.end());
+        ++cursor_;
+        return;
+    }
     bt::require(entry.kind == "bitwise" && entry.dtype == dtype && std::ranges::equal(entry.shape, shape), context() + ": kind, dtype or shape differs");
     bt::require(std::ranges::equal(entry.bytes, actual), context() + " label '" + entry.label + "': bytes differ");
     ++cursor_;
@@ -256,7 +387,46 @@ std::span<const std::size_t> Node::peek_shape() const {
     if (cursor_ >= entries_.size()) return {};
     return entries_[cursor_].shape;
 }
+void Node::write() const {
+    std::string meta = "[\n";
+    std::string payload;
+    std::size_t offset = 0;
+    for (std::size_t i = 0; i < entries_.size(); ++i) {
+        const auto &entry = entries_[i];
+        std::string shape = "[]";
+        if (!entry.shape.empty()) {
+            shape = "[\n";
+            for (std::size_t d = 0; d < entry.shape.size(); ++d)
+                shape += "   " + std::to_string(entry.shape[d]) + (d + 1 < entry.shape.size() ? ",\n" : "\n");
+            shape += "  ]";
+        }
+        meta += " {\n";
+        meta += "  \"atol\": " + entry.atol_text + ",\n";
+        meta += "  \"dtype\": " + json_string(entry.dtype) + ",\n";
+        meta += "  \"index\": " + std::to_string(i) + ",\n";
+        meta += "  \"kind\": " + json_string(entry.kind) + ",\n";
+        meta += "  \"label\": " + json_string(entry.label) + ",\n";
+        meta += "  \"nbytes\": " + std::to_string(entry.bytes.size()) + ",\n";
+        meta += "  \"node\": " + json_string(node_path(node_)) + ",\n";
+        meta += "  \"offset\": " + std::to_string(offset) + ",\n";
+        meta += "  \"rtol\": " + entry.rtol_text + ",\n";
+        meta += "  \"shape\": " + shape + "\n";
+        meta += i + 1 < entries_.size() ? " },\n" : " }\n";
+        payload.append(reinterpret_cast<const char *>(entry.bytes.data()), entry.bytes.size()); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast) byte payload appended to the binary file image
+        offset += entry.bytes.size();
+    }
+    meta += "]\n";
+    const auto base = std::filesystem::path(root_) / platform() / node_path(node_);
+    const auto meta_path = std::filesystem::path(base.string() + ".json");
+    const auto payload_path = std::filesystem::path(base.string() + ".bin");
+    for (const auto &[path, image] : {std::pair{meta_path, &meta}, std::pair{payload_path, &payload}}) {
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
+        file.write(image->data(), static_cast<std::streamsize>(image->size()));
+        bt::require(static_cast<bool>(file), node_ + ": cannot write " + path.string());
+    }
+}
 void Node::done() const {
     bt::require(cursor_ == entries_.size(), context() + ": unconsumed captured comparisons remain");
+    if (recording()) write();
 }
 } // namespace bt::oracle

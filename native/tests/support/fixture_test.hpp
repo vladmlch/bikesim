@@ -40,11 +40,23 @@ std::string text(const std::filesystem::path &path);
 // multiple of eight. Never a rounded text round-trip.
 std::vector<double> read_f64(const std::filesystem::path &path);
 
+// Record mode: environment BIKE_GOLDEN_RECORD=1 (the same switch as
+// bt::oracle::Node::recording()). Golden comparisons then rewrite their
+// fixture with the actual value instead of comparing — used only to
+// re-record goldens after a reviewed model change.
+[[nodiscard]] bool recording();
+
+// Whole-file writes for record mode (binary-safe; binary64 little-endian).
+void write_text(const std::filesystem::path &path, std::string_view content);
+void write_f64(const std::filesystem::path &path, std::span<const double> values);
+
 // Byte-exact comparison of actual against the fixture file at relative.
+// Record mode rewrites the fixture when it differs.
 void golden_text(std::string_view relative, std::string_view actual);
 
 // Bitwise binary64 comparison: uint64_t object representations, so signed
-// zero and NaN bit payloads are significant. No epsilon, no update mode.
+// zero and NaN bit payloads are significant. No epsilon. Record mode
+// rewrites the fixture when it differs.
 void golden_f64(std::string_view relative, std::span<const double> actual);
 
 // Succeeds only when action() throws std::invalid_argument (or a type

@@ -207,34 +207,27 @@ foreach(_field "${_py}n" python_executable)
     COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
 endforeach()
 
-# CMake is only an existing executable-path fixture here. --validate-only
-# does not launch it or claim that it is an actual Python interpreter.
-set(_binding_context "${_s2}")
-foreach(_field dependency_root dependency_lock configure_source_dir cmake)
-  string(JSON _binding_context REMOVE "${_binding_context}" ${_field})
+# A context without root metadata (the test-fixture shape) may omit the
+# interpreter fields, but naming an interpreter fails closed: the Python-free
+# tree has no binding context (its interpreter path was removed 2026-11-02).
+# CMake is only an existing executable-path stand-in for an interpreter.
+set(_nonroot_context "${_s2}")
+foreach(_field dependency_root dependency_lock configure_source_dir cmake
+        python_executable "${_py}n")
+  string(JSON _nonroot_context REMOVE "${_nonroot_context}" ${_field})
 endforeach()
-string(JSON _binding_context SET "${_binding_context}" python_executable
+t56_ctx_case(ctx-nonroot-no-interpreter "${_nonroot_context}")
+run_case(t56_ctx_nonroot_no_interpreter EXPECT_EXIT 0
+  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+foreach(_field python_executable "${_py}n")
+  string(JSON _bad SET "${_nonroot_context}" ${_field} "\"${CMAKE_COMMAND}\"")
+  t56_ctx_case(ctx-nonroot-interpreter-${_field} "${_bad}")
+  run_case(t56_ctx_nonroot_interpreter_${_field} EXPECT_EXIT FAIL
+    EXPECT_STDERR "Python-free native check context must record ${_field}: null"
+    COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
+endforeach()
+string(JSON _interpreter_context SET "${_nonroot_context}" python_executable
   "\"${CMAKE_COMMAND}\"")
-string(JSON _binding_context SET "${_binding_context}" "${_py}n"
-  "{\"executable\":\"${CMAKE_COMMAND}\"}")
-t56_ctx_case(ctx-binding-metadata "${_binding_context}")
-run_case(t56_ctx_binding_metadata EXPECT_EXIT 0
-  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
-string(JSON _bad SET "${_binding_context}" python_executable "null")
-t56_ctx_case(ctx-binding-null-interpreter "${_bad}")
-run_case(t56_ctx_binding_null_interpreter EXPECT_EXIT FAIL
-  EXPECT_STDERR "configured Python executable is missing or is not a path"
-  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
-string(JSON _bad REMOVE "${_binding_context}" python_executable)
-t56_ctx_case(ctx-binding-missing-interpreter "${_bad}")
-run_case(t56_ctx_binding_missing_interpreter EXPECT_EXIT FAIL
-  EXPECT_STDERR "configured Python executable is missing or is not a path"
-  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
-string(JSON _bad SET "${_binding_context}" "${_py}n" "null")
-t56_ctx_case(ctx-binding-null-identity "${_bad}")
-run_case(t56_ctx_binding_null_identity EXPECT_EXIT FAIL
-  EXPECT_STDERR "binding native check context ${_py}n must be an object"
-  COMMAND "${CHECKS_BINARY}" --kind context --build "${_fixture_dir}" --validate-only)
 
 if(_t56_system STREQUAL "Darwin")
   string(JSON _s1 SET "${_s2}" schema_version "1")
@@ -500,15 +493,15 @@ run_case(t56_contracts_default_root EXPECT_EXIT 0
   EXPECT_STDERR "native contract checks passed"
   COMMAND "${CHECKS_BINARY}" --kind contracts --build "${BUILD_DIR}")
 
-# stale extension — a bindings-era context (python_executable non-null) on a
-# build with no produced extension must fail closed rather than pass
-set(_fixture "${SCRATCH_DIR}/contracts-stale-extension")
+# bindings-era context — a context naming an interpreter fails closed in
+# the contracts kind too, before any contract rule could pass on it
+set(_fixture "${SCRATCH_DIR}/contracts-interpreter-context")
 file(MAKE_DIRECTORY "${_fixture}")
-file(WRITE "${_fixture}/native_check_context.json" "${_binding_context}")
+file(WRITE "${_fixture}/native_check_context.json" "${_interpreter_context}")
 file(COPY "${_sources}" DESTINATION "${_fixture}")
 file(COPY "${_ccdb}" DESTINATION "${_fixture}")
-run_case(t56_contracts_stale_extension EXPECT_EXIT FAIL
-  EXPECT_STDERR "expected exactly one bike_native extension"
+run_case(t56_contracts_interpreter_context EXPECT_EXIT FAIL
+  EXPECT_STDERR "Python-free native check context must record python_executable: null"
   COMMAND "${CHECKS_BINARY}" --kind contracts --build "${_fixture}"
         --repo-root "${REPO_ROOT}")
 
@@ -1715,7 +1708,7 @@ function(b29_contract_fixture name)
     "\"${_repo_real}/native/analysis_suppressions.json\","
     "\"include_paths\":[],\"library_paths\":[],\"required_files\":[],"
     "\"source_roots\":[\"${_repo_real}/native\"],"
-    "\"python_executable\":\"${_cc}\","
+    "\"python_executable\":null,"
     "\"tool_defaults\":{},\"tool_overrides\":{},"
     "\"target_contexts\":{${_tc_json}}}\n")
   file(WRITE "${_build}/native_sources.json"
@@ -1815,12 +1808,16 @@ expect_json(b29_contract_base "${_base_sum}" "human_crank_torque"
 expect_json(b29_contract_base "${_base_sum}" "pedaling_policy_valid_transition"
   checks ctest_contract_cases cases 1)
 
-# Zero or two planted extensions fail closed on the bindings context
-# (the oracle's extension-count params).
+# No extension is the Python-free build's normal state: loader provenance
+# reports not-applicable and the contracts pass. Two planted extensions
+# still fail closed (the oracle's extension-count param).
 b29_contract_fixture(b29fx-extzero)
 file(REMOVE "${b29fx-extzero_BUILD}/bike_native.fake.so")
-b29_contract_run(b29_ext_zero EXPECT_EXIT FAIL
-  EXPECT_STDERR "expected exactly one bike_native extension" NAME b29fx-extzero)
+b29_contract_run(b29_ext_zero EXPECT_EXIT 0
+  EXPECT_STDERR "native contract checks passed" NAME b29fx-extzero)
+expect_json(b29_ext_zero
+  "${b29fx-extzero_BUILD}/native_check_summaries/contracts.json"
+  "not-applicable" checks loader_provenance status)
 
 b29_contract_fixture(b29fx-exttwo)
 file(WRITE "${b29fx-exttwo_BUILD}/bike_native.second.so"
@@ -3289,13 +3286,13 @@ else()
     endif()
   endif()
   execute_process(COMMAND "${CMAKE_COMMAND}" --build
-    "${SCRATCH_DIR}/b29-cfg-rtsan-qualified" --target native_rtsan_control
+    "${SCRATCH_DIR}/b29-cfg-rtsan-qualified" --target bike_rtsan_control
     RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 600)
   if(NOT _rc EQUAL 0)
     set(_failures
       "${_failures}\n  b29_rtsan_qualified: control build failed (${_rc}): ${_o}${_e}")
   else()
-    set(_rq_bin "${SCRATCH_DIR}/b29-cfg-rtsan-qualified/native_rtsan_control")
+    set(_rq_bin "${SCRATCH_DIR}/b29-cfg-rtsan-qualified/bike_rtsan_control")
     execute_process(COMMAND "${_rq_bin}"
       RESULT_VARIABLE _rc OUTPUT_VARIABLE _o ERROR_VARIABLE _e TIMEOUT 60)
     if(NOT _rc EQUAL 0)

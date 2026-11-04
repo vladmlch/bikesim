@@ -477,6 +477,16 @@ Value load_context(const fs::path &build) {
             if (identity == nullptr || !io::is_null(*identity))
                 throw CheckError("Python-free root context must record python: null");
         }
+    } else {
+        // A context without root metadata (the test-fixture shape) may omit
+        // the interpreter fields, but nothing in the Python-free tree may
+        // name one: the binding-context interpreter path is gone (94da5c59).
+        for (const std::string_view field : {"python_executable", "python"}) {
+            const Value *value = member(context, field);
+            if (value != nullptr && !io::is_null(*value))
+                throw CheckError("Python-free native check context must record " +
+                                 std::string(field) + ": null");
+        }
     }
 
     const std::string system = schema_text == "2" ? validate_platform_record(context) : "Darwin";

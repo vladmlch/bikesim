@@ -27,7 +27,19 @@
 - No subagents. Commit only when the user asks. Branch from the committed `no-joint-damping` work (see Task 0).
 - Run tests with `ctest --timeout 120` so a hang cannot block the session.
 - Before native changes, read `docs/agents/native-engineering.md` (AGENTS.md rule 1).
-- After every task, run `bash tools/check_change.sh <commit before the task>` (level 1). Run `bash tools/run_tests.sh full` once, at the end (Task 13). A run started with `--from` is partial and never counts as the final check.
+- Verification follows the budget below. A run started with `--from` is partial and never counts as the final check.
+
+## Verification budget (user, 2026-11-04: no needless long testing)
+
+Measured on this branch's work (`<git-common-dir>/bike-gate/timings.tsv`, 2026-11-04 14:55): `run_tests.sh full` = 1506 s (ordinary ctest 45 s, static analysis ~10 min, slow set 815 s, package 45 s); `run_tests.sh native` ≈ 11 min.
+
+- **No baseline test run.** The starting commit is already verified: `run_tests.sh full` exited 0, and the episode goldens migrated after that run were checked by their own tests (`2026-11-04-no-joint-damping.md`, Status). Task 0 only lists the test names and records the reference ride.
+- **No fresh build.** Work on a new branch inside the existing worktree `.worktrees/no-joint-damping`, so `build/native-release` (9.6 GB) is reused and every build is incremental.
+- **Inside a task:** build, then run only the tests that task names with `-R`. Those patterns include the slow tests of the touched area (tyres in Task 4, suspension in Task 10, rider in Task 11), so a broken physical golden shows up in the task that broke it.
+- **Level 1 once per stage, not after every task.** `bash tools/check_change.sh <commit before the stage>` covers the stage's combined diff: it builds, runs every ordinary test and analyses the changed files. Stages: A = Tasks 2–4, B = Tasks 5–7, C = Tasks 8–8a, D = Tasks 9–10, E = Task 11. Do not run the ordinary tests again by hand; `check_change.sh` already runs them.
+- **No slow set in the middle.** `bash tools/run_tests.sh full` runs once, in Task 13 (~25 min). It is the only long run, and the proof that the physical goldens are unchanged (AGENTS.md: `full` for physics paths).
+- Task 1 (inventory) and Task 12 (docs) run no tests.
+- Expected total test time: about 1 hour (5 stage checks of ≤5 min, the final ~25 min, a few minutes of targeted runs and three reference rides).
 - Reference audits ("is this the last user?") use mcp-steroid PSI when the session preflight says `reachable`. Otherwise use `git grep -n -w` and say in the task report that grep cannot prove absence (CLAUDE.md).
 - The word "legacy" has other meanings that are **out of scope** and must not be touched: legacy recordings and replay inputs (`replay/legacy.cpp`, `tests/fixtures/replay/legacy_v1|legacy_v2`, `load_legacy_input`), `RetentionMode::legacy`, `ResearchCaptureMode::legacy` / `capture_mode='legacy'`, `configuration/legacy_battery.hpp`, the historical NPZ equilibrium inventory (`legacy_equilibrium_fingerprint`, `legacy_source_root`), `rider/legacy_allocation.cpp`, `rider/legacy_controller.cpp` (closed-form plan Task 11), and `model/legacy_topology.cpp` (it also builds the lumped rider; only its seated branch goes).
 
@@ -62,30 +74,28 @@ Modified (main ones): `native/src/cli/{ride,configuration,simulation,application
 - [ ] **Step 1: Make sure the no-joint-damping work is committed.** That needs the user's go-ahead; if there is none, stop and ask. Run:
 
 ```bash
-cd .worktrees/no-joint-damping && git status --short | grep -v '^??' | wc -l
+git -C .worktrees/no-joint-damping status --short | grep -v '^??' | wc -l
 ```
 
 Expected: `0`. Any other number means it is not committed yet.
 
-- [ ] **Step 2: Create the worktree.**
+- [ ] **Step 2: Create the branch in the existing worktree** (reuses its build; see Verification budget).
 
 ```bash
-git worktree add .worktrees/remove-legacy-mode -b remove-legacy-mode no-joint-damping
-cd .worktrees/remove-legacy-mode
-cmake --preset release && cmake --build build/native-release -j
+cd .worktrees/no-joint-damping
+git switch -c remove-legacy-mode
+cmake --build build/native-release -j
 ```
 
-- [ ] **Step 3: Record the baseline test list and result.**
+Expected: the build is up to date or only relinks.
+
+- [ ] **Step 3: Record the baseline test list** (names only; no test run, see Verification budget).
 
 ```bash
 mkdir -p /tmp/rlm
 ctest --test-dir build/native-release -N | sed -n 's/^ *Test *#[0-9]*: //p' | sort > /tmp/rlm/tests-before.txt
-ctest --test-dir build/native-release --timeout 120 -j8 -LE 'slow|package' --output-log /tmp/rlm/ctest-before.log
-ctest --test-dir build/native-release --timeout 600 -j4 -L slow --output-log /tmp/rlm/ctest-slow-before.log
-tail -3 /tmp/rlm/ctest-before.log /tmp/rlm/ctest-slow-before.log
+git rev-parse HEAD > /tmp/rlm/base-commit.txt
 ```
-
-Expected: `100% tests passed` in both. A red test here is fixed or reported before anything else.
 
 - [ ] **Step 4: Record the physical reference ride (the user's command).**
 
@@ -246,10 +256,9 @@ cmake --build build/native-release -j && ctest --test-dir build/native-release -
 
 Expected: all pass.
 
-- [ ] **Step 6: Level-1 check, then commit (with the user's go-ahead).**
+- [ ] **Step 6: Commit (with the user's go-ahead).** Level 1 runs at the end of the stage.
 
 ```bash
-bash tools/check_change.sh HEAD
 git add native/src/runtime/run_limits.hpp native/tests/runtime native/src/cli/ride.cpp native/src/runtime/realtime_driver.cpp
 git commit -m "refactor(runtime): move RunLimits out of the legacy controls"
 ```
@@ -311,7 +320,7 @@ Check the real header names first: `get_preset` and `sorted_obstacles` are decla
 
 - [ ] **Step 5: Run the tests.** `ctest --test-dir build/native-release --timeout 120 -R 'terrain|viz|plots' --output-on-failure`. Expected: pass. `viz_plots` compares the preview figure's data, if it has a golden; it must not change.
 
-- [ ] **Step 6: Level-1 check, then commit (with the user's go-ahead).** Message: `refactor(terrain): move pothole reports out of the legacy metrics`.
+- [ ] **Step 6: Commit (with the user's go-ahead).** Message: `refactor(terrain): move pothole reports out of the legacy metrics`.
 
 ---
 
@@ -404,7 +413,9 @@ cmake --build build/native-release -j && ctest --test-dir build/native-release -
 
 Expected: all pass with no golden change (`git status tests/fixtures` clean).
 
-- [ ] **Step 7: Level-1 check, then commit (with the user's go-ahead).** Message: `test(tyre): own the reference tyres outside legacy code`.
+- [ ] **Step 7: Commit (with the user's go-ahead).** Message: `test(tyre): own the reference tyres outside legacy code`.
+
+- [ ] **Stage A check (level 1).** `bash tools/check_change.sh <commit before Task 2>`. Expected: exit 0. Fix a failure before the next stage.
 
 ---
 
@@ -471,7 +482,7 @@ diff /tmp/rlm/ride-before.json /tmp/rlm/ride-t5.json
 
 Expected: the same exit code; the diff shows only the wall-clock fields recorded in Task 0.
 
-- [ ] **Step 9: Level-1 check, then commit (with the user's go-ahead).** Message: `feat(ride): bike-ride runs physical mode only`.
+- [ ] **Step 9: Commit (with the user's go-ahead).** Message: `feat(ride): bike-ride runs physical mode only`.
 
 ---
 
@@ -499,7 +510,7 @@ Expected: the same exit code; the diff shows only the wall-clock fields recorded
 
 - [ ] **Step 5: Run the tests.** `ctest --test-dir build/native-release --timeout 120 -R 'native_ride|bootstrap|welded|capture' --output-on-failure`. Expected: pass. `reference.welded_profile_config` and the `native_start_welded` golden must not change.
 
-- [ ] **Step 6: Level-1 check, then commit (with the user's go-ahead).** Message: `feat(native-ride): drop the legacy run path`.
+- [ ] **Step 6: Commit (with the user's go-ahead).** Message: `feat(native-ride): drop the legacy run path`.
 
 ---
 
@@ -522,7 +533,9 @@ Expected: the same exit code; the diff shows only the wall-clock fields recorded
 
 - [ ] **Step 5: Build and test.** `cmake --build build/native-release -j && ctest --test-dir build/native-release --timeout 120 -R 'viewer|hud|viz|plots|numerics|preview' --output-on-failure`. Expected: pass. Then run `bike-ride --preview --track examples/research/rough_uphill_savage.toml --out /tmp/rlm/preview` and check that the PNG is written (exit code 0).
 
-- [ ] **Step 6: Level-1 check, then commit (with the user's go-ahead).** Message: `refactor(viewer): drop the legacy and stand viewer modes`.
+- [ ] **Step 6: Commit (with the user's go-ahead).** Message: `refactor(viewer): drop the legacy and stand viewer modes`.
+
+- [ ] **Stage B check (level 1).** `bash tools/check_change.sh <commit before Task 5>`. Expected: exit 0. Fix a failure before the next stage.
 
 ---
 
@@ -559,16 +572,16 @@ Expected: no output. Then run the PSI check from Task 1 for `bike::legacy`, if P
 - [ ] **Step 5: Configure from scratch, build, list the tests.**
 
 ```bash
-cmake --preset release --fresh && cmake --build build/native-release -j
+cmake --preset release && cmake --build build/native-release -j
 ctest --test-dir build/native-release -N | sed -n 's/^ *Test *#[0-9]*: //p' | sort > /tmp/rlm/tests-t8.txt
 diff /tmp/rlm/tests-before.txt /tmp/rlm/tests-t8.txt
 ```
 
 Expected: the diff removes only `legacy_metrics`, `legacy_playground`, `legacy_ride` and adds `runtime_run_limits`, `terrain_pothole_report` (or whatever name you registered).
 
-- [ ] **Step 6: Run all ordinary tests.** `ctest --test-dir build/native-release --timeout 120 -j8 -LE 'slow|package' --output-on-failure`. Expected: 100% passed, and `git status --short tests/fixtures` shows only the deletions above.
+- [ ] **Step 6: Check the fixtures.** `git status --short tests/fixtures` shows only the deletions above. The ordinary tests run in the Stage C check.
 
-- [ ] **Step 7: Level-1 check, then commit (with the user's go-ahead).** Message: `refactor: delete the legacy simulation and the stand`.
+- [ ] **Step 7: Commit (with the user's go-ahead).** Message: `refactor: delete the legacy simulation and the stand`.
 
 ---
 
@@ -630,12 +643,11 @@ Use the temp-directory helper that `test_export.cpp` already uses around line 84
 
 - [ ] **Step 5: Update the old tests.** In `test_export.cpp:34-40`, loop over `{"standard","ride"}` and delete the `stand_clamp` assertion. At `:76-77`, delete the `mode="stand"` rejection: Step 1's test now covers it. At `:84`, the expected file list becomes `{"bike_model.xml","bike_ride.xml"}`. In `test_mjcf.cpp`, delete the three `stand`/`playground` cases of `no_joint_damping_in_any_mode()` (`:181-183`); keep `errors_and_ownership`'s `mode="stand"` rejection (`:224-225`), which still holds.
 
-- [ ] **Step 6: Run the model tests, then all ordinary tests.**
+- [ ] **Step 6: Run the model tests.**
 
 ```bash
 cmake --build build/native-release -j
 ctest --test-dir build/native-release --timeout 120 -R 'model|export|mjcf|inertia' --output-on-failure
-ctest --test-dir build/native-release --timeout 120 -j8 -LE 'slow|package' --output-on-failure
 git status --short tests/fixtures
 ```
 
@@ -643,7 +655,9 @@ Expected: pass, and no fixture is modified. A ride-mode golden must not change: 
 
 - [ ] **Step 7: Run the export by hand.** `build/native-release/bin/bike-export --output-dir /tmp/rlm/export && ls /tmp/rlm/export` (check the real option name with `--help`). Expected: `bike_model.xml`, `bike_ride.xml`, `coordinates.json`.
 
-- [ ] **Step 8: Level-1 check, then commit (with the user's go-ahead).** Message: `refactor(model): drop the stand model modes`.
+- [ ] **Step 8: Commit (with the user's go-ahead).** Message: `refactor(model): drop the stand model modes`.
+
+- [ ] **Stage C check (level 1).** `bash tools/check_change.sh <commit before Task 8>`. Expected: exit 0. Fix a failure before the next stage.
 
 ---
 
@@ -681,17 +695,16 @@ void physics_mode_is_physical_only() {
 
 - [ ] **Step 4: Update the tests that encoded legacy defaults.** Every test that expects `physics_mode == "legacy"`, `drive_mode == "ideal_speed_control"` or `pitch_assist == true` from defaults now expects `physical`/`coast`/`false`. Every test that loads `config/legacy.toml` is deleted, along with the fixture. In `test_schema.cpp:1173` drop the pair from the list. Check every edited assertion against the new rules and keep only the ones that still describe real behaviour.
 
-- [ ] **Step 5: Run the configuration and model tests, then everything ordinary.**
+- [ ] **Step 5: Run the configuration and model tests.**
 
 ```bash
-ctest --test-dir build/native-release --timeout 120 -R 'config|schema|resolution|runtime_config|mjcf|export' --output-on-failure
-ctest --test-dir build/native-release --timeout 120 -j8 -LE 'slow|package' --output-on-failure
+ctest --test-dir build/native-release --timeout 120 -R 'config|schema|resolution|runtime_config|mjcf|export|bootstrap|project' --output-on-failure
 git status --short tests/fixtures
 ```
 
 Expected: pass, and no golden is modified. A changed golden here means some physical path read the old default. Stop, find that caller (`project_config.cpp:38` `value_or(default_physics())` is the first suspect), and report it.
 
-- [ ] **Step 6: Level-1 check, then commit (with the user's go-ahead).** Message: `feat(config): physics_mode is physical only`.
+- [ ] **Step 6: Commit (with the user's go-ahead).** Message: `feat(config): physics_mode is physical only`.
 
 ---
 
@@ -730,9 +743,11 @@ Replace `physical_suspension_wire` and `set_path` with the helper names the chos
 
 - [ ] **Step 5: Delete the legacy suspension cases** found in Step 1 and the golden directory `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/native_suspension/legacy_env/`, but only if no remaining case reads it. Check this by running the suspension tests; a missing golden fails loudly.
 
-- [ ] **Step 6: Run the tests.** `ctest --test-dir build/native-release --timeout 600 -R 'suspension|contracts|numeric_completion|input_contracts|runtime_config|stepper' --output-on-failure`, then all ordinary tests. Expected: pass; `git status tests/fixtures` shows only the `legacy_env` deletion.
+- [ ] **Step 6: Run the tests.** `ctest --test-dir build/native-release --timeout 600 -R 'suspension|contracts|numeric_completion|input_contracts|runtime_config|stepper' --output-on-failure`. Expected: pass; `git status tests/fixtures` shows only the `legacy_env` deletion.
 
-- [ ] **Step 7: Level-1 check, then commit (with the user's go-ahead).** Message: `refactor(suspension): drop the legacy damper curve`.
+- [ ] **Step 7: Commit (with the user's go-ahead).** Message: `refactor(suspension): drop the legacy damper curve`.
+
+- [ ] **Stage D check (level 1).** `bash tools/check_change.sh <commit before Task 9>`. Expected: exit 0. Fix a failure before the next stage.
 
 ---
 
@@ -794,17 +809,18 @@ git grep -n '"seated"' -- native/src native/tests
 
 Expected: no output from the first command. The second may only show `validation/acceptance.cpp:237` (a posture name, not the rider variant) and the `geometry_pose` line `neutral.variant = "seated"`. Change that line to a comment explaining that the pose solver takes the record as geometry input, and drop the assignment if `seated_pose` no longer checks the variant (Step 3). Run the PSI check if available.
 
-- [ ] **Step 7: Run all ordinary tests, then the slow set.**
+- [ ] **Step 7: Run the rider tests, including their slow ones.** The rest of the slow set runs once in Task 13.
 
 ```bash
-ctest --test-dir build/native-release --timeout 120 -j8 -LE 'slow|package' --output-on-failure
-ctest --test-dir build/native-release --timeout 600 -j4 -L slow --output-on-failure
+ctest --test-dir build/native-release --timeout 600 -R 'rider|seated|pinned|mjcf|inertia|export|contracts|writer_config|input_contracts|numeric_completion|runtime_config|stepper|catalog|sensor' --output-on-failure
 git status --short tests/fixtures
 ```
 
 Expected: 100% passed; fixture changes only the `native_rider_forces` deletions.
 
-- [ ] **Step 8: Level-1 check, then commit (with the user's go-ahead).** Message: `feat(rider): remove the seated rider variant and its dampers`.
+- [ ] **Step 8: Commit (with the user's go-ahead).** Message: `feat(rider): remove the seated rider variant and its dampers`.
+
+- [ ] **Stage E check (level 1).** `bash tools/check_change.sh <commit before Task 11>`. Expected: exit 0. Fix a failure before the next stage.
 
 ---
 
@@ -842,7 +858,7 @@ Expected: the same exit code; only the wall-clock fields differ.
 
 - [ ] **Step 2: Compare the test lists.** `diff /tmp/rlm/tests-before.txt <(ctest --test-dir build/native-release -N | sed -n 's/^ *Test *#[0-9]*: //p' | sort)`. Every removed test is one of `legacy_ride`, `legacy_metrics`, `legacy_playground`, `reference.native_rider_forces`, plus the suspension legacy cases if they were their own CTest entries. Every added test is from Tasks 2–3.
 
-- [ ] **Step 3: Check the goldens.** `git diff --stat <Task 0 commit> -- tests/fixtures`. Expected: deletions only (`bootstrap/legacy_flat`, `requests/legacy_flat.toml`, `config/legacy.toml`, `metrics/filter_*`, `golden/*/native_rider_forces`, `golden/*/native_suspension/legacy_env`). Any modified golden is a failure of the "physical stays bit-identical" constraint and must be explained or fixed before going on.
+- [ ] **Step 3: Check the goldens.** `git diff --stat $(cat /tmp/rlm/base-commit.txt) -- tests/fixtures`. Expected: deletions only (`bootstrap/legacy_flat`, `requests/legacy_flat.toml`, `config/legacy.toml`, `metrics/filter_*`, `golden/*/native_rider_forces`, `golden/*/native_suspension/legacy_env`). Any modified golden is a failure of the "physical stays bit-identical" constraint and must be explained or fixed before going on.
 
 - [ ] **Step 4: Run the absence audit** from Task 8 Step 4 and Task 11 Step 6 on the final tree, with PSI if reachable.
 
@@ -852,7 +868,7 @@ Expected: the same exit code; only the wall-clock fields differ.
 bash tools/run_tests.sh full
 ```
 
-Expected: exit 0. A failure is fixed and the complete run is repeated; a `--from` run does not count.
+Expected: exit 0, about 25 minutes. This is the only long run of the plan. A failure is fixed and the complete run is repeated; a `--from` run does not count.
 
 - [ ] **Step 6: Report to the user, in plain Russian:**
   - what was removed and what was kept;

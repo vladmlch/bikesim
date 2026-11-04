@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 > **This session's user forbids subagents** ("не запускай агентов, делай все сам"): execute inline with superpowers:executing-plans.
 
-**Goal:** Leave `physics_mode = "physical"` as the only simulation mode. Delete the old (legacy) simulation, the `bike-playground` stand and the seated rider variant with its spring-dampers. The physical simulation stays bit-identical.
+**Goal:** Leave `physics_mode = "physical"` as the only simulation mode. Delete the old (legacy) simulation, the `bike-playground` stand with its two stand model modes, and the seated rider variant with its spring-dampers. The physical simulation stays bit-identical.
 
 **Architecture:** First move the four helpers that physical code and tests borrow from `native/src/legacy/` into their real homes. Then cut the legacy branches out of each entry point (`bike-ride`, `bike-native-ride`, viewer, plots, `bike-sim`) and delete `native/src/legacy/` with its CMake targets, tests and fixtures. After that, narrow the configuration (`physics_mode`, suspension `legacy_behavior`) to the physical value only. Last, remove the seated rider variant and the `rider_forces` writer. Every task keeps the physical goldens unchanged; a changed physical golden stops the work.
 
@@ -18,6 +18,7 @@
 - D2. "переведи на режим physical": everything that stays runs in physical mode; nothing keeps a legacy code path.
 - D3. The `bike-playground` stand is deleted ("Удалить стенд"), together with `bike-sim --playground`.
 - D4. The seated rider variant (`--rider seated`) is deleted entirely, including from physical mode. What remains: `none`, `lumped`, `articulated_planar`. No variant can stand up from the saddle (AGENTS.md); `articulated_planar` is not affected.
+- D5. The stand model modes go too ("да можно удалить", option 1, 2026-11-04). `bike-sim --export-mujoco` and `bike-export` stop writing `bike_playground_stand.xml` (mode `stand`) and `bike_playground.xml` (mode `playground`). They keep writing `bike_model.xml` (mode `standard`), `bike_ride.xml` (mode `ride`) and `coordinates.json`.
 
 ## Global Constraints
 
@@ -34,7 +35,6 @@
 
 - **Inert seated-rider fields of `RiderSpecs`:** `torso_resonance_hz`, `leg_resonance_hz`, `arm_resonance_hz`, `damping_ratio`, `saddle_interface_k_n_m`, `saddle_interface_c_ns_m`, and `legs`. Every recording writes them into its resolved config, and the equilibrium-cache and initial-state fingerprints hash the rider record (`initialization/equilibrium_cache.cpp:174`). Deleting them changes recorded bytes and makes stored states and caches invalid. That needs its own migration plan that follows the `legacy_battery.hpp` pattern. After this plan they have no effect: Task 11 adds a test that proves it.
 - **The seated pose solver** (`solve_seated_pose`, `SeatedPose`, `seated_pose`, `spring_params`, `saddle_path_apparent_mass`). `geometry_pose()` (`model/rider_geometry.cpp:1228`) builds the `articulated_planar` geometry from it, and `compute_rider_centers_of_mass` uses it. It stays; renaming it is a separate task.
-- **The `standard` / `stand` / `playground` MJCF exports** of `bike-sim --export-mujoco` and `bike-export` (`model/export.cpp:174`). These export files, not the stand simulator. Ask the user whether to remove them (see the final question in Task 13).
 - Re-recording linux-aarch64.
 
 ## File map
@@ -51,7 +51,7 @@ Deleted:
 - `native/tests/legacy/` (3 tests + CMakeLists), `native/tests/reference/test_native_rider_forces.cpp`.
 - Fixtures: `tests/fixtures/config/legacy.toml`, `tests/fixtures/requests/legacy_flat.toml`, `tests/fixtures/bootstrap/legacy_flat/`, `tests/fixtures/metrics/filter_*`, `tests/fixtures/golden/*/native_rider_forces/`, `tests/fixtures/golden/*/native_suspension/legacy_env/` (only if Task 10's audit shows nothing physical reads it).
 
-Modified (main ones): `native/src/cli/{ride,configuration,simulation,application,argument_contracts.inc}`, `native/src/app/native_ride_main.cpp`, `native/src/viewer/{ride.cpp,session.hpp,input.hpp,input.cpp}`, `native/src/viz/{ride.cpp,plot.hpp}`, `native/src/numerics/filter.{hpp,cpp}`, `native/src/runtime/{realtime_driver,project_config,capabilities,step}.cpp`, `native/src/stepper.{hpp,cpp}`, `native/src/configuration/{model_config.hpp,validate.cpp,schema.cpp,rider_spec.hpp}`, `native/src/{config_types,config_validation,writer_config}.hpp`, `native/src/writers/suspension.cpp`, `native/src/model/{builder,legacy_topology,sensors,mass,rider_geometry}.cpp`, CMake files in `native/cmake/` and `native/tests/`, docs `docs/RIDE.md`, `docs/TESTING.md`, `docs/native-workflow.md`, `docs/development/{macos,linux}.md`.
+Modified (main ones): `native/src/cli/{ride,configuration,simulation,application,argument_contracts.inc}`, `native/src/app/native_ride_main.cpp`, `native/src/viewer/{ride.cpp,session.hpp,input.hpp,input.cpp}`, `native/src/viz/{ride.cpp,plot.hpp}`, `native/src/numerics/filter.{hpp,cpp}`, `native/src/runtime/{realtime_driver,project_config,capabilities,step}.cpp`, `native/src/stepper.{hpp,cpp}`, `native/src/configuration/{model_config.hpp,validate.cpp,schema.cpp,rider_spec.hpp}`, `native/src/{config_types,config_validation,writer_config}.hpp`, `native/src/writers/suspension.cpp`, `native/src/model/{builder,legacy_topology,sensors,mass,rider_geometry,environment,drivetrain,linkage,export}.cpp`, CMake files in `native/cmake/` and `native/tests/`, docs `docs/RIDE.md`, `docs/TESTING.md`, `docs/native-workflow.md`, `docs/development/{macos,linux}.md`.
 
 ---
 
@@ -572,6 +572,81 @@ Expected: the diff removes only `legacy_metrics`, `legacy_playground`, `legacy_r
 
 ---
 
+### Task 8a: Remove the stand model modes (D5)
+
+The MJCF builder still has two modes that exist only for the stand. `stand` puts the bike on a stand post with position actuators on the suspension; `playground` adds a weld `stand_clamp` that fixes the frame to the world, plus debug markers. Only the deleted stand simulator and `export_playground_models` used them.
+
+**Files:**
+- Modify: `native/src/model/export.cpp:174-186` (write only `bike_model.xml` and `bike_ride.xml`; rename `export_playground_models` → `export_models` in `export.cpp`, `export.hpp:13-17`, `cli/export.cpp:12`, `cli/simulation.cpp:27`, using the IDE rename when PSI is reachable)
+- Modify: `native/src/model/builder.cpp:53` (timestep branch), `native/src/model/environment.cpp:15-20` (stand geoms), `native/src/model/drivetrain.cpp:80-83` (stand actuators), `native/src/model/linkage.cpp:74,180` (mode list; `stand_clamp` weld), `native/src/model/legacy_topology.cpp:132` (lumped rider condition)
+- Modify: `native/src/model/builder.hpp:28` and its readers `legacy_topology.cpp:115`, `linkage.cpp:97,117` — delete `debug_markers` only if Task 1's inventory shows that the playground export was its only product setter
+- Modify: the `bike-sim` and `bike-export` option help in `argument_contracts.inc`, if it names the stand files
+- Test: `native/tests/model/test_export.cpp:34-40,76-77,84`, `native/tests/model/test_mjcf.cpp:181-183,224-225`
+
+- [ ] **Step 1: Write the failing tests** (in `test_export.cpp`):
+
+```cpp
+// The stand model modes were removed with the stand (2026-11-04): the
+// builder accepts only the free-standing and ride models, and the export
+// writes exactly those two MJCF files plus nothing stand-related.
+void stand_modes_are_gone() {
+    for (const char* mode : {"stand", "playground", "no_such_mode"}) {
+        mdl::BuildRequest request; request.mode = mode;
+        bt::invalid([&] { (void)mdl::generate_mjcf(request); });
+    }
+}
+void export_writes_only_free_and_ride_models() {
+    const auto out = bt::temporary_directory("export_models");   // the file's existing temp-dir helper
+    mdl::export_models(mdl::BuildRequest{}, out);
+    for (const char* name : {"bike_model.xml", "bike_ride.xml"})
+        bt::require(std::filesystem::is_regular_file(out / name), std::string(name) + " is exported");
+    for (const char* name : {"bike_playground_stand.xml", "bike_playground.xml"})
+        bt::require(!std::filesystem::exists(out / name), std::string(name) + " is no longer exported");
+}
+```
+
+Use the temp-directory helper that `test_export.cpp` already uses around line 84, under its real name.
+
+- [ ] **Step 2: Run and confirm they fail.** `ctest --test-dir build/native-release --timeout 120 -R 'model_export' --output-on-failure`. Expected: `stand` still builds, and `export_models` is not declared.
+
+- [ ] **Step 3: Make the builder reject unknown modes.** At the top of `generate_mjcf` (`builder.cpp`, before line 16), add:
+
+```cpp
+    // Two model modes remain: the free-standing bike ("standard") and the
+    // ride plant ("ride"). The stand modes were removed with the stand
+    // simulator (2026-11-04); an unknown mode fails instead of silently
+    // building the standard model.
+    if(request.mode!="standard" && request.mode!="ride") throw std::invalid_argument("unknown model mode '"+request.mode+"'; available: standard, ride");
+```
+
+- [ ] **Step 4: Delete the stand branches.**
+  - `builder.cpp:53`: drop the `stand || playground` timestep branch.
+  - `environment.cpp:15-20`: delete the stand geoms.
+  - `drivetrain.cpp:80-83`: delete the stand actuator block; the `else if(mode=="ride")` becomes `if`.
+  - `linkage.cpp:74`: the condition becomes `mode=="ride"`. First check with `git grep -n '"dynamic"' -- native` that `"dynamic"` is set nowhere; if it is set somewhere, stop and report.
+  - `linkage.cpp:180`: delete the `stand_clamp` weld.
+  - `legacy_topology.cpp:132`: the condition becomes `c.request.mode=="ride"`.
+  - Change `export.cpp` and rename the function as listed under **Files**.
+
+- [ ] **Step 5: Update the old tests.** In `test_export.cpp:34-40`, loop over `{"standard","ride"}` and delete the `stand_clamp` assertion. At `:76-77`, delete the `mode="stand"` rejection: Step 1's test now covers it. At `:84`, the expected file list becomes `{"bike_model.xml","bike_ride.xml"}`. In `test_mjcf.cpp`, delete the three `stand`/`playground` cases of `no_joint_damping_in_any_mode()` (`:181-183`); keep `errors_and_ownership`'s `mode="stand"` rejection (`:224-225`), which still holds.
+
+- [ ] **Step 6: Run the model tests, then all ordinary tests.**
+
+```bash
+cmake --build build/native-release -j
+ctest --test-dir build/native-release --timeout 120 -R 'model|export|mjcf|inertia' --output-on-failure
+ctest --test-dir build/native-release --timeout 120 -j8 -LE 'slow|package' --output-on-failure
+git status --short tests/fixtures
+```
+
+Expected: pass, and no fixture is modified. A ride-mode golden must not change: no stand branch reaches mode `ride`.
+
+- [ ] **Step 7: Run the export by hand.** `build/native-release/bin/bike-export --output-dir /tmp/rlm/export && ls /tmp/rlm/export` (check the real option name with `--help`). Expected: `bike_model.xml`, `bike_ride.xml`, `coordinates.json`.
+
+- [ ] **Step 8: Level-1 check, then commit (with the user's go-ahead).** Message: `refactor(model): drop the stand model modes`.
+
+---
+
 ### Task 9: `physics_mode` accepts only "physical"
 
 **Files:**
@@ -742,7 +817,7 @@ Expected: 100% passed; fixture changes only the `native_rider_forces` deletions.
 - [ ] **Step 1: Find every mention.**
 
 ```bash
-git grep -n -i 'physics legacy\|physics_mode *= *"legacy"\|legacy mode\|bike-playground\|--playground\|--rider seated\|seated rider\|--drive-mode\|--tyre-pressure\|--tyre-model\|--visual-pedalling\|--legs\b' -- docs README.md examples AGENTS.md ':!docs/superpowers/**'
+git grep -n -i 'physics legacy\|physics_mode *= *"legacy"\|legacy mode\|bike-playground\|--playground\|bike_playground_stand\.xml\|bike_playground\.xml\|--rider seated\|seated rider\|--drive-mode\|--tyre-pressure\|--tyre-model\|--visual-pedalling\|--legs\b' -- docs README.md examples AGENTS.md ':!docs/superpowers/**'
 ```
 
 - [ ] **Step 2: Edit each hit** to describe the physical-only behaviour, or delete the sentence when it describes only removed behaviour. Keep historical audit/plan files under `docs/superpowers/` unchanged.
@@ -782,5 +857,5 @@ Expected: exit 0. A failure is fixed and the complete run is repeated; a `--from
 - [ ] **Step 6: Report to the user, in plain Russian:**
   - what was removed and what was kept;
   - the evidence (the ride diff, the test-list diff, the fixture diff, the full gate result);
-  - what was **not** done: Linux goldens; the inert `RiderSpecs` fields; the `standard`/`stand`/`playground` MJCF exports;
-  - a question: should the exports go too, and should a migration plan for the inert rider fields be written now?
+  - what was **not** done: Linux goldens; the inert `RiderSpecs` fields;
+  - a question: should a migration plan for the inert rider fields be written now?

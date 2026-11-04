@@ -209,3 +209,12 @@ Deferred:
 - **`slow`-label parallelization.** Out of scope per the design's
   not-included list: it first needs a "measures machine speed / does not"
   labeling pass over the 49 slow tests (~46 min serial today).
+
+Open tracked failures (the reason `AGENTS.md`'s "no tolerated baseline"
+rule points here): the six `tooling_checks` fixture cases recorded
+verbatim in the baseline section above (`t56_ctx_binding_*` ×3,
+`t56_contracts_stale_extension`, `b29_ext_zero`, `b29_rtsan_qualified`)
+remain unfixed — pre-existing defects in the fixture contracts, outside
+this plan's scope. They keep `tooling_checks` red and therefore gate the
+`full` profile's `slow` stage; fixing them is tracked by this record
+until a dedicated task takes them.

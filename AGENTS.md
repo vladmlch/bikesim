@@ -79,19 +79,19 @@ runs, how often, about how many minutes in total.
   after that run. Files changed after it are covered by their own tests.
 - **Reuse the build.** Start new work on a branch inside a worktree whose
   `build/native-release` is already built; a new build directory means a
-  ~10 GB full compile.
-- **Inside a task: targeted tests.** Build, then run only the tests that
-  cover the change:
-  `ctest --test-dir build/native-release --timeout 120 -R '<pattern>' --output-on-failure`.
-  Put the slow tests of the touched area into the pattern (raise
-  `--timeout` for them), so a broken golden shows up in the task that
-  broke it.
+  ~10 GB full compile. A new checkout gets its libraries with
+  `mise run deps` (one shared copy for all checkouts; `mise tasks` lists
+  the check levels too).
+- **Inside a task: targeted tests.** `mise run test '<pattern>'` builds,
+  then runs only the tests whose name matches the `ctest -R` pattern
+  (`ctest --test-dir build/native-release -N -R '<pattern>'` lists them
+  first). Building first matters: `ctest` alone runs the stale binary.
+  Put the slow tests of the touched area into the pattern, so a broken
+  golden shows up in the task that broke it.
 - **Per stage: level 1.** `check_change.sh` already runs every ordinary
   test; it is the only ordinary-suite run in a stage.
 - **At the end: one level 2 or level 3 run.** The full slow set runs only
   there. That run is the completion proof and always happens.
-- Always pass `--timeout` to `ctest`, so a hang ends the run instead of
-  the session.
 
 ## Behavioral Stability
 

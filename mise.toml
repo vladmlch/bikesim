@@ -1,0 +1,31 @@
+# mise.toml — local development entry points (https://mise.jdx.dev).
+# `mise trust` once per checkout, then `mise tasks` lists them. Offline
+# bundles and the Linux container do not go through mise.
+
+[tasks.deps]
+description = "Link .deps to the shared copy of the pinned native dependencies, acquiring it once (tools/link_deps.sh)"
+run = "bash tools/link_deps.sh"
+
+[tasks.test]
+description = "Build, then run only the tests whose name matches a ctest -R pattern"
+usage = '''
+arg "<pattern>" help="ctest -R regular expression, e.g. 'runtime_run_limits|pneumatic'"
+'''
+# ctest never rebuilds: building first keeps a test from passing on a stale binary.
+run = '''
+cmake --build build/native-release
+ctest --test-dir build/native-release -R "${usage_pattern?}" --no-tests=error --output-on-failure
+'''
+
+[tasks.check]
+description = "Level 1: check_change.sh against main or the given base (≤5 min)"
+usage = 'arg "[base]" help="Commit before the stage" default="main"'
+run = 'bash tools/check_change.sh "${usage_base?}"'
+
+[tasks.native]
+description = "Level 2: the native gate, once per merge into main (~11 min)"
+run = "bash tools/run_tests.sh native"
+
+[tasks.full]
+description = "Level 3: native + slow + package (~25 min)"
+run = "bash tools/run_tests.sh full"

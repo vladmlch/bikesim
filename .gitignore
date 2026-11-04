@@ -13,6 +13,8 @@ native/build-*/
 # build (native/dependencies.lock.json records their verified hashes).
 .deps/
 .deps
+# tools/link_deps.sh keeps a replaced real .deps aside under this name.
+.deps.replaced-*
 
 # Tooling / IDE
 .idea/

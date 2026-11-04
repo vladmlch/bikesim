@@ -58,6 +58,15 @@ placing files:
 bash tools/linux/acquire_deps.sh native/dependencies.lock.json .deps darwin-arm64
 ```
 
+For local development, `mise run deps` (`tools/link_deps.sh`) runs that
+same acquisition once into a shared copy,
+`~/.cache/bike-deps/<platform>-<lock hash>` (override with
+`BIKE_DEPS_CACHE`), and makes `<checkout>/.deps` a link to it. Every
+checkout and worktree then shares one copy. A real `.deps` already in the
+checkout is adopted when it equals a fresh acquisition, so an existing build
+does not recompile. Offline bundles and the Linux container keep using
+`acquire_deps.sh` directly.
+
 Configure points at the result with `-DBIKE_DEPENDENCY_ROOT=<checkout>/.deps`
 (the root presets already default there). The loaded MuJoCo image must
 expose the project's private ABI symbols and the numerical backend is the

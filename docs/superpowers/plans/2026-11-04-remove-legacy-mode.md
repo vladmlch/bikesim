@@ -25,7 +25,6 @@
 - Physical behaviour stays bit-identical. Every golden that a physical test consumes passes **without** `BIKE_GOLDEN_RECORD`. A golden deleted together with a deleted test is the only allowed golden change. The one exception is Task 11's sensor list, which is checked and explained separately.
 - Linux is deferred ("линукс пока не делай"). `tests/fixtures/golden/linux-aarch64/` is edited only where a deleted test's golden directory is deleted on both platforms.
 - No subagents. Commit only when the user asks. Branch from the committed `no-joint-damping` work (see Task 0).
-- Run tests with `ctest --timeout 120` so a hang cannot block the session.
 - Before native changes, read `docs/agents/native-engineering.md` (AGENTS.md rule 1).
 - Verification follows the budget below. A run started with `--from` is partial and never counts as the final check.
 
@@ -251,7 +250,7 @@ Before you save it, read `positive()` in `legacy/controls.cpp` and copy its exac
 - [ ] **Step 5: Run the test and the physical gates.**
 
 ```bash
-cmake --build build/native-release -j && ctest --test-dir build/native-release --timeout 120 -R 'runtime_run_limits|realtime|recording_cli|ride_backend_cli|cli_' --output-on-failure
+cmake --build build/native-release -j && ctest --test-dir build/native-release -R 'runtime_run_limits|realtime|recording_cli|ride_backend_cli|cli_' --output-on-failure
 ```
 
 Expected: all pass.
@@ -318,7 +317,7 @@ Check the real header names first: `get_preset` and `sorted_obstacles` are decla
 
 - [ ] **Step 4: Switch the viewer plot.** In `viz/ride.cpp:131` use `terrain::pothole_reports(track)`; add `#include "../terrain/pothole_report.hpp"`.
 
-- [ ] **Step 5: Run the tests.** `ctest --test-dir build/native-release --timeout 120 -R 'terrain|viz|plots' --output-on-failure`. Expected: pass. `viz_plots` compares the preview figure's data, if it has a golden; it must not change.
+- [ ] **Step 5: Run the tests.** `ctest --test-dir build/native-release -R 'terrain|viz|plots' --output-on-failure`. Expected: pass. `viz_plots` compares the preview figure's data, if it has a golden; it must not change.
 
 - [ ] **Step 6: Commit (with the user's go-ahead).** Message: `refactor(terrain): move pothole reports out of the legacy metrics`.
 
@@ -408,7 +407,7 @@ After writing it, run `diff <(sed -n 23,30p native/src/legacy/tyre.cpp) <(grep -
 - [ ] **Step 6: Run the tyre tests in compare mode.**
 
 ```bash
-cmake --build build/native-release -j && ctest --test-dir build/native-release --timeout 600 -R 'pneumatic|tyre|tire' --output-on-failure
+cmake --build build/native-release -j && ctest --test-dir build/native-release -R 'pneumatic|tyre|tire' --output-on-failure
 ```
 
 Expected: all pass with no golden change (`git status tests/fixtures` clean).
@@ -470,7 +469,7 @@ Call both from `main`. Check the `resolve` helper's real signature in the file b
   - `test_capture.cpp:44`: delete the line (`--close-on-finish` with legacy mode can no longer be formed).
   - `test_recording_cli.cpp:103,155,190` and `test_ride_backend_cli.cpp:187,191`: delete those cases. Each checked that physical-only flags reject legacy mode, and that combination no longer exists. If one of them also checks something that still applies (for example the `--preview` half of a message), keep that half with `--preview`.
 
-- [ ] **Step 7: Run the CLI tests.** `ctest --test-dir build/native-release --timeout 120 -R 'cli|capture|recording_cli|ride_backend|argument' --output-on-failure`. Expected: pass, including the two new cases.
+- [ ] **Step 7: Run the CLI tests.** `ctest --test-dir build/native-release -R 'cli|capture|recording_cli|ride_backend|argument' --output-on-failure`. Expected: pass, including the two new cases.
 
 - [ ] **Step 8: Run the physical reference ride and compare.**
 
@@ -508,7 +507,7 @@ Expected: the same exit code; the diff shows only the wall-clock fields recorded
 
 - [ ] **Step 4: Drop `bike_legacy` from line 70 of `NativePhysicsResearch.cmake`.**
 
-- [ ] **Step 5: Run the tests.** `ctest --test-dir build/native-release --timeout 120 -R 'native_ride|bootstrap|welded|capture' --output-on-failure`. Expected: pass. `reference.welded_profile_config` and the `native_start_welded` golden must not change.
+- [ ] **Step 5: Run the tests.** `ctest --test-dir build/native-release -R 'native_ride|bootstrap|welded|capture' --output-on-failure`. Expected: pass. `reference.welded_profile_config` and the `native_start_welded` golden must not change.
 
 - [ ] **Step 6: Commit (with the user's go-ahead).** Message: `feat(native-ride): drop the legacy run path`.
 
@@ -531,7 +530,7 @@ Expected: the same exit code; the diff shows only the wall-clock fields recorded
 
 - [ ] **Step 4: Fix the CMake link** of `bike_viz` (`RecordingApplication.cmake:120`: drop `bike_legacy`). `bike_viewer` keeps `bike_playground` until Task 8.
 
-- [ ] **Step 5: Build and test.** `cmake --build build/native-release -j && ctest --test-dir build/native-release --timeout 120 -R 'viewer|hud|viz|plots|numerics|preview' --output-on-failure`. Expected: pass. Then run `bike-ride --preview --track examples/research/rough_uphill_savage.toml --out /tmp/rlm/preview` and check that the PNG is written (exit code 0).
+- [ ] **Step 5: Build and test.** `cmake --build build/native-release -j && ctest --test-dir build/native-release -R 'viewer|hud|viz|plots|numerics|preview' --output-on-failure`. Expected: pass. Then run `bike-ride --preview --track examples/research/rough_uphill_savage.toml --out /tmp/rlm/preview` and check that the PNG is written (exit code 0).
 
 - [ ] **Step 6: Commit (with the user's go-ahead).** Message: `refactor(viewer): drop the legacy and stand viewer modes`.
 
@@ -620,7 +619,7 @@ void export_writes_only_free_and_ride_models() {
 
 Use the temp-directory helper that `test_export.cpp` already uses around line 84, under its real name.
 
-- [ ] **Step 2: Run and confirm they fail.** `ctest --test-dir build/native-release --timeout 120 -R 'model_export' --output-on-failure`. Expected: `stand` still builds, and `export_models` is not declared.
+- [ ] **Step 2: Run and confirm they fail.** `ctest --test-dir build/native-release -R 'model_export' --output-on-failure`. Expected: `stand` still builds, and `export_models` is not declared.
 
 - [ ] **Step 3: Make the builder reject unknown modes.** At the top of `generate_mjcf` (`builder.cpp`, before line 16), add:
 
@@ -647,7 +646,7 @@ Use the temp-directory helper that `test_export.cpp` already uses around line 84
 
 ```bash
 cmake --build build/native-release -j
-ctest --test-dir build/native-release --timeout 120 -R 'model|export|mjcf|inertia' --output-on-failure
+ctest --test-dir build/native-release -R 'model|export|mjcf|inertia' --output-on-failure
 git status --short tests/fixtures
 ```
 
@@ -698,7 +697,7 @@ void physics_mode_is_physical_only() {
 - [ ] **Step 5: Run the configuration and model tests.**
 
 ```bash
-ctest --test-dir build/native-release --timeout 120 -R 'config|schema|resolution|runtime_config|mjcf|export|bootstrap|project' --output-on-failure
+ctest --test-dir build/native-release -R 'config|schema|resolution|runtime_config|mjcf|export|bootstrap|project' --output-on-failure
 git status --short tests/fixtures
 ```
 
@@ -743,7 +742,7 @@ Replace `physical_suspension_wire` and `set_path` with the helper names the chos
 
 - [ ] **Step 5: Delete the legacy suspension cases** found in Step 1 and the golden directory `tests/fixtures/golden/{darwin-arm64,linux-aarch64}/native_suspension/legacy_env/`, but only if no remaining case reads it. Check this by running the suspension tests; a missing golden fails loudly.
 
-- [ ] **Step 6: Run the tests.** `ctest --test-dir build/native-release --timeout 600 -R 'suspension|contracts|numeric_completion|input_contracts|runtime_config|stepper' --output-on-failure`. Expected: pass; `git status tests/fixtures` shows only the `legacy_env` deletion.
+- [ ] **Step 6: Run the tests.** `ctest --test-dir build/native-release -R 'suspension|contracts|numeric_completion|input_contracts|runtime_config|stepper' --output-on-failure`. Expected: pass; `git status tests/fixtures` shows only the `legacy_env` deletion.
 
 - [ ] **Step 7: Commit (with the user's go-ahead).** Message: `refactor(suspension): drop the legacy damper curve`.
 
@@ -812,7 +811,7 @@ Expected: no output from the first command. The second may only show `validation
 - [ ] **Step 7: Run the rider tests, including their slow ones.** The rest of the slow set runs once in Task 13.
 
 ```bash
-ctest --test-dir build/native-release --timeout 600 -R 'rider|seated|pinned|mjcf|inertia|export|contracts|writer_config|input_contracts|numeric_completion|runtime_config|stepper|catalog|sensor' --output-on-failure
+ctest --test-dir build/native-release -R 'rider|seated|pinned|mjcf|inertia|export|contracts|writer_config|input_contracts|numeric_completion|runtime_config|stepper|catalog|sensor' --output-on-failure
 git status --short tests/fixtures
 ```
 

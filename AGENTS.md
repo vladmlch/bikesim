@@ -50,11 +50,21 @@ Three levels; pick the cheapest that covers the moment.
    A stage is the smallest group of tasks that leaves the tree building
    and green; pass the commit before the stage as `base`.
 2. **Full** — `bash tools/run_tests.sh native` **once per merge into the
-   main branch**, not per task or per parallel lane (measured ~11 min on an
-   idle 16-core machine; see `<git-common-dir>/bike-gate/timings.tsv`). After a
-   fix, `--from <stage>` re-checks from the failed stage; that run is
-   PARTIAL and never the final verification. The completion criterion is
-   one complete run that exits 0.
+   main branch** whose diff touches what the static-analysis sweeps read:
+   C++ sources or headers (tests included), CMake files (any
+   `CMakeLists.txt` or `*.cmake`, `CMakePresets.json`),
+   `native/dependencies.lock.json`,
+   or the check tooling (`native/src/tools/`, `tools/run_*.sh`,
+   `tools/check_change.sh`). Not per task or per parallel lane (measured
+   ~11 min on an idle 16-core machine; see
+   `<git-common-dir>/bike-gate/timings.tsv`). A merge that touches none of
+   these (docs, fixtures, other scripts, `mise.toml`) runs level 1 against
+   `main`, the standalone sweep of each changed kind (`--kind scripts` for
+   a `tools/*.sh`), and the tests that read a changed fixture, slow ones
+   included; its report names what ran. After a fix, `--from <stage>`
+   re-checks from the failed stage; that run is PARTIAL and never the
+   final verification. The completion criterion is one complete run that
+   exits 0.
 3. **Extended** — `bash tools/run_tests.sh full`: daily, before a large
    merge, or as the final proof of a physics or realtime change (adds the
    slow and package label sets; measured 1506 s on 2026-11-04, of which
@@ -90,8 +100,9 @@ runs, how often, about how many minutes in total.
   golden shows up in the task that broke it.
 - **Per stage: level 1.** `check_change.sh` already runs every ordinary
   test; it is the only ordinary-suite run in a stage.
-- **At the end: one level 2 or level 3 run.** The full slow set runs only
-  there. That run is the completion proof and always happens.
+- **At the end: the completion proof.** Level 2 or 3 when level 2's
+  rule above requires it, otherwise the reduced merge check it names. The
+  full slow set runs only in level 3. The proof always happens.
 
 ## Behavioral Stability
 

@@ -44,23 +44,54 @@ sanitizer/RTSan/coverage presets and sweep internals, reach `docs/TESTING.md`.
 
 Three levels; pick the cheapest that covers the moment.
 
-1. **Change** — `bash tools/check_change.sh [base]` after every edit
-   (≤5 min): incremental build, every ordinary test, cppcheck/frontends/
+1. **Change** — `bash tools/check_change.sh [base]` at the end of every
+   stage (≤5 min): incremental build, every ordinary test, cppcheck/frontends/
    clang-tidy on the changed TUs and the TUs including a changed header.
+   A stage is the smallest group of tasks that leaves the tree building
+   and green; pass the commit before the stage as `base`.
 2. **Full** — `bash tools/run_tests.sh native` **once per merge into the
    main branch**, not per task or per parallel lane (measured ~11 min on an
    idle 16-core machine; see `<git-common-dir>/bike-gate/timings.tsv`). After a
    fix, `--from <stage>` re-checks from the failed stage; that run is
    PARTIAL and never the final verification. The completion criterion is
    one complete run that exits 0.
-3. **Extended** — `bash tools/run_tests.sh full`: daily or before a large
-   merge (adds the slow label set, ~46 min serial).
+3. **Extended** — `bash tools/run_tests.sh full`: daily, before a large
+   merge, or as the final proof of a physics or realtime change (adds the
+   slow and package label sets; measured 1506 s on 2026-11-04, of which
+   slow = 815 s).
 
 Linux runs only on explicit request (`tools/linux/container.sh`).
 Concurrent gates do not queue; each takes cpu/(running gates) workers and
 prints who else is running. `BIKE_CHECK_JOBS` overrides the share.
 There is no baseline of tolerated failures: a red test is fixed, or
 disabled with a reason and a tracking task.
+
+### Test budget
+
+Every test run costs the user's time; spend it where it buys evidence.
+Before a plan or a multi-step task, read
+`<git-common-dir>/bike-gate/timings.tsv` and write down the budget: which
+runs, how often, about how many minutes in total.
+
+- **Reuse evidence.** A gate that passed on the same code is the
+  baseline; start from it without re-running it. A `timings.tsv` row names
+  only HEAD, not uncommitted edits, so it counts when no code changed
+  after that run. Files changed after it are covered by their own tests.
+- **Reuse the build.** Start new work on a branch inside a worktree whose
+  `build/native-release` is already built; a new build directory means a
+  ~10 GB full compile.
+- **Inside a task: targeted tests.** Build, then run only the tests that
+  cover the change:
+  `ctest --test-dir build/native-release --timeout 120 -R '<pattern>' --output-on-failure`.
+  Put the slow tests of the touched area into the pattern (raise
+  `--timeout` for them), so a broken golden shows up in the task that
+  broke it.
+- **Per stage: level 1.** `check_change.sh` already runs every ordinary
+  test; it is the only ordinary-suite run in a stage.
+- **At the end: one level 2 or level 3 run.** The full slow set runs only
+  there. That run is the completion proof and always happens.
+- Always pass `--timeout` to `ctest`, so a hang ends the run instead of
+  the session.
 
 ## Behavioral Stability
 

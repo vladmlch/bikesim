@@ -109,8 +109,8 @@ registered under `<git-common-dir>/bike-gate/active`. `BIKE_CHECK_JOBS`
 overrides the worker share; `BIKE_CPU_COUNT` overrides the detected CPU
 count.
 
-`tools/check_change.sh [base]` is the level-1 per-edit check (measured ~77 s
-on a warm tree): an incremental release build, every ordinary test, then
+`tools/check_change.sh [base]` is the level-1 check, run once per stage of
+work (measured ~77 s on a warm tree): an incremental release build, every ordinary test, then
 cppcheck, frontends and clang-tidy on the changed translation units plus
 every unit that includes a changed first-party header. It complements and
 never replaces the level-2 `native` gate before a merge.

@@ -73,10 +73,9 @@ void test_native_physical_driver_finishes_exports_and_retains_owned_snapshot() {
     options.record_decimation = 2;
     options.warmups = 0;
     options.runs = 1;
-    // benchmark mode (monitor non-strict) is the documented way to measure a
-    // completed prefix: strict runs abort on the recorded
-    // energy.constraint_work baseline violation (docs/RIDE.md).
-    options.benchmark = true;
+    // Strict monitor: the welded ride's first 5 ms record no model
+    // violation, so the strict driver completes the requested prefix.
+    options.benchmark = false;
     auto driver = msr::make_native_driver(options);
     driver->start();
     driver->advance(100, 60.);

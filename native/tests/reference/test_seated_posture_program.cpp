@@ -431,25 +431,17 @@ double interp(double x, const std::vector<double> &xs,
 // test_pulse_redistributes_load_through_inertia_only (slow)
 void test_pulse_redistributes_load_through_inertia_only() {
     const std::array<double, 3> pulse{2.5, .5, .15};
-    // The oracle splits this by platform: strict on darwin, diagnostic on
-    // linux (D16). The native engine trips the same verdict on BOTH
-    // platforms — the documented `energy.constraint_work` baseline
-    // violation at t=0.005 s (docs/RIDE.md, docs/TESTING.md's realtime
-    // gate runs the same diagnostic policy for the identical reason).
-    // The port therefore runs diagnostic everywhere and asserts the
-    // failure signature stays exactly ('energy.constraint_work',) — the
-    // same "signature does not change" gate the oracle's linux branch
-    // carries.
+    // Diagnostic mode keeps both episodes recording to the end; each must
+    // record no first failure, which is the strict run's contract with the
+    // full trace kept for diagnosis. (Until the freehub's tendon-limit rows
+    // joined the closure channel on 2026-11-04, every native run tripped
+    // `energy.constraint_work` at t=0.005 s and this gate tolerated it.)
     constexpr bool diagnostic = true;
     const auto calm = run_episode(diagnostic, std::nullopt);
     const auto surged = run_episode(diagnostic, pulse);
     for (const auto &result : {calm, surged})
-        bt::require(!result.first_failure.has_value() ||
-                        *result.first_failure ==
-                            std::vector<std::string>{
-                                "energy.constraint_work"},
-                    "the only tolerated failure signature is "
-                    "energy.constraint_work");
+        bt::require(!result.first_failure.has_value(),
+                    "the monitor records no model violation");
     const double start = pulse[0];
     std::vector<double> window_times, window_grip;
     for (std::size_t i = 0; i < surged.time_s.size(); ++i)

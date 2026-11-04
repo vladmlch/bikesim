@@ -704,10 +704,12 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
 
 // test_equality_rows_charge_the_closure_channel_not_the_bound — F1 re-scope
 // (e181666b added this record after the batch's first port): 'equality:*'
-// rows are soft spring-damper closures whose work is elastic exchange; limit
-// rows stay numerical constraint work. The oracle imports
-// split_constraint_powers for the name partition; the native partition is
-// raw_work's 'equality:' lift inside account_energy, exercised end-to-end
+// rows are soft spring-damper closures whose work is elastic exchange.
+// 'tendon_limit:*' rows are the drivetrain's one-way closures (freehub,
+// crank clutch, motor freewheel), built with the same closure time constant,
+// so they charge the closure channel too; joint-limit rows stay numerical
+// constraint work. The native partition is raw_work's closure lift inside
+// account_energy, exercised end-to-end
 // through a detached PeriodAccounting (the strictness_support
 // runtime_for_raws fixture the energy-ledger port uses for the same raw
 // path).
@@ -719,26 +721,27 @@ void test_equality_rows_charge_the_closure_channel_not_the_bound() {
     // raw's component fold.
     step.qvel = {1.};
     step.components = {{"human_crank", {400.}}, {"mid_drive", {100.}}};
-    // The oracle's powers dict in insertion order; split_constraint_powers
-    // keeps first-appearance order within each class, so the partitions are
-    // constraint [-.5, .25] and closure [2., -1.].
+    // Rows in insertion order; the partition keeps first-appearance order
+    // within each class, so the partitions are constraint [-.5] and closure
+    // [2., -1., .25].
     step.numerical_constraint_power_w = {{"equality:pedal_left", 2.},
                                          {"joint_limit:hip", -.5},
                                          {"equality:saddle", -1.},
-                                         {"tendon_limit:knee", .25}};
+                                         {"tendon_limit:freehub", .25}};
     step.constraint_snapshot.qvel_start = step.qvel;
     accounting->push(std::move(step));
     accounting->flush();
     const auto &energy = accounting->state().energy;
-    // dt=.0005: the limit pair lands in the numerical channels
-    // (signed -.25*.0005, absolute .75*.0005), the equality pair in the
-    // closure channels (signed 1.*.0005, absolute 3.*.0005).
-    bt::require(energy.solver_work_j == -.25 * .0005 &&
-                energy.constraint_absolute_j == .75 * .0005,
-                "limit rows stay numerical constraint work");
-    bt::require(energy.closure_signed_j == 1. * .0005 &&
-                energy.closure_absolute_j == 3. * .0005,
-                "equality rows charge the elastic closure channel");
+    // dt=.0005: the joint-limit row lands in the numerical channels
+    // (signed -.5*.0005, absolute .5*.0005); the equality pair and the
+    // tendon-limit closure in the closure channels (signed 1.25*.0005,
+    // absolute 3.25*.0005).
+    bt::require(energy.solver_work_j == -.5 * .0005 &&
+                energy.constraint_absolute_j == .5 * .0005,
+                "joint-limit rows stay numerical constraint work");
+    bt::require(energy.closure_signed_j == 1.25 * .0005 &&
+                energy.closure_absolute_j == 3.25 * .0005,
+                "equality and tendon-limit rows charge the elastic closure channel");
     bt::require(energy.muscle_positive_j == .2 &&
                 energy.motor_positive_j == .05,
                 "the muscle/motor folds feed the same step_work inputs");

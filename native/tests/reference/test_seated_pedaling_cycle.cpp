@@ -190,14 +190,12 @@ CycleEnv cycle_env() {
     request.setup.model.physics->initial_speed_mps = 0.;
     request.experiment.duration_s = 8.;
     request.experiment.record_decimation = 1;
-    // Diagnostic, not strict: the native engine trips the documented
-    // `energy.constraint_work` baseline verdict at the first 5 ms close
-    // on BOTH platforms (docs/RIDE.md, docs/TESTING.md) — the oracle's
-    // strict run stays green because the Python backend's non-equality
-    // constraint rows stay under the integral bound. Diagnostic mode
-    // keeps the monitor recording; each episode asserts the recorded
-    // first failure is either absent or exactly that signature, so a
-    // new or different verdict still fails.
+    // Diagnostic mode keeps the monitor recording to the end; each episode
+    // asserts that no first failure was recorded, which is the strict
+    // run's contract with the full trace kept for diagnosis. (Until the
+    // freehub's tendon-limit rows joined the closure channel on 2026-11-04,
+    // every native run tripped `energy.constraint_work` at the first 5 ms
+    // close, and this gate tolerated that signature.)
     request.experiment.stop_on_model_violation = false;
     request.sensors = research::SensorConfig{};
     request.sensors.sample_period_s = .005;
@@ -272,14 +270,13 @@ void assert_physical_intervals(
         // declared bounds are defect-signal margins over the ORACLE's
         // measured extrema — so the tolerated set is the enumerated
         // drift-verdict classes that measured on this native backend:
-        // the `energy.constraint_work` baseline, every `rider_strength.*`
-        // verdict (provisional strength sheet, same parity class as the
+        // every `rider_strength.*` verdict (provisional strength sheet,
+        // same parity class as the
         // named rider_torso_hinge caveat), and the weld-envelope payload
         // thresholds (<foot|saddle>.{normal,friction,shear,cop}). Verdicts
         // outside the drift classes — gap/pull/nonfinite/measurement,
         // joint power/speed, infeasible — still fail.
         const auto tolerated = [](std::string_view name) {
-            if (name == "energy.constraint_work") return true;
             // The strength channel lists bare joint names
             // (rider_knee_front); attachment_violations prefixes the
             // verdict class (rider_strength.rider_knee_front). Bare
@@ -315,12 +312,11 @@ void assert_physical_intervals(
         const auto &energy = sw::object(
             sw::required(sample.channels, "energy"));
         if ((sample.interval_id + 1) % 4 == 0 || index == rows.size() - 1) {
-            // `constraint_work_ok` is NOT asserted per-close: native trips
-            // the documented baseline verdict (`energy.constraint_work`)
-            // where the oracle stays under the bound — the monitor-level
-            // first-failure signature gate in each test carries the same
-            // contract. The closure channel check survives: weld/equality
-            // spring work must stay finite and nonnegative in absolute.
+            bt::require(sw::boolean(sw::required(energy, "constraint_work_ok")),
+                        "numerical constraint work stays inside the 1% "
+                        "bound at every close");
+            // Weld/equality and drivetrain-closure spring work must stay
+            // finite and nonnegative in absolute.
             bt::require(
                 sw::number(sw::required(energy, "closure_absolute_j")) >=
                     0.,
@@ -368,17 +364,10 @@ void test_strict_flat_cycle_delivers_and_stays_within_budgets() {
         const auto &rows = intervals_of(*env.runtime);
         assert_physical_intervals(rows, env.budget,
                                   env.delivered_positive_budget_w);
-        // The monitor's recorded first failure must be absent or exactly
-        // the documented baseline signature — a new or different verdict
-        // still fails (the strict-run equivalent of the oracle's
-        // `constraint_work_ok` per-close check).
+        // The monitor records no first failure: the strict-run contract.
         const auto failure = env.runtime->snapshot().first_failure;
-        bt::require(!failure.has_value() ||
-                        failure->violations ==
-                            std::vector<std::string>{
-                                "energy.constraint_work"},
-                    "the only tolerated failure signature is "
-                    "energy.constraint_work");
+        bt::require(!failure.has_value(),
+                    "the monitor records no model violation");
         std::vector<double> late_sensor;
         for (const auto &row : rows)
             if (row->time_s > 2.)
@@ -490,11 +479,8 @@ void test_free_coast_is_an_intent_not_a_crank_lock() {
     assert_physical_intervals(intervals_of(*env.runtime), env.budget,
                               env.delivered_positive_budget_w);
     const auto failure = env.runtime->snapshot().first_failure;
-    bt::require(!failure.has_value() ||
-                    failure->violations ==
-                        std::vector<std::string>{"energy.constraint_work"},
-                "the only tolerated failure signature is "
-                "energy.constraint_work");
+    bt::require(!failure.has_value(),
+                "the monitor records no model violation");
     bt::require(cadence_before > 1.,
                 "the cranks were spinning before the coast");
 }

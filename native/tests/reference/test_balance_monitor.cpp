@@ -238,9 +238,8 @@ void test_summary_and_metrics_keep_latched_event_position_summary() {
     request.setup.model.physics->initial_speed_mps = 0.;
     request.experiment.duration_s = 8.;
     request.experiment.record_decimation = 1;
-    // Diagnostic mode like the other welded fixtures: the documented
-    // energy.constraint_work baseline verdict must not abort the balance
-    // latch this leg measures.
+    // Diagnostic mode: a model verdict must not abort the balance latch
+    // this leg measures.
     request.experiment.stop_on_model_violation = false;
     request.sensors = bike::research::SensorConfig{};
     // The welded .00125 s grid: .005 is the 4-step sensor period the other

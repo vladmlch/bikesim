@@ -265,8 +265,8 @@ build/native-release/bin/bike-ride --physics-config examples/research/viewer_phy
 
 Headless runs need no
 display and initialize no GLFW window. Strict headless physical runs
-terminate at the documented `energy.constraint_work` baseline violation —
-a retained diagnostic prefix, not a crash ([RIDE.md](../RIDE.md)).
+stop at the first model violation; the 1 s ride above has none and exits 0 on darwin-arm64 (2026-11-04; linux-aarch64 not re-run since the start-up
+`energy.constraint_work` fix) ([RIDE.md](../RIDE.md)).
 
 Interactive viewers require a real display (X11, or XWayland inside a
 Wayland session) plus the system GLFW/OpenGL stack — those are OS packages,

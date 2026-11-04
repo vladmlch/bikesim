@@ -80,12 +80,20 @@ StepWork raw_work(const RawStep &raw, double dt_s) {
             muscle.push_back(dot(force, raw.qvel));
         if (name == "mid_drive") motor = dot(force, raw.qvel);
     }
-    // split_constraint_powers mirror: 'equality:' rows are weld/closure
-    // springs charged to the elastic channel; limit rows stay numerical
+    // Closure rows are charged to the elastic channel: 'equality:' rows are
+    // the weld/closure springs, and 'tendon_limit:' rows are the drivetrain's
+    // one-way closures (freehub, crank clutch, motor freewheel). Both are soft
+    // constraints built on closure_time_constant_s and model mechanical
+    // compliance, not solver error: a freehub taking up the first pedal load
+    // absorbs work while the rider's and motor's work is still near zero, which
+    // the 1% bound would misread as a defect. Every limited tendon is such a
+    // closure (model_mjcf pins it). Joint-limit rows stay numerical
     // constraint work. First-appearance order is preserved per class.
     for (const auto &[name, power] : raw.numerical_constraint_power_w) {
-        if (name.starts_with("equality:")) closure.push_back(power);
-        else constraint.push_back(power);
+        if (name.starts_with("equality:") || name.starts_with("tendon_limit:"))
+            closure.push_back(power);
+        else
+            constraint.push_back(power);
     }
     return step_work(muscle, motor, constraint, closure, dt_s);
 }

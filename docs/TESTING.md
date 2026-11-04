@@ -1412,9 +1412,10 @@ tools/linux/container.sh ctest root-clang -R '^reference\.realtime_gate'
 (`viewer_physics_welded.toml`, 20 s at dt=1.25 ms = 16,000 steps,
 `--record-decimation 80`, `--warmup 1 --runs 3 --benchmark`). `--benchmark`
 is the Python gate's `reference_monitor.strict=False` equivalent: the
-monitor still records the documented `energy.constraint_work` baseline
-violation as `prefix.first_failure` instead of stopping physics at step 4,
-so the measured prefix reaches `duration_reached`. Each node asserts the
+monitor still records its first verdict as `prefix.first_failure` instead of
+stopping physics (the welded rider meets real attachment verdicts on these
+tracks, e.g. a grip pull at t≈5.29 s on `rough_uphill_savage`), so the
+measured prefix reaches `duration_reached`. Each node asserts the
 schema-1 report: exit 0 (every run `measured_ok`), `duration_reached`,
 16,000/16,000 steps, `simulated_time_s >= 20 - dt`, `build_type=Release`
 provenance, and `median_real_time_factor >= 1` — the contract bar,
@@ -1443,13 +1444,26 @@ intra-period velocity drift is invisible to the tick-time clip.
 ### Closure channel
 
 Constraint-power rows whose name starts with `equality:` are weld/closure
-spring work and are charged to `closure_signed_j` / `closure_absolute_j`
-(elastic channel) in `step_work`/`runtime_step_work`. All other rows remain
+spring work, and rows whose name starts with `tendon_limit:` are the
+drivetrain's one-way closures (`ideal_mid_drive_freehub`,
+`geometric_mid_drive_freehub`, `crank_clutch`, `motor_freewheel`). Both are
+charged to `closure_signed_j` / `closure_absolute_j` (elastic channel) in
+`raw_work` (`native/src/runtime/accounting.cpp`). Joint-limit rows remain
 numerical constraint work and keep the existing `constraint_work_ok`
-round-off bound. First-appearance ordering is preserved within each class,
-mirrored between `src/bike_sim/physics/energy_ledger.py`,
-`src/bike_sim/sim/ride/period_buffer.py` and
-`native/src/runtime/accounting.cpp`.
+round-off bound. First-appearance ordering is preserved within each class.
+
+The tendon-limit rows joined the closure channel on 2026-11-04. Every limited
+tendon is built by `fixed_tendon` (`native/src/model/physical_topology.cpp`)
+on the same `closure_time_constant_s` as the welds, and the model contract
+keeps the freehub as a deliberate force element (AGENTS.md). While those rows
+counted as numerical work, the freehub taking up the first pedal load
+absorbed about 0.08 mJ in the first 5 ms, against 0.8 mJ of rider work. The
+cumulative 1% bound therefore stopped every strict ride at t = 0.005 s, the
+"documented `energy.constraint_work` baseline violation", although over a
+ride the ratio was 0.2–0.5%. With the rows reclassified, the remaining
+numerical constraint work on rough_uphill_savage is about 6e-6 of the source
+work. `model_mjcf` pins that every limited tendon is one of the closures
+listed above.
 
 ### Welded attachment envelope
 
@@ -1516,7 +1530,10 @@ not a physical contract change. The episode therefore runs the reference
 monitor in `--check-policy diagnostic` on linux only; every posture, grip
 and delivered-power assertion still applies, and the test asserts the
 recorded first failure stays exactly `('energy.constraint_work',)`, so any
-new or different verdict still fails. The identical `constraint_work_ok`
+new or different verdict still fails. 2026-11-04: the tendon-limit rows this
+residual came from moved to the closure channel (see "Closure channel"), and
+the native port now asserts that no first failure is recorded on either
+platform; linux-aarch64 has not been re-run since (Linux deferred). The identical `constraint_work_ok`
 verdict keeps full strict linux coverage through the four
 `test_seated_pedaling_cycle.py` welded-plant nodes (all measured green
 strict on linux-aarch64), which is the named D14 coverage for dropping the

@@ -99,9 +99,7 @@ void test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush() {
     options.warmups = 0;
     options.runs = 1;
     // The oracle's `monitor.relaxed = True` monkeypatch maps onto the
-    // documented benchmark posture: strict runs abort on the recorded
-    // energy.constraint_work baseline violation, so a completed measurement
-    // runs non-strict (docs/RIDE.md).
+    // benchmark posture (non-strict monitor), which this test pins below.
     options.benchmark = true;
     auto driver = msr::make_native_driver(options);
     const auto &settings = driver->settings();

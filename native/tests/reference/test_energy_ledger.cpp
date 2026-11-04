@@ -387,6 +387,9 @@ void test_cached_equilibrium_restores_the_actual_one_way_constraint_preload() {
 }
 
 // ---- record 10: opposite-signed rows never cancel in the absolute channel ---
+// Closure rows (equality welds and tendon-limit one-way closures such as the
+// freehub) charge the elastic closure channel; joint-limit rows stay numerical
+// constraint work and trip the closing-tail rejection.
 
 void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
     std::string_view kind) {
@@ -409,6 +412,13 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
               "<joint joint=\"" + a + R"(" coef="1"/>)" + "<joint joint=\"" +
               b + R"(" coef="-1"/></fixed>)";
         xml += "</tendon></mujoco>";
+    } else if (kind == "joint") {
+        xml = R"XML(<mujoco><option gravity="0 0 0" timestep=".0005"/>
+<worldbody>)XML";
+        for (const char name : {'a', 'b'})
+            xml += std::string("<body><joint name=\"") + name +
+                   R"XML(" type="slide" axis="1 0 0" limited="true" range="-.1 .1" solreflimit="-100 0"/><geom size=".1" mass="1" contype="0" conaffinity="0"/></body>)XML";
+        xml += "</worldbody></mujoco>";
     }
     const auto model = load_xml(xml, "opposite-work model");
     const auto data = data_of(model.get());
@@ -417,6 +427,10 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
     if (kind == "equality") {
         qpos[0] = .1; qpos[1] = -.1;
         qvel[0] = 1.; qvel[1] = 1.;
+    } else if (kind == "joint") {
+        // Both past the upper limit: one moving into it, one moving out.
+        qpos[0] = .15; qpos[1] = .15;
+        qvel[0] = 1.; qvel[1] = -1.;
     } else {
         qpos[0] = .1; qpos[1] = 0.; qpos[2] = .1; qpos[3] = 0.;
         qvel[0] = 1.; qvel[1] = 0.; qvel[2] = -1.; qvel[3] = 0.;
@@ -458,12 +472,12 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
     runtime->push(std::move(raw));
     double absolute_power = 0.;
     for (const auto &[key, power] : powers) absolute_power += std::abs(power);
-    // F1 re-scope (matches the repaired oracle leg): equality rows charge
-    // the elastic closure channel — tracked signed/absolute but outside the
-    // numerical bound; limit rows stay numerical constraint work and still
-    // trip the closing-tail rejection.
+    // F1 re-scope: equality and tendon-limit rows charge the elastic closure
+    // channel — tracked signed/absolute but outside the numerical bound;
+    // joint-limit rows stay numerical constraint work and still trip the
+    // closing-tail rejection.
     const auto &energy = runtime->state().energy;
-    if (kind == "equality") {
+    if (kind != "joint") {
         runtime->flush();
         bt::require(approx(energy.closure_signed_j, 0., 1e-6, 1e-12),
                     "opposite rows cancel in the closure signed channel");
@@ -480,7 +494,7 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
                                .find("energy.constraint_work") !=
                        std::string::npos;
         }
-        bt::require(rejected, "uncancellable limit work rejects the flush");
+        bt::require(rejected, "uncancellable joint-limit work rejects the flush");
         bt::require(approx(energy.solver_work_j, 0., 1e-6, 1e-12),
                     "opposite rows cancel in the signed channel");
         bt::require(approx(energy.constraint_absolute_j, absolute_power * .0005),
@@ -688,7 +702,7 @@ int main() {
         for (const std::string_view kind : {"tendon", "joint", "contact", "equality"})
             test_actual_solver_rows_partition_without_missing_or_duplicate_forces(kind);
         test_cached_equilibrium_restores_the_actual_one_way_constraint_preload();
-        for (const std::string_view kind : {"equality", "tendon"})
+        for (const std::string_view kind : {"equality", "tendon", "joint"})
             test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(kind);
         test_free_fall_keeps_energy_without_constraint_work();
         test_closed_ideal_constraint_does_no_work();

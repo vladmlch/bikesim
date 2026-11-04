@@ -55,10 +55,11 @@ The original acceptance session (branch `impl/cpp-port-p2`) recorded:
   stepping, pacing and checked replay all work under the required `mjpython`
   re-exec (the launcher re-execs automatically when `mjpython` is on PATH).
 - Measured results are reported in
-  `output/native-visual-acceptance/{python,native}/report.json` and in the audit:
-  strict headless runs terminate at step 4 on this platform's documented
-  `energy.constraint_work` baseline violation, so the reported medians describe
-  a 0.005 s diagnostic prefix, not steady-state throughput. Sustained
+  `output/native-visual-acceptance/{python,native}/report.json` and in the audit.
+  They were measured before 2026-11-04, when every strict headless run stopped
+  at step 4 on the start-up `energy.constraint_work` verdict (see
+  docs/TESTING.md, "Closure channel"), so those medians describe a 0.005 s
+  diagnostic prefix, not steady-state throughput. Sustained
   interactive evidence: native held `achieved_rtf` mean 0.9999 at requested 1x
   (visual 1x gate >= 0.95 satisfied) and ~1.8x at requested 8x.
 
@@ -114,11 +115,12 @@ build/gui/bin/bike-ride --backend native --physics-config examples/research/view
 The `--backend python` reference path was removed at T63; the produced
 binary is the only path. A headless
 physical run uses `--headless --duration 30 --no-plots`; it has no playback scale.
-Headless physical runs use strict checks — on this platform they terminate at
-the documented `energy.constraint_work` baseline violation (t=0.005 s) as
-`invalid_controller`, a retained diagnostic prefix rather than a defect
-(add `--check-policy diagnostic` to run the full `--duration`, the violation
-then printing as a `WARNING`);
+Headless physical runs use strict checks: the first model violation ends the
+run as `invalid_controller` and exit 2 (add `--check-policy diagnostic` to run
+the full `--duration`, the violation then printing as a `WARNING`). On
+`rough_uphill_savage` the welded profile's first violation is a grip pull at
+t≈5.29 s; the pneumatic and distributed profiles ride 8 s without one
+(measured on darwin-arm64, 2026-11-04);
 interactive physical runs retain model-validity/failure diagnostics in the HUD
 (`[FIRST FAILURE]` banner) and exported summaries rather than hiding invalid
 intervals.
@@ -265,8 +267,9 @@ build/native-release/bin/bike-measure-realtime --physics-config examples/researc
 
 `--benchmark` runs the reference monitor non-strict, as the
 `reference.realtime_gate.*` CTest nodes do. Without it the strict monitor
-ends each run at the `energy.constraint_work` baseline violation after
-four steps (`invalid_controller`), so the report measures no usable window.
+ends each run at its first model violation (`invalid_controller`; the welded
+profile on `rough_uphill_savage` meets a grip pull at t≈5.29 s), before the
+measured window ends.
 
 Measured wall time surrounds the full advancement loop and final flush. Setup
 and export have separate times. Percentiles describe whole `advance` calls in
@@ -277,12 +280,11 @@ prefix length. The default recording decimation is 80 for both measured backends
 
 Different settings or divergent classified prefixes are not comparable. Equally
 classified invalid prefixes remain diagnostic, never calibrated valid rides.
-Short terminal prefixes require explicit review — on this platform every strict
-run is short because the documented `energy.constraint_work` baseline violation
-at t=0.005 s ends strict progression at step 4 for both backends; the reported
-medians (python 0.4736, native 2.0196 RTF in the linked `report.json`
-artifacts) measure boundary cost on that prefix,
-not sustained throughput. Sustained evidence comes from the interactive runs
+Short terminal prefixes require explicit review. The reported medians
+(python 0.4736, native 2.0196 RTF in the linked `report.json` artifacts) were
+measured while every strict run ended at step 4 on the start-up
+`energy.constraint_work` verdict (fixed 2026-11-04), so they measure boundary
+cost on that prefix, not sustained throughput. Sustained evidence comes from the interactive runs
 above. The headless RTF threshold field alone cannot establish Track C
 acceptance: full parity/replay tests, sanitisers/inspections, actual macOS UI
 checks and 1x mean achieved RTF >= 0.95 remain separate gates.

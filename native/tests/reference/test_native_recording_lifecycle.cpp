@@ -765,15 +765,13 @@ bike::cli::Arguments headless_args(const std::filesystem::path &physics,
 
 void test_headless_records_seals_and_finalizes_once() {
     // The real cli::ride_command headless path seals once and publishes at
-    // end. The welded recipe trips its sticky energy.constraint_work marker
-    // at the first reference checkpoint (welded feet do real constraint
-    // work), so the honest exit is 2 with reason duration_reached — the
-    // seal/publish contract the oracle fakes covers is identical.
+    // end. The welded recipe's first 10 ms record no model violation, so
+    // the run exits 0 with reason duration_reached.
     bt::TemporaryDirectory const root("lifecycle-headless-ok");
     const auto physics = repo_file("examples/research/viewer_physics_welded.toml");
     const auto args = headless_args(physics, root.path(), true);
     const int code = bike::cli::ride_command(args);
-    bt::require(code == 2, "the welded marker exits 2 after duration_reached");
+    bt::require(code == 0, "the welded ride exits 0 after duration_reached");
     rec::Recording const saved(sealed_directory(root.path()));
     bt::require(saved.episode_ids() == std::vector<std::int64_t>({0}),
                 "one episode published");

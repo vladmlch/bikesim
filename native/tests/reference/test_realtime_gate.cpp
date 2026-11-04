@@ -11,13 +11,12 @@
 // gate asserted, plus the artifact's own Release/identity provenance.
 //
 // --benchmark is the Python gate's `reference_monitor.strict=False`
-// equivalent: the reference monitor still runs and retains the documented
-// energy.constraint_work baseline violation as prefix.first_failure instead
-// of stopping physics, so a strict run can never produce the 16,000-step
-// prefix the contract measures (same class as test_measure_realtime.cpp).
-// The reported prefix stays a throughput sample of a ride whose validity is
-// separately documented red — the gate asserts duration/steps/RTF, never a
-// valid-ride claim.
+// equivalent: the reference monitor still runs and retains its first
+// verdict as prefix.first_failure instead of stopping physics. The welded
+// rider meets real attachment verdicts on these tracks (rough_uphill_savage:
+// grip pull at t=5.29 s), so a strict run cannot produce the 16,000-step
+// prefix the contract measures. The reported prefix stays a throughput
+// sample — the gate asserts duration/steps/RTF, never a valid-ride claim.
 #include "../support/fixture_test.hpp"
 #include "../support/temporary_directory.hpp"
 #include "io/json.hpp"

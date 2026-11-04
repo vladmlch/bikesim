@@ -5,6 +5,7 @@
 #include "model/builder.hpp"
 #include "model/xml_writer.hpp"
 #include <mujoco/mujoco.h>
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <cmath>
@@ -101,6 +102,22 @@ void require_no_joint_damping(const mjModel& model,std::string_view label) {
     for(int dof=0;dof<model.nv;++dof)
         bt::require(damping[static_cast<std::size_t>(dof)]==0.,std::string(label)+": dof "+std::to_string(dof)+" carries joint damping");
 }
+// Every limited tendon is a one-way drivetrain closure built by
+// fixed_tendon (model/physical_topology.cpp). The energy ledger charges all
+// 'tendon_limit:' rows to the elastic closure channel (runtime/accounting.cpp
+// raw_work), so a new limited tendon must be classified there on purpose.
+void require_limited_tendons_are_closures(const mjModel& model,std::string_view label) {
+    static constexpr std::array<std::string_view,4> closures{
+        "ideal_mid_drive_freehub","geometric_mid_drive_freehub","crank_clutch","motor_freewheel"};
+    const auto limited=std::views::counted(model.tendon_limited,model.ntendon);
+    for(int tendon=0;tendon<model.ntendon;++tendon) {
+        if(limited[static_cast<std::size_t>(tendon)]==0) continue;
+        const char* name=mj_id2name(&model,mjOBJ_TENDON,tendon);
+        const std::string_view found=name==nullptr?std::string_view{}:std::string_view(name);
+        bt::require(std::ranges::find(closures,found)!=closures.end(),
+            std::string(label)+": limited tendon '"+std::string(found)+"' is not a drivetrain closure");
+    }
+}
 void captured_welded() {
     auto request=physical();
     // RCP-02 was captured from rough_uphill_savage: 130 m field, 30.1 m
@@ -117,6 +134,7 @@ void physical_profiles_and_topology() {
         const auto request=physical(name);
         const auto model=mdl::compile_mjcf(mdl::generate_mjcf(*request));
         require_no_joint_damping(*model,name);
+        require_limited_tendons_are_closures(*model,name);
         bt::require(model->nq==26 && model->nv==26 && model->nu==12,"physical spindle profile inventory");
         bt::require(mj_name2id(model.get(),mjOBJ_JOINT,"steer_joint")==-1,"physical steering is welded");
         bt::require(mj_name2id(model.get(),mjOBJ_JOINT,"rider_ankle_front")==-1,"spindle locks ankle hinge");
@@ -137,12 +155,14 @@ void physical_profiles_and_topology() {
     request->physics->articulated.pedal_attachment="weld";request->physics->articulated.saddle_attachment="weld";request->physics->articulated.grip_attachment="spring"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto welded=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*welded,"weld/spring attachments");
+    require_limited_tendons_are_closures(*welded,"weld/spring attachments");
     id(*welded,mjOBJ_JOINT,"rider_ankle_front");id(*welded,mjOBJ_EQUALITY,"weld_foot_front");id(*welded,mjOBJ_EQUALITY,"weld_saddle");
     bt::require(welded->nq==28,"welded foot preserves ankle DOFs");
     request->physics.value().drive.transmission_model="elastic_chain"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     request->physics->drive.shifting.enabled=false; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto elastic=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*elastic,"elastic chain");
+    require_limited_tendons_are_closures(*elastic,"elastic chain");
     id(*elastic,mjOBJ_BODY,"cassette");
     bt::require(mj_name2id(elastic.get(),mjOBJ_TENDON,"ideal_mid_drive_freehub")==-1,"elastic chain has no ideal freehub constraint");
     const auto wheel_id=static_cast<std::size_t>(id(*elastic,mjOBJ_BODY,"rear_wheel"));
@@ -153,16 +173,19 @@ void physical_profiles_and_topology() {
     request=physical();request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto clutch=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*clutch,"motor clutch");
+    require_limited_tendons_are_closures(*clutch,"motor clutch");
     id(*clutch,mjOBJ_JOINT,"drive_shaft_spin");id(*clutch,mjOBJ_TENDON,"crank_clutch");
     request=physical();request->physics->drive.rotor_inertia_kgm2=.2; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto rotor=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*rotor,"rotor inertia");
+    require_limited_tendons_are_closures(*rotor,"rotor inertia");
     id(*rotor,mjOBJ_JOINT,"rotor_spin");id(*rotor,mjOBJ_TENDON,"motor_freewheel");
     request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=physical();request->physics->drive.transmission_model="geometric_ideal_mid_drive"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto geometric=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*geometric,"geometric mid drive");
+    require_limited_tendons_are_closures(*geometric,"geometric mid drive");
     const auto tendon=static_cast<std::size_t>(id(*geometric,mjOBJ_TENDON,"geometric_mid_drive_freehub"));
     bt::require(std::views::counted(geometric->tendon_num,geometric->ntendon)[tendon]==geometric->njnt,"geometric drive includes all scalar joints and rider zero rows");
     request=physical();request->masses.front_wheel_mass=3.1;request->masses.rear_wheel_mass=3.7;
@@ -191,6 +214,7 @@ void no_joint_damping_in_any_mode() {
         }
         const auto model=mdl::compile_mjcf(mdl::generate_mjcf(request));
         require_no_joint_damping(*model,std::string(c.mode)+"/"+c.rider+"/"+c.legs);
+        require_limited_tendons_are_closures(*model,std::string(c.mode)+"/"+c.rider+"/"+c.legs);
     }
 }
 // Crank qpos 0 is a power position: the two spindles sit level (same

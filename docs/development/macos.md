@@ -123,8 +123,7 @@ build/native-release/bin/bike-ride --physics-config examples/research/viewer_phy
 
 Headless runs need no
 window and initialize no GLFW context. Strict headless physical runs
-terminate at the documented `energy.constraint_work` baseline violation —
-a retained diagnostic prefix, not a crash ([RIDE.md](../RIDE.md)).
+stop at the first model violation; the 1 s ride above has none and exits 0 (measured on darwin-arm64, 2026-11-04) ([RIDE.md](../RIDE.md)).
 
 **Interactive viewers run on the main OS thread** — Cocoa's
 `NSApplication` event loop requirement is a native constraint, not an

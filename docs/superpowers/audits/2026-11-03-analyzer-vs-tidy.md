@@ -103,7 +103,7 @@ checkers (including `optin.mpi`, `optin.osx.*`, `optin.performance.*`,
 those lines are redundant documentation) and `cplusplus.Move` (which
 `check_contracts.cpp:1788-1806` requires `.clang-tidy` to keep enabled).
 
-Reverse direction, for completeness: 22 tidy-enabled checkers do not appear in
+Reverse direction, for completeness: 23 tidy-enabled checkers do not appear in
 the filtered `-analyzer-checker-help` list — hidden/modeling checkers the glob
 picks up (`apiModeling.*`, `core.builtin.*`, `core.DynamicTypePropagation`,
 `core.NonnilStringConstants`, `cplusplus.SelfAssignment`,

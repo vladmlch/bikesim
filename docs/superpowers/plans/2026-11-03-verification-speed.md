@@ -53,7 +53,7 @@
 **Файлы:**
 - Создать: `docs/superpowers/audits/2026-11-03-verification-speed-baseline.md`
 
-- [ ] **Шаг 1: Запиши состояние рабочей копии**
+- [x] **Шаг 1: Запиши состояние рабочей копии**
 
 ```bash
 cd .worktrees/main3
@@ -63,7 +63,7 @@ git status --short
 
 В отчёт: хеш и список неучтённых файлов. Ожидаемо неучтённые: `.agents/`, `.devin/`, `.junie/`, план `2026-11-03-crank-reposition-native.md`, этот план и описание решений. Не трогай их.
 
-- [ ] **Шаг 2: Собери и прогони обычные тесты**
+- [x] **Шаг 2: Собери и прогони обычные тесты**
 
 ```bash
 cmake --preset release
@@ -73,7 +73,7 @@ ctest --test-dir build/native-release -LE 'slow|package' -j8 --output-on-failure
 
 Ожидаемо: `2 tests failed out of 183` — `reference.native_research_recording` и `reference.native_numeric_portability`. Если красных больше, добавь их в отчёт и сообщи владельцу до перехода к задаче 1.
 
-- [ ] **Шаг 3: Прогони тесты сценариев проверки**
+- [x] **Шаг 3: Прогони тесты сценариев проверки**
 
 `tooling_checks` ни разу не запускался на `main3` (в `CTestCostData.txt` у него 0 запусков). Его будем менять, поэтому нужно знать исходное состояние.
 
@@ -83,7 +83,7 @@ ctest --test-dir build/native-release -R '^(tooling_checks|tooling_platform|tool
 
 `tooling_checks` проходит настоящие виды проверки по всему коду и может идти 20+ минут. Запиши в отчёт итог по каждому тесту и **дословно** все строки неудач. Красные случаи, которые были до тебя, ты не чинишь, а только отмечаешь. Сравнивать с ними будешь в задачах 3, 5, 7.
 
-- [ ] **Шаг 4: Закоммить отчёт**
+- [x] **Шаг 4: Закоммить отчёт**
 
 ```bash
 git add docs/superpowers/audits/2026-11-03-verification-speed-baseline.md docs/superpowers/specs/2026-11-03-verification-speed-design.md docs/superpowers/plans/2026-11-03-verification-speed.md

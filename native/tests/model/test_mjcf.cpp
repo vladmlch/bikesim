@@ -219,11 +219,11 @@ void seated_variant_is_gone() {
     const cfg::RiderSpecs declared;
     bt::require(declared.variant=="lumped","the declared default rider is lumped");
 }
-// The seated-only parameters (resonances, damping ratio, saddle
-// interface) do not reach any remaining model: changing them leaves the
-// MJCF of the lumped and articulated_planar riders byte-identical. This
-// is what lets their removal from RiderSpecs wait for a separate
-// migration.
+// The seated-only parameters (legs mode, load shares, resonances,
+// damping ratio, saddle interface) do not reach any remaining model:
+// changing them leaves the MJCF of the lumped and articulated_planar
+// riders byte-identical. This is the evidence that lets RiderSpecs drop
+// them (configuration/legacy_rider.hpp reads old documents).
 [[gnu::noinline]] void seated_parameters_are_inert() {
     for(const auto* variant:{"lumped","articulated_planar"}) {
         mdl::BuildRequest request;request.mode="ride";request.include_rider=true;
@@ -232,8 +232,12 @@ void seated_variant_is_gone() {
             request.physics=cfg::load_physics(bt::fixture("config/viewer_physics_welded.toml"));
         const auto before=mdl::generate_mjcf(request);
         auto& rider=*request.rider;
+        rider.legs="articulated";
+        // Shares still sum to one so post_init accepts the record.
+        rider.saddle_share=.50;rider.pedal_share=.35;rider.bar_share=.15;
         rider.torso_resonance_hz=9.;rider.leg_resonance_hz=8.;rider.arm_resonance_hz=7.;
         rider.damping_ratio=.9;rider.saddle_interface_k_n_m=1.;rider.saddle_interface_c_ns_m=1.;
+        cfg::detail::post_init(rider);
         bt::require(mdl::generate_mjcf(request)==before,
                     std::string(variant)+": seated-only parameters do not change the model");
     }

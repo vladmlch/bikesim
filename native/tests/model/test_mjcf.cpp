@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 namespace {
 namespace mdl=bike::model;
@@ -29,6 +30,23 @@ std::unique_ptr<mdl::BuildRequest> physical(std::string_view profile="viewer_phy
     request->mode="ride";
     request->rider=cfg::RiderSpecs{};request->rider->variant="articulated_planar";
     request->physics=cfg::load_physics(bt::fixture("config/"+std::string(profile)));
+    return request;
+}
+// bt::fixture("config") is <repo>/tests/fixtures/config — the live example
+// document is three levels up plus its repo-relative path.
+std::filesystem::path repo_file(std::string_view relative) {
+    return bt::fixture("config").parent_path().parent_path().parent_path() /
+           std::filesystem::path(relative);
+}
+// Same build as physical(), but from the working profile under
+// examples/research/: the fixture copies keep motor_clutch=false on
+// purpose, so the clutch the rider actually gets is proven from the
+// documents bike-ride loads.
+std::unique_ptr<mdl::BuildRequest> research(std::string_view profile) {
+    auto request=std::make_unique<mdl::BuildRequest>();
+    request->mode="ride";
+    request->rider=cfg::RiderSpecs{};request->rider->variant="articulated_planar";
+    request->physics=cfg::load_physics(repo_file("examples/research/"+std::string(profile)));
     return request;
 }
 int id(const mjModel& model,mjtObj kind,const char* name) {
@@ -240,6 +258,42 @@ void drivetrain_has_two_one_way_clutches() {
     bt::require(mj_name2id(model.get(), mjOBJ_BODY, "motor_rotor") < 0, "no rotor body");
     bt::require(mj_name2id(model.get(), mjOBJ_JOINT, "rotor_spin") < 0, "no rotor joint");
 }
+// Every working profile builds the clutch (user, 2026-11-05): forward the
+// crank pulls the motor shaft along; backward (or slower) it is free and
+// the shaft is not dragged back by the crank.
+void motor_clutch_engages_forward_only() {
+    for (const auto* name : {"viewer_physics_welded.toml",
+                            "viewer_physics_pneumatic.toml",
+                            "viewer_physics_distributed.toml"}) {
+        const auto request = research(name);
+        const auto model = mdl::compile_mjcf(mdl::generate_mjcf(*request));
+        auto data = std::unique_ptr<mjData, decltype(&mj_deleteData)>(mj_makeData(model.get()), mj_deleteData);
+        const int crank = mj_name2id(model.get(), mjOBJ_JOINT, "crank_spin");
+        const int shaft = mj_name2id(model.get(), mjOBJ_JOINT, "drive_shaft_spin");
+        bt::require(crank >= 0 && shaft >= 0,
+                    std::string(name) + ": crank and motor shaft joints exist");
+        const auto qvel = std::views::counted(data->qvel, model->nv);
+        const auto dofadr = std::views::counted(model->jnt_dofadr, model->njnt);
+        const auto crank_dof = static_cast<std::size_t>(dofadr[static_cast<std::size_t>(crank)]);
+        const auto shaft_dof = static_cast<std::size_t>(dofadr[static_cast<std::size_t>(shaft)]);
+        const auto run = [&](double crank_rate, double shaft_rate) {
+            mj_resetData(model.get(), data.get());
+            model->opt.gravity[2] = 0.; // isolate the drive from the bike's fall
+            qvel[crank_dof] = crank_rate;
+            qvel[shaft_dof] = shaft_rate;
+            for (int i = 0; i < 20; ++i) mj_step(model.get(), data.get());
+            return std::pair{qvel[crank_dof], qvel[shaft_dof]};
+        };
+        const auto [c_back, s_back] = run(-3., 5.);
+        bt::require(c_back < 0. && s_back >= 0.,
+                    std::string(name) + ": backpedalling does not drag the shaft back"
+                    + " (crank=" + std::to_string(c_back) + ", shaft=" + std::to_string(s_back) + ")");
+        const auto [c_fwd, s_fwd] = run(8., 2.);
+        bt::require(std::abs(c_fwd - s_fwd) < .2,
+                    std::string(name) + ": a faster forward crank drives the shaft"
+                    + " (crank=" + std::to_string(c_fwd) + ", shaft=" + std::to_string(s_fwd) + ")");
+    }
+}
 void errors_and_ownership() {
     auto request=physical();request->mode="stand";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
@@ -266,4 +320,4 @@ void errors_and_ownership() {
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }
 } // namespace
-int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();errors_and_ownership();});}
+int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();motor_clutch_engages_forward_only();errors_and_ownership();});}

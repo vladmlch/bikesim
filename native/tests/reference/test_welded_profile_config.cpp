@@ -35,13 +35,16 @@ const cfg::SimulationPhysicsConfig &profile() {
     return config;
 }
 
-// test_rigid_crank_topology_is_the_default
-void test_rigid_crank_topology_is_the_default() {
+// test_motor_clutch_topology_is_the_default
+// The motor clutch is the default topology (user, 2026-11-05): the pedals
+// drive the chainring through a one-way clutch, so they turn backward
+// freely and the motor may turn the chainring while they stand.
+void test_motor_clutch_topology_is_the_default() {
     const auto &drive = profile().drive;
     bt::require(drive.transmission_model == "ideal_mid_drive",
-                "the welded profile selects the rigid crank topology");
-    bt::require(drive.motor_clutch == false,
-                "no one-way motor clutch on the rigid topology");
+                "ideal lossless drive");
+    bt::require(drive.motor_clutch,
+                "the welded example uses the motor clutch");
     bt::require(drive.human_torque_nm == 0.,
                 "effort comes from seated_climb, not a crank torque");
 }
@@ -137,7 +140,7 @@ void test_rider_numbers() {
 
 int main() {
     return bt::run([] {
-        test_rigid_crank_topology_is_the_default();
+        test_motor_clutch_topology_is_the_default();
         test_assist_is_bosch_turbo_with_the_declared_envelope();
         test_rider_numbers();
     });

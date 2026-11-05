@@ -24,14 +24,14 @@ mu = 1.1
 mu = 1.1
 
 [drive]
-# Real mid-drive topology: the chainring sits on the crank spindle (rigid
-# crank/chainring through the torque sensor) and the motor drives the crank
-# directly; the cassette freehub is the only one-way element. The separate
-# rotor freewheel was removed 2026-11-05. RU: шатун жёстко со звездой, мотор
-# на шатун напрямую. motor_clutch=true — топология с муфтой шатун→вал
-# только для регрессионного A/B.
+# Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling
+# forward engages it and drives the chainring; backward, or slower than the
+# motor shaft, it is free — the pedals turn back freely and the motor may
+# keep turning the chainring while they stand. The rear freehub is the only
+# other one-way element; the drive is lossless (AGENTS.md «Передача»).
+# RU: педаль вперёд — зацепление, назад — свободно; муфт две: в моторе и втулка.
 transmission_model = "ideal_mid_drive"
-motor_clutch = false
+motor_clutch = true
 
 [drive.pedaling]
 enabled = true
@@ -65,9 +65,8 @@ rollback_demand = 1.0
 # прежнюю мощность (выбег, Р1). Stall-отсечки и boost нет.
 profile = "bosch_cx_gen4"
 mode = "turbo"
-# Torque envelope vs crank rpm (crank == motor shaft with the rigid
-# chainring). Plateau documents capability; above 120 rpm support declines
-# to zero at 180 rpm.
+# Torque envelope vs motor-shaft rpm (motor.cpp ceiling). With the clutch
+# engaged the shaft turns at crank rpm.
 torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
 # Sensor noise floor: measured pedal torque below this is "not pedalling".
 engage_torque_nm = 4.0

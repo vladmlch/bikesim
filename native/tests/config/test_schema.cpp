@@ -10,6 +10,8 @@
 // records/presets/resolve_suspension mapping — mirroring the Python oracle
 // in the listed source-authority files.
 #include "support/fixture_test.hpp"
+#include "configuration/legacy_rider.hpp"
+#include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/physical_config.hpp"
 #include "configuration/rider_spec.hpp"
@@ -1441,6 +1443,65 @@ void test_rider() {
     bt::invalid([] { (void) cfg::pedal_intent(0., 10., 0.2, 1.5); });
 }
 
+// The declared default rider exactly as the record writer serialized it
+// before the seated-only fields were removed: key-sorted canonical JSON
+// with the writer's number lexemes. Initial-state contracts written then
+// hash this text (via source_json, which is ASCII-identical here).
+constexpr std::string_view kPreRemovalDefaultRider =
+    R"({"arm_resonance_hz":4.0,"bar_share":0.12,"damping_ratio":0.4,)"
+    R"("height_m":1.8,"helmet_mass_kg":0.4,"inseam_m":null,)"
+    R"("leg_resonance_hz":5.0,"legs":"rigid","mass_kg":80.0,)"
+    R"("pedal_share":0.33,"saddle_interface_c_ns_m":2762.0,)"
+    R"("saddle_interface_k_n_m":101000.0,"saddle_share":0.55,)"
+    R"("torso_resonance_hz":7.0,"variant":"lumped"})";
+
+// Documents written before the seated-only fields were removed still
+// carry them. Default members are inert and erase; any other value is
+// named; re-adding the defaults rebuilds the exact pre-removal text the
+// old initial-state contracts hashed. Holds before and after the fields
+// leave RiderSpecs.
+void legacy_rider_fields() {
+    namespace legacy = cfg::legacy;
+    const io::Value current = cfg::detail::plain_document(cfg::detail::as_object(
+        cfg::detail::kRiderSpecsSchema, &cfg::detail::kDeclaredRiderSpecs));
+    io::Value current_erased = current;
+    legacy::erase_removed_rider_fields(current_erased);
+    bt::require(io::canonical_json(legacy::with_removed_rider_defaults(current_erased)) ==
+                    kPreRemovalDefaultRider,
+                "re-added defaults rebuild the pre-removal serialization");
+
+    const io::Value old = io::parse_json(kPreRemovalDefaultRider);
+    bt::require(!legacy::non_default_rider_field(old).has_value(),
+                "the shipped defaults are inert");
+    io::Value old_erased = old;
+    legacy::erase_removed_rider_fields(old_erased);
+    bt::require(io::canonical_json(old_erased) == io::canonical_json(current_erased),
+                "erasing leaves exactly the current record");
+    bt::require(!legacy::non_default_rider_field(old_erased).has_value(),
+                "absent members are inert");
+
+    const auto mutated = [&](std::string_view key, const io::Value& value) {
+        io::Value doc = old;
+        for (auto& member : std::get<io::Value::Object>(doc.data))
+            if (member.first == key) member.second = value;
+        return doc;
+    };
+    bt::require(legacy::non_default_rider_field(mutated("legs", io::Value{std::string("articulated")})) ==
+                    std::optional<std::string_view>{"legs"},
+                "articulated legs are named");
+    for (const auto& [name, value] : legacy::kRemovedRiderReals) {
+        bt::require(legacy::non_default_rider_field(mutated(name, io::Value{io::Number{"0.5"}})) ==
+                        std::optional<std::string_view>{name},
+                    std::string(name) + ": a non-default value is named");
+        bt::require(legacy::non_default_rider_field(mutated(name, io::Value{std::string("0.55")})) ==
+                        std::optional<std::string_view>{name},
+                    std::string(name) + ": a wrong-kind value is named");
+    }
+    io::Value twice = legacy::with_removed_rider_defaults(current_erased);
+    expect_invalid("legacy rider section already carries legs",
+                   [&] { (void)legacy::with_removed_rider_defaults(std::move(twice)); });
+}
+
 void test_loaders() {
     const cfg::JointEnvelopeMap envelopes = cfg::load_joint_envelopes(
         bt::fixture("config/rider_joint_envelope_anatomical.json"));
@@ -1602,6 +1663,7 @@ int main() {
         test_profile_coverage();
         test_wire_validation();
         test_rider();
+        legacy_rider_fields();
         test_loaders();
         test_suspension();
     });

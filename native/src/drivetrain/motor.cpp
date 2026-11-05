@@ -29,6 +29,7 @@ namespace drivetrain {
         nonnegative(s.torque, "torque");
         nonnegative(s.last_gain, "last_gain");
         nonnegative(s.hold_power_w, "hold_power_w");
+        nonnegative(s.hold_torque_nm, "hold_torque_nm");
         nonnegative(s.release_hold_left_s, "release_hold_left_s");
         state_ = s;
     }
@@ -72,17 +73,20 @@ namespace drivetrain {
         const double omega = validation::derived(shaft.value_or(rpm) * 2. * std::numbers::pi / 60., "AssistController.shaft_speed");
         // P1 motor run-on: a drop of the rider-proportional target below the
         // delivered torque arms a hold on the delivered POWER (torque x shaft
-        // speed). The window counts down from release_hold_s and is not
-        // re-armed until the target rises again — hold_power_w > 0 with an
-        // expired window is the spent marker. A full stop of pedalling is
-        // the same case; braking resets everything before this point.
+        // speed) and the delivered torque itself. The window counts down from
+        // release_hold_s and is not re-armed until the target rises again —
+        // hold_power_w > 0 with an expired window is the spent marker. A full
+        // stop of pedalling is the same case; braking resets everything
+        // before this point.
         if (target < state_.torque) {
             if (state_.hold_power_w <= 0. && omega > 0.) {
                 state_.hold_power_w = validation::derived(state_.torque * omega, "AssistController.hold_power_w");
+                state_.hold_torque_nm = state_.torque;
                 state_.release_hold_left_s = config_.release_hold_s;
             }
         } else {
             state_.hold_power_w = 0.;
+            state_.hold_torque_nm = 0.;
             state_.release_hold_left_s = 0.;
         }
         double candidate = validation::derived(state_.torque - std::expm1(-dt / config_.tau) * (target - state_.torque), "AssistController.filtered_torque");
@@ -91,12 +95,17 @@ namespace drivetrain {
         const double upper = validation::derived(state_.torque + delta, "AssistController.slew_upper");
         candidate = std::max(lower, std::min(upper, candidate));
         const double cap = request.value_or(std::numeric_limits<double>::infinity());
-        double held = 0.;
+        // During the window the delivery IS the held power read as torque —
+        // the held watts are a ceiling, not a demand: it may never top the
+        // armed delivery, so a slowing shaft sinks it and a stopped shaft
+        // ends it outright (the filter candidate stays below held while the
+        // hold lasts, so this changes nothing for a turning shaft).
+        double delivery = candidate;
         if (state_.release_hold_left_s > 0.) {
             state_.release_hold_left_s = std::max(0., state_.release_hold_left_s - dt);
-            held = omega > 0. ? std::min(state_.hold_power_w / omega, limit) : limit;
+            delivery = omega > 0. ? std::min({state_.hold_power_w / omega, state_.hold_torque_nm, limit}) : 0.;
         }
-        const double torque = validation::derived(std::max(0., std::min({std::max(candidate, held), limit, cap})), "delivered assist torque");
+        const double torque = validation::derived(std::max(0., std::min({delivery, limit, cap})), "delivered assist torque");
         state_.last_gain = gain;
         state_.torque = torque;
         state_.pedaling = torque > 0.;

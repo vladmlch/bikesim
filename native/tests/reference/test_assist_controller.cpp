@@ -62,18 +62,24 @@ namespace cfg = bike::configuration;
     near(c.state().torque, 68., "held power reads as held torque at the armed shaft speed", 1e-3);
     near(run_assist(c, 10., 60., 3., .5), 34., "the lag then follows the smaller target", 1e-2);
     // The hold is in power, not torque: armed at 60 rpm, a faster shaft
-    // then draws less torque for the same watts; a slower shaft is still
-    // envelope-capped.
-    AssistController faster(config), slower(config);
+    // then draws less torque for the same watts. A slower shaft cannot
+    // turn the held watts into more torque than the armed delivery — the
+    // armed torque and the envelope both cap it.
+    AssistController faster(config), slower(config), tapered(config);
     (void)run_assist(faster, 20., 60., 3., .5);
     (void)run_assist(slower, 20., 60., 3., .5);
+    (void)run_assist(tapered, 20., 60., 3., .5);
     (void)faster.step(10., 60., 3., false, .001, std::nullopt, 60.);
     for (int i = 0; i < 110; ++i)
         (void)faster.step(10., 60., 3., false, .001, std::nullopt, 90.);
     near(faster.state().torque, 68. * 60. / 90., "same held power through a faster shaft", 2e-2);
     (void)slower.step(10., 60., 3., false, .001, std::nullopt, 60.);
-    near(slower.step(10., 60., 3., false, .001, std::nullopt, 30.), 85.,
-         "the torque envelope still caps the held power", 1e-3);
+    near(slower.step(10., 60., 3., false, .001, std::nullopt, 30.), 68.,
+         "a slower shaft still caps at the armed torque", 1e-3);
+    (void)tapered.step(10., 60., 3., false, .001, std::nullopt, 60.);
+    near(tapered.step(10., 60., 6.9, false, .001, std::nullopt, 60.),
+         85. * (config.cutoff_mps - 6.9) / config.taper_width_mps,
+         "the speed taper still caps the held power", .1);
 }
 [[gnu::noinline]] void test_stopped_pedals_hold_the_motor_for_release_hold_s_then_release(const drivetrain::AssistConfig& config) {
     // A full stop of pedalling is the same ease-off case: with the shaft
@@ -89,6 +95,22 @@ namespace cfg = bike::configuration;
                 "expired hold leaves no armed state behind");
     bt::require(c.state().hold_power_w > 0.,
                 "the spent marker stays until a target rise re-arms the hold");
+}
+[[gnu::noinline]] void test_a_stalling_shaft_inside_the_hold_never_exceeds_the_armed_torque(const drivetrain::AssistConfig& config) {
+    // The run-on holds an already-delivered power — it must never mint new
+    // torque: a shaft decelerating to a standstill inside the window sinks
+    // the held floor to the armed delivery and then to zero, not to the
+    // torque envelope.
+    AssistController c(config);
+    (void)run_assist(c, 20., 60., 3., .5);
+    (void)c.step(0., 60., 3., false, .001, std::nullopt, 60.);
+    for (int i = 0; i < 250; ++i) {
+        const double delivered = c.step(0., 60., 3., false, .001, std::nullopt,
+                                        60. * (250. - i) / 250.);
+        bt::require(delivered <= 68. + 1e-9, "run-on never tops the armed torque");
+    }
+    near(c.step(0., 60., 3., false, .001, std::nullopt, 0.), 0.,
+         "a stopped shaft ends the held delivery", .5);
 }
 [[gnu::noinline]] void test_speed_taper_and_cutoff(const drivetrain::AssistConfig& config) {
     AssistController c22(config), c24(config), c25(config), c30(config);
@@ -236,6 +258,7 @@ int main() { return bt::run([] {
     test_torque_below_engage_threshold_is_not_pedalling(config);
     test_easing_off_holds_the_delivered_power_for_release_hold_s(config);
     test_stopped_pedals_hold_the_motor_for_release_hold_s_then_release(config);
+    test_a_stalling_shaft_inside_the_hold_never_exceeds_the_armed_torque(config);
     test_speed_taper_and_cutoff(config);
     test_torque_curve_and_power_ceiling_bind_on_shaft_rpm(config);
     test_external_request_is_a_ceiling_not_a_throttle(config);

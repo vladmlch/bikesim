@@ -75,11 +75,11 @@ namespace drivetrain {
 
     struct AssistSnapshot {
         double torque{}, last_gain{};
-        // Motor run-on (P1): the power captured when the rider target last
-        // dropped below the delivered torque, and the window left to hold it.
+        // Motor run-on (P1): the power and torque delivered when the rider
+        // target last dropped below them, and the window left to hold it.
         // hold_power_w > 0 with an expired window marks a spent hold — it is
         // not re-armed until the target rises again.
-        double hold_power_w{}, release_hold_left_s{};
+        double hold_power_w{}, hold_torque_nm{}, release_hold_left_s{};
         bool pedaling{};
     };
 

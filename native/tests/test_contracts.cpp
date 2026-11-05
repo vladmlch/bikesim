@@ -1601,6 +1601,7 @@ namespace {
               const drivetrain::AssistSnapshot &b) {
         return same(a.torque, b.torque) && same(a.last_gain, b.last_gain) &&
                same(a.hold_power_w, b.hold_power_w) &&
+               same(a.hold_torque_nm, b.hold_torque_nm) &&
                same(a.release_hold_left_s, b.release_hold_left_s) &&
                a.pedaling == b.pedaling;
     }

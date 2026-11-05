@@ -101,13 +101,10 @@ void test_activated_zero_hbo_denominator_rejected() {
         bt::ModelFixture fixture(suspension_xml); auto config = suspension(suspension_wire());
         config.fork_damper.legacy_behavior = legacy;
         config.fork_damper.hbo_start_mm = config.fork_damper.total_travel_mm;
-        if (!legacy) bt::invalid([&] { SuspensionWriter const rejected(fixture.model.get(), config); });
-        else {
-            SuspensionWriter writer(fixture.model.get(), config);
-            model_access::mutable_buffer(fixture.data->qpos, fixture.model->nq)[static_cast<std::size_t>(writer.fork_qposadr())] = .181;
-            model_access::mutable_buffer(fixture.data->qvel, fixture.model->nv)[static_cast<std::size_t>(writer.fork_dofadr())] = .7;
-            bt::invalid([&] { (void)writer.components(fixture.data.get()); });
-        }
+        // The legacy arm never reaches the runtime zero denominator any
+        // more: validate() rejects the removed legacy damper curve at the
+        // writer boundary; the physical arm hits the HBO-zone check.
+        bt::invalid([&] { SuspensionWriter const rejected(fixture.model.get(), config); });
     }
 }
 void test_mutated_policy_configs_are_rejected() {

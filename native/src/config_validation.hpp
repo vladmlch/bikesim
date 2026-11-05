@@ -57,7 +57,12 @@ namespace nativecfg {
         validation::positive(s.total_travel_mm, "config.suspension.fork_damper.total_travel_mm");
         validation::nonnegative(s.hbo_start_mm, "config.suspension.fork_damper.hbo_start_mm");
         validation::nonnegative(s.c_hbo_base, "config.suspension.fork_damper.c_hbo_base");
-        if (!s.legacy_behavior && s.hbo_start_mm >= s.total_travel_mm)
+        // The legacy damper curve was removed with legacy mode (2026-11-04);
+        // the wire keeps the key (always false) but a request for it is an
+        // ingress rejection, never silently modernized.
+        if (s.legacy_behavior)
+            throw std::invalid_argument("config.suspension.fork_damper.legacy_behavior: the legacy damper curve was removed");
+        if (s.hbo_start_mm >= s.total_travel_mm)
             throw std::invalid_argument("config.suspension.fork_damper.hbo_start_mm");
     }
 
@@ -70,11 +75,15 @@ namespace nativecfg {
         validation::nonnegative(s.c_hbo_max, "config.suspension.shock_damper.c_hbo_max");
         validation::nonnegative(s.lockout_preload_n, "config.suspension.shock_damper.lockout_preload_n");
         validation::nonnegative(s.lockout_stiffness, "config.suspension.shock_damper.lockout_stiffness");
-        if (s.c_hbo_min > s.c_hbo_max || (!s.legacy_behavior && s.hbo_start_mm >= s.total_stroke_mm))
+        if (s.legacy_behavior)
+            throw std::invalid_argument("config.suspension.shock_damper.legacy_behavior: the legacy damper curve was removed");
+        if (s.c_hbo_min > s.c_hbo_max || s.hbo_start_mm >= s.total_stroke_mm)
             throw std::invalid_argument("config.suspension.shock_damper: invalid HBO bounds");
     }
 
     inline void validate(const CoilConfig &s) {
+        if (s.legacy_behavior)
+            throw std::invalid_argument("config.suspension.coil.legacy_behavior: the legacy damper curve was removed");
         validation::positive(s.rate_n_m, "config.suspension.coil.rate_n_m");
         validation::nonnegative(s.preload_mm, "config.suspension.coil.preload_mm");
         validation::positive(s.stroke_mm, "config.suspension.coil.stroke_mm");
@@ -89,7 +98,7 @@ namespace nativecfg {
     }
 
     inline void validate(const SuspensionConfig &s) {
-        if (s.physics_mode != "legacy" && s.physics_mode != "physical")
+        if (s.physics_mode != "physical")
             throw std::invalid_argument("config.suspension.physics_mode");
         validate(s.air_spring);
         validate(s.fork_damper);

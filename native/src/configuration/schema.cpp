@@ -1104,8 +1104,7 @@ void validate_config(const Value &config) {
         const auto *mode = mode_member == nullptr
             ? nullptr
             : std::get_if<std::string>(&mode_member->data);
-        if (mode == nullptr ||
-            (*mode != "legacy" && *mode != "physical"))
+        if (mode == nullptr || *mode != "physical")
             fail("config.suspension.physics_mode: unsupported mode");
         const std::string fork_path = "config.suspension.fork_damper";
         const auto &fork = wire_object(
@@ -1128,6 +1127,26 @@ void validate_config(const Value &config) {
                 : legacy_member != nullptr &&
                       std::holds_alternative<bool>(legacy_member->data) &&
                       std::get<bool>(legacy_member->data);
+        // The legacy damper curve was removed with legacy mode
+        // (2026-11-04): the wire keeps the key (always false), a request
+        // for it — either schema's spelling — is an ingress rejection.
+        if (legacy)
+            fail("config.suspension.fork_damper.legacy_behavior: the "
+                 "legacy damper curve was removed");
+        for (const char *damper : {"shock_damper", "coil"}) {
+            const std::string damper_path =
+                "config.suspension." + std::string(damper);
+            const auto &damper_object = wire_object(
+                *bike::io::find_member(susp, damper), damper_path);
+            const Value *flag =
+                bike::io::find_member(damper_object, "legacy_behavior");
+            if (flag != nullptr &&
+                std::holds_alternative<bool>(flag->data) &&
+                std::get<bool>(flag->data))
+                fail(damper_path +
+                     ".legacy_behavior: the legacy damper curve was "
+                     "removed");
+        }
         wire_scalar(
             *bike::io::find_member(fork, "total_travel_mm"),
             "config.suspension.fork_damper.total_travel_mm",
@@ -1137,8 +1156,8 @@ void validate_config(const Value &config) {
         // `start >= fork['total_travel_mm']` compares the raw member —
         // a parseable string passed scalar() but raises the TypeError
         // here, exactly like Python.
-        if (!legacy && py_ge_dnum(start, *bike::io::find_member(
-                                          fork, "total_travel_mm")))
+        if (py_ge_dnum(start, *bike::io::find_member(
+                                  fork, "total_travel_mm")))
             fail("config.suspension.fork_damper.hbo_start_mm: invalid "
                  "modern HBO zone");
     }

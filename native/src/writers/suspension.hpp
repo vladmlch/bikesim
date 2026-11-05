@@ -36,20 +36,19 @@ public:
 
     using Component = std::pair<std::string, std::vector<double> >;
 
-    // Insertion-order component counts ('shock_hbo' exists only in
-    // physical mode) — construction-time constants like the Python dict.
-    static constexpr std::size_t kLegacyComponentCount = 7;
+    // Insertion-order component count ('shock_hbo' last) — a
+    // construction-time constant like the Python dict; the removed legacy
+    // damper curve's 7-row dict no longer exists.
     static constexpr std::size_t kPhysicalComponentCount = 8;
 
     // compute_qfrc_components: nv-vectors in the Python dict's insertion
-    // order ('shock_hbo' last, physical mode only). The result depends
-    // only on d->qpos/d->qvel at the two slide coordinates.
+    // order ('shock_hbo' last). The result depends only on
+    // d->qpos/d->qvel at the two slide coordinates.
     [[nodiscard]] std::vector<Component> components(const mjData *d) const;
 
     // R1 allocation-free face. components_into fills `out` with one
-    // ForceComponentView per named component — 7 legacy / 8 physical
-    // views in components()' insertion order, each
-    // ForceKind::suspension — over
+    // ForceComponentView per named component — 8 views in components()'
+    // insertion order, each ForceKind::suspension — over
     // persistent member storage valid until the next compute.
     // components_into is the checked convenience boundary:
     // std::invalid_argument on a null mjData or wrong view count, then
@@ -65,9 +64,9 @@ public:
             const noexcept BIKE_NONBLOCKING;
 
     // The serialized component names in components()' insertion order —
-    // a prefix sized to the active physics mode (7 legacy / 8 physical).
-    // Stepper's boxed convenience surface serializes views under these
-    // names instead of calling the allocating components().
+    // all eight physical rows. Stepper's boxed convenience surface
+    // serializes views under these names instead of calling the
+    // allocating components().
     [[nodiscard]] std::span<const std::string_view>
     component_names() const noexcept;
 
@@ -98,7 +97,6 @@ public:
 
 private:
     nativecfg::SuspensionConfig cfg_;
-    bool physical_ = false;
     mjtSize nq_ = 0, nv_ = 0;
     int fork_qposadr_ = 0, fork_dofadr_ = 0;
     int shock_qposadr_ = 0, shock_dofadr_ = 0;
@@ -118,9 +116,9 @@ private:
     // noexcept: spans over construction-sized storage only.
     void export_views(std::span<ForceComponentView> out) const noexcept;
 
-    // The per-call component nv-vectors — construction-sized (7 legacy /
-    // 8 physical entries of nv each), rewritten in place every compute.
-    // export_views borrows them, so they must never resize.
+    // The per-call component nv-vectors — construction-sized (8 entries
+    // of nv each), rewritten in place every compute. export_views
+    // borrows them, so they must never resize.
     mutable std::vector<std::vector<double> > components_;
 
     // The retained scalar telemetry the oracle stores on self.*_n each

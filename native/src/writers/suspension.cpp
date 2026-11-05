@@ -197,38 +197,11 @@ namespace {
         double base_n, hbo_n;
     };
 
-    // SuperDeluxeDamper._compute_legacy_damping_force (damper.py:362-377).
-    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
-    double sd_legacy_damping_force(const nativecfg::SuperDeluxeConfig &d,
-                                   double velocity_mps, double stroke_mm) {
-        // NOLINTEND(bugprone-easily-swappable-parameters)
-        const Coeffs k = calc_fractions_and_coeffs(d.core);
-        // get_effective_coefficients (damper.py:312-328) HBO terms.
-        const double frac_hbo = std::clamp(d.hbo_clicks, 0, d.max_hbo) / static_cast<double>(d.max_hbo);
-        const double c_hbo =
-                d.c_hbo_min + (d.c_hbo_max - d.c_hbo_min) * pyfloat::pow(frac_hbo, 1.30);
-        const double v = velocity_mps;
-        if (d.lockout_firm && v > 0.0) {
-            if (v < 0.03)
-                return d.lockout_stiffness * v;
-            return d.lockout_preload_n + (k.c_hsc * 1.8) * (v - 0.03);
-        }
-        double f_damp = base_damping(d.core, v, k.c_lsc, k.c_hsc, k.c_reb);
-        if (stroke_mm > d.hbo_start_mm && v > 0.0) {
-            if (d.total_stroke_mm == d.hbo_start_mm) throw std::invalid_argument("SuperDeluxeDamper.hbo_start_mm: zero denominator");
-            const double hbo_prog = std::max(
-                0.0, std::min(1.0, (stroke_mm - d.hbo_start_mm) /
-                                   (d.total_stroke_mm - d.hbo_start_mm)));
-            f_damp += c_hbo * pyfloat::pow(hbo_prog, 2.0) * v;
-        }
-        return validation::derived(f_damp, "SuspensionWriter.damper_force");
-    }
-
     // SuperDeluxeDamper.compute_damping_components (damper.py:338-360).
+    // The legacy damper curve was removed with legacy mode (2026-11-04):
+    // only the physical decomposition remains.
     DampingParts sd_damping_components(const nativecfg::SuperDeluxeConfig &d,
                                        double velocity_mps, double stroke_mm) {
-        if (d.legacy_behavior)
-            return {.base_n = sd_legacy_damping_force(d, velocity_mps, stroke_mm), .hbo_n = 0.0};
         const double v = velocity_mps;
         if (!std::isfinite(v) || !std::isfinite(stroke_mm))
             throw std::invalid_argument("non-finite shock damper state");
@@ -259,8 +232,6 @@ namespace {
     // SuperDeluxeDamper.compute_damping_force (damper.py:330-336).
     double sd_damping_force(const nativecfg::SuperDeluxeConfig &d,
                             double velocity_mps, double stroke_mm) {
-        if (d.legacy_behavior)
-            return sd_legacy_damping_force(d, velocity_mps, stroke_mm);
         const DampingParts p =
                 sd_damping_components(d, velocity_mps, stroke_mm);
         return validation::derived(p.base_n + p.hbo_n, "SuperDeluxeDamper.force");
@@ -268,9 +239,8 @@ namespace {
 
     // CoilShock.compute_spring_force (coil_shock.py:77-90).
     double coil_spring_force(const nativecfg::CoilConfig &s, double stroke_mm) {
-        double compression_mm = stroke_mm + s.preload_mm;
-        if (!s.legacy_behavior)
-            compression_mm = std::max(0.0, compression_mm);
+        const double compression_mm =
+                std::max(0.0, stroke_mm + s.preload_mm);
         return validation::derived(s.rate_n_m * compression_mm / 1000.0, "CoilShock.spring_force");
     }
 
@@ -355,9 +325,10 @@ namespace {
         model_access::require_id(vadr, m->nv, "suspension dof address");
         return {qadr, vadr};
     }
-    // The member-init list consumes physics_mode before the ctor body could
-    // run, so the typed config is validated in the init expression itself —
-    // same pattern as drivetrain::checked_config.
+    // The member-init list runs before the ctor body could, so the typed
+    // config is validated in the init expression itself — same pattern as
+    // drivetrain::checked_config. validate() accepts physics_mode
+    // "physical" only and rejects the removed legacy damper curve.
     nativecfg::SuspensionConfig checked_config(
             nativecfg::SuspensionConfig config) {
         nativecfg::validate(config);
@@ -378,15 +349,14 @@ namespace {
 SuspensionWriter::SuspensionWriter(const mjModel *m,
                                    nativecfg::SuspensionConfig config)
     : cfg_(checked_config(std::move(config))),
-      physical_(cfg_.physics_mode == "physical"),
       nq_(m->nq),
       nv_(m->nv) {
-    // forces.py:49-52 — only the physical shock may start below zero
+    // forces.py:49-52 — the physical shock may start below zero
     // (top-out travel).
     std::tie(fork_qposadr_, fork_dofadr_) =
             resolve_compression_joint(m, cfg_.fork_joint, false);
     std::tie(shock_qposadr_, shock_dofadr_) =
-            resolve_compression_joint(m, cfg_.shock_joint, physical_);
+            resolve_compression_joint(m, cfg_.shock_joint, true);
 
     // Component-constructor validation, mirroring the Python __init__s.
     // CoilShock.__init__ (coil_shock.py:64-75).
@@ -400,15 +370,14 @@ SuspensionWriter::SuspensionWriter(const mjModel *m,
         throw std::invalid_argument("invalid coil shock specifications");
 
     // Charger3Damper.__init__ (damper.py:167-189): the resolved-zone
-    // invariant is what survives once hbo_start_mm is projected resolved —
-    // the legacy-vs-modern choice was made upstream in Python.
+    // invariant is what survives once hbo_start_mm is projected resolved.
     const nativecfg::Charger3Config &f = cfg_.fork_damper;
     if (!std::isfinite(f.total_travel_mm) || f.total_travel_mm <= 0.0)
         throw std::invalid_argument(
             "fork travel must be finite and positive");
     if (!std::isfinite(f.hbo_start_mm) || f.hbo_start_mm < 0.0)
         throw std::invalid_argument("config.suspension.fork_damper.hbo_start_mm: invalid HBO start");
-    if (!f.legacy_behavior && !(0.0 < f.total_travel_mm - f.hbo_start_mm &&
+    if (!(0.0 < f.total_travel_mm - f.hbo_start_mm &&
           f.total_travel_mm - f.hbo_start_mm <= f.total_travel_mm))
         throw std::invalid_argument(
             "fork HBO zone must be positive and no longer than travel");
@@ -418,16 +387,14 @@ SuspensionWriter::SuspensionWriter(const mjModel *m,
     if (!std::isfinite(h.total_stroke_mm) || h.total_stroke_mm <= 0.0)
         throw std::invalid_argument(
             "shock stroke must be finite and positive");
-    if (!h.legacy_behavior &&
-        !(0.0 < h.total_stroke_mm - h.hbo_start_mm &&
+    if (!(0.0 < h.total_stroke_mm - h.hbo_start_mm &&
           h.total_stroke_mm - h.hbo_start_mm <= h.total_stroke_mm))
         throw std::invalid_argument(
             "shock HBO zone must be positive and no longer than stroke");
 
     // R1: the former per-call component nv-vectors are construction-sized
     // members — compute fills this capacity, never resizes.
-    components_.resize(physical_ ? kPhysicalComponentCount
-                                 : kLegacyComponentCount);
+    components_.resize(kPhysicalComponentCount);
     for (std::vector<double> &v: components_)
         v.assign(static_cast<std::size_t>(nv_), 0.0);
 }
@@ -531,23 +498,21 @@ void SuspensionWriter::compute_validated(const mjData *d) const {
     const double shock_spring = coil_spring_force(cfg_.coil, stroke_mm);
     const double stroke_limit_mm = cfg_.coil.stroke_mm;
     const double shock_bumper =
-            (physical_ && stroke_mm > stroke_limit_mm)
+            stroke_mm > stroke_limit_mm
                 ? 0.0
                 : coil_bumper_force(cfg_.coil, stroke_mm);
     const double shock_damper =
             sd_damping_force(cfg_.shock_damper, shock_velocity_mps, stroke_mm);
     const double shock_hbo =
-            physical_
-                ? sd_damping_components(cfg_.shock_damper,
-                                        shock_velocity_mps, stroke_mm)
-                .hbo_n
-                : 0.0;
+            sd_damping_components(cfg_.shock_damper,
+                                  shock_velocity_mps, stroke_mm)
+            .hbo_n;
 
     double top_out_force = 0.0, top_out_energy = 0.0;
     double upper_force = 0.0, upper_energy = 0.0;
     double bumper_energy = 0.0;
     double coil_energy = 0.0;
-    if (physical_) {
+    {
         // forces.py:154-179.
         const nativecfg::EndStopConfig &stop = cfg_.end_stops;
         const double stroke_m = stroke_mm / 1000.0;
@@ -615,8 +580,7 @@ void SuspensionWriter::compute_validated(const mjData *d) const {
     vector(4, shock_dofadr_, shock_damper - shock_hbo);
     vector(5, shock_dofadr_, shock_top_out);
     vector(6, shock_dofadr_, shock_upper_stop);
-    if (physical_)
-        vector(7, shock_dofadr_, shock_hbo);
+    vector(7, shock_dofadr_, shock_hbo);
 }
 
 // suspension_energy (physical_energy.py:70-89) — the terms dict in its

@@ -116,17 +116,6 @@ Value suspension(const mdl::BuildRequest& request,
         .fork_travel=b.fork_travel, .shock_stroke=b.shock_stroke, .fork_initial_psi=b.fork_initial_psi, .fork_air_tokens=b.fork_air_tokens,
         .shock_stiffness=b.shock_stiffness};
     auto resolved = cfg::resolve_suspension(inputs);
-    if (physics_config.physics_mode != "physical") {
-        // RideSimulation._default_controller uses the default legacy damper
-        // geometry/clicks; custom physical inputs use resolve_suspension.
-        const auto legacy = cfg::resolve_suspension(cfg::SuspensionInputs{});
-        resolved.fork_damper = legacy.fork_damper;
-        resolved.shock_damper = legacy.shock_damper;
-        resolved.fork_damper.legacy_behavior = true;
-        resolved.shock_damper.legacy_behavior = true;
-        resolved.fork_damper.hbo_start_mm = 160.;
-        resolved.shock_damper.hbo_start_mm = 52.;
-    }
     const auto& a = resolved.air;
     Value fork = damper_core(resolved.fork_damper.core);
     const auto& f = resolved.fork_damper;
@@ -166,7 +155,10 @@ Value suspension(const mdl::BuildRequest& request,
         {"coil", Value{Object{{"rate_n_m", real(c.rate_n_m)},
             {"preload_mm", real(c.preload_mm)}, {"stroke_mm", real(c.stroke_mm)},
             {"bumper_length_mm", real(c.bumper_length_mm)}, {"bumper_peak_n", real(c.bumper_peak_n)},
-            {"legacy_behavior", Value{physics_config.physics_mode != "physical"}}}}},
+            // The legacy damper curve was removed with legacy mode
+            // (2026-11-04): the wire keeps the key pinned false so every
+            // physical config keeps its exact bytes.
+            {"legacy_behavior", Value{false}}}}},
         {"end_stops", Value{Object{
             {"stiffness_n_m", real(physics_config.end_stops.stiffness_n_m())},
             {"damping_n_s_m", real(physics_config.end_stops.damping_n_s_m)}}}}}};

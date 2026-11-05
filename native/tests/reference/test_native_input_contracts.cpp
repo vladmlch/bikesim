@@ -321,29 +321,20 @@ void scalar(bt::oracle::Node& golden, double value) {
 }
 
 // Source: native_input_contracts/schema_migration_preserves_resolved_fork_force
-// GOLDEN — schema ∈ {1,2} × (travel,legacy) ∈ {(150,T),(180,F),(150,F)}:
-// the C++ ids are the pytest parameter spellings; each node consumes the
-// two bitwise fork_damper scalars (compression travel-1 then travel+15 mm).
+// GOLDEN — schema ∈ {1,2} × travel ∈ {150,180}, minus the case spellings
+// that resolved to the legacy damper curve (hbo_start_mm == 160 under
+// schema 1 derives the legacy branch): those are ingress rejections since
+// legacy mode was removed (2026-11-04). The C++ ids are the pytest
+// parameter spellings; each node consumes the two bitwise fork_damper
+// scalars (compression travel-1 then travel+15 mm).
 [[gnu::noinline]] void test_schema_migration_preserves_resolved_fork_force() {
     const int fork_adr = pinned_adr("fork_travel");
     const int fork_dof = pinned_dof("fork_travel");
     struct Case { const char* id; int schema; double travel; bool legacy; };
-    for (const Case &item : std::array{Case{.id = "1-150.0-True",
-                                            .schema = 1,
-                                            .travel = 150.,
-                                            .legacy = true},
-                                       Case{.id = "1-180.0-False",
-                                            .schema = 1,
-                                            .travel = 180.,
-                                            .legacy = false},
-                                       Case{.id = "1-150.0-False",
+    for (const Case &item : std::array{Case{.id = "1-150.0-False",
                                             .schema = 1,
                                             .travel = 150.,
                                             .legacy = false},
-                                       Case{.id = "2-150.0-True",
-                                            .schema = 2,
-                                            .travel = 150.,
-                                            .legacy = true},
                                        Case{.id = "2-180.0-False",
                                             .schema = 2,
                                             .travel = 180.,

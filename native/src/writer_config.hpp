@@ -529,10 +529,9 @@ namespace nativecfg {
             const Dict<N> d = req_dict(top, "suspension");
             SuspensionConfig c;
             c.physics_mode = req_str(d, "physics_mode");
-            if (c.physics_mode != "legacy" && c.physics_mode != "physical")
+            if (c.physics_mode != "physical")
                 throw std::invalid_argument(
-                    "config.suspension.physics_mode must be 'legacy' or "
-                    "'physical'");
+                    "config.suspension.physics_mode must be 'physical'");
             {
                 const Dict<N> j = req_dict(d, "joints");
                 c.fork_joint = req_str(j, "fork");
@@ -564,10 +563,18 @@ namespace nativecfg {
                 c.fork_damper.c_hbo_base = req_f64(f, "c_hbo_base");
                 if (schema == 1 && f.contains("legacy_behavior"))
                     invalid("config.suspension.fork_damper.legacy_behavior", "unknown schema-1 key");
-                // Schema 1 retains the historical resolved branch; never reconstruct defaults.
+                // Schema 1 still derives the flag from hbo_start_mm;
+                // the derived request is rejected right below.
                 c.fork_damper.legacy_behavior = schema == 1
                     ? c.fork_damper.hbo_start_mm == 160.0
                     : req_bool(f, "legacy_behavior");
+                // The legacy damper curve was removed with legacy mode
+                // (2026-11-04): the wire keeps the key (always false), a
+                // request for it — either schema's spelling — is an ingress
+                // rejection, never silently modernized.
+                if (c.fork_damper.legacy_behavior)
+                    invalid("config.suspension.fork_damper.legacy_behavior",
+                            "the legacy damper curve was removed");
             }
             {
                 const Dict<N> h = req_dict(d, "shock_damper");
@@ -586,6 +593,9 @@ namespace nativecfg {
                         req_f64(h, "lockout_preload_n");
                 c.shock_damper.lockout_stiffness =
                         req_f64(h, "lockout_stiffness");
+                if (c.shock_damper.legacy_behavior)
+                    invalid("config.suspension.shock_damper.legacy_behavior",
+                            "the legacy damper curve was removed");
             }
             {
                 const Dict<N> k = req_dict(d, "coil");
@@ -597,6 +607,9 @@ namespace nativecfg {
                     .bumper_peak_n = req_f64(k, "bumper_peak_n"),
                     .legacy_behavior = req_bool(k, "legacy_behavior"),
                 };
+                if (c.coil.legacy_behavior)
+                    invalid("config.suspension.coil.legacy_behavior",
+                            "the legacy damper curve was removed");
             }
             {
                 const Dict<N> e = req_dict(d, "end_stops");

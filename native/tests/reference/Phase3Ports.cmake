@@ -46,8 +46,9 @@ bike_add_reference_test(native_static_brake ENGINE
   SOURCES test_native_static_brake.cpp LIBRARIES bike_app LABELS t52 runtime golden)
 # 3.20 T52 batch — brakes, cruise, suspension, clocks. Golden consumers
 # replay the frozen pinned_savage_40_f2 episode (post-F2 recapture) and the
-# native_suspension/legacy_env + control_clock/env_request bundles under
-# tests/fixtures/golden/<platform>/.
+# control_clock/env_request bundle under tests/fixtures/golden/<platform>/.
+# The native_suspension/legacy_env bundle left with the legacy damper
+# curve (2026-11-04) — the wire rejects it at decode now.
 bike_add_reference_test(native_cruise ENGINE
   SOURCES test_native_cruise.cpp LIBRARIES bike_app bike_random
   LABELS t52 runtime golden)

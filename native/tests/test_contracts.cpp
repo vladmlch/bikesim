@@ -2492,9 +2492,9 @@ namespace {
         .c_reb_min = 0., .c_reb_max = 60.,
         .v_knee_comp = .5, .v_knee_reb = .5};
 
-    nativecfg::SuspensionConfig warm_suspension(std::string_view mode) {
+    nativecfg::SuspensionConfig warm_suspension() {
         return {
-            .physics_mode = std::string(mode),
+            .physics_mode = "physical",
             .fork_joint = "fork_stroke", .shock_joint = "shock_stroke",
             .air_spring = {
                 .specs = {.stanchion_inner_diam_mm = 34.,
@@ -2838,7 +2838,7 @@ namespace {
     // allocation and deallocation counters must stay at zero inside the
     // window.
     void test_warm_core_zero_allocation() {
-        const auto rig = std::make_unique<WarmRig>(warm_suspension("physical"),
+        const auto rig = std::make_unique<WarmRig>(warm_suspension(),
                                                    warm_tire(true));
         // Two warmup ticks — the drivetrain's tick and settlement banks
         // alternate, so each needs a first engagement before measurement.
@@ -2873,7 +2873,7 @@ namespace {
     // always-on twin of the RTSan build's coverage: the same paths run
     // here under the counters and there under [[clang::nonblocking]].
     void test_rtsan_invalid_status_control() {
-        const auto rig = std::make_unique<WarmRig>(warm_suspension("physical"),
+        const auto rig = std::make_unique<WarmRig>(warm_suspension(),
                                                    warm_tire(true));
         // Two warmup cycles — the drivetrain's tick and settlement banks
         // alternate, so each needs a first engagement before measurement.
@@ -3789,41 +3789,13 @@ namespace {
         {
             std::unique_ptr<SuspensionWriter> writer;
             std::array<ForceComponentView,
-                       SuspensionWriter::kLegacyComponentCount>
-                    views{};
-            rig_row(
-                "suspension_legacy",
-                [&] {
-                    writer = std::make_unique<SuspensionWriter>(
-                        context.model.get(), warm_suspension("legacy"));
-                },
-                [&] {
-                    static_cast<void>(writer->try_components_into(
-                        context.data.get(), views));
-                    static_cast<void>(writer->try_components_into(
-                        context.data.get(), views));
-                },
-                [&] {
-                    require(writer->try_components_into(
-                                context.data.get(), views) ==
-                                CoreStatus::ok,
-                            "suspension legacy tick");
-                },
-                [&] {
-                    static_cast<void>(writer->components(
-                        context.data.get()));
-                });
-        }
-        {
-            std::unique_ptr<SuspensionWriter> writer;
-            std::array<ForceComponentView,
                        SuspensionWriter::kPhysicalComponentCount>
                     views{};
             rig_row(
                 "suspension_physical",
                 [&] {
                     writer = std::make_unique<SuspensionWriter>(
-                        context.model.get(), warm_suspension("physical"));
+                        context.model.get(), warm_suspension());
                 },
                 [&] {
                     static_cast<void>(writer->try_components_into(

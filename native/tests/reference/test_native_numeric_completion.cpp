@@ -417,7 +417,9 @@ void test_drivetrain_actuator_target_shared() {
     }
 }
 
-// test_shock_component_overflow_shared[legacy]
+// test_shock_component_overflow_shared[legacy] — the legacy arm kept the
+// model-side overflow control; the wire spelling of it is an ingress
+// rejection now that the legacy damper curve is removed (2026-11-04).
 void test_shock_component_overflow_shared() {
     std::println(stderr, ">> test_shock_component_overflow_shared");
     const auto shock_dof = pinned_dof("shock_stroke");
@@ -431,6 +433,10 @@ void test_shock_component_overflow_shared() {
         damper.legacy_behavior = legacy; damper.lockout_firm = true;
         damper.c_hsc_min = damper.c_hsc_max = 1e308;
         overflow([&] { (void)damper.compute_damping_force(10., 30.); });
+        if (legacy) {
+            bt::invalid([&] { (void)resolved_stepper(wire); });
+            continue;
+        }
         auto stepper = resolved_stepper(wire);
         auto velocity = pinned_qvel();
         velocity[static_cast<std::size_t>(shock_dof)] = 10.;
@@ -860,40 +866,6 @@ void test_tire_two_wheel_loss_overflow_before_publication() {
     overflow([&] { (void)stepper->tire_qfrc(.001); });
 }
 
-// test_integer_normalization_and_legacy_hbo_bitwise_controls[tokens-clicks]
-void test_integer_normalization_and_legacy_hbo_bitwise_controls() {
-    std::println(stderr, ">> test_integer_normalization_and_legacy_hbo_bitwise_controls");
-    const auto fork_adr = pinned_adr("fork_travel");
-    const auto fork_dof = pinned_dof("fork_travel");
-    for (const auto& [id, tokens, clicks] : std::array<std::tuple<const char*, int, int>, 2>{
-        std::tuple{"-100--100", -100, -100}, std::tuple{"100-100", 100, 100}}) {
-        auto golden = node("test_integer_normalization_and_legacy_hbo_bitwise_controls", id);
-        auto wire = resolved_wire();
-        set(member(member(wire, "suspension"), "air_spring"), "num_tokens", integer(tokens));
-        auto& fork = member(member(wire, "suspension"), "fork_damper");
-        set(fork, "total_travel_mm", real(150.));
-        set(fork, "hbo_start_mm", real(160.));
-        set(fork, "legacy_behavior", Value{true});
-        set(fork, "hsc_clicks", integer(clicks));
-        set(fork, "lsc_clicks", integer(clicks));
-        set(fork, "rebound_clicks", integer(clicks));
-        auto stepper = resolved_stepper(wire);
-        auto position = pinned_qpos();
-        position[static_cast<std::size_t>(fork_adr)] = .17;
-        auto velocity = std::vector<double>(pinned_qpos().size(), 0.);
-        velocity[static_cast<std::size_t>(fork_dof)] = .7;
-        set_fresh(*stepper, position, velocity);
-        const auto components = stepper->suspension_components();
-        for (const auto* wanted : {"fork_spring", "fork_damper"}) {
-            const auto found = std::ranges::find_if(components,
-                [&](const auto& item) { return item.first == wanted; });
-            bt::require(found != components.end(), "suspension components carry the fork rows");
-            array(golden, found->second);
-        }
-        golden.done();
-    }
-}
-
 // test_air_unreachable_declared_travel_remains_usable
 void test_air_unreachable_declared_travel_remains_usable() {
     std::println(stderr, ">> test_air_unreachable_declared_travel_remains_usable");
@@ -1198,7 +1170,8 @@ int main() { return bt::run([] {
     test_suspension_total_overflow_before_telemetry();
     test_end_stop_mutated_config_rejected();
     test_tire_two_wheel_loss_overflow_before_publication();
-    test_integer_normalization_and_legacy_hbo_bitwise_controls();
+    // test_integer_normalization_and_legacy_hbo_bitwise_controls left
+    // with the legacy damper curve (2026-11-04).
     test_air_unreachable_declared_travel_remains_usable();
     test_air_calibration_denominator_overflow_before_pressure_commit();
     test_air_force_curve_energy_overflow_before_publication();

@@ -17,6 +17,7 @@
 #include <functional>
 #include <limits>
 #include <new>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -33,12 +34,17 @@ bike::io::Value parse(std::string_view text) {
 }
 
 // One complete suspension wire section (physical values are inert for
-// decode — the section/key/type layer is what T07 owns). `legacy_key`
-// controls whether fork_damper carries the schema-2 field; `hbo_start`
-// drives the schema-1 resolved-metadata branch.
-std::string suspension_doc(int schema, bool legacy_key, double hbo_start) {
+// decode — the section/key/type layer is what T07 owns). `fork_legacy`
+// controls the fork_damper field: std::nullopt omits it (a schema-2
+// missing-key probe or a schema-1 document), a value emits the field;
+// `hbo_start` drives the schema-1 resolved-metadata branch.
+std::string suspension_doc(int schema, std::optional<bool> fork_legacy,
+                           double hbo_start,
+                           std::string_view mode = "physical",
+                           bool shock_legacy = false,
+                           bool coil_legacy = false) {
     std::string doc = R"({"schema":)" + std::to_string(schema) + R"(,"suspension":{
-        "physics_mode":"physical",
+        "physics_mode":")" + std::string(mode) + R"(",
         "joints":{"fork":"fork_joint","shock":"shock_joint"},
         "air_spring":{"stanchion_inner_diam_mm":32.0,"total_travel_mm":160.0,
             "pos_chamber_length_mm":40.0,"neg_chamber_length_mm":160.0,
@@ -49,17 +55,23 @@ std::string suspension_doc(int schema, bool legacy_key, double hbo_start) {
             "c_hsc_min":50.0,"c_hsc_max":200.0,"c_reb_min":20.0,"c_reb_max":150.0,
             "v_knee_comp":0.1,"v_knee_reb":0.2,"total_travel_mm":160.0,
             "hbo_start_mm":)" + std::to_string(hbo_start) + R"(,"c_hbo_base":300.0)";
-    if (legacy_key) doc += R"(,"legacy_behavior":true)";
-    doc += R"(},
+    if (fork_legacy)
+        doc += std::string(R"(,"legacy_behavior":)") +
+               (*fork_legacy ? "true" : "false");
+    doc += std::string(R"(},
         "shock_damper":{"max_hsc":8,"max_lsc":8,"max_reb":8,"hsc_clicks":4,
             "lsc_clicks":4,"rebound_clicks":4,"c_lsc_min":10.0,"c_lsc_max":100.0,
             "c_hsc_min":50.0,"c_hsc_max":200.0,"c_reb_min":20.0,"c_reb_max":150.0,
             "v_knee_comp":0.1,"v_knee_reb":0.2,"total_stroke_mm":60.0,
-            "max_hbo":4,"hbo_clicks":2,"lockout_firm":false,"legacy_behavior":false,
+            "max_hbo":4,"hbo_clicks":2,"lockout_firm":false,"legacy_behavior":)") +
+           (shock_legacy ? "true" : "false") +
+           std::string(R"(,
             "hbo_start_mm":40.0,"c_hbo_min":200.0,"c_hbo_max":800.0,
             "lockout_preload_n":10.0,"lockout_stiffness":50000.0},
         "coil":{"rate_n_m":80000.0,"preload_mm":2.0,"stroke_mm":60.0,
-            "bumper_length_mm":8.0,"bumper_peak_n":2000.0,"legacy_behavior":false},
+            "bumper_length_mm":8.0,"bumper_peak_n":2000.0,"legacy_behavior":)") +
+           (coil_legacy ? "true" : "false") +
+           R"(},
         "end_stops":{"stiffness_n_m":100000.0,"damping_n_s_m":50.0}}})";
     return doc;
 }
@@ -126,46 +138,70 @@ void checks_decode() {
                 "point_body_m":[0,0,0],"bodies":{"frame":"f","front_wheel":"w","rear_wheel":"w"}}})"));
     });
 
-    // Schema-1 resolved-fork metadata migrates without reconstructing
-    // defaults: hbo_start_mm == 160 selects the legacy branch and the
-    // schema-2 key is rejected under schema 1.
-    {
-        const auto legacy1 = nativecfg::decode(
-            parse(suspension_doc(1, /*legacy_key=*/false, 160.0)));
-        const auto legacy2 = nativecfg::decode(
-            parse(suspension_doc(2, /*legacy_key=*/true, 160.0)));
-        // &&-guarded derefs — bt::require's has_value gate is not a CFG
-        // guard, so each optional read stays inside the same expression.
-        bt::require(legacy1.suspension && legacy2.suspension &&
-                        legacy1.suspension->fork_damper.legacy_behavior ==
-                            legacy2.suspension->fork_damper.legacy_behavior,
-                    "schema-1 resolved fork metadata must equal the "
-                    "schema-2 explicit field");
-        bt::require(legacy1.suspension &&
-                        legacy1.suspension->fork_damper.legacy_behavior,
-                    "hbo_start_mm == 160 must select the legacy branch");
-        bt::require(legacy1.suspension && legacy2.suspension &&
-                        legacy1.suspension->fork_damper.hbo_start_mm ==
-                            160.0 &&
-                        legacy2.suspension->fork_damper.hbo_start_mm ==
-                            160.0,
-                    "schema-1/2 decodes must carry identical resolved inputs");
-    }
+    // Schema-1 resolved-fork metadata still migrates without
+    // reconstructing defaults (hbo_start_mm != 160 clears the legacy
+    // branch), but the legacy damper curve itself was removed with
+    // legacy mode (2026-11-04): both its schema-1 spelling
+    // (hbo_start_mm == 160) and the schema-2 "legacy_behavior":true are
+    // ingress rejections now, never silently modernized.
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(1, /*fork_legacy=*/std::nullopt, 160.0)));
+    });
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(2, /*fork_legacy=*/true, 160.0)));
+    });
     {
         const auto nonlegacy = nativecfg::decode(
-            parse(suspension_doc(1, /*legacy_key=*/false, 161.0)));
+            parse(suspension_doc(1, /*fork_legacy=*/std::nullopt, 161.0)));
         bt::require(nonlegacy.suspension &&
                         !nonlegacy.suspension->fork_damper.legacy_behavior,
                     "hbo_start_mm != 160 must clear the legacy branch");
     }
+    // The schema-2 key is still rejected under schema 1, and schema 2
+    // without the resolved key is a missing-required rejection.
     bt::invalid([] {
         (void) nativecfg::decode(
-            parse(suspension_doc(1, /*legacy_key=*/true, 160.0)));
+            parse(suspension_doc(1, /*fork_legacy=*/true, 160.0)));
     });
-    // Schema 2 without the resolved key is a missing-required rejection.
     bt::invalid([] {
         (void) nativecfg::decode(
-            parse(suspension_doc(2, /*legacy_key=*/false, 160.0)));
+            parse(suspension_doc(2, /*fork_legacy=*/std::nullopt, 160.0)));
+    });
+}
+
+// The legacy damper curve was removed with legacy mode (2026-11-04): a wire
+// config that asks for it is rejected at ingress, never silently modernized.
+void legacy_damper_curve_is_rejected() {
+    // fork_damper, shock_damper and coil each reject their own explicit
+    // "legacy_behavior":true — the key stays required on the wire so
+    // physical configs keep their exact bytes.
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(2, /*fork_legacy=*/true, 130.0)));
+    });
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(2, /*fork_legacy=*/false, 130.0,
+                                 "physical", /*shock_legacy=*/true)));
+    });
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(2, /*fork_legacy=*/false, 130.0,
+                                 "physical", /*shock_legacy=*/false,
+                                 /*coil_legacy=*/true)));
+    });
+    // The schema-1 spelling of the same request — fork hbo_start_mm == 160 —
+    // resolves to the legacy branch and rejects identically.
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(1, /*fork_legacy=*/std::nullopt, 160.0)));
+    });
+    // physics_mode "legacy" is not an accepted mode any more.
+    bt::invalid([] {
+        (void) nativecfg::decode(
+            parse(suspension_doc(2, /*fork_legacy=*/false, 130.0, "legacy")));
     });
 }
 
@@ -207,7 +243,8 @@ void checks_construction() {
     // partially published Stepper exists.
     {
         const nativecfg::WriterConfig cfg =
-            nativecfg::decode(parse(suspension_doc(2, true, 160.0)));
+            nativecfg::decode(
+                parse(suspension_doc(2, /*fork_legacy=*/false, 160.0)));
         bt::invalid([&] { const Stepper stepper(model_path(), cfg); });
     }
 }
@@ -217,7 +254,8 @@ void checks_allocation_failures() {
     // must throw bad_alloc, and an unarmed retry must produce the
     // identical typed result. The measurement scope closes before the
     // enumeration loop so require() diagnostics stay unarmed.
-    const std::string doc = suspension_doc(2, /*legacy_key=*/true, 160.0);
+    const std::string doc =
+        suspension_doc(2, /*fork_legacy=*/false, 160.0);
     const bike::io::Value value = parse(doc);
     std::size_t decode_positions = 0;
     bool control_legacy = false;
@@ -297,6 +335,7 @@ int main() {
     try {
         int failures = 0;
         failures += bt::run(checks_decode);
+        failures += bt::run(legacy_damper_curve_is_rejected);
         failures += bt::run(checks_construction);
         failures += bt::run(checks_allocation_failures);
         return failures == 0 ? 0 : 1;

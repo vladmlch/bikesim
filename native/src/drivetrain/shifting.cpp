@@ -44,35 +44,19 @@ namespace drivetrain {
             std::min(cadence, required) < 0.) return finish(false);
         int selected = next.rear_teeth;
         ShiftDirection direction = ShiftDirection::none;
-        // A throw can jump several cogs: when the crank has spun far past the
-        // band the one-step shift lands the rider still overspun and the
-        // cooldown forces another wait. Take the smallest cog whose
-        // wheel-implied landing cadence still clears the band floor — the
-        // same no-hunting rule as below, applied across the throw (mirrors
-        // shifting.py; the cassette is sorted ascending after validation).
+        // One cassette position per shift (ruling Р3, plan
+        // 2026-11-05-clutch-pedaling-fixes task 4): cadence above the band
+        // steps one cog harder, below it one cog easier. If the cadence is
+        // still out of band when the cooldown ends the step repeats. The
+        // landing guard below keeps its veto on the single step; the
+        // cassette is sorted ascending after validation.
         if (engaged(next.cadence_ema) > config_.target_cadence_max_rpm) {
-            int fallback = next.rear_teeth;
-            for (int const teeth : config_.cassette) {
-                if (teeth >= next.rear_teeth) continue;
-                fallback = teeth;  // ascending order: the last candidate is max()
-                if (engaged(next.required_ema) * teeth / next.rear_teeth >= config_.target_cadence_min_rpm) {
-                    selected = teeth;
-                    break;
-                }
-            }
-            if (selected == next.rear_teeth) selected = fallback;
+            for (const int teeth : std::views::reverse(config_.cassette))
+                if (teeth < next.rear_teeth) { selected = teeth; break; }
             direction = ShiftDirection::up;
         } else if (engaged(next.cadence_ema) < config_.target_cadence_min_rpm) {
-            int fallback = next.rear_teeth;
-            for (const int teeth : std::views::reverse(config_.cassette)) {
-                if (teeth <= next.rear_teeth) continue;
-                fallback = teeth;  // descending order: the last candidate is min()
-                if (engaged(next.required_ema) * teeth / next.rear_teeth <= config_.target_cadence_max_rpm) {
-                    selected = teeth;
-                    break;
-                }
-            }
-            if (selected == next.rear_teeth) selected = fallback;
+            for (const int teeth : config_.cassette)
+                if (teeth > next.rear_teeth) { selected = teeth; break; }
             direction = ShiftDirection::down;
         } else return finish(false);
         if (selected == next.rear_teeth) return finish(false);

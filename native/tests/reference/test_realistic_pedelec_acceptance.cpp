@@ -73,6 +73,7 @@ struct PedelecEnv {
     std::int64_t control_steps = 0, max_steps = 0;
     double track_length_m = 0.;
     int root_x_dof = -1, root_x_qpos = -1;
+    std::vector<int> cassette;
 };
 
 // _environment(tmp_path, track, duration_s): welded physics + the probe
@@ -100,8 +101,14 @@ struct PedelecEnv {
     // not a step multiple — .005 is the 4-step period the other welded
     // fixtures use.
     request.sensors.sample_period_s = .005;
+    const auto cassette =
+        request.setup.model.physics->drive.shifting.cassette;
     const auto prepared = research::prepare_environment(std::move(owner));
     PedelecEnv env;
+    env.cassette = cassette;
+    // Adjacency in the one-cog check below is positional: sort here the
+    // same way the shifter constructor normalizes its own copy.
+    std::ranges::sort(env.cassette);
     env.control_steps = prepared->bootstrap.config.control_steps;
     env.max_steps = prepared->bootstrap.config.max_steps;
     env.track_length_m = prepared->bootstrap.config.track_length_m;
@@ -148,6 +155,8 @@ struct WindowRow {
     double t = 0., v = 0., x = 0.;
     double cadence = 0., human = 0., motor = 0.;
     std::string mode;
+    int gear = 0, shift_from = 0;
+    std::string shift_direction;
     bool shift = false, balance_lost = false;
     // (interval_id, time_s, violations) — only non-empty rows, like the
     // oracle's _interval_violations filter.
@@ -226,6 +235,12 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
     row.motor = sw::number(sw::required(drive, "motor_torque_nm"));
     row.mode = sw::string(sw::required(drive, "rider_mode"));
     row.shift = sw::boolean(sw::required(drive, "shift_active"));
+    row.gear = static_cast<int>(
+        sw::number(sw::required(drive, "gear_rear_teeth")));
+    row.shift_from = static_cast<int>(
+        sw::number(sw::required(drive, "shift_from_teeth")));
+    row.shift_direction =
+        sw::string(sw::required(drive, "shift_direction"));
     row.balance_lost = sw::boolean(sw::required(
         section(sample.channels, "rider_balance"), "balance_lost"));
     result.rows.push_back(std::move(row));
@@ -310,8 +325,23 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
     for (std::size_t i = 1; i < result.rows.size(); ++i)
         if (result.rows[i].shift && !result.rows[i - 1].shift)
             shifts.push_back(i);
-    bt::require(shifts.size() >= 5,
-                "the 22/51 flat launch produces a run of upshifts");
+    // Ruling Р4 (plan 2026-11-05-clutch-pedaling-fixes task 4): the
+    // shifts.size() >= 5 bar was a stall workaround and is removed. The
+    // behavioural checks are: the flat launch produces at least one
+    // upshift, every shift steps exactly one cassette position, and the
+    // motor-through-shift check below runs over all shifts found.
+    int upshifts = 0;
+    for (const std::size_t shift : shifts) {
+        const WindowRow &row = result.rows[shift];
+        const auto from = std::ranges::find(env.cassette, row.shift_from);
+        const auto to = std::ranges::find(env.cassette, row.gear);
+        bt::require(from != env.cassette.end() && to != env.cassette.end() &&
+                        std::abs(to - from) == 1,
+                    "every shift moves exactly one cog");
+        if (row.shift_direction == "up") ++upshifts;
+    }
+    bt::require(upshifts >= 1,
+                "the 22/51 flat launch produces at least one upshift");
     int checked = 0, failed = 0;
     double worst_ratio = std::numeric_limits<double>::infinity();
     for (const std::size_t shift : shifts) {

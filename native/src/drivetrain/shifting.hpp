@@ -76,7 +76,7 @@ namespace drivetrain {
             // cassette to ascending order on every construction — including a
             // directly-constructed config that never sees the wire decoder or
             // post_init(). Mirror that ordering guarantee here or the
-            // multi-cog throw's sorted-iteration scans diverge from the oracle.
+            // adjacent-cog scans land on the wrong neighbour.
             std::ranges::sort(config_.cassette);
             // validate() already closed the slip-mode domain; resolving once
             // here keeps per-tick updates on the enum. engaged() turns a

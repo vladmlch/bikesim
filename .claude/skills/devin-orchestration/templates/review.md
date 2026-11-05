@@ -12,5 +12,7 @@ Rules:
 - Read-only: modify no file except {{REVIEW_FILE}}; no git state changes; do not start Devin.
 - Work without asking questions; no subagents.
 
+Besides the code, judge the brief the work was done from: a requirement it contradicts, leaves out, or states so the work could not meet it is a brief defect. Report brief defects in their own section, apart from code findings.
+
 Write the full review to {{REVIEW_FILE}}.
-Final message (under 15 lines): every verdict line, one line per Critical/Important finding (file:line + one-liner), the count of Minor findings.
+Final message (under 15 lines): every verdict line, one line per Critical/Important finding (file:line + one-liner), one line per brief defect, the count of Minor findings.

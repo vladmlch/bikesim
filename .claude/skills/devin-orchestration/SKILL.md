@@ -35,7 +35,13 @@ Every byte you write into a brief or read back from Devin stays in your context 
 
 ## Briefs
 
-Write each brief once, as the delta only, and never read it back: what you wrote is already in your context, and `devin-brief.py` checks the fill.
+Write each brief once, as the delta only. A brief you wrote this session is already in your context, and `devin-brief.py` checks the fill, so leave it unread. Read it back — only the section you need — when its text is not in your context or may be wrong:
+
+- after compaction or in a new session (the ledger keeps only the brief's path);
+- when Devin returns `NEEDS_CONTEXT` / `BLOCKED`, or its report contradicts what you meant to ask: decide whether Devin or the brief is wrong;
+- when you did not write it this session.
+
+The brief's main readers are the Devin runs: the implementer checks it against the repository before working and restates goal and done-criterion in its report (`task.md`), and reviewers get its path and report brief defects separately (`review.md`). A defect in a brief surfaces in those short reports, not in a re-read of yours.
 
 - **By path, not by paste.** Devin reads files itself. Requirements that already exist as a file (a plan task extracted by `task-brief`, a review package, an SDD prompt template, the plan, a spec) go into the brief as a path. The brief carries only what exists nowhere on disk: the goal, the done-criterion, decisions and rulings, the report path.
 - **Fixed text lives in the templates.** Rules, the no-push line, the report contract are in `$T/*.md`; fill placeholders, never retype them. `task.md` serves implementers and fixers; `review.md` serves task reviews, re-reviews and any other read-only verdict run, with `INSTRUCTIONS_FILE` pointing at the prompt template it follows.

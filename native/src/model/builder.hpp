@@ -25,7 +25,6 @@ struct BuildRequest {
     BikeMassSpecs masses;
     std::string mode = "standard";
     bool include_rider = false;
-    bool debug_markers = false;
     std::optional<configuration::RiderSpecs> rider;
     terrain::HeightFieldSpec field;
     std::string tyre_model = "sphere";

@@ -10,6 +10,11 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::string generate_mjcf(const BuildRequest& request) {
     using namespace detail;
+    // Two model modes remain: the free-standing bike ("standard") and the
+    // ride plant ("ride"). The stand modes were removed with the stand
+    // simulator (2026-11-04); an unknown mode fails instead of silently
+    // building the standard model.
+    if(request.mode!="standard" && request.mode!="ride") throw std::invalid_argument("unknown model mode '"+request.mode+"'; available: standard, ride");
     auto physics=request.physics?
         std::make_unique<configuration::SimulationPhysicsConfig>(*request.physics):nullptr;
     if(physics) configuration::post_init(*physics);
@@ -50,7 +55,6 @@ std::string generate_mjcf(const BuildRequest& request) {
     root.add("compiler",{{"angle","degree"},{"coordinate","local"},{"inertiafromgeom","auto"},{"autolimits","true"}});
     std::string timestep="0.002";
     if(request.mode=="ride") timestep=context.physics?repr(context.physics->timestep_s):"0.0005";
-    else if(request.mode=="stand" || request.mode=="playground") timestep="0.001";
     root.add("option",{{"gravity","0 0 -9.81"},{"timestep",timestep},{"integrator","implicitfast"},{"iterations","100"},{"tolerance","1e-10"}});
     build_visual_and_assets(root);
     auto& world=root.add("worldbody");
@@ -59,7 +63,7 @@ std::string generate_mjcf(const BuildRequest& request) {
     auto& frame=build_frame_body(world,context);
     build_steering_and_fork(frame,context);build_rear_linkage(frame,context);
     if(physical) assign_budgets(frame,context.registry,request.masses);
-    build_equality_constraints(root,request.mode);
+    build_equality_constraints(root);
     if(crank && !physical) {
         build_chain_constraint(root,request.gear_ratio);
         if(context.seated) for(const auto& chain:context.seated->leg_chains)

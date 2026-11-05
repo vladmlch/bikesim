@@ -201,9 +201,6 @@ void no_joint_damping_in_any_mode() {
     struct Case { const char* mode; const char* rider; const char* legs; bool crank; };
     for(const Case c:{Case{.mode="standard",.rider="none",.legs="rigid",.crank=false},
                       Case{.mode="standard",.rider="lumped",.legs="rigid",.crank=false},
-                      Case{.mode="stand",.rider="none",.legs="rigid",.crank=false},
-                      Case{.mode="stand",.rider="lumped",.legs="rigid",.crank=false},
-                      Case{.mode="playground",.rider="none",.legs="rigid",.crank=false},
                       Case{.mode="ride",.rider="none",.legs="rigid",.crank=false},
                       Case{.mode="ride",.rider="seated",.legs="rigid",.crank=false},
                       Case{.mode="ride",.rider="seated",.legs="articulated",.crank=true}}) {

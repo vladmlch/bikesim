@@ -24,7 +24,7 @@ int simulation_command(const Arguments& args) {
     if (all || defaults || args.flag("plot") || args.flag("plot_damper"))
         viz::write_artifact(viz::damper_dyno(), plots / "damper_dyno_curves.png");
     if (all || args.flag("export_json")) model::export_geometry_json(request, models / "coordinates.json");
-    if (all || args.flag("export_mujoco")) model::export_playground_models(request, models);
+    if (all || args.flag("export_mujoco")) model::export_models(request, models);
     return 0;
 }
 } // namespace bike::cli

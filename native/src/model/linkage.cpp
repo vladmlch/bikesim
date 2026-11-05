@@ -71,7 +71,7 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     const auto relative=sub(p11,ht),axis=div(relative,geometry::detail::np_norm3(relative)),axle=sub(fa,ht);
     auto& steer=body(frame,"steer",ht);
     const auto& mode=c.request.mode;
-    if(mode=="stand" || mode=="dynamic" || mode=="playground" || mode=="ride")
+    if(mode=="ride")
         joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-0.01 0.01"},{"stiffness","50000"}});
     else joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-60 60"}});
     tube(steer,"geom_steerer_tube","cylinder",{},relative,"0.014","0.25","mat_metal");
@@ -94,7 +94,6 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     tube(lower,"geom_fork_arch","capsule",lateral(top,-.065),lateral(top,.065),"0.016","0.25","mat_fork_lower");
     tube(lower,"geom_front_dropout","cylinder",lateral(axle,-.065),lateral(axle,.065),"0.012","0.15","mat_metal");
     site(lower,"site_PFA",vec(axle),"0.008","0.1 0.7 0.9 1.0");
-    if(c.request.debug_markers) marker(lower,"marker_pfa",axle);
     auto& wheel=front_wheel(lower,axle,c);
     if(c.physical()) {
         std::vector<Element*> assembly,stanchions;
@@ -114,7 +113,6 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     const auto p1=div(c.state.P1,1000.),p2=div(c.state.P2,1000.),p3=div(c.state.P3,1000.),p4=div(c.state.P4,1000.),p6=div(c.state.P6,1000.),p12=div(c.state.P12,1000.);
     const auto d20=sub(p2,p0),d32=sub(p3,p2),d12=sub(p1,p2),d122=sub(p12,p2);
     const auto d35=sub(p3,p5),d45=sub(p4,p5),d64=sub(p6,p4),d76=sub(p7,p6);
-    const bool debug=c.request.debug_markers;
     auto& cs=body(frame,"chainstay",p0);
     joint(cs,"main_pivot","hinge",{{"axis","0 1 0"}});
     tube(cs,"geom_cs_sleeve","cylinder",{0.,-.040,0.},{0.,.040,0.},"0.018","0.25","mat_metal");
@@ -123,7 +121,6 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     const auto cs_bridge=mul(d20,.40);
     tube(cs,"geom_cs_bridge","capsule",lateral(cs_bridge,-.055),lateral(cs_bridge,.055),"0.014","0.20","mat_frame");
     site(cs,"site_P2_cs",vec(d20),"0.008","0.1 0.9 0.1 1.0");
-    if(debug) marker(cs,"marker_p2",d20);
     register_component(c.mass_registry(),"chainstay",cs.direct("geom"));
     auto& ss=body(cs,"seatstay",d20);
     joint(ss,"horst_pivot","hinge",{{"axis","0 1 0"}});
@@ -141,9 +138,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     tube(ss,"geom_ss_bridge","capsule",lateral(ss_bridge,-.050),lateral(ss_bridge,.050),"0.013","0.13","mat_frame");
     site(ss,"site_P3_ss",vec(d32),"0.008","0.9 0.5 0.1 1.0");
     site(ss,"site_P12_ss",vec(d122),"0.007","0.9 0.6 0.1 1.0");
-    if(debug) marker(ss,"marker_p12",d122,"0.011");
     site(ss,"site_PRA",vec(d12),"0.008","0.2 0.4 0.9 1.0");
-    if(debug) marker(ss,"marker_pra",d12);
     build_rear_wheel(ss,d12,c);
     register_component(c.mass_registry(),"seatstay",ss.direct("geom"));
     auto& rocker=body(frame,"rocker",p5);
@@ -155,9 +150,7 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
             lateral(arm==1?d35:d45,y),arm==3?"0.012":"0.014","0.04","mat_linkage");
     }
     site(rocker,"site_P3_rocker",vec(d35),"0.008","0.9 0.5 0.1 1.0");
-    if(debug) {marker(rocker,"marker_p3_roc_l",lateral(d35,.045),"0.011");marker(rocker,"marker_p3_roc_r",lateral(d35,-.045),"0.011");}
     site(rocker,"site_P4_rocker",vec(d45),"0.008","0.7 0.2 0.8 1.0");
-    if(debug) {marker(rocker,"marker_p4_l",lateral(d45,.045));marker(rocker,"marker_p4_r",lateral(d45,-.045));}
     register_component(c.mass_registry(),"rocker",rocker.direct("geom"));
     auto& yoke=body(rocker,"shock_yoke",d45);
     joint(yoke,"yoke_pivot","hinge",{{"axis","0 1 0"}});
@@ -168,16 +161,14 @@ void build_rear_linkage(Element& frame,BuildContext& c) {
     tube(yoke,"geom_yoke_bridge","capsule",lateral(bridge,-.038),lateral(bridge,.038),"0.009","0.04","mat_yoke");
     tube(yoke,"geom_yoke_eyelet","cylinder",lateral(d64,-.040),lateral(d64,.040),"0.011","0.04","mat_metal");
     site(yoke,"site_P6_yoke",vec(d64),"0.008","0.6 0.1 0.7 1.0");
-    if(debug) {marker(yoke,"marker_p6_l",lateral(d64,.038));marker(yoke,"marker_p6_r",lateral(d64,-.038));}
     register_component(c.mass_registry(),"shock_yoke",yoke.direct("geom"));
     shock_assembly(yoke,d64,d76,c);
 }
 NATIVE_DIAG_POP
-void build_equality_constraints(Element& root,std::string_view mode) {
+void build_equality_constraints(Element& root) {
     auto& equality=root.add("equality");
     equality.add("connect",{{"name","seatstay_rocker_joint"},{"site1","site_P3_ss"},{"site2","site_P3_rocker"},{"solref","0.0005 1"},{"solimp","0.99 0.999 0.0001 0.5 2"}});
     equality.add("connect",{{"name","shock_frame_joint"},{"site1","site_P7_shock"},{"site2","site_P7"},{"solref","0.0005 1"},{"solimp","0.99 0.999 0.0001 0.5 2"}});
-    if(mode=="playground") equality.add("weld",{{"name","stand_clamp"},{"body1","world"},{"body2","frame"},{"active","true"}});
 }
 void build_contact_exclusions(Element& root) {
     auto& contact=root.add("contact");

@@ -112,13 +112,6 @@ void mounts_and_sites(Element& frame,const BuildContext& c,const Vec3& seatpost)
     site(frame,"site_seat_tube_junction",vec(p10),"0.005","0.5 0.5 0.5 0.8");
     site(frame,"site_headtube_top",vec(p11),"0.006","0.9 0.1 0.1 0.8");
     site(frame,"site_headtube_bottom",vec(ht),"0.006","0.9 0.1 0.1 0.8");
-    if(c.request.debug_markers) {
-        marker(frame,"marker_bb",{});marker(frame,"marker_p0",p0);
-        marker(frame,"marker_p5_l",lateral(p5,.048));marker(frame,"marker_p5_r",lateral(p5,-.048));
-        marker(frame,"marker_p7",p7);marker(frame,"marker_p8",p8,"0.011");
-        marker(frame,"marker_p9",p9,"0.011");marker(frame,"marker_p10",p10,"0.011");
-        marker(frame,"marker_p11",p11);marker(frame,"marker_cg",c.cg,"0.014","mat_cg_marker");
-    }
 }
 } // namespace
 Element& build_frame_body(Element& world,BuildContext& c) {
@@ -129,7 +122,7 @@ Element& build_frame_body(Element& world,BuildContext& c) {
         joint(frame,"root_pitch","hinge",{{"axis","0 1 0"}});
     }
     if(c.seated) build_seated_rider(frame,*c.seated);
-    else if(c.request.mode=="stand" || c.request.mode=="playground" || c.request.mode=="ride") build_lumped_rider(frame,c.rider);
+    else if(c.request.mode=="ride") build_lumped_rider(frame,c.rider);
     build_bb_and_motor(frame,c);
     front_triangle(frame,c);
     const auto top=seatpost_and_saddle(frame,c);

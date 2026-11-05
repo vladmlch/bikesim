@@ -31,13 +31,11 @@ struct Directory {
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void mode_and_rider_cases() {
-    for(const char* mode:{"standard","stand","playground","ride"}) {
-        mdl::BuildRequest request;request.mode=mode;request.debug_markers=true;
+    for(const char* mode:{"standard","ride"}) {
+        mdl::BuildRequest request;request.mode=mode;
         const auto model=mdl::compile_mjcf(mdl::generate_mjcf(request));
-        const double timestep=request.mode=="ride"?.0005:request.mode=="standard"?.002:.001;
+        const double timestep=request.mode=="ride"?.0005:.002;
         bt::require(model->opt.timestep==timestep,"source timestep selection for "+request.mode);
-        bt::require(mj_name2id(model.get(),mjOBJ_GEOM,"marker_cg")>=0,"debug marker remains in all modes");
-        bt::require((mj_name2id(model.get(),mjOBJ_EQUALITY,"stand_clamp")>=0)==(request.mode=="playground"),"playground clamp membership");
         bt::require((mj_name2id(model.get(),mjOBJ_JOINT,"root_x")>=0)==(request.mode=="ride"),"ride-only planar root");
     }
     mdl::BuildRequest request;request.mode="ride";request.include_rider=true;
@@ -73,18 +71,35 @@ void mode_and_rider_cases() {
         const auto geom=static_cast<std::size_t>(geom_id);
         bt::require(std::views::counted(pneumatic->geom_contype,pneumatic->ngeom)[geom]==0 && std::views::counted(pneumatic->geom_conaffinity,pneumatic->ngeom)[geom]==0,"legacy pneumatic contact disabling");
     }
-    request.mode="stand";
+    request.mode="standard";
     bt::invalid([&]{(void)mdl::generate_mjcf(request);});
     request.tyre_model="sphere";request.rider->variant="seated";
     bt::invalid([&]{(void)mdl::generate_mjcf(request);});
 }
+// The stand model modes were removed with the stand (2026-11-04): the
+// builder accepts only the free-standing and ride models, and the export
+// writes exactly those two MJCF files plus nothing stand-related.
+void stand_modes_are_gone() {
+    for(const char* mode:{"stand","playground","no_such_mode"}) {
+        mdl::BuildRequest request;request.mode=mode;
+        bt::invalid([&]{(void)mdl::generate_mjcf(request);});
+    }
+}
+void export_writes_only_free_and_ride_models() {
+    Directory const directory;
+    mdl::export_models(mdl::BuildRequest{},directory.path/"models");
+    for(const char* name:{"bike_model.xml","bike_ride.xml"})
+        bt::require(std::filesystem::is_regular_file(directory.path/"models"/name),std::string(name)+" is exported");
+    for(const char* name:{"bike_playground_stand.xml","bike_playground.xml"})
+        bt::require(!std::filesystem::exists(directory.path/"models"/name),std::string(name)+" is no longer exported");
+}
 void exports_and_schema() {
     Directory const directory;const auto cwd=std::filesystem::current_path();
-    mdl::export_playground_models(directory.path/"models");
-    constexpr std::array files{"bike_playground_stand.xml","bike_model.xml","bike_playground.xml","bike_ride.xml"};
+    mdl::export_models(directory.path/"models");
+    constexpr std::array files{"bike_model.xml","bike_ride.xml"};
     for(const char* name:files) {
         const auto path=directory.path/"models"/name;
-        bt::require(std::filesystem::is_regular_file(path),"playground export filename "+std::string(name));
+        bt::require(std::filesystem::is_regular_file(path),"model export filename "+std::string(name));
         const auto model=mdl::compile_mjcf(bt::text(path),path.parent_path());
         bt::require(model->nbody>10,"exported MJCF compiles as a complete model");
     }
@@ -113,5 +128,5 @@ void exports_and_schema() {
     bt::invalid([&]{mdl::export_model(request,options);});
 }
 } // namespace
-int main() {return bt::run([]{mode_and_rider_cases();exports_and_schema();});}
+int main() {return bt::run([]{mode_and_rider_cases();stand_modes_are_gone();export_writes_only_free_and_ride_models();exports_and_schema();});}
 NATIVE_DIAG_POP

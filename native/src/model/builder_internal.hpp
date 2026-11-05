@@ -60,7 +60,7 @@ void build_bb_and_motor(Element& frame,BuildContext& context);
 Element& build_rear_wheel(Element& seatstay,const Vec3& axle,BuildContext& context);
 void build_steering_and_fork(Element& frame,BuildContext& context);
 void build_rear_linkage(Element& frame,BuildContext& context);
-void build_equality_constraints(Element& root,std::string_view mode);
+void build_equality_constraints(Element& root);
 void build_contact_exclusions(Element& root);
 void build_chain_constraint(Element& root,double ratio);
 void build_actuators(Element& root,const BuildContext& context);

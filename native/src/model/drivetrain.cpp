@@ -77,11 +77,7 @@ void build_actuators(Element& root,const BuildContext& c) {
     const auto motor=[&](std::string name,std::string joint_name,std::string range) {
         actuator.add("motor",{{"name",std::move(name)},{"joint",std::move(joint_name)},{"gear","1"},{"ctrlrange",std::move(range)}});
     };
-    if(mode=="stand" || mode=="playground") {
-        actuator.add("position",{{"name","rear_travel_actuator"},{"joint","main_pivot"},{"kp","150000"},{"kv","5000"},{"ctrlrange","-0.60 0.60"}});
-        actuator.add("position",{{"name","fork_travel_actuator"},{"joint","fork_travel"},{"kp","150000"},{"kv","5000"},{"ctrlrange","0 0.30"}});
-        motor("front_wheel_spin","front_wheel_spin","-50 50");motor("rear_wheel_spin","rear_wheel_spin","-50 50");
-    } else if(mode=="ride") {
+    if(mode=="ride") {
         if(c.crank_joint) motor("crank_drive","crank_spin","-180 180");
         motor("rear_drive","rear_wheel_spin","-150 150");
         motor("front_brake","front_wheel_spin","-200 200");motor("rear_brake","rear_wheel_spin","-200 200");

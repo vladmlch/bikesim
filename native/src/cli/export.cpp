@@ -9,7 +9,7 @@ int export_command(const Arguments& args) {
     model::BuildRequest request;
     request.solver.emplace(request.bike);
     if (!args.flag("xml_only")) model::export_geometry_json(request, output / "coordinates.json");
-    if (!args.flag("json_only")) model::export_playground_models(request, output);
+    if (!args.flag("json_only")) model::export_models(request, output);
     return 0;
 }
 } // namespace bike::cli

@@ -171,19 +171,15 @@ void export_mjcf(const BuildRequest& request,const std::filesystem::path& file) 
 void export_geometry_json(const BuildRequest& request,const std::filesystem::path& file) {
     std::string json;pretty_value(geometry_value(request),json,0);write_export(file,json);
 }
-void export_playground_models(const BuildRequest& request,const std::filesystem::path& directory) {
+void export_models(const BuildRequest& request,const std::filesystem::path& directory) {
     BuildRequest common;common.bike=request.bike;common.solver=request.solver;
-    common.mode="stand";common.include_rider=request.include_rider;
-    export_mjcf(common,directory/"bike_playground_stand.xml");
-    common.mode="standard";common.include_rider=false;
+    common.mode="standard";
     export_mjcf(common,directory/"bike_model.xml");
-    common.mode="playground";common.include_rider=request.include_rider;common.debug_markers=true;
-    export_mjcf(common,directory/"bike_playground.xml");
-    common.mode="ride";common.debug_markers=false;common.include_rider=false;
+    common.mode="ride";
     common.rider=configuration::RiderSpecs{};common.tyre_model=request.tyre_model;
     export_mjcf(common,directory/"bike_ride.xml");
 }
-void export_playground_models(const std::filesystem::path& directory) {export_playground_models(BuildRequest{},directory);}
+void export_models(const std::filesystem::path& directory) {export_models(BuildRequest{},directory);}
 void export_model(const BuildRequest& request,const ExportOptions& options) {
     if(options.xml_only && options.json_only) throw std::invalid_argument("xml_only and json_only are mutually exclusive");
     if(!options.json_only) export_mjcf(request,options.xml_file);

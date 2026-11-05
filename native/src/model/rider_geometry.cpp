@@ -990,32 +990,9 @@ compute_rider_centers_of_mass(const RiderSpecs &rider,
                     }()});
         return out;
     }
-    const SeatedPose pose = seated_pose(rider, specs);
-    std::vector<RiderCenter> components;
-    components.reserve(pose.bodies.size() + pose.leg_chains.size() * 3);
-    for (const RiderBody &b: pose.bodies)
-        components.push_back(RiderCenter{.name = b.name,
-                                         .pos_m = b.center_of_mass(),
-                                         .mass_kg = b.mass()});
-    for (const LegChain &chain: pose.leg_chains) {
-        const Vec3 offset{0.0, chain.lateral_y_m, 0.0};
-        components.push_back(RiderCenter{
-                .name = "rider_thigh_" + chain.side,
-                .pos_m = v_add(v_scale(0.5, v_add(chain.hip, chain.knee)),
-                               offset),
-                .mass_kg = chain.thigh_mass_kg});
-        components.push_back(RiderCenter{
-                .name = "rider_shank_" + chain.side,
-                .pos_m = v_add(v_scale(0.5, v_add(chain.knee, chain.ankle)),
-                               offset),
-                .mass_kg = chain.shank_mass_kg});
-        components.push_back(RiderCenter{
-                .name = "rider_foot_" + chain.side,
-                .pos_m = v_add(v_scale(0.5, v_add(chain.ankle, chain.pedal)),
-                               offset),
-                .mass_kg = chain.foot_mass_kg});
-    }
-    return components;
+    throw std::invalid_argument(
+            "unknown rider variant " + py_str_repr(rider.variant) +
+            "; available: none, lumped, articulated_planar");
 }
 std::vector<RiderCenter>
 compute_rider_centers_of_mass(const RiderSpecs &rider) {

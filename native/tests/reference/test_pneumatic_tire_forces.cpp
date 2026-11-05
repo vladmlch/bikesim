@@ -24,10 +24,8 @@ using namespace bt::pneumatic;
     rejects([&] { (void)std::make_unique<PneumaticTireWriter>(rig.engine.model.get(), rig.engine.data.get(), *cfg); }, "config.tire.backend");
     cfg->backend = "pneumatic"; cfg->pneumatic.reset();
     rejects([&] { (void)std::make_unique<PneumaticTireWriter>(rig.engine.model.get(), rig.engine.data.get(), *cfg); }, "config.tire.pneumatic");
-    // Python's legacy TyreConfig is a different native type and cannot
-    // enter this constructor. The missing-section value control above
-    // exercises the resolved-wire boundary that is reachable in C++.
-    static_assert(!std::is_constructible_v<PneumaticTireWriter, const mjModel *, const mjData *, bike::legacy::TyreConfig>);
+    // The missing-section value control above exercises the resolved-wire
+    // boundary that is reachable in C++.
     *cfg = configuration(); cfg->surface_mode = "track"; cfg->pneumatic->surface.reset(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     rejects([&] { (void)std::make_unique<PneumaticTireWriter>(rig.engine.model.get(), rig.engine.data.get(), *cfg); }, "config.tire.surface_map");
 }
@@ -134,7 +132,7 @@ using namespace bt::pneumatic;
 [[gnu::noinline]] void test_state_wire_names_and_round_trip() {
     // pneumatic_tire_forces/state_wire_names_and_round_trip
     Rig rig;
-    const auto n = static_cast<std::size_t>(bike::legacy::tier_spec("fast").n_rays), width = (n + 1) / 2;
+    const auto n = static_cast<std::size_t>(bt::tyres::tier_spec("fast").n_rays), width = (n + 1) / 2;
     const auto &names = rig.tire->state_names();
     bt::require(names.size() == 2 * (4 * n + 8 + 3 * width), "canonical fast state width");
     const std::array<std::string_view, 4> first{"front.ray.000.delta_prev_m", "front.ray.000.elastic_prev_n", "front.ray.000.maxwell_n", "front.ray.000.bristle_m"};

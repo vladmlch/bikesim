@@ -9,9 +9,9 @@
 #include "tyre_reference_support.hpp"
 
 #include "geometry/specs.hpp"
-#include "legacy/tyre.hpp"
 #include "pneumatic/model.hpp"
 #include "pneumatic/profile.hpp"
+#include "reference_tyres.hpp"
 #include "terrain/generators.hpp"
 #include "terrain/profile.hpp"
 
@@ -48,7 +48,7 @@ void test_build_road_profile_matches_the_former_inline_construction_bitwise() {
     const auto field = terrain::HeightFieldSpec::for_track(track);
     const bike::geometry::BikeSpecs specs;
 
-    const auto road = bike::legacy::build_road_profile(track, field, specs);
+    const auto road = bt::tyres::build_road_profile(track, field, specs);
     scalar(golden, road.x0_m(), "expected x0_m");
     scalar(golden, road.dx_m(), "expected dx_m");
     vector(golden, road.z_m(), "expected z_m");
@@ -81,8 +81,8 @@ void test_patch_slip_speed_mps_is_the_signed_tread_slip(
     auto golden = node(kFile,
                        "test_patch_slip_speed_mps_is_the_signed_tread_slip",
                        parameters);
-    const auto tyre = bike::legacy::front_tyre();
-    const auto tier = bike::legacy::tier_spec(tier_name);
+    const auto tyre = bt::tyres::front_tyre();
+    const auto tier = bt::tyres::tier_spec(tier_name);
     const double radius_m = tyre.outer_radius_mm / 1000.;
     // RoadProfile.from_samples(linspace(0, 20, 4001), zeros) — x0 0, dx 5 mm.
     biketyre::RoadProfile const road(0., .005, std::vector<double>(4001, 0.));

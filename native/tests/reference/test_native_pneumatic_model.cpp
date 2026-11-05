@@ -329,8 +329,8 @@ void test_model_progressive_load_unload_bitwise(std::size_t tier_index,
                        "tier" + std::to_string(tier_index) + "-tyre" +
                                std::to_string(tyre_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = tyre_index == 0 ? bike::legacy::front_tyre()
-                                      : bike::legacy::rear_tyre();
+    const auto tyre = tyre_index == 0 ? bt::tyres::front_tyre()
+                                      : bt::tyres::rear_tyre();
     const auto road = bump_road();
     const double radius = tyre.outer_radius_mm * 0.001;
     std::vector<double> xs(16), zs(16), omegas;
@@ -359,7 +359,7 @@ void test_model_authored_tiers_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_authored_tiers_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast256 : kDetail;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const auto road = bump_road();
     const double radius = tyre.outer_radius_mm * 0.001;
     std::vector<double> xs(10), zs(10), omegas(10, 8.0), dts(10);
@@ -378,7 +378,7 @@ void test_model_airborne_sequence_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_airborne_sequence_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const double hi = radius + 0.40, lo = radius - 0.018;
     const std::vector<double> xs(8, 5.0),
@@ -407,7 +407,7 @@ void test_model_mixed_velocity_components_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_mixed_velocity_components_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.025;
     const std::vector<Row> table{
@@ -447,7 +447,7 @@ void test_model_patch_migration_drift_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_patch_migration_drift_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     std::vector<double> xs(4, 4.80), zs(4, radius - 0.030),
             omegas(30, 10.0);
@@ -477,7 +477,7 @@ void test_model_patch_split_and_merge_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_patch_split_and_merge_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     std::vector<double> xs(34), zs(34), omegas(34, 8.5);
     for (std::size_t k = 0; k < 34; ++k) {
@@ -517,7 +517,7 @@ void test_model_patch_no_overlap_drops_stale(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_patch_no_overlap_drops_stale",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -549,7 +549,7 @@ void test_model_patch_migration_injected_candidates() {
     auto golden = node(kFile,
                        "test_model_patch_migration_injected_candidates");
     const TierCfg &tier = kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -606,7 +606,7 @@ void test_model_migration_bristle_broadcast_semantics() {
     auto golden = node(
             kFile, "test_model_migration_bristle_broadcast_semantics");
     const TierCfg &tier = kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -657,7 +657,7 @@ void test_model_migration_bristle_broadcast_semantics() {
 void test_model_migration_from_detailed_none() {
     auto golden = node(kFile, "test_model_migration_from_detailed_none");
     const TierCfg &tier = kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -681,7 +681,7 @@ void test_model_rim_strike_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_rim_strike_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const double rim_defl = tyre.rim_strike_deflection_mm() * 0.001;
     const double cz_below = radius - rim_defl - 0.004;
@@ -713,7 +713,7 @@ void test_model_rolling_loss_signs_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_rolling_loss_signs_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.025;
     const std::vector<Row> table{
@@ -801,7 +801,7 @@ void test_model_tread_loss_disabled_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_tread_loss_disabled_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    auto tyre = bike::legacy::front_tyre();
+    auto tyre = bt::tyres::front_tyre();
     tyre.tread_loss_crr = 0.0;
     const double radius = tyre.outer_radius_mm * 0.001;
     const std::vector<double> xs{5.0, 5.0, 5.0},
@@ -818,7 +818,7 @@ void test_model_pressure_power_and_set_pressure_bitwise(
             kFile, "test_model_pressure_power_and_set_pressure_bitwise",
             "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.025;
     const std::vector<Row> table{
@@ -880,7 +880,7 @@ void test_model_surface_sections_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_surface_sections_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     std::vector<double> xs(30), zs(30, radius - 0.025), omegas(30, 9.0);
     for (std::size_t k = 0; k < 30; ++k) xs[k] = 4.3 + 0.05 * static_cast<double>(k);
@@ -904,7 +904,7 @@ void test_model_reset_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_reset_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const std::vector<double> xs{4.9, 4.95, 5.0, 5.05},
             zs(4, radius - 0.030), omegas(4, 8.0);
@@ -931,7 +931,7 @@ void test_model_coverage_event_bitwise(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_coverage_event_bitwise",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const double radius = tyre.outer_radius_mm * 0.001;
     const double lo = radius - 0.02;
     const std::vector<double> xs{5.02, 5.02, 5.02},
@@ -957,7 +957,7 @@ void test_model_validation_bitwise_atomicity(std::size_t tier_index) {
     auto golden = node(kFile, "test_model_validation_bitwise_atomicity",
                        "tier" + std::to_string(tier_index));
     const TierCfg tier = tier_index == 0 ? kFast : kDetail64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const auto road = flat_road();
     const auto smap = uniform_map("asphalt");
     const double radius = tyre.outer_radius_mm * 0.001;

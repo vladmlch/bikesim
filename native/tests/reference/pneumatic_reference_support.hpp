@@ -39,13 +39,13 @@
 #include "config_types.hpp"
 #include "geometry/specs.hpp"
 #include "io/float_format.hpp"
-#include "legacy/tyre.hpp"
 #include "numeric_numpy.hpp"
 #include "numeric_sincos.hpp"
 #include "pneumatic/brush.hpp"
 #include "pneumatic/carcass.hpp"
 #include "pneumatic/geometry.hpp"
 #include "random/numpy_compat.hpp"
+#include "reference_tyres.hpp"
 #include "terrain/types.hpp"
 
 namespace pneumatic_reference {

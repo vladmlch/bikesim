@@ -72,16 +72,16 @@ bike_add_reference_test(native_kernel_contracts ENGINE
 bike_add_reference_test(pneumatic_tire_config ENGINE
   SOURCES test_pneumatic_tire_config.cpp LIBRARIES bike_app LABELS t52 tyre)
 bike_add_reference_test(pneumatic_tire_forces ENGINE
-  SOURCES test_pneumatic_tire_forces.cpp LIBRARIES bike_app bike_legacy LABELS t52 tyre)
+  SOURCES test_pneumatic_tire_forces.cpp LIBRARIES bike_app LABELS t52 tyre)
 bike_add_reference_test(pneumatic_tire_oracle ENGINE
-  SOURCES test_pneumatic_tire_oracle.cpp LIBRARIES bike_app bike_legacy LABELS t52 tyre golden)
+  SOURCES test_pneumatic_tire_oracle.cpp LIBRARIES bike_app LABELS t52 tyre golden)
 # 3.12a pneumatic kernel oracle ports (T52 batch) — replay the frozen
 # two-platform goldens for geometry, carcass and brush.
 bike_add_reference_test(native_pneumatic_geometry ENGINE
   SOURCES test_native_pneumatic_geometry.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_carcass ENGINE
-  SOURCES test_native_pneumatic_carcass.cpp LIBRARIES bike_app bike_legacy
+  SOURCES test_native_pneumatic_carcass.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_brush ENGINE
   SOURCES test_native_pneumatic_brush.cpp LIBRARIES bike_app bike_random
@@ -92,7 +92,7 @@ bike_add_reference_test(native_pneumatic_brush ENGINE
 # pneumatic_tire/ carry the episode/model/wire artifacts the writer port
 # replays).
 bike_add_reference_test(native_pneumatic_model ENGINE
-  SOURCES test_native_pneumatic_model.cpp LIBRARIES bike_app bike_legacy
+  SOURCES test_native_pneumatic_model.cpp LIBRARIES bike_app
   bike_random LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_wire ENGINE
   SOURCES test_native_pneumatic_wire.cpp LIBRARIES bike_app bike_random
@@ -111,7 +111,7 @@ bike_add_reference_test(terrain_placement_regression ENGINE
   SOURCES test_terrain_placement_regression.cpp LIBRARIES bike_app
   LABELS t52 terrain)
 bike_add_reference_test(tyre_road_profile ENGINE
-  SOURCES test_tyre_road_profile.cpp LIBRARIES bike_app bike_legacy
+  SOURCES test_tyre_road_profile.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 bike_add_reference_test(native_distributed_stands ENGINE
   SOURCES test_native_distributed_stands.cpp LIBRARIES bike_app

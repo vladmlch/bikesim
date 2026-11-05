@@ -29,19 +29,18 @@ void keys(bt::oracle::Node &node, const biketyre::PneumaticTyreModel &wheel, std
     node.bytes(bytes, "<i8", shape, label);
 }
 
-// pneumatic_tire_forces/oracle_parity_with_xfrc_writer/tier
+// pneumatic_tire_forces/oracle_parity_with_xfrc_writer/tier — the qfrc
+// writer's carcass, patch and output state per step, and qfrc equal to the
+// sum of the patch wrenches mapped through the Jacobian. The legacy
+// xfrc-writer parity half was removed with legacy mode (2026-11-04).
 void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
     bt::oracle::Node node("pneumatic_tire_forces/oracle_parity_with_xfrc_writer/" + std::string(tier));
-    Rig rig(tier), legacy_rig(tier);
-    auto config = std::make_unique<bike::legacy::TyreConfig>();
-    config->model = "pneumatic"; config->tier = tier; config->surface = "asphalt";
-    auto legacy = std::make_unique<bike::legacy::TyreForceApplier>(*legacy_rig.engine.model,
-        *config, biketyre::RoadProfile(Access::config(*legacy_rig.tire).pneumatic->profile), // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
-        bike::terrain::SurfaceMap::uniform("asphalt"));
-    const double dt = legacy_rig.dt();
-    rig.spin("front", 2.); legacy_rig.spin("front", 2.);
+    Rig rig(tier);
+    // The removed legacy applier rewrote the model timestep to the tier's
+    // own step; dt is that step, not the rig's compile-time default.
+    const double dt = bt::tyres::tier_spec(tier).timestep_s;
+    rig.spin("front", 2.);
     for (int step = 0; step < 4; ++step) {
-        legacy->apply(*legacy_rig.engine.data);
         const auto actual = rig.tire->qfrc(rig.engine.data.get(), dt);
         std::vector<double> expected(actual.size(), 0.);
         for (std::size_t side = 0; side < sides.size(); ++side) {
@@ -62,21 +61,17 @@ void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
             }
             const auto output = wheel.last_outputs().patches();
             scalar(node, static_cast<double>(output.size()), prefix + ".output_patch_count");
-            const auto other = (side == 0 ? legacy->front_outputs() : legacy->rear_outputs()).patches();
-            bt::require(output.size() == other.size(), "native xfrc and qfrc patch counts agree");
             for (std::size_t i = 0; i < output.size(); ++i) {
                 const auto label = prefix + ".output." + std::to_string(i);
                 vector(node, output[i].force_world_n, label + ".force_world_n");
                 scalar(node, output[i].slip_speed_mps, label + ".slip_speed_mps");
-                numeric_equal(output[i].force_world_n, other[i].force_world_n);
-                bt::require(output[i].slip_speed_mps == other[i].slip_speed_mps, "native legacy signed slip agrees");
                 add_jtf(*rig.engine.model, *rig.engine.data, sides[side], output[i].centroid_world_m,
                     output[i].force_world_n, expected);
             }
         }
         vector(node, actual, "step." + std::to_string(step) + ".qfrc");
         numeric_equal(actual, expected);
-        rig.engine.data->time += dt; legacy_rig.engine.data->time += dt;
+        rig.engine.data->time += dt;
     }
     node.done();
 }
@@ -84,5 +79,5 @@ void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
 // bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
 // cppcheck-suppress throwInEntryPoint
 int main() { return bt::run([] {
-    for (const auto tier : bike::legacy::TYRE_TIERS) test_oracle_parity_with_xfrc_writer(tier);
+    for (const auto tier : bt::tyres::kTiers) test_oracle_parity_with_xfrc_writer(tier);
 }); }

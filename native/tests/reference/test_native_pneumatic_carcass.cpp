@@ -46,8 +46,8 @@ void test_carcass_progressive_load_unload_bitwise(std::int64_t n_rays,
                        std::to_string(n_rays) + "-tyre" +
                                std::to_string(tyre_index));
     const auto tyre =
-            tyre_index == 0 ? bike::legacy::front_tyre()
-                            : bike::legacy::rear_tyre();
+            tyre_index == 0 ? bt::tyres::front_tyre()
+                            : bt::tyres::rear_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     const auto road = bump_road();
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -69,7 +69,7 @@ void test_carcass_progressive_load_unload_bitwise(std::int64_t n_rays,
 void test_carcass_rim_strike_bitwise(std::int64_t n_rays) {
     auto golden = node(kFile, "test_carcass_rim_strike_bitwise",
                        std::to_string(n_rays));
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     const auto road = flat_road();
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -123,7 +123,7 @@ void test_carcass_rim_strike_bitwise(std::int64_t n_rays) {
 void test_carcass_airborne_landed_bitwise(std::int64_t n_rays) {
     auto golden = node(kFile, "test_carcass_airborne_landed_bitwise",
                        std::to_string(n_rays));
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     const auto road = flat_road();
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -144,7 +144,7 @@ void test_carcass_airborne_landed_bitwise(std::int64_t n_rays) {
 void test_carcass_advance_unloaded_sequence_bitwise(std::int64_t n_rays) {
     auto golden = node(kFile, "test_carcass_advance_unloaded_sequence_bitwise",
                        std::to_string(n_rays));
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     const auto road = flat_road();
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -279,7 +279,7 @@ void test_carcass_saturation_and_patch_shapes_bitwise(
     auto golden =
             node(kFile, "test_carcass_saturation_and_patch_shapes_bitwise",
                  std::to_string(n_rays));
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     bike::random::NumpyRng rng(static_cast<std::uint64_t>(n_rays));
     const auto n = static_cast<std::size_t>(n_rays);
@@ -356,7 +356,7 @@ void test_carcass_invalid_inputs_bitwise_atomicity(std::int64_t n_rays) {
     auto golden =
             node(kFile, "test_carcass_invalid_inputs_bitwise_atomicity",
                  std::to_string(n_rays));
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     const auto n = static_cast<std::size_t>(n_rays);
     std::vector<double> delta(n, 0.0);
@@ -481,7 +481,7 @@ void test_carcass_invalid_inputs_bitwise_atomicity(std::int64_t n_rays) {
 void test_carcass_advance_unloaded_validation() {
     auto golden = node(kFile, "test_carcass_advance_unloaded_validation");
     constexpr std::int64_t n_rays = 64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     // Uninitialized: even invalid dt returns silently.
     biketyre::CarcassState early(n_rays);
@@ -541,7 +541,7 @@ void test_carcass_state_construction_validation() {
 void test_carcass_first_step_initialized_branch() {
     auto golden = node(kFile, "test_carcass_first_step_initialized_branch");
     constexpr std::int64_t n_rays = 64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     std::vector<double> delta(64, 0.0);
     for (std::size_t i = 30; i < 35; ++i) delta[i] = 0.02;
@@ -590,7 +590,7 @@ void test_carcass_multistep_mixed_speed_spin_bitwise(std::int64_t n_rays) {
     auto golden =
             node(kFile, "test_carcass_multistep_mixed_speed_spin_bitwise",
                  std::to_string(n_rays));
-    const auto tyre = bike::legacy::rear_tyre();
+    const auto tyre = bt::tyres::rear_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     const auto road = bump_road();
     const double radius = tyre.outer_radius_mm * 0.001;
@@ -620,7 +620,7 @@ void test_carcass_negative_zero_delta_and_inf_hits() {
     auto golden =
             node(kFile, "test_carcass_negative_zero_delta_and_inf_hits");
     constexpr std::int64_t n_rays = 64;
-    const auto tyre = bike::legacy::front_tyre();
+    const auto tyre = bt::tyres::front_tyre();
     const biketyre::RayRing ring(n_rays, kHalf);
     std::vector<double> delta(64, 0.0);
     delta[10] = -0.0;

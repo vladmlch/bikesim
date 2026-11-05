@@ -5,8 +5,8 @@
 #include "support/model_fixture.hpp"
 #include "cblas_abi.hpp"
 #include "geometry/specs.hpp"
-#include "legacy/tyre.hpp"
 #include "model/mapping.hpp"
+#include "reference_tyres.hpp"
 #include "writers/pneumatic_tire.hpp"
 
 #include <algorithm>
@@ -56,11 +56,11 @@ struct PneumaticWriterAccess {
 namespace bt::pneumatic {
 using Access = bike::testing::PneumaticWriterAccess;
 inline constexpr std::array<std::string_view, 2> sides{"front", "rear"};
-[[nodiscard]] inline double front_radius() { return bike::legacy::front_tyre().outer_radius_mm / 1000.; }
-[[nodiscard]] inline double rear_radius() { return bike::legacy::rear_tyre().outer_radius_mm / 1000.; }
+[[nodiscard]] inline double front_radius() { return bt::tyres::front_tyre().outer_radius_mm / 1000.; }
+[[nodiscard]] inline double rear_radius() { return bt::tyres::rear_tyre().outer_radius_mm / 1000.; }
 
 [[nodiscard]] inline nativecfg::TireConfig configuration(std::string_view tier_name = "fast") {
-    const auto tier = bike::legacy::tier_spec(tier_name);
+    const auto tier = bt::tyres::tier_spec(tier_name);
     const auto &surface = bike::terrain::get_surface("asphalt");
     const auto x = bike::geometry::detail::np_linspace(-2., 3., 1001);
     nativecfg::TireConfig out;
@@ -77,7 +77,7 @@ inline constexpr std::array<std::string_view, 2> sides{"front", "rear"};
     auto &p = *out.pneumatic;
     p.tier = tier.name; p.n_rays = tier.n_rays; p.half_angle_deg = tier.half_angle_deg;
     p.discretised_brush = tier.discretised_brush; p.timestep_s = tier.timestep_s;
-    p.front = bike::legacy::front_tyre(); p.rear = bike::legacy::rear_tyre();
+    p.front = bt::tyres::front_tyre(); p.rear = bt::tyres::rear_tyre();
     p.surface = nativecfg::SurfaceSpec{.name=surface.name, .mu_peak=surface.mu_peak, .mu_slide=surface.mu_slide,
         .slip_stiffness_per_load=surface.slip_stiffness_per_load, .stribeck_speed_mps=surface.stribeck_speed_mps};
     // RoadProfile.from_samples uses x[1]-x[0], not the rounded literal .005.

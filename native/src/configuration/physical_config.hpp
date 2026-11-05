@@ -286,7 +286,6 @@ struct PhysicalDriveConfig {
     double chain_c_ns_m = 10.;
     double freehub_k_nm_rad = 1000.;
     double freehub_c_nms_rad = .5;
-    double bearing_c_nms_rad = .03;
     double brake_ceiling_nm = 200.;
     // Held-brake stiction at standstill (pad bite) — physical_config.py's
     // same-named block: a zero torque or stiffness disables it.
@@ -784,7 +783,6 @@ inline constexpr auto kPhysicalDriveConfigFields = std::to_array<FieldDecl>({
     REAL(PhysicalDriveConfig, chain_c_ns_m),
     REAL(PhysicalDriveConfig, freehub_k_nm_rad),
     REAL(PhysicalDriveConfig, freehub_c_nms_rad),
-    REAL(PhysicalDriveConfig, bearing_c_nms_rad),
     REAL(PhysicalDriveConfig, brake_ceiling_nm),
     REAL(PhysicalDriveConfig, brake_hold_torque_nm),
     REAL(PhysicalDriveConfig, brake_hold_stiffness_nm_rad),

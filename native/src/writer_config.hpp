@@ -1070,7 +1070,7 @@ namespace nativecfg {
         template <class N>
         [[nodiscard]] drivetrain::DriveConfig decode_drive(const Dict<N> &d) {
             drivetrain::DriveConfig c;
-            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","bearing_c_nms_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
+            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
             c.policies = decode_drive_policies(d, extra_keys);
             c.drive_mode = str(d, "drive_mode");
             c.transmission_model = str(d, "transmission_model");
@@ -1088,7 +1088,6 @@ namespace nativecfg {
             c.crank_phase_rad = num(d, "crank_phase_rad");
             c.chain_k_n_m = positive(num(d, "chain_k_n_m"), "chain_k_n_m");
             c.chain_c_ns_m = nonnegative(num(d, "chain_c_ns_m"), "chain_c_ns_m");
-            c.bearing_c_nms_rad = nonnegative(num(d, "bearing_c_nms_rad"), "bearing_c_nms_rad");
             c.rotor_inertia_kgm2 =
                     nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
             c.brake_ceiling_nm =

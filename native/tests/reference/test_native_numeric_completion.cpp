@@ -342,7 +342,6 @@ void test_mutated_drive_config_rejected_before_model_writes() {
     struct Case { std::string_view id, key; double numeric; bool wire_text; };
     const std::array cases{
         Case{.id="chain_k_n_m-0.0", .key="chain_k_n_m", .numeric=0., .wire_text=false},
-        Case{.id="bearing_c_nms_rad--1.0", .key="bearing_c_nms_rad", .numeric=-1., .wire_text=false},
         Case{.id="motor_clutch-no", .key="motor_clutch", .numeric=0., .wire_text=true},
         Case{.id="torque_ripple-1.0", .key="torque_ripple", .numeric=1., .wire_text=false}};
     for (const auto& item : cases) {
@@ -360,7 +359,6 @@ void test_mutated_drive_config_rejected_before_model_writes() {
             auto typed = nativecfg::decode(wire);
             auto drive = (typed.drive).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
             if (std::string_view(item.key) == "chain_k_n_m") drive.chain_k_n_m = item.numeric;
-            else if (std::string_view(item.key) == "bearing_c_nms_rad") drive.bearing_c_nms_rad = item.numeric;
             else drive.torque_ripple = item.numeric;
             bt::invalid([&] { drivetrain::validate(drive); });
             auto mutated = typed;
@@ -609,7 +607,7 @@ const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone
     {{"tire", "significant_delta_m"}},
     {{"tire", "significance_fraction"}},
     {{"drive", "human_torque_nm"}}, {{"drive", "torque_ripple"}},
-    {{"drive", "chain_c_ns_m"}}, {{"drive", "bearing_c_nms_rad"}},
+    {{"drive", "chain_c_ns_m"}},
     {{"drive", "rotor_inertia_kgm2"}}, {{"drive", "hub_damping_nm_s"}},
     {{"drive", "pedaling", "resume_below_rpm"}},
     {{"drive", "pedaling", "coast_cadence_tau_s"}},
@@ -763,17 +761,6 @@ void test_invalid_motor_profile_relationships_rejected() {
         else profile.taper_width_mps = value;
         bt::invalid([&] { cfg::detail::post_init(profile); });
     }
-}
-
-// test_bearing_force_overflow_before_return_and_telemetry
-void test_bearing_force_overflow_before_return_and_telemetry() {
-    std::println(stderr, ">> test_bearing_force_overflow_before_return_and_telemetry");
-    auto source = drivetrain_reference::source();
-    source.bearing_c_nms_rad = 1e308;
-    auto owner = drivetrain_reference::pair(source);
-    drivetrain_reference::velocity(*owner, "crank_spin", 100.);
-    drivetrain_reference::reset_engine_state(*owner);
-    overflow([&] { (void)drivetrain_reference::components(*owner, .001, 0.); });
 }
 
 // test_chain_dissipation_overflow_before_telemetry
@@ -1004,7 +991,7 @@ void test_zero_disable_policy_fields_remain_bitwise_valid() {
     source.shifting.cadence_smoothing_tau_s = 0.; source.shifting.upshift_slip_limit_mps = 0.;
     source.assist.gain = 0.; source.assist.max_torque = 0.; source.assist.max_power = 0.;
     source.assist.engage_torque_nm = 0.; source.assist.gate_min_crank_rad_s = 0.;
-    source.bearing_c_nms_rad = 0.; source.freehub_c_nms_rad = 0.; source.chain_c_ns_m = 0.;
+    source.freehub_c_nms_rad = 0.; source.chain_c_ns_m = 0.;
     auto const stepper = drivetrain_reference::pair(source);
     drivetrain_reference::components(golden,
         drivetrain_reference::components(*stepper, .001, 0.));
@@ -1135,7 +1122,6 @@ int main() { return bt::run([] {
     test_damper_mutated_denominator_rejected_by_setter();
     test_s4_relationship_matrix();
     test_invalid_motor_profile_relationships_rejected();
-    test_bearing_force_overflow_before_return_and_telemetry();
     test_chain_dissipation_overflow_before_telemetry();
     test_suspension_total_overflow_before_telemetry();
     test_end_stop_mutated_config_rejected();

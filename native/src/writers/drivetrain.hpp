@@ -84,7 +84,6 @@ namespace drivetrain {
     enum class ForceComponent : std::uint8_t {
         chain,
         freehub,
-        drive_bearings,
         ideal_transmission
     };
 
@@ -94,13 +93,11 @@ namespace drivetrain {
         ForceKind kind;
     };
 
-    inline constexpr std::array<ForceComponentSpec, 4> force_component_specs{{
+    inline constexpr std::array<ForceComponentSpec, 3> force_component_specs{{
         {.slot = ForceComponent::chain, .name = "chain",
          .kind = ForceKind::transmission},
         {.slot = ForceComponent::freehub, .name = "freehub",
          .kind = ForceKind::transmission},
-        {.slot = ForceComponent::drive_bearings, .name = "drive_bearings",
-         .kind = ForceKind::bearing},
         {.slot = ForceComponent::ideal_transmission, .name = "ideal_transmission",
          .kind = ForceKind::transmission},
     }};
@@ -150,11 +147,11 @@ namespace drivetrain {
             std::optional<FreehubSnapshot> hub;
             // Candidate force rows — construction-sized nv vectors indexed
             // by ForceComponent; the emitted span carries component_count
-            // entries in the declared force_component order (3 physical,
-            // 4 for the simplified models).
-            std::array<std::vector<double>, 4> components;
-            std::array<ForceComponentView, 4> component_views{};
-            std::array<std::string_view, 4> component_names{};
+            // entries in the declared force_component order (2 physical,
+            // 3 for the simplified models).
+            std::array<std::vector<double>, 3> components;
+            std::array<ForceComponentView, 3> component_views{};
+            std::array<std::string_view, 3> component_names{};
             std::size_t component_count = 0;
             // Candidate actuator writes as (ctrl index, value) pairs; the
             // live data->ctrl row is touched only at commit.
@@ -238,7 +235,7 @@ namespace drivetrain {
             : snapshot(bank.snapshot), result(bank.result),
               // first() over the container-bound span: component_count/
               // ctrl_count are invariantly within the fixed array extents
-              // (writers only ever assign components_.size() ≤ 4 or 0).
+              // (writers only ever assign components_.size() ≤ 3 or 0).
               components(std::span<const ForceComponentView>(
                              bank.component_views)
                              .first(bank.component_count)),
@@ -415,7 +412,6 @@ namespace drivetrain {
         };
 
         std::map<std::string, Joint> joints_;
-        std::vector<Joint> bearing_joints_;
         // Warm-path joint caches resolved once at construction: the joints_
         // map keys are std::string and its comparator is not transparent, so
         // every at()/contains() materializes a key string — "drive_shaft_spin"
@@ -511,7 +507,7 @@ namespace drivetrain {
         };
 
         // The solve half of stage_components: pedaling advance, chain/freehub
-        // and bearing force evaluation and the motor solve land the
+        // force evaluation and the motor solve land the
         // component forces on the candidate bank and return the scalar
         // metrics the telemetry build publishes.
         [[nodiscard]] TickMetrics

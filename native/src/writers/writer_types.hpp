@@ -33,7 +33,7 @@ enum class ForceKind : std::uint8_t {
     human,
     motor,
     transmission,
-    bearing,
+    bearing, // reserved: removed 2026-11-05 (AGENTS.md «Передача»), never produced
     suspension,
     tire,
     rider,

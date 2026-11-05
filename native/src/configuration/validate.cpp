@@ -651,7 +651,6 @@ void post_init(PhysicalDriveConfig &config) {
           {"torque_ripple", &PhysicalDriveConfig::torque_ripple},
           {"chain_c_ns_m", &PhysicalDriveConfig::chain_c_ns_m},
           {"freehub_c_nms_rad", &PhysicalDriveConfig::freehub_c_nms_rad},
-          {"bearing_c_nms_rad", &PhysicalDriveConfig::bearing_c_nms_rad},
           {"brake_ceiling_nm", &PhysicalDriveConfig::brake_ceiling_nm},
           {"brake_hold_torque_nm", &PhysicalDriveConfig::brake_hold_torque_nm},
           {"brake_hold_stiffness_nm_rad", &PhysicalDriveConfig::brake_hold_stiffness_nm_rad},

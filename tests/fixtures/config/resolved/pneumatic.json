@@ -112,7 +112,6 @@
         ]
       }
     },
-    "bearing_c_nms_rad": 0.03,
     "brake_ceiling_nm": 200.0,
     "brake_hold_damping_nms_rad": 10.0,
     "brake_hold_engage_radps": 0.5,

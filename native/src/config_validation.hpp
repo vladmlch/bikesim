@@ -193,7 +193,6 @@ namespace drivetrain {
         validation::finite(s.crank_phase_rad, "config.drive.crank_phase_rad");
         validation::positive(s.chain_k_n_m, "config.drive.chain_k_n_m");
         validation::nonnegative(s.chain_c_ns_m, "config.drive.chain_c_ns_m");
-        validation::nonnegative(s.bearing_c_nms_rad, "config.drive.bearing_c_nms_rad");
         validation::nonnegative(s.rotor_inertia_kgm2, "config.drive.rotor_inertia_kgm2");
         if (s.drive_mode != "crank_effort" && s.drive_mode != "articulated_effort" &&
             s.drive_mode != "coast" && s.drive_mode != "ideal_speed_control")

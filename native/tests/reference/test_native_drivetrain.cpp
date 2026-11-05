@@ -436,6 +436,28 @@ void test_genuine_wheel_and_rotor_overrun() {
         golden.done();
     }
 }
+// AGENTS.md «Передача» (2026-11-05): the drivetrain has no mechanical loss.
+// A spinning wheel and crank with zero human and motor torque receive no
+// drive force at all — no bearing component exists.
+void test_ideal_drive_applies_no_bearing_drag() {
+    for (auto const kind : kinds) {
+        auto owner = pair(kind);
+        velocity(*owner, "rear_wheel_spin", 10.);
+        velocity(*owner, "front_wheel_spin", 10.);
+        velocity(*owner, "crank_spin", 8.);
+        reset_engine_state(*owner);
+        const auto forces = components(*owner, .002, 2.);
+        for (const auto& [name, row] : forces) {
+            (void)row;
+            bt::require(name != "drive_bearings",
+                        "no bearing component is emitted");
+        }
+        if (kind != "elastic_chain")
+            for (const double force : total(*owner, forces))
+                bt::require(force == 0.,
+                            "zero effort gives zero drive force");
+    }
+}
 // Source: test_geometric_prepared_buffers_reuse_storage.
 void test_geometric_prepared_buffers_reuse_storage() {
     for (auto operation : {"prepare", "reset", "shift", "restore"}) {
@@ -506,6 +528,9 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {
+        // First, before the golden nodes: a stale golden aborts the run, and
+        // this non-golden check must still execute while recordings are stale.
+        test_ideal_drive_applies_no_bearing_drag();
         test_chain_core(); test_force_staging(); test_solved_intervals();
         test_atomic_state_inputs_and_probes(); test_projection(); test_no_drive();
         test_transmission_core(); test_random_multiturn_staging(); test_shifting_prepared_state_and_clock();

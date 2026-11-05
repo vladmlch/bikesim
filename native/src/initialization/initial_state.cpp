@@ -48,7 +48,7 @@ bio::Value optional(std::optional<double> value){return value?real(*value):bio::
 double height(std::span<const std::array<double,2>> vertices,double x){if(x<=vertices.front()[0])return vertices.front()[1];if(x>=vertices.back()[0])return vertices.back()[1];const auto it=std::ranges::lower_bound(vertices,x,{},[](const auto& a){return a[0];});const auto i=static_cast<std::size_t>(std::ranges::distance(vertices.begin(),it))-1;return biketyre::np_interp(x,std::array{vertices[i][0],vertices[i+1][0]},std::array{vertices[i][1],vertices[i+1][1]});}
 void guard(const SetupContext& context){if(context.physical.step()!=0||context.stepper.time()!=0.)throw std::invalid_argument("physical initial states may only be transferred before the first step");}
 
-std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_battery=false,bool legacy_rider=false){
+std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_battery=false,bool legacy_rider=false,bool legacy_bearing=false){
     bio::Value physics=plain(configuration::to_value(context.physics));auto& config=std::get<bio::Value::Object>(physics.data);
     if(station_count){auto tires=field(config,"tires");auto distributed=field(std::get<bio::Value::Object>(tires.data),"distributed");put(std::get<bio::Value::Object>(distributed.data),"station_count",integer(*station_count));put(std::get<bio::Value::Object>(tires.data),"distributed",std::move(distributed));put(config,"tires",std::move(tires));}
     std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s"||p.first=="equilibrium_relaxation";});
@@ -68,6 +68,12 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // contract, so transfers recorded before the knobs keep validating and a
     // configured value never changes the fingerprint (2026-11-03).
     {auto drive=field(config,"drive");auto pedaling=field(std::get<bio::Value::Object>(drive.data),"pedaling");static const std::initializer_list<std::string_view> knobs={"reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s","reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s","reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"};std::erase_if(std::get<bio::Value::Object>(pedaling.data),[](const auto& p){return std::ranges::find(knobs,p.first)!=knobs.end();});put(std::get<bio::Value::Object>(drive.data),"pedaling",std::move(pedaling));put(config,"drive",std::move(drive));}
+    // legacy artifacts: pre-removal configs serialized drive.bearing_c_nms_rad
+    // between freehub_c_nms_rad and brake_ceiling_nm (viscous bearing drag,
+    // removed 2026-11-05). Stored transfers carried the shipped default 0.03,
+    // so only that value is re-injected — a non-default recorded coefficient
+    // never matches and fails closed.
+    if(legacy_bearing){auto drive=field(config,"drive");auto& members=std::get<bio::Value::Object>(drive.data);const auto it=std::ranges::find_if(members,[](const auto& p){return p.first=="freehub_c_nms_rad";});if(it==members.end())throw std::invalid_argument("initial-state contract physics is missing drive.freehub_c_nms_rad");members.insert(std::next(it),{std::string("bearing_c_nms_rad"),real(.03)});put(config,"drive",std::move(drive));}
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
     auto const add=[&](std::string name,const double* pointer,mjtSize count,std::optional<std::size_t> columns=std::nullopt){const auto values=std::span<const double>{std::views::counted(pointer,count)};compiled.emplace_back(std::move(name),columns?matrix(values,*columns):numbers(values));};
@@ -107,11 +113,11 @@ EquilibriumResult equilibrium(const bio::Value& value){const auto& o=bio::as_obj
 void validated(const SetupContext& context,const bio::Value::Object& p){
     guard(context);const auto stored_sha=bio::as_string(field(p,"contract_sha256"),"contract_sha256");
     // legacy artifacts: the contract over the pre-removal serialization —
-    // with the disabled drive.battery section and/or the seated-only rider
-    // members at their defaults — is also accepted; any other divergence,
-    // including an enabled recorded battery or a non-default removed rider
-    // member, fails closed.
-    const auto matches=[&]{for(const bool battery:{false,true})for(const bool rider:{false,true})if(stored_sha==contract(context,std::nullopt,battery,rider))return true;return false;};
+    // with the disabled drive.battery section, the seated-only rider members
+    // and/or the default drive.bearing_c_nms_rad — is also accepted; any other
+    // divergence, including an enabled recorded battery or a non-default
+    // removed member, fails closed.
+    const auto matches=[&]{for(const bool battery:{false,true})for(const bool rider:{false,true})for(const bool bearing:{false,true})if(stored_sha==contract(context,std::nullopt,battery,rider,bearing))return true;return false;};
     if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||!matches())throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
     (void)vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());(void)vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
     const auto x=vector(field(p,"road_x"),"road_x"),z=vector(field(p,"road_z"),"road_z",x.size());if(x.empty()||x.size()>1048576)throw std::invalid_argument("invalid initial support road");

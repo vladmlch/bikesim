@@ -721,7 +721,8 @@ void test_schema() {
     bt::require(io::as_array(tires, "fields.tires.fields").size() == 9,
                 "tires field count");
     const Value& drive = member(fields[7], "fields", "fields.drive");
-    bt::require(io::as_array(drive, "fields.drive.fields").size() == 21,
+    // 20 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive).
+    bt::require(io::as_array(drive, "fields.drive.fields").size() == 20,
                 "drive field count");
     // 67 = 69 minus leg_track_damping_nms_rad (no joint damping in any
     // form) and coupled_task_control (removed with its welded-rider mode).

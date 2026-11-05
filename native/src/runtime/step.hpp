@@ -524,7 +524,7 @@ private:
     // fold/probe destinations.
     std::array<::ForceComponentView, 8> suspension_views_{};
     std::array<::ForceComponentView, 2> resistance_views_{};
-    std::array<::ForceComponentView, 4> drive_views_{};
+    std::array<::ForceComponentView, 3> drive_views_{};
     std::vector<double> component_out_;
     std::vector<double> acc_inputs_;  // qfrc_applied|xfrc_applied|ctrl|act|time|qpos|qvel
     bool acc_inputs_valid_ = false;

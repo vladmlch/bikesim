@@ -295,7 +295,7 @@ Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& doc
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) physics schema requires drive_mode
     set(out, "drive_mode", text(physics_config.drive_mode.value()));
     for (auto key : {"transmission_model", "motor_clutch", "human_torque_nm", "torque_ripple",
-         "crank_phase_rad", "chain_k_n_m", "chain_c_ns_m", "bearing_c_nms_rad",
+         "crank_phase_rad", "chain_k_n_m", "chain_c_ns_m",
          "rotor_inertia_kgm2", "brake_ceiling_nm", "brake_hold_torque_nm",
          "brake_hold_stiffness_nm_rad", "brake_hold_damping_nms_rad",
          "brake_hold_engage_radps", "brake_hold_release_radps"})

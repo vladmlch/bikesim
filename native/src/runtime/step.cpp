@@ -2427,7 +2427,7 @@ double PhysicalStep::loss_increment(
     const drivetrain::Diagnostics &last) const {
     NeumaierSum acc;
     for (const char *name:
-         {"fork_damper", "shock_damper", "shock_hbo", "drive_bearings"})
+         {"fork_damper", "shock_damper", "shock_hbo"})
         if (const auto *f = ordered_at(components, name))
             acc.add(std::max(0., -dot(*f, velocity)) * dt);
     double loss = acc.total();

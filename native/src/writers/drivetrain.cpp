@@ -122,7 +122,6 @@ namespace drivetrain {
                 .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
             };
             joints_.emplace(name, j);
-            bearing_joints_.push_back(j);
         }
         for (const char *name: {"cassette_spin", "drive_shaft_spin", "rotor_spin"}) {
             const std::string key(name);
@@ -136,7 +135,6 @@ namespace drivetrain {
                     .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
                 };
                 joints_.emplace(name, j);
-                bearing_joints_.push_back(j);
             }
         }
         // joints_ is immutable from here on — resolve the warm-path lookups
@@ -947,9 +945,6 @@ namespace drivetrain {
                                     engaged(engaged(bank.hub).boundary),
                                     0.);
         }
-        for (auto const j: bearing_joints_)
-            bank.components[force_component_index(ForceComponent::drive_bearings)][static_cast<std::size_t>(j.dof)] =
-                    validation::derived(-config_.bearing_c_nms_rad * v[static_cast<std::size_t>(j.dof)], "DrivetrainWriter.bearing_force");
         m.omega_crank = v[static_cast<std::size_t>(crank.dof)];
         m.cadence = validation::derived(
                 m.omega_crank * 60. / (2. * std::numbers::pi),

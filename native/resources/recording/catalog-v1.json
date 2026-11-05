@@ -828,7 +828,7 @@
           "optional": false,
           "measurement": "derived",
           "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._close_period",
-          "description": "cumulative material dissipation (dampers, brush, bearings)"
+          "description": "cumulative material dissipation (dampers, brush)"
         },
         {
           "frame": "n/a",

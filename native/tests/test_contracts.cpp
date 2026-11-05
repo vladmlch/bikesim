@@ -1784,7 +1784,7 @@ namespace {
             .transmission_model = std::string(kind),
             .human_torque_nm = 20., .torque_ripple = .35,
             .crank_phase_rad = 0., .chain_k_n_m = 200000.,
-            .chain_c_ns_m = 10., .bearing_c_nms_rad = .03,
+            .chain_c_ns_m = 10.,
             .rotor_inertia_kgm2 = topology == "rotor" ? .2 : 0.,
             .motor_clutch = topology == "clutch"};
     }
@@ -2349,24 +2349,22 @@ namespace {
 
     // C4: the serialized component rows are addressed by the ForceComponent
     // table, not by emplace order — the emitted names and their order are
-    // checked against the declared table, and the bearing row carries its
-    // force at the right dof (external output, not private structure).
+    // checked against the declared table (external output, not private
+    // structure).
     void test_force_component_layout() {
         using namespace drivetrain;
 
-        static_assert(force_component_specs.size() == 4 &&
+        static_assert(force_component_specs.size() == 3 &&
                       force_component_index(ForceComponent::chain) == 0 &&
                       force_component_index(ForceComponent::freehub) == 1 &&
-                      force_component_index(ForceComponent::drive_bearings) == 2 &&
-                      force_component_index(ForceComponent::ideal_transmission) == 3,
+                      force_component_index(ForceComponent::ideal_transmission) == 2,
                       "component slots match the declared enum positions");
         static_assert(force_component_specs[0].name == "chain" &&
                       force_component_specs[1].name == "freehub" &&
-                      force_component_specs[2].name == "drive_bearings" &&
-                      force_component_specs[3].name == "ideal_transmission",
+                      force_component_specs[2].name == "ideal_transmission",
                       "component names match the serialized layout");
 
-        {   // Physical chain: three rows, in declared order.
+        {   // Physical chain: two rows, in declared order.
             const auto fixture = std::make_unique<DriveFixture>(
                 "elastic_chain", "plain",
                 drive_config("elastic_chain", "plain", true, false));
@@ -2375,21 +2373,12 @@ namespace {
                  .braking = false, .active = true, .advance = true,
                  .contact = true, .pedaling = std::nullopt,
                  .slip = std::nullopt});
-            require(tick.components.size() == 3,
-                    "elastic chain emits exactly three component rows");
+            require(tick.components.size() == 2,
+                    "elastic chain emits exactly two component rows");
             for (std::size_t i = 0; i < tick.components.size(); ++i)
                 require(tick.component_names[i] ==
                                 force_component_specs[i].name,
                         "emitted name matches the declared table slot");
-            // qvel rear_wheel_spin = 5 → bearing force -0.03*5 at its dof.
-            const int wheel = joint_dof(fixture->model.get(),
-                                        "rear_wheel_spin");
-            const auto &bearings =
-                    tick.components[force_component_index(
-                                        ForceComponent::drive_bearings)]
-                        .values;
-            require(bearings[static_cast<std::size_t>(wheel)] < 0.,
-                    "bearing row carries force at the wheel dof");
             // The snapshot telemetry keeps the wire strings — enum plumbing
             // must not leak into serialization.
             require(std::get<std::string>(
@@ -2408,7 +2397,7 @@ namespace {
                  .braking = false, .active = true, .advance = true,
                  .contact = true, .pedaling = std::nullopt,
                  .slip = std::nullopt});
-            require(tick.components.size() == 4 &&
+            require(tick.components.size() == 3 &&
                         tick.component_names[force_component_index(
                                                  ForceComponent::ideal_transmission)] ==
                                 "ideal_transmission",
@@ -2671,7 +2660,7 @@ namespace {
         BrakeWriter brake;
         ResistanceWriter resistance;
         TireWriter tire;
-        std::array<ForceComponentView, 4> drive_views{};
+        std::array<ForceComponentView, 3> drive_views{};
         std::array<ForceComponentView,
                    SuspensionWriter::kPhysicalComponentCount>
                 suspension_views{};
@@ -3639,11 +3628,11 @@ namespace {
             });
             require(fixture != nullptr, "matrix fixture construction");
             // Component view count is the topology's row count — the
-            // physical chain emits the declared 3 rows, the simplified
-            // models append ideal_transmission for 4.
+            // physical chain emits the declared 2 rows, the simplified
+            // models append ideal_transmission for 3.
             const std::size_t view_count =
-                    std::string_view(kind) == "elastic_chain" ? 3 : 4;
-            std::array<ForceComponentView, 4> views{};
+                    std::string_view(kind) == "elastic_chain" ? 2 : 3;
+            std::array<ForceComponentView, 3> views{};
             // Two cycles through the same warm path: the tick and
             // settlement banks alternate, so each needs a first
             // engagement before the measured rows.

@@ -650,12 +650,6 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.03,
-          "default_factory": null,
-          "name": "bearing_c_nms_rad",
-          "type": "<class 'float'>"
-        },
-        {
           "default": 200.0,
           "default_factory": null,
           "name": "brake_ceiling_nm",

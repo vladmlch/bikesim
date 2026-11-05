@@ -892,89 +892,6 @@ void expect_saddle(const Value &sect_v, const geo::SaddleGeometry &g,
                        g.exposed_post_m, std::string(label) + ".exposed_post_m");
 }
 
-void expect_body(const Value &sect, const mdl::RiderBody &b,
-                 std::string_view label) {
-    bt::require(string_of(member(sect, "name", label), label) == b.name,
-                std::string(label) + ".name");
-    bt::require(string_of(member(sect, "parent", label), label) ==
-                        b.parent,
-                std::string(label) + ".parent");
-    bt::require(string_of(member(sect, "joint", label), label) ==
-                        b.joint,
-                std::string(label) + ".joint");
-    expect_bits(member(sect, "attach", label), b.attach,
-                std::string(label) + ".attach");
-    const Value::Array &geoms =
-            array_of(member(sect, "geoms", label), label);
-    bt::require(geoms.size() == b.geoms.size(), std::string(label) + ".geom count");
-    for (std::size_t i = 0; i < geoms.size(); ++i) {
-        const Value &gv = geoms.at(i);
-        const mdl::RiderGeom &g = b.geoms.at(i);
-        bt::require(string_of(member(gv, "name", label), label) ==
-                            g.name &&
-                            string_of(member(gv, "kind", label), label) ==
-                                    g.kind,
-                    std::string(label) + ".geom " + std::to_string(i));
-        expect_bits(member(gv, "p1", label), g.p1, std::string(label) + ".p1");
-        expect_bits(member(gv, "p2", label), g.p2, std::string(label) + ".p2");
-        expect_scalar_bits(member(gv, "radius", label), g.radius,
-                           std::string(label) + ".radius");
-        expect_scalar_bits(member(gv, "mass", label), g.mass,
-                           std::string(label) + ".geom mass");
-    }
-    expect_scalar_bits(member(sect, "stiffness_n_m", label),
-                       b.stiffness_n_m, std::string(label) + ".stiffness");
-    expect_scalar_bits(member(sect, "damping_ns_m", label),
-                       b.damping_ns_m, std::string(label) + ".damping");
-    expect_scalar_bits(member(sect, "supported_mass_kg", label),
-                       b.supported_mass_kg, std::string(label) + ".supported");
-    bt::require(bool_of(member(sect, "unilateral", label), label) ==
-                        b.unilateral,
-                std::string(label) + ".unilateral");
-    bt::require(string_of(member(sect, "interface", label), label) ==
-                        b.interface,
-                std::string(label) + ".interface");
-    expect_scalar_bits(member(sect, "mass", label), b.mass(),
-                       std::string(label) + ".mass");
-    expect_bits(member(sect, "center_of_mass", label),
-                b.center_of_mass(), std::string(label) + ".center_of_mass");
-    expect_scalar_bits(member(sect, "preload_n", label), b.preload_n(),
-                       std::string(label) + ".preload_n");
-    expect_scalar_bits(member(sect, "preload_deflection_m", label),
-                       b.preload_deflection_m(),
-                       std::string(label) + ".preload_deflection_m");
-}
-
-void expect_chain(const Value &sect, const mdl::LegChain &c,
-                  std::string_view label) {
-    bt::require(string_of(member(sect, "side", label), label) == c.side,
-                std::string(label) + ".side");
-    expect_scalar_bits(member(sect, "lateral_y_m", label),
-                       c.lateral_y_m, std::string(label) + ".lateral_y");
-    expect_scalar_bits(member(sect, "crank_len_m", label), c.crank_len_m,
-                       std::string(label) + ".crank_len");
-    expect_bits(member(sect, "hip", label), c.hip, std::string(label) + ".hip");
-    expect_bits(member(sect, "knee", label), c.knee, std::string(label) + ".knee");
-    expect_bits(member(sect, "ankle", label), c.ankle, std::string(label) + ".ankle");
-    expect_bits(member(sect, "pedal", label), c.pedal, std::string(label) + ".pedal");
-    expect_scalar_bits(member(sect, "thigh_len_m", label), c.thigh_len_m,
-                       std::string(label) + ".thigh_len");
-    expect_scalar_bits(member(sect, "shank_len_m", label), c.shank_len_m,
-                       std::string(label) + ".shank_len");
-    expect_scalar_bits(member(sect, "thigh_mass_kg", label),
-                       c.thigh_mass_kg, std::string(label) + ".thigh_mass");
-    expect_scalar_bits(member(sect, "shank_mass_kg", label),
-                       c.shank_mass_kg, std::string(label) + ".shank_mass");
-    expect_scalar_bits(member(sect, "foot_mass_kg", label),
-                       c.foot_mass_kg, std::string(label) + ".foot_mass");
-    expect_scalar_bits(member(sect, "pitch0_thigh_rad", label),
-                       c.pitch0_thigh_rad, std::string(label) + ".pitch0_thigh");
-    expect_scalar_bits(member(sect, "pitch0_shank_rad", label),
-                       c.pitch0_shank_rad, std::string(label) + ".pitch0_shank");
-    expect_scalar_bits(member(sect, "pitch0_foot_rad", label),
-                       c.pitch0_foot_rad, std::string(label) + ".pitch0_foot");
-}
-
 void expect_pose(const Value &sect, const mdl::SeatedPose &pose,
                  std::string_view label) {
     expect_saddle(member(sect, "saddle", label), pose.saddle,
@@ -1009,37 +926,6 @@ void expect_pose(const Value &sect, const mdl::SeatedPose &pose,
                        std::string(label) + ".flexion_rear");
     expect_scalar_bits(member(sect, "knee_flexion_bdc_deg", label),
                        pose.knee_flexion_bdc_deg, std::string(label) + ".flexion_bdc");
-    const Value::Array &bodies =
-            array_of(member(sect, "bodies", label), label);
-    bt::require(bodies.size() == pose.bodies.size(),
-                std::string(label) + ".body count");
-    for (std::size_t i = 0; i < bodies.size(); ++i)
-        expect_body(bodies.at(i), pose.bodies.at(i),
-                    std::string(label) + ".bodies[" + std::to_string(i) + "]");
-    expect_pairs(member(sect, "path_masses_kg", label),
-                 pose.path_masses_kg, std::string(label) + ".path_masses");
-    const Value::Array &chains =
-            array_of(member(sect, "leg_chains", label), label);
-    bt::require(chains.size() == pose.leg_chains.size(),
-                std::string(label) + ".chain count");
-    for (std::size_t i = 0; i < chains.size(); ++i)
-        expect_chain(chains.at(i), pose.leg_chains.at(i),
-                     std::string(label) + ".chain[" + std::to_string(i) + "]");
-    expect_scalar_bits(member(sect, "total_mass_kg", label),
-                       pose.total_mass_kg(), std::string(label) + ".total_mass");
-    expect_pairs(member(sect, "interface_loads_n", label),
-                 pose.interface_loads_n(), std::string(label) + ".loads");
-    expect_pairs(member(sect, "interface_shares", label),
-                 pose.interface_shares(), std::string(label) + ".shares");
-    const Value &miss = member(sect, "missing_body_error", label);
-    bt::require(!outcome_accepted(miss, std::string(label) + ".missing"),
-                "missing body must reject");
-    bt::require(string_of(member(miss, "error", label), label) ==
-                        "KeyError",
-                std::string(label) + ".missing error kind");
-    expect_key_error(outcome_message(miss, std::string(label) + ".missing"),
-                     [&] { (void)pose.body("rider_nothing"); },
-                     std::string(label) + ".missing_body_error");
 }
 
 void test_seated_pose() {
@@ -1051,20 +937,11 @@ void test_seated_pose() {
     rider_75.height_m = 1.75;
     cfg::detail::post_init(rider_75);
 
-    mdl::RiderSpecs artic;
-    artic.legs = "articulated";
-    artic.mass_kg = 75.0;
-    artic.height_m = 1.75;
-    cfg::detail::post_init(artic);
-
     expect_pose(member(doc, "default", "doc"),
                 mdl::solve_seated_pose(specs, mdl::RiderSpecs{}),
                 "default");
     expect_pose(member(doc, "rider_75_175", "doc"),
                 mdl::solve_seated_pose(specs, rider_75), "rider_75_175");
-    expect_pose(member(doc, "legs_articulated", "doc"),
-                mdl::solve_seated_pose(specs, artic),
-                "legs_articulated");
 }
 
 // ---- model/rider_helpers -------------------------------------------------------
@@ -1114,133 +991,17 @@ void test_rider_helpers() {
         expect_scalar_bits(*outcome_result(c, "flex " + tag),
                            mdl::flexion_deg(p, j, d), "flex " + tag);
     }
-
-    const Value::Array &springs =
-            array_of(member(doc, "spring_cases", "doc"), "doc");
-    for (const Value &c: springs) {
-        bt::require(outcome_accepted(c, "spring"), "spring accepts");
-        const auto [k, d] = mdl::spring_params(30.0, 5.0, 0.4);
-        const std::vector<double> got{k, d};
-        const std::vector<double> want =
-                scalar_list(*outcome_result(c, "spring"), "spring");
-        bt::require(got.size() == want.size(), "spring arity");
-        for (std::size_t i = 0; i < got.size(); ++i)
-            bt::require(same_bits(got.at(i), want.at(i)),
-                        "spring lane " + std::to_string(i));
-    }
-
-    const Value::Array &paths =
-            array_of(member(doc, "path_cases", "doc"), "doc");
-    for (const Value &c: paths) {
-        const std::string &tag = string_of(member(c, "tag", "c"), "c");
-        const auto make = [&]() -> mdl::RiderSpecs {
-            mdl::RiderSpecs r;
-            if (tag == "rider_75") {
-                r.mass_kg = 75.0;
-                r.height_m = 1.75;
-            } else if (tag == "bar_too_low") {
-                r.bar_share = 0.05;
-                r.pedal_share = 0.40;
-            } else if (tag == "pedal_too_low") {
-                r.pedal_share = 0.05;
-                r.bar_share = 0.40;
-            } else if (tag == "pedal_too_high") {
-                r.pedal_share = 0.80;
-                r.saddle_share = 0.10;
-                r.bar_share = 0.10;
-            } else if (tag == "helmet_heavy") {
-                r.mass_kg = 60.0;
-                r.helmet_mass_kg = 5.0;
-                r.saddle_share = 0.40;
-                r.pedal_share = 0.30;
-                r.bar_share = 0.30;
-            }
-            cfg::detail::post_init(r);
-            return r;
-        };
-        if (outcome_accepted(c, "path " + tag)) {
-            const mdl::RiderSpecs r = make();
-            expect_pairs(*outcome_result(c, "path " + tag),
-                         mdl::seated_path_masses(r), "path " + tag);
-        } else {
-            expect_invalid_msg(
-                    outcome_message(c, "path " + tag),
-                    [&] {
-                        const mdl::RiderSpecs r = make();
-                        (void)mdl::seated_path_masses(r);
-                    },
-                    "path " + tag);
-        }
-    }
 }
 
-// ---- model/rider_legs_centers --------------------------------------------------
+// ---- model/rider_legs_centers (centre-of-mass tables) -----------------------
 
-void test_rider_legs_centers() {
+void test_rider_centers() {
     const Value doc = doc_of("model/rider_legs_centers");
     const geo::BikeSpecs specs;
-
-    mdl::RiderSpecs artic;
-    artic.legs = "articulated";
-    artic.mass_kg = 75.0;
-    artic.height_m = 1.75;
-    cfg::detail::post_init(artic);
-    const mdl::SeatedPose pose_leg =
-            mdl::solve_seated_pose(specs, artic);
-    bt::require(pose_leg.leg_chains.size() == 2,
-                "articulated pose needs two leg chains");
-
-    const Value::Array &legs =
-            array_of(member(doc, "leg_cases", "doc"), "doc");
-    for (const Value &c: legs) {
-        const std::string &side =
-                string_of(member(c, "side", "c"), "c");
-        const double phase =
-                scalar_field(member(c, "phase", "c"), "c");
-        const mdl::LegChain &chain =
-                side == "front" ? pose_leg.leg_chains.at(0)
-                                : pose_leg.leg_chains.at(1);
-        bt::require(outcome_accepted(c, "leg " + side),
-                    "leg case must accept: " + side);
-        const Value &res = *outcome_result(c, "leg " + side);
-        const geo::Vec3 qpos = mdl::solve_leg_qpos(chain, phase, 0.0);
-        expect_bits(member(res, "qpos", "leg"), qpos, "leg.qpos");
-        if (const Value *k_ik = member_opt(res, "knee_ik", "leg")) {
-            const auto [knee_ik, ankle_ik] =
-                    mdl::solve_leg_joints(chain, phase, 0.0);
-            expect_bits(*k_ik, knee_ik, "leg.knee_ik");
-            expect_bits(member(res, "ankle_ik", "leg"), ankle_ik,
-                        "leg.ankle_ik");
-            const mdl::LegFkResult fk = mdl::fk_leg(chain, qpos, 0.0);
-            expect_bits(member(res, "knee_fk", "leg"), fk.knee,
-                        "leg.knee_fk");
-            expect_bits(member(res, "ankle_fk", "leg"), fk.ankle,
-                        "leg.ankle_fk");
-            expect_bits(member(res, "pedal_fk", "leg"), fk.pedal_pt,
-                        "leg.pedal_fk");
-            const mdl::Mat32 jac = mdl::leg_jacobian(chain, qpos, 0.0);
-            const std::vector<double> flat{
-                    jac[0][0], jac[0][1], jac[1][0],
-                    jac[1][1], jac[2][0], jac[2][1]};
-            expect_bits(member(res, "jacobian", "leg"), flat,
-                        "leg.jacobian");
-            expect_scalar_bits(member(res, "crank_torque_share", "leg"),
-                               mdl::crank_torque_share(phase, 0.6),
-                               "leg.crank_torque_share");
-            expect_bits(member(res, "pedal_spindle", "leg"),
-                        mdl::pedal_spindle_pos(phase, chain.lateral_y_m,
-                                               chain.crank_len_m),
-                        "leg.pedal_spindle");
-        }
-    }
-
     const Value &variants = member(doc, "center_variants", "doc");
     const auto rider_for = [](std::string_view tag) {
         mdl::RiderSpecs r;
-        if (tag == "none") r.variant = "none";
-        else if (tag == "lumped") r.variant = "lumped";
-        else if (tag == "articulated_planar")
-            r.variant = "articulated_planar";
+        r.variant = std::string(tag);
         cfg::detail::post_init(r);
         return r;
     };
@@ -1254,14 +1015,6 @@ void test_rider_legs_centers() {
                        mdl::compute_rider_centers_of_mass(r, specs),
                        "variant " + std::string(tag));
     }
-
-    const mdl::SeatedPose pose_default =
-            mdl::solve_seated_pose(specs, mdl::RiderSpecs{});
-    const std::vector<double> apparent = mdl::saddle_path_apparent_mass(
-            pose_default, std::vector<double>{0.5, 1.0, 2.0, 4.8, 8.0,
-                                              20.0});
-    expect_bits(member(doc, "apparent_mass", "doc"), apparent,
-                "apparent_mass");
 }
 
 // ---- model/rider_segments --------------------------------------------------------
@@ -2245,7 +1998,7 @@ int main() {
         test_rider_specs();
         test_seated_pose();
         test_rider_helpers();
-        test_rider_legs_centers();
+        test_rider_centers();
         test_rider_segments();
         test_air_spring();
         test_coil_shock();

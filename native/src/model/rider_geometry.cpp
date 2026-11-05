@@ -1,15 +1,10 @@
 // model/rider_geometry.cpp — T15 rider boundary implementations.
 //
 // numpy-provider notes kept inline at each site. Scalar `x ** y` goes
-// through pyfloat::float_pow (CPython float_pow's complete ladder); the
-// complex ops of saddle_path_apparent_mass reproduce NumPy's ufunc
-// kernels bitwise: multiply = {fma(ar,br,-(ai*bi)), fma(ar,bi,ai*br)}
-// (the ARM64 NEON simd_cmul_f64 lane form the oracle's contiguous
-// complex128 loop reaches), divide = the scalar Smith-scaled
-// CDOUBLE_divide body, absolute = npy_cabs == hypot(re, im). Every sin/cos
-// call takes the numeric::np_* or math_* family of its Python mirror (np.*
-// or math.*), so the optimizer cannot merge a same-angle pair into a
-// __sincos_stret the oracle never calls.
+// through pyfloat::float_pow (CPython float_pow's complete ladder). Every
+// sin/cos call takes the numeric::np_* or math_* family of its Python
+// mirror (np.* or math.*), so the optimizer cannot merge a same-angle
+// pair into a __sincos_stret the oracle never calls.
 #include "rider_geometry.hpp"
 
 #include "../diag.hpp"
@@ -19,11 +14,9 @@
 #include "../writers/pyfloat.hpp"
 #include "checks.hpp"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <limits>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -39,14 +32,10 @@ NATIVE_DIAG_IGNORE("-Wlarge-by-value-copy")
 
 namespace {
 
-using bike::model::LegChain;
 using bike::model::Mat3;
-using bike::model::RiderBody;
-using bike::model::RiderGeom;
 using bike::model::SeatedPose;
 using bike::model::Vec3;
 namespace gd = bike::geometry::detail;
-using bike::model::checks::boolean;
 using bike::model::checks::scalar;
 
 [[nodiscard]] inline double py_pow(double base, double exponent) {
@@ -121,68 +110,6 @@ using bike::model::checks::scalar;
 }
 
 // ---------------------------------------------------------------------
-// Complex ufunc kernels — see the header's provider note. A Cpx value is
-// the (re, im) pair NumPy stores for one complex128 lane.
-struct Cpx {
-    double re, im;
-};
-[[nodiscard]] inline Cpx cadd(Cpx a, Cpx b) noexcept {
-    return Cpx{.re = a.re + b.re, .im = a.im + b.im};
-}
-[[nodiscard]] inline Cpx csub(Cpx a, Cpx b) noexcept {
-    return Cpx{.re = a.re - b.re, .im = a.im - b.im};
-}
-// CDOUBLE multiply — simd_cmul_f64: the (ai*bi)/(ai*br) products are
-// rounded first, then fused into fma(ar,br,-p)/fma(ar,bi,q).
-[[nodiscard]] inline Cpx cmul(Cpx a, Cpx b) noexcept {
-    return Cpx{.re = std::fma(a.re, b.re, -(a.im * b.im)),
-               .im = std::fma(a.re, b.im, a.im * b.re)};
-}
-// CDOUBLE_divide — loops.c.src's scalar Smith-scaled body (the divide
-// ufunc has no complex SIMD dispatch). The oracle's build contracts
-// every `x ± y*rat` term to an AArch64 fma, so each fused form is
-// spelled out here — the build uses -ffp-contract=off, meaning plain
-// expressions would round the product first and drift ~1 ulp.
-[[nodiscard]] inline Cpx cdiv(Cpx a, Cpx b) noexcept {
-    const double abs_br = std::fabs(b.re), abs_bi = std::fabs(b.im);
-    if (abs_br >= abs_bi) {
-        if (abs_br == 0.0 && abs_bi == 0.0)
-            return Cpx{.re = a.re / abs_br, .im = a.im / abs_bi};
-        const double rat = b.im / b.re;
-        const double scl =
-                1.0 / std::fma(b.im, rat, b.re); // br + bi*rat
-        return Cpx{.re = std::fma(a.im, rat, a.re) * scl, // ar + ai*rat
-                   .im = std::fma(-a.re, rat, a.im) * scl}; // ai - ar*rat
-    }
-    const double rat = b.re / b.im;
-    const double scl =
-            1.0 / std::fma(b.re, rat, b.im); // bi + br*rat
-    return Cpx{.re = std::fma(a.re, rat, a.im) * scl, // ar*rat + ai
-               .im = std::fma(a.im, rat, -a.re) * scl}; // ai*rat - ar
-}
-// CDOUBLE_absolute — simd_cabsolute_f64's scaled-hypot lane form
-// (loops_unary_complex.dispatch.c.src), not libm hypot: the
-// inf/nan normalisation runs first, then larger·sqrt(ratio² + 1) with
-// the fma product — this differs from hypot by ~1 ulp on unlucky
-// inputs, so the oracle's bitwise value requires this exact form.
-// npyv_max/fmin on AArch64 map to fmax/fmin (NaN-returning-the-numeric
-// operand); the normalisation above already spread NaN into both
-// lanes, so fmax/fmin give the same result.
-[[nodiscard]] inline double cabs(Cpx z) noexcept {
-    double re = std::fabs(z.re), im = std::fabs(z.im);
-    constexpr double inf = std::numeric_limits<double>::infinity();
-    if (re == inf) im = inf;
-    if (im == inf) re = inf;
-    if (std::isnan(re)) im = std::numeric_limits<double>::quiet_NaN();
-    if (std::isnan(im)) re = std::numeric_limits<double>::quiet_NaN();
-    const double larger = std::fmax(re, im);
-    const double smaller = std::fmin(re, im);
-    const double ratio =
-            (larger != 0.0 && smaller != inf) ? smaller / larger : 0.0;
-    return std::sqrt(std::fma(ratio, ratio, 1.0)) * larger;
-}
-
-// ---------------------------------------------------------------------
 // The dict tables — insertion order kept as declared.
 struct NameValue {
     std::string_view name;
@@ -200,31 +127,11 @@ constexpr std::array kDeLevaMassFractions{
     NameValue{.name = "shank", .value = 0.0433},
     NameValue{.name = "foot", .value = 0.0137},
 };
-constexpr std::array kSegmentRadii{
-    NameValue{.name = "torso", .value = 0.110},
-    NameValue{.name = "pelvis", .value = 0.085},
-    NameValue{.name = "thigh", .value = 0.070},
-    NameValue{.name = "shank", .value = 0.055},
-    NameValue{.name = "foot", .value = 0.035},
-    NameValue{.name = "upper_arm", .value = 0.045},
-    NameValue{.name = "forearm", .value = 0.040},
-};
-
 [[nodiscard]] double dict_lookup(std::span<const NameValue> table,
                                  std::string_view name) {
     for (const NameValue &row: table)
         if (row.name == name) return row.value;
     throw std::out_of_range(py_str_repr(name)); // KeyError payload
-}
-
-// masses dict lookups used inside solve_seated_pose — linear scans over
-// the nine-key ordered table.
-[[nodiscard]] double mass_of(
-        const std::vector<std::pair<std::string, double>> &masses,
-        std::string_view key) {
-    for (const auto &[name, value]: masses)
-        if (name == key) return value;
-    throw std::out_of_range(py_str_repr(key));
 }
 
 } // namespace
@@ -243,138 +150,12 @@ bool has_de_leva_mass_fraction(std::string_view name) noexcept {
         if (entry.name == name) return true;
     return false;
 }
-double segment_radius_m(std::string_view name) {
-    return dict_lookup(std::span<const NameValue>{kSegmentRadii}, name);
-}
-bool has_segment_radius(std::string_view name) noexcept {
-    for (const NameValue &entry: kSegmentRadii)
-        if (entry.name == name) return true;
-    return false;
-}
 Vec3 lumped_com_m(std::string_view name) {
     // LUMPED_COM_M — the three standing-pose capsule centres.
     if (name == "rider_torso") return {0.160, 0.0, 0.650};
     if (name == "rider_legs") return {0.050, 0.0, 0.240};
     if (name == "rider_arms") return {0.335, 0.0, 0.720};
     throw std::out_of_range(py_str_repr(name));
-}
-
-// ---------------------------------------------------------------------
-// RiderBody
-// ---------------------------------------------------------------------
-void validate_rider_body(const RiderBody &body) {
-    scalar(body.stiffness_n_m, "RiderBody.stiffness_n_m", 0.0);
-    scalar(body.damping_ns_m, "RiderBody.damping_ns_m", 0.0);
-    scalar(body.supported_mass_kg, "RiderBody.supported_mass_kg", 0.0);
-    boolean(body.unilateral, "RiderBody.unilateral");
-}
-
-double RiderBody::mass() const {
-    // sum(g.mass for g in geoms) — builtin float accumulation; all
-    // items are float fields, so the compensated branch is exact.
-    numeric::PythonSum total;
-    for (const RiderGeom &g: geoms) total.add(g.mass);
-    return total.total();
-}
-
-Vec3 RiderBody::center_of_mass() const {
-    // sum(g.mass * g.center) has the default start=0: the first item
-    // becomes int-0 + ndarray -> x + 0.0 per lane, then sequential adds.
-    const double total = mass();
-    if (geoms.empty())
-        // int 0 / float -> ZeroDivisionError("float division by zero").
-        throw std::runtime_error("float division by zero");
-    Vec3 acc{0.0, 0.0, 0.0};
-    bool first = true;
-    for (const RiderGeom &g: geoms) {
-        const Vec3 c = g.center();
-        for (std::size_t i = 0; i < 3; ++i) {
-            const double item = g.mass * c[i];
-            acc[i] = first ? item + 0.0 : acc[i] + item;
-        }
-        first = false;
-    }
-    return v_div(acc, total);
-}
-
-double RiderBody::preload_n() const {
-    scalar(supported_mass_kg, "RiderBody.supported_mass_kg", 0.0);
-    const double preload = supported_mass_kg * configuration::kGravityMps2;
-    checks::derived(preload, "RiderBody.preload_n");
-    return preload;
-}
-
-double RiderBody::preload_deflection_m() const {
-    const double stiffness = stiffness_n_m;
-    scalar(stiffness, "RiderBody.stiffness_n_m", 0.0);
-    const double preload = preload_n();
-    if (stiffness == 0.) {
-        if (preload != 0.)
-            throw std::invalid_argument(
-                    "RiderBody.stiffness_n_m: zero stiffness cannot "
-                    "carry preload");
-        return 0.;
-    }
-    const double deflection = preload / stiffness;
-    checks::derived(deflection, "RiderBody.preload_deflection_m");
-    return deflection;
-}
-
-// ---------------------------------------------------------------------
-// SeatedPose
-// ---------------------------------------------------------------------
-const RiderBody &SeatedPose::body(std::string_view name) const {
-    for (const RiderBody &b: bodies)
-        if (b.name == name) return b;
-    // Python raises KeyError(f"no rider body named {name!r}"): the
-    // payload callers read through str(exc) is repr() of the formatted
-    // message (double-quoted because it embeds a single-quoted name).
-    throw std::out_of_range(
-            py_str_repr("no rider body named " + py_str_repr(name)));
-}
-
-double SeatedPose::total_mass_kg() const {
-    // float(sum(body masses) + sum(chain segment sums)) — two builtin
-    // float accumulations combined with a plain add; every item is a
-    // float field or float sum, so both take the compensated branch.
-    numeric::PythonSum body_total;
-    for (const RiderBody &b: bodies) body_total.add(b.mass());
-    numeric::PythonSum chain_total;
-    for (const LegChain &c: leg_chains)
-        chain_total.add(c.thigh_mass_kg + c.shank_mass_kg +
-                        c.foot_mass_kg);
-    return body_total.total() + chain_total.total();
-}
-
-std::vector<std::pair<std::string, double>>
-SeatedPose::interface_loads_n() const {
-    // loads = {"saddle": 0.0, "pedals": 0.0, "bar": 0.0} — dict order.
-    // The local names shadow the pose record's point members — suffix
-    // them like the oracle's dict keys.
-    double saddle_n = 0.0, pedals_n = 0.0, bar_n = 0.0;
-    for (const RiderBody &b: bodies) {
-        if (b.parent != "frame") continue;
-        if (b.interface == "saddle") saddle_n += b.preload_n();
-        else if (b.interface == "pedals") pedals_n += b.preload_n();
-        else if (b.interface == "bar") bar_n += b.preload_n();
-        else
-            throw std::out_of_range(py_str_repr(b.interface)); // dict miss
-    }
-    return {{"saddle", saddle_n}, {"pedals", pedals_n}, {"bar", bar_n}};
-}
-
-std::vector<std::pair<std::string, double>>
-SeatedPose::interface_shares() const {
-    const auto loads = interface_loads_n();
-    const double weight = total_mass_kg() * configuration::kGravityMps2;
-    std::vector<std::pair<std::string, double>> out;
-    out.reserve(loads.size());
-    for (const auto &[name, v]: loads) {
-        if (weight == 0.0)
-            throw std::runtime_error("float division by zero");
-        out.emplace_back(name, v / weight);
-    }
-    return out;
 }
 
 // ---------------------------------------------------------------------
@@ -429,179 +210,9 @@ double flexion_deg(const Vec3 &proximal, const Vec3 &joint,
     return 180.0 - gd::np_degrees(std::acos(clamped));
 }
 
-std::pair<double, double> spring_params(
-        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
-        double mass_kg, double resonance_hz, double damping_ratio) {
-    const double k = mass_kg *
-                     py_pow(2.0 * M_PI * resonance_hz, 2.0);
-    const double c = 2.0 * damping_ratio * std::sqrt(k * mass_kg);
-    return {k, c};
-}
-
-std::vector<std::pair<std::string, double>>
-seated_path_masses(const RiderSpecs &rider) {
-    const auto &f = [](std::string_view name) {
-        return de_leva_mass_fraction(name);
-    };
-    const double body = rider.mass_kg - rider.helmet_mass_kg;
-    const double head = f("head") * body + rider.helmet_mass_kg;
-    const double trunk_upper_mid =
-            (f("trunk_upper") + f("trunk_middle")) * body;
-    // The oracle computes trunk_lower but never reads it (dead in the
-    // source) — keep the identical evaluation.
-    [[maybe_unused]] const double trunk_lower = f("trunk_lower") * body;
-    const double arms =
-            2.0 * (f("upper_arm") + f("forearm") + f("hand")) * body;
-    const double thighs = 2.0 * f("thigh") * body;
-    const double shanks_feet = 2.0 * (f("shank") + f("foot")) * body;
-
-    const double bar_path = rider.bar_share * rider.mass_kg;
-    const double pedal_path = rider.pedal_share * rider.mass_kg;
-    const double saddle_path = rider.saddle_share * rider.mass_kg;
-
-    const double trunk_to_arms = bar_path - arms;
-    const double thigh_to_legs = pedal_path - shanks_feet;
-    if (trunk_to_arms < 0.0)
-        throw std::invalid_argument(
-                "bar share " + gd::py_fixed(rider.bar_share, 2) +
-                " puts " + gd::py_fixed(bar_path, 1) +
-                " kg on the bar, less than the arms' " +
-                gd::py_fixed(arms, 1) + " kg");
-    if (thigh_to_legs < 0.0 || thigh_to_legs > thighs)
-        throw std::invalid_argument(
-                "pedal share " + gd::py_fixed(rider.pedal_share, 2) +
-                " needs " + gd::py_fixed(thigh_to_legs, 1) +
-                " kg of thigh on the pedals; the shanks and feet weigh " +
-                gd::py_fixed(shanks_feet, 1) + " kg and the thighs " +
-                gd::py_fixed(thighs, 1) + " kg");
-    const double torso = trunk_upper_mid + head - trunk_to_arms;
-    const double pelvis = saddle_path - torso;
-    if (pelvis <= 0.0)
-        throw std::invalid_argument(
-                "saddle share " + gd::py_fixed(rider.saddle_share, 2) +
-                " leaves " + gd::py_fixed(pelvis, 1) +
-                " kg for the pelvis");
-    return {
-        {"torso", torso},
-        {"pelvis", pelvis},
-        {"arms", bar_path},
-        {"leg", pedal_path / 2.0},
-        {"head", head},
-        {"trunk_to_arms", trunk_to_arms},
-        {"thigh_to_legs", thigh_to_legs / 2.0},
-        {"shank_foot", shanks_feet / 2.0},
-        {"upper_arm_fraction",
-         f("upper_arm") / (f("upper_arm") + f("forearm") + f("hand"))},
-    };
-}
-
-double pitch_xz(const Vec3 &vec) {
-    return std::atan2(-vec[2], vec[0]);
-}
-
-Vec3 pedal_spindle_pos(double phase_rad, double lateral_y_m,
-                       double crank_len_m) {
-    // cos/sin share the phase operand — keep two separate libm calls.
-    return {crank_len_m * numeric::math_cos(phase_rad), lateral_y_m,
-            -crank_len_m * numeric::math_sin(phase_rad)};
-}
-
-std::pair<Vec3, Vec3> solve_leg_joints(
-        const LegChain &chain,
-        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
-        double phase_rad, double pelvis_z_m) {
-    Vec3 ankle = pedal_spindle_pos(phase_rad, chain.lateral_y_m,
-                                   chain.crank_len_m);
-    ankle[2] += ANKLE_ABOVE_PEDAL_M;
-    const Vec3 hip = v_add(chain.hip, {0.0, 0.0, pelvis_z_m});
-    const Vec3 knee = two_link_ik(hip, ankle, chain.thigh_len_m,
-                                  chain.shank_len_m, "+x");
-    return {knee, ankle};
-}
-
-Vec3 solve_leg_qpos(const LegChain &chain, double phase_rad,
-                  double pelvis_z_m) {
-    const auto [knee, ankle] =
-            solve_leg_joints(chain, phase_rad, pelvis_z_m);
-    const Vec3 hip = v_add(chain.hip, {0.0, 0.0, pelvis_z_m});
-    const Vec3 pedal = pedal_spindle_pos(phase_rad, chain.lateral_y_m,
-                                         chain.crank_len_m);
-    const double pitch_t = pitch_xz(v_sub(knee, hip));
-    const double pitch_s = pitch_xz(v_sub(ankle, knee));
-    const double pitch_f = pitch_xz(v_sub(pedal, ankle));
-    Vec3 q{};
-    q[0] = pitch_t - chain.pitch0_thigh_rad;
-    q[1] = (pitch_s - chain.pitch0_shank_rad) - q[0];
-    q[2] = (pitch_f - chain.pitch0_foot_rad) - (q[0] + q[1]);
-    return q;
-}
-
-LegFkResult fk_leg(const LegChain &chain, const Vec3 &qpos,
-                   double pelvis_z_m) {
-    const Vec3 hip = v_add(chain.hip, {0.0, 0.0, pelvis_z_m});
-    const double p_t = chain.pitch0_thigh_rad + qpos[0];
-    const Vec3 knee =
-            v_add(hip, {chain.thigh_len_m * numeric::math_cos(p_t), 0.0,
-                        chain.thigh_len_m * -numeric::math_sin(p_t)});
-    const double p_s =
-            chain.pitch0_shank_rad + qpos[0] + qpos[1];
-    const Vec3 ankle =
-            v_add(knee, {chain.shank_len_m * numeric::math_cos(p_s), 0.0,
-                         chain.shank_len_m * -numeric::math_sin(p_s)});
-    // qpos.sum() — the 3-element pairwise lane (-0.0 seed + fold).
-    const double p_f =
-            chain.pitch0_foot_rad +
-            numeric::numpy_pairwise_sum(
-                    std::span<const double>(qpos.data(), qpos.size()));
-    const double foot_len = gd::np_norm3(v_sub(chain.pedal, chain.ankle));
-    const Vec3 pedal_pt =
-            v_add(ankle, {foot_len * numeric::math_cos(p_f), 0.0,
-                          foot_len * -numeric::math_sin(p_f)});
-    return LegFkResult{.knee = knee, .ankle = ankle,
-                       .pedal_pt = pedal_pt};
-}
-
-Mat32 leg_jacobian(const LegChain &chain, const Vec3 &qpos,
-                   double pelvis_z_m) {
-    const Vec3 hip = v_add(chain.hip, {0.0, 0.0, pelvis_z_m});
-    const LegFkResult fk = fk_leg(chain, qpos, pelvis_z_m);
-    const std::array<Vec3, 3> joints{hip, fk.knee, fk.ankle};
-    Mat32 J{};
-    for (std::size_t i = 0; i < 3; ++i) {
-        const Vec3 r = v_sub(fk.pedal_pt, joints[i]);
-        J[i] = {r[2], -r[0]};
-    }
-    return J;
-}
-
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
-double crank_torque_share(double phase_rad, double depth) {
-    // max(0.0, cos(phase)) — Python max returns cos only when cos > 0.
-    const double c = numeric::math_cos(phase_rad);
-    return 0.5 * (1.0 - depth) +
-           depth * (M_PI / 2.0) * (c > 0.0 ? c : 0.0);
-}
-
 // ---------------------------------------------------------------------
 // solve_seated_pose
 // ---------------------------------------------------------------------
-namespace {
-
-[[nodiscard]] RiderGeom make_geom(std::string name, std::string kind,
-                                  Vec3 p1, Vec3 p2, double radius,
-                                  double mass) {
-    return RiderGeom{.name = std::move(name), .kind = std::move(kind),
-                     .p1 = p1, .p2 = p2, .radius = radius, .mass = mass};
-}
-
-} // namespace
-
-// solve_seated_pose's frame is ~8.6 KB — the oracle's pose dict maps to
-// dozens of point/segment locals that must stay named for the verbatim
-// expression order; the 8 KB guard keeps covering the tighter code
-// elsewhere (same convention as the binding TUs).
-NATIVE_DIAG_PUSH
-NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 SeatedPose solve_seated_pose(const BikeSpecs &specs,
                              const RiderSpecs &rider) {
     const geometry::FixedFramePoints fixed =
@@ -723,153 +334,6 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
             v_add(shoulder,
                   v_scale(NECK_LENGTH_M + HEAD_RADIUS_M, torso_axis));
 
-    const auto masses = seated_path_masses(rider);
-    const double shank_foot_fraction =
-            de_leva_mass_fraction("shank") + de_leva_mass_fraction("foot");
-    const double shank_mass = mass_of(masses, "shank_foot") *
-                              de_leva_mass_fraction("shank") /
-                              shank_foot_fraction;
-    const double foot_mass = mass_of(masses, "shank_foot") *
-                             de_leva_mass_fraction("foot") /
-                             shank_foot_fraction;
-    const auto [k_torso, c_torso] =
-            spring_params(mass_of(masses, "torso"),
-                          rider.torso_resonance_hz, rider.damping_ratio);
-    const auto [k_arms, c_arms] =
-            spring_params(mass_of(masses, "arms"), rider.arm_resonance_hz,
-                          rider.damping_ratio);
-    const auto [k_leg, c_leg] =
-            spring_params(mass_of(masses, "leg"), rider.leg_resonance_hz,
-                          rider.damping_ratio);
-    const double upper_arm_mass =
-            mass_of(masses, "upper_arm_fraction") *
-            mass_of(masses, "arms");
-
-    const Vec3 pelvis_center = v_add(hip, {-0.010, 0.0, 0.040});
-    RiderBody pelvis{
-            .name = "rider_pelvis",
-            .parent = "frame",
-            .attach = hip,
-            .joint = "rider_pelvis_z",
-            .geoms = {make_geom("geom_rider_pelvis", "capsule",
-                                v_add(pelvis_center, {-0.060, 0.0, 0.0}),
-                                v_add(pelvis_center, {0.060, 0.0, 0.0}),
-                                segment_radius_m("pelvis"),
-                                mass_of(masses, "pelvis"))},
-            .stiffness_n_m = rider.saddle_interface_k_n_m,
-            .damping_ns_m = rider.saddle_interface_c_ns_m,
-            .supported_mass_kg =
-                    mass_of(masses, "pelvis") + mass_of(masses, "torso"),
-            .unilateral = true,
-            .interface = "saddle",
-    };
-    validate_rider_body(pelvis);
-    RiderBody torso{
-            .name = "rider_torso",
-            .parent = "rider_pelvis",
-            .attach = hip,
-            .joint = "rider_torso_z",
-            .geoms = {make_geom("geom_rider_torso", "capsule",
-                                v_add(hip, v_scale(0.10, torso_axis)),
-                                shoulder, segment_radius_m("torso"),
-                                mass_of(masses, "torso") -
-                                        mass_of(masses, "head")),
-                      make_geom("geom_rider_head", "sphere", head_center,
-                                head_center, HEAD_RADIUS_M,
-                                mass_of(masses, "head"))},
-            .stiffness_n_m = k_torso,
-            .damping_ns_m = c_torso,
-            .supported_mass_kg = mass_of(masses, "torso"),
-            .unilateral = false,
-            .interface = "saddle",
-    };
-    validate_rider_body(torso);
-    RiderBody arms{
-            .name = "rider_arms",
-            .parent = "frame",
-            .attach = grip,
-            .joint = "rider_arms_z",
-            .geoms = {make_geom("geom_rider_upper_arm", "capsule",
-                                shoulder, elbow,
-                                segment_radius_m("upper_arm"),
-                                upper_arm_mass),
-                      make_geom("geom_rider_forearm", "capsule", elbow,
-                                grip, segment_radius_m("forearm"),
-                                mass_of(masses, "arms") - upper_arm_mass)},
-            .stiffness_n_m = k_arms,
-            .damping_ns_m = c_arms,
-            .supported_mass_kg = mass_of(masses, "arms"),
-            .unilateral = false,
-            .interface = "bar",
-    };
-    validate_rider_body(arms);
-
-    const auto leg = [&](const std::string &side, const Vec3 &knee,
-                         const Vec3 &ankle, const Vec3 &pedal) {
-        RiderBody body{
-                .name = "rider_leg_" + side,
-                .parent = "frame",
-                .attach = pedal,
-                .joint = "rider_leg_" + side + "_z",
-                .geoms = {make_geom("geom_rider_thigh_" + side, "capsule",
-                                    hip, knee, segment_radius_m("thigh"),
-                                    mass_of(masses, "thigh_to_legs")),
-                          make_geom("geom_rider_shank_" + side, "capsule",
-                                    knee, ankle, segment_radius_m("shank"),
-                                    mass_of(masses, "shank_foot")),
-                          make_geom("geom_rider_foot_" + side, "capsule",
-                                    ankle, pedal, segment_radius_m("foot"),
-                                    0.0)},
-                .stiffness_n_m = k_leg,
-                .damping_ns_m = c_leg,
-                .supported_mass_kg = mass_of(masses, "leg"),
-                .unilateral = true,
-                .interface = "pedals",
-        };
-        validate_rider_body(body);
-        return body;
-    };
-    const auto leg_chain = [&](std::string side, const Vec3 &knee,
-                               const Vec3 &ankle, const Vec3 &pedal,
-                               double lateral_y_m,
-                               double crank_len_m) {
-        return LegChain{
-                .side = std::move(side),
-                .lateral_y_m = lateral_y_m,
-                .crank_len_m = crank_len_m,
-                .hip = hip,
-                .knee = knee,
-                .ankle = ankle,
-                .pedal = pedal,
-                .thigh_len_m = l_thigh,
-                .shank_len_m = l_shank,
-                .thigh_mass_kg = mass_of(masses, "thigh_to_legs"),
-                .shank_mass_kg = shank_mass,
-                .foot_mass_kg = foot_mass,
-                .pitch0_thigh_rad = pitch_xz(v_sub(knee, hip)),
-                .pitch0_shank_rad = pitch_xz(v_sub(ankle, knee)),
-                .pitch0_foot_rad = pitch_xz(v_sub(pedal, ankle)),
-        };
-    };
-
-    std::vector<RiderBody> bodies;
-    std::vector<LegChain> leg_chains;
-    if (rider.legs == "articulated") {
-        bodies = {std::move(pelvis), std::move(torso), std::move(arms)};
-        leg_chains = {
-            leg_chain("front", knee_front, ankle_front, pedal_front,
-                      -geometry::PEDAL_LATERAL_OFFSET_M, crank_m),
-            leg_chain("rear", knee_rear, ankle_rear, pedal_rear,
-                      geometry::PEDAL_LATERAL_OFFSET_M, -crank_m),
-        };
-    } else {
-        bodies = {std::move(pelvis), std::move(torso), std::move(arms),
-                  leg("front", knee_front, ankle_front, pedal_front),
-                  leg("rear", knee_rear, ankle_rear, pedal_rear)};
-    }
-    std::vector<std::pair<std::string, double>> path_masses;
-    for (const char *key: {"torso", "pelvis", "arms", "leg"})
-        path_masses.emplace_back(key, mass_of(masses, key));
     return SeatedPose{
             .saddle = saddle,
             .hip = hip,
@@ -890,12 +354,8 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
             .knee_flexion_rear_deg =
                     flexion_deg(hip, knee_rear, ankle_rear),
             .knee_flexion_bdc_deg = knee_flexion_bdc,
-            .bodies = std::move(bodies),
-            .path_masses_kg = std::move(path_masses),
-            .leg_chains = std::move(leg_chains),
     };
 }
-NATIVE_DIAG_POP
 
 // RiderSpecs.seated_pose member ports. The seated variant gate is gone
 // with the variant: both remaining callers (geometry_pose and
@@ -997,50 +457,6 @@ compute_rider_centers_of_mass(const RiderSpecs &rider,
 std::vector<RiderCenter>
 compute_rider_centers_of_mass(const RiderSpecs &rider) {
     return compute_rider_centers_of_mass(rider, BikeSpecs{});
-}
-
-// ---------------------------------------------------------------------
-// saddle_path_apparent_mass
-// ---------------------------------------------------------------------
-std::vector<double>
-saddle_path_apparent_mass(const SeatedPose &pose,
-                          std::span<const double> frequencies_hz) {
-    const RiderBody &pelvis = pose.body("rider_pelvis");
-    const RiderBody &torso = pose.body("rider_torso");
-    const double m1 = pelvis.mass(), k1 = pelvis.stiffness_n_m,
-                 c1 = pelvis.damping_ns_m;
-    const double m2 = torso.mass(), k2 = torso.stiffness_n_m,
-                 c2 = torso.damping_ns_m;
-    std::vector<double> out;
-    out.reserve(frequencies_hz.size());
-    for (const double f: frequencies_hz) {
-        // s = 2j * np.pi * f — CPython complex*float then the complex
-        // multiply ufunc per element. The CPython step is _Py_c_prod,
-        // which gained Annex-G nan-recovery in 3.14; 3.13 is the naive
-        // {ac-bd, ad+bc} schoolbook. The divergence is unreachable here:
-        // (0+2j)*pi can only yield the finite (0, 2*pi), so both versions
-        // compute the same scalar — and every later op is a NumPy ufunc
-        // lane, not a CPython complex path, in either case.
-        const Cpx s = cmul(Cpx{.re = 0.0, .im = 2.0 * M_PI},
-                           Cpx{.re = f, .im = 0.0});
-        const Cpx z1 = cadd(Cpx{.re = k1, .im = 0.0},
-                            cmul(Cpx{.re = c1, .im = 0.0}, s));
-        const Cpx z2 = cadd(Cpx{.re = k2, .im = 0.0},
-                            cmul(Cpx{.re = c2, .im = 0.0}, s));
-        // denominator = m1*s*s + z1 + z2 - z2*z2/(m2*s*s + z2)
-        const Cpx m1ss = cmul(cmul(Cpx{.re = m1, .im = 0.0}, s), s);
-        const Cpx m2ss = cmul(cmul(Cpx{.re = m2, .im = 0.0}, s), s);
-        const Cpx frac = cdiv(cmul(z2, z2), cadd(m2ss, z2));
-        const Cpx denominator =
-                csub(cadd(cadd(m1ss, z1), z2), frac);
-        const Cpx x1 = cdiv(z1, denominator);
-        const Cpx seat_force =
-                cmul(z1, csub(Cpx{.re = 1.0, .im = 0.0}, x1));
-        const double abs_s = cabs(s);
-        // np.abs(seat_force) / np.abs(s)**2 / (m1+m2)
-        out.push_back(cabs(seat_force) / (abs_s * abs_s) / (m1 + m2));
-    }
-    return out;
 }
 
 // ---------------------------------------------------------------------

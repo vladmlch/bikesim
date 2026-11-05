@@ -60,3 +60,4 @@ Per attempt `N`: `stdout.N.txt` (final message only), `stderr.N.txt`, `export.N.
 
 - Print mode cannot show Devin's workspace-trust prompt and fails in an untrusted directory: a fresh worktree may need trusting once by the user (interactive `devin` there).
 - Live progress lives in `~/.local/share/devin/cli/sessions.db` (`message_nodes` per `session_id`); the watchdog reads it read-only. The file is tens of GB: query it by `session_id` only.
+- After changing a script, run its tests: `python3 -I -m unittest discover -s .claude/skills/devin-orchestration/tests -v`.

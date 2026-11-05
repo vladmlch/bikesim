@@ -35,9 +35,11 @@ def main() -> int:
     exit_code = (run_dir / f"exit_code.{n}")
     print(f"attempt {n}: exit={exit_code.read_text().strip() if exit_code.exists() else 'running'}")
     stderr = run_dir / f"stderr.{n}.txt"
-    if stderr.exists() and stderr.stat().st_size:
-        print(f"stderr ({stderr.stat().st_size} B), last line: "
-              f"{short(stderr.read_text(errors='replace').strip().splitlines()[-1], 200)}")
+    # Blank lines carry nothing; a file of only whitespace counts as empty.
+    stderr_lines = ([line for line in stderr.read_text(errors="replace").splitlines() if line.strip()]
+                    if stderr.exists() else [])
+    if stderr_lines:
+        print(f"stderr ({stderr.stat().st_size} B), last line: {short(stderr_lines[-1], 200)}")
 
     export = run_dir / f"export.{n}.json"
     if not export.exists():

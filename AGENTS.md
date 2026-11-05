@@ -182,8 +182,6 @@ The goal is **behavioral stability**: the agent should behave with approximately
 
 ## Ограничения модели райдера и мотора
 
-Canonical source: `docs/physics-model-constraints.md`. The constraints below are normative for all simulation work in this tree; simulation results are valid only within these assumptions.
-
 Этот документ фиксирует принятые границы физической модели. Перечисленные упрощения являются намеренными: модель должна описывать заданные сценарии езды, а не все возможные процессы в велосипеде и организме человека.
 
 ### Райдер

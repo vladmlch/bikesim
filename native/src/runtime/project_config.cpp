@@ -115,7 +115,7 @@ Value suspension(const mdl::BuildRequest& request,
         .shock_hsc=b.shock_hsc, .shock_lsc=b.shock_lsc, .shock_rebound=b.shock_rebound, .shock_hbo=b.shock_hbo, .shock_lockout=b.shock_lockout,
         .fork_travel=b.fork_travel, .shock_stroke=b.shock_stroke, .fork_initial_psi=b.fork_initial_psi, .fork_air_tokens=b.fork_air_tokens,
         .shock_stiffness=b.shock_stiffness};
-    auto resolved = cfg::resolve_suspension(inputs);
+    const auto resolved = cfg::resolve_suspension(inputs);
     const auto& a = resolved.air;
     Value fork = damper_core(resolved.fork_damper.core);
     const auto& f = resolved.fork_damper;

@@ -200,8 +200,10 @@ namespace {
     // SuperDeluxeDamper.compute_damping_components (damper.py:338-360).
     // The legacy damper curve was removed with legacy mode (2026-11-04):
     // only the physical decomposition remains.
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     DampingParts sd_damping_components(const nativecfg::SuperDeluxeConfig &d,
                                        double velocity_mps, double stroke_mm) {
+        // NOLINTEND(bugprone-easily-swappable-parameters)
         const double v = velocity_mps;
         if (!std::isfinite(v) || !std::isfinite(stroke_mm))
             throw std::invalid_argument("non-finite shock damper state");

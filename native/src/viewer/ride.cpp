@@ -5,7 +5,6 @@
 #include "pacer.hpp"
 #include "render_owner.hpp"
 #include "../legacy/playground.hpp"
-#include "../legacy/ride.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -180,36 +179,6 @@ RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options
     hooks.operator_event=lifecycle.operator_event;
     hooks.close_requested=lifecycle.close_requested;
     return run(std::move(hooks),ride.model_image(),options);
-}
-namespace {
-runtime::RenderFrame legacy_frame(const legacy::RideSnapshot& sample,const runtime::ModelImage& image) {
-    if(sample.generation>static_cast<std::uint64_t>(std::numeric_limits<int>::max()))throw std::overflow_error("legacy viewer generation overflow");
-    runtime::RenderFrame frame;
-    frame.model_sha256=image.sha256;frame.state.generation=static_cast<int>(sample.generation);frame.state.step=sample.steps;
-    frame.state.time_s=sample.time_s;frame.state.integration_state=sample.integration_state;
-    if(sample.crash)frame.state.outcome="crash:"+sample.crash->cause;
-    auto& p=frame.presentation;p.time_s=sample.time_s;p.position_m=sample.position_m;p.speed_mps=sample.speed_mps;p.pitch_rad=sample.pitch_rad;p.z_m=sample.z_m;
-    p.model_fields=sample.model_fields;
-    const auto lane=[&](std::string_view name){const auto it=std::ranges::find(legacy::kLegacyChannels,name);return sample.telemetry[static_cast<std::size_t>(it-legacy::kLegacyChannels.begin())];};
-    p.fork_travel_mm=lane("fork_travel_mm");p.shock_stroke_mm=lane("shock_stroke_mm");p.front_load_n=lane("front_load_n");p.rear_load_n=lane("rear_load_n");
-    frame.state.view=p.as_wire();return frame;
-}
-}
-RunResult run_legacy(legacy::RideSimulation& ride,const ViewerOptions& supplied,const LifecycleHooks& lifecycle) {
-    auto options=supplied;options.mode=Mode::legacy;options.timestep_s=ride.timestep_s();
-    auto image=ride.model_image();double front=0.,rear=0.;
-    const auto limits=ride.default_limits();
-    SessionHooks hooks;hooks.frame=[&]{return legacy_frame(ride.snapshot(),image);};
-    const auto terminal=[&]{return ride.crash_event().has_value()||ride.position_m()>=limits.finish_x_m||ride.steps()>=limits.max_steps;};
-    hooks.terminal=terminal;
-    hooks.advance=[&,terminal](std::int64_t target,double budget){const auto start=std::chrono::steady_clock::now();while(ride.steps()<target&&!terminal()){
-        if(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()>=budget)break;
-        ride.step(front,rear);if(lifecycle.after_advance)lifecycle.after_advance();}};
-    hooks.reset=[&]{if(lifecycle.before_reset)lifecycle.before_reset();ride.reset();if(lifecycle.after_reset)lifecycle.after_reset();};
-    hooks.brakes=[&](double f,double r){front=f;rear=r;};hooks.operator_event=lifecycle.operator_event;
-    hooks.close_requested=lifecycle.close_requested;
-    hooks.unhandled_key=[&](int key){const auto message=ride.handle_tuning_key(key);if(message)std::cout<<*message<<'\n';return message.has_value();};
-    return run(std::move(hooks),image,options);
 }
 RunResult run_playground(legacy::Playground& stand,const ViewerOptions& supplied) {
     auto options=supplied;options.mode=Mode::playground;options.title="Bike suspension playground";

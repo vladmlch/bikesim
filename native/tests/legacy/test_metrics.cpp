@@ -2,7 +2,7 @@
 #include "support/fixture_test.hpp"
 #include "legacy/metrics.hpp"
 #include "legacy/legs.hpp"
-#include "numerics/filter.hpp"
+#include "legacy/filter.hpp"
 #include "runtime/research_metrics.hpp"
 #include "runtime/setup_values.hpp"
 #include "terrain/profile.hpp"
@@ -17,12 +17,12 @@
 
 namespace {
 void filters(){
-    const std::array short_signal{0.,1.,-2.,3.,-0.};const auto short_result=bike::numerics::legacy_lowpass(short_signal,.001);
+    const std::array short_signal{0.,1.,-2.,3.,-0.};const auto short_result=bike::legacy::legacy_lowpass(short_signal,.001);
     for(std::size_t i=0;i<short_signal.size();++i)bt::require(std::bit_cast<std::uint64_t>(short_signal[i])==std::bit_cast<std::uint64_t>(short_result[i]),"short filter is a bitwise copy");
-    std::vector<double> constant(200,7.);const auto output=bike::numerics::legacy_lowpass(constant,.001);for(double const x:output)bt::require(std::abs(x-7.)<1e-10,"filtfilt preserves a constant including its edges");
-    std::vector<double> impulse(401,0.);impulse[200]=1.;const auto response=bike::numerics::legacy_lowpass(impulse,.001);
+    std::vector<double> constant(200,7.);const auto output=bike::legacy::legacy_lowpass(constant,.001);for(double const x:output)bt::require(std::abs(x-7.)<1e-10,"filtfilt preserves a constant including its edges");
+    std::vector<double> impulse(401,0.);impulse[200]=1.;const auto response=bike::legacy::legacy_lowpass(impulse,.001);
     bt::require(response[200]>0.&&response[200]<1.,"filter impulse is attenuated");for(std::size_t i=1;i<70;++i)bt::require(std::abs(response[200-i]-response[200+i])<1e-12,"forward/backward filtering has zero phase");
-    const auto above=bike::numerics::legacy_lowpass(constant,.01);bt::require(above==constant,"cutoff at or above Nyquist is source passthrough");
+    const auto above=bike::legacy::legacy_lowpass(constant,.01);bt::require(above==constant,"cutoff at or above Nyquist is source passthrough");
 }
 void events_and_metrics(){
     namespace l=bike::legacy;const std::array<unsigned char,7> flags{1,1,0,1,0,0,1};bt::require(l::count_events(flags)==3,"events count rising edges including the first sample");
@@ -71,7 +71,7 @@ void wheelies(){
     bt::invalid([&]{tracker.update(t,.01,{});});tracker.reset();bt::require(tracker.state()=="uninitialized","tracker reset clears temporal state");
     bt::require(runtime::quasistatic_front_load(100.,1.,.5,1.,0.,10.)<0.,"quasistatic diagnostic keeps an infeasible signed front load");
 }
-void oracle(){const auto input=bt::read_f64(bt::fixture("metrics/filter_input.f64"));bt::golden_f64("metrics/filter_expected.f64",bike::numerics::legacy_ride_filter(input,1000.));
-    const auto short_input=bt::read_f64(bt::fixture("metrics/filter_input_short.f64"));bt::golden_f64("metrics/filter_short.f64",bike::numerics::legacy_ride_filter(short_input,1000.));}
+void oracle(){const auto input=bt::read_f64(bt::fixture("metrics/filter_input.f64"));bt::golden_f64("metrics/filter_expected.f64",bike::legacy::legacy_ride_filter(input,1000.));
+    const auto short_input=bt::read_f64(bt::fixture("metrics/filter_input_short.f64"));bt::golden_f64("metrics/filter_short.f64",bike::legacy::legacy_ride_filter(short_input,1000.));}
 }
 int main(){return bt::run([]{filters();events_and_metrics();controls();wheelies();oracle();});}

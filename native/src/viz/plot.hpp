@@ -74,18 +74,11 @@ void set_plotly_resource(const std::filesystem::path& js_file);
 [[nodiscard]] Report compressed_comparison(const geometry::BikeSpecs&,
     const kinematics::HorstLinkageSolver&);
 [[nodiscard]] Report damper_dyno();
-[[nodiscard]] Report travel_plot(const Channels&, const terrain::TrackSpec&, double fork_mm, double shock_mm);
-[[nodiscard]] Report shaft_velocity_plot(const Channels&, std::span<const unsigned char> window = {}, unsigned bins = 80);
-[[nodiscard]] Report acceleration_plot(const Channels&, double sample_interval_s, const terrain::TrackSpec&);
-[[nodiscard]] Report tyre_plot(const Channels&, const terrain::TrackSpec&);
 [[nodiscard]] Report track_profile(const terrain::TrackSpec&, double resolution_m = .005);
 [[nodiscard]] std::vector<Report> physical_ride_plots(const Channels&);
 [[nodiscard]] std::vector<Report> physical_ride_figures(const Channels&);
 [[nodiscard]] std::vector<std::pair<double, std::string>> shift_events(const Channels&);
 [[nodiscard]] std::vector<std::pair<double, std::string>> obstacle_positions(const Channels&);
-[[nodiscard]] std::vector<std::filesystem::path> plot_ride(const Channels&, double sample_interval_s,
-    const terrain::TrackSpec&, double fork_mm, double shock_mm, const std::filesystem::path&,
-    std::span<const unsigned char> window = {});
 [[nodiscard]] std::filesystem::path plot_physical_ride_html(const Channels&,
     const std::filesystem::path&, std::string_view filename = "ride.html");
 [[nodiscard]] std::string geometry_table(const geometry::BikeSpecs&, const kinematics::HorstLinkageSolver&);

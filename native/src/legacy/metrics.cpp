@@ -1,7 +1,7 @@
 #include "metrics.hpp"
 #include "../numeric_sum.hpp"
 #include "../numeric_sincos.hpp"
-#include "../numerics/filter.hpp"
+#include "filter.hpp"
 #include "../rider/least_squares.hpp"
 #include "../terrain/pothole_report.hpp"
 #include "../runtime/setup_values.hpp"
@@ -82,7 +82,7 @@ TravelStats travel_stats(std::string end,Values travel,Values velocity,double li
 AccelStats accel_stats(std::string point,Values acceleration,double dt){
     positive(dt,"sample interval");AccelStats out;out.point=std::move(point);if(acceleration.empty())return out;
     std::vector<double> a;for(double const v:acceleration)a.push_back(v-kGravityMps2);
-    const auto filtered=numerics::legacy_lowpass(a,dt,kAccelFilterHz,4);
+    const auto filtered=legacy_lowpass(a,dt,kAccelFilterHz,4);
     std::vector<double> squared,absolute,raw;squared.reserve(a.size());absolute.reserve(a.size());raw.reserve(a.size());
     for(std::size_t i=0;i<a.size();++i){squared.push_back(filtered[i]*filtered[i]);absolute.push_back(std::abs(filtered[i]));raw.push_back(std::abs(a[i]));}
     out.rms_filtered_mps2=std::sqrt(mean(squared));out.peak_filtered_mps2=maximum(absolute);out.peak_raw_mps2=maximum(raw);return out;

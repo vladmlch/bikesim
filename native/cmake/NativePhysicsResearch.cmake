@@ -56,7 +56,7 @@ function(bike_add_physics_research native_dir core_target)
   target_link_libraries(bike_app PUBLIC bike_random ${CMAKE_DL_LIBS})
 
   add_library(bike_legacy STATIC
-    "${native_dir}/src/numerics/filter.cpp"
+    "${native_dir}/src/legacy/filter.cpp"
     "${native_dir}/src/legacy/controls.cpp"
     "${native_dir}/src/legacy/force_accumulator.cpp"
     "${native_dir}/src/legacy/legs.cpp"

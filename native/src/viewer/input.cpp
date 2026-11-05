@@ -21,8 +21,8 @@ Action action_for_key(Mode mode, int key) {
         case ' ': return mode == Mode::research || mode == Mode::inspection || mode == Mode::checked_replay ?
             Action::toggle_pause : mode == Mode::playground ? Action::none : Action::toggle_brakes;
         case 'B': return mode == Mode::research ? Action::toggle_brakes : Action::none;
-        case ',': return mode == Mode::physical || mode == Mode::legacy ? Action::brake_less : Action::none;
-        case '.': return mode == Mode::physical || mode == Mode::legacy ? Action::brake_more : Action::none;
+        case ',': return mode == Mode::physical ? Action::brake_less : Action::none;
+        case '.': return mode == Mode::physical ? Action::brake_more : Action::none;
         default: break;
     }
     if (mode == Mode::physical && key >= 0 && key < 128 && std::string_view("PLKJHUYX09876543[]-=NM;'E").find(static_cast<char>(key)) != std::string_view::npos)
@@ -64,9 +64,6 @@ std::string help_text(Mode mode) {
     if (mode == Mode::checked_replay) return "Space pause | R restart | " + controls;
     if (mode == Mode::physical) return "Space brake toggle | ,/. brake strength | R reset | " + controls +
         "\nPhysical parameters are fixed per run; edit the configuration and start a new run.";
-    if (mode == Mode::legacy) return "W/S cruise | Space brakes | ,/. brake strength | E assist | R reset | " + controls +
-        "\nFork L/K LSC J/H HSC U/Y rebound | Shock 0/9 LSC 8/7 HSC 6/5 rebound 4/3 HBO X lockout"
-        "\n[/] air tokens -/= PSI | N/M front tyre ;/' rear tyre | P preset";
     return controls + "\nW/S rear travel | Up/Down fork travel | Space auto sweep | B rider | P preset"
         "\nFork L/K LSC J/H HSC U/Y rebound | Shock 0/9 LSC 8/7 HSC 6/5 rebound 4/3 HBO X lockout"
         "\n[/] air tokens -/= PSI";

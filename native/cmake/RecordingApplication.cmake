@@ -117,7 +117,9 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/viz/ride.cpp"
     "${native_dir}/src/viz/tables.cpp")
   bike_startup_target_policy(bike_viz "${native_dir}")
-  target_link_libraries(bike_viz PUBLIC bike_legacy bike_terrain bike_io bike_platform)
+  # track_profile pulls terrain::ProfileQuery, whose biketyre objects ride the
+  # startup-runtime carrier (the same edge bike_initialization declares).
+  target_link_libraries(bike_viz PUBLIC bike_terrain bike_io bike_platform bike_startup_runtime)
   # The source root reaches html.cpp as a generated header, never as a quoted
   # compile definition: the check-context writer embeds target properties
   # verbatim, and a quote inside one would make native_check_context.json invalid.

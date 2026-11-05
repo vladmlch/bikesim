@@ -12,7 +12,7 @@
 #include "../writers/pyfloat.hpp"
 #include <array>
 
-namespace bike::numerics {
+namespace bike::legacy {
 namespace {
 using Complex = std::complex<double>;
 // lfilter_zi uses NumPy's solve, the same ILP64 provider as the existing
@@ -142,4 +142,4 @@ std::vector<double> legacy_ride_filter(std::span<const double> samples,double fs
     if (!std::isfinite(fs)||fs<=0.) throw std::invalid_argument("legacy sample rate must be finite and positive");
     return legacy_lowpass(samples,1./fs);
 }
-} // namespace bike::numerics
+} // namespace bike::legacy

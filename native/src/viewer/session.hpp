@@ -6,7 +6,7 @@
 #include <string>
 
 namespace bike::research { class PolicySession; }
-namespace bike::legacy { class RideSimulation; class Playground; }
+namespace bike::legacy { class Playground; }
 namespace bike::viewer {
 struct ViewerOptions {
     Mode mode = Mode::physical;
@@ -54,8 +54,6 @@ struct LifecycleHooks {
 [[nodiscard]] RunResult run_ride(runtime::NativeRideRuntime&, const ViewerOptions&,
     runtime::RideControl control = {}, const LifecycleHooks& = {});
 [[nodiscard]] RunResult run_research(research::PolicySession&, const ViewerOptions&,
-    const LifecycleHooks& = {});
-[[nodiscard]] RunResult run_legacy(legacy::RideSimulation&, const ViewerOptions&,
     const LifecycleHooks& = {});
 [[nodiscard]] RunResult run_playground(legacy::Playground&, const ViewerOptions& = {});
 [[nodiscard]] int replay_exit_code(bool completed, bool passed) noexcept;

@@ -6,7 +6,7 @@
 
 namespace bike::viewer {
 // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
-enum class Mode : std::uint8_t { physical, research, legacy, playground, inspection, checked_replay };
+enum class Mode : std::uint8_t { physical, research, playground, inspection, checked_replay };
 // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference ABI layout
 enum class Action : std::uint8_t {
     none, close, reset, toggle_pause, toggle_brakes, brake_less, brake_more,

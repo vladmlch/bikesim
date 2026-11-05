@@ -60,9 +60,8 @@ void controls_and_camera() {
         view::action_for_key(view::Mode::inspection, 262) == view::Action::none,
         "both replay modes restart while inspection seek keys reach the cursor owner");
     bt::require(view::action_for_key(view::Mode::physical, 'P') == view::Action::fixed_parameter &&
-        view::action_for_key(view::Mode::legacy, 'P') == view::Action::none &&
         view::action_for_key(view::Mode::playground, ' ') == view::Action::none,
-        "legacy/playground tuning routes to their owners while physical parameters stay fixed");
+        "playground tuning routes to its owner while physical parameters stay fixed");
     view::InputState input;
     input.apply(view::Action::toggle_brakes); input.apply(view::Action::brake_less);
     bt::require(std::abs(input.brake_demand() - .9) < 1e-12, "brake demand uses the selected strength");

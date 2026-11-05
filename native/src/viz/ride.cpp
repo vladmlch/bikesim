@@ -1,12 +1,8 @@
 #include "plot_internal.hpp"
-#include "../legacy/metrics.hpp"
-#include "../legacy/tyre.hpp"
-#include "../numerics/filter.hpp"
 #include "../terrain/pothole_report.hpp"
 #include "../terrain/profile.hpp"
 #include <algorithm>
 #include <cmath>
-#include <limits>
 #include <numbers>
 #include <regex>
 #include <set>
@@ -14,14 +10,6 @@
 
 namespace bike::viz {
 namespace {
-double percentile(std::vector<double> values,double percent) {
-    if(values.empty())return 0.;
-    if(std::ranges::any_of(values,[](double x){return std::isnan(x);}))return std::numeric_limits<double>::quiet_NaN();
-    std::ranges::sort(values);const double index=(static_cast<double>(values.size())-1.)*(percent/100.);
-    const auto lower=static_cast<std::size_t>(std::floor(index)),upper=static_cast<std::size_t>(std::ceil(index));const double fraction=index-static_cast<double>(lower);
-    // NumPy linear percentile interpolates toward the nearer endpoint.
-    const double delta=values[upper]-values[lower];return fraction>=.5?values[upper]-delta*(1.-fraction):values[lower]+delta*fraction;
-}
 void add(Plot& plot,const Channels& channels,const std::vector<double>& x,std::string_view name,std::string_view color={},bool secondary=false,SeriesStyle style=SeriesStyle::line) {
     detail::add_series(plot,channels,x,name,color,secondary,style);
 }
@@ -50,72 +38,6 @@ void evidence_markers(std::vector<Report>& reports,const Channels& channels,cons
         bool active=false;for(std::size_t i=0;i<brakes->size();++i){const bool current=(*brakes)[i]>.5;if(current!=active){events.emplace_back(i,current?"BRAKE ON":"BRAKE OFF");active=current;}}}
     for(std::size_t r=0;r<reports.size();++r)for(auto& panel:reports[r].panels)for(const auto& [i,label]:events){const double x=r==0?time[i]:distance[i];if(std::isfinite(x))panel.markers.push_back({.kind=MarkerKind::vertical,.first=x,.second=0.,.label=label,.color="#ef4444"});}
 }
-}
-Report travel_plot(const Channels& channels,const terrain::TrackSpec& track,double fork_limit,double shock_limit) {
-    const auto x=detail::required(channels,"x_m");
-    Plot fork{.title="Fork travel along "+track.name,.x_label="",.y_label="travel (mm)",.series={{.name="fork travel",.x=x,.y=detail::required(channels,"fork_travel_mm"),.color="#38bdf8"}}};
-    fork.markers.push_back({.kind=MarkerKind::horizontal,.first=fork_limit,.second=0.,.label="full travel "+detail::number(fork_limit)+" mm",.color="#ef4444"});detail::track_markers(fork,track);
-    Plot shock{.title="Shock stroke and rear wheel travel",.x_label="track x (m)",.y_label="mm",.series={{.name="shock stroke",.x=x,.y=detail::required(channels,"shock_stroke_mm"),.color="#fbbf24"},
-        {.name="rear wheel travel",.x=x,.y=detail::required(channels,"rear_wheel_mm"),.color="#f97316"}}};
-    shock.markers.push_back({.kind=MarkerKind::horizontal,.first=shock_limit,.second=0.,.label="full stroke "+detail::number(shock_limit)+" mm",.color="#ef4444"});detail::track_markers(shock,track);
-    Report out{.title="Suspension travel",.panels={std::move(fork),std::move(shock)},.columns=1,.width=2400,.height=1200};validate(out);return out;
-}
-Report shaft_velocity_plot(const Channels& channels,std::span<const unsigned char> window,unsigned bins) {
-    if(bins==0||bins>10000)throw std::invalid_argument("histogram bins must be in [1,10000]");
-    const auto x=detail::required(channels,"x_m");if(!window.empty()&&window.size()!=x.size())throw std::invalid_argument("shaft-velocity window width differs from x_m");
-    Report out{.title="Shaft velocity",.panels={},.columns=2,.width=2100,.height=900};
-    for(std::size_t end=0;end<2;++end){const std::string name=end==0?"fork_shaft_mps":"shock_shaft_mps";const auto source=detail::required(channels,name);
-        if(source.size()!=x.size())throw std::invalid_argument("shaft-velocity channel width differs from x_m");
-        std::vector<double> values;for(std::size_t i=0;i<source.size();++i)if((window.empty()||window[i])&&std::isfinite(source[i]))values.push_back(source[i]);
-        Plot plot{.title=end==0?"Fork shaft velocity":"Shock shaft velocity",.x_label="shaft velocity (m/s), + compression / - rebound",.y_label="time share",.series={}};plot.log_y=true;
-        if(!values.empty()){auto absolute=values;for(double& value:absolute)value=std::abs(value);const double limit=std::max(.5,percentile(absolute,99.5)*1.1),width=2.*limit/bins;
-            std::vector<double> centers(bins),density(bins,0.);std::size_t included=0;
-            for(const double value:values)if(value>=-limit&&value<=limit){const auto index=std::min<std::size_t>(bins-1,static_cast<std::size_t>(std::floor((value+limit)/width)));density[index]+=1.;++included;}
-            for(unsigned i=0;i<bins;++i){centers[i]=-limit+(static_cast<double>(i)+.5)*width;if(included)density[i]/=static_cast<double>(included)*width;}
-            plot.series.push_back({.name=end==0?"fork":"shock",.x=std::move(centers),.y=std::move(density),.color=std::string(end==0?"#38bdf8":"#fbbf24"),.style=SeriesStyle::bars});
-            std::vector<double> compression,rebound;for(const double value:values)if(value>0.)compression.push_back(value);else if(value<0.)rebound.push_back(-value);
-            plot.notes={"compression: p50 "+detail::number(percentile(compression,50.))+", p95 "+detail::number(percentile(compression,95.))+", max "+detail::number(compression.empty()?0.:*std::ranges::max_element(compression))+" m/s",
-                "rebound: p50 "+detail::number(-percentile(rebound,50.))+", p95 "+detail::number(-percentile(rebound,95.))+", max "+detail::number(rebound.empty()?0.:-*std::ranges::max_element(rebound))+" m/s"};
-        }
-        plot.markers.push_back({.kind=MarkerKind::vertical,.first=0.,.second=0.,.label={},.color="#8b949e"});out.panels.push_back(std::move(plot));
-    }
-    validate(out);return out;
-}
-Report acceleration_plot(const Channels& channels,double dt,const terrain::TrackSpec& track) {
-    const auto x=detail::required(channels,"x_m");Report report{.title="Vertical acceleration",.panels={},.columns=1,.width=2400,.height=1200};
-    for(std::size_t end=0;end<2;++end){auto raw=detail::required(channels,end==0?"bar_acc_vert_mps2":"saddle_acc_vert_mps2");if(raw.size()!=x.size())throw std::invalid_argument("acceleration channel width differs from x_m");
-        for(double& value:raw)value-=legacy::kGravityMps2;
-        const auto filtered=numerics::legacy_lowpass(raw,dt);
-        Plot plot{.title=end==0?"Handlebar vertical acceleration":"Saddle vertical acceleration",.x_label=end==0?"":"track x (m)",.y_label="m/s^2 (g removed)",
-            .series={{.name="100 Hz low-pass",.x=x,.y=filtered,.color=end==0?"#34d399":"#f97316"}}};
-        plot.markers.push_back({.kind=MarkerKind::horizontal,.first=0.,.second=0.,.label={},.color="#8b949e"});detail::track_markers(plot,track);
-        if(!raw.empty()){std::size_t peak=0;for(std::size_t i=1;i<raw.size();++i)if(std::abs(raw[i])>std::abs(raw[peak]))peak=i;
-            plot.notes.push_back("raw peak "+detail::number(raw[peak])+" m/s^2 at x = "+detail::number(x[peak])+" m (solver transient, unfiltered)");}
-        if(end==1)if(const auto* torso=numeric(channels,"rider_torso_acc_vert_mps2"))if(!torso->empty()&&std::ranges::any_of(*torso,[](double v){return v!=0.;})){
-            auto values=*torso;for(double& v:values)v-=legacy::kGravityMps2;plot.series.push_back({.name="rider torso, 100 Hz low-pass",.x=x,.y=numerics::legacy_lowpass(values,dt),.color="#c084fc"});}
-        report.panels.push_back(std::move(plot));
-    }
-    validate(report);return report;
-}
-Report tyre_plot(const Channels& channels,const terrain::TrackSpec& track) {
-    const auto x=detail::required(channels,"x_m");Report report{.title="Pneumatic tyres",.panels={
-        {.title="Tyre vertical load",.x_label="",.y_label="load (N)",.series={}},{.title="Tyre deflection and rim strikes",.x_label="",.y_label="deflection (mm)",.series={}},
-        {.title="Longitudinal slip",.x_label="track x (m)",.y_label="slip ratio κ",.series={}},{.title="Contact patch length",.x_label="track x (m)",.y_label="length (mm)",.series={}}},.columns=2,.width=2400,.height=1350};
-    report.panels[2].markers={{.kind=MarkerKind::horizontal,.first=0.,.second=0.,.label={},.color="#8b949e"},{.kind=MarkerKind::horizontal,.first=-1.,.second=0.,.label="locked wheel κ = −1",.color="#ef4444"}};
-    for(std::size_t wheel=0;wheel<2;++wheel){const std::string side=wheel==0?"front":"rear",color=wheel==0?"#38bdf8":"#fbbf24";
-        for(std::size_t p=0;p<4;++p){const std::array suffix{"_tyre_fz_n","_tyre_deflection_mm","_slip_ratio","_patch_length_mm"};add(report.panels[p],channels,x,side+suffix[p],color);}
-        // Historical ride_plots.py uses FRONT_TYRE/REAR_TYRE for these
-        // geometric thresholds. A newer recording may advertise its actual
-        // geometry explicitly; pressure changes do not move the rim datum.
-        double rim_threshold=(wheel==0?legacy::front_tyre():legacy::rear_tyre()).rim_strike_deflection_mm();
-        if(const auto* threshold=numeric(channels,side+"_rim_strike_deflection_mm"))if(!threshold->empty()&&std::isfinite(threshold->front()))rim_threshold=threshold->front();
-        report.panels[1].markers.push_back({.kind=MarkerKind::horizontal,.first=rim_threshold,.second=0.,.label=side+" rim threshold",.color=color});
-        if(const auto* rim=numeric(channels,side+"_rim_strike")){if(rim->size()!=x.size())throw std::invalid_argument("rim-event width differs from x_m");bool previous=false;
-            for(std::size_t i=0;i<rim->size();++i){const bool active=(*rim)[i]>.5;if(active&&!previous&&std::isfinite(x[i]))for(const auto panel:{0U,1U,3U})report.panels[panel].markers.push_back({.kind=MarkerKind::vertical,.first=x[i],.second=0.,.label=side+" rim strike",.color="#ef4444"});previous=active;}}
-    }
-    for(auto& panel:report.panels)detail::track_markers(panel,track);
-    validate(report);
-    return report;
 }
 Report track_profile(const terrain::TrackSpec& track,double resolution) {
     if(!std::isfinite(resolution)||resolution<=0.)throw std::invalid_argument("track plot resolution must be finite and positive");
@@ -187,11 +109,6 @@ std::vector<Report> physical_ride_figures(const Channels& channels) {
     add(suspension.panels[1],channels,x,"front_load_n","#34d399");add(suspension.panels[1],channels,x,"rear_load_n","#f97316");
     for(const auto& [position,label]:obstacle_positions(channels))for(auto& panel:suspension.panels)panel.markers.push_back({.kind=MarkerKind::vertical,.first=position,.second=0.,.label=label,.color="#a855f7",.full_height=true});
     std::vector<Report> out{std::move(effort),std::move(suspension)};evidence_markers(out,channels,time,x);for(const auto& report:out)validate(report);return out;
-}
-std::vector<std::filesystem::path> plot_ride(const Channels& channels,double dt,const terrain::TrackSpec& track,double fork,double shock,const std::filesystem::path& out,std::span<const unsigned char> window) {
-    const std::array reports{travel_plot(channels,track,fork,shock),shaft_velocity_plot(channels,window),acceleration_plot(channels,dt,track)};
-    constexpr std::array names{"travel.png","shaft_velocity.png","acceleration.png"};std::vector<std::filesystem::path> paths;
-    for(std::size_t i=0;i<reports.size();++i){paths.push_back(out/names[i]);write_png(reports[i],paths.back());}return paths;
 }
 std::filesystem::path plot_physical_ride_html(const Channels& channels,const std::filesystem::path& out,std::string_view filename) {
     const std::filesystem::path name(filename);if(name.empty()||name.has_parent_path()||name.extension()!=".html")throw std::invalid_argument("ride HTML filename must be a leaf .html path");

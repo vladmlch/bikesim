@@ -391,12 +391,12 @@ void test_savage_is_ridden_to_the_end() {
     auto env = environment(
         terrain::load_track(repo_file("examples/research/rough_uphill_savage.toml")),
         110.);
-    // ORACLE PARITY GAP: the oracle's savage episode runs to 'duration'
-    // (x≈53 m stall); the native episode throws
-    // "attachment normal has no planar component" partway through — a
-    // contact normal that decomposes to a purely vertical (y-only)
-    // direction. Catch it so the remaining runs can be measured and the
-    // exact failure mode stays pinned below.
+    // The episode used to abort with "attachment normal has no planar
+    // component": the pinned saddle's normal was the flat saddle's two-pad
+    // mean, which cancels to zero once the pitched pelvis sinks the pads
+    // across the thin saddle box. The welded saddle now reads its own
+    // upper face (rider_contacts test pins it), so the ride must finish
+    // with a published outcome rather than an exception.
     RideResult result;
     std::string ride_error;
     try {
@@ -434,15 +434,8 @@ void test_savage_is_ridden_to_the_end() {
 #endif
     // The structural half stays live: a full 110 s episode commits every
     // physical interval once and terminates with a published outcome.
-    // On this platform the episode aborts on the planar-normal parity
-    // gap; pin that exact failure mode so a different crash is red, and
-    // re-check window production whenever the ride completes.
-    if (ride_error.empty()) {
-        bt::require(!result.rows.empty(), "the savage ride produced windows");
-    } else {
-        bt::require(ride_error == "attachment normal has no planar component",
-                    "savage episode fails on the documented parity gap only");
-    }
+    bt::require(ride_error.empty(), "the savage episode ends without an exception");
+    bt::require(!result.rows.empty(), "the savage ride produced windows");
 }
 
 } // namespace

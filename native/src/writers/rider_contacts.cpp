@@ -1107,6 +1107,25 @@ namespace writers {
                              static_cast<std::size_t>(target.eq_id));
             target.point = rider::add(vec3_at(xpos, ref.body),
                                       rider::matvec(foot, anchor));
+        } else if (support == 0) {
+            // A linked saddle (weld/pin) is an equality, not a pad
+            // contact: the pelvis may pitch about the pin and sink into the
+            // thin saddle box, and the flat saddle's two-pad mean then
+            // pairs a +z with a -z nearest face into the zero vector. The
+            // normal is the saddle's own upper face — exactly the pad mean
+            // whenever both pads rest above that face.
+            const std::span<const double> geom_xpos =
+                model_access::readonly_buffer(data->geom_xpos,
+                                              3 * model_->ngeom, "geom_xpos");
+            const std::span<const double> geom_xmat =
+                model_access::readonly_buffer(data->geom_xmat,
+                                              9 * model_->ngeom, "geom_xmat");
+            const std::span<const double> geom_size =
+                model_access::readonly_buffer(model_->geom_size,
+                                              3 * model_->ngeom, "geom_size");
+            target.normal = rider::upper_box_face(
+                vec3_at(geom_xpos, ref.geom), mat3_at(geom_xmat, ref.geom),
+                vec3_at(geom_size, ref.geom)).normal;
         } else {
             // np.mean([n0, n1], axis=0) — the ordered pair mean,
             // unnormalized (decompose/geometry normalize downstream).

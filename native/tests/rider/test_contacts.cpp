@@ -14,9 +14,11 @@
 #include "model/rider_geometry.hpp"
 #include "engine_call.hpp"
 #include "io/json.hpp"
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <memory>
+#include <ranges>
 
 namespace {
 namespace r=bike::rider;
@@ -70,11 +72,43 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(!runtime::implemented_capabilities(*request.physics,wrong).implemented,"nonflat attachment model requires articulated rider");
     auto assisted=*request.physics;assisted.pitch_assist=true;bt::invalid([&]{(void)runtime::implemented_capabilities(assisted,*request.rider);});
 }
+// The pinned saddle is a connect equality, not a pad contact: the pelvis
+// may pitch about the pin and sink into the 30 mm saddle box. The flat
+// saddle's two-pad mean then lands one pad above and one below the box
+// mid-plane, their nearest-face normals are +z and -z, the mean is the
+// zero vector, and decompose_wrench aborted the whole ride with "attachment
+// normal has no planar component" (rough_uphill_savage, t~24.5 s at 35 %
+// sag, 2026-11-05). The welded saddle's normal is the saddle's upper face.
+[[gnu::noinline]] void pinned_saddle_normal_is_the_saddle_face() {
+    mdl::BuildRequest request;request.mode="ride";request.rider=cfg::RiderSpecs{};request.rider->variant="articulated_planar";request.physics=physical();
+    auto&a=request.physics->articulated;a.pedal_attachment="spindle";a.saddle_attachment="pin";a.grip_attachment="connect";
+    auto const model=mdl::compile_mjcf(mdl::generate_mjcf(request));const std::unique_ptr<mjData,decltype(&mj_deleteData)> data(engine::make_data(model.get()),mj_deleteData);engine::forward(model.get(),data.get());
+    auto writer=r::make_support_writer(*model,contacts(a));writer->reset(data.get());
+    const mjModel*m=model.get();const mjData*d=data.get();
+    const auto id=[m](mjtObj type,const char*name){const int i=mj_name2id(m,type,name);bt::require(i>=0,name);return static_cast<std::size_t>(i);};
+    const auto qpos=std::views::counted(d->qpos,m->nq);const auto adr=std::views::counted(m->jnt_qposadr,m->njnt);
+    const auto root_z=static_cast<std::size_t>(adr[id(mjOBJ_JOINT,"rider_root_z")]);const auto root_pitch=static_cast<std::size_t>(adr[id(mjOBJ_JOINT,"rider_root_pitch")]);
+    const auto geom=id(mjOBJ_GEOM,"geom_saddle"),site=id(mjOBJ_SITE,"site_rider_saddle"),pelvis=id(mjOBJ_BODY,"rider_pelvis");
+    const auto gpos=std::views::counted(d->geom_xpos,3*m->ngeom),gmat=std::views::counted(d->geom_xmat,9*m->ngeom),gsize=std::views::counted(m->geom_size,3*m->ngeom);
+    const auto spos=std::views::counted(d->site_xpos,3*m->nsite),bmat=std::views::counted(d->xmat,9*m->nbody);
+    // Pad centres (site + pelvis_R @ (+-half, 0, radius)) in the saddle box frame.
+    const auto pads=[&]{std::array<std::array<double,3>,2> out{};for(std::size_t p=0;p<2;++p){const std::array<double,3> off{(p==0?-1.:1.)*a.saddle_patch_half_length_m,0.,a.support_pad_radius_m};std::array<double,3> w{};for(std::size_t i=0;i<3;++i){w[i]=spos[3*site+i]-gpos[3*geom+i];for(std::size_t j=0;j<3;++j)w[i]+=bmat[9*pelvis+3*i+j]*off[j];}for(std::size_t i=0;i<3;++i){out[p][i]=0.;for(std::size_t j=0;j<3;++j)out[p][i]+=gmat[9*geom+3*j+i]*w[j];}}return out;};
+    // Pitch the pelvis, then sink it until the pads straddle the box mid-plane.
+    qpos[root_pitch]+=.2;engine::forward(model.get(),data.get());
+    const auto tilted=pads();qpos[root_z]-=(tilted[0][2]+tilted[1][2])/2.;engine::forward(model.get(),data.get());
+    const auto inside=pads();const double half_z=gsize[3*geom+2],half_x=gsize[3*geom];
+    bt::require(inside[0][2]*inside[1][2]<0.&&std::abs(inside[0][2])<half_z&&std::abs(inside[1][2])<half_z&&std::abs(inside[0][0])<half_x&&std::abs(inside[1][0])<half_x,"precondition: the two saddle pads straddle the box mid-plane");
+    const auto prepared=writer->prepare_attachment_raw(d);
+    const auto saddle=std::ranges::find_if(prepared.geometry,[](const auto&e){return e.first=="saddle";});
+    bt::require(saddle!=prepared.geometry.end()&&saddle->second.kind=="saddle","pinned saddle is a prepared attachment");
+    const auto&n=saddle->second.normal;
+    bt::require(n.size()==3&&n[0]==gmat[9*geom+2]&&n[1]==gmat[9*geom+5]&&n[2]==gmat[9*geom+8],"pinned saddle normal is the saddle box's upper face, whatever the pads do");
+}
 [[gnu::noinline]] void diagnostics_roundtrip() {
     r::LegacySupportDiagnostics d;d.target.vertical_forces_n={400.,150.,150.,100.};d.target.feasible=true;d.stance={true,false};d.posture.pelvis_offset_m=std::array<double,2>{.01,.02};d.target_phase_rad=0.;d.phase_error_rad=.1;d.feet[0].weld=true;d.feet[1].recovery=true;d.feet[1].recovery_stage="escape";
     const auto encoded=r::encode_support_diagnostics(d);const auto restored=r::decode_support_diagnostics(encoded,"support");
     bt::require(bike::io::canonical_json(r::encode_support_diagnostics(restored))==bike::io::canonical_json(encoded),"force targets, optional phase and foot recovery roundtrip");
 }
 }
-int main(){return bt::run([]{support_wrench();topology_and_controller();diagnostics_roundtrip();});}
+int main(){return bt::run([]{support_wrench();topology_and_controller();pinned_saddle_normal_is_the_saddle_face();diagnostics_roundtrip();});}
 NATIVE_DIAG_POP

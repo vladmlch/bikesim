@@ -7,11 +7,11 @@ description: Delegate task execution to the local Devin CLI agent while you orch
 
 Devin is the default executor for delegated tasks; you orchestrate. Say so explicitly when you hand a task to your own subagent instead.
 
-`S=.claude/skills/devin-orchestration/scripts`. Run every command from the main checkout root, so the relative paths (and the permission rule on `devin-run.sh`) match.
+`S=.claude/skills/devin-orchestration/scripts`, `T=.claude/skills/devin-orchestration/templates`. Run every command from the main checkout root, so the relative paths (and the permission rule on `devin-run.sh`) match.
 
 ## Steps
 
-1. **Run directory.** Create `.scratch/devin/<YYYY-MM-DD>-<slug>/` and write `brief.md` from the template below. Done when the brief names the goal, the workdir, and a checkable done-criterion.
+1. **Brief.** Fill a template into `.scratch/devin/<YYYY-MM-DD>-<slug>/brief.md` with `python3 -I $S/devin-brief.py $T/<template>.md <run-dir>/brief.md KEY=VALUE ...` (see Briefs). Done when the script prints `wrote …`: it refuses a missing or unknown field.
 2. **Launch.** Bash with `run_in_background: true`:
    `bash $S/devin-run.sh <run-dir> [--workdir <worktree>] [--model <id>]`.
    The model defaults to `swe-2-max` (free). A paid model (Fable, Opus, GPT-6, …) needs the user's approval first: ask when the task is clearly hard or `swe-2-max` failed it twice.
@@ -27,30 +27,27 @@ Devin is the default executor for delegated tasks; you orchestrate. Say so expli
 
 ## Context budget
 
-Devin's raw output never enters your context. Read only the three sources in step 5. `export.<N>.json` is read only through `devin-summary.py`, never directly. Background launches print one status line; keep it that way.
+Every byte you write into a brief or read back from Devin stays in your context for the rest of the session. Spend it only on what Devin cannot read itself and on the verdicts you act on.
 
-## Brief template
+- Devin's raw output never enters your context: read only the three sources in step 5. `export.<N>.json` is read only through `devin-summary.py`. Background launches print one status line; keep it that way.
+- A reviewer's or implementer's final message carries the verdicts; open its report or review file only for the finding you are about to act on, and then only that section.
+- When you review a diff yourself, start it at the first commit Devin authored, not at a base that re-shows your own code; check code the plan dictated verbatim mechanically (compare the file with the plan's code block) instead of reading it.
 
-Write briefs in English (Devin's Russian drifts into anglicism-heavy mush). Devin already loads `AGENTS.md` and `CLAUDE.md` as always-on rules, so the brief carries only the task. One concern per brief; split broader work into sequential briefs.
+## Briefs
 
-```markdown
-# Task: <one line>
+Write each brief once, as the delta only, and never read it back: what you wrote is already in your context, and `devin-brief.py` checks the fill.
 
-Workdir: <absolute path>
-Goal: <what must be true when you are done>
-Context: <files, symbols, prior findings, decisions already made>
-Done when: <checkable criterion, e.g. the named test passes, the listed behaviour holds>
+- **By path, not by paste.** Devin reads files itself. Requirements that already exist as a file (a plan task extracted by `task-brief`, a review package, an SDD prompt template, the plan, a spec) go into the brief as a path. The brief carries only what exists nowhere on disk: the goal, the done-criterion, decisions and rulings, the report path.
+- **Fixed text lives in the templates.** Rules, the no-push line, the report contract are in `$T/*.md`; fill placeholders, never retype them. `task.md` serves implementers and fixers; `review.md` serves task reviews, re-reviews and any other read-only verdict run, with `INSTRUCTIONS_FILE` pointing at the prompt template it follows.
+- **Fill fresh, never derive.** Build every brief from its template. Do not `sed` a previous brief into a new one: the copy carries values you never looked at.
+- **Long values from files.** `KEY=@path` takes a value from a file you already have (a findings list, a constraints block copied from the plan), so it is not typed twice.
+- English only (Devin's Russian drifts into anglicism-heavy mush). Devin already loads `AGENTS.md` and `CLAUDE.md` as always-on rules, so the brief never restates them. One concern per brief; split broader work into sequential briefs.
 
-Rules:
-- Keep all work on this machine: no git push, no PRs, no messages to external services.
-- Work without asking questions. If blocked, stop and report the blocker and the options you see.
+## With subagent-driven-development
 
-Final report (your last message, at most 40 lines, exactly these sections):
-## Result      — done / partial / blocked, one sentence
-## Changes     — files changed, one line each
-## Commands    — commands run that matter, with pass/fail
-## Open issues — anything unresolved or doubtful
-```
+Devin fills every SDD seat except the final review: implementers, task reviewers, scoped re-reviews and the final fix wave are Devin runs (`task.md` / `review.md`, with `INSTRUCTIONS_FILE` pointing at the matching SDD prompt template). Devin print mode cannot ask questions, so an implementer's questions arrive as `NEEDS_CONTEXT` and you answer through a follow-up.
+
+**The final whole-branch review is yours.** Do it yourself, in this session: no Devin run, no subagent. Read the review package under the Context-budget rules (skip your own commits, check plan-verbatim code mechanically), triage the ledger's deferred minors, and record the verdict in the ledger. Findings go to one Devin fix run; check its fix diff yourself.
 
 ## Run directory layout
 
@@ -60,4 +57,5 @@ Per attempt `N`: `stdout.N.txt` (all agent narration; the final message is at th
 
 - Print mode cannot show Devin's workspace-trust prompt and fails in an untrusted directory: a fresh worktree may need trusting once by the user (interactive `devin` there).
 - Live progress lives in `~/.local/share/devin/cli/sessions.db` (`message_nodes` per `session_id`); the watchdog reads it read-only. The file is tens of GB: query it by `session_id` only.
+- `devin-run.sh` is the script running while Devin works: a Devin task that changes it must replace it atomically (write a sibling file, then `mv`), because bash reads a running script from its open file.
 - After changing a script, run its tests: `python3 -I -m unittest discover -s .claude/skills/devin-orchestration/tests -v`.

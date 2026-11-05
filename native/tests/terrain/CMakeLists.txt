@@ -1,6 +1,6 @@
 # terrain domain contract tests. The same app/library graph is exercised
 # by both executables; registration never invokes them.
-foreach(_terrain_test IN ITEMS terrain_generators terrain_presets)
+foreach(_terrain_test IN ITEMS terrain_generators terrain_pothole_report terrain_presets)
   string(REGEX REPLACE "^terrain_" "" _terrain_src "${_terrain_test}")
   add_executable(${_terrain_test} "test_${_terrain_src}.cpp")
   bike_startup_target_policy(${_terrain_test} "${_test_repo_root}/native")

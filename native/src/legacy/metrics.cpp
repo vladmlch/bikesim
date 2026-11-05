@@ -3,7 +3,7 @@
 #include "../numeric_sincos.hpp"
 #include "../numerics/filter.hpp"
 #include "../rider/least_squares.hpp"
-#include "../terrain/profile.hpp"
+#include "../terrain/pothole_report.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../io/json.hpp"
 
@@ -122,17 +122,6 @@ std::optional<PedalBobStats> pedal_bob_stats(const Channels& w,double dt,int swi
     const double total=out.crank_torque_mean_nm+out.assist_torque_mean_nm;out.gear_ratio_check=std::abs(total)>1e-9?out.wheel_torque_mean_nm/total:0.;
     out.freewheel_fraction=fraction(coast);out.cutoff_fraction=fraction(channel(w,"assist_cutoff_active"));out.traction_limited_fraction=fraction(channel(w,"drive_traction_limited"));out.assist_switches=switches;return out;
 }
-std::vector<PotholeReport> pothole_reports(const terrain::TrackSpec& track){
-    std::vector<PotholeReport> out;
-    for(const auto& obstacle:track.sorted_obstacles()){
-        if(obstacle.is_pothole()){
-            const double depth=std::visit([](const auto& shape){if constexpr(requires{shape.depth_m;})return shape.depth_m;else return 0.;},obstacle.shape);
-            out.push_back({.label=obstacle.label(),.kind=std::string(obstacle.kind()),.start_m=obstacle.start_m(),.length_m=obstacle.length_m(),.declared_depth_mm=depth*1000.,
-                .effective_drop_front_mm=terrain::effective_drop_m(obstacle,terrain::FRONT_WHEEL_RADIUS_M)*1000.,.effective_drop_rear_mm=terrain::effective_drop_m(obstacle,terrain::REAR_WHEEL_RADIUS_M)*1000.});
-        }
-    }
-    return out;
-}
 std::array<std::size_t,3> count_kinds(std::span<const terrain::Obstacle> obstacles){std::array<std::size_t,3> out{};for(const auto& o:obstacles){out[0]+=o.is_pothole();out[1]+=o.is_bump();out[2]+=o.annotate();}return out;}
 std::size_t count_completed_impact_episodes(std::span<const RimStrikeStats> events,double gap,double distance){
     if(!std::isfinite(gap)||!std::isfinite(distance)||gap<0.||distance<0.)throw std::invalid_argument("rim episode thresholds must be nonnegative and finite");
@@ -159,7 +148,7 @@ for(std::size_t i=0;i<front.size();++i)air.push_back(front[i]<.5&&rear[i]<.5?1:0
     out.fork=travel_stats("fork",channel(window,"fork_travel_mm"),channel(window,"fork_shaft_mps"),options.fork_travel_mm,options.fork_travel_mm-kForkBottomMarginMm);
     out.shock=travel_stats("shock",channel(window,"shock_stroke_mm"),channel(window,"shock_shaft_mps"),options.shock_stroke_mm,options.shock_bumper_engage_mm);
     out.bar=accel_stats("bar",channel(window,"bar_acc_vert_mps2"),dt);out.saddle=accel_stats("saddle",channel(window,"saddle_acc_vert_mps2"),dt);
-    out.potholes=pothole_reports(track);out.extras=options.extras;out.rider_variant=options.rider_variant;
+    out.potholes=terrain::pothole_reports(track);out.extras=options.extras;out.rider_variant=options.rider_variant;
     if(options.rider_variant=="seated"&&std::ranges::any_of(window,[](const auto& entry){return entry.first=="saddle_load_n";}))out.rider=rider_stats(window,dt,options.rider_mass_kg*kGravityMps2);
     if(out.window_rows)out.pedals=pedal_bob_stats(window,dt,options.assist_switches);
     for(std::size_t i=0;i<2;++i)out.tyres[i]=tyre_stats(i==0?"front":"rear",window,dt,start,options.tyre_history?&(*options.tyre_history)[i]:nullptr);

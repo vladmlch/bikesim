@@ -35,6 +35,7 @@ function(bike_add_native_startup native_dir)
 
   add_library(bike_terrain STATIC
     "${native_dir}/src/terrain/profile.cpp"
+    "${native_dir}/src/terrain/pothole_report.cpp"
     "${native_dir}/src/terrain/heightfield.cpp"
     "${native_dir}/src/terrain/surface.cpp"
     "${native_dir}/src/terrain/obstacles.cpp"

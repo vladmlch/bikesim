@@ -2,6 +2,7 @@
 
 #include "ride.hpp"
 #include "../io/value.hpp"
+#include "../terrain/pothole_report.hpp"
 #include "../terrain/types.hpp"
 
 namespace bike::legacy {
@@ -24,10 +25,8 @@ struct RiderStats {
     double saddle_lift_time_s=0.,saddle_gap_max_mm=0.,mean_saddle_share=0.,mean_pedal_share=0.,mean_bar_share=0.;
     double min_saddle_load_n=0.,max_saddle_load_n=0.;
 };
-struct PotholeReport {
-    std::string label,kind;
-    double start_m=0.,length_m=0.,declared_depth_mm=0.,effective_drop_front_mm=0.,effective_drop_rear_mm=0.;
-};
+// Moved to the terrain library; the summary JSON keeps the legacy spelling.
+using PotholeReport=terrain::PotholeReport;
 using RimStrikeStats=RideRecorder::RimEvent;
 struct TyreStats {
     std::string wheel;
@@ -86,7 +85,6 @@ struct RideSummary {
 [[nodiscard]] RiderStats rider_stats(const Channels& window,double dt_s,double rider_weight_n);
 [[nodiscard]] double sine_amplitude(std::span<const double> signal,double frequency_hz,double dt_s);
 [[nodiscard]] std::optional<PedalBobStats> pedal_bob_stats(const Channels& window,double dt_s,int assist_switches=0);
-[[nodiscard]] std::vector<PotholeReport> pothole_reports(const terrain::TrackSpec&);
 [[nodiscard]] std::array<std::size_t,3> count_kinds(std::span<const terrain::Obstacle>);
 [[nodiscard]] std::size_t count_completed_impact_episodes(std::span<const RimStrikeStats>,
     double gap_s=.001,double distance_m=.01);

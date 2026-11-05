@@ -2,6 +2,7 @@
 #include "../legacy/metrics.hpp"
 #include "../legacy/tyre.hpp"
 #include "../numerics/filter.hpp"
+#include "../terrain/pothole_report.hpp"
 #include "../terrain/profile.hpp"
 #include <algorithm>
 #include <cmath>
@@ -128,7 +129,7 @@ Report track_profile(const terrain::TrackSpec& track,double resolution) {
     Plot holes{.title="Potholes: declared depth vs effective wheel drop",.x_label="track x (m)",.y_label="mm",.series={}};
     Series declared{.name="declared depth",.x={}, .y={},.color="#8b949e",.style=SeriesStyle::bars},front{.name="front wheel drop (r = 372 mm)",.x={}, .y={},.color="#38bdf8",.style=SeriesStyle::bars},rear{.name="rear wheel drop (r = 352 mm)",.x={}, .y={},.color="#fbbf24",.style=SeriesStyle::bars};
     const double width=std::max(.4,track.length_m/150.);
-    for(const auto& hole:legacy::pothole_reports(track)){const double center=hole.start_m+hole.length_m/2.;declared.x.push_back(center-width);declared.y.push_back(hole.declared_depth_mm);
+    for(const auto& hole:terrain::pothole_reports(track)){const double center=hole.start_m+hole.length_m/2.;declared.x.push_back(center-width);declared.y.push_back(hole.declared_depth_mm);
         front.x.push_back(center);front.y.push_back(hole.effective_drop_front_mm);rear.x.push_back(center+width);rear.y.push_back(hole.effective_drop_rear_mm);}
     if(declared.x.empty())holes.notes.emplace_back("no potholes on this track");else holes.series={std::move(declared),std::move(front),std::move(rear)};
     holes.x_range=std::pair{0.,track.length_m};Report report{.title="Track preview",.panels={std::move(profile),std::move(holes)},.columns=1,.width=2400,.height=1200};validate(report);return report;

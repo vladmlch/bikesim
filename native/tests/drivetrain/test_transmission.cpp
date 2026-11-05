@@ -27,54 +27,14 @@
 
 namespace {
 
-void chain_geometry_and_virtual_work() {
-    constexpr std::array<double, 4> q{0., 0., .4, .1};
-    const auto evaluate = [](std::span<const double> value) {
-        return drivetrain::chain_extension({value[0], 0.}, {.5, value[1]},
-            .05, .05, value[2], value[3], .5);
-    };
-    bt::require(std::abs(evaluate(q) - .015) < 1e-15,
-        "equal sprockets have tangent length plus relative angular extension");
-    const auto jacobian = drivetrain::chain_jacobian(q, evaluate);
-    constexpr std::array<double, 4> expected{-1., 0., .05, -.05};
-    for (std::size_t i = 0; i < expected.size(); ++i)
-        bt::require(std::abs(jacobian[i] - expected[i]) < 1e-9,
-            "independent central difference matches analytic chain derivative");
-
-    const auto linear = drivetrain::linearized_upper_bound(evaluate(q), jacobian, q, .2);
-    bt::require(linear.first == jacobian, "linearized coefficients own the complete Jacobian");
-    bt::require(std::abs(drivetrain::dot(linear.first, q) - linear.second -
-                         (evaluate(q) - .2)) < 1e-15,
-        "linearized tendon preserves the source gap at the expansion point");
-    const auto reaction = drivetrain::constraint_reaction(80., jacobian);
-    constexpr std::array<double, 4> velocity{.1, .3, 4., 1.};
-    bt::require(std::abs(drivetrain::dot(reaction, velocity) +
-                         80. * drivetrain::dot(jacobian, velocity)) < 1e-13,
-        "chain generalized force supplies exactly minus tension times extension power");
-    const auto slack = drivetrain::chain_tension(-.01, 3., 1000., 20.);
-    bt::require(slack.first == 0. && slack.second == 0., "slack chain has no push or stored energy");
-    const auto stretched = drivetrain::chain_tension(.02, -.1, 1000., 20.);
-    bt::require(stretched.first == 18. && stretched.second == .2,
-        "chain damping changes tensile force and not elastic stored energy");
-    bt::invalid([&] { (void)drivetrain::linearized_upper_bound(0., jacobian, {}, 0.); });
-    bt::invalid([&] { (void)drivetrain::constraint_reaction(-1., jacobian); });
-    bt::invalid([&] { (void)drivetrain::chain_jacobian(q, evaluate, 0.); });
-    bt::invalid([&] { (void)drivetrain::chain_jacobian(q, {}); });
-    bt::invalid([&] {
-        (void)drivetrain::chain_extension({}, {.5, 0.}, .05, .05,
-            std::numeric_limits<double>::quiet_NaN(), 0., 0.);
-    });
-}
-
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void native_topologies() {
     const auto available = drivetrain::implemented_capabilities();
-    bt::require(available.elastic_chain && available.motor_clutch && available.reflected_rotor,
-        "native availability includes existing elastic, clutch and rotor branches");
+    bt::require(available.motor_clutch && available.reflected_rotor,
+        "native availability includes existing clutch and rotor branches");
     struct Variant { std::string_view family; bool clutch; double rotor; };
     constexpr std::array variants{
-        Variant{.family="elastic_chain", .clutch=false, .rotor=0.},
         Variant{.family="ideal_mid_drive", .clutch=false, .rotor=0.},
         Variant{.family="ideal_mid_drive", .clutch=true, .rotor=0.},
         Variant{.family="ideal_mid_drive", .clutch=false, .rotor=.02},
@@ -108,9 +68,8 @@ void native_topologies() {
         auto writer = std::make_unique<drivetrain::DrivetrainWriter>(model.get(), data.get(), *config.drive);
         writer->reset();
         const auto initial = std::make_unique<drivetrain::DriveSnapshot>(writer->state());
-        const bool elastic = variant.family == "elastic_chain";
-        bt::require(initial->hub.has_value() == elastic && initial->ideal_hub.has_value() != elastic,
-            "reset state carries exactly its selected freehub topology");
+        bt::require(initial->ideal_hub.has_value(),
+            "reset state carries the ideal freehub topology");
         bt::require(initial->clutch.has_value() == variant.clutch &&
             initial->freewheel.has_value() == (variant.rotor > 0.),
             "auxiliary clutch and rotor state are neither dropped nor invented");
@@ -152,6 +111,6 @@ void native_topologies() {
 } // namespace
 
 int main() {
-    return bt::run([] { chain_geometry_and_virtual_work(); native_topologies(); });
+    return bt::run([] { native_topologies(); });
 }
 NATIVE_DIAG_POP

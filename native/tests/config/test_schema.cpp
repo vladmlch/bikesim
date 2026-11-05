@@ -631,7 +631,7 @@ void test_defaults() {
                     c.tires.front.mu == .8 &&
                     !c.tires.distributed.front_material.has_value(),
                 "TireBackendConfig defaults");
-    bt::require(c.drive.transmission_model == "elastic_chain" &&
+    bt::require(c.drive.transmission_model == "ideal_mid_drive" &&
                     !c.drive.motor_clutch &&
                     c.drive.rotor_inertia_kgm2 == 0. &&
                     c.drive.gearing.front_teeth == 34 &&
@@ -721,8 +721,10 @@ void test_schema() {
     bt::require(io::as_array(tires, "fields.tires.fields").size() == 9,
                 "tires field count");
     const Value& drive = member(fields[7], "fields", "fields.drive");
-    // 20 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive).
-    bt::require(io::as_array(drive, "fields.drive.fields").size() == 20,
+    // 16 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive)
+    // and the four elastic-chain members chain_k_n_m, chain_c_ns_m,
+    // freehub_k_nm_rad, freehub_c_nms_rad.
+    bt::require(io::as_array(drive, "fields.drive.fields").size() == 16,
                 "drive field count");
     // 67 = 69 minus leg_track_damping_nms_rad (no joint damping in any
     // form) and coupled_task_control (removed with its welded-rider mode).
@@ -801,6 +803,29 @@ void resolved_case(
     expect_resolved(config, manifest_name, relative);
 }
 
+// The elastic-chain transmission was removed (user, 2026-11-05: 100 % drive
+// efficiency, the chain is not modelled). The value and its keys are
+// rejected at both the TOML construction and the C++ post_init gates.
+[[gnu::noinline]] void test_elastic_chain_is_rejected() {
+    const Value document = cfg::detail::merge_values(
+        cfg::detail::plain_document(
+            cfg::to_value(cfg::default_physics())),
+        cfg::detail::parse_toml(R"([drive]
+transmission_model = "elastic_chain"
+)",
+                                "elastic_chain rejection"));
+    bt::invalid([&] {
+        (void) cfg::detail::construct_config(document);
+    });
+    case_from_default("unknown transmission model",
+                      [](cfg::SimulationPhysicsConfig& c) {
+                          c.drive.transmission_model = "elastic_chain";
+                      });
+    bt::require(cfg::PhysicalDriveConfig{}.transmission_model ==
+                    "ideal_mid_drive",
+                "the declared default is the ideal drive");
+}
+
 void test_validation() {
     // The brief's mandatory red-line case plus exact diagnostics.
     case_from_default("timestep_s must be finite and positive",
@@ -876,17 +901,6 @@ void test_validation() {
         });
 
     // Drive/transmission rules inside PhysicalDriveConfig.__post_init__.
-    case_from_welded("automatic physical shifting requires ideal_mid_drive",
-                     [](cfg::SimulationPhysicsConfig& c) {
-                         c.drive.transmission_model = "elastic_chain";
-                     });
-    case_from_welded(
-        "a motor rotor requires an ideal mid-drive transmission",
-        [](cfg::SimulationPhysicsConfig& c) {
-            c.drive.transmission_model = "elastic_chain";
-            c.drive.shifting.enabled = false;
-            c.drive.rotor_inertia_kgm2 = 0.2;
-        });
     case_from_welded(
         "rotor freewheel and the legacy crank clutch are exclusive",
         [](cfg::SimulationPhysicsConfig& c) {
@@ -1063,12 +1077,6 @@ void test_aliases_and_resolution() {
                       c.articulated.saddle_attachment = "flat";
                       c.articulated.grip_attachment = "spring";
                   });
-    resolved_case("config/variant_elastic_chain",
-                  "config/variant_elastic_chain.resolved.json",
-                  [](cfg::SimulationPhysicsConfig& c) {
-                      c.drive.transmission_model = "elastic_chain";
-                      c.drive.shifting.enabled = false;
-                  });
 }
 
 void test_resolved_profiles() {
@@ -1186,11 +1194,7 @@ void test_profile_coverage() {
            "config/viewer_physics_pneumatic.toml"},
           {"config/variant_alt_support", "config/variant_alt_support.toml"},
           {"config/variant_grip_weld_coercion",
-           "config/variant_grip_weld_coercion.toml"},
-          {"config/variant_elastic_chain",
-           "config/variant_elastic_chain.toml"},
-          {"config/variant_elastic_chain_shifting_rejected",
-           "config/variant_elastic_chain_shifting_rejected.toml"}})
+           "config/variant_grip_weld_coercion.toml"}})
         expect_covered(name, path);
 
     // The rejection fixture ships a deliberately uncovered key.
@@ -1654,6 +1658,7 @@ int main() {
         physics_mode_is_physical_only();
         test_defaults();
         test_schema();
+        test_elastic_chain_is_rejected();
         test_validation();
         test_aliases_and_resolution();
         test_resolved_profiles();

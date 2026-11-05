@@ -154,11 +154,8 @@ inline WireObject drive_channels(double brake) {
     return WireObject{
         {"transmission_model", Wire{std::string("ideal_hub")}},
         {"omits_suspension_coupling", Wire{true}},
-        {"chain_extension_m", Wire{0.}}, {"chain_extension_rate_mps", Wire{0.}},
-        {"chain_tension_n", Wire{0.}}, {"chain_energy_j", Wire{0.}},
-        {"chain_dissipation_power_w", Wire{0.}}, {"chain_power_w", Wire{0.}},
-        {"freehub_torque_nm", Wire{0.}}, {"freehub_energy_j", Wire{0.}},
-        {"freehub_engaged", Wire{true}}, {"freehub_deflection_rad", Wire{0.}},
+        {"freehub_torque_nm", Wire{0.}},
+        {"freehub_engaged", Wire{true}},
         {"freehub_dissipation_power_w", Wire{0.}}, {"freehub_power_w", Wire{0.}},
         {"cadence_rpm", Wire{0.}}, {"crank_rad_s", Wire{0.}},
         {"drive_shaft_rad_s", Wire{0.}}, {"crank_phase_rad", Wire{0.}},

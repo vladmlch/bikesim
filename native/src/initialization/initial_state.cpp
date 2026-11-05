@@ -121,10 +121,9 @@ void stage_drive_material(const SetupContext& context,const bio::Value::Object& 
     // NOLINTNEXTLINE(modernize-make-unique) make_unique's inlined forwarding path overflows the 8192-byte frame budget here
     auto drive=std::unique_ptr<drivetrain::DriveSnapshot>{new drivetrain::DriveSnapshot(context.stepper.drive().state())};
     for(const auto& [name,array]:material.arrays)if(name=="state_native_drive"){const auto encoded=array.strings();if(encoded.size()!=1)throw std::invalid_argument("invalid initial drive document");*drive=drivetrain::decode_drive_snapshot(bio::parse_recording_json(encoded.front()));}
-    const auto& source=bio::as_object(field(p,"drive"),"drive");drive->reference=optional_real(field(source,"reference"),"drive.reference");drive->psi=optional_real(field(source,"psi"),"drive.psi");
+    const auto& source=bio::as_object(field(p,"drive"),"drive");
     if(bio::is_null(field(source,"angles")))drive->angles.reset();else{const auto angles=vector(field(source,"angles"),"drive.angles");if(angles.empty()||angles.size()>2)throw std::invalid_argument("invalid drive angle count");drive->angles=drivetrain::DriveAngles{};drive->angles.value().count=angles.size();std::ranges::copy(angles,drive->angles.value().values.begin());}
     for(const auto& entry:{std::pair{"ideal_boundary",&drive->ideal_hub},std::pair{"clutch_boundary",&drive->clutch}}){const auto boundary=optional_real(field(p,entry.first),entry.first);if(boundary.has_value()!=entry.second->has_value())throw std::invalid_argument("initial transmission topology differs");if(boundary){(*entry.second)->boundary=boundary;(*entry.second)->range[1]=*boundary;}} // NOLINT(bugprone-unchecked-optional-access) has_value() parity with boundary was enforced two lines up
-    if(drive->hub){const auto& hub=bio::as_object(field(p,"hub"),"hub");drive->hub->boundary=optional_real(field(hub,"boundary"),"hub.boundary");drive->hub->energy_j=bio::as_double(field(hub,"energy_j"),"hub.energy_j");drive->hub->torque_nm=bio::as_double(field(hub,"torque_nm"),"hub.torque_nm");}
     put_array(material,"state_native_drive",bio::string_array(std::array<std::string,1>{bio::recording_json(drivetrain::encode_drive_snapshot(*drive))},{}));
 }
 void stage_controller_material(const SetupContext& context,const bio::Value::Object& p,StateFile& material){
@@ -151,12 +150,11 @@ PhysicalInitialState PhysicalInitialState::capture(const SetupContext& context){
     std::vector<double> road_x(513),road_z(513);for(std::size_t i=0;i<513;++i){road_x[i]=i==512?stop:start+(stop-start)/512.*static_cast<double>(i);road_z[i]=height(context.physical.terrain_vertices(),road_x[i]);}
     const auto state=capture_state(context,context.equilibrium->steps,context.equilibrium->residual_qacc);const auto drive=context.stepper.drive().state();
     bio::Value angles;if(drive.angles)angles=numbers(std::span{drive.angles->values}.first(drive.angles->count));
-    bio::Value hub;if(drive.hub)hub=bio::Value{bio::Value::Object{{"boundary",optional(drive.hub.value().boundary)},{"energy_j",real(drive.hub.value().energy_j)},{"torque_nm",real(drive.hub.value().torque_nm)}}};
     bio::Value anchors;if(context.stepper.has_rider_contacts()){bio::Value::Object entries;const auto& rider_state=context.stepper.rider_contacts().state();for(std::size_t side=0;side<2;++side){const auto& anchor=rider_state.grip_anchor_local[side];entries.emplace_back(std::string(writers::kSideNames[side]),anchor?numbers(*anchor):bio::Value{});}anchors=bio::Value{std::move(entries)};}
     const bio::Value active=context.physical.rider_present()?numbers(context.physical.rider_control().state().active_state):bio::Value{};
     bio::Value::Object p{{"schema_version",integer(2)},{"contract_sha256",string(contract(context))},{"qpos",numbers(context.stepper.qpos())},{"qvel",numbers(context.stepper.qvel())},{"qacc_warmstart",numbers(std::views::counted(d->qacc_warmstart,m->nv))},{"road_x",numbers(road_x)},{"road_z",numbers(road_z)},{"material",material_document(state)},{"equilibrium",equilibrium_value(*context.equilibrium)},
-        {"drive",bio::Value{bio::Value::Object{{"reference",optional(drive.reference)},{"angles",std::move(angles)},{"psi",optional(drive.psi)}}}},
-        {"ideal_boundary",drive.ideal_hub?optional(drive.ideal_hub->boundary):bio::Value{}},{"clutch_boundary",drive.clutch?optional(drive.clutch->boundary):bio::Value{}},{"hub",std::move(hub)},{"grip_anchor_local",std::move(anchors)},{"active_state",active},{"source_timestep_s",real(m->opt.timestep)},{"source_sha256",string(context.source_identity)}};
+        {"drive",bio::Value{bio::Value::Object{{"angles",std::move(angles)}}}},
+        {"ideal_boundary",drive.ideal_hub?optional(drive.ideal_hub->boundary):bio::Value{}},{"clutch_boundary",drive.clutch?optional(drive.clutch->boundary):bio::Value{}},{"grip_anchor_local",std::move(anchors)},{"active_state",active},{"source_timestep_s",real(m->opt.timestep)},{"source_sha256",string(context.source_identity)}};
     return PhysicalInitialState(detail::source_json(bio::Value{std::move(p)}));
 }
 

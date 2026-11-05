@@ -4,8 +4,6 @@
 #include "../model_access.hpp"
 #include "../contact/laws.hpp"
 #include "../cblas_abi.hpp"
-#include "../drivetrain/chain.hpp"
-#include "../drivetrain/freehub.hpp"
 #include "../drivetrain/transmission.hpp"
 #include "../geometry/specs.hpp"
 #include "../numerics/brent.hpp"
@@ -78,32 +76,6 @@ Value brake_rig(double dt,double duration){
     qfrc_applied[0]=10.;for(std::size_t i=0;i<count;++i)engine::step(m,d);const double held=qpos[0];double work=0.;qfrc_applied[0]=30.;
     for(std::size_t i=0,n=steps(.1,dt);i<n;++i){const double speed=qvel[0];engine::step(m,d);work+=qfrc_constraint[0]*speed*dt;}
     return metrics({{"held_angle_rad",held},{"overload_speed_rad_s",qvel[0]},{"brake_work_j",work}});
-}
-Value chain_locked_rig(double dt,double duration){
-    const auto count=steps(duration,dt);const configuration::DrivetrainSpecs gear;
-    const double rf=gear.front_radius_m(),rr=gear.rear_radius_m(),ratio=rf/rr,load=10.,tension=load/rr,k=200000.;
-    std::string xml="<mujoco>"+option(dt)+"<worldbody>";const std::array inertias{.02,.005,.2};
-    for(std::size_t i=0;i<inertias.size();++i){const double inertia=inertias[i];xml+="<body pos=\""+std::to_string(i)+R"( 0 0"><joint type="hinge" axis="0 1 0"/><inertial mass="1" pos="0 0 0" diaginertia=")"+xml_number(inertia/2.)+" "+xml_number(inertia)+" "+xml_number(inertia/2.)+"\"/></body>";}
-    xml+="</worldbody></mujoco>";Stand const s(xml);auto const* m=s.model.get();auto* d=s.data.get();drivetrain::Freehub hub(1000.,0.);
-    const std::span<mjtNum> qpos=model_access::mutable_buffer(d->qpos,m->nq,"qpos"),qvel=model_access::mutable_buffer(d->qvel,m->nv,"qvel"),qfrc_applied=model_access::mutable_buffer(d->qfrc_applied,m->nv,"qfrc_applied");
-    qpos[1]=load/1000.;qpos[0]=(tension/k+rr*qpos[1])/rf;qvel[0]=10.;qvel[1]=10.*ratio;qvel[2]=10.*ratio;
-    hub.set_state(drivetrain::FreehubSnapshot{.boundary=0.,.energy_j=0.,.torque_nm=0.});double input=0.,output=0.,last_t=0.,last_h=0.;
-    for(std::size_t i=0;i<count;++i){const double e=rf*qpos[0]-rr*qpos[1];last_t=k*std::max(e,0.);last_h=hub.update(qpos[1],qpos[2],qvel[1],qvel[2]);
-        qfrc_applied[0]=load*ratio-last_t*rf;qfrc_applied[1]=last_t*rr-last_h;qfrc_applied[2]=last_h-load;
-        input+=load*ratio*qvel[0]*dt;output+=load*qvel[2]*dt;engine::step(m,d);}
-    return metrics({{"speed_ratio",qvel[2]/qvel[0]},{"expected_ratio",ratio},{"torque_ratio",last_t*rf/last_h},
-        {"power_relative_error",std::abs(input-output)/std::abs(input)},{"cassette_wheel_speed_difference",qvel[1]-qvel[2]}});
-}
-Value chain_geometry_rig(){
-    const drivetrain::Vec2 front{0.,0.},rear{-.45,.02};const double rf=.07,rr=.04,angle=.41;
-    const double base=drivetrain::chain_extension(front,rear,rf,rr,0.,0.,0.);const double cs=std::cos(angle),sn=std::sin(angle);
-    const double rotated=drivetrain::chain_extension({3.,3.},{cs*rear[0]-sn*rear[1]+3.,sn*rear[0]+cs*rear[1]+3.},rf,rr,-angle,-angle,base,{-sn,cs});
-    const auto evaluate=[&](std::span<const double> q){return drivetrain::chain_extension(front,{q[0],q[1]},rf,rr,q[2],q[3],base);};
-    const std::array q{rear[0],rear[1],.1,.2},direction{.7,-.3,.2,-.1};const auto j=drivetrain::chain_jacobian(q,evaluate);const double h=2e-6;
-    auto low=q,high=q;for(std::size_t i=0;i<q.size();++i){low[i]-=h*direction[i];high[i]+=h*direction[i];}
-    const double independent=(evaluate(high)-evaluate(low))/(2.*h);
-    return metrics({{"rigid_motion_extension_m",rotated},{"directional_relative_error",std::abs(vector_dot(j,direction)-independent)/std::max(std::abs(independent),1e-8)},
-        {"suspension_chain_gradient_x",j[0]},{"suspension_chain_gradient_z",j[1]}});
 }
 Value contact_event_rig(double dt){
     Stand const s(slider(dt));auto const* m=s.model.get();auto* d=s.data.get();

@@ -602,7 +602,7 @@
           "type": "<class 'bike_sim.physics.chain.DrivetrainSpecs'>"
         },
         {
-          "default": "elastic_chain",
+          "default": "ideal_mid_drive",
           "default_factory": null,
           "name": "transmission_model",
           "type": "<class 'str'>"
@@ -623,30 +623,6 @@
           "default": 0.0,
           "default_factory": null,
           "name": "crank_phase_rad",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 200000.0,
-          "default_factory": null,
-          "name": "chain_k_n_m",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 10.0,
-          "default_factory": null,
-          "name": "chain_c_ns_m",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 1000.0,
-          "default_factory": null,
-          "name": "freehub_k_nm_rad",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 0.5,
-          "default_factory": null,
-          "name": "freehub_c_nms_rad",
           "type": "<class 'float'>"
         },
         {

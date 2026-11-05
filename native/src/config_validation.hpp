@@ -180,8 +180,6 @@ namespace drivetrain {
     }
     inline void validate(const DrivePolicyConfig &s) {
         validate(s.gearing); validate(s.pedaling); validate(s.shifting); validate(s.assist);
-        validation::positive(s.hub_stiffness_nm_rad, "config.drive.hub_stiffness_nm_rad");
-        validation::nonnegative(s.hub_damping_nm_s, "config.drive.hub_damping_nm_s");
         if (s.shifting.enabled && std::ranges::find(s.shifting.cassette, s.gearing.rear_teeth) == s.shifting.cassette.end())
             throw std::invalid_argument("config.drive.gearing.rear_teeth: enabled gear must belong to cassette");
     }
@@ -191,18 +189,15 @@ namespace drivetrain {
         validation::nonnegative(s.torque_ripple, "config.drive.torque_ripple");
         if (s.torque_ripple >= 1.) throw std::invalid_argument("config.drive.torque_ripple");
         validation::finite(s.crank_phase_rad, "config.drive.crank_phase_rad");
-        validation::positive(s.chain_k_n_m, "config.drive.chain_k_n_m");
-        validation::nonnegative(s.chain_c_ns_m, "config.drive.chain_c_ns_m");
         validation::nonnegative(s.rotor_inertia_kgm2, "config.drive.rotor_inertia_kgm2");
         if (s.drive_mode != "crank_effort" && s.drive_mode != "articulated_effort" &&
             s.drive_mode != "coast" && s.drive_mode != "ideal_speed_control")
             throw std::invalid_argument("config.drive.drive_mode");
-        if (s.transmission_model != "elastic_chain" && s.transmission_model != "ideal_mid_drive" &&
+        if (s.transmission_model != "ideal_mid_drive" &&
             s.transmission_model != "geometric_ideal_mid_drive")
             throw std::invalid_argument("config.drive.transmission_model");
-        if ((s.motor_clutch && s.rotor_inertia_kgm2 > 0.) ||
-            (s.transmission_model == "elastic_chain" && (s.motor_clutch || s.rotor_inertia_kgm2 > 0. || s.policies.shifting.enabled)))
-            throw std::invalid_argument("config.drive.transmission_model: incompatible clutch, rotor or shifting");
+        if (s.motor_clutch && s.rotor_inertia_kgm2 > 0.)
+            throw std::invalid_argument("config.drive.transmission_model: incompatible clutch or rotor");
     }
 }
 

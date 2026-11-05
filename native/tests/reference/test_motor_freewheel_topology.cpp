@@ -205,7 +205,7 @@ void test_legacy_crank_clutch_still_builds_for_regression_ab() {
 void test_rotor_and_legacy_clutch_are_exclusive() {
     for (int index = 0; index < 3; ++index) {
         cfg::PhysicalDriveConfig drive;
-        drive.transmission_model = index == 1 ? "elastic_chain" : "ideal_mid_drive";
+        drive.transmission_model = index == 1 ? "bogus" : "ideal_mid_drive";
         drive.motor_clutch = index == 0; drive.rotor_inertia_kgm2 = index == 2 ? -.1 : .1;
         bt::invalid([&] { cfg::detail::post_init(drive); });
     }

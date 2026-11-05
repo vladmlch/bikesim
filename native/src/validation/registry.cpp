@@ -28,9 +28,6 @@ constexpr auto operations=std::to_array<CaseDescription>({
     {.id="wheel_inertia_rig",.source="validation/rigs.py:53-66",.description="Applied torque versus known wheel inertia",.slow=false},
     {.id="incline_rig",.source="validation/rigs.py:68-88",.description="Gravity decomposition on a constrained incline",.slow=true},
     {.id="brake_stand",.source="validation/rigs.py:91-106",.description="Static hold then overload friction work",.slow=true},
-    {.id="chain_locked_rig",.source="validation/rigs.py:108-127",.description="Locked geometry chain/freehub ratio and power",.slow=true},
-    {.id="chain_geometry",.source="validation/rigs.py:129-138",.description="Rigid-motion invariance and directional derivative",.slow=false},
-    {.id="compiled_chain_motion",.source="validation/rigs.py:158-194",.description="Actual linkage geometry Jacobian finite difference",.slow=true},
     {.id="load_transfer",.source="validation/load_transfer.py:24-71",.description="Free-pitch rigid stand and independent normal-load balance",.slow=true},
     {.id="quasistatic_front_load",.source="validation/load_transfer.py:13-21",.description="Explicit gravity and acceleration load transfer",.slow=false},
     {.id="grade_feasibility",.source="validation/grade_feasibility.py:5-20",.description="Necessary rear traction margin; no completion claim",.slow=false},
@@ -154,9 +151,6 @@ Verdict case_native_radial_rig(const Value& c,const std::filesystem::path&){retu
 Verdict case_wheel_inertia_rig(const Value& c,const std::filesystem::path&){return diagnostic(wheel_inertia_rig(case_dt(c),real(c,"duration_s",.5)));}
 Verdict case_incline_rig(const Value& c,const std::filesystem::path&){return diagnostic(incline_rig(case_dt(c),real(c,"duration_s",2.),real(c,"angle_deg",30.)));}
 Verdict case_brake_stand(const Value& c,const std::filesystem::path&){return diagnostic(brake_rig(case_dt(c),real(c,"duration_s",5.)));}
-Verdict case_chain_locked_rig(const Value& c,const std::filesystem::path&){return diagnostic(chain_locked_rig(case_dt(c),real(c,"duration_s",1.)));}
-Verdict case_chain_geometry(const Value&,const std::filesystem::path&){return diagnostic(chain_geometry_rig());}
-Verdict case_compiled_chain_motion(const Value&,const std::filesystem::path&){return diagnostic(compiled_chain_motion_rig());}
 Verdict case_load_transfer(const Value& c,const std::filesystem::path&){return bounded_case(load_transfer_rig(case_dt(c),real(c,"slope_rad"),real(c,"com_x_m"),real(c,"com_h_m")));}
 Verdict case_quasistatic_front_load(const Value& c,const std::filesystem::path&){return diagnostic(value::real(quasistatic_front_load(real(c,"mass_kg"),real(c,"wheelbase_m"),real(c,"com_x_m"),real(c,"com_h_m"),real(c,"slope_rad"),real(c,"acceleration_mps2",0.),real(c,"gravity_mps2",9.81))));}
 Verdict case_grade_feasibility(const Value& c,const std::filesystem::path&){const double margin=necessary_traction_margin(real(c,"mu"),real(c,"rear_fraction"),real(c,"grade"));return diagnostic(Value{Object{{"necessary_traction_margin",value::real(margin)},{"necessary_condition_met",Value{margin>=0.}},{"sufficient_for_completion",Value{false}}}});}
@@ -210,7 +204,6 @@ constexpr auto handlers=std::to_array<CaseHandler>({
     {.id="holdout_metrics",.run=case_holdout_metrics},{.id="experiment_acceptance",.run=case_experiment_acceptance},{.id="contact_bounds",.run=case_contact_bounds},
     {.id="contact_matrix",.run=case_contact_matrix},{.id="radial_rig",.run=case_radial_rig},{.id="native_radial_rig",.run=case_native_radial_rig},
     {.id="wheel_inertia_rig",.run=case_wheel_inertia_rig},{.id="incline_rig",.run=case_incline_rig},{.id="brake_stand",.run=case_brake_stand},
-    {.id="chain_locked_rig",.run=case_chain_locked_rig},{.id="chain_geometry",.run=case_chain_geometry},{.id="compiled_chain_motion",.run=case_compiled_chain_motion},
     {.id="load_transfer",.run=case_load_transfer},{.id="quasistatic_front_load",.run=case_quasistatic_front_load},{.id="grade_feasibility",.run=case_grade_feasibility},
     {.id="distributed_flat",.run=case_distributed_flat},{.id="distributed_step_rig",.run=case_distributed_step_rig},{.id="distributed_incline_rig",.run=case_distributed_incline_rig},
     {.id="distributed_road_trace",.run=case_distributed_road_trace},{.id="contact_case_vertices",.run=case_contact_case_vertices},{.id="shaft_ratio",.run=case_shaft_ratio},

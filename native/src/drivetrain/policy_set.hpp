@@ -1,6 +1,5 @@
 #pragma once
 
-#include "freehub.hpp"
 #include "motor.hpp"
 #include "pedaling.hpp"
 #include "shifting.hpp"
@@ -10,37 +9,33 @@
 #include <utility>
 
 namespace drivetrain {
-// The four-policy snapshot previously owned only by the Python adapter.
+// The three-policy snapshot previously owned only by the Python adapter.
 // It intentionally has no model, transmission or borrowed Python state.
 struct PolicySnapshot {
     PedalingSnapshot pedaling;
     ShiftingSnapshot shifting;
     AssistSnapshot assist;
-    FreehubSnapshot hub;
 };
 
 class PolicySet {
 public:
     explicit PolicySet(DrivePolicyConfig source)
         : config(std::move(source)), pedaling(config.pedaling),
-          shifting(config.gearing, config.shifting), assist(config.assist),
-          hub(config.hub_stiffness_nm_rad, config.hub_damping_nm_s) {
+          shifting(config.gearing, config.shifting), assist(config.assist) {
         validate(config);
     }
 
     void reset() {
-        pedaling.reset(); shifting.reset(); assist.reset(); hub.reset();
+        pedaling.reset(); shifting.reset(); assist.reset();
     }
     [[nodiscard]] PolicySnapshot snapshot() const {
-        return {.pedaling = pedaling.state(), .shifting = shifting.state(), .assist = assist.state(),
-                .hub = hub.state()};
+        return {.pedaling = pedaling.state(), .shifting = shifting.state(), .assist = assist.state()};
     }
     void restore(const PolicySnapshot& source) {
         auto next = *this;
         next.pedaling.set_state(source.pedaling);
         next.shifting.set_state(source.shifting);
         next.assist.set_state(source.assist);
-        next.hub.set_state(source.hub);
         next.validate_state();
         *this = std::move(next);
     }
@@ -67,6 +62,5 @@ public:
     PedalingPolicy pedaling;
     CadenceShifter shifting;
     AssistController assist;
-    Freehub hub;
 };
 } // namespace drivetrain

@@ -918,7 +918,7 @@ namespace nativecfg {
         [[nodiscard]] drivetrain::DrivePolicyConfig decode_drive_policies(
             const Dict<N> &input,
             std::span<const std::string_view> extra_root_keys) {
-            constexpr auto root = keys("gearing", "pedaling", "shifting", "assist", "hub_stiffness_nm_rad", "hub_damping_nm_s");
+            constexpr auto root = keys("gearing", "pedaling", "shifting", "assist");
             exact(input, root, extra_root_keys);
             drivetrain::DrivePolicyConfig out;
             const auto g = section(input, "gearing"), p = section(input, "pedaling"), s = section(input, "shifting"),
@@ -1056,29 +1056,26 @@ namespace nativecfg {
                 if (ac.profile->emtb_low > ac.profile->emtb_high)
                     invalid(gains.child("emtb"), "unordered mode gains");
             }
-            out.hub_stiffness_nm_rad = positive(num(input, "hub_stiffness_nm_rad"), input.child("hub_stiffness_nm_rad"));
-            out.hub_damping_nm_s = nonnegative(num(input, "hub_damping_nm_s"), input.child("hub_damping_nm_s"));
             return out;
         }
         NATIVE_DIAG_POP
 
         // config.drive itself: the policy subtree plus the drive-only
         // scalars — the cross-field exclusion rules (rotor/clutch
-        // exclusive, elastic_chain rejects both and shifting, passive
-        // drive modes reject rotor/clutch) stay in this one decode so the
-        // nb adapter and the Value boundary share them verbatim.
+        // exclusive, passive drive modes reject rotor/clutch) stay in
+        // this one decode so the nb adapter and the Value boundary share
+        // them verbatim.
         template <class N>
         [[nodiscard]] drivetrain::DriveConfig decode_drive(const Dict<N> &d) {
             drivetrain::DriveConfig c;
-            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","chain_k_n_m","chain_c_ns_m","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
+            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
             c.policies = decode_drive_policies(d, extra_keys);
             c.drive_mode = str(d, "drive_mode");
             c.transmission_model = str(d, "transmission_model");
             if (c.drive_mode != "crank_effort" && c.drive_mode != "articulated_effort" &&
                 c.drive_mode != "coast" && c.drive_mode != "ideal_speed_control")
                 invalid(d.child("drive_mode"), "unsupported mode");
-            if (c.transmission_model != "elastic_chain" &&
-                c.transmission_model != "ideal_mid_drive" &&
+            if (c.transmission_model != "ideal_mid_drive" &&
                 c.transmission_model != "geometric_ideal_mid_drive")
                 invalid(d.child("transmission_model"), "unsupported model");
             c.human_torque_nm = nonnegative(num(d, "human_torque_nm"), "human_torque_nm");
@@ -1086,8 +1083,6 @@ namespace nativecfg {
             if (c.torque_ripple >= 1.)
                 throw std::invalid_argument("torque_ripple");
             c.crank_phase_rad = num(d, "crank_phase_rad");
-            c.chain_k_n_m = positive(num(d, "chain_k_n_m"), "chain_k_n_m");
-            c.chain_c_ns_m = nonnegative(num(d, "chain_c_ns_m"), "chain_c_ns_m");
             c.rotor_inertia_kgm2 =
                     nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
             c.brake_ceiling_nm =
@@ -1111,10 +1106,6 @@ namespace nativecfg {
             c.motor_clutch = boolean(d, "motor_clutch");
             if (c.motor_clutch && c.rotor_inertia_kgm2 > 0.)
                 throw std::invalid_argument("rotor and clutch are exclusive");
-            if (c.transmission_model == "elastic_chain" &&
-                (c.motor_clutch || c.rotor_inertia_kgm2 > 0. || c.policies.shifting.enabled))
-                throw std::invalid_argument(
-                    "rotor/clutch/shifting requires ideal transmission");
             if ((c.drive_mode == "coast" || c.drive_mode == "ideal_speed_control") &&
                 (c.motor_clutch || c.rotor_inertia_kgm2 > 0.))
                 throw std::invalid_argument("passive drive cannot use rotor/clutch");

@@ -672,19 +672,6 @@ void wire_set(WireObject &o, std::string_view key, Wire value) {
     o.emplace_back(std::string(key), std::move(value));
 }
 
-// drivetrain::DiagnosticValue -> Wire (monostate is Python None).
-Wire diag_wire(const drivetrain::DiagnosticValue &v) {
-    if (const auto *x = std::get_if<double>(&v))
-        return Wire{*x};
-    if (const auto *x = std::get_if<int>(&v))
-        return Wire{static_cast<std::int64_t>(*x)};
-    if (const auto *x = std::get_if<bool>(&v))
-        return Wire{*x};
-    if (const auto *x = std::get_if<std::string>(&v))
-        return Wire{*x};
-    return Wire{nullptr};
-}
-
 // drive.last.get(key, 0.) under float() — the sensor-channel readers and
 // the loss ledger's `*dt` terms; non-numeric/absent is 0.
 double diag_number(const drivetrain::Diagnostics &m, const char *key) {
@@ -1821,8 +1808,6 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             elastic = std::move(measured_elastic);
             total = measured_total;
         }
-        wire_set(drive, "chain_power_w",
-                 Wire(dot(require_component(components, "chain"), v)));
         {
             // components['freehub'] + components.get('ideal_transmission',
             // zeros) — 'freehub' is a direct index (the pinned drivetrain
@@ -2318,8 +2303,6 @@ WireObject PhysicalStep::stored_terms() const {
     out.emplace_back("shock_bumper", Wire(susp.shock_bumper));
     out.emplace_back("shock_top_out", Wire(susp.shock_top_out));
     out.emplace_back("shock_upper_stop", Wire(susp.shock_upper_stop));
-    for (const auto &[key, value]: stepper_->drive().stored_energy())
-        wire_set(out, key, diag_wire(value));
     if (stepper_->has_tire())
         wire_set(out, "tires",
                  Wire(stepper_->tire_writer().stored_energy(d)));
@@ -2453,7 +2436,6 @@ double PhysicalStep::loss_increment(
         const auto *f = ordered_at(components, "brake_hold");
         loss += std::max(0., -(f != nullptr ? dot(*f, velocity) : 0.)) * dt;
     }
-    loss += diag_number(last, "chain_dissipation_power_w") * dt;
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
     loss += diag_number(last, "motor_freewheel_dissipation_power_w") * dt;

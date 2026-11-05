@@ -34,8 +34,7 @@ inline bike::configuration::PhysicalDriveConfig source(bool fixture = true) {
 }
 inline Value config(const bike::configuration::PhysicalDriveConfig& input) {
     const auto writer = drive_reference::projected_writer(input);
-    return select(field(writer, "drive"), {"gearing", "pedaling", "shifting", "assist",
-                                          "hub_stiffness_nm_rad", "hub_damping_nm_s"});
+    return select(field(writer, "drive"), {"gearing", "pedaling", "shifting", "assist"});
 }
 inline PolicySet policies(const Value& value) { return PolicySet(nativecfg::decode_policy_config(value)); }
 inline Value state(const PolicySet& policy) { return drivetrain::encode_policy_snapshot(policy.snapshot()); }

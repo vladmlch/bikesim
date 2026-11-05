@@ -1,5 +1,4 @@
 #pragma once
-#include "../drivetrain/freehub.hpp"
 #include "../drivetrain/motor.hpp"
 #include "../drivetrain/pedaling.hpp"
 #include "../drivetrain/shifting.hpp"
@@ -44,9 +43,9 @@ namespace drivetrain {
         bool enabled{};
     };
 
-    // Fixed-width angle mirror — construction-sized (simplified emits crank
-    // only, elastic emits crank + cassette), so snapshot copies never
-    // allocate the way the former vector did.
+    // Fixed-width angle mirror — construction-sized (the ideal path emits
+    // the crank angle only), so snapshot copies never allocate the way the
+    // former vector did.
     struct DriveAngles {
         std::array<double, 2> values{};
         std::size_t count = 0;
@@ -56,8 +55,7 @@ namespace drivetrain {
         PedalingSnapshot pedaling;
         ShiftingSnapshot shifting;
         AssistSnapshot assist;
-        std::optional<FreehubSnapshot> hub;
-        std::optional<double> shift_time_s, last_time_s, reference, psi;
+        std::optional<double> shift_time_s, last_time_s;
         std::optional<DriveAngles> angles;
         // Typed telemetry lanes (R1) — the closed 67-field schema replaces
         // the per-tick map; lane presence keeps the wire's absent/explicit-
@@ -144,11 +142,9 @@ namespace drivetrain {
             PedalingSnapshot pedaling;
             ShiftingSnapshot shifting;
             AssistSnapshot assist;
-            std::optional<FreehubSnapshot> hub;
             // Candidate force rows — construction-sized nv vectors indexed
             // by ForceComponent; the emitted span carries component_count
-            // entries in the declared force_component order (2 physical,
-            // 3 for the simplified models).
+            // entries in the declared force_component order.
             std::array<std::vector<double>, 3> components;
             std::array<ForceComponentView, 3> component_views{};
             std::array<std::string_view, 3> component_names{};
@@ -348,8 +344,6 @@ namespace drivetrain {
 
         [[nodiscard]] const DriveTelemetry &diagnostics(bool probe) const noexcept;
 
-        [[nodiscard]] Diagnostics stored_energy();
-
         [[nodiscard]] DriveSnapshot state() const;
 
         void restore(const DriveSnapshot &snapshot);
@@ -359,15 +353,10 @@ namespace drivetrain {
         }
 
         // self.ids.get (drivetrain_forces.py:34-37): {'frame','crank',
-        // 'rear_wheel'} always, 'cassette' only on the elastic-chain
-        // topology — the tire-channel builder falls back to
+        // 'rear_wheel'} — the tire-channel builder falls back to
         // geom_bodyid[contact geom] on a miss, so no exception.
         [[nodiscard]] std::optional<int>
         body_id(std::string_view name) const noexcept;
-
-        // self.simplified — stored_terms()'s empty-map branch and the
-        // runtime's crank-target gating both read it.
-        [[nodiscard]] bool simplified() const noexcept { return simplified_; }
 
         // self.cfg — the runtime's static-brake owner reads
         // brake_ceiling_nm and the pedaling gates off the same config the
@@ -398,14 +387,9 @@ namespace drivetrain {
         // geometric_hub_ selects the telemetry-merge settle path (the
         // geometric transmission publishes its solve diagnostics — a map
         // carrying a string status — which cannot be written in place).
-        bool simplified_ = false, effort_ = false, geometric_hub_ = false;
+        bool effort_ = false, geometric_hub_ = false;
         GeometryWorkspace geometry_;
-        // frame_/crank_/rear_ resolve unconditionally in the ctor; cassette_
-        // resolves only for the elastic-chain model, so it needs a named
-        // invalid sentinel — 0 would silently be the world body. Dereferences
-        // go through cassette_body() below.
-        int frame_ = absent_id, crank_ = absent_id, rear_ = absent_id,
-                cassette_ = absent_id;
+        int frame_ = absent_id, crank_ = absent_id, rear_ = absent_id;
 
         struct Joint {
             int qpos{}, dof{};
@@ -419,16 +403,12 @@ namespace drivetrain {
         // heap-allocates once per tick. The joint set never changes after
         // the ctor, so the tick path reads these cached values instead of
         // paying a map lookup (and a possible allocation) per tick.
-        // cassette_joint_ is valid only under the elastic-chain topology —
-        // the same guard that emplaces "cassette_spin" — and shaft_joint_
-        // caches the drive-shaft → rotor → crank fallback chain.
-        Joint crank_joint_{}, wheel_joint_{}, cassette_joint_{},
-                shaft_joint_{};
+        // shaft_joint_ caches the drive-shaft → rotor → crank fallback chain.
+        Joint crank_joint_{}, wheel_joint_{}, shaft_joint_{};
         int human_actuator_ = absent_id, motor_actuator_ = absent_id;
         PedalingPolicy pedaling_;
         CadenceShifter shifting_;
         AssistController assist_;
-        std::optional<Freehub> hub_;
         std::unique_ptr<Transmission> ideal_hub_, clutch_, freewheel_;
         DriveSnapshot live_;
         // Detached snapshot staging for reset()/restore(): keeping the
@@ -454,17 +434,6 @@ namespace drivetrain {
         PedalingPolicy pedaling_scratch_;
         CadenceShifter shifting_scratch_;
         AssistController assist_scratch_;
-        std::optional<Freehub> hub_scratch_;
-
-        // cassette_ resolves only under the elastic-chain topology; the
-        // absent_id sentinel makes every other mode honest, and this throws
-        // like engaged() does for the same compiler-invisible invariant.
-        [[nodiscard]] int cassette_body() const {
-            if (cassette_ == absent_id)
-                throw std::logic_error(
-                    "cassette body is absent outside the elastic_chain model");
-            return cassette_;
-        }
 
         [[nodiscard]] double
         angle(int body, std::optional<double> reference = std::nullopt);
@@ -495,21 +464,16 @@ namespace drivetrain {
         // 8192-byte frame contract this way (the sanitizer build's red
         // zones pushed the single merged frame past it).
         struct TickMetrics {
-            double extension = 0., rate = 0., tension = 0., energy = 0.,
-                    torque = 0., deflection = 0., relative_rate = 0.,
-                    cadence = 0., omega_crank = 0., omega = 0., human = 0.,
+            double cadence = 0., omega_crank = 0., omega = 0., human = 0.,
                     sensor = 0., assist_sensor = 0., request = 0.,
                     safety = 0., delivered = 0.;
             bool enabled = false;
             PedalingState ps;
-            DriveAngles angles;
-            std::optional<double> psi;
         };
 
-        // The solve half of stage_components: pedaling advance, chain/freehub
-        // force evaluation and the motor solve land the
-        // component forces on the candidate bank and return the scalar
-        // metrics the telemetry build publishes.
+        // The solve half of stage_components: pedaling advance and the
+        // motor solve land the component forces on the candidate bank and
+        // return the scalar metrics the telemetry build publishes.
         [[nodiscard]] TickMetrics
         stage_components_metrics(detail::TickBank &bank, const TickInputs &in);
 

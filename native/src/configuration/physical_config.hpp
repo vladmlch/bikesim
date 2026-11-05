@@ -278,14 +278,10 @@ struct ShiftingConfig {
 
 struct PhysicalDriveConfig {
     DrivetrainSpecs gearing;
-    std::string transmission_model = "elastic_chain";
+    std::string transmission_model = "ideal_mid_drive";
     double human_torque_nm = 0.;
     double torque_ripple = .35;
     double crank_phase_rad = 0.;
-    double chain_k_n_m = 200000.;
-    double chain_c_ns_m = 10.;
-    double freehub_k_nm_rad = 1000.;
-    double freehub_c_nms_rad = .5;
     double brake_ceiling_nm = 200.;
     // Held-brake stiction at standstill (pad bite) — physical_config.py's
     // same-named block: a zero torque or stiffness disables it.
@@ -779,10 +775,6 @@ inline constexpr auto kPhysicalDriveConfigFields = std::to_array<FieldDecl>({
     REAL(PhysicalDriveConfig, human_torque_nm),
     REAL(PhysicalDriveConfig, torque_ripple),
     REAL(PhysicalDriveConfig, crank_phase_rad),
-    REAL(PhysicalDriveConfig, chain_k_n_m),
-    REAL(PhysicalDriveConfig, chain_c_ns_m),
-    REAL(PhysicalDriveConfig, freehub_k_nm_rad),
-    REAL(PhysicalDriveConfig, freehub_c_nms_rad),
     REAL(PhysicalDriveConfig, brake_ceiling_nm),
     REAL(PhysicalDriveConfig, brake_hold_torque_nm),
     REAL(PhysicalDriveConfig, brake_hold_stiffness_nm_rad),

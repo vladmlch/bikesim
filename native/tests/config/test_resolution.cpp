@@ -320,9 +320,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] void checks_variants() {
     for (const auto& entry : {
              std::pair<std::string_view, std::string_view>{
-                 "config/variant_elastic_chain",
-                 "config/variant_elastic_chain"},
-             {"config/variant_alt_support", "config/variant_alt_support"},
+                 "config/variant_alt_support", "config/variant_alt_support"},
          }) {
         const std::string name(entry.first);
         const auto config = cfg::load_physics(
@@ -336,11 +334,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                     "'weld' grip coerces to 'connect'");
         expect_resolved(config, name, name + ".resolved.json");
     }
-    invalid_with("automatic physical shifting requires ideal_mid_drive",
-                 [] {
-                     discard(cfg::load_physics(bt::fixture(
-                         "config/variant_elastic_chain_shifting_rejected.toml")));
-                 });
 }
 
 // ---- rejection surface ------------------------------------------------------

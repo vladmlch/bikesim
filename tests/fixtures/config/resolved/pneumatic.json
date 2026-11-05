@@ -118,11 +118,7 @@
     "brake_hold_release_radps": 1.0,
     "brake_hold_stiffness_nm_rad": 20000.0,
     "brake_hold_torque_nm": 200.0,
-    "chain_c_ns_m": 10.0,
-    "chain_k_n_m": 200000.0,
     "crank_phase_rad": 0.0,
-    "freehub_c_nms_rad": 0.5,
-    "freehub_k_nm_rad": 1000.0,
     "gearing": {
       "chain_pitch_m": 0.0127,
       "front_teeth": 22,

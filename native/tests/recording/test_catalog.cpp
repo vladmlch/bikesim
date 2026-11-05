@@ -40,7 +40,11 @@ void catalog_contract() {
     // channel_drive.{battery_energy_j, battery_empty, energy_limited,
     // electrical_power_w} and channel_energy.{electrical_work_j,
     // electrical_residual_j}.
-    bt::require(count == 487, "full reviewed catalog retains all 487 repeated/nested descriptor occurrences");
+    // 479 = 487 minus the removed elastic-chain telemetry keys:
+    // channel_drive.{chain_extension_m, chain_extension_rate_mps,
+    // chain_tension_n, chain_energy_j, chain_dissipation_power_w,
+    // chain_power_w, freehub_energy_j, freehub_deflection_rad}.
+    bt::require(count == 479, "full reviewed catalog retains all 479 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

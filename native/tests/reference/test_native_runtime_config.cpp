@@ -224,18 +224,14 @@ void test_native_capability_rejects_other_drive_modes() {
 }
 
 // ---------------------------------------------------------------------------
-// test_native_capability_rejects_other_transmissions (2 params): both
-// remaining schema models are accepted — native gates no transmission
-// beyond the schema set.
+// test_native_capability_rejects_other_transmissions (1 param): the
+// remaining non-default schema model is accepted — native gates no
+// transmission beyond the schema set.
 // ---------------------------------------------------------------------------
 void test_native_capability_rejects_other_transmissions() {
     const cfg::RiderSpecs rider = articulated_rider();
-    for (const char* value :
-         {"elastic_chain", "geometric_ideal_mid_drive"}) {
+    for (const char* value : {"geometric_ideal_mid_drive"}) {
         cfg::SimulationPhysicsConfig config = welded();
-        // Automatic physical shifting requires ideal_mid_drive; disabling
-        // it isolates the capability verdict the source exercised past
-        // construction.
         config.drive.shifting.enabled = false;
         config.drive.transmission_model = value;
         require_supported(config, rider,

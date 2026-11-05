@@ -210,11 +210,8 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     if (args.present("rear_teeth")) set(gearing, "rear_teeth", integer(args.integer("rear_teeth")));
     if (!io::as_object(assist, "assist").empty()) set(drive, "assist", std::move(assist));
     if (!io::as_object(gearing, "gearing").empty()) set(drive, "gearing", std::move(gearing));
-    add_number(drive, args, "chain_stiffness", "chain_k_n_m");
-    add_number(drive, args, "freehub_stiffness", "freehub_k_nm_rad");
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", std::move(drive));
     request.setup.model.physics = research::resolve_research_physics(*defaults, file(args, "physics_config"), overrides);
-    if (request.setup.model.physics->drive.transmission_model != "elastic_chain" && (args.has("chain_stiffness") || args.has("freehub_stiffness"))) throw ArgumentError("--chain-stiffness/--freehub-stiffness apply only to elastic_chain");
     request.experiment.control_period_s = args.real("control_period"); request.experiment.actuator_delay_s = args.real("actuator_delay");
     request.experiment.duration_s = args.real("duration"); request.experiment.seed_decimal = research::validate_seed(args.text("seed"));
     request.experiment.record_decimation = bounded_integer(args, "record_decimation", 80);

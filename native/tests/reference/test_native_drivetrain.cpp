@@ -40,7 +40,6 @@ void test_force_staging() {
 void test_solved_intervals() {
     for (auto mode : {"crank_effort", "articulated_effort"}) for (bool const sparse : {false, true})
         for (auto const kind : kinds) for (auto topology : {"plain", "clutch", "rotor"}) {
-            if (kind == "elastic_chain" && std::string_view(topology) != "plain") continue;
             auto golden = node("test_solved_intervals", std::string(mode) + "-" + (sparse ? "sparse-" : "dense-") +
                 std::string(kind) + "-" + topology);
             auto owner = pair(kind, mode, topology, sparse);
@@ -121,7 +120,6 @@ void test_random_multiturn_staging() {
             random.uniform(-.006, .006, model_access::mutable_buffer(owner->data()->qpos, owner->model()->nq));
             position(*owner, "crank_spin", random.uniform(-90., 90.));
             position(*owner, "rear_wheel_spin", random.uniform(-90., 90.));
-            if (kind == "elastic_chain") position(*owner, "cassette_spin", random.uniform(-90., 90.));
             random.uniform(-7., 7., model_access::mutable_buffer(owner->data()->qvel, owner->model()->nv));
             owner->data()->time += .01; reset_engine_state(*owner); clear_pending(*owner);
             components(golden, components(*owner, .01, -1.)); tree(golden, diagnostics(*owner));
@@ -283,10 +281,6 @@ void test_injected_valid_state_and_replay() {
         injected->shift_time_s = -1.; injected->last_time_s = -.5;
         bt::require(injected->angles.has_value(), "injected source has angle state");
         for (auto& angle : std::span(injected->angles->values).first(injected->angles->count)) angle += 2. * std::numbers::pi; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
-        if (injected->hub) {
-            injected->hub->boundary = -.03; injected->hub->energy_j = .04; injected->hub->torque_nm = 2.;
-            injected->reference.value() += .001; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
-        }
         if (injected->ideal_hub) {
             injected->ideal_hub->boundary.value() += .02; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
             if (kind == "geometric_ideal_mid_drive") {
@@ -366,8 +360,9 @@ void test_real_solved_request_violation() {
     owner->set_inputs(control, std::vector<double>(owner->qvel().size())); owner->step();
     error<drivetrain::ArithmeticError>([&] { (void)owner->drive().settle(); }, "reserved effort ceiling");
 }
-// Source: test_invalid_elastic_topology_rejects, public config and native wire.
-void test_invalid_elastic_topology_rejects() {
+// Source: the removed elastic_chain variant rejects at the public config and
+// native wire gates (the mid-drive-only topology rules went away with it).
+void test_elastic_transmission_rejects() {
     for (auto topology : {"clutch", "rotor"}) {
         auto input = source("elastic_chain", topology);
         bt::invalid([&] { cfg::detail::post_init(input); });
@@ -420,7 +415,7 @@ void test_diagnostic_ratio_and_integer_ranges() {
 void test_genuine_wheel_and_rotor_overrun() {
     for (auto const kind : kinds) {
         auto golden = node("test_genuine_wheel_and_rotor_overrun", kind);
-        const std::string_view topology = kind == "elastic_chain" ? "plain" : "rotor";
+        const std::string_view topology = "rotor";
         auto owner = pair(kind, "crank_effort", topology);
         velocity(*owner, "rear_wheel_spin", 12.); if (topology == "rotor") velocity(*owner, "rotor_spin", 2.);
         reset_engine_state(*owner);
@@ -452,10 +447,9 @@ void test_ideal_drive_applies_no_bearing_drag() {
             bt::require(name != "drive_bearings",
                         "no bearing component is emitted");
         }
-        if (kind != "elastic_chain")
-            for (const double force : total(*owner, forces))
-                bt::require(force == 0.,
-                            "zero effort gives zero drive force");
+        for (const double force : total(*owner, forces))
+            bt::require(force == 0.,
+                        "zero effort gives zero drive force");
     }
 }
 // Source: test_geometric_prepared_buffers_reuse_storage.
@@ -539,7 +533,7 @@ int main() {
         test_set_inputs_cross_aliases_and_ownership(); test_injected_valid_state_and_replay();
         test_pending_and_duplicate_settlement_guards(); test_passive_topology_without_actuators();
         test_diagnostic_state_validation(); test_prepared_state_requires_boundary(); test_real_solved_request_violation();
-        test_invalid_elastic_topology_rejects(); test_optional_project_and_initial_gearing();
+        test_elastic_transmission_rejects(); test_optional_project_and_initial_gearing();
         test_set_inputs_both_cross_buffer_aliases(); test_diagnostic_ratio_and_integer_ranges();
         test_genuine_wheel_and_rotor_overrun(); test_geometric_prepared_buffers_reuse_storage();
         test_geometric_prepared_sentinel_owns_reused_storage();

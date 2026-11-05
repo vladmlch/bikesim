@@ -22,10 +22,7 @@ struct Stand {
 [[nodiscard]] Value wheel_inertia_rig(double dt,double duration_s=.5);
 [[nodiscard]] Value incline_rig(double dt,double duration_s=2.,double angle_deg=30.);
 [[nodiscard]] Value brake_rig(double dt,double duration_s=5.);
-[[nodiscard]] Value chain_locked_rig(double dt,double duration_s=1.);
-[[nodiscard]] Value chain_geometry_rig();
 [[nodiscard]] Value contact_event_rig(double dt);
-[[nodiscard]] Value compiled_chain_motion_rig();
 [[nodiscard]] double quasistatic_front_load(double mass,double wheelbase,double com_x,double com_h,
     double slope,double acceleration=0.,double gravity=9.81);
 [[nodiscard]] double necessary_traction_margin(double mu,double rear_fraction,double grade);

@@ -57,7 +57,6 @@ namespace drivetrain {
         PedalingConfig pedaling;
         ShiftingConfig shifting;
         AssistConfig assist;
-        double hub_stiffness_nm_rad{}, hub_damping_nm_s{};
     };
 
     struct PedalingSnapshot {
@@ -79,6 +78,8 @@ namespace drivetrain {
         bool pedaling{};
     };
 
+    // Retained for the GPU resistance-kernel parity tests; the CPU drivetrain
+    // no longer owns a Freehub (task 3 removes the kernel and its users).
     struct FreehubSnapshot {
         std::optional<double> boundary;
         double energy_j{}, torque_nm{};
@@ -86,8 +87,8 @@ namespace drivetrain {
     struct DriveConfig {
         DrivePolicyConfig policies;
         std::string drive_mode, transmission_model;
-        double human_torque_nm{}, torque_ripple{}, crank_phase_rad{}, chain_k_n_m{},
-                chain_c_ns_m{}, rotor_inertia_kgm2{};
+        double human_torque_nm{}, torque_ripple{}, crank_phase_rad{},
+                rotor_inertia_kgm2{};
         // StaticBrakeApplier's ceiling (physical_config drive section) —
         // the runtime's static-brake owner reads it; the drivetrain writer
         // itself never does. The brake_hold_* block is the latched standstill

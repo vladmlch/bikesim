@@ -266,7 +266,7 @@ namespace {
     }
 
     void decode_policies(const Dict &d, DriveSnapshot &out) {
-        exact(d, ncd::keys("pedaling", "shifting", "assist", "hub"));
+        exact(d, ncd::keys("pedaling", "shifting", "assist"));
         const auto p = section(d, "pedaling"), s = section(d, "shifting"),
                    a = section(d, "assist");
         exact(p, ncd::keys("coasting", "target_phase_rad",
@@ -295,14 +295,6 @@ namespace {
         out.assist = {.torque = num(a, "torque"),
                       .last_gain = num(a, "last_gain"),
                       .pedaling = boolean(a, "pedaling")};
-        if (!field(d, "hub").is_none()) {
-            const auto h = section(d, "hub");
-            exact(h, ncd::keys("boundary", "energy_j", "torque_nm"));
-            out.hub = FreehubSnapshot{
-                .boundary = optional_num(h, "boundary"),
-                .energy_j = num(h, "energy_j"),
-                .torque_nm = num(h, "torque_nm")};
-        }
     }
 
     [[nodiscard]] std::optional<TransmissionSnapshot> decode_transmission(
@@ -432,15 +424,6 @@ namespace {
         out.emplace_back("pedaling", bio::Value{std::move(p)});
         out.emplace_back("shifting", bio::Value{std::move(sh)});
         out.emplace_back("assist", bio::Value{std::move(a)});
-        if (s.hub.has_value()) {
-            bio::Value::Object h;
-            h.emplace_back("boundary", optional_value(s.hub->boundary));
-            h.emplace_back("energy_j", real_value(s.hub->energy_j));
-            h.emplace_back("torque_nm", real_value(s.hub->torque_nm));
-            out.emplace_back("hub", bio::Value{std::move(h)});
-        } else {
-            out.emplace_back("hub", bio::Value{});
-        }
         return bio::Value{std::move(out)};
     }
 
@@ -480,30 +463,26 @@ namespace {
 PolicySnapshot decode_policy_snapshot(const bio::Value& value) {
     auto decoded = std::make_unique<DriveSnapshot>();
     decode_policies(mapping(VNode{&value}, "state"), *decoded);
-    if (!decoded->hub) throw std::invalid_argument("state.hub: expected dict");
-    return {.pedaling = decoded->pedaling, .shifting = decoded->shifting, .assist = decoded->assist,
-            .hub = *decoded->hub};
+    return {.pedaling = decoded->pedaling, .shifting = decoded->shifting, .assist = decoded->assist};
 }
 
 bio::Value encode_policy_snapshot(const PolicySnapshot& state) {
     auto source = std::make_unique<DriveSnapshot>();
     source->pedaling = state.pedaling; source->shifting = state.shifting;
-    source->assist = state.assist; source->hub = state.hub;
+    source->assist = state.assist;
     return policy_value(*source);
 }
 
 DriveSnapshot decode_drive_snapshot(const bio::Value &value) {
     const Dict d = mapping(VNode{&value}, "state.drive");
     exact(d, ncd::keys("policies", "shift_time_s", "last_time_s",
-                          "reference", "psi", "angles", "last", "probe_last",
+                          "angles", "last", "probe_last",
                           "pending_actuation", "ideal_hub", "clutch",
                           "freewheel"));
     DriveSnapshot s;
     decode_policies(section(d, "policies"), s);
     s.shift_time_s = optional_num(d, "shift_time_s");
     s.last_time_s = optional_num(d, "last_time_s");
-    s.reference = optional_num(d, "reference");
-    s.psi = optional_num(d, "psi");
     if (!field(d, "angles").is_none()) {
         const auto a = vector(field(d, "angles"), d.child("angles"));
         DriveAngles angles{.count = a.size()};
@@ -537,10 +516,8 @@ bio::Value encode_drive_snapshot(const DriveSnapshot &s) {
     out.emplace_back("policies", policy_value(s));
     out.emplace_back("shift_time_s", optional_value(s.shift_time_s));
     out.emplace_back("last_time_s", optional_value(s.last_time_s));
-    out.emplace_back("reference", optional_value(s.reference));
-    out.emplace_back("psi", optional_value(s.psi));
     // The fixed-width mirror expands back into the wire's variable list —
-    // 1 entry for the simplified models, 2 for elastic_chain.
+    // the ideal path carries the crank angle only.
     if (s.angles.has_value()) {
         const auto values =
             std::span<const double>(s.angles->values).first(s.angles->count);

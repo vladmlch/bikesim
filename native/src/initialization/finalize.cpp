@@ -49,8 +49,8 @@ void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshot
     if(drive.pedaling.enabled&&std::abs(rate)*60./(2.*std::numbers::pi)>=drive.pedaling.coast_above_rpm)pedaling=false;
     if(pedaling){
         velocity[static_cast<std::size_t>(joint_address(context,"crank_spin").dof)]=rate;
-        for(std::string_view const name:{"drive_shaft_spin","rotor_spin","cassette_spin"})if(mj_name2id(m,mjOBJ_JOINT,std::string(name).c_str())>=0)
-            velocity[static_cast<std::size_t>(joint_address(context,name).dof)]=name=="cassette_spin"?velocity[static_cast<std::size_t>(joint_address(context,"rear_wheel_spin").dof)]:rate;
+        for(std::string_view const name:{"drive_shaft_spin","rotor_spin"})if(mj_name2id(m,mjOBJ_JOINT,std::string(name).c_str())>=0)
+            velocity[static_cast<std::size_t>(joint_address(context,name).dof)]=rate;
         const double frame_rate=model::body_angular_velocity(*m,*d,context.frame_body_id)[1];
         velocity[static_cast<std::size_t>(joint_address(context,"pedal_front_spin").dof)]=-rate-frame_rate;
         velocity[static_cast<std::size_t>(joint_address(context,"pedal_rear_spin").dof)]=-rate-frame_rate;

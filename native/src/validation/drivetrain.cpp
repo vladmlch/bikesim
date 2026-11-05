@@ -14,7 +14,7 @@ namespace bike::validation {
 using mechanics::metrics;
 using mechanics::bounds;
 namespace {
-constexpr std::array<std::string_view,3> modes{"ideal_mid_drive","geometric_ideal_mid_drive","elastic_chain"};
+constexpr std::array<std::string_view,2> modes{"ideal_mid_drive","geometric_ideal_mid_drive"};
 constexpr std::array strokes{.005,.015,.030};
 // The 8 KiB frame budget keeps the SimulationPhysicsConfig, BuildRequest
 // and BikeStand temporaries each in their own noinline frame; the inlined
@@ -56,22 +56,6 @@ struct Fixture {
         suspension=std::make_unique<SuspensionWriter>(m,*bike.writers.suspension);drive=std::make_unique<drivetrain::DrivetrainWriter>(m,d,*bike.writers.drive);drive->reset();
     }
 };
-// The frame limit keeps the BikeStand out of caller frames; noinline
-// helpers hold the same split under optimization. Gearing values reach
-// the caller through request.physics, identical to the pre-refactor
-// stack-resident default configuration.
-[[gnu::noinline]] configuration::SimulationPhysicsConfig chain_config(){
-    configuration::SimulationPhysicsConfig c;c.physics_mode="physical";return c;
-}
-[[gnu::noinline]] model::BuildRequest chain_model(){
-    return mechanics::request(chain_config());
-}
-NATIVE_DIAG_PUSH
-NATIVE_DIAG_IGNORE("-Wframe-larger-than")
-[[gnu::noinline]] std::unique_ptr<mechanics::BikeStand> chain_bike(){
-    return std::make_unique<mechanics::BikeStand>(chain_model());
-}
-NATIVE_DIAG_POP
 }
 
 RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,double stroke,double duration) { // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
@@ -129,25 +113,11 @@ Value drive_suspension_comparison(const Value& config,const std::filesystem::pat
         catch(const std::exception& e){value::set(fields,"passed",Value{false});value::set(fields,"error",value::text(e.what()));value::set(fields,"metrics",Value{});}
         lookup.emplace(std::tuple{step,stroke,torque,mode},item);series.push_back(std::move(item));value::set(std::get<Object>(report.data),"series",Value{series});checkpoint();}
     const double finest=*std::ranges::min_element(dt);bool proposed=false,passed=true;
-    for(double const stroke:strokes)for(double const torque:{0.,20.,40.})for(auto const mode:{modes[0],modes[1]}){const auto& a=lookup.at({finest,stroke,torque,mode});const auto& b=lookup.at({finest,stroke,torque,modes[2]});Value result{Object{{"dt_s",value::real(finest)},{"mode",value::text(mode)},{"initial_shock_stroke_m",value::real(stroke)},{"torque_nm",value::real(torque)}}};auto& fields=std::get<Object>(result.data);bool ok=false;
+    for(double const stroke:strokes)for(double const torque:{0.,20.,40.})for(auto const mode:{modes[1]}){const auto& a=lookup.at({finest,stroke,torque,mode});const auto& b=lookup.at({finest,stroke,torque,modes[0]});Value result{Object{{"dt_s",value::real(finest)},{"mode",value::text(mode)},{"initial_shock_stroke_m",value::real(stroke)},{"torque_nm",value::real(torque)}}};auto& fields=std::get<Object>(result.data);bool ok=false;
         const auto& ma=get(a,"metrics");const auto& mb=get(b,"metrics");if(!io::is_null(ma)&&!io::is_null(mb)){Object errors;double maximum=0.;for(const char* name:{"mean_shock_force_n","mean_front_normal_load_n"}){const double error=relative_change(real(ma,name),real(mb,name),10.);maximum=std::max(maximum,error);errors.emplace_back(name,value::real(error));}ok=flag(a,"passed")&&flag(b,"passed")&&maximum<=.05;
             value::set(fields,"relative_force_errors",Value{std::move(errors)});value::set(fields,"rear_travel_difference_m",value::real(real(ma,"mean_rear_travel_delta_m")-real(mb,"mean_rear_travel_delta_m")));value::set(fields,"shaft_power_difference_w",value::real(real(ma,"mean_shaft_power_w")-real(mb,"mean_shaft_power_w")));}
         else{value::set(fields,"reason",value::text("missing fixture result"));}value::set(fields,"passed",Value{ok});if(mode=="geometric_ideal_mid_drive"&&torque>0.){proposed=true;passed=passed&&ok;}comparisons.push_back(std::move(result));}
     for(const auto& row:series){passed=passed&&flag(row,"passed");}passed=passed&&proposed;auto& out=std::get<Object>(report.data);value::set(out,"comparisons",Value{std::move(comparisons)});value::set(out,"passed",Value{passed});value::set(out,"status",value::text(passed?"synthetic_local_fixture_pass":"experimental_gate_failed"));checkpoint();return report;
-}
-
-Value compiled_chain_motion_rig() {
-    const auto bike=chain_bike();auto* m=bike->model();auto* d=bike->data();engine::forward(m,d);
-    const int front=object_id(m,mjOBJ_BODY,"crank"),rear=object_id(m,mjOBJ_BODY,"cassette"),frame=object_id(m,mjOBJ_BODY,"frame"),pivot=mechanics::qpos(m,"main_pivot"),cassette=mechanics::qpos(m,"cassette_spin");
-    const auto& gearing=bike->request.physics->drive.gearing;const drivetrain::GearingConfig gear{.front_teeth=gearing.front_teeth,.rear_teeth=gearing.rear_teeth,.chain_pitch_m=gearing.chain_pitch_m};drivetrain::GeometryWorkspace analytic(m->nv),numeric(m->nv);const double reference=analytic.evaluate(m,d,gear,front,rear,frame,{}, {},false);const drivetrain::Vec2 original_angles{analytic.theta_f,analytic.theta_r};const double psi=analytic.psi,phase=analytic.theta_r; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
-    const std::span<mjtNum> qpos=model_access::mutable_buffer(d->qpos,m->nq,"qpos");
-    const std::vector<double> base(qpos.begin(),qpos.end());std::unique_ptr<mjData,DataDeleter> scratch(engine::make_data(m));double error=0.,coupling=0.;
-    for(double const displacement:geometry::detail::np_linspace(-.05,.05,9)){std::ranges::copy(base,qpos.begin());qpos[static_cast<std::size_t>(pivot)]+=displacement;engine::forward(m,d);qpos[static_cast<std::size_t>(cassette)]+=phase-drivetrain::unwrap(analytic.angle(m,d,rear,false),phase);engine::forward(m,d);
-        const std::vector<double> saved(qpos.begin(),qpos.end());(void)analytic.evaluate(m,d,gear,front,rear,frame,original_angles,psi,false);const auto jac=analytic.jacobian;const drivetrain::Vec2 angles{analytic.theta_f,analytic.theta_r};
-        const auto numerical=drivetrain::chain_jacobian(saved,[&](std::span<const double> q){std::ranges::copy(q,model_access::mutable_buffer(scratch->qpos,m->nq,"qpos").begin());engine::kinematics(m,scratch.get());return numeric.evaluate(m,scratch.get(),gear,front,rear,frame,angles,psi,false)-reference;});
-        std::vector<double> difference(jac.size());for(std::size_t i=0;i<jac.size();++i)difference[i]=jac[i]-numerical[i];error=std::max(error,vector_norm(difference)/std::max(vector_norm(numerical),1e-12));coupling=std::max(coupling,std::abs(jac[static_cast<std::size_t>(mechanics::dof(m,"main_pivot"))]));
-        if(!std::ranges::equal(saved,qpos))throw std::logic_error("chain oracle changed live generalized coordinates");}
-    return metrics({{"compiled_jacobian_relative_error",error},{"linkage_force_per_tension_m",coupling}});
 }
 
 RigResult suspension_cycle(double dt) {

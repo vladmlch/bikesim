@@ -7,7 +7,6 @@ namespace drivetrain {
 // Availability is distinct from qualification: task evidence records which
 // platform/oracle gates have actually run for these existing writer branches.
 struct Capability {
-    bool elastic_chain = true;
     bool motor_clutch = true;
     bool reflected_rotor = true;
 };

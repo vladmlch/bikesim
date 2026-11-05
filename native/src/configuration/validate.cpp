@@ -622,35 +622,21 @@ void post_init(PhysicalDriveConfig &config) {
     post_init(config.gearing);
     post_init(config.assist);
     post_init(config.pedaling);
-    if (config.transmission_model != "elastic_chain" &&
-        config.transmission_model != "ideal_mid_drive" &&
+    if (config.transmission_model != "ideal_mid_drive" &&
         config.transmission_model != "geometric_ideal_mid_drive")
         fail("unknown transmission model");
     scalar(config.rotor_inertia_kgm2, "rotor_inertia_kgm2", 0.);
     if (config.rotor_inertia_kgm2 > 0. && config.motor_clutch)
         fail("rotor freewheel and the legacy crank clutch are exclusive");
-    const bool mid_drive = config.transmission_model == "ideal_mid_drive" ||
-        config.transmission_model == "geometric_ideal_mid_drive";
-    if (config.rotor_inertia_kgm2 > 0. && !mid_drive)
-        fail("a motor rotor requires an ideal mid-drive transmission");
-    if (config.motor_clutch && !mid_drive)
-        fail("motor clutch requires an ideal mid-drive transmission");
     post_init(config.shifting);
-    if (config.shifting.enabled) {
-        if (!mid_drive)
-            fail("automatic physical shifting requires ideal_mid_drive");
-        if (std::ranges::find(config.shifting.cassette,
-                              config.gearing.rear_teeth) ==
+    if (config.shifting.enabled &&
+        std::ranges::find(config.shifting.cassette,
+                          config.gearing.rear_teeth) ==
             config.shifting.cassette.end())
-            fail("initial rear sprocket must belong to the cassette");
-    }
-    scalar(config.chain_k_n_m, "chain_k_n_m", std::nullopt, true);
-    scalar(config.freehub_k_nm_rad, "freehub_k_nm_rad", std::nullopt, true);
+        fail("initial rear sprocket must belong to the cassette");
     for (const auto& [name, member] :
          {std::pair{"human_torque_nm", &PhysicalDriveConfig::human_torque_nm},
           {"torque_ripple", &PhysicalDriveConfig::torque_ripple},
-          {"chain_c_ns_m", &PhysicalDriveConfig::chain_c_ns_m},
-          {"freehub_c_nms_rad", &PhysicalDriveConfig::freehub_c_nms_rad},
           {"brake_ceiling_nm", &PhysicalDriveConfig::brake_ceiling_nm},
           {"brake_hold_torque_nm", &PhysicalDriveConfig::brake_hold_torque_nm},
           {"brake_hold_stiffness_nm_rad", &PhysicalDriveConfig::brake_hold_stiffness_nm_rad},

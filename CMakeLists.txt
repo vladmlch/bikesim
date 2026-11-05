@@ -118,7 +118,6 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writer_config.cpp"
   "${_bike_native_dir}/src/drivetrain/pedaling.cpp"
   "${_bike_native_dir}/src/drivetrain/chain.cpp"
-  "${_bike_native_dir}/src/drivetrain/elastic_chain.cpp"
   "${_bike_native_dir}/src/drivetrain/motor_clutch.cpp"
   "${_bike_native_dir}/src/drivetrain/transmission.cpp"
   "${_bike_native_dir}/src/drivetrain/shifting.cpp"
@@ -647,7 +646,7 @@ if(BUILD_TESTING)
   # The ODR sweep relocatable-links every selected TU into one image, so each
   # first-party definition has exactly one compile: GPU tests link the library
   # that owns a reference TU (bike_core for tyre/station.cpp and
-  # drivetrain/freehub.cpp, bike_rider_math for rider/spindle_math.cpp,
+  # drivetrain/transmission.cpp, bike_rider_math for rider/spindle_math.cpp,
   # bike_gpu_kernels for the extern "C" entry points) instead of including it.
   add_library(bike_gpu_kernels STATIC
     "${_bike_native_dir}/src/gpu/cuda_kernels_host.cpp")

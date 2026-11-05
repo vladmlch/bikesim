@@ -3,7 +3,6 @@
 #include "../drivetrain/capabilities.hpp"
 #include "../engine_call.hpp"
 #include "../model_topology.hpp"
-#include "pyfloat.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -25,15 +24,12 @@ namespace drivetrain {
 
     void validate(const DriveSnapshot &s, const DriveConfig &config,
                   const mjModel &model) {
-        const bool simplified = config.transmission_model != "elastic_chain",
-                effort = config.drive_mode == "crank_effort" ||
-                         config.drive_mode == "articulated_effort";
+        const bool effort = config.drive_mode == "crank_effort" ||
+                            config.drive_mode == "articulated_effort";
         // Topology is selected by the config, not discovered from the snapshot.
-        if (s.hub.has_value() == simplified)
-            throw std::invalid_argument("hub topology");
-        if (s.ideal_hub.has_value() != (simplified && effort) ||
-            s.clutch.has_value() != (simplified && effort && config.motor_clutch) ||
-            s.freewheel.has_value() != (simplified && effort && config.rotor_inertia_kgm2 > 0.))
+        if (s.ideal_hub.has_value() != effort ||
+            s.clutch.has_value() != (effort && config.motor_clutch) ||
+            s.freewheel.has_value() != (effort && config.rotor_inertia_kgm2 > 0.))
             throw std::invalid_argument("transmission topology");
         // A pending actuation exists only after a compute that also set the clock.
         if (s.pending_actuation && !s.last_time_s)
@@ -92,7 +88,6 @@ namespace drivetrain {
 
     DrivetrainWriter::DrivetrainWriter(mjModel *m, mjData *d, DriveConfig c)
         : model_(m), data_(d), config_(checked_config(std::move(c))),
-          simplified_(config_.transmission_model != "elastic_chain"),
           effort_(config_.drive_mode == "crank_effort" ||
                   config_.drive_mode == "articulated_effort"),
           geometric_hub_(config_.transmission_model == "geometric_ideal_mid_drive"),
@@ -123,10 +118,9 @@ namespace drivetrain {
             };
             joints_.emplace(name, j);
         }
-        for (const char *name: {"cassette_spin", "drive_shaft_spin", "rotor_spin"}) {
+        for (const char *name: {"drive_shaft_spin", "rotor_spin"}) {
             const std::string key(name);
-            if ((key == "cassette_spin" && !simplified_) ||
-                (key == "drive_shaft_spin" && config_.motor_clutch) ||
+            if ((key == "drive_shaft_spin" && config_.motor_clutch) ||
                 (key == "rotor_spin" && config_.rotor_inertia_kgm2 > 0.)) {
                 const int id = resolve(m, mjOBJ_JOINT, name);
                 topology::joint(m, id, name, mjJNT_HINGE, {0., 1., 0.});
@@ -143,8 +137,6 @@ namespace drivetrain {
         // libstdc++).
         crank_joint_ = joints_.at("crank_spin");
         wheel_joint_ = joints_.at("rear_wheel_spin");
-        if (!simplified_)
-            cassette_joint_ = joints_.at("cassette_spin");
         shaft_joint_ =
                 joints_.contains("drive_shaft_spin")
                     ? joints_.at("drive_shaft_spin")
@@ -161,17 +153,7 @@ namespace drivetrain {
         if (motor_actuator_ >= 0)
             topology::actuator(m, motor_actuator_, "mid_drive",
                                resolve(m, mjOBJ_JOINT, motor.actuator_joint));
-        if (!simplified_) {
-            cassette_ = resolve(m, mjOBJ_BODY, "cassette");
-            const auto parents = buffer(m->body_parentid, m->nbody);
-            if (parents[static_cast<std::size_t>(cassette_)] !=
-                parents[static_cast<std::size_t>(rear_)])
-                throw std::invalid_argument(
-                    "cassette and wheel must have the same carrier body");
-            hub_.emplace(config_.policies.hub_stiffness_nm_rad,
-                         config_.policies.hub_damping_nm_s);
-        }
-        if (simplified_ && effort_) {
+        if (effort_) {
             const bool geometric =
                     config_.transmission_model == "geometric_ideal_mid_drive";
             ideal_hub_ = std::make_unique<Transmission>(
@@ -193,9 +175,8 @@ namespace drivetrain {
         // table position IS the serialized slot (pinned by the
         // force_component_table_ordered static_assert in the header).
         for (const ForceComponentSpec &spec: force_component_specs)
-            if (spec.slot != ForceComponent::ideal_transmission || simplified_)
-                components_.emplace_back(std::string(spec.name),
-                                         std::vector<double>(transmission_.size()));
+            components_.emplace_back(std::string(spec.name),
+                                     std::vector<double>(transmission_.size()));
         // TickBank::components are construction-sized by contract (see the
         // struct comment): a fresh writer may go straight to restore()
         // without a reset(), and restore() reseeds no bank extents, so the
@@ -298,77 +279,61 @@ namespace drivetrain {
         next.shifting = {};
         next.shifting.rear_teeth = next.shifting.from_teeth =
                 config_.policies.gearing.rear_teeth;
-        next.hub = hub_ ? std::optional<FreehubSnapshot>(FreehubSnapshot{})
-                        : std::nullopt;
         detail::TickBank &staging = banks_.at(0);
         staging.ideal_hub_staged = staging.clutch_staged =
                 staging.freewheel_staged = false;
-        if (simplified_) {
-            next.angles = DriveAngles{.values = {angle(crank_), 0.},
-                                      .count = 1};
-            next.reference = 0.;
-            next.psi.reset();
-            if (ideal_hub_) {
-                // Live order was set_ratio(configured gearing) then reset();
-                // staging composes both candidates into one update.
-                const double ratio =
-                        static_cast<double>(config_.policies.gearing.front_teeth) /
-                        config_.policies.gearing.rear_teeth;
-                TransmissionUpdate &update =
-                        staging.ideal_hub ? *staging.ideal_hub
-                                          : staging.ideal_hub.emplace();
-                if (geometric_hub_) {
-                    // reset() seeded at the current gear, then the ratio
-                    // staging composes on top — pending stays set inside the
-                    // composed update, but the published reset state clears
-                    // it, exactly like the sequential live order did.
-                    ideal_hub_->stage_reset_into(data_, update);
-                    ideal_hub_->stage_ratio_into(data_, ratio, update);
-                    update.state.shift_pending = false;
-                } else {
-                    ideal_hub_->make_update_into(update);
-                    ideal_hub_->stage_ratio_into(data_, ratio, update);
-                    // reset() publishes the boundary at the new ratio — the
-                    // direct relative() value, not the composed delta.
-                    const auto q = buffer(data_->qpos, model_->nq);
-                    const auto driver = joints_.at(config_.motor_clutch
-                                                           ? "drive_shaft_spin"
-                                                           : "crank_spin"),
-                            driven = joints_.at("rear_wheel_spin");
-                    update.state.boundary = validation::finite(
-                        ratio * q[static_cast<std::size_t>(driver.qpos)] -
-                            q[static_cast<std::size_t>(driven.qpos)],
-                        "transmission boundary");
-                    update.range[1] = engaged(update.state.boundary);
-                    update.state.range = update.range;
-                }
-                staging.ideal_hub_staged = true;
-                committed_into(update, next.ideal_hub);
+        next.angles = DriveAngles{.values = {angle(crank_), 0.},
+                                  .count = 1};
+        if (ideal_hub_) {
+            // Live order was set_ratio(configured gearing) then reset();
+            // staging composes both candidates into one update.
+            const double ratio =
+                    static_cast<double>(config_.policies.gearing.front_teeth) /
+                    config_.policies.gearing.rear_teeth;
+            TransmissionUpdate &update =
+                    staging.ideal_hub ? *staging.ideal_hub
+                                      : staging.ideal_hub.emplace();
+            if (geometric_hub_) {
+                // reset() seeded at the current gear, then the ratio
+                // staging composes on top — pending stays set inside the
+                // composed update, but the published reset state clears
+                // it, exactly like the sequential live order did.
+                ideal_hub_->stage_reset_into(data_, update);
+                ideal_hub_->stage_ratio_into(data_, ratio, update);
+                update.state.shift_pending = false;
+            } else {
+                ideal_hub_->make_update_into(update);
+                ideal_hub_->stage_ratio_into(data_, ratio, update);
+                // reset() publishes the boundary at the new ratio — the
+                // direct relative() value, not the composed delta.
+                const auto q = buffer(data_->qpos, model_->nq);
+                const auto driver = joints_.at(config_.motor_clutch
+                                                       ? "drive_shaft_spin"
+                                                       : "crank_spin"),
+                        driven = joints_.at("rear_wheel_spin");
+                update.state.boundary = validation::finite(
+                    ratio * q[static_cast<std::size_t>(driver.qpos)] -
+                        q[static_cast<std::size_t>(driven.qpos)],
+                    "transmission boundary");
+                update.range[1] = engaged(update.state.boundary);
+                update.state.range = update.range;
             }
-            if (clutch_) {
-                clutch_->stage_reset_into(
-                    data_, staging.clutch ? *staging.clutch
-                                          : staging.clutch.emplace());
-                staging.clutch_staged = true;
-                committed_into(*staging.clutch, next.clutch);
-            }
-            if (freewheel_) {
-                freewheel_->stage_reset_into(
-                    data_, staging.freewheel ? *staging.freewheel
-                                             : staging.freewheel.emplace());
-                staging.freewheel_staged = true;
-                committed_into(*staging.freewheel, next.freewheel);
-            }
-        } else {
-            next.angles = DriveAngles{
-                .values = {angle(crank_), angle(cassette_body())},
-                .count = 2};
-            next.reference = geometry_.evaluate(
-                model_, data_, config_.policies.gearing, crank_, cassette_body(),
-                frame_,
-                Vec2{next.angles->values[0], next.angles->values[1]},
-                std::nullopt, false);
-            next.psi = geometry_.psi;
+            staging.ideal_hub_staged = true;
+            committed_into(update, next.ideal_hub);
+        }
+        if (clutch_) {
+            clutch_->stage_reset_into(
+                data_, staging.clutch ? *staging.clutch
+                                      : staging.clutch.emplace());
+            staging.clutch_staged = true;
+            committed_into(*staging.clutch, next.clutch);
+        }
+        if (freewheel_) {
+            freewheel_->stage_reset_into(
+                data_, staging.freewheel ? *staging.freewheel
+                                         : staging.freewheel.emplace());
+            staging.freewheel_staged = true;
+            committed_into(*staging.freewheel, next.freewheel);
         }
         // Lane-equivalent of the former seed map — only these fields and the
         // shift block publish on reset, matching the sparse wire dict. The
@@ -376,8 +341,6 @@ namespace drivetrain {
         // the previous lanes engaged — clear() restores the sparse shape).
         DriveTelemetry &last = next.last;
         last.clear();
-        last.set(TelemetryField::chain_energy_j, 0.);
-        last.set(TelemetryField::freehub_energy_j, 0.);
         last.set(TelemetryField::motor_torque_nm, 0.);
         last.set(TelemetryField::human_torque_nm, 0.);
         last.set(TelemetryField::freehub_torque_nm, 0.);
@@ -424,7 +387,6 @@ namespace drivetrain {
             bank.pedaling = next.pedaling;
             bank.shifting = next.shifting;
             bank.assist = next.assist;
-            bank.hub = next.hub;
             bank.ctrl_count = 0;
             bank.ideal_hub_staged = bank.clutch_staged =
                     bank.freewheel_staged = false;
@@ -510,8 +472,6 @@ namespace drivetrain {
         shifting_.reset();
         assist_.reset();
         pedaling_.reset();
-        if (hub_)
-            engaged(hub_).reset();
         // Swap (not move): live_ gains the candidate's storage outright and
         // the scratch keeps the old live_ storage for the next stage — a
         // move would empty the scratch and the copy would allocate.
@@ -523,7 +483,6 @@ namespace drivetrain {
         pedaling_scratch_ = pedaling_;
         shifting_scratch_ = shifting_;
         assist_scratch_ = assist_;
-        hub_scratch_ = hub_;
     }
 
     void DrivetrainWriter::restart_clock() {
@@ -579,7 +538,7 @@ namespace drivetrain {
     // The warm-core twin: the tick's public gates are prechecked here so a
     // valid warm tick never constructs a throw — the double-advance clock
     // check mirrors tire.cpp's own precheck, the unsettled actuation maps
-    // to its dedicated status, and the uninitialized-reference gate is the
+    // to its dedicated status, and the uninitialized-state gate is the
     // geometry status. Residual kernel rejections (derived-value overflow,
     // engine failures inside a transmission commit) are caught and mapped
     // so noexcept is proved by the catch-all.
@@ -596,7 +555,7 @@ namespace drivetrain {
             return CoreStatus::invalid_input;
         if (inputs.active && inputs.advance && live_.pending_actuation)
             return CoreStatus::pending_actuation;
-        if (!live_.reference)
+        if (!live_.angles)
             return CoreStatus::invalid_geometry;
         try {
             components_into(inputs, out);
@@ -669,7 +628,6 @@ namespace drivetrain {
                 bank.freewheel_staged = false;
         bank.shifting = shifting_.state();
         bank.assist = assist_.state();
-        bank.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
         // The pedaling policy always advances on a detached candidate; only a
         // committed tick publishes it back.
         pedaling_scratch_ = pedaling_;
@@ -689,7 +647,6 @@ namespace drivetrain {
         bank.snapshot.pedaling = bank.pedaling;
         bank.snapshot.shifting = bank.shifting;
         bank.snapshot.assist = bank.assist;
-        bank.snapshot.hub = bank.hub;
         const auto mirror = [](Transmission *transmission,
                                const std::optional<TransmissionUpdate> &update,
                                bool staged,
@@ -720,10 +677,6 @@ namespace drivetrain {
         shifting_scratch_.set_state(bank.shifting);
         assist_scratch_ = assist_;
         assist_scratch_.set_state(bank.assist);
-        if (hub_) {
-            hub_scratch_ = hub_;
-            engaged(hub_scratch_).set_state(engaged(bank.hub));
-        }
     }
 
     void DrivetrainWriter::stage_pedal_advance(detail::TickBank &bank,
@@ -747,9 +700,6 @@ namespace drivetrain {
         const bool enabled = in.active && in.control.rider_enabled && effort_;
         double torque_factor = shifting_.torque_factor();
         if (in.advance && in.active && config_.policies.shifting.enabled && effort_) {
-            if (!ideal_hub_)
-                throw std::invalid_argument(
-                    "automatic shifting needs the live ideal_mid_drive model");
             // The shifter and the transmission update stage together: a
             // rejected ratio discards the whole candidate — EMAs, counters,
             // gear — and the commit lands both in one move. When the tick
@@ -832,7 +782,7 @@ namespace drivetrain {
         // control boundary (research policies hand it in through the ABI).
         if (in.control.motor_limit_nm)
             nonnegative(*in.control.motor_limit_nm, "motor torque limit");
-        if (!live_.reference)
+        if (!live_.angles)
             throw std::runtime_error("initialize the drivetrain before applying forces");
         if (in.advance && live_.last_time_s && data_->time <= *live_.last_time_s)
             throw std::invalid_argument(
@@ -847,7 +797,6 @@ namespace drivetrain {
         bank.pedaling = pedaling_.state();
         bank.shifting = shifting_.state();
         bank.assist = assist_.state();
-        bank.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
         if (!in.advance) {
             // Probe evaluation runs on the detached candidate: pending
             // settlement and the interval clock are cleared only there.
@@ -905,46 +854,8 @@ namespace drivetrain {
         bank.component_count = components_.size();
         for (auto &component: bank.components)
             std::ranges::fill(component, 0.);
-        const auto crank = crank_joint_, wheel = wheel_joint_;
+        const auto crank = crank_joint_;
         const auto q = buffer(data_->qpos, model_->nq), v = buffer(data_->qvel, model_->nv);
-        if (!simplified_) {
-            m.angles.count = 2;
-            m.angles.values = {
-                angle(crank_, engaged(bank.snapshot.angles).values[0]),
-                angle(cassette_body(), engaged(bank.snapshot.angles).values[1])
-            };
-            m.extension =
-                    geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
-                                       cassette_body(), frame_,
-                                       Vec2{m.angles.values[0], m.angles.values[1]},
-                                       bank.snapshot.psi, false) -
-                    engaged(live_.reference);
-            m.psi = geometry_.psi;
-            m.rate = dot(geometry_.jacobian, v);
-            auto const t =
-                    chain_tension(m.extension, m.rate, config_.chain_k_n_m,
-                                  config_.chain_c_ns_m);
-            m.tension = t.first;
-            m.energy = t.second;
-            for (std::size_t i = 0; i < transmission_.size(); ++i)
-                bank.components[force_component_index(ForceComponent::chain)][i] = -m.tension * geometry_.jacobian[i];
-            const auto cassette = cassette_joint_;
-            hub_scratch_ = hub_;
-            m.torque =
-                    engaged(hub_scratch_).update(q[static_cast<std::size_t>(cassette.qpos)],
-                                        q[static_cast<std::size_t>(wheel.qpos)],
-                                        v[static_cast<std::size_t>(cassette.dof)],
-                                        v[static_cast<std::size_t>(wheel.dof)]);
-            bank.hub = engaged(hub_scratch_).state();
-            bank.components[force_component_index(ForceComponent::freehub)][static_cast<std::size_t>(wheel.dof)] = m.torque;
-            bank.components[force_component_index(ForceComponent::freehub)][static_cast<std::size_t>(cassette.dof)] = -m.torque;
-            m.relative_rate = v[static_cast<std::size_t>(cassette.dof)] -
-                              v[static_cast<std::size_t>(wheel.dof)];
-            m.deflection = std::max(q[static_cast<std::size_t>(cassette.qpos)] -
-                                    q[static_cast<std::size_t>(wheel.qpos)] -
-                                    engaged(engaged(bank.hub).boundary),
-                                    0.);
-        }
         m.omega_crank = v[static_cast<std::size_t>(crank.dof)];
         m.cadence = validation::derived(
                 m.omega_crank * 60. / (2. * std::numbers::pi),
@@ -982,10 +893,6 @@ namespace drivetrain {
         for (std::size_t i = 0; i < bank.component_count; ++i)
             validation::derived_array(bank.components[i],
                                       "DrivetrainWriter.force");
-        const double chain_loss = std::max(0., validation::derived(
-            (m.tension - config_.chain_k_n_m * std::max(m.extension, 0.)) * m.rate, "DrivetrainWriter.chain_dissipation"));
-        const double hub_loss = simplified_ ? 0. : std::max(0., validation::derived(
-            (m.torque - config_.policies.hub_stiffness_nm_rad * m.deflection) * m.relative_rate, "DrivetrainWriter.freehub_dissipation"));
         bank.snapshot.pending_actuation =
                 in.active
                     ? std::optional<PendingActuation>{
@@ -1013,19 +920,9 @@ namespace drivetrain {
                            config_.transmission_model)));
         last.set(TelemetryField::omits_suspension_coupling,
                  config_.transmission_model == "ideal_mid_drive");
-        last.set(TelemetryField::chain_extension_m, m.extension);
-        last.set(TelemetryField::chain_extension_rate_mps, m.rate);
-        last.set(TelemetryField::chain_tension_n, m.tension);
-        last.set(TelemetryField::chain_energy_j, m.energy);
-        last.set(TelemetryField::chain_dissipation_power_w, chain_loss);
-        last.set(TelemetryField::freehub_torque_nm,
-                 simplified_ ? 0. : m.torque);
-        last.set(TelemetryField::freehub_energy_j,
-                 simplified_ ? 0. : engaged(bank.hub).energy_j);
-        last.set(TelemetryField::freehub_engaged,
-                 simplified_ ? false : m.torque > 0.);
-        last.set(TelemetryField::freehub_deflection_rad, m.deflection);
-        last.set(TelemetryField::freehub_dissipation_power_w, hub_loss);
+        last.set(TelemetryField::freehub_torque_nm, 0.);
+        last.set(TelemetryField::freehub_engaged, false);
+        last.set(TelemetryField::freehub_dissipation_power_w, 0.);
         last.set(TelemetryField::cadence_rpm, m.cadence);
         last.set(TelemetryField::crank_rad_s, m.omega_crank);
         last.set(TelemetryField::drive_shaft_rad_s, m.omega);
@@ -1074,16 +971,11 @@ namespace drivetrain {
                       config_.policies.assist.mode);
         last.set(TelemetryField::assist_gain, bank.assist.last_gain);
         shifts(last, bank.shifting, bank.snapshot.shift_time_s);
-        if (simplified_)
-            bank.snapshot.angles = DriveAngles{
-                .values = {angle(crank_,
-                                 engaged(bank.snapshot.angles).values[0]),
-                           0.},
-                .count = 1};
-        else {
-            bank.snapshot.angles = m.angles;
-            bank.snapshot.psi = m.psi;
-        }
+        bank.snapshot.angles = DriveAngles{
+            .values = {angle(crank_,
+                             engaged(bank.snapshot.angles).values[0]),
+                       0.},
+            .count = 1};
         bank.snapshot.last_time_s = data_->time;
         if (bank.advance)
             stage_snapshot_mirrors(bank);
@@ -1142,8 +1034,6 @@ namespace drivetrain {
         pedaling_.set_state(bank.pedaling);
         shifting_.set_state(bank.shifting);
         assist_.set_state(bank.assist);
-        if (hub_)
-            engaged(hub_).set_state(engaged(bank.hub));
         // The snapshot's embedded policy/transmission mirrors were staged
         // with the committed values — copy-assign (not move) keeps every
         // vector and telemetry lane in the bank at capacity for the next
@@ -1343,34 +1233,7 @@ namespace drivetrain {
         if (name == "frame") return frame_;
         if (name == "crank") return crank_;
         if (name == "rear_wheel") return rear_;
-        if (name == "cassette" && cassette_ != absent_id) return cassette_;
         return std::nullopt;
-    }
-
-    Diagnostics DrivetrainWriter::stored_energy() {
-        if (simplified_)
-            return {};
-        if (!live_.reference || !live_.angles)
-            throw std::runtime_error("initialize the drivetrain before reading energy");
-        const double e =
-                geometry_.evaluate(model_, data_, config_.policies.gearing, crank_,
-                                   cassette_body(),
-                                   frame_, Vec2{live_.angles->values[0],
-                                                live_.angles->values[1]},
-                                   live_.psi, false) -
-                *live_.reference;
-        const auto qc = joints_.at("cassette_spin"), qw = joints_.at("rear_wheel_spin");
-        const auto q = buffer(data_->qpos, model_->nq);
-        const double phi = q[static_cast<std::size_t>(qc.qpos)] -
-                           q[static_cast<std::size_t>(qw.qpos)],
-                boundary = engaged(hub_).state().boundary.value_or(phi);
-        return {
-            {"chain", .5 * config_.chain_k_n_m * pyfloat::pow(std::max(e, 0.), 2.)},
-            {
-                "freehub", .5 * config_.policies.hub_stiffness_nm_rad *
-                           pyfloat::pow(std::max(phi - boundary, 0.), 2.)
-            }
-        };
     }
 
     DriveSnapshot DrivetrainWriter::state() const {
@@ -1378,7 +1241,6 @@ namespace drivetrain {
         s.pedaling = pedaling_.state();
         s.shifting = shifting_.state();
         s.assist = assist_.state();
-        s.hub = hub_ ? std::optional(hub_->state()) : std::nullopt;
         s.ideal_hub = ideal_hub_ ? std::optional(ideal_hub_->state()) : std::nullopt;
         s.clutch = clutch_ ? std::optional(clutch_->state()) : std::nullopt;
         s.freewheel = freewheel_ ? std::optional(freewheel_->state()) : std::nullopt;
@@ -1390,27 +1252,17 @@ namespace drivetrain {
         auto p = pedaling_;
         auto sh = shifting_;
         auto a = assist_;
-        auto h = hub_;
         p.set_state(s.pedaling);
         sh.set_state(s.shifting);
         a.set_state(s.assist);
-        if (s.hub.has_value() != h.has_value())
-            throw std::invalid_argument("hub topology");
-        if (h)
-            h->set_state(*s.hub);
-        finite_optional(s.reference, "chain reference");
-        finite_optional(s.psi, "chain psi");
         finite_optional(s.last_time_s, "last time");
         finite_optional(s.shift_time_s, "shift time");
         if (s.angles) {
-            if (s.angles->count != (simplified_ ? 1U : 2U))
+            if (s.angles->count != 1U)
                 throw std::invalid_argument("drive angle width");
             for (std::size_t i = 0; i < s.angles->count; ++i)
                 finite(s.angles->values[i], "drive angle");
         }
-        if (s.reference.has_value() != s.angles.has_value() ||
-            (!simplified_ && s.reference.has_value() != s.psi.has_value()))
-            throw std::invalid_argument("drive initialization state");
         if (s.pending_actuation) {
             nonnegative(s.pending_actuation->requested, "pending request");
             finite(s.pending_actuation->omega, "pending omega");
@@ -1440,7 +1292,6 @@ namespace drivetrain {
         pedaling_ = p;
         shifting_ = std::move(sh);
         assist_ = std::move(a);
-        hub_ = h;
         live_ = std::move(snapshot_scratch_);
         // A publication: retire every outstanding staged handle. The banks
         // reseed themselves from the restored live_ on their next stage —

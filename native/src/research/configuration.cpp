@@ -208,7 +208,6 @@ configuration::SimulationPhysicsConfig resolve_research_physics(
             transmission = io::as_string(*model, "drive.transmission_model");
     if (!find(overrides, "timestep_s") && transmission != defaults.drive.transmission_model) {
         if (transmission == "ideal_mid_drive" || transmission == "geometric_ideal_mid_drive") set(overrides, "timestep_s", real(.0005));
-        else if (transmission == "elastic_chain") set(overrides, "timestep_s", real(.000125));
     }
     if (!find(overrides, "closure_time_constant_s"))
         if (const auto* dt = find(overrides, "timestep_s"))

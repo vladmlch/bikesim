@@ -185,16 +185,8 @@ WireObject drive_channels(double speed = 0., const WireObject &drive_over = {},
     drive.reserve(79);
     drive.emplace_back("transmission_model", Wire{"ideal_mid_drive"});
     drive.emplace_back("omits_suspension_coupling", Wire{true});
-    drive.emplace_back("chain_extension_m", Wire{0.001 + speed});
-    drive.emplace_back("chain_extension_rate_mps", Wire{0.002 - speed});
-    drive.emplace_back("chain_tension_n", Wire{120.0 + speed});
-    drive.emplace_back("chain_energy_j", Wire{0.06 + speed});
-    drive.emplace_back("chain_dissipation_power_w", Wire{-0.4 - speed});
-    drive.emplace_back("chain_power_w", Wire{12.0 - speed});
     drive.emplace_back("freehub_torque_nm", Wire{8.0 + speed});
-    drive.emplace_back("freehub_energy_j", Wire{0.02});
     drive.emplace_back("freehub_engaged", Wire{speed < 0.5});
-    drive.emplace_back("freehub_deflection_rad", Wire{-0.05 + speed});
     drive.emplace_back("freehub_dissipation_power_w", Wire{speed != 0.0 ? -0.0 : 0.1});
     drive.emplace_back("freehub_power_w", Wire{12.1});
     drive.emplace_back("cadence_rpm", Wire{80.0 + speed});

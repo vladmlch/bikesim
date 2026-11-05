@@ -290,12 +290,10 @@ Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& doc
             {"emtb_full_gain_at_nm", real(p->emtb_full_gain_at_nm)}}});
     }
     set(out, "assist", std::move(assist));
-    set(out, "hub_stiffness_nm_rad", real(physics_config.drive.freehub_k_nm_rad));
-    set(out, "hub_damping_nm_s", real(physics_config.drive.freehub_c_nms_rad));
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) physics schema requires drive_mode
     set(out, "drive_mode", text(physics_config.drive_mode.value()));
     for (auto key : {"transmission_model", "motor_clutch", "human_torque_nm", "torque_ripple",
-         "crank_phase_rad", "chain_k_n_m", "chain_c_ns_m",
+         "crank_phase_rad",
          "rotor_inertia_kgm2", "brake_ceiling_nm", "brake_hold_torque_nm",
          "brake_hold_stiffness_nm_rad", "brake_hold_damping_nms_rad",
          "brake_hold_engage_radps", "brake_hold_release_radps"})

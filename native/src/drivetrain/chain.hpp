@@ -24,17 +24,8 @@ namespace drivetrain {
                                Vec2 up = {0., 1.},
                                std::optional<double> reference = std::nullopt);
 
-    // Cold diagnostic/calibration faces of physics/chain.py. The live writer
-    // retains its existing analytic GeometryWorkspace and fixed stage banks.
-    double chain_extension(Vec2 front, Vec2 rear, double rf, double rr,
-                           double theta_f, double theta_r, double reference,
-                           Vec2 up = {0., 1.},
-                           std::optional<double> psi_reference = std::nullopt);
-    std::vector<double> chain_jacobian(
-        std::span<const double> q,
-        const std::function<double(std::span<const double>)>& evaluate,
-        double epsilon = 1e-7);
-
+    // Retained for the GPU resistance-kernel parity tests; the CPU drivetrain
+    // no longer calls it (task 3 removes the kernel and its last users).
     std::pair<double, double> chain_tension(double extension, double rate, double k,
                                             double c);
 

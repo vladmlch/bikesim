@@ -2,6 +2,7 @@
 // Capture-only source changes give every tree leaf a stable label. This test
 // intentionally fails when either platform's real capture is still missing.
 #include "policy_reference_support.hpp"
+#include "drivetrain/freehub.hpp"
 
 namespace {
 using namespace policy_reference;
@@ -9,8 +10,8 @@ using namespace policy_reference;
 // native_drive_policies/native_policy_api_exists
 [[gnu::noinline]] void test_native_policy_api_exists(const Value& baseline) {
     auto policy = policies(baseline);
-    bt::require(sorted_keys(state(policy)) == std::vector<std::string>{"assist", "hub", "pedaling", "shifting"},
-                "native policy owner exposes all four complete snapshots");
+    bt::require(sorted_keys(state(policy)) == std::vector<std::string>{"assist", "pedaling", "shifting"},
+                "native policy owner exposes all three complete snapshots");
 }
 
 // native_drive_policies/crank_torque
@@ -121,15 +122,25 @@ void assist_case(bt::oracle::Node& golden, PolicySet& policy, const AssistCase& 
     }
 }
 
+Value freehub_state(const drivetrain::Freehub& hub) {
+    Value::Object out;
+    out.emplace_back("boundary", hub.state().boundary ? real(*hub.state().boundary) : Value{});
+    out.emplace_back("energy_j", real(hub.state().energy_j));
+    out.emplace_back("torque_nm", real(hub.state().torque_nm));
+    return Value{std::move(out)};
+}
+
 // native_drive_policies/freehub
 [[gnu::noinline]] void test_freehub(const Value& baseline) {
     auto golden = node("test_freehub"); tree(golden, baseline);
-    auto policy = policies(baseline);
+    // PolicySet no longer owns a hub; the standalone leaf is exercised here
+    // until task 3 removes its remaining GPU-kernel users.
+    drivetrain::Freehub hub(500., 2.);
     constexpr std::array<std::array<double, 4>, 6> cases{{
         {0., 0., 0., 0.}, {.1, 0., 2., 0.}, {.3, .5, 0., 3.},
         {.4, .5, 4., 0.}, {8., 3., 2., 3.}, {8., 10., 2., 3.}}};
     for (const auto& item : cases) {
-        scalar(golden, policy.hub.update(item[0], item[1], item[2], item[3])); tree(golden, state(policy));
+        scalar(golden, hub.update(item[0], item[1], item[2], item[3])); tree(golden, freehub_state(hub));
     }
     golden.done();
 }
@@ -249,10 +260,8 @@ struct Mutation { std::string_view id, section, key, json; };
     (void)policy.pedaling.update(1., 13., 120., 30., .04);
     (void)policy.shifting.update(100., 100., .01);
     (void)policy.assist.step(30., 80., 0., false, .01);
-    (void)policy.hub.update(0., 0., 2., 0.); (void)policy.hub.update(.1, 0., 2., 0.);
     auto bad = state(policy); const auto before = state_text(policy);
     put(bad, "pedaling", "_effort", real(17.)); put(bad, "shifting", "rear_teeth", integer(33));
-    put(bad, "hub", "torque_nm", Value{bike::io::Number{"inf"}});
     bt::invalid([&] { restore(policy, bad); });
     bt::require(state_text(policy) == before, "late invalid hub value cannot commit earlier policy fields");
     tree(golden, state(policy)); policy.reset(); tree(golden, state(policy)); golden.done();
@@ -308,7 +317,7 @@ struct Mutation { std::string_view id, section, key, json; };
 
 // native_drive_policies/missing_config_sections/key
 [[gnu::noinline]] void test_missing_config_sections(const Value& baseline) {
-    for (auto key : {"gearing", "pedaling", "shifting", "assist", "hub_stiffness_nm_rad", "hub_damping_nm_s"}) {
+    for (auto key : {"gearing", "pedaling", "shifting", "assist"}) {
         auto golden = node("test_missing_config_sections", key); tree(golden, baseline);
         auto bad = baseline; erase(bad, key); bt::invalid([&] { (void)policies(bad); }); golden.done();
     }
@@ -386,8 +395,7 @@ struct Mutation { std::string_view id, section, key, json; };
         Case{.id="shift-zero-dt", .invoke=[](auto& p) { (void)p.shifting.update(80., 80., 0.); }},
         Case{.id="shift-infinite", .invoke=[inf](auto& p) { (void)p.shifting.update(80., inf, .01); }},
         Case{.id="assist-zero-dt", .invoke=[](auto& p) { (void)p.assist.step(30., 80., 0., false, 0.); }},
-        Case{.id="assist-infinite", .invoke=[inf](auto& p) { (void)p.assist.step(inf, 80., 0., false, .01); }},
-        Case{.id="hub-infinite", .invoke=[inf](auto& p) { (void)p.hub.update(0., inf, 0., 0.); }}};
+        Case{.id="assist-infinite", .invoke=[inf](auto& p) { (void)p.assist.step(inf, 80., 0., false, .01); }}};
     for (const auto& item : cases) {
         auto golden = node("test_invalid_calls_preserve_state", item.id); tree(golden, baseline);
         auto policy = policies(baseline); const auto before = state_text(policy);

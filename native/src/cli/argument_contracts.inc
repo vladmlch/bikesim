@@ -1420,34 +1420,9 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
         "default": "ideal_mid_drive",
         "type": "str",
         "choices": [
-          "elastic_chain",
           "ideal_mid_drive",
           "geometric_ideal_mid_drive"
         ],
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--chain-stiffness"
-        ],
-        "dest": "chain_stiffness",
-        "default": null,
-        "type": "float",
-        "choices": null,
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--freehub-stiffness"
-        ],
-        "dest": "freehub_stiffness",
-        "default": null,
-        "type": "float",
-        "choices": null,
         "flag": false,
         "required": false,
         "positional": false

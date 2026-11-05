@@ -168,11 +168,8 @@ void checks_drive_welded() {
                     std::bit_cast<std::uint64_t>(state->angles->values[0]) ==
                         0x8000000000000000ULL,
                 "drive angle -0.0 must keep its sign bit");
-    bt::require(state->reference.has_value() && *state->reference == 0.0,
-                "reference 0.0 decodes");
     bt::require(!state->shift_time_s.has_value() &&
-                    !state->last_time_s.has_value() &&
-                    !state->psi.has_value(),
+                    !state->last_time_s.has_value(),
                 "absent-valued wire members decode to absent optionals");
     bt::require(!state->pending_actuation.has_value() &&
                     !state->clutch.has_value() && !state->freewheel.has_value(),
@@ -228,9 +225,9 @@ void checks_drive_roundtrip() {
         drivetrain::decode_drive_snapshot(input));
     const bio::Value encoded = encode_back_drive(*state);
     expect_round_trip("state/drive.canonical.json", input, encoded);
-    constexpr std::array<std::string_view, 12> kDriveOrder{
-        "policies",   "shift_time_s", "last_time_s", "reference",
-        "psi",        "angles",       "last",        "probe_last",
+    constexpr std::array<std::string_view, 10> kDriveOrder{
+        "policies",   "shift_time_s", "last_time_s",
+        "angles",       "last",        "probe_last",
         "pending_actuation", "ideal_hub", "clutch", "freewheel"};
     bt::require(member_names(object_of(encoded)) ==
                     std::vector<std::string_view>(kDriveOrder.begin(),
@@ -248,8 +245,8 @@ void checks_drive_roundtrip() {
     // The policies object's dict-literal order is part of the wire shape.
     if (const bio::Value *const policies =
             bio::find_member(object_of(encoded), "policies")) {
-        constexpr std::array<std::string_view, 4> kPolicyOrder{
-            "pedaling", "shifting", "assist", "hub"};
+        constexpr std::array<std::string_view, 3> kPolicyOrder{
+            "pedaling", "shifting", "assist"};
         bt::require(member_names(object_of(*policies)) ==
                         std::vector<std::string_view>(kPolicyOrder.begin(),
                                                       kPolicyOrder.end()),
@@ -307,10 +304,9 @@ void checks_drive_invalid() {
              "shifting":{"rear_teeth":22.0,"from_teeth":22,"shift_count":0,
              "cooldown_s":0.0,"cut_remaining_s":0.0,"direction":"none",
              "cadence_ema":null,"required_ema":null},
-             "assist":{"torque":0.0,"pedaling":false,"last_gain":0.0},
-             "hub":null},
-             "shift_time_s":null,"last_time_s":null,"reference":0.0,
-             "psi":null,"angles":null,"last":{},"probe_last":null,
+             "assist":{"torque":0.0,"pedaling":false,"last_gain":0.0}},
+             "shift_time_s":null,"last_time_s":null,
+             "angles":null,"last":{},"probe_last":null,
              "pending_actuation":null,"ideal_hub":null,"clutch":null,
              "freewheel":null})"));
     });

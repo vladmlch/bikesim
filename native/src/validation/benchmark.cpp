@@ -32,12 +32,11 @@ constexpr auto names=std::to_array<std::string_view>({
     "radial_100","radial_300","radial_600","radial_1000","radial_native_reference",
     "flat_static","flat_static_native","incline_30_deg","brake_hold","drive_low_mu",
     "airborne_internal_actuation","airborne_passive","released_rider","suspension_cycle",
-    "chain_locked_geometry","chain_suspension_motion","smooth_coast","single_edge","road_worn",
+    "smooth_coast","single_edge","road_worn",
     "distributed_flat_600","distributed_step","distributed_incline","rigid_load_transfer",
     "whole_system_passive","whole_system_active","motor_only_airborne","actual_shaft_ratio","actual_freehub_overrun",
     "drive_suspension_ideal_mid_drive_0","drive_suspension_ideal_mid_drive_20","drive_suspension_ideal_mid_drive_40",
-    "drive_suspension_geometric_ideal_mid_drive_0","drive_suspension_geometric_ideal_mid_drive_20","drive_suspension_geometric_ideal_mid_drive_40",
-    "drive_suspension_elastic_chain_0","drive_suspension_elastic_chain_20","drive_suspension_elastic_chain_40"});
+    "drive_suspension_geometric_ideal_mid_drive_0","drive_suspension_geometric_ideal_mid_drive_20","drive_suspension_geometric_ideal_mid_drive_40"});
 Value versions(){const auto b=platform::build_identity();const auto e=engine::identity();return Value{Object{
     {"compiler",value::text(b.compiler)},{"mujoco",value::text(e.mujoco_version)},
     {"numeric_provider",value::text(e.numeric_provider)},{"execution_identity",value::text(platform::execution_identity())}}};}
@@ -70,7 +69,7 @@ std::map<std::string,std::vector<std::pair<std::string,double>>> convergence_key
     std::map<std::string,std::vector<std::pair<std::string,double>>> result{
         {"wheel_inertia",{{"omega_rad_s",1.}}},{"flat_static",{{"fork_travel_m",.001},{"rear_travel_m",.001}}},
         {"drive_low_mu",{{"mean_rear_load_n",1.},{"traction_impulse_ns",.1}}},
-        {"suspension_cycle",{{"cycle_loss_j",.1}}},{"chain_locked_geometry",{{"speed_ratio",1.}}}};
+        {"suspension_cycle",{{"cycle_loss_j",.1}}}};
     for(const char* name:{"radial_100","radial_300","radial_600","radial_1000"})result[name]={{"deflection_m",.0001}};
     for(const char* name:{"smooth_coast","single_edge","road_worn"}){auto& keys=result[name];
         keys={{"mean_load_n",1.},{"rms_load_n",1.},{"normal_impulse_ns",.1},{"mean_fork_travel_m",.001}};
@@ -103,8 +102,8 @@ Value mechanics_check(std::string_view kind,const std::filesystem::path& out,con
     if(kind=="analytic")artifact=out/"analytic/report.json";else if(kind=="load_and_shaft")artifact=out/"load-and-shaft.json";
     else if(kind=="drive_suspension")artifact=out/"drive-suspension.json";else if(kind=="contact")artifact=out/"contact/report.json";else artifact=out/"rider/report.json";
     set(check,"artifact",value::text(artifact.string()));
-    try{if(kind=="analytic")result=benchmark_suite(Value{Object{{"output",value::text((out/"analytic").string())},{"cases",value::strings(std::array<std::string,6>{
-        "wheel_inertia","chain_suspension_motion","suspension_cycle","airborne_internal_actuation","incline_30_deg","brake_hold"})}}},root);
+    try{if(kind=="analytic")result=benchmark_suite(Value{Object{{"output",value::text((out/"analytic").string())},{"cases",value::strings(std::array<std::string,5>{
+        "wheel_inertia","suspension_cycle","airborne_internal_actuation","incline_30_deg","brake_hold"})}}},root);
         else if(kind=="load_and_shaft"){Array cases;for(double grade:{0.,.12,.28,.35}){for(const auto& [x,h]:std::array<std::pair<double,double>,2>{{{.45,.9},{.55,.8}}})
             cases.push_back(bounded(std::format("load_grade{}_com{}_{}",grade,x,h),load_transfer_rig(.00025,std::atan(grade),x,h),true));}
             for(int rear:{10,24,51})for(bool const overrun:{false,true})cases.push_back(bounded(std::format("shaft_34_{}_overrun{}",rear,overrun?"True":"False"),shaft_ratio_rig(.000125,34./rear,overrun),true));
@@ -191,7 +190,7 @@ NATIVE_DIAG_POP
 
 std::span<const std::string_view> benchmark_case_names(){return names;}
 RigResult benchmark_case(std::string_view name,double dt){
-    positive(dt,"timestep");using mechanics::bounds;const double inf=std::numeric_limits<double>::infinity();
+    positive(dt,"timestep");using mechanics::bounds;[[maybe_unused]] const double inf=std::numeric_limits<double>::infinity();
     if(name=="wheel_inertia")return {.metrics=wheel_inertia_rig(dt),.bounds=bounds({{"acceleration_relative_error",0.,.001}})};
     if(name=="contact_event")return {.metrics=contact_event_rig(dt),.bounds=bounds({{"event_error_s",0.,2.*dt}})};
     if(name=="radial_native_reference"){Object results;for(double const load:{100.,300.,600.,1000.}){results.emplace_back("deflection_at_"+std::to_string(static_cast<int>(load))+"n_m",get(radial_rig(load,dt,2.,true),"effective_deflection_m"));}return {.metrics=Value{std::move(results)},.bounds=empty_object()};}
@@ -201,11 +200,6 @@ RigResult benchmark_case(std::string_view name,double dt){
     if(name=="incline_30_deg"){auto result=incline_rig(dt);set(result,"normal_relative_error",value::real(relative_change(real(result,"normal_load_n"),real(result,"expected_normal_load_n"),1.)));
         set(result,"vertical_relative_error",value::real(relative_change(real(result,"vertical_with_stand_reaction_n"),real(result,"expected_weight_n"),1.)));
         return {.metrics=std::move(result),.bounds=bounds({{"normal_relative_error",0.,.005},{"vertical_relative_error",0.,.005}})};}
-    if(name=="chain_locked_geometry"){auto result=chain_locked_rig(dt);set(result,"speed_ratio_error",value::real(relative_change(real(result,"speed_ratio"),real(result,"expected_ratio"),1.)));
-        set(result,"torque_ratio_error",value::real(relative_change(real(result,"torque_ratio"),real(result,"expected_ratio"),1.)));
-        return {.metrics=std::move(result),.bounds=bounds({{"speed_ratio_error",0.,.001},{"torque_ratio_error",0.,.001},{"power_relative_error",0.,.005}})};}
-    if(name=="chain_suspension_motion"){auto result=chain_geometry_rig();merge(result,compiled_chain_motion_rig());return {.metrics=std::move(result),.bounds=bounds({
-        {"rigid_motion_extension_m",-1e-12,1e-12},{"directional_relative_error",0.,1e-7},{"compiled_jacobian_relative_error",0.,1e-7},{"linkage_force_per_tension_m",1e-5,inf}})};}
     if(name=="suspension_cycle")return suspension_cycle(dt);
     if(name=="airborne_internal_actuation")return airborne_internal_actuation(dt);
     if(name=="distributed_flat_600")return distributed_flat_rig(dt,256,600.);
@@ -217,7 +211,7 @@ RigResult benchmark_case(std::string_view name,double dt){
     if(name=="motor_only_airborne")return momentum_rig(dt,true,"geometric_ideal_mid_drive",false);
     if(name=="actual_shaft_ratio")return shaft_ratio_rig(dt);
     if(name=="actual_freehub_overrun")return shaft_ratio_rig(dt,34./51.,true);
-    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive","elastic_chain"})for(double const torque:{0.,20.,40.})
+    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive"})for(double const torque:{0.,20.,40.})
         if(name==std::string("drive_suspension_")+mode+"_"+std::to_string(static_cast<int>(torque)))return drive_suspension_rig(dt,mode,torque);
     if(std::ranges::find(names,name)!=names.end())return ride_case(name,dt);
     throw std::invalid_argument("unknown validation benchmark case: "+std::string(name));

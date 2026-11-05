@@ -252,12 +252,11 @@ void cli_option_contract(){
 void actual_stand_checks(){
     // Preserve the source horizons, loads and thresholds. There is no short
     // substitute trajectory and no golden update mode in this regression.
-    for(const char* name:{"wheel_inertia","chain_suspension_motion","actual_shaft_ratio","actual_freehub_overrun",
+    for(const char* name:{"wheel_inertia","actual_shaft_ratio","actual_freehub_overrun",
             // rigs.py stands (task 3.38): radial spring/damper loads, first
-            // contact timing, incline gravity decomposition, and the locked
-            // three-shaft chain geometry/power.
+            // contact timing and incline gravity decomposition.
             "radial_100","radial_300","radial_600","radial_1000","contact_event",
-            "incline_30_deg","chain_locked_geometry",
+            "incline_30_deg",
             // contact_manifold_rigs.py + load_transfer.py stands: distributed
             // flat/step/incline cells and the free-pitch rigid-equivalent stand.
             "distributed_flat_600","distributed_step","distributed_incline","rigid_load_transfer",
@@ -271,7 +270,7 @@ void actual_stand_checks(){
     }
     // drive_suspension_rig.py: all three transmissions under the full
     // 0/20/40 Nm delivered-torque sweep on the actual compiled fixture.
-    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive","elastic_chain"})
+    for(const char* mode:{"ideal_mid_drive","geometric_ideal_mid_drive"})
         for(int const torque:{0,20,40}){
             const std::string name=std::string("drive_suspension_")+mode+"_"+std::to_string(torque);
             const auto result=benchmark_case(name,.0005);const auto checks=check_bounds(result.metrics,result.bounds);

@@ -158,18 +158,6 @@ void physical_profiles_and_topology() {
     require_limited_tendons_are_closures(*welded,"weld/spring attachments");
     id(*welded,mjOBJ_JOINT,"rider_ankle_front");id(*welded,mjOBJ_EQUALITY,"weld_foot_front");id(*welded,mjOBJ_EQUALITY,"weld_saddle");
     bt::require(welded->nq==28,"welded foot preserves ankle DOFs");
-    request->physics.value().drive.transmission_model="elastic_chain"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
-    request->physics->drive.shifting.enabled=false; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
-    const auto elastic=mdl::compile_mjcf(mdl::generate_mjcf(*request));
-    require_no_joint_damping(*elastic,"elastic chain");
-    require_limited_tendons_are_closures(*elastic,"elastic chain");
-    id(*elastic,mjOBJ_BODY,"cassette");
-    bt::require(mj_name2id(elastic.get(),mjOBJ_TENDON,"ideal_mid_drive_freehub")==-1,"elastic chain has no ideal freehub constraint");
-    const auto wheel_id=static_cast<std::size_t>(id(*elastic,mjOBJ_BODY,"rear_wheel"));
-    const auto cassette_id=static_cast<std::size_t>(id(*elastic,mjOBJ_BODY,"cassette"));
-    const auto masses=std::views::counted(elastic->body_mass,elastic->nbody);
-    bt::require(masses[wheel_id]==request->masses.rear_wheel_mass*.9,"rear wheel split retains 90 percent budget");
-    bt::require(masses[cassette_id]==request->masses.rear_wheel_mass*.1,"cassette transfers 10 percent budget");
     request=physical();request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto clutch=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*clutch,"motor clutch");

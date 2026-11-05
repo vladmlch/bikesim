@@ -591,17 +591,16 @@ bool schema_entry(std::string_view name, std::string_view &required,
         {.name = "tire.surface_map.sections", .entry = {.required = "start_m end_m surface",
           .optional = ""}},
         {.name = "drive", .entry =
-         {.required = "gearing pedaling shifting assist hub_stiffness_nm_rad "
-          "hub_damping_nm_s drive_mode transmission_model human_torque_nm "
-          "torque_ripple crank_phase_rad chain_k_n_m chain_c_ns_m "
+         {.required = "gearing pedaling shifting assist "
+          "drive_mode transmission_model human_torque_nm "
+          "torque_ripple crank_phase_rad "
           "rotor_inertia_kgm2 motor_clutch "
           "brake_ceiling_nm",
           .optional = "brake_hold_torque_nm brake_hold_stiffness_nm_rad "
           "brake_hold_damping_nms_rad brake_hold_engage_radps "
           "brake_hold_release_radps"}},
         {.name = "policies", .entry =
-         {.required = "gearing pedaling shifting assist "
-          "hub_stiffness_nm_rad hub_damping_nm_s",
+         {.required = "gearing pedaling shifting assist",
           .optional = ""}},
         {.name = "drive.gearing", .entry = {.required = "front_teeth rear_teeth chain_pitch_m",
           .optional = ""}},
@@ -1232,8 +1231,7 @@ void validate_config(const Value &config) {
         const std::string_view transmission =
             transmission_member == nullptr ? std::string_view{}
                                            : *transmission_member;
-        if (transmission != "elastic_chain" &&
-            transmission != "ideal_mid_drive" &&
+        if (transmission != "ideal_mid_drive" &&
             transmission != "geometric_ideal_mid_drive")
             fail("config.drive.transmission_model: unsupported model");
         validate_policy_modes(*drive, "config.drive");

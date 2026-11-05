@@ -1602,11 +1602,6 @@ namespace {
         return same(a.torque, b.torque) && same(a.last_gain, b.last_gain) &&
                a.pedaling == b.pedaling;
     }
-    bool same(const drivetrain::FreehubSnapshot &a,
-              const drivetrain::FreehubSnapshot &b) {
-        return same(a.boundary, b.boundary) && same(a.energy_j, b.energy_j) &&
-               same(a.torque_nm, b.torque_nm);
-    }
     bool same(const drivetrain::PendingActuation &a,
               const drivetrain::PendingActuation &b) {
         return same(a.requested, b.requested) && same(a.omega, b.omega) &&
@@ -1620,9 +1615,8 @@ namespace {
               const drivetrain::DriveSnapshot &b) {
         return same(a.pedaling, b.pedaling) && same(a.shifting, b.shifting) &&
                same(a.assist, b.assist) &&
-               same(a.hub, b.hub) && same(a.shift_time_s, b.shift_time_s) &&
+               same(a.shift_time_s, b.shift_time_s) &&
                same(a.last_time_s, b.last_time_s) &&
-               same(a.reference, b.reference) && same(a.psi, b.psi) &&
                same(a.angles, b.angles) && same(a.last, b.last) &&
                same(a.probe_last, b.probe_last) &&
                same(a.pending_actuation, b.pending_actuation) &&
@@ -1670,12 +1664,6 @@ namespace {
             "rear_wheel_spin", "front_wheel_spin", "pedal_front_spin",
             "pedal_rear_spin"};
         std::string extra, tendon;
-        if (kind == "elastic_chain") {
-            extra += "<body name=\"cassette\" pos=\"-.5 0 0\"><joint "
-                     "name=\"cassette_spin\" axis=\"0 1 0\"/><geom size=\".04\" "
-                     "mass=\"1\"/></body>";
-            names.emplace_back("cassette_spin");
-        }
         if (topology == "clutch") {
             extra += "<body name=\"drive_shaft\"><joint "
                      "name=\"drive_shaft_spin\" axis=\"0 1 0\"/><geom "
@@ -1778,13 +1766,11 @@ namespace {
                             .chain_pitch_m = .0127},
                 .pedaling = valid_pedaling_config(),
                 .shifting = std::move(shifting),
-                .assist = std::move(assist),
-                .hub_stiffness_nm_rad = 1000., .hub_damping_nm_s = .5},
+                .assist = std::move(assist)},
             .drive_mode = "crank_effort",
             .transmission_model = std::string(kind),
             .human_torque_nm = 20., .torque_ripple = .35,
-            .crank_phase_rad = 0., .chain_k_n_m = 200000.,
-            .chain_c_ns_m = 10.,
+            .crank_phase_rad = 0.,
             .rotor_inertia_kgm2 = topology == "rotor" ? .2 : 0.,
             .motor_clutch = topology == "clutch"};
     }
@@ -2048,8 +2034,6 @@ namespace {
             bool assist, shifting;
         };
         for (const Variant variant: {
-                 Variant{.kind = "elastic_chain", .topology = "plain",
-                         .assist = true, .shifting = false},
                  Variant{.kind = "ideal_mid_drive", .topology = "plain",
                          .assist = true, .shifting = false},
                  Variant{.kind = "ideal_mid_drive", .topology = "plain",
@@ -2364,31 +2348,8 @@ namespace {
                       force_component_specs[2].name == "ideal_transmission",
                       "component names match the serialized layout");
 
-        {   // Physical chain: two rows, in declared order.
-            const auto fixture = std::make_unique<DriveFixture>(
-                "elastic_chain", "plain",
-                drive_config("elastic_chain", "plain", true, false));
-            const auto tick = fixture->writer.stage_components(
-                {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
-                 .braking = false, .active = true, .advance = true,
-                 .contact = true, .pedaling = std::nullopt,
-                 .slip = std::nullopt});
-            require(tick.components.size() == 2,
-                    "elastic chain emits exactly two component rows");
-            for (std::size_t i = 0; i < tick.components.size(); ++i)
-                require(tick.component_names[i] ==
-                                force_component_specs[i].name,
-                        "emitted name matches the declared table slot");
-            // The snapshot telemetry keeps the wire strings — enum plumbing
-            // must not leak into serialization.
-            require(std::get<std::string>(
-                        tick.snapshot.last.at("assist_mode")) == "turbo" &&
-                    std::get<std::string>(
-                        tick.snapshot.last.at("shift_direction")) == "none",
-                    "telemetry keeps the public serialization strings");
-            fixture->writer.commit(tick);
-        }
-        {   // Simplified topology appends ideal_transmission last.
+        {   // Ideal topology emits the declared rows including
+            // ideal_transmission.
             const auto fixture = std::make_unique<DriveFixture>(
                 "ideal_mid_drive", "plain",
                 drive_config("ideal_mid_drive", "plain", true, false));
@@ -2401,7 +2362,7 @@ namespace {
                         tick.component_names[force_component_index(
                                                  ForceComponent::ideal_transmission)] ==
                                 "ideal_transmission",
-                    "simplified model appends the ideal_transmission row");
+                    "ideal model emits the ideal_transmission row");
             for (std::size_t i = 0; i < tick.components.size(); ++i)
                 require(tick.component_names[i] ==
                                 force_component_specs[i].name,
@@ -3614,11 +3575,10 @@ namespace {
             report(row);
         };
 
-        // Drivetrain rows — all three transmission kinds through their
-        // own fixtures (each topology resolves a different model).
+        // Drivetrain rows — both transmission kinds through their own
+        // fixtures (each topology resolves a different model).
         for (const char *kind:
-             {"elastic_chain", "ideal_mid_drive",
-              "geometric_ideal_mid_drive"}) {
+             {"ideal_mid_drive", "geometric_ideal_mid_drive"}) {
             const std::string prefix = std::string("drive/") + kind;
             std::unique_ptr<DriveFixture> fixture;
             measured_row(prefix + "/construction", [&] {
@@ -3627,11 +3587,9 @@ namespace {
                     drive_config(kind, "plain", true, false));
             });
             require(fixture != nullptr, "matrix fixture construction");
-            // Component view count is the topology's row count — the
-            // physical chain emits the declared 2 rows, the simplified
-            // models append ideal_transmission for 3.
-            const std::size_t view_count =
-                    std::string_view(kind) == "elastic_chain" ? 2 : 3;
+            // Component view count is the topology's declared row count —
+            // both ideal models emit the full 3-row table.
+            const std::size_t view_count = 3;
             std::array<ForceComponentView, 3> views{};
             // Two cycles through the same warm path: the tick and
             // settlement banks alternate, so each needs a first

@@ -9,8 +9,8 @@ namespace drivetrain_reference {
 using bike::io::Value;
 using namespace runtime::setupvalue;
 namespace cfg = bike::configuration;
-inline constexpr std::array<std::string_view, 3> kinds{
-    "elastic_chain", "ideal_mid_drive", "geometric_ideal_mid_drive"};
+inline constexpr std::array<std::string_view, 2> kinds{
+    "ideal_mid_drive", "geometric_ideal_mid_drive"};
 
 // Verbatim model_xml() topology, unrelated carrier joint limit and dense /
 // sparse Jacobian variants from test_native_drivetrain.py.
@@ -19,10 +19,6 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
     std::vector<std::string> names{"root_x", "frame_pitch", "crank_spin", "rear_carrier", "rear_wheel_spin",
         "front_wheel_spin", "pedal_front_spin", "pedal_rear_spin"};
     std::string extra;
-    if (kind == "elastic_chain") {
-        extra += R"(<body name="cassette" pos="-.5 0 0"><joint name="cassette_spin" axis="0 1 0"/><geom size=".04" mass="1"/></body>)";
-        names.emplace_back("cassette_spin");
-    }
     if (topology == "clutch") {
         extra += R"(<body name="drive_shaft"><joint name="drive_shaft_spin" axis="0 1 0"/><geom size=".04" mass="1"/></body>)";
         names.emplace_back("drive_shaft_spin");
@@ -135,17 +131,9 @@ inline void restore(Stepper const& owner, const Value& value) { owner.drive().re
 inline Value diagnostics(const Stepper& owner, bool probe = false) {
     return field(state(owner), probe ? "probe_last" : "last");
 }
-inline Value stored_energy(Stepper const& owner) {
-    Value::Object result;
-    for (const auto& [key, value] : owner.drive().stored_energy()) std::visit([&](const auto& item) {
-        using T = std::decay_t<decltype(item)>;
-        if constexpr (std::is_same_v<T, double>) result.emplace_back(key, real(item));
-        else if constexpr (std::is_same_v<T, int>) result.emplace_back(key, integer(item));
-        else if constexpr (std::is_same_v<T, bool>) result.emplace_back(key, Value{item});
-        else if constexpr (std::is_same_v<T, std::string>) result.emplace_back(key, text(item));
-        else result.emplace_back(key, Value{});
-    }, value);
-    return Value{std::move(result)};
+inline Value stored_energy(Stepper const&) {
+    // The lossless drivetrain stores no energy — the emitted row is empty.
+    return Value{Value::Object{}};
 }
 inline drivetrain::ForceComponents components(Stepper const& owner, double dt, double speed,
     drivetrain::RideControl control = {}, bool active = true, bool braking = false,

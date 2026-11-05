@@ -66,20 +66,7 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         set_inertia(pedal,pedal_mass,{0.,sign*.04,0.},diagonal(scale*(.04*.04+.008*.008),scale*(.05*.05+.008*.008),scale*(.05*.05+.04*.04)));
     }
     auto& wheel=required(root,"body","rear_wheel");
-    if(drive.transmission_model=="elastic_chain") {
-        Element* parent=nullptr;
-        for(auto* candidate:root.descendants("body")) for(const auto& value:candidate->children) if(value.get()==&wheel) parent=candidate;
-        if(!parent) throw std::invalid_argument("rear wheel has no body parent");
-        auto& cassette=parent->add("body",{{"name","cassette"},{"pos",wheel.get("pos","0 0 0")}});
-        cassette.add("joint",{{"name","cassette_spin"},{"type","hinge"},{"axis","0 1 0"}});
-        auto& cassette_geom=required(wheel,"geom","geom_rear_cassette");
-        cassette.children.push_back(wheel.remove(&cassette_geom));
-        auto profile=kRearWheelProfile;profile[0].mass_fraction=.75/.9;profile[1].mass_fraction=.15/.9;
-        const double wheel_mass=c.request.masses.rear_wheel_mass*.9;
-        const auto wi=wheel_body_inertia(wheel_mass,profile);set_inertia(wheel,wheel_mass,wi.com,wi.tensor);
-        const double mass=c.request.masses.rear_wheel_mass*.1;const auto& core=kRearWheelProfile[1];
-        set_inertia(cassette,mass,core.offset_m,ring_inertia(mass,core.inner_radius_m,core.outer_radius_m,core.width_m));
-    } else {
+    {
         const auto wi=wheel_body_inertia(c.request.masses.rear_wheel_mass,kRearWheelProfile);
         set_inertia(wheel,c.request.masses.rear_wheel_mass,wi.com,wi.tensor);
     }
@@ -107,7 +94,6 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
     std::vector<std::string> names;
     for(auto const* item:root.descendants("body")) if(!item->get("name").empty()) names.push_back(item->get("name"));
     std::vector<std::string> moving{"crank","pedal_front","pedal_rear"};
-    if(drive.transmission_model=="elastic_chain") moving.emplace_back("cassette");
     if(drive.motor_clutch) moving.emplace_back("drive_shaft");
     for(const auto& source:moving) for(const auto& target:names) {
         if(source==target || target.starts_with("rider_") || !excluded.insert(pair(source,target)).second) continue;

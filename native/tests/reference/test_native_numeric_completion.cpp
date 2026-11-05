@@ -341,7 +341,6 @@ void test_mutated_drive_config_rejected_before_model_writes() {
     std::println(stderr, ">> test_mutated_drive_config_rejected_before_model_writes");
     struct Case { std::string_view id, key; double numeric; bool wire_text; };
     const std::array cases{
-        Case{.id="chain_k_n_m-0.0", .key="chain_k_n_m", .numeric=0., .wire_text=false},
         Case{.id="motor_clutch-no", .key="motor_clutch", .numeric=0., .wire_text=true},
         Case{.id="torque_ripple-1.0", .key="torque_ripple", .numeric=1., .wire_text=false}};
     for (const auto& item : cases) {
@@ -358,8 +357,7 @@ void test_mutated_drive_config_rejected_before_model_writes() {
         } else {
             auto typed = nativecfg::decode(wire);
             auto drive = (typed.drive).value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
-            if (std::string_view(item.key) == "chain_k_n_m") drive.chain_k_n_m = item.numeric;
-            else drive.torque_ripple = item.numeric;
+            drive.torque_ripple = item.numeric;
             bt::invalid([&] { drivetrain::validate(drive); });
             auto mutated = typed;
             mutated.drive = drive;
@@ -378,7 +376,7 @@ void test_drivetrain_wheel_topology_shared() {
     std::println(stderr, ">> test_drivetrain_wheel_topology_shared");
     for (const auto& [axis, kind] : std::array<std::pair<const char*, const char*>, 2>{
         std::pair{"0 0 1", "hinge"}, std::pair{"0 1 0", "slide"}}) {
-        auto text_xml = drivetrain_reference::model_xml("elastic_chain");
+        auto text_xml = drivetrain_reference::model_xml("ideal_mid_drive");
         const std::string needle = R"(<joint name="front_wheel_spin" axis="0 1 0"/>)";
         const auto position = text_xml.find(needle);
         bt::require(position != std::string::npos, "drivetrain xml carries the front-wheel joint");
@@ -387,8 +385,8 @@ void test_drivetrain_wheel_topology_shared() {
                 "\" axis=\"" + axis + "\"/>");
         bt::ModelFixture const fixture(text_xml);
         const auto image = bike::initialization::capture_model_image(*fixture.model);
-        auto wire = drivetrain_reference::writer_config(drivetrain_reference::source("elastic_chain"));
-        put(wire, "drive", "transmission_model", text("elastic_chain"));
+        auto wire = drivetrain_reference::writer_config(drivetrain_reference::source("ideal_mid_drive"));
+        put(wire, "drive", "transmission_model", text("ideal_mid_drive"));
         drivetrain_reference::error<std::invalid_argument>(
             [&] { Stepper const rejected(image.mjb, nativecfg::decode(wire)); }, "front_wheel_spin");
     }
@@ -443,23 +441,9 @@ void test_shock_component_overflow_shared() {
 // test_chain_computation_overflow_shared[name]
 void test_chain_computation_overflow_shared() {
     std::println(stderr, ">> test_chain_computation_overflow_shared");
-    for (const auto name : {"chain_tension", "chain_geometry"}) {
-        if (std::string_view(name) == "chain_tension") {
-            auto source = drivetrain_reference::source("elastic_chain");
-            source.chain_k_n_m = 1e308; source.chain_c_ns_m = 1e308;
-            auto owner = drivetrain_reference::pair(source);
-            const auto crank = bike::model::joint_address(*owner->model(), "crank_spin");
-            drivetrain_reference::position(*owner, "crank_spin",
-                owner->qpos()[static_cast<std::size_t>(crank.first)] + 1.);
-            drivetrain_reference::velocity(*owner, "crank_spin", 1000.);
-            drivetrain_reference::reset_engine_state(*owner);
-            overflow([&] { (void)drivetrain_reference::components(*owner, .001, 0.); });
-        } else {
-            overflow([&] {
-                (void)drivetrain::chain_geometry(drivetrain::Vec2{0., 0.},
-                    drivetrain::Vec2{1e308, 0.}, .1, .05, drivetrain::Vec2{0., 1.}, std::nullopt); });
-        }
-    }
+    overflow([&] {
+        (void)drivetrain::chain_geometry(drivetrain::Vec2{0., 0.},
+            drivetrain::Vec2{1e308, 0.}, .1, .05, drivetrain::Vec2{0., 1.}, std::nullopt); });
 }
 
 // test_policy_intermediate_overflow_shared[policy]
@@ -579,8 +563,6 @@ const std::initializer_list<FieldCase> kPositiveFields = { // NOLINT(bugprone-th
     {{"tire", "surface_map", "surface", "slip_stiffness_per_load"}},
     {{"tire", "surface_map", "surface", "stribeck_speed_mps"}},
     {{"drive", "gearing", "chain_pitch_m"}},
-    {{"drive", "chain_k_n_m"}},
-    {{"drive", "hub_stiffness_nm_rad"}},
     {{"drive", "pedaling", "coast_above_rpm"}},
     {{"drive", "pedaling", "stop_time_s"}},
     {{"drive", "shifting", "target_cadence_min_rpm"}},
@@ -607,8 +589,7 @@ const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone
     {{"tire", "significant_delta_m"}},
     {{"tire", "significance_fraction"}},
     {{"drive", "human_torque_nm"}}, {{"drive", "torque_ripple"}},
-    {{"drive", "chain_c_ns_m"}},
-    {{"drive", "rotor_inertia_kgm2"}}, {{"drive", "hub_damping_nm_s"}},
+    {{"drive", "rotor_inertia_kgm2"}},
     {{"drive", "pedaling", "resume_below_rpm"}},
     {{"drive", "pedaling", "coast_cadence_tau_s"}},
     {{"drive", "pedaling", "mash_cadence_rpm"}},
@@ -761,21 +742,6 @@ void test_invalid_motor_profile_relationships_rejected() {
         else profile.taper_width_mps = value;
         bt::invalid([&] { cfg::detail::post_init(profile); });
     }
-}
-
-// test_chain_dissipation_overflow_before_telemetry
-void test_chain_dissipation_overflow_before_telemetry() {
-    std::println(stderr, ">> test_chain_dissipation_overflow_before_telemetry");
-    auto source = drivetrain_reference::source("elastic_chain");
-    source.chain_k_n_m = 1e308; source.chain_c_ns_m = 1e108;
-    auto owner = drivetrain_reference::pair(source);
-    const auto crank = bike::model::joint_address(*owner->model(), "crank_spin");
-    drivetrain_reference::position(*owner, "crank_spin",
-        owner->qpos()[static_cast<std::size_t>(crank.first)] + 1.);
-    drivetrain_reference::velocity(*owner, "crank_spin", -1e200);
-    drivetrain_reference::reset_engine_state(*owner);
-    overflow([&] {
-        (void)drivetrain_reference::components(*owner, .001, 0., {}, false); });
 }
 
 // test_suspension_total_overflow_before_telemetry
@@ -991,7 +957,6 @@ void test_zero_disable_policy_fields_remain_bitwise_valid() {
     source.shifting.cadence_smoothing_tau_s = 0.; source.shifting.upshift_slip_limit_mps = 0.;
     source.assist.gain = 0.; source.assist.max_torque = 0.; source.assist.max_power = 0.;
     source.assist.engage_torque_nm = 0.; source.assist.gate_min_crank_rad_s = 0.;
-    source.freehub_c_nms_rad = 0.; source.chain_c_ns_m = 0.;
     auto const stepper = drivetrain_reference::pair(source);
     drivetrain_reference::components(golden,
         drivetrain_reference::components(*stepper, .001, 0.));
@@ -1122,7 +1087,6 @@ int main() { return bt::run([] {
     test_damper_mutated_denominator_rejected_by_setter();
     test_s4_relationship_matrix();
     test_invalid_motor_profile_relationships_rejected();
-    test_chain_dissipation_overflow_before_telemetry();
     test_suspension_total_overflow_before_telemetry();
     test_end_stop_mutated_config_rejected();
     test_tire_two_wheel_loss_overflow_before_publication();

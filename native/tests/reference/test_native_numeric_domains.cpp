@@ -11,6 +11,7 @@
 #include "writers/resistance.hpp"
 #include "model/suspension_setup.hpp"
 #include "drivetrain/policy_set.hpp"
+#include "drivetrain/freehub.hpp"
 #include "configuration/suspension_spec.hpp"
 #include "io/json.hpp"
 #include <array>
@@ -131,8 +132,9 @@ void test_mutated_policy_configs_are_rejected() {
 void test_policy_derived_overflow_is_shared() {
     drivetrain::PolicySet policies(drive_reference::projected_policies(drive_reference::turbo_source()));
     overflow([&] { (void)policies.assist.step(1e308, 80., 0., false, .001); });
-    policies.hub.set_state({.boundary = 0., .energy_j = 0., .torque_nm = 0.});
-    overflow([&] { (void)policies.hub.update(1e308, 0., 0., 0.); });
+    drivetrain::Freehub hub(1000., .5);
+    hub.set_state({.boundary = 0., .energy_j = 0., .torque_nm = 0.});
+    overflow([&] { (void)hub.update(1e308, 0., 0., 0.); });
 }
 void test_cruise_longitudinal_topology_is_shared() {
     for (const auto& [kind, axis] : std::array{std::pair{"hinge", "1 0 0"}, std::pair{"slide", "0 1 0"}, std::pair{"ball", "0 0 1"}}) {

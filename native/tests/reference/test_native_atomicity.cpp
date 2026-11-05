@@ -498,8 +498,7 @@ void test_sparse_last_settle_debits_once() {
     // exactly-once settlement — the detached map republishes the telemetry,
     // the solved assist torque publishes once, and a second settle changes
     // nothing.
-    const std::array<std::pair<std::string_view, std::string_view>, 7> combos{{
-        {"elastic_chain", "plain"},
+    const std::array<std::pair<std::string_view, std::string_view>, 6> combos{{
         {"ideal_mid_drive", "plain"}, {"ideal_mid_drive", "clutch"}, {"ideal_mid_drive", "rotor"},
         {kGeometric, "plain"}, {kGeometric, "clutch"}, {kGeometric, "rotor"}}};
     for (const auto& [kind, topology] : combos) {

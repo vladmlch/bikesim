@@ -17,6 +17,7 @@
 #include "../recording/capture.hpp"
 #include "../recording/publish.hpp"
 #include "../research/preview_csv.hpp"
+#include "../runtime/run_limits.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../terrain/trackfile.hpp"
 #include "../viewer/session.hpp"
@@ -127,7 +128,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
     if(args.flag("record")) {catalog=model_catalog(prepared->bootstrap.model);assets=physical_assets(request,*prepared,metadata);}
     auto runtime=app::make_ride(std::move(prepared));
     const auto dt=request.model.physics.value().timestep_s; // NOLINT(bugprone-unchecked-optional-access) request/parse schema guarantees engagement; .value() is the loud contract
-    const auto limits=legacy::RunLimits::for_track(request.track.length_m,request.start_x_m,dt);
+    const auto limits=runtime::RunLimits::for_track(request.track.length_m,request.start_x_m,dt);
     const double requested_steps=args.has("duration")?std::ceil(args.real("duration")/dt):static_cast<double>(limits.max_steps);
     if(!std::isfinite(requested_steps)||requested_steps>=static_cast<double>(std::numeric_limits<std::int64_t>::max()))throw ArgumentError("duration exceeds step range");
     const auto max_steps=static_cast<std::int64_t>(requested_steps);

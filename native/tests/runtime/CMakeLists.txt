@@ -57,3 +57,20 @@ if(BUILD_TESTING)
   set_tests_properties(runtime_encoding PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_encoding>")
 endif()
+
+# RunLimits (runtime/run_limits.hpp) — header-only step/wall-clock caps of
+# the physical ride, moved from the removed legacy controls.
+add_executable(runtime_run_limits test_run_limits.cpp)
+set_target_properties(runtime_run_limits PROPERTIES
+  CXX_STANDARD 23
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+target_link_libraries(runtime_run_limits PRIVATE bike_test_fixtures)
+bike_apply_native_policy(runtime_run_limits)
+target_include_directories(runtime_run_limits SYSTEM PRIVATE
+  "${_test_repo_root}/native/src")
+if(BUILD_TESTING)
+  add_test(NAME runtime_run_limits COMMAND runtime_run_limits)
+  set_tests_properties(runtime_run_limits PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_run_limits>")
+endif()

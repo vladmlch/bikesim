@@ -6,7 +6,7 @@
 #include "../cli/physical_capture.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
-#include "../legacy/controls.hpp"
+#include "run_limits.hpp"
 #include "../platform/files.hpp"
 #include "../platform/provenance.hpp"
 #include "../research/evidence.hpp"
@@ -46,7 +46,7 @@ public:
         if (!std::isfinite(steps) || steps < 1. || steps >= static_cast<double>(std::numeric_limits<std::int64_t>::max()))
             throw std::invalid_argument("duration/timestep produces an unrepresentable step count");
         settings_.max_steps = static_cast<std::int64_t>(steps);
-        limits_ = bike::legacy::RunLimits::for_track(request.track.length_m, request.start_x_m,
+        limits_ = runtime::RunLimits::for_track(request.track.length_m, request.start_x_m,
             settings_.timestep_s);
         // Snapshot compiled vertices during setup, outside the measured clock.
         const auto assets = bike::cli::physical_assets(request, *prepared, settings_.metadata);
@@ -128,7 +128,7 @@ public:
     void close() override { runtime_->close(); }
 private:
     Settings settings_;
-    bike::legacy::RunLimits limits_;
+    runtime::RunLimits limits_;
     Clock clock_;
     double started_ = 0.;
     std::optional<std::string> terminal_;

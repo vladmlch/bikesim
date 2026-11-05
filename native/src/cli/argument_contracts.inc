@@ -325,21 +325,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
-          "--legs"
-        ],
-        "dest": "legs",
-        "default": null,
-        "type": "str",
-        "choices": [
-          "articulated",
-          "rigid"
-        ],
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
           "--preview"
         ],
         "dest": "preview",
@@ -400,64 +385,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
-          "--tyre-model"
-        ],
-        "dest": "tyre_model",
-        "default": null,
-        "type": "str",
-        "choices": [
-          "sphere",
-          "pneumatic"
-        ],
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--tyre-tier"
-        ],
-        "dest": "tyre_tier",
-        "default": null,
-        "type": "str",
-        "choices": [
-          "fast",
-          "detailed"
-        ],
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--tyre-pressure"
-        ],
-        "dest": "tyre_pressure",
-        "default": null,
-        "type": "_parse_tyre_pressures",
-        "choices": null,
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--drive-mode"
-        ],
-        "dest": "drive_mode",
-        "default": null,
-        "type": "str",
-        "choices": [
-          "motor",
-          "pedal",
-          "pedelec"
-        ],
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
           "--assist"
         ],
         "dest": "assist",
@@ -477,30 +404,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
-          "--gearing"
-        ],
-        "dest": "gearing",
-        "default": null,
-        "type": "_parse_gearing",
-        "choices": null,
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--ripple-depth"
-        ],
-        "dest": "ripple_depth",
-        "default": null,
-        "type": "float",
-        "choices": null,
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
           "--crank-phase"
         ],
         "dest": "crank_phase",
@@ -513,43 +416,12 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
-          "--visual-pedalling"
-        ],
-        "dest": "visual_pedalling",
-        "default": false,
-        "type": "str",
-        "choices": null,
-        "flag": true,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
-          "--surface"
-        ],
-        "dest": "surface",
-        "default": null,
-        "type": "str",
-        "choices": [
-          "asphalt",
-          "hardpack",
-          "loose",
-          "wet",
-          "scree"
-        ],
-        "flag": false,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
           "--physics"
         ],
         "dest": "physics",
         "default": null,
         "type": "str",
         "choices": [
-          "legacy",
           "physical"
         ],
         "flag": false,

@@ -181,16 +181,23 @@ void test_explicit_scale_is_invalid_headless_even_one(std::string_view scale) {
           " is invalid for a headless run");
 }
 
-// ride_backend_cli/legacy_scale_and_native_rejected
-void test_legacy_scale_and_native_rejected() {
-    throws<cli::ArgumentError>(
-        [] { (void)resolve({"--physics", "legacy", "--time-scale", "1"}); },
-        "--time-scale requires an interactive physical or research run",
-        "legacy physics rejects an explicit playback scale");
-    throws<cli::ArgumentError>(
-        [] { (void)resolve({"--physics", "legacy", "--backend", "native"}); },
-        "--backend native requires physical or research mode",
-        "legacy physics rejects the native backend");
+// Legacy mode is gone: `--physics legacy` is not an accepted choice and the
+// legacy-only drivetrain/tyre flags are no longer bike-ride options.
+void legacy_mode_is_not_selectable() {
+    bt::invalid([] { (void)resolve({"--physics", "legacy"}); });
+    for (const auto* flag : {"--drive-mode", "--tyre-model", "--tyre-tier", "--tyre-pressure",
+                             "--surface", "--gearing", "--ripple-depth", "--legs"})
+        bt::invalid([flag] { (void)resolve({flag, "x"}); });
+    bt::invalid([] { (void)resolve({"--visual-pedalling"}); });
+}
+
+// Without --physics-config or --physics the ride resolves to physical mode.
+void default_ride_is_physical() {
+    const auto ride = resolve({"--duration", "1"});
+    bt::require(ride->setup.model.physics.value().physics_mode == "physical", // NOLINT(bugprone-unchecked-optional-access) request/parse schema guarantees engagement; .value() is the loud contract
+                "an unconfigured bike-ride is a physical run");
+    bt::require(ride->setup.model.rider.value().variant == "lumped", // NOLINT(bugprone-unchecked-optional-access) request/parse schema guarantees engagement; .value() is the loud contract
+                "the default physical rider is lumped");
 }
 
 // ride_backend_cli/headless_native_profile_does_not_replace_timestep
@@ -377,7 +384,8 @@ int main() {
         test_native_visual_scale_keeps_all_physics_settings();
         for (const std::string_view scale : {"1", "2", "4", "8"})
             test_explicit_scale_is_invalid_headless_even_one(scale);
-        test_legacy_scale_and_native_rejected();
+        legacy_mode_is_not_selectable();
+        default_ride_is_physical();
         test_headless_native_profile_does_not_replace_timestep();
         test_research_cli_has_backend_but_no_playback_scale();
         test_replay_requires_viewer_for_explicit_scale();

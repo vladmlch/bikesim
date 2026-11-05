@@ -62,8 +62,18 @@ namespace {
 // load_physics and resolve_physics return the multi-KB physics config by
 // value; isolating their temporaries keeps ride_physics' own frame small.
 [[gnu::noinline]] std::unique_ptr<configuration::SimulationPhysicsConfig> load_ride_physics(const Arguments& args) {
-    return std::make_unique<configuration::SimulationPhysicsConfig>(
-        args.has("physics_config") ? configuration::load_physics(args.text("physics_config")) : configuration::SimulationPhysicsConfig{});
+    auto physics = std::make_unique<configuration::SimulationPhysicsConfig>(
+        args.has("physics_config") ? configuration::load_physics(args.text("physics_config")) : configuration::default_physics());
+    if (!args.has("physics_config")) {
+        // physical is the only mode (legacy removed 2026-11-04); until
+        // default_physics() resolves it itself, pin the mode and re-open
+        // the two fields post_init derived for the legacy default so the
+        // overrides merge resolves their physical values.
+        physics->physics_mode = "physical";
+        physics->drive_mode.reset();
+        physics->pitch_assist.reset();
+    }
+    return physics;
 }
 [[gnu::noinline]] void resolve_physics_into(configuration::SimulationPhysicsConfig& physics, const Value& overrides) {
     physics = configuration::resolve_physics(overrides, physics);
@@ -81,7 +91,7 @@ std::unique_ptr<configuration::SimulationPhysicsConfig> ride_physics(Arguments& 
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", drive);
     auto physics = load_ride_physics(args);
     resolve_physics_into(*physics, overrides);
-    if (physics->physics_mode == "physical" && args.has("assist")) {
+    if (args.has("assist")) {
         set(assist, "mode", text(args.text("assist"))); set(drive, "assist", assist); set(overrides, "drive", drive);
         resolve_physics_into(*physics, overrides);
     }
@@ -89,7 +99,7 @@ std::unique_ptr<configuration::SimulationPhysicsConfig> ride_physics(Arguments& 
     return physics;
 }
 std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const& args, const configuration::SimulationPhysicsConfig& physics,
-    bool physical, bool experiment) {
+    bool experiment) {
     auto owner = std::make_unique<initialization::SetupRequest>();
     auto& request = *owner;
     request.origin = args.command; request.asset_root = std::filesystem::current_path();
@@ -100,10 +110,10 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     request.seed_decimal = research::validate_seed(args.text("seed", "0"));
     request.model.mode = "ride"; request.model.field = terrain::HeightFieldSpec::for_track(request.track);
     request.model.physics = physics;
-    auto rider = model::rider_from_args(args.flag("no_rider") ? "none" : args.text("rider", "seated"), args.real("rider_mass", 80.), args.real("rider_height", 1.8), args.optional_real("rider_inseam"));
+    auto rider = model::rider_from_args(args.flag("no_rider") ? "none" : args.text("rider", "lumped"), args.real("rider_mass", 80.), args.real("rider_height", 1.8), args.optional_real("rider_inseam"));
     request.model.rider = std::move(rider);
     request.model.include_rider = request.model.rider->present();
-    request.model.crank_joint = physical;
+    request.model.crank_joint = true;
     request.runtime.speed_kph = args.real("speed", 25.);
     request.runtime.strict = args.text("resolved_check_policy") == "strict";
     request.runtime.measurement_decimation = bounded_integer(args, "decimate", experiment ? 80 : 1);
@@ -120,51 +130,31 @@ std::unique_ptr<ResolvedRide> resolve_ride(Arguments args, bool settling) {
     if (!args.has("decimate")) args.set("decimate", experiment ? "80" : "1");
     if (experiment && !args.has("seed")) args.set("seed", "0");
     const auto physics = ride_physics(args);
-    const bool physical = physics->physics_mode == "physical";
-    if (args.has("time_scale") && (args.flag("headless") || !physical || args.flag("preview")))
+    if (args.has("time_scale") && (args.flag("headless") || args.flag("preview")))
         throw ArgumentError("--time-scale requires an interactive physical or research run");
     if (args.flag("close_on_finish")) {
-        if (settling || args.flag("headless") || !physical || args.flag("preview"))
+        if (settling || args.flag("headless") || args.flag("preview"))
             throw ArgumentError("--close-on-finish requires an interactive physical or research run");
         if (!args.has("duration")) throw ArgumentError("--close-on-finish requires --duration");
     }
     if (!args.has("time_scale")) args.set("time_scale", "1");
-    if (args.present("backend") && !physical) throw ArgumentError("--backend native requires physical or research mode");
-    if (experiment && (!physical || (args.text("drive") != "crank_effort" && args.text("drive") != "articulated_effort")))
+    if (experiment && (args.text("drive") != "crank_effort" && args.text("drive") != "articulated_effort"))
         throw ArgumentError("--research requires physical crank_effort or articulated_effort");
     if (experiment && (args.has("sag") || args.flag("preview"))) throw ArgumentError("--research cannot combine with --sag or --preview");
-    if (args.flag("record") && (!physical || args.flag("preview"))) throw ArgumentError("--record requires a physical run and cannot combine with --preview");
-    if (args.has("check_policy") && (!physical || args.flag("preview"))) throw ArgumentError("--check-policy requires a physical run");
+    if (args.flag("record") && args.flag("preview")) throw ArgumentError("--record requires a physical run and cannot combine with --preview");
+    if (args.has("check_policy") && args.flag("preview")) throw ArgumentError("--check-policy requires a physical run");
     if (args.has("duration")) positive(args.real("duration"), "--duration");
-    if (physical) {
-        if (args.has("speed") && args.text("drive") != "ideal_speed_control") throw ArgumentError("--speed is an ideal controller target; use --initial-speed for coast/effort");
-        if ((args.has("drive_mode") && args.text("drive_mode") != "motor") || args.flag("visual_pedalling")) throw ArgumentError("legacy drive/visual flags cannot select physical drivetrain settings");
-        if ((args.has("tyre_model") && args.text("tyre_model") != "sphere") || args.has("surface") || args.has("tyre_tier") || args.has("tyre_pressure")) throw ArgumentError("physical tire backend and friction must be selected in --physics-config");
-        if (args.has("gearing") || args.has("ripple_depth")) throw ArgumentError("physical gearing and torque_ripple are configured in TOML");
-        if (args.has("legs")) throw ArgumentError("use --rider articulated_planar instead of legacy --legs");
-        if (args.text("drive") == "ideal_speed_control" && !args.has("speed")) args.set("speed", "25");
-        if (!args.has("rider") && !args.flag("no_rider")) args.set("rider", args.text("drive") == "articulated_effort" ? "articulated_planar" : "lumped");
-        if (args.text("drive") == "articulated_effort" && (args.flag("no_rider") || args.text("rider") != "articulated_planar")) throw ArgumentError("articulated_effort requires --rider articulated_planar");
-        if (!settling && args.flag("headless") && args.text("drive") == "coast" && physics->initial_speed_mps == 0. && !args.has("duration")) throw ArgumentError("a stationary physical coast run needs --duration or nonzero --initial-speed");
-        args.set("resolved_check_policy", args.text("check_policy", args.flag("headless") ? "strict" : "diagnostic"));
-    } else {
-        if (settling) throw ArgumentError("bike-settle requires physics_mode=physical");
-        if (args.text("assist") == "emtb") throw ArgumentError("--assist emtb requires physical mode");
-        for (const auto key : {"initial_speed", "human_torque", "assist_gain", "duration"})
-            if (args.has(key)) throw ArgumentError(std::string(key) + " requires --physics physical");
-        const bool climb = args.text("track") == "climb_steps";
-        if (!args.has("speed")) args.set("speed", climb ? "16" : "25");
-        if (!args.has("tyre_model")) args.set("tyre_model", climb ? "pneumatic" : "sphere");
-        if (!args.has("drive_mode")) args.set("drive_mode", climb ? "pedelec" : "motor");
-        if (!args.has("assist")) args.set("assist", climb ? "turbo" : "tour");
-    }
+    if (args.has("speed") && args.text("drive") != "ideal_speed_control") throw ArgumentError("--speed is an ideal controller target; use --initial-speed for coast/effort");
+    if (args.text("drive") == "ideal_speed_control" && !args.has("speed")) args.set("speed", "25");
+    if (!args.has("rider") && !args.flag("no_rider")) args.set("rider", args.text("drive") == "articulated_effort" ? "articulated_planar" : "lumped");
+    if (args.text("drive") == "articulated_effort" && (args.flag("no_rider") || args.text("rider") != "articulated_planar")) throw ArgumentError("articulated_effort requires --rider articulated_planar");
+    if (!settling && args.flag("headless") && args.text("drive") == "coast" && physics->initial_speed_mps == 0. && !args.has("duration")) throw ArgumentError("a stationary physical coast run needs --duration or nonzero --initial-speed");
+    args.set("resolved_check_policy", args.text("check_policy", args.flag("headless") ? "strict" : "diagnostic"));
     if (!args.has("crank_phase")) args.set("crank_phase", "0");
-    if (!args.has("tyre_tier")) args.set("tyre_tier", "fast");
-    if (!args.has("tyre_pressure")) args.set("tyre_pressure", "1.5/1.7");
     // Build the setup before moving args — member-order evaluation would
     // otherwise hand ride_setup_request a moved-from Arguments.
     auto resolved = std::make_unique<ResolvedRide>();
-    resolved->setup = std::move(*ride_setup_request(args, *physics, physical, experiment));
+    resolved->setup = std::move(*ride_setup_request(args, *physics, experiment));
     resolved->arguments = std::move(args);
     return resolved;
 }

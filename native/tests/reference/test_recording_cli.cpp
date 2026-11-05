@@ -99,13 +99,6 @@ void test_record_rejected_for_python_backend() {
         }, "invalid choice", "python backend + record is an invalid choice");
 }
 
-void test_record_rejected_for_legacy_physics() {
-    rejected({"--physics", "legacy", "--record"}, "--record requires a physical run",
-             "record rejected for legacy physics");
-    rejected({"--record"}, "--record requires a physical run",
-             "record rejected when legacy is the default physics mode");
-}
-
 void test_record_accepted_for_research() {
     // backend='python' is unspellable natively (see
     // test_record_rejected_for_python_backend); the shared research gate
@@ -152,9 +145,6 @@ void test_check_policy_accepted_for_python_backend_physical_runs() {
 
 void test_check_policy_rejected_outside_physical_and_research() {
     for (const char *policy : {"strict", "diagnostic"}) {
-        rejected({"--physics", "legacy", "--check-policy", policy},
-                 "--check-policy requires a physical run",
-                 "check-policy rejected for legacy physics");
         const auto args = resolve({"--physics-config", PROFILE, "--research",
                                    "--check-policy", policy});
         bt::require(args.text("resolved_check_policy") == policy,
@@ -187,10 +177,6 @@ void test_unsupported_combination_names_itself() {
         "native", "unspellable backend names the native choice");
     throws<cli::ArgumentError>(
         [] {
-            (void)cli::resolve_ride(parse({"--physics", "legacy", "--record"}));
-        }, "physical", "record + legacy names 'physical'");
-    throws<cli::ArgumentError>(
-        [] {
             (void)cli::resolve_ride(parse({"--physics-config", PROFILE,
                                            "--backend", "native", "--preview",
                                            "--record"}));
@@ -205,7 +191,6 @@ int main() {
         test_out_alone_never_enables_recording();
         test_record_is_accepted_for_physical_native_runs();
         test_record_rejected_for_python_backend();
-        test_record_rejected_for_legacy_physics();
         test_record_accepted_for_research();
         test_record_rejected_for_preview();
         test_check_policy_resolved_before_runtime_and_independent_of_record();

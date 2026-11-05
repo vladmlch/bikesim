@@ -41,7 +41,6 @@ void close_on_finish_contract() {
     constexpr std::string_view interactive = "--close-on-finish requires an interactive physical or research run";
     rejected_close_on_finish({"--physics", "physical", "--duration", "1", "--headless", "--close-on-finish"}, interactive);
     rejected_close_on_finish({"--physics", "physical", "--duration", "1", "--preview", "--close-on-finish"}, interactive);
-    rejected_close_on_finish({"--physics", "legacy", "--duration", "1", "--close-on-finish"}, interactive);
     bt::invalid([] { (void)parse("bike-ride", {"--close-on-finish=true"}); });
     bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--physics", "physical", "--duration", "0", "--close-on-finish"})); });
     const auto physical = resolve_ride(parse("bike-ride", {"--physics", "physical", "--duration", "1", "--close-on-finish"}));
@@ -152,7 +151,6 @@ int main(int argc, char** argv) {
         bt::invalid([] { (void)parse("bike-settle", {"--physics", "physical"}); });
         bt::invalid([] { (void)parse("bike-ride", {"--record=true"}); });
         bt::invalid([] { (void)parse("bike-research", {"--duration", "nan"}); });
-        bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--record"})); });
         bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--physics", "physical", "--headless", "--time-scale", "2", "--duration", ".1"})); });
         close_on_finish_contract();
         // Real command dispatch is registered for later execution. No simulator

@@ -499,10 +499,10 @@ bool schema_entry(std::string_view name, std::string_view &required,
                   std::string_view &optional) {
     const std::string_view key = schema_name(name);
     using SV = std::string_view;
-    static const std::array<KeyedSchemaEntry, 36> entries{{
+    static const std::array<KeyedSchemaEntry, 34> entries{{
         {.name = "config", .entry =
          {.required = "schema",
-          .optional = "drive cruise suspension brake resistance tire rider_forces "
+          .optional = "drive cruise suspension brake resistance tire "
           "rider_contacts"}},
         {.name = "suspension", .entry =
          {.required = "physics_mode joints air_spring fork_damper shock_damper coil "
@@ -589,12 +589,6 @@ bool schema_entry(std::string_view name, std::string_view &required,
         {.name = "tire.surface_map", .entry = {.required = "surface sections",
           .optional = ""}},
         {.name = "tire.surface_map.sections", .entry = {.required = "start_m end_m surface",
-          .optional = ""}},
-        {.name = "rider_forces", .entry = {.required = "paths",
-          .optional = ""}},
-        {.name = "rider_forces.paths", .entry =
-         {.required = "name joint stiffness_n_m damping_ns_m preload_deflection_m "
-          "offset_m unilateral",
           .optional = ""}},
         {.name = "drive", .entry =
          {.required = "gearing pedaling shifting assist hub_stiffness_nm_rad "

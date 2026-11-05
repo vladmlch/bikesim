@@ -166,7 +166,6 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writers/suspension.cpp"
   "${_bike_native_dir}/src/writers/brake.cpp"
   "${_bike_native_dir}/src/writers/resistance.cpp"
-  "${_bike_native_dir}/src/writers/rider_forces.cpp"
   "${_bike_native_dir}/src/writers/tire_common.cpp"
   "${_bike_native_dir}/src/writers/tire.cpp"
   "${_bike_native_dir}/src/writers/distributed_tire.cpp"

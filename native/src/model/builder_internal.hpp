@@ -41,7 +41,6 @@ struct BuildContext {
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-const-or-ref-data-members) aggregate mirrors the Python reference structure
     const kinematics::HorstLinkageSolver& solver;
     configuration::RiderSpecs rider;
-    std::optional<SeatedPose> seated;
     std::optional<ArticulatedPose> articulated;
     std::unique_ptr<configuration::SimulationPhysicsConfig> physics;
     geometry::FixedFramePoints fixed;

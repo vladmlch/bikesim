@@ -44,9 +44,10 @@ namespace nativecfg {
     // --- typed result ----------------------------------------------------
     // The projected config's writer sections: one std::optional per
     // writer family the wire carries (drive, cruise, suspension, brake,
-    // resistance, tire, rider_forces, rider_contacts — the eight
-    // section_keys entries under 'config'). An absent key means the
-    // writer stays disabled.
+    // resistance, tire, rider_contacts — the seven section_keys entries
+    // under 'config'; rider_forces went away with the seated rider
+    // variant, so a wire document that still carries it fails as an
+    // unknown key). An absent key means the writer stays disabled.
     struct WriterConfig {
         std::optional<drivetrain::DriveConfig> drive;
         std::optional<CruiseConfig> cruise;
@@ -54,7 +55,6 @@ namespace nativecfg {
         std::optional<BrakeConfig> brake;
         std::optional<ResistanceConfig> resistance;
         std::optional<TireConfig> tire;
-        std::optional<RiderForcesConfig> rider_forces;
         std::optional<rider::RiderContactsConfig> rider_contacts;
     };
 
@@ -321,7 +321,7 @@ namespace nativecfg {
         void section_keys(const Dict<N> &d, std::string_view name) {
             if (name == "config") {
                 constexpr auto required = keys("schema");
-                constexpr auto optional = keys("drive", "cruise", "suspension", "brake", "resistance", "tire", "rider_forces", "rider_contacts");
+                constexpr auto optional = keys("drive", "cruise", "suspension", "brake", "resistance", "tire", "rider_contacts");
                 exact_at(d, required, optional, d.path);
                 return;
             }
@@ -469,18 +469,6 @@ namespace nativecfg {
             }
             if (name == "tire.surface_map.sections") {
                 constexpr auto required = keys("start_m", "end_m", "surface");
-                constexpr auto optional = keys();
-                exact_at(d, required, optional, d.path);
-                return;
-            }
-            if (name == "rider_forces") {
-                constexpr auto required = keys("paths");
-                constexpr auto optional = keys();
-                exact_at(d, required, optional, d.path);
-                return;
-            }
-            if (name == "rider_forces.paths") {
-                constexpr auto required = keys("name", "joint", "stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m", "unilateral");
                 constexpr auto optional = keys();
                 exact_at(d, required, optional, d.path);
                 return;
@@ -873,35 +861,6 @@ namespace nativecfg {
             return c;
         }
 
-        template <class N>
-        [[nodiscard]] RiderForcesConfig rider_forces_from_dict(
-            const Dict<N> &top) {
-            const Dict<N> d = req_dict(top, "rider_forces");
-            RiderForcesConfig c;
-            const N raw = req(d, "paths");
-            const auto paths = sequence(raw, "config.rider_forces.paths");
-            std::size_t path_index = 0;
-            for (std::size_t i = 0; i < paths.size(); ++i) {
-                const N item = paths.at(i);
-                if (!item.is_mapping())
-                    throw std::invalid_argument(
-                        "native config: 'rider_forces.paths' entries must be dicts");
-                const std::string path = "rider_forces.paths." + std::to_string(path_index++);
-                const Dict<N> p{.value = item, .path = "config." + path};
-                section_keys(p, "rider_forces.paths");
-                c.paths.push_back({
-                    .name = req_str(p, "name"),
-                    .joint = req_str(p, "joint"),
-                    .stiffness_n_m = req_f64(p, "stiffness_n_m"),
-                    .damping_ns_m = req_f64(p, "damping_ns_m"),
-                    .preload_deflection_m = req_f64(p, "preload_deflection_m"),
-                    .offset_m = req_f64(p, "offset_m"),
-                    .unilateral = req_bool(p, "unilateral"),
-                });
-            }
-            return c;
-        }
-
         // rider_contacts (T3b-1): the ArticulatedConfig subset
         // RiderContactApplier reads, plus the pose-resolved arm_reach_m. The
         // closed-set parses name the field on rejection like the
@@ -1193,8 +1152,6 @@ namespace nativecfg {
                 c.resistance = resistance_from_dict(d);
             if (d.contains("tire"))
                 c.tire = tire_from_dict(d);
-            if (d.contains("rider_forces"))
-                c.rider_forces = rider_forces_from_dict(d);
             if (d.contains("rider_contacts"))
                 c.rider_contacts = rider_contacts_from_dict(d);
             return c;

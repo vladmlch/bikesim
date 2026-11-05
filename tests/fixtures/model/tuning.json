@@ -1,5 +1,5 @@
 {
-  "_notes": "reflected shock mass + compute_suspension_tuning_for_sag outputs incl. explicit rider/fraction variants",
+  "_notes": "reflected shock mass + compute_suspension_tuning_for_sag outputs incl. explicit rider/fraction variants \u2014 the 'seated_rider' case went with the removed variant",
   "_produced_by": "tuning.py over default BikeSpecs/BikeMassSpecs",
   "reflected_cases": [
     {
@@ -207,88 +207,6 @@
         ]
       ],
       "tag": "rider_90kg"
-    },
-    {
-      "accepted": true,
-      "result": [
-        [
-          "total_system_mass_kg",
-          104.4
-        ],
-        [
-          "front_load_fraction",
-          0.4035594105371718
-        ],
-        [
-          "target_front_sag_mm",
-          54.0
-        ],
-        [
-          "fork_stiffness_n_m",
-          6879.286743809776
-        ],
-        [
-          "fork_damping_n_s_m",
-          512.8412580889321
-        ],
-        [
-          "fork_air_tokens",
-          2
-        ],
-        [
-          "fork_calibrated_psi",
-          100.4761319387217
-        ],
-        [
-          "fork_air_force_full_travel_n",
-          2524.045052902542
-        ],
-        [
-          "fork_air_bottom_out_g",
-          6.106890283467233
-        ],
-        [
-          "fork_air_progressivity_pct",
-          349.9970440564026
-        ],
-        [
-          "front_spring_force_full_travel_n",
-          1377.7034004446402
-        ],
-        [
-          "front_bottom_out_g",
-          3.333333333333333
-        ],
-        [
-          "target_rear_sag_mm",
-          54.0
-        ],
-        [
-          "shock_stroke_at_sag_mm",
-          17.191963746178885
-        ],
-        [
-          "lr_at_sag",
-          2.9592916334484314
-        ],
-        [
-          "shock_stiffness_n_m",
-          105147.50608336276
-        ],
-        [
-          "shock_damping_n_s_m",
-          9432.104771874703
-        ],
-        [
-          "rear_spring_force_full_travel_n",
-          2833.8576980384505
-        ],
-        [
-          "rear_bottom_out_g",
-          4.639181262007234
-        ]
-      ],
-      "tag": "seated_rider"
     },
     {
       "accepted": true,

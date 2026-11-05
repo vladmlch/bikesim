@@ -508,15 +508,6 @@ double BikeMassSpecs::compute_wheel_rotational_inertia(
 // ---------------------------------------------------------------------
 // physics/mass.py — component centers and the static system CG.
 // ---------------------------------------------------------------------
-std::optional<double>
-saddle_top_z_for_rider(const geometry::BikeSpecs &specs,
-                       const configuration::RiderSpecs *rider_specs) {
-    // Python: rider_specs is not None and rider_specs.variant == "seated".
-    if (rider_specs != nullptr && rider_specs->variant == "seated")
-        return seated_pose(*rider_specs, specs).saddle.top_z_m;
-    return std::nullopt;
-}
-
 ComponentCenters compute_component_centers_of_mass(
         const geometry::BikeSpecs &specs, const BikeMassSpecs &mass_specs,
         const kinematics::HorstLinkageSolver &solver,
@@ -545,9 +536,11 @@ ComponentCenters compute_component_centers_of_mass(
     const Vec3 pos_motor = v_add(p_bb, {0.030, 0.0, 0.0275});
     const Vec3 pos_battery{0.172834, 0.0, 0.226886};
     const Vec3 pos_frame{0.180925, 0.0, 0.335899};
-    // The post and saddle follow the rider's cockpit placement.
+    // The post and saddle keep the declared cockpit placement: only the
+    // removed seated variant overrode the saddle-top height from its
+    // pose, so no remaining rider record supplies an override.
     const geometry::SaddleGeometry saddle = geometry::saddle_geometry(
-            p9, saddle_top_z_for_rider(specs, rider_specs));
+            p9, std::nullopt);
     const Vec3 pos_saddle = geometry::saddle_post_center_of_mass(
             mass_specs.saddle_post_mass, p10, p9, saddle);
     const Vec3 pos_cranks = p_bb; // p_bb.copy()

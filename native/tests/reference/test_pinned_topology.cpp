@@ -76,7 +76,7 @@ Compiled compiled() {
     const auto rider = mdl::resolve_rider(
         cfg::RiderSpecs{.variant = "articulated_planar",
                         .inseam_m = std::nullopt},
-        true, "seated");
+        true, "lumped");
     request.rider = rider;
     request.crank_joint = true;
     request.physics = physics;

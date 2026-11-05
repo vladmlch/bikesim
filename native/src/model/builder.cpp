@@ -23,16 +23,12 @@ std::string generate_mjcf(const BuildRequest& request) {
     const bool crank=request.crank_joint || physical;
     if(crank && request.mode!="ride") throw std::invalid_argument("the pedalled crankset is a ride-mode model; mode '"+request.mode+"' builds a rigid crankset");
     auto rider=resolve_rider(request.rider?RiderArg(*request.rider):RiderArg(std::monostate{}),request.include_rider,"lumped");
-    if(rider.variant=="seated" && request.mode!="ride") throw std::invalid_argument("the seated rider is a ride-mode model; mode '"+request.mode+"' takes 'none' or 'lumped'");
-    std::optional<SeatedPose> seated;
-    if(rider.variant=="seated") seated=solve_seated_pose(request.bike,rider);
     std::optional<ArticulatedPose> articulated;
     if(rider.variant=="articulated_planar") {
         if(!physical) throw std::invalid_argument("articulated_planar requires physical ride mode");
         articulated=geometry_pose(rider,request.bike);
     }
     if(physical && physics->drive_mode=="articulated_effort" && !articulated) throw std::invalid_argument("articulated_effort requires articulated_planar rider");
-    if(physical && seated && !seated->leg_chains.empty()) throw std::invalid_argument("physical seated rider supports rigid legs; use articulated_planar");
     // Source validation is independent of environment creation; all bad
     // mode/attachment combinations fail before any mjModel or mjData exists.
     if(physics) {
@@ -47,7 +43,7 @@ std::string generate_mjcf(const BuildRequest& request) {
     const auto fixed=geometry::get_fixed_frame_points(request.bike);
     const auto state=solver.solve_state_from_wheel_travel(0.);
     const Vec3 cg=physical?Vec3{.001,0.,0.}:compute_static_system_cg(request.bike,request.masses,rider.present()?&rider:nullptr,&solver).cg_pos_m;
-    BuildContext context{.request=request,.solver=solver,.rider=std::move(rider),.seated=std::move(seated),.articulated=articulated,.physics=std::move(physics),.fixed=fixed,.state=state,.cg=cg,.crank_joint=crank,.registry={}};
+    BuildContext context{.request=request,.solver=solver,.rider=std::move(rider),.articulated=articulated,.physics=std::move(physics),.fixed=fixed,.state=state,.cg=cg,.crank_joint=crank,.registry={}};
     Element root("mujoco",{{"model","enduro_bike_horst_yoke"}});
     root.add("compiler",{{"angle","degree"},{"coordinate","local"},{"inertiafromgeom","auto"},{"autolimits","true"}});
     std::string timestep="0.002";
@@ -61,11 +57,7 @@ std::string generate_mjcf(const BuildRequest& request) {
     build_steering_and_fork(frame,context);build_rear_linkage(frame,context);
     if(physical) assign_budgets(frame,context.registry,request.masses);
     build_equality_constraints(root);
-    if(crank && !physical) {
-        build_chain_constraint(root,request.gear_ratio);
-        if(context.seated) for(const auto& chain:context.seated->leg_chains)
-            block(root,"equality").add("weld",{{"name","weld_foot_"+chain.side},{"body1","rider_foot_"+chain.side},{"body2","pedal_"+chain.side},{"solref","0.003 1"}});
-    }
+    if(crank && !physical) build_chain_constraint(root,request.gear_ratio);
     build_contact_exclusions(root);build_actuators(root,context);build_sensors(root,context);
     if(physical) {
         finish_physical_topology(root,context);

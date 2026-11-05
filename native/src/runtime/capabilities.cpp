@@ -26,8 +26,6 @@ CapabilityReport implemented_capabilities(
         reject("rider.variant","unknown rider variant");
     if(config.drive_mode==std::optional<std::string>("articulated_effort") && rider.variant!="articulated_planar")
         reject("rider.variant","articulated_effort requires articulated_planar topology");
-    if(rider.variant=="seated" && rider.legs!="rigid")
-        reject("rider.legs","physical seated topology supports rigid legs");
     const auto& attachments=config.articulated;
     if(rider.variant!="articulated_planar" && (attachments.pedal_attachment!="flat" ||
        attachments.saddle_attachment!="flat" || attachments.grip_attachment!="spring"))

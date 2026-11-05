@@ -252,7 +252,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
         "choices": [
           "none",
           "lumped",
-          "seated",
           "articulated_planar"
         ],
         "flag": false,
@@ -768,7 +767,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
         "choices": [
           "none",
           "lumped",
-          "seated",
           "articulated_planar"
         ],
         "flag": false,

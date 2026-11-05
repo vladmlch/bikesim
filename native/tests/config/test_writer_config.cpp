@@ -88,7 +88,7 @@ void checks_decode() {
             nativecfg::decode(parse(R"({"schema":2})"));
         bt::require(!cfg.drive && !cfg.cruise && !cfg.suspension &&
                         !cfg.brake && !cfg.resistance && !cfg.tire &&
-                        !cfg.rider_forces && !cfg.rider_contacts,
+                        !cfg.rider_contacts,
                     "schema-only config must decode to no writers");
     }
     bt::invalid([] {
@@ -100,7 +100,7 @@ void checks_decode() {
         const nativecfg::WriterConfig cfg = nativecfg::decode(parse("{}"));
         bt::require(!cfg.drive && !cfg.cruise && !cfg.suspension &&
                         !cfg.brake && !cfg.resistance && !cfg.tire &&
-                        !cfg.rider_forces && !cfg.rider_contacts,
+                        !cfg.rider_contacts,
                     "empty object must decode to no writers");
     }
     // Root kind + unknown section/key rejections and the strict scalar
@@ -216,7 +216,6 @@ void checks_construction() {
         bt::require(!stepper.has_tire() && !stepper.has_drive() &&
                         !stepper.has_suspension() && !stepper.has_cruise() &&
                         !stepper.has_resistance() &&
-                        !stepper.has_rider_forces() &&
                         !stepper.has_rider_contacts(),
                     "empty writer config must install no writers");
         stepper.forward();

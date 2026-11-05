@@ -861,8 +861,8 @@ void post_init(const SeatedClimbConfig &config) {
 void post_init(RiderSpecs &specs) {
     if (!in_set(specs.variant,
                 std::initializer_list<std::string_view>{
-                    "none", "lumped", "seated", "articulated_planar"}))
-        fail("rider variant must be one of ('none', 'lumped', 'seated', "
+                    "none", "lumped", "articulated_planar"}))
+        fail("rider variant must be one of ('none', 'lumped', "
              "'articulated_planar'), got " +
              detail::py_repr_str(specs.variant));
     if (specs.legs != "rigid" && specs.legs != "articulated")

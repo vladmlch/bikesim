@@ -28,7 +28,6 @@ class ResistanceWriter;
 class TireWriter;
 class DistributedTireWriter;
 class PneumaticTireWriter;
-class RiderForcesWriter;
 
 namespace drivetrain {
     class DrivetrainWriter;
@@ -341,7 +340,6 @@ public:
     // while the caller holds no other alias into the same data.
     [[nodiscard]] SuspensionWriter &suspension() const;
     [[nodiscard]] ResistanceWriter &resistance() const;
-    [[nodiscard]] RiderForcesWriter &rider_forces() const;
     // The tyre writer view dispatches to whichever backend `tire.backend`
     // selected; the throw-on-absent contract is the same as drive().
     [[nodiscard]] TireWriterView tire_writer() const;
@@ -352,9 +350,6 @@ public:
     [[nodiscard]] bool has_resistance() const noexcept {
         return resistance_ != nullptr;
     }
-    [[nodiscard]] bool has_rider_forces() const noexcept {
-        return rider_forces_ != nullptr;
-    }
     [[nodiscard]] bool has_rider_contacts() const noexcept {
         return rider_contacts_ != nullptr;
     }
@@ -364,12 +359,6 @@ public:
     [[nodiscard]] std::span<const double> qfrc_passive() const {
         return std::views::counted(d_->qfrc_passive, m_->nv);
     }
-    // RiderForceApplier.apply on the CURRENT mjData, read back as a vector:
-    // zeros(nv) + each path's force at its dofadr — the 'seated_interfaces'
-    // accumulator row. Throws std::logic_error without a rider_forces
-    // config.
-    [[nodiscard]] std::vector<double> rider_forces_qfrc() const;
-
     // attachment_wrench.py equality_qfrc on the CURRENT mjData: zeros(nv),
     // then J^T times the solved multipliers of the equality rows whose
     // efc_id matches — so a missing equality is exactly zeros(nv). The
@@ -498,7 +487,6 @@ private:
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<DistributedTireWriter> distributed_tire_;
     std::unique_ptr<PneumaticTireWriter> pneumatic_tire_;
-    std::unique_ptr<RiderForcesWriter> rider_forces_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
     // T3b-1 — the model-owned RiderContactWriter plus its construction-
     // sized nv qfrc buffer (resized beside the writer in the config ctor).
@@ -514,7 +502,6 @@ private:
     // sized in the config ctor when its writer is built.
     mutable std::array<ForceComponentView, 8> suspension_views_{};
     mutable std::array<ForceComponentView, 2> resistance_views_{};
-    mutable std::vector<double> rider_out_;
     std::vector<double> tire_out_;
     // Lazy per-Stepper scratch for rider_equality_qfrc — the reusable
     // nefc multiplier / nv qfrc buffers behind it. Null until the first

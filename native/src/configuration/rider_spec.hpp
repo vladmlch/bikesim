@@ -35,10 +35,14 @@ namespace bike::configuration {
 // ---------------------------------------------------------------------------
 inline constexpr double kGravityMps2 = 9.81;  // GRAVITY_MPS2
 
-// rider.py RIDER_VARIANTS / DEFAULT_RIDER_VARIANT.
-inline constexpr std::array<std::string_view, 4> kRiderVariants = {
-    "none", "lumped", "seated", "articulated_planar"};
-inline constexpr std::string_view kDefaultRiderVariant = "seated";
+// rider.py RIDER_VARIANTS / DEFAULT_RIDER_VARIANT — the 'seated' variant
+// was removed with its slide-joint spring-damper model (2026-11-04).
+// The seated-only record fields below stay for now: the pose solver
+// still consumes them as geometry input, so dropping them waits for a
+// separate migration (inertness is pinned in test_mjcf.cpp).
+inline constexpr std::array<std::string_view, 3> kRiderVariants = {
+    "none", "lumped", "articulated_planar"};
+inline constexpr std::string_view kDefaultRiderVariant = "lumped";
 
 // de Leva (1996) Table 4 segment length fractions over reference stature.
 inline constexpr double kDeLevaReferenceStatureM = 1.741;
@@ -59,7 +63,7 @@ inline constexpr double kLumpedArmsFraction = 7.0 / 80.0;
 // field and every pure derived helper.
 // ---------------------------------------------------------------------------
 struct RiderSpecs {
-    std::string variant = "seated";
+    std::string variant = "lumped";
     std::string legs = "rigid";
     double mass_kg = 80.0;
     double height_m = 1.80;

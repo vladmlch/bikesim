@@ -140,8 +140,6 @@ Value resolved_wire() {
     set(assist, "profile", io::parse_json(
         R"({"mode_gains":{"eco":1.0,"tour":2.0,"emtb":[1.0,3.0],"turbo":3.0},"emtb_full_gain_at_nm":20.0})"));
     set(assist, "mode", text("eco"));
-    set(wire, "rider_forces", io::parse_json(
-        R"({"paths":[{"name":"probe_path","joint":"root_x","stiffness_n_m":1.0,"damping_ns_m":0.0,"preload_deflection_m":0.0,"offset_m":0.0,"unilateral":false}]})"));
     auto& surface_map = member(member(wire, "tire"), "surface_map");
     auto& sections = member(surface_map, "sections");
     if (io::as_array(sections, "tire.surface_map.sections").empty()) {
@@ -178,7 +176,6 @@ void typed_wire_config(const nativecfg::WriterConfig& config) {
     if (config.resistance) nativecfg::validate(*config.resistance);
     if (config.tire) nativecfg::validate(*config.tire);
     if (config.drive) drivetrain::validate(*config.drive);
-    if (config.rider_forces) nativecfg::validate(*config.rider_forces);
 }
 
 // ---- golden plumbing --------------------------------------------------------
@@ -536,8 +533,7 @@ void test_nested_numeric_errors_name_full_field_path() {
     const std::array cases{
         Case{.path={"tire", "front", "material", "radial_c_ns_m"}, .bad=-1., .expected="config.tire.front.material.radial_c_ns_m"},
         Case{.path={"tire", "rear", "relaxation_length_m"}, .bad=0., .expected="config.tire.rear.relaxation_length_m"},
-        Case{.path={"drive", "assist", "profile", "mode_gains", "eco"}, .bad=-1., .expected="config.drive.assist.profile.mode_gains.eco"},
-        Case{.path={"rider_forces", "paths", "0", "stiffness_n_m"}, .bad=-1., .expected="config.rider_forces.paths.0.stiffness_n_m"}};
+        Case{.path={"drive", "assist", "profile", "mode_gains", "eco"}, .bad=-1., .expected="config.drive.assist.profile.mode_gains.eco"}};
     for (const auto& item : cases) {
         auto wire = resolved_wire();
         at(wire, item.path) = real(item.bad);
@@ -755,28 +751,6 @@ void test_damper_mutated_denominator_rejected_by_setter() {
     bike::model::Charger3Damper damper;
     damper.max_hsc = 0;
     bt::invalid([&] { damper.set_clicks(1, std::nullopt, std::nullopt); });
-}
-
-// test_rider_path_scalar_matrix_shared[key-bad]
-void test_rider_path_scalar_matrix_shared() {
-    std::println(stderr, ">> test_rider_path_scalar_matrix_shared");
-    const double nan = std::numeric_limits<double>::quiet_NaN();
-    const std::array bad_values{
-        Value{bike::io::Number{"nan"}}, Value{bike::io::Number{"inf"}},
-        Value{bike::io::Number{"-inf"}}, Value{true}};
-    for (const auto key : {"stiffness_n_m", "damping_ns_m", "preload_deflection_m", "offset_m"})
-        for (const auto& bad : bad_values) {
-            auto wire = resolved_wire();
-            set(at(wire, {"rider_forces", "paths", "0"}), key, bad);
-            bt::invalid([&] { (void)resolved_stepper(wire); });
-            auto typed = nativecfg::decode(resolved_wire()).rider_forces.value(); // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
-            auto& row = typed.paths[0];
-            if (std::string_view(key) == "stiffness_n_m") row.stiffness_n_m = nan;
-            else if (std::string_view(key) == "damping_ns_m") row.damping_ns_m = nan;
-            else if (std::string_view(key) == "preload_deflection_m") row.preload_deflection_m = nan;
-            else row.offset_m = nan;
-            bt::invalid([&] { nativecfg::validate(row); });
-        }
 }
 
 // test_invalid_motor_profile_relationships_rejected[attribute-value]
@@ -1115,9 +1089,6 @@ void test_python_free_typed_numeric_validators() {
     invalid_config(nativecfg::EndStopConfig{.stiffness_n_m = -1., .damping_n_s_m = 0.});
     invalid_config(nativecfg::BrakeConfig{});
     invalid_config(nativecfg::CruiseConfig{});
-    invalid_config(nativecfg::RiderPathConfig{.name = "rider_leg_front",
-        .joint = "rider_leg_front", .stiffness_n_m = -1., .damping_ns_m = 0.,
-        .preload_deflection_m = 0., .offset_m = 0., .unilateral = false});
     invalid_config(nativecfg::ResistanceConfig{});
     invalid_config(nativecfg::TireMaterial{});
     invalid_config(nativecfg::TireParams{});
@@ -1163,7 +1134,6 @@ int main() { return bt::run([] {
     test_mutated_tire_parameters_rejected();
     test_damper_mutated_denominator_rejected_by_setter();
     test_s4_relationship_matrix();
-    test_rider_path_scalar_matrix_shared();
     test_invalid_motor_profile_relationships_rejected();
     test_bearing_force_overflow_before_return_and_telemetry();
     test_chain_dissipation_overflow_before_telemetry();

@@ -416,17 +416,6 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
         set(out, "tire", tire(request, config, track, document));
     }
     const auto resolved_rider = rider(request);
-    if (resolved_rider.variant == "seated") {
-        Array paths;
-        for (const auto& body : mdl::seated_pose(resolved_rider, request.bike).bodies) {
-            (void)mdl::required_id(model, mjOBJ_JOINT, body.joint);
-            paths.push_back(Value{Object{{"name", text(body.name)}, {"joint", text(body.joint)},
-                {"stiffness_n_m", real(body.stiffness_n_m)}, {"damping_ns_m", real(body.damping_ns_m)},
-                {"preload_deflection_m", real(body.preload_deflection_m())},
-                {"unilateral", Value{body.unilateral}}, {"offset_m", real(0.)}}});
-        }
-        if (!paths.empty()) set(out, "rider_forces", Value{Object{{"paths", Value{std::move(paths)}}}});
-    }
     if (config.physics_mode == "physical") {
         set(out, "drive", drive(config, document));
         if (resolved_rider.variant == "articulated_planar") {

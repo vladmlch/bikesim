@@ -16,46 +16,6 @@ void build_lumped_rider(Element& frame,const configuration::RiderSpecs& rider) {
         {"size",visible?part.size:"0.0001"},{"mass",visible?f(part.mass,1):"0.0"},
         {"rgba",visible?"0.5 0.5 0.5 1.0":"0.5 0.5 0.5 0.0"},{"material","mat_rider"},{"contype","0"},{"conaffinity","0"}});
 }
-void build_seated_rider(Element& frame,const SeatedPose& pose) {
-    std::map<std::string,Element*> elements{{"frame",&frame}};
-    std::map<std::string,Vec3> origins{{"frame",{0.,0.,0.}}};
-    for(const auto& spec:pose.bodies) {
-        const auto parent=elements.find(spec.parent);
-        if(parent==elements.end()) throw std::invalid_argument("rider body '"+spec.name+"' names parent '"+spec.parent+"' before it is built");
-        auto& element=body(*parent->second,spec.name,sub(spec.attach,origins.at(spec.parent)));
-        joint(element,spec.joint,"slide",{{"axis","0 0 1"}});
-        for(const auto& shape:spec.geoms) {
-            Attributes attributes;
-            if(shape.kind=="sphere") attributes.emplace_back("pos",vec(sub(shape.p1,spec.attach)));
-            else attributes.emplace_back("fromto",fromto(sub(shape.p1,spec.attach),sub(shape.p2,spec.attach)));
-            attributes.insert(attributes.end(),{{"size",f(shape.radius,3)},{"mass",f(shape.mass,6)},
-                {"rgba","0.5 0.5 0.5 1.0"},{"material","mat_rider"},{"contype","0"},{"conaffinity","0"}});
-            geom(element,shape.name,shape.kind=="sphere"?"sphere":"capsule",std::move(attributes));
-        }
-        elements[spec.name]=&element;origins[spec.name]=spec.attach;
-    }
-    for(const auto* part:{"torso","pelvis"}) {
-        const std::string name="rider_"+std::string(part);
-        const auto& spec=pose.body(name);
-        site(*elements.at(name),"site_"+name,vec(sub(spec.center_of_mass(),spec.attach)),"0.008","0.9 0.6 0.1 1.0");
-    }
-    for(const auto& chain:pose.leg_chains) {
-        auto& thigh=body(*elements.at("rider_pelvis"),"rider_thigh_"+chain.side,{0.,chain.lateral_y_m,0.});
-        joint(thigh,"rider_hip_"+chain.side,"hinge",{{"axis","0 1 0"}});
-        const auto segment=[&](Element& owner,std::string name,const Vec3& vector,double radius,double mass) {
-            geom(owner,std::move(name),"capsule",{{"fromto",fromto({},vector)},{"size",f(radius,3)},{"mass",f(mass,6)},
-                {"rgba","0.5 0.5 0.5 1.0"},{"material","mat_rider"},{"contype","0"},{"conaffinity","0"}});
-        };
-        segment(thigh,"geom_rider_thigh_"+chain.side,sub(chain.knee,chain.hip),segment_radius_m("thigh"),chain.thigh_mass_kg);
-        auto& shank=body(thigh,"rider_shank_"+chain.side,sub(chain.knee,chain.hip));
-        joint(shank,"rider_knee_"+chain.side,"hinge",{{"axis","0 1 0"}});
-        segment(shank,"geom_rider_shank_"+chain.side,sub(chain.ankle,chain.knee),segment_radius_m("shank"),chain.shank_mass_kg);
-        auto& foot=body(shank,"rider_foot_"+chain.side,sub(chain.ankle,chain.knee));
-        joint(foot,"rider_ankle_"+chain.side,"hinge",{{"axis","0 1 0"}});
-        segment(foot,"geom_rider_foot_"+chain.side,sub(chain.pedal,chain.ankle),segment_radius_m("foot"),chain.foot_mass_kg);
-        site(foot,"site_foot_"+chain.side,vec(sub(chain.pedal,chain.ankle)),"0.006");
-    }
-}
 void front_triangle(Element& frame,const BuildContext& c) {
     const Vec3 bb{};
     const auto ht=div(c.fixed.P_HT_bot,1000.),p11=div(c.fixed.P11,1000.),p8=div(c.fixed.P8,1000.),p10=div(c.fixed.P10,1000.);
@@ -77,7 +37,6 @@ Vec3 seatpost_and_saddle(Element& frame,const BuildContext& c) {
     geom(frame,"geom_seattube","capsule",{{"fromto",fromto(p10,end)},{"size","0.020"},{"mass","0.05"},{"material","mat_frame"}});
     geom(frame,"geom_frame_casting","box",{{"pos",f((end[0]+p5[0])/2.)+" 0 "+f((end[2]+0.)/2.)},{"size","0.075 0.036 0.130"},{"mass",f(.65-.05,2)},{"material","mat_frame"},{"contype","0"},{"conaffinity","0"}});
     std::optional<double> height;
-    if(c.seated) height=c.seated->saddle.top_z_m;
     if(c.articulated) height=c.articulated->saddle.top_z_m;
     const auto saddle=geometry::saddle_geometry(p9,height);
     const auto masses=geometry::saddle_post_masses(c.physical()?.90:c.request.masses.saddle_post_mass,p10,p9,saddle);
@@ -121,8 +80,7 @@ Element& build_frame_body(Element& world,BuildContext& c) {
         joint(frame,"root_z","slide",{{"axis","0 0 1"}});
         joint(frame,"root_pitch","hinge",{{"axis","0 1 0"}});
     }
-    if(c.seated) build_seated_rider(frame,*c.seated);
-    else if(c.request.mode=="ride") build_lumped_rider(frame,c.rider);
+    if(c.request.mode=="ride") build_lumped_rider(frame,c.rider);
     build_bb_and_motor(frame,c);
     front_triangle(frame,c);
     const auto top=seatpost_and_saddle(frame,c);

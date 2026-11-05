@@ -219,16 +219,6 @@ namespace nativecfg {
         validation::finite(s.target_speed_kmh, "config.cruise.target_speed_kmh");
         if (s.target_speed_kmh < 15. || s.target_speed_kmh > 45.) throw std::invalid_argument("config.cruise.target_speed_kmh");
     }
-    inline void validate(const RiderPathConfig &s, std::string_view path = "config.rider_forces.paths") {
-        validation::nonnegative(s.stiffness_n_m, std::string(path) + ".stiffness_n_m");
-        validation::nonnegative(s.damping_ns_m, std::string(path) + ".damping_ns_m");
-        validation::nonnegative(s.preload_deflection_m, std::string(path) + ".preload_deflection_m");
-        validation::finite(s.offset_m, std::string(path) + ".offset_m");
-    }
-    inline void validate(const RiderForcesConfig &s) {
-        for (std::size_t i = 0; i < s.paths.size(); ++i)
-            validate(s.paths[i], "config.rider_forces.paths." + std::to_string(i));
-    }
     inline void validate(const ResistanceConfig &s) {
         validation::nonnegative(s.crr, "config.resistance.crr");
         validation::nonnegative(s.rho_kg_m3, "config.resistance.rho_kg_m3");

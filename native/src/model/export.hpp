@@ -12,7 +12,7 @@ void export_mjcf(const BuildRequest& request,const std::filesystem::path& file);
 void export_geometry_json(const BuildRequest& request,const std::filesystem::path& file);
 void export_models(const std::filesystem::path& directory);
 // Configurable twin preserves the source export arguments: geometry/solver
-// are used; ride uses the default seated rider and standard is always
+// are used; ride uses the default lumped rider and standard is always
 // bike-only.
 void export_models(const BuildRequest& request,const std::filesystem::path& directory);
 

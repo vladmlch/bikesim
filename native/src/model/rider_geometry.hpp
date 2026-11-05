@@ -255,8 +255,9 @@ using Mat32 = std::array<std::array<double, 2>, 3>;
 [[nodiscard]] SeatedPose solve_seated_pose(const BikeSpecs &specs,
                                            const RiderSpecs &rider);
 
-// RiderSpecs.seated_pose(specs=None) — the member-method port; variant
-// must be "seated" and specs defaults to BikeSpecs().
+// RiderSpecs.seated_pose(specs=None) — the member-method port; the
+// solver takes the record as geometry input and specs defaults to
+// BikeSpecs().
 [[nodiscard]] SeatedPose seated_pose(
         const RiderSpecs &rider, const BikeSpecs &specs);
 [[nodiscard]] SeatedPose seated_pose(const RiderSpecs &rider);
@@ -286,14 +287,14 @@ rider_from_args(std::string_view variant, double mass_kg = 80.0,
                 double height_m = 1.80,
                 std::optional<double> inseam_m = std::nullopt);
 
-// resolve_rider(rider, include_rider=None, default_variant="seated").
+// resolve_rider(rider, include_rider=None, default_variant="lumped").
 // rider is None / RiderSpecs / str in Python; the variant encodes the
 // same domain. Always returns a validated RiderSpecs.
 using RiderArg = std::variant<std::monostate, RiderSpecs, std::string>;
 [[nodiscard]] RiderSpecs resolve_rider(
         const RiderArg &rider,
         std::optional<bool> include_rider = std::nullopt,
-        std::string_view default_variant = "seated");
+        std::string_view default_variant = "lumped");
 
 // ---------------------------------------------------------------------------
 // physics/rider_segments.py

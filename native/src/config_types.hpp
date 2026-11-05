@@ -341,26 +341,6 @@ namespace nativecfg {
         std::optional<PneumaticConfig> pneumatic;
     };
 
-    // RiderForceApplier per-path state (rider_forces.py:35-76): the body's
-    // resolved spring params plus the construction-time pedal offset
-    // (set_pedal_offsets is applied before project() runs — the config carries
-    // the effective offset_m, not the crank derivation). `joint` re-resolves to
-    // qposadr/dofadr through _resolve_slide's checks.
-    struct RiderPathConfig {
-        // `name` is the SeatedPose body name ('rider_leg_front', ...) —
-        // the 'seated_'+name stored-terms key and _by_name lookup key;
-        // `joint` is the MuJoCo slide joint the path resolves through.
-        std::string name;
-        std::string joint;
-        double stiffness_n_m, damping_ns_m;
-        double preload_deflection_m, offset_m;
-        bool unilateral;
-    };
-
-    struct RiderForcesConfig {
-        std::vector<RiderPathConfig> paths{}; // _paths order
-    };
-
     // The whole-config aggregate (formerly NativeConfig) lives in
     // writer_config.hpp as nativecfg::WriterConfig — the owned T07
     // boundary type shared by the bike::io::Value decode and the nanobind

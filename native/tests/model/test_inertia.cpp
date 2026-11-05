@@ -629,31 +629,39 @@ void test_component_centers() {
     const Value doc = doc_of("model/component_centers");
     const geo::BikeSpecs specs;
     const mdl::BikeMassSpecs mass_specs;
+    const Value &bike = member(doc, "bike_only", "doc");
     expect_centers(
-            member(doc, "bike_only", "doc"),
+            bike,
             mdl::compute_component_centers_of_mass(specs, mass_specs),
             "bike_only");
+    // A present rider appends its centres after the 15-entry bike table.
+    // Only the removed seated variant overrode the saddle-top height
+    // (mass.py's saddle_top_z_for_rider went with it), so the bike table
+    // stays bitwise equal to bike_only for every remaining record; the
+    // appended rows are the lumped rider's capsule centres, bitwise-
+    // pinned by center_variants.lumped in rider_legs_centers.json.
     const mdl::RiderSpecs rider{};
+    const auto got = mdl::compute_component_centers_of_mass(
+            specs, mass_specs, &rider);
+    const auto rider_centres =
+            mdl::compute_rider_centers_of_mass(rider, specs);
+    bt::require(got.size() == 15 + rider_centres.size(),
+                "lumped rider appends its capsule centres");
     expect_centers(
-            member(doc, "with_seated_rider", "doc"),
-            mdl::compute_component_centers_of_mass(specs, mass_specs,
-                                                   &rider),
-            "with_seated_rider");
-    // mass.py's saddle_top_z_for_rider rides the same pose: only the
-    // seated variant moves the saddle.
-    const mdl::SeatedPose pose = mdl::solve_seated_pose(specs, rider);
-    const std::optional<double> top =
-            mdl::saddle_top_z_for_rider(specs, &rider);
-    bt::require(top.has_value() &&
-                    same_bits(*top, pose.saddle.top_z_m),
-                "saddle_top_z_for_rider seated");
-    mdl::RiderSpecs lumped;
-    lumped.variant = "lumped";
-    cfg::detail::post_init(lumped);
-    bt::require(!mdl::saddle_top_z_for_rider(specs, &lumped).has_value() &&
-                    !mdl::saddle_top_z_for_rider(specs, nullptr)
-                             .has_value(),
-                "saddle_top_z_for_rider non-seated/None");
+            bike,
+            std::vector<mdl::ComponentCenter>(got.begin(),
+                                              got.begin() + 15),
+            "bike table under a lumped rider");
+    for (std::size_t i = 0; i < rider_centres.size(); ++i) {
+        const auto &a = got.at(15 + i);
+        const auto &e = rider_centres.at(i);
+        bt::require(a.name == e.name, "appended rider centre name");
+        for (std::size_t k = 0; k < 3; ++k)
+            bt::require(same_bits(a.pos_m.at(k), e.pos_m.at(k)),
+                        "appended rider centre pos");
+        bt::require(same_bits(a.mass_kg, e.mass_kg),
+                    "appended rider centre mass");
+    }
 }
 
 void test_static_system_cg() {
@@ -688,9 +696,23 @@ void test_static_system_cg() {
     };
     check(member(doc, "bike_only", "doc"),
           mdl::compute_static_system_cg(specs, mass_specs), "bike_only");
-    check(member(doc, "with_seated_rider", "doc"),
-          mdl::compute_static_system_cg(specs, mass_specs, &rider),
-          "with_seated_rider");
+    // A present rider adds its mass and keeps the axle loads summing to
+    // the total weight; only the removed seated variant additionally
+    // moved the saddle (its recorded with_seated_rider row went with
+    // the variant).
+    const mdl::StaticSystemCg with_rider =
+            mdl::compute_static_system_cg(specs, mass_specs, &rider);
+    bt::require(same_bits(with_rider.total_mass_kg,
+                          with_rider.bike_mass_kg +
+                                  with_rider.rider_mass_kg) &&
+                    same_bits(with_rider.rider_mass_kg, 80.) &&
+                    same_bits(with_rider.front_load_n +
+                                      with_rider.rear_load_n,
+                              with_rider.total_mass_kg * 9.81),
+                "lumped rider mass bookkeeping");
+    bt::require(with_rider.cg_pos_m[0] > with_rider.rear_axle_x &&
+                    with_rider.cg_pos_m[0] < with_rider.front_axle_x,
+                "lumped rider CG stays inside the wheelbase");
 }
 
 // ---- model/rider_specs ---------------------------------------------------------
@@ -782,7 +804,7 @@ void test_rider_specs() {
     }
 
     expect_rider_record(member(doc, "rider_from_args_75_175", "doc"),
-                        mdl::rider_from_args("seated", 75.0, 1.75,
+                        mdl::rider_from_args("lumped", 75.0, 1.75,
                                              std::nullopt),
                         "rider_from_args");
     const mdl::RiderSpecs def_rider{};
@@ -1217,18 +1239,13 @@ void test_rider_legs_centers() {
         mdl::RiderSpecs r;
         if (tag == "none") r.variant = "none";
         else if (tag == "lumped") r.variant = "lumped";
-        else if (tag == "seated_articulated_legs") {
-            r.legs = "articulated";
-            r.mass_kg = 75.0;
-            r.height_m = 1.75;
-        } else if (tag == "articulated_planar")
+        else if (tag == "articulated_planar")
             r.variant = "articulated_planar";
         cfg::detail::post_init(r);
         return r;
     };
     for (const std::string_view tag:
-             {"none", "lumped", "seated", "seated_articulated_legs",
-              "articulated_planar"}) {
+             {"none", "lumped", "articulated_planar"}) {
         const Value &v = member(variants, tag, "variants");
         const mdl::RiderSpecs r = rider_for(tag);
         bt::require(outcome_accepted(v, "variant " + std::string(tag)),
@@ -2060,7 +2077,8 @@ void test_tuning() {
 
     const geo::BikeSpecs specs;
     const mdl::BikeMassSpecs mass_specs;
-    const mdl::RiderSpecs rider_default{};
+    // The recorded 'seated_rider' case went with the variant — a default
+    // record no longer carries seated CG data into this path.
     const Value::Array &cases =
             array_of(member(doc, "tuning_cases", "doc"), "doc");
     for (const Value &c: cases) {
@@ -2072,9 +2090,6 @@ void test_tuning() {
         else if (tag == "rider_90kg")
             got = mdl::compute_suspension_tuning_for_sag(
                     specs, mass_specs, nullptr, 90.0);
-        else if (tag == "seated_rider")
-            got = mdl::compute_suspension_tuning_for_sag(
-                    specs, mass_specs, &rider_default);
         else if (tag == "front_fraction")
             got = mdl::compute_suspension_tuning_for_sag(
                     specs, mass_specs, nullptr, std::nullopt, 30.0,

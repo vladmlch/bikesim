@@ -1351,7 +1351,7 @@ void test_wire_validation() {
 
 void test_rider() {
     const cfg::RiderSpecs specs;
-    bt::require(specs.variant == "seated" && specs.legs == "rigid" &&
+    bt::require(specs.variant == "lumped" && specs.legs == "rigid" &&
                     specs.mass_kg == 80. && specs.height_m == 1.80 &&
                     !specs.inseam_m.has_value() &&
                     specs.helmet_mass_kg == 0.40 &&
@@ -1372,7 +1372,7 @@ void test_rider() {
     cfg::RiderSpecs bad = specs;
     bad.variant = "bogus";
     expect_invalid(
-        "rider variant must be one of ('none', 'lumped', 'seated', "
+        "rider variant must be one of ('none', 'lumped', "
         "'articulated_planar'), got 'bogus'",
         [&] { cfg::detail::post_init(bad); });
     bad = specs;

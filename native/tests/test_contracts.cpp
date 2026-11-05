@@ -18,7 +18,6 @@
 #include "../src/writers/drivetrain.hpp"
 #include "../src/writers/brake.hpp"
 #include "../src/writers/resistance.hpp"
-#include "../src/writers/rider_forces.hpp"
 #include "../src/writers/suspension.hpp"
 #include "../src/writers/tire.hpp"
 #include "../src/writers/distributed_tire.hpp"
@@ -392,7 +391,7 @@ namespace {
     void test_writer_config_domains() {
         // The model-carrying writer ctors validate cfg_ with these exact
         // overloads as their first config action (writers/resistance.cpp,
-        // brake.cpp, rider_forces.cpp, suspension.cpp) — they cannot be
+        // brake.cpp, suspension.cpp) — they cannot be
         // instantiated here without an mjModel, so the config domain is
         // exercised through the same calls their constructors make.
         {
@@ -437,29 +436,6 @@ namespace {
             invalid([](auto &c) { c.wind_world_mps[1] = .1; });           // planar gate
             invalid([](auto &c) { c.point_body_m[1] = .1; });             // planar gate
             invalid([](auto &c) { c.point_body_m[2] = std::numeric_limits<double>::infinity(); });
-        }
-        {   // Rider-force path fields.
-            const nativecfg::RiderForcesConfig config{
-                .paths = {{
-                    .name = "", .joint = "saddle_z", .stiffness_n_m = 5000.,
-                    .damping_ns_m = 50., .preload_deflection_m = .01,
-                    .offset_m = 0., .unilateral = true}}};
-            nativecfg::validate(config);
-            {   // Empty path list is the inert pose=None control.
-                const nativecfg::RiderForcesConfig empty{.paths = {}};
-                nativecfg::validate(empty);
-            }
-            const auto invalid = [&config](auto mutate) {
-                auto copy = config;
-                mutate(copy.paths.front());
-                require_throws_invalid_argument(
-                    [&] { nativecfg::validate(copy); },
-                    "rider path config must reject the mutated field");
-            };
-            invalid([](auto &p) { p.stiffness_n_m = -1.; });
-            invalid([](auto &p) { p.damping_ns_m = -1.; });
-            invalid([](auto &p) { p.preload_deflection_m = -1.; });
-            invalid([](auto &p) { p.offset_m = std::numeric_limits<double>::quiet_NaN(); });
         }
         {   // Cruise gains/ceiling positive, target speed finite in [15, 45].
             const nativecfg::CruiseConfig config{
@@ -2637,14 +2613,6 @@ namespace {
                 .rear_wheel_body = "rear_wheel"};
     }
 
-    nativecfg::RiderForcesConfig warm_rider() {
-        return {.paths = {{.name = "", .joint = "saddle_z",
-                           .stiffness_n_m = 9000.,
-                           .damping_ns_m = 200.,
-                           .preload_deflection_m = .01, .offset_m = .002,
-                           .unilateral = false}}};
-    }
-
     // Model + data seeded to a steady ride pose — carrier sag, spinning
     // crank/wheels, compressed suspension and a settled rider — so every
     // warm tick sees nonzero inputs. The forward runs before the hfield
@@ -2706,7 +2674,6 @@ namespace {
         BrakeWriter brake;
         ResistanceWriter resistance;
         TireWriter tire;
-        RiderForcesWriter rider;
         std::array<ForceComponentView, 4> drive_views{};
         std::array<ForceComponentView,
                    SuspensionWriter::kPhysicalComponentCount>
@@ -2714,7 +2681,7 @@ namespace {
         std::array<ForceComponentView, ResistanceWriter::kComponentCount>
                 resistance_views{};
         std::array<double, BrakeWriter::kTorqueCount> brake_out{};
-        std::vector<double> tire_out, rider_out;
+        std::vector<double> tire_out;
         std::array<double, 1> front_loads{180.}, rear_loads{220.};
         std::array<bool, 1> front_working{true}, rear_working{true};
 
@@ -2728,13 +2695,11 @@ namespace {
                     {.torque_ceiling_nm = 200., .taper_radps = 5.}),
               resistance(context.model.get(), warm_resistance()),
               tire(context.model.get(), context.data.get(),
-                   std::move(tire_cfg)),
-              rider(context.model.get(), warm_rider()) {
+                   std::move(tire_cfg)) {
             drive.reset();
             const std::size_t nv =
                     static_cast<std::size_t>(context.model->nv);
             tire_out.resize(nv);
-            rider_out.resize(nv);
         }
     };
 
@@ -2824,12 +2789,8 @@ namespace {
             rig.context.data.get(), front, rear, rig.resistance_views);
         if (status != CoreStatus::ok)
             return status;
-        status = rig.tire.try_compute_into(
+        return rig.tire.try_compute_into(
             rig.context.data.get(), dt, rig.tire_out);
-        if (status != CoreStatus::ok)
-            return status;
-        return rig.rider.try_compute_into(rig.context.data.get(),
-                                          rig.rider_out);
     }
 
     // The R1 zero-allocation contract: a warmed rig runs repeated steady
@@ -2948,16 +2909,6 @@ namespace {
         expect("resistance/patch-shape",
                rig->resistance.try_components_into(
                    d, mismatched, rear, rig->resistance_views),
-               CoreStatus::invalid_input);
-
-        // Rider gates — null data, wrong output width.
-        expect("rider/null",
-               rig->rider.try_compute_into(nullptr, rig->rider_out),
-               CoreStatus::invalid_input);
-        expect("rider/width",
-               rig->rider.try_compute_into(
-                   d, std::span{rig->rider_out}.first(
-                          rig->rider_out.size() - 1)),
                CoreStatus::invalid_input);
 
         // Tire gates — null data, wrong width, dt domain, double advance
@@ -3874,32 +3825,6 @@ namespace {
                 [&] {
                     static_cast<void>(writer->components(
                         context.data.get(), side, side));
-                });
-        }
-        {
-            std::unique_ptr<RiderForcesWriter> writer;
-            std::vector<double> out(
-                static_cast<std::size_t>(context.model->nv));
-            rig_row(
-                "rider",
-                [&] {
-                    writer = std::make_unique<RiderForcesWriter>(
-                        context.model.get(), warm_rider());
-                },
-                [&] {
-                    static_cast<void>(writer->try_compute_into(
-                        context.data.get(), out));
-                    static_cast<void>(writer->try_compute_into(
-                        context.data.get(), out));
-                },
-                [&] {
-                    require(writer->try_compute_into(
-                                context.data.get(), out) ==
-                                CoreStatus::ok,
-                            "rider tick");
-                },
-                [&] {
-                    static_cast<void>(writer->qfrc(context.data.get()));
                 });
         }
         for (const bool track: {false, true}) {

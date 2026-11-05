@@ -28,7 +28,6 @@
 #include "../writers/cruise.hpp"
 #include "../writers/drivetrain.hpp"
 #include "../writers/resistance.hpp"
-#include "../writers/rider_forces.hpp"
 #include "../writers/suspension.hpp"
 
 namespace runtime {
@@ -1301,11 +1300,6 @@ PhysicalStep::apply_forces_body(
                         : tires.probe_snapshot_storage();
             add_resistance(d, snaps[0], snaps[1], committed);
         }
-        if (stepper_->has_rider_forces() &&
-            stepper_->rider_forces().active()) {
-            stepper_->rider_forces().compute_into(d, component_out_);
-            accumulator_.add("seated_interfaces", component_out_);
-        }
         if (rider_control_.has_value()) {
             stepper_->rider_contacts().compute_qfrc_into(
                 d, dt, advance, /*detailed=*/true, component_out_);
@@ -2336,15 +2330,6 @@ WireObject PhysicalStep::stored_terms() const {
         wire_set(out, "rider_interfaces",
                  Wire(stepper_->rider_contacts().stored_energy(d)));
     const auto qpos = buf(d->qpos, m->nq);
-    if (stepper_->has_rider_forces())
-        for (const auto &path: stepper_->rider_forces().paths()) {
-            double depth = path.preload_deflection_m + path.offset_m -
-                qpos[static_cast<std::size_t>(path.qposadr)];
-            if (path.unilateral)
-                depth = std::max(depth, 0.);
-            wire_set(out, "seated_" + path.name,
-                     Wire(.5 * path.stiffness_n_m * depth * depth));
-        }
     // Explicit engine springs are stored separately from applied-force
     // springs ('engine_joint_<j>' in jnt index order).
     const auto jnt_stiff = buf(m->jnt_stiffness, m->njnt);
@@ -2478,24 +2463,6 @@ double PhysicalStep::loss_increment(
     if (stepper_->has_rider_contacts()) {
         const auto &rc = stepper_->rider_contacts().state();
         loss += rc.loss_step_j + rc.radial_dissipation_power_w * dt;
-    }
-    if (stepper_->has_rider_forces()) {
-        const auto paths = stepper_->rider_forces().paths();
-        const auto telemetry = stepper_->rider_forces().path_telemetry();
-        for (std::size_t i = 0; i < paths.size(); ++i) {
-            const auto &path = paths[i];
-            const double depth = path.preload_deflection_m + path.offset_m -
-                engaged(last_force_sample_)
-                    .qpos[static_cast<std::size_t>(path.qposadr)];
-            const double elastic =
-                path.stiffness_n_m * (path.unilateral ? std::max(depth, 0.)
-                                                      : depth);
-            loss += std::max(0.,
-                             -(telemetry[i].force_n - elastic) *
-                                 velocity[static_cast<std::size_t>(
-                                     path.dofadr)]) *
-                dt;
-        }
     }
     // End-stop damping is superimposed on an explicitly integrated
     // spring.

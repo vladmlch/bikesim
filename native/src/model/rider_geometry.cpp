@@ -897,13 +897,11 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
 }
 NATIVE_DIAG_POP
 
-// RiderSpecs.seated_pose member ports.
+// RiderSpecs.seated_pose member ports. The seated variant gate is gone
+// with the variant: both remaining callers (geometry_pose and
+// compute_rider_centers_of_mass) pass their own record and the pose
+// solver consumes it as geometry input.
 SeatedPose seated_pose(const RiderSpecs &rider, const BikeSpecs &specs) {
-    if (rider.variant != "seated")
-        throw std::invalid_argument(
-                "seated_pose is only defined for the seated variant, "
-                "not " +
-                py_str_repr(rider.variant));
     return solve_seated_pose(specs, rider);
 }
 SeatedPose seated_pose(const RiderSpecs &rider) {
@@ -1227,11 +1225,12 @@ void validate_articulated_pose(const ArticulatedPose &pose) {
 
 ArticulatedPose geometry_pose(const RiderSpecs &rider,
                               const BikeSpecs &specs) {
-    // dataclasses.replace(rider, variant='seated', legs='rigid',
-    // saddle_share=.55, pedal_share=.33, bar_share=.12) — a fresh
-    // validated record.
+    // dataclasses.replace(rider, legs='rigid', saddle_share=.55,
+    // pedal_share=.33, bar_share=.12) — a fresh validated record. The
+    // Python original also forced variant='seated' to pass the pose
+    // gate; the gate is gone with the variant, and the seated pose
+    // solver now takes this record purely as geometry input.
     RiderSpecs neutral = rider;
-    neutral.variant = "seated";
     neutral.legs = "rigid";
     neutral.saddle_share = .55;
     neutral.pedal_share = .33;

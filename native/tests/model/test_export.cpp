@@ -51,27 +51,18 @@ void mode_and_rider_cases() {
     request.include_rider=false;request.rider->variant="lumped";
     const auto override=mdl::compile_mjcf(mdl::generate_mjcf(request));
     bt::require(std::views::counted(override->body_mass,override->nbody)[frame]==lumped_masses[frame],"explicit rider overrides include_rider=false");
-    request.rider=cfg::RiderSpecs{};
-    const auto seated=mdl::compile_mjcf(mdl::generate_mjcf(request));
-    bt::require(mj_name2id(seated.get(),mjOBJ_BODY,"rider_torso")>=0,"seated rider body tree");
-    bt::require(mj_name2id(seated.get(),mjOBJ_SENSOR,"sensor_rider_pelvis_accel")>=0,"seated rider telemetry sites");
-    request.rider->legs="articulated";request.crank_joint=true;
-    const auto legs=mdl::compile_mjcf(mdl::generate_mjcf(request));
-    bt::require(mj_name2id(legs.get(),mjOBJ_JOINT,"rider_knee_front")>=0,"legacy articulated knee");
-    bt::require(mj_name2id(legs.get(),mjOBJ_EQUALITY,"weld_foot_front")>=0,"legacy articulated clipless pedal weld");
-    bt::require(mj_name2id(legs.get(),mjOBJ_EQUALITY,"chain_drive")>=0,"legacy crank-wheel equality");
-    request.crank_joint=false;
-    const auto free_legs=mdl::compile_mjcf(mdl::generate_mjcf(request));
-    bt::require(mj_name2id(free_legs.get(),mjOBJ_EQUALITY,"weld_foot_front")==-1,"no pedal body means no foot weld");
     // The pneumatic tyre_model selector is gone with legacy mode: the
     // sphere contact path is the only MJCF tire the builder writes.
     for(const char* name:{"geom_front_contact","geom_rear_contact"}) {
-        const int geom_id=mj_name2id(free_legs.get(),mjOBJ_GEOM,name);
+        const int geom_id=mj_name2id(none.get(),mjOBJ_GEOM,name);
         bt::require(geom_id>=0,"contact geom exists");
         const auto geom=static_cast<std::size_t>(geom_id);
-        bt::require(std::views::counted(free_legs->geom_contype,free_legs->ngeom)[geom]==1 && std::views::counted(free_legs->geom_conaffinity,free_legs->ngeom)[geom]==1,"sphere contact geom stays live");
+        bt::require(std::views::counted(none->geom_contype,none->ngeom)[geom]==1 && std::views::counted(none->geom_conaffinity,none->ngeom)[geom]==1,"sphere contact geom stays live");
     }
-    request.mode="standard";request.rider->variant="seated";
+    // articulated_planar is a physical-ride-only variant; the free-
+    // standing model rejects it (the removed seated variant used to
+    // carry this same mode-domain check).
+    request.mode="standard";request.rider->variant="articulated_planar";
     bt::invalid([&]{(void)mdl::generate_mjcf(request);});
 }
 // The stand model modes were removed with the stand (2026-11-04): the

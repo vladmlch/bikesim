@@ -11,7 +11,6 @@
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
 #include "writers/rider_contacts.hpp"
-#include "writers/rider_forces.hpp"
 #include "writers/suspension.hpp"
 #include "writers/tire.hpp"
 #include "writers/distributed_tire.hpp"
@@ -150,11 +149,6 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
             // reroutes through compute_into instead of copying qfrc()'s
             // member out per call.
             tire_out_.resize(static_cast<std::size_t>(m_->nv));
-        }
-        if (cfg.rider_forces) {
-            rider_forces_ =
-                    std::make_unique<RiderForcesWriter>(m_, *cfg.rider_forces);
-            rider_out_.resize(static_cast<std::size_t>(m_->nv));
         }
         if (cfg.drive)
             drive_ = std::make_unique<drivetrain::DrivetrainWriter>(m_, d_, *cfg.drive);
@@ -348,14 +342,6 @@ ResistanceWriter &Stepper::resistance() const {
             "resistance: Stepper was built without a resistance config (pass "
             "the dict from tools.native_config.project)");
     return *resistance_;
-}
-
-RiderForcesWriter &Stepper::rider_forces() const {
-    if (!rider_forces_)
-        throw std::logic_error(
-            "rider_forces: Stepper was built without a rider_forces config "
-            "(pass the dict from tools.native_config.project)");
-    return *rider_forces_;
 }
 
 TireWriterView Stepper::tire_writer() const {
@@ -743,16 +729,6 @@ const std::vector<std::string> &Stepper::tire_state_names() const {
     if (distributed_tire_) return distributed_tire_->state_names();
     if (pneumatic_tire_) return pneumatic_tire_->state_names();
     return TireWriter::state_names();
-}
-
-std::vector<double> Stepper::rider_forces_qfrc() const {
-    require_healthy();
-    if (!rider_forces_)
-        throw std::logic_error(
-            "rider_forces_qfrc: Stepper was built without a rider_forces "
-            "config (pass the dict from tools.native_config.project)");
-    rider_forces_->compute_into(d_, rider_out_);
-    return rider_out_;
 }
 
 std::vector<double>

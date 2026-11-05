@@ -279,13 +279,13 @@ void test_native_capability_rejects_unported_tire_backend() {
 }
 
 // ---------------------------------------------------------------------------
-// test_native_capability_rejects_other_riders (3 params): none/lumped are
-// unknown to the articulated_effort topology; seated is valid but not
-// articulated_planar — all three reject by rider.variant.
+// test_native_capability_rejects_other_riders (2 params): none/lumped are
+// unknown to the articulated_effort topology — both reject by
+// rider.variant.
 // ---------------------------------------------------------------------------
 void test_native_capability_rejects_other_riders() {
     const cfg::SimulationPhysicsConfig config = welded();
-    for (const char* variant : {"none", "lumped", "seated"}) {
+    for (const char* variant : {"none", "lumped"}) {
         cfg::RiderSpecs rider;
         rider.variant = variant;
         require_rejected(config, rider, "rider.variant");

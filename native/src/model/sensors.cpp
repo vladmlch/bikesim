@@ -29,9 +29,5 @@ void build_sensors(Element& root,const BuildContext& c) {
         sensors.add("accelerometer",{{"name","sensor_bar_accel"},{"site","site_handlebar"}});
         sensors.add("accelerometer",{{"name","sensor_saddle_accel"},{"site","site_seatpost_top"}});
     }
-    if(c.rider.variant=="seated") {
-        sensors.add("accelerometer",{{"name","sensor_rider_torso_accel"},{"site","site_rider_torso"}});
-        sensors.add("accelerometer",{{"name","sensor_rider_pelvis_accel"},{"site","site_rider_pelvis"}});
-    }
 }
 } // namespace bike::model::detail

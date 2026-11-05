@@ -194,12 +194,6 @@ struct ComponentCenter {
 };
 using ComponentCenters = std::vector<ComponentCenter>;
 
-// mass.py saddle_top_z_for_rider — the seated rider's required saddle top
-// height, or nullopt (None) for other variants / no rider.
-[[nodiscard]] std::optional<double>
-saddle_top_z_for_rider(const geometry::BikeSpecs &specs,
-                       const configuration::RiderSpecs *rider_specs);
-
 // compute_component_centers_of_mass(specs=None, mass_specs=None,
 // solver=None, rider_specs=None). Null/None defaults build the declared
 // Python defaults: BikeSpecs()/BikeMassSpecs()/a fresh

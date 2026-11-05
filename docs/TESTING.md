@@ -977,7 +977,7 @@ present in the process's dyld image list on every import. The final log is
 
 ~~~bash
 UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
-  -k 'native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_state_restore or native_state_fuzz'
+  -k 'native_input_contracts or native_cruise or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_state_restore or native_state_fuzz'
 ~~~
 
 ## F2 physical numeric domains and topology
@@ -1069,7 +1069,6 @@ UV_CACHE_DIR=/private/tmp/e1-uv uv run --frozen --group native python -m pytest 
   tests/reference/test_native_cruise.py \
   tests/reference/test_native_suspension.py \
   tests/reference/test_native_brake_resistance.py \
-  tests/reference/test_native_rider_forces.py \
   tests/reference/test_native_tire.py \
   tests/reference/test_energy_ledger.py -q --tb=short
 ~~~
@@ -1125,7 +1124,7 @@ proof also confirmed the extension and mapped runtime, recorded at
 ~~~bash
 UV_CACHE_DIR=/private/tmp/e1-uv NATIVE_TEST_BUILD_DIR=asan bash tools/run_tests.sh native \
   tests/reference/test_energy_ledger.py \
-  -k 'native_numeric_domains or native_numeric_completion or native_input_contracts or native_cruise or native_rider_forces or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_brake_resistance or energy_ledger'
+  -k 'native_numeric_domains or native_numeric_completion or native_input_contracts or native_cruise or native_tire or native_drive_policies or native_drivetrain or native_suspension or native_brake_resistance or energy_ledger'
 ~~~
 
 F2 is ready for root review/integration. No child commit was made. The user

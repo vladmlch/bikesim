@@ -136,8 +136,6 @@ Value resolved_wire() {
     set(assist, "profile", io::parse_json(
         R"({"mode_gains":{"eco":1.0,"tour":2.0,"emtb":[1.0,3.0],"turbo":3.0},"emtb_full_gain_at_nm":20.0})"));
     set(assist, "mode", text("eco"));
-    set(wire, "rider_forces", io::parse_json(
-        R"({"paths":[{"name":"probe_path","joint":"root_x","stiffness_n_m":1.0,"damping_ns_m":0.0,"preload_deflection_m":0.0,"offset_m":0.0,"unilateral":false}]})"));
     auto& surface_map = member(member(wire, "tire"), "surface_map");
     auto& sections = member(surface_map, "sections");
     if (io::as_array(sections, "tire.surface_map.sections").empty()) {
@@ -179,7 +177,7 @@ void scalar(bt::oracle::Node& golden, double value) {
     bt::require(!locations.empty(), "resolved wire exposes object locations");
     static const std::set<std::string> root_sections{
         "drive", "cruise", "suspension", "brake", "resistance", "tire",
-        "rider_forces", "rider_contacts"};
+        "rider_contacts"};
     static const std::set<std::string> optional_nested{
         "profile", "torque_curve", "surface_map", "grip_pair_force_limit_n"};
     for (const std::string_view mutation : {"unknown", "missing"}) {
@@ -216,7 +214,7 @@ void scalar(bt::oracle::Node& golden, double value) {
 [[gnu::noinline]] void test_present_empty_writer_requires_its_schema() {
     for (const std::string_view section :
          {"drive", "cruise", "suspension", "brake", "resistance", "tire",
-          "rider_forces", "rider_contacts"}) {
+          "rider_contacts"}) {
         const Value config{Value::Object{
             {"schema", integer(2)},
             {std::string(section), Value{Value::Object{}}}}};
@@ -557,8 +555,7 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
     const Value original = resolved_wire();
     for (const std::vector<std::string>& location :
          std::vector<std::vector<std::string>>{
-             {"tire", "surface_map", "sections"},
-             {"rider_forces", "paths"}}) {
+             {"tire", "surface_map", "sections"}}) {
         for (const std::string_view container : {"OrderedRows", "np-object-array"}) {
             (void)container;
             Value candidate = original;

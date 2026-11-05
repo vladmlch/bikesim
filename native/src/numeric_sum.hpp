@@ -8,8 +8,8 @@
 // (3.14 compensates them and adds a complex fast path — a real
 // divergence only reachable from generators that can yield int or
 // complex items), and float subclasses such as np.float64 fall back to
-// the generic PyNumber_Add loop (plain sequential adds — see
-// legacy/telemetry.cpp's body_mass site, which must NOT use PythonSum).
+// the generic PyNumber_Add loop (plain sequential adds — the removed
+// legacy simulator's body_mass site was one; it must NOT use PythonSum).
 // Every ported call site below feeds Python floats only.
 //
 // PythonSum::add updates the compensation term only while the running

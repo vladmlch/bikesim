@@ -65,18 +65,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
-          "--playground"
-        ],
-        "dest": "playground",
-        "default": false,
-        "type": "str",
-        "choices": null,
-        "flag": true,
-        "required": false,
-        "positional": false
-      },
-      {
-        "names": [
           "--output-plots-dir"
         ],
         "dest": "output_plots_dir",
@@ -112,10 +100,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
         "positional": false
       }
     ],
-    "help": ""
-  },
-  "bike-playground": {
-    "options": [],
     "help": ""
   },
   "bike-export": {

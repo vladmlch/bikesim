@@ -96,7 +96,7 @@ foreach(_library IN LISTS _runtime_libraries)
   _inspect_installed("${_library}" FALSE)
 endforeach()
 
-set(_entry_points bike-sim bike-playground bike-export bike-ride bike-settle
+set(_entry_points bike-sim bike-export bike-ride bike-settle
   bike-research bike-replay bike-batch bike-recording bike-research-sweep bike-native-ride)
 foreach(_name IN LISTS _entry_points)
   set(_binary "${_prefix}/bin/${_name}")
@@ -115,4 +115,4 @@ foreach(_name IN LISTS _entry_points)
     message(FATAL_ERROR "${_name} --help failed (${_rc}):\n${_help}${_error}")
   endif()
 endforeach()
-message(STATUS "Relocated install: all 11 entry points passed help with inspected load paths")
+message(STATUS "Relocated install: all 10 entry points passed help with inspected load paths")

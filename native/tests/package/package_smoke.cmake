@@ -38,7 +38,7 @@ foreach(_kind binary source)
 endforeach()
 set(_prefix "${_scratch}/binary/${BINARY_PACKAGE}")
 set(_source "${_scratch}/source/${SOURCE_PACKAGE}")
-foreach(_required bike-sim bike-playground bike-export bike-ride bike-settle bike-research
+foreach(_required bike-sim bike-export bike-ride bike-settle bike-research
     bike-replay bike-batch bike-recording bike-research-sweep bike-native-ride)
   if(NOT EXISTS "${_prefix}/bin/${_required}")
     message(FATAL_ERROR "Package omits installed entry point ${_required}")

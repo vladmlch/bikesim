@@ -184,6 +184,6 @@ std::string help_text(std::string_view command) {
     return text;
 }
 std::vector<std::string> command_names() {
-    return {"bike-sim", "bike-playground", "bike-export", "bike-ride", "bike-settle", "bike-research", "bike-batch", "bike-replay", "bike-recording"};
+    return {"bike-sim", "bike-export", "bike-ride", "bike-settle", "bike-research", "bike-batch", "bike-replay", "bike-recording"};
 }
 } // namespace bike::cli

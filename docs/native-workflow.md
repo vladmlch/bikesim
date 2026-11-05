@@ -38,8 +38,8 @@ build/native-release/bin/bike-ride --help    # produced executables
 Presets come from `CMakePresets.json` (default `release`,
 `build/native-release`); sanitizer and coverage presets are documented in
 docs/TESTING.md. Installed layouts come from CPack packages
-(docs/installation.md); the produced binaries are the nine entrypoints —
-`bike-sim`, `bike-playground`, `bike-export`, `bike-ride`, `bike-settle`,
+(docs/installation.md); the produced binaries are the eight entrypoints —
+`bike-sim`, `bike-export`, `bike-ride`, `bike-settle`,
 `bike-research`, `bike-batch`, `bike-replay`, `bike-recording` — plus the
 developer tools `bike-measure-realtime`, `bike-validate`,
 `bike-research-sweep` and `bike-native-checks`.

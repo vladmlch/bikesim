@@ -19,7 +19,7 @@ Action action_for_key(Mode mode, int key) {
         case 296: return Action::faster;
         case 297: return Action::normal_speed;
         case ' ': return mode == Mode::research || mode == Mode::inspection || mode == Mode::checked_replay ?
-            Action::toggle_pause : mode == Mode::playground ? Action::none : Action::toggle_brakes;
+            Action::toggle_pause : Action::toggle_brakes;
         case 'B': return mode == Mode::research ? Action::toggle_brakes : Action::none;
         case ',': return mode == Mode::physical ? Action::brake_less : Action::none;
         case '.': return mode == Mode::physical ? Action::brake_more : Action::none;
@@ -64,8 +64,6 @@ std::string help_text(Mode mode) {
     if (mode == Mode::checked_replay) return "Space pause | R restart | " + controls;
     if (mode == Mode::physical) return "Space brake toggle | ,/. brake strength | R reset | " + controls +
         "\nPhysical parameters are fixed per run; edit the configuration and start a new run.";
-    return controls + "\nW/S rear travel | Up/Down fork travel | Space auto sweep | B rider | P preset"
-        "\nFork L/K LSC J/H HSC U/Y rebound | Shock 0/9 LSC 8/7 HSC 6/5 rebound 4/3 HBO X lockout"
-        "\n[/] air tokens -/= PSI";
+    return controls;
 }
 } // namespace bike::viewer

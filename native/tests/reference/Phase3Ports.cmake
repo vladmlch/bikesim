@@ -692,7 +692,7 @@ bike_add_reference_test(native_platform_linkage ENGINE
   LABELS t53 platform)
 # The link-table probe enumerates the published bin/ artifacts.
 add_dependencies(reference.native_platform_linkage
-  bike-sim bike-playground bike-export bike-ride bike-settle bike-research
+  bike-sim bike-export bike-ride bike-settle bike-research
   bike-replay bike-batch bike-recording bike-research-sweep bike-validate
   bike-measure-realtime bike-test-child)
 # tests/reference/test_native_numeric_portability.py port: every

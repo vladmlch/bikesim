@@ -85,7 +85,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/viewer/research.cpp"
     "${native_dir}/src/viewer/replay.cpp")
   bike_startup_target_policy(bike_viewer "${native_dir}")
-  target_link_libraries(bike_viewer PUBLIC bike_app bike_playground Threads::Threads)
+  target_link_libraries(bike_viewer PUBLIC bike_app Threads::Threads)
   option(BIKE_BUILD_GUI "Enable the native GLFW viewer" OFF)
   if(BIKE_BUILD_GUI)
     bike_dependency_lock_verify("${_recording_lock}" glfw BIKE_DEP_glfw_ROOT)
@@ -170,7 +170,6 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/cli/settle.cpp"
     "${native_dir}/src/cli/export.cpp"
     "${native_dir}/src/cli/simulation.cpp"
-    "${native_dir}/src/cli/playground.cpp"
     "${native_dir}/src/cli/replay.cpp"
     "${native_dir}/src/cli/batch.cpp")
   bike_startup_target_policy(bike_cli "${native_dir}")
@@ -179,7 +178,7 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   # times and break the produced source/ODR checks.
   add_library(bike_cli_main OBJECT "${native_dir}/src/cli/main.cpp")
   bike_startup_target_policy(bike_cli_main "${native_dir}")
-  foreach(_command IN ITEMS bike-sim bike-playground bike-export bike-ride bike-settle bike-research bike-replay bike-batch)
+  foreach(_command IN ITEMS bike-sim bike-export bike-ride bike-settle bike-research bike-replay bike-batch)
     add_executable(${_command} "$<TARGET_OBJECTS:bike_cli_main>")
     bike_startup_target_policy(${_command} "${native_dir}")
     target_link_libraries(${_command} PRIVATE bike_cli)

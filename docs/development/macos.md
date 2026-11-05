@@ -109,7 +109,7 @@ performance, package or GUI acceptance result.
 Build products land in `build/<preset>/bin` (`build/native-release/bin`
 for the release preset). The CLI family — `bike-ride`, `bike-sim`,
 `bike-replay`, `bike-research`, `bike-batch`, `bike-settle`, `bike-export`,
-`bike-playground`, `bike-recording` — plus the lane executables
+`bike-recording` — plus the lane executables
 `bike-native-ride`, `bike-native-checks`, `bike-validate` and
 `bike-measure-realtime` run directly; there is no interpreter, extension
 artifact or environment to select. The retired `BIKE_NATIVE_BUILD_PATH`

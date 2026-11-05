@@ -65,7 +65,7 @@ set_target_properties(bike_test_allocation_faults PROPERTIES
 # One subdirectory per contract domain; each registers its own executables
 # and CTest names.
 foreach(_domain IN ITEMS batch cli config drivetrain engine initialization
-    io kinematics legacy model numerics platform random recording replay
+    io kinematics model numerics platform random recording replay
     research rider runtime terrain validation viewer viz)
   add_subdirectory(${_domain})
 endforeach()

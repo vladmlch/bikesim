@@ -6,7 +6,6 @@
 #include <string>
 
 namespace bike::research { class PolicySession; }
-namespace bike::legacy { class Playground; }
 namespace bike::viewer {
 struct ViewerOptions {
     Mode mode = Mode::physical;
@@ -36,7 +35,7 @@ struct SessionHooks {
     std::function<void(bool)> pause;
     std::function<bool(int)> unhandled_key;
     std::function<bool(int key, int modifiers)> key_event;
-    // Needed only when a playground operation replaces the compiled model.
+    // Needed only when an operation replaces the compiled model.
     std::function<runtime::ModelImage()> model_image;
     std::function<void(Action)> operator_event;
     std::function<void(std::string_view)> console;
@@ -55,7 +54,6 @@ struct LifecycleHooks {
     runtime::RideControl control = {}, const LifecycleHooks& = {});
 [[nodiscard]] RunResult run_research(research::PolicySession&, const ViewerOptions&,
     const LifecycleHooks& = {});
-[[nodiscard]] RunResult run_playground(legacy::Playground&, const ViewerOptions& = {});
 [[nodiscard]] int replay_exit_code(bool completed, bool passed) noexcept;
 [[nodiscard]] RunResult run_replay(SessionHooks, const runtime::ModelImage&,
     ViewerOptions, bool checked);

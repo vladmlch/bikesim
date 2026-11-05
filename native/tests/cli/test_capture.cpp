@@ -153,6 +153,11 @@ int main(int argc, char** argv) {
         bt::invalid([] { (void)parse("bike-research", {"--duration", "nan"}); });
         bt::invalid([] { (void)resolve_ride(parse("bike-ride", {"--physics", "physical", "--headless", "--time-scale", "2", "--duration", ".1"})); });
         close_on_finish_contract();
+        // The stand simulator was removed (2026-11-04): bike-sim has no
+        // --playground option and bike-playground is not a built command.
+        bt::invalid([] { (void)parse("bike-sim", {"--playground"}); });
+        bt::require(!std::ranges::contains(command_names(), "bike-playground"),
+            "bike-playground is no longer a built command");
         // Real command dispatch is registered for later execution. No simulator
         // is constructed by help, including the standalone analyst executable.
         bt::require(argc == 3, "command directory and bike-native-ride are supplied by CTest");

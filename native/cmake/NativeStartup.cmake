@@ -81,7 +81,6 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/initialization/capture.cpp"
     "${native_dir}/src/initialization/initial_pose.cpp"
     "${native_dir}/src/initialization/equilibrium.cpp"
-    "${native_dir}/src/initialization/legacy_equilibrium.cpp"
     "${native_dir}/src/initialization/settle_contacts.cpp"
     "${native_dir}/src/initialization/refine.cpp"
     "${native_dir}/src/initialization/finalize.cpp"

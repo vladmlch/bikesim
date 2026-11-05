@@ -17,7 +17,6 @@ int dispatch(std::string_view executable, std::span<const std::string_view> inpu
         if (command == "bike-settle") return settle_command(args);
         if (command == "bike-export") return export_command(args);
         if (command == "bike-sim") return simulation_command(args);
-        if (command == "bike-playground") return playground_command();
         if (command == "bike-replay") return replay_command(args);
         if (command == "bike-batch") return batch_command(args);
         throw ArgumentError("unknown executable: " + command);

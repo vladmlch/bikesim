@@ -21,7 +21,7 @@ endif()
 add_executable(cli_capture test_capture.cpp)
 bike_startup_target_policy(cli_capture "${_test_repo_root}/native")
 target_link_libraries(cli_capture PRIVATE bike_test_fixtures bike_cli)
-add_dependencies(cli_capture bike-sim bike-playground bike-export
+add_dependencies(cli_capture bike-sim bike-export
   bike-ride bike-settle bike-research bike-recording bike-replay bike-batch
   bike-native-ride)
   bike_rewrite_mujoco_load_name(cli_capture

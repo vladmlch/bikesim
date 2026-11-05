@@ -1,5 +1,4 @@
 #include "hud.hpp"
-#include "../io/json.hpp"
 #include <cmath>
 #include <iomanip>
 #include <numbers>
@@ -153,16 +152,5 @@ std::string overlay_text(const runtime::RenderFrame& frame,const InputState& inp
         (frame.state.first_failure?"INVALID: model evidence failed\n":"")+
         (frame.state.outcome?*frame.state.outcome+" (R reset / Q close)\n":"")+
         help_text(mode).substr(0,help_text(mode).find('\n'));
-}
-std::string playground_hud(const io::Value& telemetry,bool sweep) {
-    const auto& values=io::as_object(telemetry,"stand telemetry");
-    const auto get=[&](std::string_view name)->const io::Value&{const auto* value=io::find_member(values,name);if(!value)throw std::invalid_argument("stand HUD is missing "+std::string(name));return *value;};
-    const auto n=[&](std::string_view name){return io::as_double(get(name),name);};
-    const auto b=[&](std::string_view name){return io::as_bool(get(name),name);};
-    const auto i=[&](std::string_view name){return std::to_string(io::as_int64(get(name),name));};
-    return std::string("[STAND")+(sweep?" [AUTO-SWEEP ON]":"")+"|Rider:"+(b("rider_active")?"ON":"OFF")+"|"+std::string(io::as_string(get("damper_preset"),"damper_preset"))+"] "+
-        "Fork:"+f(n("fork_travel_mm"),5)+"mm (Air:"+f(n("fork_air_psi"),4)+"PSI, "+i("fork_tokens")+"tok, Fd:"+f(n("fork_damper_n"),4,0,true)+"N) | "+
-        "Shock:"+f(n("shock_stroke_mm"),4)+"/65mm ("+f(n("shock_compression_pct"),4)+"%, Fd:"+f(n("shock_damper_n"),4,0,true)+"N) | "+
-        "ZEB:[H"+i("fork_hsc")+" L"+i("fork_lsc")+" R"+i("fork_reb")+"] Shk:[H"+i("shock_hsc")+" L"+i("shock_lsc")+" R"+i("shock_reb")+" B"+i("shock_hbo")+"|"+(b("shock_lockout")?"FIRM":"OPEN")+"]";
 }
 } // namespace bike::viewer

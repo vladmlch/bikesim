@@ -21,7 +21,6 @@ void validate_research_arguments(const Arguments&);
 [[nodiscard]] int settle_command(const Arguments&);
 [[nodiscard]] int export_command(const Arguments&);
 [[nodiscard]] int simulation_command(const Arguments&);
-[[nodiscard]] int playground_command();
 [[nodiscard]] int replay_command(const Arguments&);
 [[nodiscard]] int batch_command(const Arguments&);
 [[nodiscard]] int dispatch(std::string_view executable, std::span<const std::string_view> arguments);

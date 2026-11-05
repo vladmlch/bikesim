@@ -55,27 +55,6 @@ function(bike_add_physics_research native_dir core_target)
     "${native_dir}/src/research/preview_csv.cpp")
   target_link_libraries(bike_app PUBLIC bike_random ${CMAKE_DL_LIBS})
 
-  add_library(bike_legacy STATIC
-    "${native_dir}/src/legacy/filter.cpp"
-    "${native_dir}/src/legacy/controls.cpp"
-    "${native_dir}/src/legacy/force_accumulator.cpp"
-    "${native_dir}/src/legacy/legs.cpp"
-    "${native_dir}/src/legacy/rider.cpp"
-    "${native_dir}/src/legacy/tyre.cpp"
-    "${native_dir}/src/legacy/ride.cpp"
-    "${native_dir}/src/legacy/recorder.cpp"
-    "${native_dir}/src/legacy/metrics.cpp")
-  bike_startup_target_policy(bike_legacy "${native_dir}")
-  target_link_libraries(bike_legacy PUBLIC bike_initialization PRIVATE Bike::Numerics)
-
-  add_library(bike_playground STATIC
-    "${native_dir}/src/legacy/playground.cpp"
-    "${native_dir}/src/legacy/suspension_controller.cpp"
-    "${native_dir}/src/legacy/static_equilibrium.cpp"
-    "${native_dir}/src/legacy/telemetry.cpp")
-  bike_startup_target_policy(bike_playground "${native_dir}")
-  target_link_libraries(bike_playground PUBLIC bike_legacy)
-
   option(BIKE_BUILD_POLICY_EXAMPLES "Build the native policy ABI example" OFF)
   if(BIKE_BUILD_POLICY_EXAMPLES)
     add_library(bike_traction_policy MODULE "${native_dir}/../examples/policies/traction_control.cpp")

@@ -4,7 +4,6 @@
 #include "hud.hpp"
 #include "pacer.hpp"
 #include "render_owner.hpp"
-#include "../legacy/playground.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -89,7 +88,7 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         if (!window.open()) { result.closed_by_user = true; break; }
         if (hooks.close_requested && hooks.close_requested()) { result.closed_by_user = true; break; }
         // Operator callbacks may finish an already-issued interval or replace
-        // the playground model. Rebase BEFORE computing a new target, so an
+        // the compiled model. Rebase BEFORE computing a new target, so an
         // old generation's step count cannot leak into the new model.
         if (request_frame) {
             auto observed = hooks.frame();
@@ -122,7 +121,7 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             frame = std::move(after);
             result.terminal = hooks.terminal() || (options.duration_s && frame.state.time_s >= *options.duration_s);
         } else if (request_frame) frame = hooks.frame();
-        // Stand model/rider changes are explicitly model-generation changes.
+        // Model/rider changes are explicitly model-generation changes.
         // A renderer cannot accept a different digest merely because nq/nv fit.
         if (frame.model_sha256 != renderer->model_sha256()) {
             if (!hooks.model_image) throw std::runtime_error("viewer received a new model without an owned image supplier");
@@ -179,32 +178,5 @@ RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options
     hooks.operator_event=lifecycle.operator_event;
     hooks.close_requested=lifecycle.close_requested;
     return run(std::move(hooks),ride.model_image(),options);
-}
-RunResult run_playground(legacy::Playground& stand,const ViewerOptions& supplied) {
-    auto options=supplied;options.mode=Mode::playground;options.title="Bike suspension playground";
-    const auto initial=stand.snapshot();options.timestep_s=initial.timestep_s;
-    auto image=stand.model_image();auto generation=initial.generation;
-    const auto monotonic=[](){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();};
-    SessionHooks hooks;
-    hooks.frame=[&]{const auto sample=stand.snapshot();if(sample.generation!=generation){image=stand.model_image();generation=sample.generation;}
-        if(sample.generation>static_cast<std::uint64_t>(std::numeric_limits<int>::max()))throw std::overflow_error("playground viewer generation overflow");
-        runtime::RenderFrame frame;frame.model_sha256=image.sha256;frame.state.generation=static_cast<int>(sample.generation);
-        frame.state.step=std::llround(sample.time_s/sample.timestep_s);frame.state.time_s=sample.time_s;frame.state.integration_state=sample.integration_state;
-        frame.presentation.time_s=sample.time_s;frame.presentation.model_fields=sample.model_fields;frame.presentation.z_m=.4;
-        const auto& telemetry=io::as_object(sample.telemetry,"playground telemetry");
-        const auto value=[&](std::string_view name){const auto* result=io::find_member(telemetry,name);return result?io::as_double(*result,name):0.;};
-        frame.presentation.fork_travel_mm=value("fork_travel_mm");frame.presentation.shock_stroke_mm=value("shock_stroke_mm");
-        frame.presentation.front_load_n=value("front_load_n");frame.presentation.rear_load_n=value("rear_load_n");
-        frame.state.view=frame.presentation.as_wire();return frame;};
-    hooks.advance=[&](std::int64_t target,double budget){const auto start=std::chrono::steady_clock::now();
-        while(std::llround(stand.snapshot().time_s/options.timestep_s)<target){
-            if(std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count()>=budget)break;
-            stand.step_at(monotonic());
-            }
-            };
-    hooks.terminal=[] {return false;};hooks.reset=[&]{stand.reset();};
-    hooks.unhandled_key=[&](int key){return stand.handle_key(key,monotonic());};hooks.model_image=[&]{return image;};
-    hooks.hud=[&](const runtime::RenderFrame&,const InputState&,std::optional<double>){const auto sample=stand.snapshot();return playground_hud(sample.telemetry,sample.auto_sweep);};
-    return run(std::move(hooks),image,options);
 }
 } // namespace bike::viewer

@@ -24,11 +24,6 @@ namespace drivetrain {
                                Vec2 up = {0., 1.},
                                std::optional<double> reference = std::nullopt);
 
-    // Retained for the GPU resistance-kernel parity tests; the CPU drivetrain
-    // no longer calls it (task 3 removes the kernel and its last users).
-    std::pair<double, double> chain_tension(double extension, double rate, double k,
-                                            double c);
-
     double dot(std::span<const double> a, std::span<const double> b);
 
     double unwrap(double value, double reference);

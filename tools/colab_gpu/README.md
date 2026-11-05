@@ -26,7 +26,7 @@ Because of this design, the same code compiles with `clang++ -std=c++23` on macO
 | `common.hpp` | Defines `BIKE_HD`, vector types (`GpuVec2`, `GpuVec3`), `GpuModelIndices`, and root force projection (`project_planar_force_to_root`). |
 | `suspension_kernel.hpp` | Computes the polytropic dual-chamber fork air spring, Charger3 hydraulic bottom-out (`HBO`) damper, rear coil spring, elastomer bumper, and top-out stops. |
 | `tire_kernel.hpp` | Evaluates the distributed multi-rib tire contact grid over the 1D heightfield and updates tangential bristle deflections. |
-| `drivetrain_resistance_kernel.hpp` | Computes aerodynamic drag, rolling resistance, bearing drag, dynamic braking, rider crank torque, and unilateral freehub ratcheting. |
+| `drivetrain_resistance_kernel.hpp` | Computes aerodynamic drag, rolling resistance, dynamic braking, rider crank torque, and unilateral freehub ratcheting. |
 | `rider_kernel.hpp` | Computes 6-DOF anatomical range-of-motion (`ROM`) soft-edge torques and posture PD plus pedaling actuator commands. |
 | `batch_step.hpp` | Defines `GpuWorldConfig`, `GpuWorldState`, `gpu_build_sweep_configs`, and the unified per-world step function `gpu_step_world_writers`. |
 | `cuda_kernels.cu` | Defines the `__global__` CUDA kernels (`bike_gpu_init_states_kernel` and `bike_gpu_writers_kernel`) and the `extern "C"` host functions. |

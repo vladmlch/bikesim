@@ -238,9 +238,9 @@ void test_authoritative_freehub_parity() {
     const GpuDrivetrainParams dp{};
     const float ratio = gpu_drivetrain_ratio(dp);
 
-    // Construct authoritative native Freehub with identical spring stiffness and damping
-    drivetrain::Freehub native_hub(static_cast<double>(dp.freehub_stiffness_nm_rad),
-                                   static_cast<double>(dp.freehub_damping_nm_s_rad));
+    // Construct authoritative native Freehub with identical spring stiffness
+    // and zero damping (the kernel's ratchet is undamped).
+    drivetrain::Freehub native_hub(static_cast<double>(dp.freehub_stiffness_nm_rad), 0.0);
 
     GpuDrivetrainState gpu_st{};
     gpu_reset_drivetrain_state(dp, gpu_st, 0.0f, 0.0f);
@@ -297,8 +297,8 @@ void test_authoritative_freehub_parity() {
         require_near(gpu_st.freehub_boundary_rad, static_cast<float>(engaged_value(native_hub.state().boundary, "engaged_bound_parity")), 1e-6f, "engaged_bound_parity");
 
         // Deflection is large (> pawl_engage_rad = 0.087266 rad), so pawl_scale == 1.0f.
-        // out.rear_drive_torque_nm = efficiency * pawl_torque.
-        const float expected_gpu_drive = dp.efficiency * static_cast<float>(native_torque);
+        // out.rear_drive_torque_nm = pawl_torque (the drive is lossless).
+        const float expected_gpu_drive = static_cast<float>(native_torque);
         require_near(out.rear_drive_torque_nm, expected_gpu_drive, 1e-4f, "engaged_pawl_torque_parity");
     }
 
@@ -312,7 +312,6 @@ void test_authoritative_freehub_parity() {
         const GpuResistanceParams rp_sweep{};
         GpuDrivetrainParams dp_sweep = dp;
         dp_sweep.pawl_engage_rad = 0.0f; // Match native Freehub step engagement
-        dp_sweep.efficiency = 1.0f;
 
         gpu_reset_drivetrain_state(dp_sweep, gpu_st, 0.0f, 0.0f);
         native_hub.set_state(drivetrain::FreehubSnapshot{.boundary = 0.0, .energy_j = 0.0, .torque_nm = 0.0});
@@ -404,7 +403,7 @@ void test_drivetrain_torque_paths_and_modes() {
 
     // In standalone mode, rear_drive_torque_nm MUST be included in qfrc_world[idx.rear_wheel_spin_dof]
     const float expected_rear_qfrc_standalone =
-        out_standalone.rear_rolling_torque_nm + out_standalone.rear_bearing_torque_nm
+        out_standalone.rear_rolling_torque_nm
         + out_standalone.rear_drive_torque_nm + out_standalone.rear_brake_torque_nm;
     require_near(
         qfrc_standalone[to_index(idx.rear_wheel_spin_dof)],
@@ -413,10 +412,9 @@ void test_drivetrain_torque_paths_and_modes() {
         "standalone_qfrc_rear_wheel_includes_drive"
     );
     // In standalone mode, crank_spin_dof receives crank_torque_nm minus the equal-and-opposite
-    // pawl reaction torque rear_drive_torque_nm * (ratio / efficiency).
+    // pawl reaction torque rear_drive_torque_nm * ratio.
     const float ratio = gpu_drivetrain_ratio(dp);
-    const float eff = std::max(dp.efficiency, 1e-6f);
-    const float expected_crank_pawl_reaction = out_standalone.rear_drive_torque_nm * (ratio / eff);
+    const float expected_crank_pawl_reaction = out_standalone.rear_drive_torque_nm * ratio;
     require_near(
         qfrc_standalone[to_index(idx.crank_spin_dof)],
         out_standalone.crank_torque_nm - expected_crank_pawl_reaction,
@@ -455,7 +453,7 @@ void test_drivetrain_torque_paths_and_modes() {
 
     // In tendon-backed mode, rear_drive_torque_nm MUST be OMITTED from qfrc_world[idx.rear_wheel_spin_dof]
     const float expected_rear_qfrc_tendon =
-        out_tendon.rear_rolling_torque_nm + out_tendon.rear_bearing_torque_nm + out_tendon.rear_brake_torque_nm;
+        out_tendon.rear_rolling_torque_nm + out_tendon.rear_brake_torque_nm;
     require_near(
         qfrc_tendon[to_index(idx.rear_wheel_spin_dof)],
         expected_rear_qfrc_tendon,
@@ -592,7 +590,7 @@ void test_braking_and_qfrc_write() {
         require_near(out.rear_drive_torque_nm, 0.0f, 1e-6f, "braking_zero_rear_drive");
         require_near(
             out.crank_torque_nm,
-            -rp.drivetrain_viscous_nm_s_rad * qvel[to_index(idx.crank_spin_dof)],
+            0.0f,
             1e-6f,
             "braking_cuts_rider_torque"
         );
@@ -600,13 +598,13 @@ void test_braking_and_qfrc_write() {
         require_near(out.rear_brake_torque_nm, -0.25f * dp.rear_max_brake_torque_nm, 1e-5f, "braking_rear_torque");
         require_near(
             qfrc_world[to_index(idx.front_wheel_spin_dof)],
-            out.front_rolling_torque_nm + out.front_bearing_torque_nm + out.front_brake_torque_nm,
+            out.front_rolling_torque_nm + out.front_brake_torque_nm,
             1e-5f,
             "braking_qfrc_front"
         );
         require_near(
             qfrc_world[to_index(idx.rear_wheel_spin_dof)],
-            out.rear_rolling_torque_nm + out.rear_bearing_torque_nm + out.rear_brake_torque_nm,
+            out.rear_rolling_torque_nm + out.rear_brake_torque_nm,
             1e-5f,
             "braking_qfrc_rear"
         );
@@ -654,11 +652,10 @@ void test_braking_and_qfrc_write() {
 }
 
 // Rider crank torque transferred to the rear wheel by power balance through the tendon constraint
-// wheel_omega = ratio * crank_omega: wheel torque = crank torque / ratio * efficiency
-// = crank torque * (cog / chainring) * efficiency.
+// wheel_omega = ratio * crank_omega: wheel torque = crank torque / ratio
+// = crank torque * (cog / chainring).
 double expected_rider_wheel_torque(const GpuDrivetrainParams &dp, double crank_torque_nm) {
-    return crank_torque_nm * static_cast<double>(dp.cog_teeth) / static_cast<double>(dp.chainring_teeth)
-        * static_cast<double>(dp.efficiency);
+    return crank_torque_nm * static_cast<double>(dp.cog_teeth) / static_cast<double>(dp.chainring_teeth);
 }
 
 void require_output_finite(const GpuDrivetrainOutput &out, std::string_view what) {
@@ -666,8 +663,6 @@ void require_output_finite(const GpuDrivetrainOutput &out, std::string_view what
     require(std::isfinite(out.aero_fz_n), what);
     require(std::isfinite(out.front_rolling_torque_nm), what);
     require(std::isfinite(out.rear_rolling_torque_nm), what);
-    require(std::isfinite(out.front_bearing_torque_nm), what);
-    require(std::isfinite(out.rear_bearing_torque_nm), what);
     require(std::isfinite(out.crank_torque_nm), what);
     require(std::isfinite(out.rear_drive_torque_nm), what);
     require(std::isfinite(out.front_brake_torque_nm), what);
@@ -676,7 +671,7 @@ void require_output_finite(const GpuDrivetrainOutput &out, std::string_view what
 }
 
 // Regression: zero freehub deflection, engaged branch (phi == prev_bound, rel_omega >= 0, rider torque > 0).
-// Rear drive must equal the rider torque transferred by power balance, not rider * ratio * efficiency.
+// Rear drive must equal the rider torque transferred by power balance, not rider * ratio.
 void test_rider_drive_zero_deflection_engaged() {
     const GpuResistanceParams rp{};
     const GpuDrivetrainParams dp{};
@@ -710,12 +705,9 @@ void test_rider_drive_small_deflection_floor() {
     gpu_reset_drivetrain_state(dp, st, 0.0f, 0.0f); // boundary = 0
 
     // phi = ratio * 0 - (-1e-4) = 1e-4 > prev_bound (0) -> deflection = 1e-4 rad.
-    const double ratio = static_cast<double>(dp.chainring_teeth) / static_cast<double>(dp.cog_teeth);
-    const double rel_omega = ratio * 5.0 - 0.0;
-    const double pawl_term = static_cast<double>(dp.efficiency)
-        * (1e-4 / static_cast<double>(dp.pawl_engage_rad))
-        * (static_cast<double>(dp.freehub_stiffness_nm_rad) * 1e-4
-           + static_cast<double>(dp.freehub_damping_nm_s_rad) * rel_omega);
+    const double pawl_term =
+        (1e-4 / static_cast<double>(dp.pawl_engage_rad))
+        * (static_cast<double>(dp.freehub_stiffness_nm_rad) * 1e-4);
     const double expected = expected_rider_wheel_torque(dp, static_cast<double>(dp.nominal_crank_torque_nm));
     require(pawl_term < 0.01 * expected, "small_deflection_pawl_term_is_minor");
 
@@ -744,8 +736,7 @@ void test_cadence_defaults_105_120_rpm() {
 // linear in between (half torque at the midpoint of the taper band).
 void test_cadence_taper_profile() {
     const GpuDrivetrainParams dp{};
-    GpuResistanceParams rp{};
-    rp.drivetrain_viscous_nm_s_rad = 0.0f; // crank_torque_nm == rider torque
+    const GpuResistanceParams rp{}; // crank_torque_nm == rider torque (no drivetrain drag)
 
     const auto crank_torque_at = [&](float crank_omega) -> float {
         GpuDrivetrainState st{};
@@ -766,6 +757,64 @@ void test_cadence_taper_profile() {
     require_near(crank_torque_at(13.0f), 0.0f, 1e-6f, "cadence_zero_above_120_rpm");
     const float mid = 0.5f * (dp.target_cadence_rad_s + dp.max_rider_cadence_rad_s);
     require_near(crank_torque_at(mid), 0.5f * dp.nominal_crank_torque_nm, 1e-4f, "cadence_linear_midpoint");
+}
+
+// AGENTS.md «Передача» (user, 2026-11-05): the GPU kernel matches the lossless
+// CPU drive — a spinning wheel and crank with no torque inputs see no bearing
+// or drivetrain drag, and rider torque reaches the wheel with no 96 %
+// efficiency factor.
+void test_gpu_drive_is_lossless() {
+    const GpuResistanceParams rp{};
+    const GpuDrivetrainParams dp{};
+
+    // Coasting: spinning wheels and crank, zero pedal/brake demand and zero
+    // normal load — no drag torque anywhere.
+    {
+        GpuDrivetrainState st{};
+        gpu_reset_drivetrain_state(dp, st, 0.0f, 0.0f);
+        const GpuDrivetrainOutput out = gpu_compute_drivetrain_and_resistance(
+            rp, dp, st,
+            /*bike_vx_mps=*/0.0f, /*bike_vz_mps=*/0.0f,
+            /*crank_qpos_rad=*/0.0f, /*crank_omega_rad_s=*/8.0f,
+            /*front_wheel_omega_rad_s=*/10.0f,
+            /*rear_wheel_qpos_rad=*/0.0f, /*rear_wheel_omega_rad_s=*/10.0f,
+            /*front_normal_load_n=*/0.0f, /*rear_normal_load_n=*/0.0f,
+            /*front_eff_radius_m=*/0.34f, /*rear_eff_radius_m=*/0.34f,
+            /*pedal_demand=*/0.0f, /*front_brake_demand=*/0.0f,
+            /*rear_brake_demand=*/0.0f
+        );
+        require_near(out.crank_torque_nm, 0.0f, 1e-7f, "lossless_crank_has_no_viscous_drag");
+        require_near(out.front_rolling_torque_nm, 0.0f, 1e-7f, "lossless_front_zero_load");
+        require_near(out.rear_rolling_torque_nm, 0.0f, 1e-7f, "lossless_rear_zero_load");
+        require_near(out.rear_drive_torque_nm, 0.0f, 1e-7f, "lossless_coast_no_drive");
+        require_near(out.aero_fx_n, 0.0f, 1e-7f, "lossless_still_air_no_aero");
+    }
+
+    // Engaged pedaling at zero deflection: the rear wheel receives the full
+    // rider torque transferred by power balance (crank torque / ratio).
+    {
+        GpuDrivetrainState st{};
+        gpu_reset_drivetrain_state(dp, st, 0.0f, 0.0f);
+        const GpuDrivetrainOutput out = gpu_compute_drivetrain_and_resistance(
+            rp, dp, st,
+            /*bike_vx_mps=*/0.0f, /*bike_vz_mps=*/0.0f,
+            /*crank_qpos_rad=*/0.0f, /*crank_omega_rad_s=*/5.0f,
+            /*front_wheel_omega_rad_s=*/0.0f,
+            /*rear_wheel_qpos_rad=*/0.0f, /*rear_wheel_omega_rad_s=*/0.0f,
+            /*front_normal_load_n=*/0.0f, /*rear_normal_load_n=*/0.0f,
+            /*front_eff_radius_m=*/0.34f, /*rear_eff_radius_m=*/0.34f,
+            /*pedal_demand=*/1.0f, /*front_brake_demand=*/0.0f,
+            /*rear_brake_demand=*/0.0f
+        );
+        require(st.engaged == 1, "lossless_engaged_pedaling");
+        require_rel(
+            static_cast<double>(out.rear_drive_torque_nm),
+            static_cast<double>(dp.nominal_crank_torque_nm)
+                / static_cast<double>(gpu_drivetrain_ratio(dp)),
+            1e-5,
+            "lossless_full_rider_torque_at_wheel"
+        );
+    }
 }
 
 // Guard: zero chainring teeth gives ratio == 0; the rider-drive division must be guarded so that
@@ -826,7 +875,7 @@ void test_zero_chainring_outputs_finite() {
     }
 }
 
-constexpr std::array<TestCase, 12> cases{{
+constexpr std::array<TestCase, 13> cases{{
     {.name = "default_gear_ratio", .run = test_default_gear_ratio},
     {.name = "rolling_moment", .run = test_rolling_moment},
     {.name = "aerodynamic_force", .run = test_aerodynamic_force},
@@ -843,6 +892,7 @@ constexpr std::array<TestCase, 12> cases{{
     {.name = "cadence_defaults_105_120_rpm",
      .run = test_cadence_defaults_105_120_rpm},
     {.name = "cadence_taper_profile", .run = test_cadence_taper_profile},
+    {.name = "gpu_drive_is_lossless", .run = test_gpu_drive_is_lossless},
     {.name = "zero_chainring_outputs_finite",
      .run = test_zero_chainring_outputs_finite},
 }};

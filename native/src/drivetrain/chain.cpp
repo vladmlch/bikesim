@@ -123,19 +123,6 @@ namespace drivetrain {
         return result;
     }
 
-    std::pair<double, double> chain_tension(double e, double rate, double k, double c) {
-        finite(e, "chain extension");
-        finite(rate, "chain extension rate");
-        positive(k, "chain stiffness");
-        nonnegative(c, "chain damping");
-        if (e <= 0.)
-            return {0., 0.};
-        return {
-            validation::derived(std::max(0., validation::derived(k * e + c * rate, "chain raw tension")), "chain tension"),
-            validation::derived(.5 * k * e * e, "chain energy")
-        };
-    }
-
     GeometryWorkspace::GeometryWorkspace(mjtSize nv)
         : jp_f(checked_geometry_width(nv, 3)), jr_f(jp_f.size()), jp_r(jp_f.size()),
           jr_r(jp_f.size()), jacobian(checked_geometry_width(nv, 1)),

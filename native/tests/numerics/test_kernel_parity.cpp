@@ -3,7 +3,6 @@
 // trace capture/qualification remains a separately recorded execution gate.
 #include "kernel_test_support.hpp"
 #include "support/fixture_test.hpp"
-#include "drivetrain/chain.hpp"
 #include "drivetrain/freehub.hpp"
 #include "drivetrain/motor.hpp"
 #include "drivetrain/state_codec.hpp"
@@ -22,9 +21,6 @@ void exact(double actual, double expected, const char* label) {
 void exact_controls() {
     // All inputs/results here are dyadic values. These are independently
     // derived arithmetic controls, not newly generated source goldens.
-    const auto spring = drivetrain::chain_tension(.125, 2., 64., 4.);
-    exact(spring.first, 16., "chain spring+damping exact arithmetic");
-    exact(spring.second, .5, "chain elastic energy exact arithmetic");
     drivetrain::Freehub hub(64., 0.);
     exact(hub.update(0., 0., 0., 0.), 0., "freehub initial boundary");
     exact(hub.update(.25, 0., 0., 0.), 16., "freehub engagement torque");

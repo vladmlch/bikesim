@@ -17,17 +17,12 @@ struct GpuResistanceParams {
     float rolling_taper_rad_s = 0.25f;
     float wind_vx_mps = 0.0f;
     float wind_vz_mps = 0.0f;
-    float wheel_bearing_viscous_nm_s_rad = 0.004f;
-    float wheel_bearing_coulomb_nm = 0.02f;
-    float drivetrain_viscous_nm_s_rad = 0.015f;
 };
 
 struct GpuDrivetrainParams {
     float chainring_teeth = 22.0f;
     float cog_teeth = 51.0f;
-    float efficiency = 0.96f;
     float freehub_stiffness_nm_rad = 850.0f;
-    float freehub_damping_nm_s_rad = 4.5f;
     float pawl_engage_rad = 0.087266f;
     // Rider cadence taper. Reference: tools/fp32_probe/artifacts/common/captured_bootstrap.json,
     // config.writer_config.drive.pedaling (resume_below_rpm = 105, coast_above_rpm = 120). The kernel's
@@ -51,8 +46,6 @@ struct GpuDrivetrainOutput {
     float aero_fz_n = 0.0f;
     float front_rolling_torque_nm = 0.0f;
     float rear_rolling_torque_nm = 0.0f;
-    float front_bearing_torque_nm = 0.0f;
-    float rear_bearing_torque_nm = 0.0f;
     float crank_torque_nm = 0.0f;
     float rear_drive_torque_nm = 0.0f;
     float front_brake_torque_nm = 0.0f;
@@ -94,16 +87,6 @@ BIKE_HD GpuVec2 gpu_aerodynamic_force(
     const float v_rel_norm = gpu_sqrt(v_rel_x * v_rel_x + v_rel_z * v_rel_z);
     const float scale = -0.5f * rp.rho_kg_m3 * rp.cda_m2 * v_rel_norm;
     return GpuVec2{.x = scale * v_rel_x, .y = scale * v_rel_z};
-}
-
-// Wheel hub bearing drag torque (viscous + smooth Coulomb friction).
-BIKE_HD float gpu_wheel_bearing_torque(
-    const BIKE_THREAD GpuResistanceParams &rp,
-    float wheel_omega_rad_s
-) noexcept {
-    const float taper = rp.rolling_taper_rad_s > 0.0f ? rp.rolling_taper_rad_s : 0.25f;
-    return -rp.wheel_bearing_viscous_nm_s_rad * wheel_omega_rad_s
-           - rp.wheel_bearing_coulomb_nm * gpu_tanh(wheel_omega_rad_s / taper);
 }
 
 // Matches brake.cpp:82-92 & 128-138 — dynamic opposing brake torque with low-speed linear taper.
@@ -153,7 +136,7 @@ BIKE_HD float gpu_update_freehub_bound(
     return next_bound;
 }
 
-// Computes aerodynamic drag, rolling resistance, bearing drag, rider crank torque,
+// Computes aerodynamic drag, rolling resistance, rider crank torque,
 // freehub engagement / rear drive torque, and dynamic braking torques.
 BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
     const BIKE_THREAD GpuResistanceParams &rp,
@@ -191,11 +174,7 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
         rear_wheel_omega_rad_s, rp.rolling_taper_rad_s
     );
 
-    // 3. Wheel bearing drag moments
-    out.front_bearing_torque_nm = gpu_wheel_bearing_torque(rp, front_wheel_omega_rad_s);
-    out.rear_bearing_torque_nm = gpu_wheel_bearing_torque(rp, rear_wheel_omega_rad_s);
-
-    // 4. Dynamic braking moments
+    // 3. Dynamic braking moments
     out.front_brake_torque_nm = gpu_brake_torque(
         front_brake_demand, dp.front_max_brake_torque_nm,
         front_wheel_omega_rad_s, dp.brake_taper_rad_s
@@ -205,7 +184,7 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
         rear_wheel_omega_rad_s, dp.brake_taper_rad_s
     );
 
-    // 5. Freehub ratcheting bound and relative kinematics
+    // 4. Freehub ratcheting bound and relative kinematics
     const float ratio = gpu_drivetrain_ratio(dp);
     const float phi = ratio * crank_qpos_rad - rear_wheel_qpos_rad;
     const float prev_bound = st.freehub_boundary_rad;
@@ -215,7 +194,7 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
     const float deflection = gpu_max(0.0f, phi - prev_bound);
     const float rel_omega = ratio * crank_omega_rad_s - rear_wheel_omega_rad_s;
 
-    // 6. Rider pedaling torque with braking gate and cadence taper
+    // 5. Rider pedaling torque with braking gate and cadence taper
     const bool braking = (front_brake_demand > 1e-6f) || (rear_brake_demand > 1e-6f);
     const float clamped_pedal = braking ? 0.0f : gpu_clamp(pedal_demand, 0.0f, 1.0f);
     float cadence_factor = 1.0f;
@@ -228,17 +207,16 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
         );
     }
     const float rider_crank_torque = clamped_pedal * dp.nominal_crank_torque_nm * cadence_factor;
-    const float crank_viscous_torque = -rp.drivetrain_viscous_nm_s_rad * crank_omega_rad_s;
-    out.crank_torque_nm = rider_crank_torque + crank_viscous_torque;
+    out.crank_torque_nm = rider_crank_torque;
 
     if (clamped_pedal <= 0.0f) {
         st.crank_target_phase_rad = crank_qpos_rad;
     }
 
-    // 7. Freehub engagement & rear wheel drive torque
+    // 6. Freehub engagement & rear wheel drive torque
     // Rider-driven wheel torque: wheel_omega = ratio * crank_omega (tendon coef), so power balance gives
-    // wheel torque = crank torque / ratio * efficiency. Zero when ratio <= 0 (e.g. chainring_teeth == 0).
-    const float rider_wheel_drive_nm = ratio > 0.0f ? (rider_crank_torque / ratio) * dp.efficiency : 0.0f;
+    // wheel torque = crank torque / ratio. Zero when ratio <= 0 (e.g. chainring_teeth == 0).
+    const float rider_wheel_drive_nm = ratio > 0.0f ? rider_crank_torque / ratio : 0.0f;
     float rear_drive = 0.0f;
     if (deflection > 0.0f) {
         const float pawl_scale = dp.pawl_engage_rad > 0.0f
@@ -246,9 +224,9 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
             : 1.0f;
         const float pawl_torque = gpu_max(
             0.0f,
-            dp.freehub_stiffness_nm_rad * deflection + dp.freehub_damping_nm_s_rad * rel_omega
+            dp.freehub_stiffness_nm_rad * deflection
         );
-        rear_drive = dp.efficiency * pawl_scale * pawl_torque;
+        rear_drive = pawl_scale * pawl_torque;
         if (rider_crank_torque > 0.0f && rel_omega >= 0.0f) {
             rear_drive = gpu_max(rear_drive, rider_wheel_drive_nm);
         }
@@ -331,9 +309,9 @@ BIKE_HD void gpu_write_drivetrain_and_resistance_qfrc(
     }
     if (idx.front_wheel_spin_dof >= 0 && idx.front_wheel_spin_dof < kMaxNv) {
         qfrc_world[idx.front_wheel_spin_dof] +=
-            out.front_rolling_torque_nm + out.front_bearing_torque_nm + out.front_brake_torque_nm;
+            out.front_rolling_torque_nm + out.front_brake_torque_nm;
     }
-    float rear_torque = out.rear_rolling_torque_nm + out.rear_bearing_torque_nm + out.rear_brake_torque_nm;
+    float rear_torque = out.rear_rolling_torque_nm + out.rear_brake_torque_nm;
     if (include_rear_drive_torque) {
         rear_torque += out.rear_drive_torque_nm;
     }
@@ -392,9 +370,8 @@ BIKE_HD GpuDrivetrainOutput gpu_write_drivetrain_and_resistance_qfrc(
         rear_brake_demand
     );
     const float ratio = gpu_drivetrain_ratio(dp);
-    const float eff = gpu_max(dp.efficiency, 1e-6f);
     const float crank_pawl_reaction_nm =
-        include_rear_drive_torque ? (out.rear_drive_torque_nm * (ratio / eff)) : 0.0f;
+        include_rear_drive_torque ? (out.rear_drive_torque_nm * ratio) : 0.0f;
     gpu_write_drivetrain_and_resistance_qfrc(
         out, idx, qfrc_world, include_rear_drive_torque, crank_pawl_reaction_nm
     );
@@ -435,9 +412,8 @@ BIKE_HD GpuDrivetrainOutput gpu_write_drivetrain_and_resistance_qfrc(
         rear_brake_demand
     );
     const float ratio = gpu_drivetrain_ratio(dp);
-    const float eff = gpu_max(dp.efficiency, 1e-6f);
     const float crank_pawl_reaction_nm =
-        include_rear_drive_torque ? (out.rear_drive_torque_nm * (ratio / eff)) : 0.0f;
+        include_rear_drive_torque ? (out.rear_drive_torque_nm * ratio) : 0.0f;
     gpu_write_drivetrain_and_resistance_qfrc(
         out, idx, qfrc_world, include_rear_drive_torque, crank_pawl_reaction_nm
     );

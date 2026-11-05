@@ -79,7 +79,7 @@ namespace drivetrain {
     };
 
     // Retained for the GPU resistance-kernel parity tests; the CPU drivetrain
-    // no longer owns a Freehub (task 3 removes the kernel and its users).
+    // no longer owns a Freehub.
     struct FreehubSnapshot {
         std::optional<double> boundary;
         double energy_j{}, torque_nm{};

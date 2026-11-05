@@ -1,6 +1,5 @@
 #include "kernel_test_support.hpp"
 #include "support/fixture_test.hpp"
-#include "drivetrain/chain.hpp"
 #include "drivetrain/motor.hpp"
 #include "writers/tire_common.hpp"
 #include "contact/tabulated_radial.hpp"
@@ -12,13 +11,6 @@
 #include <limits>
 
 void kernel_properties() {
-    double previous_energy = 0.;
-    for (double const extension : {0., .001, .01, .1}) {
-        const auto response = drivetrain::chain_tension(extension, 0., 2000., 40.);
-        bt::require(response.first >= 0. && response.second >= previous_energy,
-            "unilateral chain cannot push and stored energy grows with extension");
-        previous_energy = response.second;
-    }
     for (double const slip : {-2., -.1, 0., .1, 2.}) {
         const auto brush = tirecommon::brush_step(0., slip, 2., 500., 10000., .8, .04, .001);
         bt::require(std::abs(brush.force) <= 400. + 1e-12 && brush.loss >= 0.,
@@ -27,10 +19,6 @@ void kernel_properties() {
     const auto airborne = tirecommon::brush_step(.01, 1., 2., 0., 10000., .8, .04, .001);
     bt::require(airborne.force == 0. && airborne.xi == 0. && airborne.loss >= 0.,
         "airborne contact releases stored brush state without force");
-    bt::invalid([&] {
-        (void)drivetrain::chain_tension(std::numeric_limits<double>::quiet_NaN(), 0., 1., 0.);
-    });
-
     // Independent dyadic table: slopes 4 and 8, prefix area 1/8.
     const nativecfg::TireTable table{.deflection_m={0., .25, .5}, .force_n={0., 1., 3.}};
     const contactlaw::TabulatedRadial radial(table);

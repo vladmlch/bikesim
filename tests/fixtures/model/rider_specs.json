@@ -20,20 +20,10 @@
     "total_rider_mass": 80.0
   },
   "default_specs": {
-    "arm_resonance_hz": 4.0,
-    "bar_share": 0.12,
-    "damping_ratio": 0.4,
     "height_m": 1.8,
     "helmet_mass_kg": 0.4,
     "inseam_m": null,
-    "leg_resonance_hz": 5.0,
-    "legs": "rigid",
     "mass_kg": 80.0,
-    "pedal_share": 0.33,
-    "saddle_interface_c_ns_m": 2762.0,
-    "saddle_interface_k_n_m": 101000.0,
-    "saddle_share": 0.55,
-    "torso_resonance_hz": 7.0,
     "variant": "lumped"
   },
   "resolve_cases": [
@@ -51,20 +41,10 @@
       "default_variant": "seated",
       "include_rider": null,
       "result": {
-        "arm_resonance_hz": 4.0,
-        "bar_share": 0.12,
-        "damping_ratio": 0.4,
         "height_m": 1.8,
         "helmet_mass_kg": 0.4,
         "inseam_m": null,
-        "leg_resonance_hz": 5.0,
-        "legs": "rigid",
         "mass_kg": 80.0,
-        "pedal_share": 0.33,
-        "saddle_interface_c_ns_m": 2762.0,
-        "saddle_interface_k_n_m": 101000.0,
-        "saddle_share": 0.55,
-        "torso_resonance_hz": 7.0,
         "variant": "lumped"
       },
       "rider": "lumped",
@@ -75,20 +55,10 @@
       "default_variant": "seated",
       "include_rider": null,
       "result": {
-        "arm_resonance_hz": 4.0,
-        "bar_share": 0.12,
-        "damping_ratio": 0.4,
         "height_m": 1.8,
         "helmet_mass_kg": 0.4,
         "inseam_m": null,
-        "leg_resonance_hz": 5.0,
-        "legs": "rigid",
         "mass_kg": 80.0,
-        "pedal_share": 0.33,
-        "saddle_interface_c_ns_m": 2762.0,
-        "saddle_interface_k_n_m": 101000.0,
-        "saddle_share": 0.55,
-        "torso_resonance_hz": 7.0,
         "variant": "articulated_planar"
       },
       "rider": "articulated_planar",
@@ -99,20 +69,10 @@
       "default_variant": "seated",
       "include_rider": null,
       "result": {
-        "arm_resonance_hz": 4.0,
-        "bar_share": 0.12,
-        "damping_ratio": 0.4,
         "height_m": 1.8,
         "helmet_mass_kg": 0.4,
         "inseam_m": null,
-        "leg_resonance_hz": 5.0,
-        "legs": "rigid",
         "mass_kg": 80.0,
-        "pedal_share": 0.33,
-        "saddle_interface_c_ns_m": 2762.0,
-        "saddle_interface_k_n_m": 101000.0,
-        "saddle_share": 0.55,
-        "torso_resonance_hz": 7.0,
         "variant": "none"
       },
       "rider": "none",
@@ -150,20 +110,10 @@
       "default_variant": "seated",
       "include_rider": false,
       "result": {
-        "arm_resonance_hz": 4.0,
-        "bar_share": 0.12,
-        "damping_ratio": 0.4,
         "height_m": 1.8,
         "helmet_mass_kg": 0.4,
         "inseam_m": null,
-        "leg_resonance_hz": 5.0,
-        "legs": "rigid",
         "mass_kg": 80.0,
-        "pedal_share": 0.33,
-        "saddle_interface_c_ns_m": 2762.0,
-        "saddle_interface_k_n_m": 101000.0,
-        "saddle_share": 0.55,
-        "torso_resonance_hz": 7.0,
         "variant": "none"
       },
       "rider": null,
@@ -174,20 +124,10 @@
       "default_variant": "lumped",
       "include_rider": null,
       "result": {
-        "arm_resonance_hz": 4.0,
-        "bar_share": 0.12,
-        "damping_ratio": 0.4,
         "height_m": 1.8,
         "helmet_mass_kg": 0.4,
         "inseam_m": null,
-        "leg_resonance_hz": 5.0,
-        "legs": "rigid",
         "mass_kg": 80.0,
-        "pedal_share": 0.33,
-        "saddle_interface_c_ns_m": 2762.0,
-        "saddle_interface_k_n_m": 101000.0,
-        "saddle_share": 0.55,
-        "torso_resonance_hz": 7.0,
         "variant": "lumped"
       },
       "rider": null,
@@ -207,20 +147,10 @@
       "default_variant": "seated",
       "include_rider": null,
       "result": {
-        "arm_resonance_hz": 4.0,
-        "bar_share": 0.12,
-        "damping_ratio": 0.4,
         "height_m": 1.8,
         "helmet_mass_kg": 0.4,
         "inseam_m": null,
-        "leg_resonance_hz": 5.0,
-        "legs": "rigid",
         "mass_kg": 70.0,
-        "pedal_share": 0.33,
-        "saddle_interface_c_ns_m": 2762.0,
-        "saddle_interface_k_n_m": 101000.0,
-        "saddle_share": 0.55,
-        "torso_resonance_hz": 7.0,
         "variant": "lumped"
       },
       "rider": "RiderSpecs(lumped,70kg)",
@@ -228,32 +158,13 @@
     }
   ],
   "rider_from_args_75_175": {
-    "arm_resonance_hz": 4.0,
-    "bar_share": 0.12,
-    "damping_ratio": 0.4,
     "height_m": 1.75,
     "helmet_mass_kg": 0.4,
     "inseam_m": null,
-    "leg_resonance_hz": 5.0,
-    "legs": "rigid",
     "mass_kg": 75.0,
-    "pedal_share": 0.33,
-    "saddle_interface_c_ns_m": 2762.0,
-    "saddle_interface_k_n_m": 101000.0,
-    "saddle_share": 0.55,
-    "torso_resonance_hz": 7.0,
     "variant": "lumped"
   },
   "spec_errors": [
-    {
-      "accepted": false,
-      "error": "ValueError",
-      "kwargs": {
-        "legs": "spring"
-      },
-      "message": "legs must be 'rigid' or 'articulated', got 'spring'",
-      "tag": "bad_legs"
-    },
     {
       "accepted": false,
       "error": "ValueError",
@@ -280,15 +191,6 @@
       },
       "message": "inseam 1.9 m must lie between 0 and the height 1.8 m",
       "tag": "inseam_over_height"
-    },
-    {
-      "accepted": false,
-      "error": "ValueError",
-      "kwargs": {
-        "saddle_share": 0.5
-      },
-      "message": "saddle, pedal and bar shares must sum to 1, got 0.950000",
-      "tag": "shares_not_one"
     },
     {
       "accepted": false,

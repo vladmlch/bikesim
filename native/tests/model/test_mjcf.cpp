@@ -198,18 +198,18 @@ void physical_profiles_and_topology() {
 }
 // The non-physical builder modes and rider variants: none emits joint damping.
 void no_joint_damping_in_any_mode() {
-    struct Case { const char* mode; const char* rider; const char* legs; bool crank; };
-    for(const Case c:{Case{.mode="standard",.rider="none",.legs="rigid",.crank=false},
-                      Case{.mode="standard",.rider="lumped",.legs="rigid",.crank=false},
-                      Case{.mode="ride",.rider="none",.legs="rigid",.crank=false}}) {
+    struct Case { const char* mode; const char* rider; bool crank; };
+    for(const Case c:{Case{.mode="standard",.rider="none",.crank=false},
+                      Case{.mode="standard",.rider="lumped",.crank=false},
+                      Case{.mode="ride",.rider="none",.crank=false}}) {
         mdl::BuildRequest request;request.mode=c.mode;request.crank_joint=c.crank;
         if(std::string_view(c.rider)!="none") {
             request.include_rider=true;request.rider=cfg::RiderSpecs{};
-            request.rider->variant=c.rider;request.rider->legs=c.legs;
+            request.rider->variant=c.rider;
         }
         const auto model=mdl::compile_mjcf(mdl::generate_mjcf(request));
-        require_no_joint_damping(*model,std::string(c.mode)+"/"+c.rider+"/"+c.legs);
-        require_limited_tendons_are_closures(*model,std::string(c.mode)+"/"+c.rider+"/"+c.legs);
+        require_no_joint_damping(*model,std::string(c.mode)+"/"+c.rider);
+        require_limited_tendons_are_closures(*model,std::string(c.mode)+"/"+c.rider);
     }
 }
 // The seated rider variant was removed (2026-11-04): it no longer
@@ -218,29 +218,6 @@ void seated_variant_is_gone() {
     bt::invalid([] { (void)mdl::rider_from_args("seated"); });
     const cfg::RiderSpecs declared;
     bt::require(declared.variant=="lumped","the declared default rider is lumped");
-}
-// The seated-only parameters (legs mode, load shares, resonances,
-// damping ratio, saddle interface) do not reach any remaining model:
-// changing them leaves the MJCF of the lumped and articulated_planar
-// riders byte-identical. This is the evidence that lets RiderSpecs drop
-// them (configuration/legacy_rider.hpp reads old documents).
-[[gnu::noinline]] void seated_parameters_are_inert() {
-    for(const auto* variant:{"lumped","articulated_planar"}) {
-        mdl::BuildRequest request;request.mode="ride";request.include_rider=true;
-        request.rider=cfg::RiderSpecs{};request.rider->variant=variant;
-        if(std::string_view(variant)=="articulated_planar")
-            request.physics=cfg::load_physics(bt::fixture("config/viewer_physics_welded.toml"));
-        const auto before=mdl::generate_mjcf(request);
-        auto& rider=*request.rider;
-        rider.legs="articulated";
-        // Shares still sum to one so post_init accepts the record.
-        rider.saddle_share=.50;rider.pedal_share=.35;rider.bar_share=.15;
-        rider.torso_resonance_hz=9.;rider.leg_resonance_hz=8.;rider.arm_resonance_hz=7.;
-        rider.damping_ratio=.9;rider.saddle_interface_k_n_m=1.;rider.saddle_interface_c_ns_m=1.;
-        cfg::detail::post_init(rider);
-        bt::require(mdl::generate_mjcf(request)==before,
-                    std::string(variant)+": seated-only parameters do not change the model");
-    }
 }
 // Crank qpos 0 is a power position: the two spindles sit level (same
 // height) and 180 degrees apart. PedalingPolicy's reposition goal
@@ -295,4 +272,4 @@ void errors_and_ownership() {
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }
 } // namespace
-int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();seated_parameters_are_inert();crank_zero_is_horizontal();errors_and_ownership();});}
+int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();errors_and_ownership();});}

@@ -86,17 +86,6 @@ double derived(double value, std::string_view name) {
     return value;
 }
 
-// Python f"{x:.6f}" — fixed notation, six decimals; nonfinite spells
-// 'inf'/'nan' like printf %.6f. The worst-case fixed spelling (DBL_MAX)
-// needs ~316 chars.
-std::string format_fixed6(double value) {
-    std::array<char, 384> buf{};
-    const auto out =
-        std::to_chars(buf.data(), buf.end(), value,
-                      std::chars_format::fixed, 6);
-    return {buf.data(), out.ptr};
-}
-
 // str.strip() boundary: the nativecfg whitespace table is the Python
 // strip set at the UTF-8 level.
 bool nonblank(std::string_view text) { return nativecfg::nonblank(text); }
@@ -865,9 +854,6 @@ void post_init(RiderSpecs &specs) {
         fail("rider variant must be one of ('none', 'lumped', "
              "'articulated_planar'), got " +
              detail::py_repr_str(specs.variant));
-    if (specs.legs != "rigid" && specs.legs != "articulated")
-        fail("legs must be 'rigid' or 'articulated', got " +
-             detail::py_repr_str(specs.legs));
     if (specs.mass_kg <= 0. && specs.variant != "none")
         fail("rider mass must be positive, got " +
              repr_double(specs.mass_kg));
@@ -879,11 +865,6 @@ void post_init(RiderSpecs &specs) {
         fail("inseam " + repr_double(*specs.inseam_m) +
              " m must lie between 0 and the height " +
              repr_double(specs.height_m) + " m");
-    const double shares =
-        specs.saddle_share + specs.pedal_share + specs.bar_share;
-    if (std::abs(shares - 1.) > 1e-9)
-        fail("saddle, pedal and bar shares must sum to 1, got " +
-             format_fixed6(shares));
     if (specs.helmet_mass_kg < 0. || specs.helmet_mass_kg >= specs.mass_kg)
         fail("helmet mass " + repr_double(specs.helmet_mass_kg) +
              " kg must be non-negative and below the rider mass");

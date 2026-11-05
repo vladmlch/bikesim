@@ -36,10 +36,10 @@ namespace bike::configuration {
 inline constexpr double kGravityMps2 = 9.81;  // GRAVITY_MPS2
 
 // rider.py RIDER_VARIANTS / DEFAULT_RIDER_VARIANT — the 'seated' variant
-// was removed with its slide-joint spring-damper model (2026-11-04).
-// The seated-only record fields below stay for now: the pose solver
-// still consumes them as geometry input, so dropping them waits for a
-// separate migration (inertness is pinned in test_mjcf.cpp).
+// was removed with its slide-joint spring-damper model (2026-11-04), and
+// the ten fields only it read left the record afterwards; documents
+// written before carry them and are read through
+// configuration/legacy_rider.hpp.
 inline constexpr std::array<std::string_view, 3> kRiderVariants = {
     "none", "lumped", "articulated_planar"};
 inline constexpr std::string_view kDefaultRiderVariant = "lumped";
@@ -59,27 +59,15 @@ inline constexpr double kLumpedArmsFraction = 7.0 / 80.0;
 // ---------------------------------------------------------------------------
 // rider.py RiderSpecs (lines 139-339) — a plain (mutable) dataclass. The
 // geometry-consuming methods (seated_pose, compute_rider_centers_of_mass)
-// belong to the T15 pose solver; the input-side record keeps every declared
-// field and every pure derived helper.
+// belong to the T15 pose solver; the input-side record keeps the fields
+// the remaining variants read and every pure derived helper.
 // ---------------------------------------------------------------------------
 struct RiderSpecs {
     std::string variant = "lumped";
-    std::string legs = "rigid";
     double mass_kg = 80.0;
     double height_m = 1.80;
     std::optional<double> inseam_m;
     double helmet_mass_kg = 0.40;
-
-    double saddle_share = 0.55;
-    double pedal_share = 0.33;
-    double bar_share = 0.12;
-
-    double torso_resonance_hz = 7.0;
-    double leg_resonance_hz = 5.0;
-    double arm_resonance_hz = 4.0;
-    double damping_ratio = 0.40;
-    double saddle_interface_k_n_m = 101'000.0;
-    double saddle_interface_c_ns_m = 2'762.0;
 
     // RiderSpecs.present / total_rider_mass.
     [[nodiscard]] bool present() const { return variant != "none"; }
@@ -248,10 +236,6 @@ inline constexpr std::array kRiderSpecsFields{
               .kind = FieldKind::Text, .offset = offsetof(RiderSpecs, variant),
               .required = false, .factory = "", .nested = nullptr,
               .nested2 = nullptr},
-    FieldDecl{.name = "legs", .type = "<class 'str'>",
-              .kind = FieldKind::Text, .offset = offsetof(RiderSpecs, legs),
-              .required = false, .factory = "", .nested = nullptr,
-              .nested2 = nullptr},
     FieldDecl{.name = "mass_kg", .type = "<class 'float'>",
               .kind = FieldKind::Real,
               .offset = offsetof(RiderSpecs, mass_kg), .required = false,
@@ -267,47 +251,6 @@ inline constexpr std::array kRiderSpecsFields{
     FieldDecl{.name = "helmet_mass_kg", .type = "<class 'float'>",
               .kind = FieldKind::Real,
               .offset = offsetof(RiderSpecs, helmet_mass_kg),
-              .required = false, .factory = "", .nested = nullptr,
-              .nested2 = nullptr},
-    FieldDecl{.name = "saddle_share", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, saddle_share), .required = false,
-              .factory = "", .nested = nullptr, .nested2 = nullptr},
-    FieldDecl{.name = "pedal_share", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, pedal_share), .required = false,
-              .factory = "", .nested = nullptr, .nested2 = nullptr},
-    FieldDecl{.name = "bar_share", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, bar_share), .required = false,
-              .factory = "", .nested = nullptr, .nested2 = nullptr},
-    FieldDecl{.name = "torso_resonance_hz", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, torso_resonance_hz),
-              .required = false, .factory = "", .nested = nullptr,
-              .nested2 = nullptr},
-    FieldDecl{.name = "leg_resonance_hz", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, leg_resonance_hz),
-              .required = false, .factory = "", .nested = nullptr,
-              .nested2 = nullptr},
-    FieldDecl{.name = "arm_resonance_hz", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, arm_resonance_hz),
-              .required = false, .factory = "", .nested = nullptr,
-              .nested2 = nullptr},
-    FieldDecl{.name = "damping_ratio", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, damping_ratio), .required = false,
-              .factory = "", .nested = nullptr, .nested2 = nullptr},
-    FieldDecl{.name = "saddle_interface_k_n_m", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, saddle_interface_k_n_m),
-              .required = false, .factory = "", .nested = nullptr,
-              .nested2 = nullptr},
-    FieldDecl{.name = "saddle_interface_c_ns_m", .type = "<class 'float'>",
-              .kind = FieldKind::Real,
-              .offset = offsetof(RiderSpecs, saddle_interface_c_ns_m),
               .required = false, .factory = "", .nested = nullptr,
               .nested2 = nullptr}};
 inline constexpr RecordSchema kRiderSpecsSchema{

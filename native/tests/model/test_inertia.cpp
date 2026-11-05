@@ -722,8 +722,6 @@ void expect_rider_record(const Value &rec, const mdl::RiderSpecs &r,
     bt::require(string_of(member(rec, "variant", label), label) ==
                         r.variant,
                 std::string(label) + ": variant");
-    bt::require(string_of(member(rec, "legs", label), label) == r.legs,
-                std::string(label) + ": legs");
     expect_scalar_bits(member(rec, "mass_kg", label), r.mass_kg,
                        std::string(label) + ": mass_kg");
     expect_scalar_bits(member(rec, "height_m", label), r.height_m,
@@ -735,24 +733,6 @@ void expect_rider_record(const Value &rec, const mdl::RiderSpecs &r,
         expect_scalar_bits(inseam, *r.inseam_m, std::string(label) + ": inseam_m");
     expect_scalar_bits(member(rec, "helmet_mass_kg", label),
                        r.helmet_mass_kg, std::string(label) + ": helmet");
-    expect_scalar_bits(member(rec, "saddle_share", label),
-                       r.saddle_share, std::string(label) + ": saddle_share");
-    expect_scalar_bits(member(rec, "pedal_share", label),
-                       r.pedal_share, std::string(label) + ": pedal_share");
-    expect_scalar_bits(member(rec, "bar_share", label), r.bar_share,
-                       std::string(label) + ": bar_share");
-    expect_scalar_bits(member(rec, "torso_resonance_hz", label),
-                       r.torso_resonance_hz, std::string(label) + ": torso_hz");
-    expect_scalar_bits(member(rec, "leg_resonance_hz", label),
-                       r.leg_resonance_hz, std::string(label) + ": leg_hz");
-    expect_scalar_bits(member(rec, "arm_resonance_hz", label),
-                       r.arm_resonance_hz, std::string(label) + ": arm_hz");
-    expect_scalar_bits(member(rec, "damping_ratio", label),
-                       r.damping_ratio, std::string(label) + ": damping");
-    expect_scalar_bits(member(rec, "saddle_interface_k_n_m", label),
-                       r.saddle_interface_k_n_m, std::string(label) + ": saddle_k");
-    expect_scalar_bits(member(rec, "saddle_interface_c_ns_m", label),
-                       r.saddle_interface_c_ns_m, std::string(label) + ": saddle_c");
 }
 
 void test_rider_specs() {
@@ -841,11 +821,9 @@ void test_rider_specs() {
         const std::string &tag = string_of(member(c, "tag", "c"), "c");
         const auto action = [&]() {
             mdl::RiderSpecs s;
-            if (tag == "bad_legs") s.legs = "spring";
-            else if (tag == "zero_mass") s.mass_kg = 0.0;
+            if (tag == "zero_mass") s.mass_kg = 0.0;
             else if (tag == "neg_height") s.height_m = -1.0;
             else if (tag == "inseam_over_height") s.inseam_m = 1.9;
-            else if (tag == "shares_not_one") s.saddle_share = 0.5;
             else if (tag == "helmet_ge_mass") s.helmet_mass_kg = 90.0;
             else bt::require(false, "spec error tag: " + tag);
             cfg::detail::post_init(s);

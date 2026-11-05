@@ -160,6 +160,35 @@ void removed_battery_gate() {
         [&] { (void)rr::replay::request_from_input(input, assets); },
         "drive.battery");
 }
+
+// The seated-only rider fields left RiderSpecs; legacy recordings still
+// carry them in resolved_config.rider. At the shipped defaults they are
+// inert and the recording replays; any other value is refused by name.
+void removed_rider_fields_gate() {
+    const auto input = rr::replay::load_legacy_input(bt::fixture("replay/legacy_v2"));
+    const auto& recorded_rider = field(field(input.summary, "resolved_config"), "rider");
+    bt::require(rr::io::find_member(rr::io::as_object(recorded_rider, "rider"), "saddle_share") != nullptr,
+                "the legacy fixture still records the seated-only rider fields");
+    {
+        const rr::replay::FixedAssets assets(input);
+        bt::require(static_cast<bool>(rr::replay::request_from_input(input, assets)),
+                    "default seated-only rider fields are inert and replay");
+    }
+    for (const auto& [key, value] :
+         {std::pair<std::string_view, rr::io::Value>{"legs", rr::io::Value{std::string("articulated")}},
+          std::pair<std::string_view, rr::io::Value>{"damping_ratio", rr::io::Value{rr::io::Number{"0.9"}}}}) {
+        auto changed = input;
+        auto resolved = field(changed.summary, "resolved_config");
+        auto rider = field(resolved, "rider");
+        rr::set(rider, key, value);
+        rr::set(resolved, "rider", std::move(rider));
+        rr::set(changed.summary, "resolved_config", std::move(resolved));
+        const rr::replay::FixedAssets assets(changed);
+        rr::incompatible(
+            [&] { (void)rr::replay::request_from_input(changed, assets); },
+            "rider." + std::string(key));
+    }
+}
 } // namespace
 int main() {
     return bt::run([] {
@@ -170,5 +199,6 @@ int main() {
         final_state_boundary();
         checksum_before_plant();
         removed_battery_gate();
+        removed_rider_fields_gate();
     });
 }

@@ -3,6 +3,7 @@
 #include "input_detail.hpp"
 #include "../configuration/load.hpp"
 #include "../configuration/legacy_battery.hpp"
+#include "../configuration/legacy_rider.hpp"
 #include "../engine_identity.hpp"
 #include "../platform/files.hpp"
 #include "../platform/provenance.hpp"
@@ -61,14 +62,23 @@ model::BikeMassSpecs mass_specs(const Value& value) {
 configuration::RiderSpecs rider_specs(const Value& value) {
     configuration::RiderSpecs out;
     if (const auto* variant = find(value, "variant")) out.variant = string(*variant);
-    if (const auto* legs = find(value, "legs")) out.legs = string(*legs);
     if (const auto* inseam = find(value, "inseam_m"); inseam && !io::is_null(*inseam)) out.inseam_m = io::as_double(*inseam, "inseam_m");
 #define BIKE_RIDER(name) {#name, &configuration::RiderSpecs::name}
-    reals(out, value, {BIKE_RIDER(mass_kg), BIKE_RIDER(height_m), BIKE_RIDER(helmet_mass_kg), BIKE_RIDER(saddle_share),
-        BIKE_RIDER(pedal_share), BIKE_RIDER(bar_share), BIKE_RIDER(torso_resonance_hz), BIKE_RIDER(leg_resonance_hz),
-        BIKE_RIDER(arm_resonance_hz), BIKE_RIDER(damping_ratio), BIKE_RIDER(saddle_interface_k_n_m), BIKE_RIDER(saddle_interface_c_ns_m)});
+    reals(out, value, {BIKE_RIDER(mass_kg), BIKE_RIDER(height_m), BIKE_RIDER(helmet_mass_kg)});
 #undef BIKE_RIDER
     configuration::detail::post_init(out); return out;
+}
+// legacy recordings: the seated-only rider members removed from RiderSpecs
+// are tolerated only at their shipped defaults
+// (configuration/legacy_rider.hpp). Any other value was never written by
+// a shipped config, so the run is not one replay promises to reproduce.
+Value inert_rider(Value rider) {
+    if (const auto removed = configuration::legacy::non_default_rider_field(rider))
+        throw IncompatibleExecution(
+            "resolved_config.rider." + std::string(*removed) + ": a non-default value cannot be "
+            "replayed — the seated rider model that read it no longer exists");
+    configuration::legacy::erase_removed_rider_fields(rider);
+    return rider;
 }
 // legacy recordings: the removed [drive.battery] section is tolerated only
 // when it was disabled (configuration/legacy_battery.hpp). An enabled
@@ -133,13 +143,16 @@ void drop_if_default_reposition(Value& pedaling) {
 }
 // Semantic-equality form: the recorded-form digest document (shared with
 // the write side via research::configuration_digest_document) with the
-// removed inert knobs stripped. Each strip throws on a non-inert recorded
-// value before any equality comparison can run.
+// removed inert knobs stripped — the battery section and the seated-only
+// rider members. Each strip throws on a non-inert recorded value before
+// any equality comparison can run.
 Value configuration_hashable(const Value& resolved) {
     auto hashable = research::configuration_digest_document(resolved);
     auto physics = field(hashable, "physics");
     drop_removed_battery(physics);
-    set(hashable, "physics", std::move(physics)); return hashable;
+    set(hashable, "physics", std::move(physics));
+    set(hashable, "rider", inert_rider(field(hashable, "rider")));
+    return hashable;
 }
 } // namespace
 FixedAssets::FixedAssets(const ReplayInput& input) {
@@ -178,7 +191,7 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
     request.setup.model.physics = configuration::detail::construct_config(physics);
     request.setup.model.bike = bike_specs(field(resolved, "geometry_and_suspension"));
     request.setup.model.masses = mass_specs(field(resolved, "mass_budget"));
-    request.setup.model.rider = rider_specs(field(resolved, "rider"));
+    request.setup.model.rider = rider_specs(inert_rider(field(resolved, "rider")));
     request.setup.model.mode = "ride"; request.setup.model.crank_joint = true;
     request.setup.asset_root = assets.path(); request.setup.origin = "validated replay recipe";
     request.setup.track = terrain::track_from_dict(terrain::parse_track_toml(asset_text(input, "track.toml"), "recording/track.toml"));

@@ -1353,13 +1353,17 @@ void test_wire_validation() {
 
 void test_rider() {
     const cfg::RiderSpecs specs;
-    bt::require(specs.variant == "lumped" && specs.legs == "rigid" &&
-                    specs.mass_kg == 80. && specs.height_m == 1.80 &&
-                    !specs.inseam_m.has_value() &&
-                    specs.helmet_mass_kg == 0.40 &&
-                    specs.saddle_share == 0.55 && specs.pedal_share == 0.33 &&
-                    specs.bar_share == 0.12,
+    bt::require(specs.variant == "lumped" && specs.mass_kg == 80. &&
+                    specs.height_m == 1.80 && !specs.inseam_m.has_value() &&
+                    specs.helmet_mass_kg == 0.40,
                 "RiderSpecs defaults");
+    // The serialized record carries exactly the five remaining fields.
+    const io::Value doc = cfg::detail::plain_document(
+        cfg::detail::as_object(cfg::detail::kRiderSpecsSchema, &specs));
+    std::set<std::string> keys;
+    for (const auto& member : io::as_object(doc, "rider")) keys.insert(member.first);
+    bt::require(keys == std::set<std::string>{"variant", "mass_kg", "height_m", "inseam_m", "helmet_mass_kg"},
+                "RiderSpecs serializes only the remaining fields");
     bt::require(specs.present() && specs.total_rider_mass() == 80.,
                 "RiderSpecs presence/mass");
     // Derived helpers: inseam estimate, LeMond saddle height, segment scale.
@@ -1378,10 +1382,6 @@ void test_rider() {
         "'articulated_planar'), got 'bogus'",
         [&] { cfg::detail::post_init(bad); });
     bad = specs;
-    bad.legs = "bogus";
-    expect_invalid("legs must be 'rigid' or 'articulated', got 'bogus'",
-                   [&] { cfg::detail::post_init(bad); });
-    bad = specs;
     bad.mass_kg = 0.;
     expect_invalid("rider mass must be positive, got 0.0",
                    [&] { cfg::detail::post_init(bad); });
@@ -1392,10 +1392,6 @@ void test_rider() {
     bad = specs;
     bad.inseam_m = 1.90;  // above height
     expect_invalid("inseam 1.9 m must lie between 0 and the height 1.8 m",
-                   [&] { cfg::detail::post_init(bad); });
-    bad = specs;
-    bad.saddle_share = 0.9;  // shares no longer sum to one
-    expect_invalid("saddle, pedal and bar shares must sum to 1, got 1.350000",
                    [&] { cfg::detail::post_init(bad); });
     bad = specs;
     bad.helmet_mass_kg = 81.0;

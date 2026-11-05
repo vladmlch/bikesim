@@ -618,18 +618,12 @@ void validate_articulated_pose(const ArticulatedPose &pose) {
 
 ArticulatedPose geometry_pose(const RiderSpecs &rider,
                               const BikeSpecs &specs) {
-    // dataclasses.replace(rider, legs='rigid', saddle_share=.55,
-    // pedal_share=.33, bar_share=.12) — a fresh validated record. The
-    // Python original also forced variant='seated' to pass the pose
-    // gate; the gate is gone with the variant, and the seated pose
-    // solver now takes this record purely as geometry input.
-    RiderSpecs neutral = rider;
-    neutral.legs = "rigid";
-    neutral.saddle_share = .55;
-    neutral.pedal_share = .33;
-    neutral.bar_share = .12;
-    configuration::detail::post_init(neutral);
-    const SeatedPose pose = seated_pose(neutral, specs);
+    // A fresh validated record, as the Python original's
+    // dataclasses.replace(...) produced; the seated pose solver takes it
+    // purely as geometry input.
+    RiderSpecs checked = rider;
+    configuration::detail::post_init(checked);
+    const SeatedPose pose = seated_pose(checked, specs);
     ArticulatedPose out{
             .saddle = pose.saddle,
             .hip = pose.hip,

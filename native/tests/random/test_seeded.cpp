@@ -632,25 +632,10 @@ void test_rider_samples() {
                     key + ".variant");
         rider_scalar("mass_kg", sampled.rider.mass_kg);
         rider_scalar("height_m", sampled.rider.height_m);
-        rider_scalar("arm_resonance_hz", sampled.rider.arm_resonance_hz);
-        rider_scalar("leg_resonance_hz", sampled.rider.leg_resonance_hz);
-        rider_scalar("torso_resonance_hz",
-                     sampled.rider.torso_resonance_hz);
-        rider_scalar("damping_ratio", sampled.rider.damping_ratio);
-        rider_scalar("bar_share", sampled.rider.bar_share);
-        rider_scalar("pedal_share", sampled.rider.pedal_share);
-        rider_scalar("saddle_share", sampled.rider.saddle_share);
         rider_scalar("helmet_mass_kg", sampled.rider.helmet_mass_kg);
-        rider_scalar("saddle_interface_k_n_m",
-                     sampled.rider.saddle_interface_k_n_m);
-        rider_scalar("saddle_interface_c_ns_m",
-                     sampled.rider.saddle_interface_c_ns_m);
         bt::require(io::is_null(member(rider, "inseam_m", key)) &&
                             !sampled.rider.inseam_m.has_value(),
                     key + ".inseam_m");
-        bt::require(string_of(member(rider, "legs", key), key) ==
-                            sampled.rider.legs,
-                    key + ".legs");
         const Value program = member(expected, "program", key);
         const double delay = number_of(
                 member(program, "reaction_delay_s", key), key);

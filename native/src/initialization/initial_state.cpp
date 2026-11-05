@@ -3,6 +3,7 @@
 #include "state_file.hpp"
 #include "source_json.hpp"
 #include "../configuration/legacy_battery.hpp"
+#include "../configuration/legacy_rider.hpp"
 #include "../drivetrain/state_codec.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
@@ -47,7 +48,7 @@ bio::Value optional(std::optional<double> value){return value?real(*value):bio::
 double height(std::span<const std::array<double,2>> vertices,double x){if(x<=vertices.front()[0])return vertices.front()[1];if(x>=vertices.back()[0])return vertices.back()[1];const auto it=std::ranges::lower_bound(vertices,x,{},[](const auto& a){return a[0];});const auto i=static_cast<std::size_t>(std::ranges::distance(vertices.begin(),it))-1;return biketyre::np_interp(x,std::array{vertices[i][0],vertices[i+1][0]},std::array{vertices[i][1],vertices[i+1][1]});}
 void guard(const SetupContext& context){if(context.physical.step()!=0||context.stepper.time()!=0.)throw std::invalid_argument("physical initial states may only be transferred before the first step");}
 
-std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_battery=false){
+std::string contract(const SetupContext& context,std::optional<int> station_count=std::nullopt,bool legacy_battery=false,bool legacy_rider=false){
     bio::Value physics=plain(configuration::to_value(context.physics));auto& config=std::get<bio::Value::Object>(physics.data);
     if(station_count){auto tires=field(config,"tires");auto distributed=field(std::get<bio::Value::Object>(tires.data),"distributed");put(std::get<bio::Value::Object>(distributed.data),"station_count",integer(*station_count));put(std::get<bio::Value::Object>(tires.data),"distributed",std::move(distributed));put(config,"tires",std::move(tires));}
     std::erase_if(config,[](const auto& p){return p.first=="timestep_s"||p.first=="equilibrium_cache_enabled"||p.first=="equilibrium_state_file"||p.first=="equilibrium_refine_after_s"||p.first=="equilibrium_refine_period_s"||p.first=="equilibrium_relaxation";});
@@ -73,7 +74,7 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     add("qpos0",m->qpos0,m->nq);add("body_mass",m->body_mass,m->nbody);add("body_inertia",m->body_inertia,3*m->nbody,3);add("body_ipos",m->body_ipos,3*m->nbody,3);add("body_pos",m->body_pos,3*m->nbody,3);add("body_quat",m->body_quat,4*m->nbody,4);add("jnt_axis",m->jnt_axis,3*m->njnt,3);add("jnt_pos",m->jnt_pos,3*m->njnt,3);add("jnt_range",m->jnt_range,2*m->njnt,2);add("dof_armature",m->dof_armature,m->nv);add("actuator_gear",m->actuator_gear,6*m->nu,6);add("actuator_ctrlrange",m->actuator_ctrlrange,2*m->nu,2);add("eq_solref",m->eq_solref,2*m->neq,2);add("eq_solimp",m->eq_solimp,5*m->neq,5);
     bio::Value::Array limited;for(auto const value:std::views::counted(m->jnt_limited,m->njnt))limited.push_back(bio::Value{value!=0});compiled.emplace_back("jnt_limited",bio::Value{std::move(limited)});
     const auto& identity=bio::as_object(context.identity,"initial state identity");
-    return hash(bio::Value{bio::Value::Object{{"physics",std::move(physics)},{"specs",plain(field(identity,"specs"))},{"mass",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"start_x_m",real(context.start_x_m)},{"joints",bio::Value{std::move(joints)}},{"compiled",bio::Value{std::move(compiled)}},{"envelope_sha256",context.physics.articulated.joint_envelope_path?string(platform::file_sha256(*context.physics.articulated.joint_envelope_path)):bio::Value{}},{"strength_sha256",context.physics.articulated.joint_strength_path?string(platform::file_sha256(*context.physics.articulated.joint_strength_path)):bio::Value{}}}});
+    return hash(bio::Value{bio::Value::Object{{"physics",std::move(physics)},{"specs",plain(field(identity,"specs"))},{"mass",plain(field(identity,"mass_specs"))},{"rider",legacy_rider?configuration::legacy::with_removed_rider_defaults(plain(field(identity,"rider"))):plain(field(identity,"rider"))},{"start_x_m",real(context.start_x_m)},{"joints",bio::Value{std::move(joints)}},{"compiled",bio::Value{std::move(compiled)}},{"envelope_sha256",context.physics.articulated.joint_envelope_path?string(platform::file_sha256(*context.physics.articulated.joint_envelope_path)):bio::Value{}},{"strength_sha256",context.physics.articulated.joint_strength_path?string(platform::file_sha256(*context.physics.articulated.joint_strength_path)):bio::Value{}}}});
 }
 
 bio::Value shape_values(const bio::NpyArray& array){
@@ -105,10 +106,12 @@ bio::Value equilibrium_value(const EquilibriumResult& r){return bio::Value{bio::
 EquilibriumResult equilibrium(const bio::Value& value){const auto& o=bio::as_object(value,"equilibrium");EquilibriumResult r;r.fork_travel_mm=bio::as_double(field(o,"fork_travel_mm"),"fork travel");r.shock_stroke_mm=bio::as_double(field(o,"shock_stroke_mm"),"shock stroke");r.rear_travel_mm=bio::as_double(field(o,"rear_travel_mm"),"rear travel");r.root_z_m=bio::as_double(field(o,"root_z_m"),"root z");r.pitch_rad=bio::as_double(field(o,"pitch_rad"),"pitch");r.steps=bio::as_int64(field(o,"steps"),"steps");r.residual_qacc=bio::as_double(field(o,"residual_qacc"),"residual");if(r.steps<=0||r.residual_qacc<0.)throw std::invalid_argument("invalid transferred equilibrium evidence");if(const auto* p=bio::find_member(o,"initial_crank_phase_rad"))r.initial_crank_phase_rad=bio::as_double(*p,"crank phase");if(const auto* p=bio::find_member(o,"settled_crank_phase_rad"))r.settled_crank_phase_rad=bio::as_double(*p,"settled crank phase");return r;}
 void validated(const SetupContext& context,const bio::Value::Object& p){
     guard(context);const auto stored_sha=bio::as_string(field(p,"contract_sha256"),"contract_sha256");
-    // legacy artifacts: the contract over the pre-removal serialization
-    // with the disabled drive.battery section is also accepted; any other
-    // divergence — including an enabled recorded battery — fails closed.
-    const auto matches=[&]{for(const bool battery:{false,true})if(stored_sha==contract(context,std::nullopt,battery))return true;return false;};
+    // legacy artifacts: the contract over the pre-removal serialization —
+    // with the disabled drive.battery section and/or the seated-only rider
+    // members at their defaults — is also accepted; any other divergence,
+    // including an enabled recorded battery or a non-default removed rider
+    // member, fails closed.
+    const auto matches=[&]{for(const bool battery:{false,true})for(const bool rider:{false,true})if(stored_sha==contract(context,std::nullopt,battery,rider))return true;return false;};
     if(bio::as_int64(field(p,"schema_version"),"schema_version")!=2||!matches())throw std::invalid_argument("initial-state physical model contract differs (only timestep/road mesh may vary)");
     (void)vector(field(p,"qpos"),"qpos",context.stepper.qpos().size());(void)vector(field(p,"qvel"),"qvel",context.stepper.qvel().size());(void)vector(field(p,"qacc_warmstart"),"qacc_warmstart",context.stepper.qvel().size());
     const auto x=vector(field(p,"road_x"),"road_x"),z=vector(field(p,"road_z"),"road_z",x.size());if(x.empty()||x.size()>1048576)throw std::invalid_argument("invalid initial support road");

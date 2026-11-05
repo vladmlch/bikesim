@@ -30,8 +30,10 @@
 #include <cmath>
 #include <cstddef>
 #include <format>
+#include <iostream>
 #include <memory>
 #include <numbers>
+#include <numeric>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -520,6 +522,54 @@ void test_spindle_coasting_command_matches_python() {
     node.done();
 }
 
+// physics-2026-11-05 plan task 3 («Действует» 9): with nothing asked of
+// the muscles (mean_crank_torque_nm = 0 — the coasting branch, no weld
+// sensor so the hold servo cannot learn to lift the leg) and a free
+// crank — the pinned plant's crank carries nothing downstream, which is
+// exactly an open one-way clutch — the descending leg's own weight must
+// press the pedal and accelerate the crank forward. While the leg
+// feedforward cancelled the leg's weight the crank rate instead decayed
+// toward the coasting brake's zero.
+void test_free_crank_spins_up_under_descending_leg_weight() {
+    Plant plant = make_plant();
+    // The staged pose has the front pedal at 3 o'clock — crank_split's
+    // leg_shares hands the downstroke to the front leg (cos(phase) > 0).
+    stage(plant, 0., 0.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 0.;
+    command.crank_target_rate_rad_s = 0.;
+    const auto dof = joint_dofadr(plant.model, "crank_spin");
+    const auto qpos = joint_qposadr(plant.model, "crank_spin");
+    const double dt = plant.model->opt.timestep;
+    // The pinned crank is the open-clutch ideal — nothing downstream
+    // drives or holds it — but an inertia-free shaft escapes under a few
+    // N.m of press and the weld springs tear. The bench loads it with a
+    // weak viscous term (a dynamometer drag) so the leg-weight press
+    // reads as a bounded forward rate instead of a runaway.
+    constexpr double kLoadNms = 1.;
+    std::vector<double> rates;
+    double max_excursion = 0.;
+    for (int i = 0; i < 800; ++i) { // 1 s of free cranking
+        const auto torques = plant.controller->compute(
+            plant.data, command, true, dt, false);
+        plant.controller->write(plant.data, torques);
+        wbuf(plant.data->qfrc_applied, nv(plant.model))[dof] =
+            -kLoadNms * buf(plant.data->qvel, nv(plant.model))[dof];
+        mj_step(plant.model, plant.data);
+        rates.push_back(buf(plant.data->qvel, nv(plant.model))[dof]);
+        max_excursion = std::max(
+            max_excursion,
+            buf(plant.data->qpos, nq(plant.model))[qpos]);
+    }
+    const double peak = *std::ranges::max_element(rates);
+    std::cerr << std::format(
+        "free-crank peak rate {:.4f} rad/s, forward excursion {:.3f} rad\n",
+        peak, max_excursion);
+    bt::require(peak > 1.5 && max_excursion > .5,
+                "the descending leg's weight accelerates the free crank "
+                "forward instead of settling at the coasting brake's ~0");
+}
+
 void test_spindle_compute_posture_matches_python() {
     rider::RiderPosture offset;
     offset.torso_lean_rad = -.2;
@@ -908,6 +958,7 @@ int main() {
         test_effort_ceiling_matches_python();
         test_spindle_waveform_rejects_bad_inputs();
         test_effort_ceiling_rejects_bad_inputs();
+        test_free_crank_spins_up_under_descending_leg_weight();
         test_spindle_compute_matches_python();
         test_spindle_rear_chain_effort_matches_python();
         test_spindle_disabled_command_matches_python();

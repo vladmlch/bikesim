@@ -1272,17 +1272,54 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             djacs[s] = {(plus[0] - minus[0]) / (2. * kJacobianDelta),
                         (plus[1] - minus[1]) / (2. * kJacobianDelta)};
         }
+        // crank_split.leg_shares' downstroke fractions, hoisted so the
+        // descending-leg rule below and the stance diagnostics read the
+        // same values.
+        const Vec2 shares = spindle::leg_shares(phase);
+        // «Действует» 9 (2026-11-05): the descending leg's weight presses
+        // the pedal — its feedforward below stops carrying the leg's own
+        // gravity term while the rising leg keeps full compensation.
+        // qfrc_bias mixes gravity with the velocity terms, so the gravity
+        // share is recovered exactly as -Σ_b m_b·(g·J^com_b[:,dof]) over
+        // the rider bodies — a leg dof's Jacobian columns vanish outside
+        // that leg's subtree, so bodies outside it contribute nothing.
+        // This equals mj_rne(q, qdot=0, qddot=0) on these dofs without
+        // disturbing live mjData; the step-1 probe cross-checked the two
+        // digit-for-digit on all four leg dofs.
+        std::array<std::array<std::size_t, 2>, 2> leg_dofs{};
+        std::array<std::array<double, 2>, 2> leg_gravity{};
+        {
+            const auto gravity = model_access::readonly_buffer(
+                std::data(model_->opt.gravity), 3, "opt.gravity");
+            const auto mass = model_access::readonly_buffer(
+                model_->body_mass, model_->nbody, "body_mass");
+            const auto width = static_cast<std::size_t>(model_->nv);
+            for (const auto side : kSides) {
+                const auto s = side_index(side);
+                for (std::size_t i = 0; i < 2; ++i)
+                    leg_dofs[s][i] = static_cast<std::size_t>(
+                        joints_[leg_joint_index_[s][i]].dof_adr);
+            }
+            std::vector<mjtNum> jac(3 * width);
+            for (const int body : rider_bodies_) {
+                mj_jacBodyCom(model_, data, jac.data(), nullptr, body);
+                const double m = mass[static_cast<std::size_t>(body)];
+                for (const std::size_t s : {0U, 1U})
+                    for (std::size_t i = 0; i < 2; ++i) {
+                        const auto dof = leg_dofs[s][i];
+                        leg_gravity[s][i] -=
+                            m * (gravity[0] * jac[dof] +
+                                 gravity[1] * jac[width + dof] +
+                                 gravity[2] * jac[2 * width + dof]);
+                    }
+            }
+        }
         const double accel = 0.;
         std::vector<double> imposed(static_cast<std::size_t>(model_->nv), 0.);
         for (const auto side : kSides) {
             const auto s = side_index(side);
             for (std::size_t i = 0; i < 2; ++i) {
-                const auto dof = static_cast<std::size_t>(
-                    joints_[joint_index("rider_" +
-                                        std::string(i == 0 ? "hip_"
-                                                          : "knee_") +
-                                        std::string(side))]
-                        .dof_adr);
+                const auto dof = leg_dofs[s][i];
                 imposed[dof] = jacobians[s][i] * accel +
                                djacs[s][i] * rate * rate;
             }
@@ -1298,8 +1335,26 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                         std::string(side),
                     data, sign);
             };
+            // «Действует» 9 (2026-11-05): mean_crank_torque_nm is the
+            // rider's TOTAL crank torque including the descending leg's
+            // weight, whose press this leg's feedforward no longer
+            // cancels. The muscles' share is therefore the leg's
+            // commanded torque minus the crank torque that weight
+            // already delivers through this leg's own loop Jacobian —
+            // negative down to carrying the leg fully when the share
+            // asks for less than the weight presses. The accounting
+            // lives in the commanded-effort branch only: coasting
+            // carries no commanded torque to book.
+            const double weight_crank_nm =
+                -(jacobians[s][0] * leg_gravity[s][0] +
+                  jacobians[s][1] * leg_gravity[s][1]);
+            const double muscle_task_nm =
+                command.mean_crank_torque_nm > 0. && shares[s] >= .5
+                    ? std::max(leg_targets_v[s] - weight_crank_nm,
+                               -weight_crank_nm)
+                    : leg_targets_v[s];
             const Vec2 torques = spindle::split_joint_torques(
-                leg_targets_v[s], jacobians[s], capacity);
+                muscle_task_nm, jacobians[s], capacity);
             for (std::size_t i = 0; i < 2; ++i) {
                 const std::size_t slot = joint_index(
                     "rider_" + std::string(i == 0 ? "hip_" : "knee_") +
@@ -1309,8 +1364,14 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 // Weld-imposed leg feedforward (rider_control.py:924-934):
                 // the actuators carry the bias and inertia of the motion
                 // the crank imposes. No velocity-damping term is added —
-                // the model has no joint damping in any form.
-                const double feedforward = bias[dof] + inertia[dof];
+                // the model has no joint damping in any form. «Действует»
+                // 9: the descending leg's own-weight term stays
+                // uncompensated so its weight reaches the pedal; the
+                // rising leg keeps the whole bias term.
+                const double feedforward =
+                    bias[dof] -
+                        (shares[s] >= .5 ? leg_gravity[s][i] : 0.) +
+                        inertia[dof];
                 requested[slot] = torques[i] + feedforward;
                 requested_filled[slot] = 1;
             }
@@ -1340,7 +1401,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 torque + bias[static_cast<std::size_t>(joint.dof_adr)];
             requested_filled[index] = 1;
         }
-        const Vec2 shares = spindle::leg_shares(phase);
         support_diagnostics_ = {.present = true,
                                 .stance_front = shares[0] >= .5,
                                 .stance_rear = shares[1] >= .5};

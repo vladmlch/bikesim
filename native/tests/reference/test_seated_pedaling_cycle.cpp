@@ -31,7 +31,10 @@
 #include "validation/runtime_access.hpp"
 #include <algorithm>
 #include <cmath>
+#include <format>
+#include <iostream>
 #include <limits>
+#include <map>
 #include <memory>
 #include <mujoco/mujoco.h>
 #include <numbers>
@@ -399,6 +402,77 @@ void test_strict_flat_cycle_delivers_and_stays_within_budgets() {
     }
 }
 
+// physics-2026-11-05 plan task 3 («Действует» 9): on the rigid layout
+// (motor_clutch=false) the weld-measured crank torque per completed
+// revolution still tracks the commanded mean — mean_crank_torque_nm is
+// the rider's TOTAL crank torque, so the descending leg's uncompensated
+// weight is part of the commanded total, not added on top of it. The
+// weld accounting's baseline overshoot must not grow by the ~+1.4 N·m
+// the step-1 probe measured when the muscle task was not reduced by the
+// weight's crank contribution.
+void test_rigid_per_revolution_crank_torque_tracks_command() {
+    auto env = cycle_env(); // rigid: motor_clutch=false
+    // The ~24 N.m demand lands inside the deliverable band — the flat
+    // launch's sustained ceiling is ~26 N.m — so the weld reading tracks
+    // the commanded effort rather than the capability cap. The cadence
+    // wish above the achieved rate keeps the weld-hold servo gated off,
+    // the ride's own regime: without it the servo would learn to cancel
+    // the descending leg's weight press and mask the bookkeeping the
+    // test watches.
+    const runtime::RideControl control{.motor_torque_nm = 0.,
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 24.,
+                                       .crank_target_rate_rad_s = 8.,
+                                       .posture = std::nullopt};
+    while (!env.runtime->snapshot().outcome.has_value() &&
+           env.runtime->snapshot().step < env.max_steps) {
+        const auto result = env.runtime->advance(
+            env.runtime->snapshot().step + env.period, control, 0., 0.,
+            std::nullopt);
+        if (result.reason == "outcome") break;
+    }
+    // Per completed crank revolution over t > 2 s: the weld-measured
+    // delivered mean vs the commanded effort mean over the same rows.
+    std::map<std::int64_t, double> sensor, commanded;
+    std::map<std::int64_t, std::size_t> rows_per_rev;
+    for (const auto &row : intervals_of(*env.runtime)) {
+        if (row->time_s <= 2.) continue;
+        const auto &drive =
+            sw::object(sw::required(row->channels, "drive"));
+        const auto rev = static_cast<std::int64_t>(std::floor(
+            row->qpos[static_cast<std::size_t>(env.crank_qpos)] /
+            (2. * kPi)));
+        sensor[rev] +=
+            sw::number(sw::required(drive, "human_sensor_nm"));
+        commanded[rev] +=
+            sw::number(sw::required(drive, "human_command_nm"));
+        ++rows_per_rev[rev];
+    }
+    // The boundary revolutions may be partial — only the fully sampled
+    // interior ones count.
+    bt::require(sensor.size() >= 4,
+                "the late window spans full revolutions");
+    sensor.erase(sensor.begin()->first);
+    sensor.erase(std::prev(sensor.end())->first);
+    double delivered_mean = 0., commanded_mean = 0.;
+    for (const auto &[rev, sum] : sensor) {
+        const double n = static_cast<double>(rows_per_rev.at(rev));
+        delivered_mean += sum / n;
+        commanded_mean += commanded.at(rev) / n;
+    }
+    delivered_mean /= static_cast<double>(sensor.size());
+    commanded_mean /= static_cast<double>(sensor.size());
+    const double gap = delivered_mean - commanded_mean;
+    std::cerr << std::format(
+        "rigid per-rev delivered {:.3f} vs commanded {:.3f} N.m "
+        "(gap {:+.3f} over {} revs)\n",
+        delivered_mean, commanded_mean, gap, sensor.size());
+    bt::require(gap >= -.5 && gap <= 2.2,
+                "the delivered per-rev mean tracks the commanded mean — "
+                "the leg weight is inside the commanded total, not on "
+                "top of it");
+}
+
 // test_free_coast_is_an_intent_not_a_crank_lock
 void test_free_coast_is_an_intent_not_a_crank_lock() {
     auto env = cycle_env();
@@ -567,6 +641,7 @@ int main() {
         test_cadence_control_validates_a_finite_nonnegative_wish();
         test_first_pedal_command_and_restart_respect_configured_effort_slew();
         test_strict_flat_cycle_delivers_and_stays_within_budgets();
+        test_rigid_per_revolution_crank_torque_tracks_command();
         test_free_coast_is_an_intent_not_a_crank_lock();
         test_clutch_engagement_is_not_a_loss();
         test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue();

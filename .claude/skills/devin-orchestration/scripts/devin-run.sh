@@ -55,7 +55,7 @@ start=$(date +%s)
 
 cd "$workdir" || die "cannot cd to $workdir"
 devin -p --prompt-file "$prompt" --model "$model" --permission-mode dangerous \
-  --export "$run_dir/export.$n.json" "${resume[@]}" \
+  --export "$run_dir/export.$n.json" ${resume[@]+"${resume[@]}"} \
   </dev/null >"$run_dir/stdout.$n.txt" 2>"$run_dir/stderr.$n.txt" &
 pid=$!
 echo "$pid" > "$run_dir/pid"

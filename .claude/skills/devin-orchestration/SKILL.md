@@ -20,7 +20,7 @@ Devin is the default executor for delegated tasks; you orchestrate. Say so expli
    - A descendant process is burning CPU (build, tests) → re-arm the watchdog and wait another 15 min.
    - No descendant, or all idle → `kill <pid>`, write a follow-up that says where it stopped, resume (step 6), and tell the user.
 5. **On completion.** Read, in this order, and stop as soon as you know enough:
-   1. the report: `head -c 6000 <run-dir>/stdout.<N>.txt`;
+   1. the report: `tail -c 6000 <run-dir>/stdout.<N>.txt`;
    2. the digest: `python3 -I $S/devin-summary.py <run-dir>`;
    3. `git -C <workdir> diff --stat`, then only the files or hunks you need.
 6. **Follow-up.** Write `followup-<N>.md` and run `bash $S/devin-run.sh <run-dir> --prompt <run-dir>/followup-<N>.md` (it resumes the recorded session with `-r`), then re-arm the watchdog. When Devin stopped on a question, answer it yourself if the facts settle it; when the decision is the user's, ask the user first.
@@ -54,7 +54,7 @@ Final report (your last message, at most 40 lines, exactly these sections):
 
 ## Run directory layout
 
-Per attempt `N`: `stdout.N.txt` (final message only), `stderr.N.txt`, `export.N.json` (ATIF transcript, written only when the attempt ends), `exit_code.N`. Shared: `brief.md`, `followup-N.md`, `attempt` (latest N), `session_id`, `pid`.
+Per attempt `N`: `stdout.N.txt` (all agent narration; the final message is at the end), `stderr.N.txt`, `export.N.json` (ATIF transcript, written only when the attempt ends), `exit_code.N`. Shared: `brief.md`, `followup-N.md`, `attempt` (latest N), `session_id`, `pid`.
 
 ## Gotchas
 

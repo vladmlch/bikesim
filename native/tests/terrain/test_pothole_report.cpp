@@ -11,7 +11,8 @@ void reports_every_pothole_in_order() {
     const auto track = bike::terrain::get_preset("road_worn");
     const auto reports = bike::terrain::pothole_reports(track);
     std::size_t potholes = 0;
-    for (const auto& obstacle : track.sorted_obstacles()) potholes += obstacle.is_pothole() ? 1 : 0;
+    for (const auto& obstacle : track.sorted_obstacles())
+        if (obstacle.is_pothole()) ++potholes;
     bt::require(potholes > 0 && reports.size() == potholes, "one report per pothole");
     for (std::size_t i = 1; i < reports.size(); ++i)
         bt::require(reports[i - 1].start_m <= reports[i].start_m, "reports follow track order");

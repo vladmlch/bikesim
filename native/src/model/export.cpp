@@ -176,7 +176,7 @@ void export_models(const BuildRequest& request,const std::filesystem::path& dire
     common.mode="standard";
     export_mjcf(common,directory/"bike_model.xml");
     common.mode="ride";
-    common.rider=configuration::RiderSpecs{};common.tyre_model=request.tyre_model;
+    common.rider=configuration::RiderSpecs{};
     export_mjcf(common,directory/"bike_ride.xml");
 }
 void export_models(const std::filesystem::path& directory) {export_models(BuildRequest{},directory);}

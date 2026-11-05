@@ -57,10 +57,8 @@ Element& build_rear_wheel(Element& parent,const Vec3& axle,BuildContext& c) {
     const auto radius=f(c.request.bike.rear_wheel_radius/1000.);
     const auto mask=c.request.mode=="ride"?"0":"1";
     geom(wheel,"geom_rear_tire","cylinder",{{"fromto","0 -0.032 0 0 0.032 0"},{"size",radius},{"mass",c.physical()?"0":"1.50"},{"material","mat_tire"},{"contype",mask},{"conaffinity",mask},{"friction","1.2 0.005 0.0001"}});
-    if(c.request.mode=="ride") {
-        const auto contact=c.request.tyre_model=="pneumatic"?"0":"1";
-        geom(wheel,"geom_rear_contact","sphere",{{"pos","0 0 0"},{"size",radius},{"mass","0"},{"condim","3"},{"friction","1.2 0.005 0.0001"},{"solref","-130000 -800"},{"contype",contact},{"conaffinity",contact},{"rgba","0.08 0.08 0.08 0"}});
-    }
+    if(c.request.mode=="ride")
+        geom(wheel,"geom_rear_contact","sphere",{{"pos","0 0 0"},{"size",radius},{"mass","0"},{"condim","3"},{"friction","1.2 0.005 0.0001"},{"solref","-130000 -800"},{"contype","1"},{"conaffinity","1"},{"rgba","0.08 0.08 0.08 0"}});
     geom(wheel,"geom_rear_cassette","cylinder",{{"fromto","0 -0.055 0 0 -0.035 0"},{"size","0.095"},{"mass",c.physical()?"0":"0.40"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
     geom(wheel,"geom_rear_rotor","cylinder",{{"fromto","0 0.038 0 0 0.040 0"},{"size","0.1015"},{"mass",c.physical()?"0":"0.20"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
     if(c.physical()) {

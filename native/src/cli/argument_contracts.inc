@@ -716,7 +716,6 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
         "default": null,
         "type": "str",
         "choices": [
-          "legacy",
           "physical"
         ],
         "flag": false,

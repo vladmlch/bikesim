@@ -14,7 +14,7 @@ CapabilityReport implemented_capabilities(
         out.rejections.push_back(std::move(path)+": "+std::move(reason));
     };
     if(config.physics_mode!="physical")
-        reject("physics_mode","physical runtime requires 'physical'; legacy configurations use RideSimulation");
+        reject("physics_mode","physical runtime requires 'physical'");
     if(!config.drive_mode)
         reject("drive_mode","a resolved drive mode is required");
     else if(*config.drive_mode!="articulated_effort" && *config.drive_mode!="crank_effort" &&

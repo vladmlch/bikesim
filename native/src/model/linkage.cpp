@@ -17,10 +17,8 @@ Element& front_wheel(Element& lower,const Vec3& axle,BuildContext const& c) {
     const auto mask=c.request.mode=="ride"?"0":"1";
     geom(wheel,"geom_front_tire","cylinder",{{"fromto","0 -0.030 0 0 0.030 0"},{"size",radius},{"mass",c.physical()?"0":"1.35"},{"material","mat_tire"},{"contype",mask},{"conaffinity",mask},{"friction","1.2 0.005 0.0001"}});
     geom(wheel,"geom_front_rotor","cylinder",{{"fromto","0 0.032 0 0 0.034 0"},{"size","0.1015"},{"mass",c.physical()?"0":"0.25"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
-    if(c.request.mode=="ride") {
-        const auto contact=c.request.tyre_model=="pneumatic"?"0":"1";
-        geom(wheel,"geom_front_contact","sphere",{{"pos","0 0 0"},{"size",radius},{"mass","0"},{"condim","3"},{"friction","1.2 0.005 0.0001"},{"solref","-130000 -800"},{"contype",contact},{"conaffinity",contact},{"rgba","0.08 0.08 0.08 0"}});
-    }
+    if(c.request.mode=="ride")
+        geom(wheel,"geom_front_contact","sphere",{{"pos","0 0 0"},{"size",radius},{"mass","0"},{"condim","3"},{"friction","1.2 0.005 0.0001"},{"solref","-130000 -800"},{"contype","1"},{"conaffinity","1"},{"rgba","0.08 0.08 0.08 0"}});
     if(c.physical()) {
         const auto value=wheel_body_inertia(c.request.masses.front_wheel_mass,kFrontWheelProfile);
         inertial(wheel,c.request.masses.front_wheel_mass,value.com,value.tensor);

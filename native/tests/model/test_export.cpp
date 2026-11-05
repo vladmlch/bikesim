@@ -63,17 +63,15 @@ void mode_and_rider_cases() {
     request.crank_joint=false;
     const auto free_legs=mdl::compile_mjcf(mdl::generate_mjcf(request));
     bt::require(mj_name2id(free_legs.get(),mjOBJ_EQUALITY,"weld_foot_front")==-1,"no pedal body means no foot weld");
-    request.rider->variant="none";request.tyre_model="pneumatic";
-    const auto pneumatic=mdl::compile_mjcf(mdl::generate_mjcf(request));
+    // The pneumatic tyre_model selector is gone with legacy mode: the
+    // sphere contact path is the only MJCF tire the builder writes.
     for(const char* name:{"geom_front_contact","geom_rear_contact"}) {
-        const int geom_id=mj_name2id(pneumatic.get(),mjOBJ_GEOM,name);
-        bt::require(geom_id>=0,"legacy contact geom exists");
+        const int geom_id=mj_name2id(free_legs.get(),mjOBJ_GEOM,name);
+        bt::require(geom_id>=0,"contact geom exists");
         const auto geom=static_cast<std::size_t>(geom_id);
-        bt::require(std::views::counted(pneumatic->geom_contype,pneumatic->ngeom)[geom]==0 && std::views::counted(pneumatic->geom_conaffinity,pneumatic->ngeom)[geom]==0,"legacy pneumatic contact disabling");
+        bt::require(std::views::counted(free_legs->geom_contype,free_legs->ngeom)[geom]==1 && std::views::counted(free_legs->geom_conaffinity,free_legs->ngeom)[geom]==1,"sphere contact geom stays live");
     }
-    request.mode="standard";
-    bt::invalid([&]{(void)mdl::generate_mjcf(request);});
-    request.tyre_model="sphere";request.rider->variant="seated";
+    request.mode="standard";request.rider->variant="seated";
     bt::invalid([&]{(void)mdl::generate_mjcf(request);});
 }
 // The stand model modes were removed with the stand (2026-11-04): the

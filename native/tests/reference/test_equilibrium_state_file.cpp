@@ -290,11 +290,6 @@ void test_equilibrium_state_field_validation() {
     const bt::TemporaryDirectory dir("eq_state_field");
     for (const std::string_view blank : {"", "   "}) {
         auto config = cfg::default_physics();
-        config.physics_mode = "physical";
-        // post_init already resolved the legacy pitch_assist default at
-        // default_physics() time — clear it so the physical-mode config is
-        // valid except for the state-file field under test.
-        config.pitch_assist = false;
         config.equilibrium_state_file = std::string(blank);
         expect_invalid("equilibrium_state_file",
                        [&] { cfg::post_init(config); });

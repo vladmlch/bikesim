@@ -43,7 +43,7 @@ using SeatedClimbConfig = ::rider::IntentConfig;
 // model_config.py SimulationPhysicsConfig — 20 fields; drive_mode/pitch_assist
 // declared defaults are None (nullopt), resolved by post_init.
 struct SimulationPhysicsConfig {
-    std::string physics_mode = "legacy";
+    std::string physics_mode = "physical";
     std::optional<std::string> drive_mode;
     double timestep_s = 0.0005;
     double control_period_s = 0.005;
@@ -70,8 +70,8 @@ struct SimulationPhysicsConfig {
 
 // ---- public boundary -----------------------------------------------------------
 
-// SimulationPhysicsConfig() — declared defaults after __post_init__ (legacy
-// mode resolves drive_mode="ideal_speed_control", pitch_assist=true).
+// SimulationPhysicsConfig() — declared defaults after __post_init__ (physical
+// mode resolves drive_mode="coast", pitch_assist=false).
 [[nodiscard]] SimulationPhysicsConfig default_physics();
 
 // Python __post_init__: normalize in place (drive_mode/pitch_assist

@@ -27,7 +27,6 @@ struct BuildRequest {
     bool include_rider = false;
     std::optional<configuration::RiderSpecs> rider;
     terrain::HeightFieldSpec field;
-    std::string tyre_model = "sphere";
     bool crank_joint = false;
     double gear_ratio = 32.0 / 14.0;
     std::optional<configuration::SimulationPhysicsConfig> physics;

@@ -583,14 +583,27 @@ void expect_covered(std::string_view manifest_name [[maybe_unused]],
 
 // ---- section bodies ---------------------------------------------------------
 
+// Legacy mode was removed (2026-11-04): physical is the declared default
+// and the only accepted value; an old "legacy" document fails loudly.
+void physics_mode_is_physical_only() {
+    bt::require(cfg::SimulationPhysicsConfig{}.physics_mode == "physical",
+                "the declared default mode is physical");
+    auto old = cfg::default_physics();
+    bt::require(old.physics_mode == "physical" &&
+                    old.drive_mode == "coast" && old.pitch_assist == false,
+                "defaults resolve as a physical coast run");
+    old.physics_mode = "legacy";
+    bt::invalid([&] { cfg::post_init(old); });
+}
+
 void test_defaults() {
     const cfg::SimulationPhysicsConfig c = cfg::default_physics();
-    bt::require(c.physics_mode == "legacy", "default physics_mode");
-    // Legacy __post_init__ resolution.
-    bt::require(c.drive_mode && *c.drive_mode == "ideal_speed_control",
-                "legacy drive_mode resolution");
-    bt::require(c.pitch_assist && *c.pitch_assist,
-                "legacy pitch_assist resolution");
+    bt::require(c.physics_mode == "physical", "default physics_mode");
+    // Physical __post_init__ resolution.
+    bt::require(c.drive_mode && *c.drive_mode == "coast",
+                "physical drive_mode resolution");
+    bt::require(c.pitch_assist && !*c.pitch_assist,
+                "physical pitch_assist resolution");
     bt::require(c.timestep_s == 0.0005, "default timestep_s");
     bt::require(c.control_period_s == 0.005, "default control_period_s");
     bt::require(c.closure_time_constant_s == 0.001, "default closure tau");
@@ -646,14 +659,6 @@ void test_defaults() {
     bt::require(!c.seated_climb.enabled &&
                     c.seated_climb.surge_recovery_rate == 1. / 3.,
                 "SeatedClimbConfig defaults");
-    // Physical-mode resolution is the mirror image.
-    cfg::SimulationPhysicsConfig physical;
-    physical.physics_mode = "physical";
-    cfg::post_init(physical);
-    bt::require(physical.drive_mode && *physical.drive_mode == "coast",
-                "physical drive_mode resolution");
-    bt::require(physical.pitch_assist && !*physical.pitch_assist,
-                "physical pitch_assist resolution");
 }
 
 void test_schema() {
@@ -804,9 +809,15 @@ void test_validation() {
                           c.timestep_s =
                               std::numeric_limits<double>::quiet_NaN();
                       });
-    case_from_default("unknown physics_mode",
+    case_from_default("unknown physics_mode 'bogus'; legacy mode was "
+                      "removed, use physical",
                       [](cfg::SimulationPhysicsConfig& c) {
                           c.physics_mode = "bogus";
+                      });
+    case_from_default("unknown physics_mode 'legacy'; legacy mode was "
+                      "removed, use physical",
+                      [](cfg::SimulationPhysicsConfig& c) {
+                          c.physics_mode = "legacy";
                       });
     case_from_default(
         "control_period_s must be an integer multiple of timestep_s",
@@ -818,26 +829,21 @@ void test_validation() {
                           c.equilibrium_refine_after_s = 0.0;
                       });
 
-    // Physics-mode versus drive-mode restrictions.
-    case_from_default(
-        "physical effort drive modes require physics_mode=physical",
-        [](cfg::SimulationPhysicsConfig& c) { c.drive_mode = "crank_effort"; });
+    // Drive-mode and pitch-assist restrictions.
     case_from_default("unknown drive_mode", [](cfg::SimulationPhysicsConfig& c) {
         c.drive_mode = "bogus";
     });
     case_from_default("external pitch assist is forbidden in physical mode",
                       [](cfg::SimulationPhysicsConfig& c) {
-                          c.physics_mode = "physical";
                           c.pitch_assist = true;
                       });
 
-    // Physical-mode closure domain: 2*timestep_s floor.
+    // Closure domain: 2*timestep_s floor.
     case_from_default(
         "closure_time_constant_s=0.0006 must be at least "
         "2*timestep_s=0.001; otherwise MuJoCo silently changes closure "
         "stiffness",
         [](cfg::SimulationPhysicsConfig& c) {
-            c.physics_mode = "physical";
             c.closure_time_constant_s = 0.0006;
         });
 
@@ -1134,8 +1140,7 @@ void test_resolved_profiles() {
     const Value& drive_mode =
         member(encoded, "drive_mode", "config");
     bt::require(!io::is_null(drive_mode) &&
-                    string_of(drive_mode, "drive_mode") ==
-                        "ideal_speed_control",
+                    string_of(drive_mode, "drive_mode") == "coast",
                 "resolved drive_mode encoding");
     const Value& assist =
         member(member(encoded, "drive", "config"), "assist", "drive");
@@ -1170,8 +1175,7 @@ void test_profile_coverage() {
     // Every shipped TOML profile field resolves to exactly one declared
     // schema field (the typed FieldDecl graph — not a second list).
     for (const auto& [name, path] :
-         {std::pair{"config/legacy.toml", "config/legacy.toml"},
-          {"config/viewer_physics_welded.toml",
+         {std::pair{"config/viewer_physics_welded.toml",
            "config/viewer_physics_welded.toml"},
           {"config/viewer_physics_distributed.toml",
            "config/viewer_physics_distributed.toml"},
@@ -1589,6 +1593,7 @@ void test_suspension() {
 
 int main() {
     return bt::run([] {
+        physics_mode_is_physical_only();
         test_defaults();
         test_schema();
         test_validation();

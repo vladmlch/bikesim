@@ -1034,8 +1034,9 @@ void post_init(SimulationPhysicsConfig &config) {
     detail::post_init(config.articulated);
     detail::post_init(config.seated_climb);
 
-    if (config.physics_mode != "legacy" && config.physics_mode != "physical")
-        fail("unknown physics_mode");
+    if (config.physics_mode != "physical")
+        fail("unknown physics_mode '" + config.physics_mode +
+             "'; legacy mode was removed, use physical");
     if (!std::isfinite(config.timestep_s) || config.timestep_s <= 0.)
         fail("timestep_s must be finite and positive");
     scalar(config.control_period_s, "control period", std::nullopt, true);
@@ -1050,29 +1051,22 @@ void post_init(SimulationPhysicsConfig &config) {
            "equilibrium_refine_after_s", std::nullopt, true);
     scalar(config.equilibrium_refine_period_s,
            "equilibrium_refine_period_s", std::nullopt, true);
-    const bool legacy = config.physics_mode == "legacy";
     scalar(config.closure_time_constant_s, "closure time constant",
            std::nullopt, true);
-    if (!legacy &&
-        config.closure_time_constant_s < 2.0 * config.timestep_s)
+    if (config.closure_time_constant_s < 2.0 * config.timestep_s)
         fail("closure_time_constant_s=" +
              detail::repr_double(config.closure_time_constant_s) +
              " must be at least 2*timestep_s=" +
              detail::repr_double(2.0 * config.timestep_s) +
              "; otherwise MuJoCo silently changes closure stiffness");
-    if (!config.drive_mode)
-        config.drive_mode = legacy ? "ideal_speed_control" : "coast";
-    if (!config.pitch_assist) config.pitch_assist = legacy;
+    if (!config.drive_mode) config.drive_mode = "coast";
+    if (!config.pitch_assist) config.pitch_assist = false;
     if (!in_set(*config.drive_mode,
                 std::initializer_list<std::string_view>{
                     "coast", "ideal_speed_control", "crank_effort",
                     "articulated_effort"}))
         fail("unknown drive_mode");
-    if (legacy &&
-        (*config.drive_mode == "crank_effort" ||
-         *config.drive_mode == "articulated_effort"))
-        fail("physical effort drive modes require physics_mode=physical");
-    if (!legacy && *config.pitch_assist)
+    if (*config.pitch_assist)
         fail("external pitch assist is forbidden in physical mode");
 
     scalar(config.initial_speed_mps, "initial speed");
@@ -1105,7 +1099,7 @@ void post_init(SimulationPhysicsConfig &config) {
              detail::repr_double(detailed->timestep_s) +
              "; got " + detail::repr_double(config.timestep_s));
     if (config.seated_climb.enabled &&
-        (legacy || *config.drive_mode != "articulated_effort"))
+        *config.drive_mode != "articulated_effort")
         fail("seated climb requires the articulated physical effort drive");
     if (config.drive.motor_clutch &&
         *config.drive_mode != "crank_effort" &&

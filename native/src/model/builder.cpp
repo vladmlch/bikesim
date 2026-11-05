@@ -20,11 +20,8 @@ std::string generate_mjcf(const BuildRequest& request) {
     if(physics) configuration::post_init(*physics);
     const bool physical=physics && physics->physics_mode=="physical";
     if(physical && request.mode!="ride") throw std::invalid_argument("physical configuration requires ride mode");
-    if(physical && request.tyre_model!="sphere") throw std::invalid_argument("legacy pneumatic tyre_model is not a physical backend; configure physics_config.tires");
     const bool crank=request.crank_joint || physical;
     if(crank && request.mode!="ride") throw std::invalid_argument("the pedalled crankset is a ride-mode model; mode '"+request.mode+"' builds a rigid crankset");
-    if(request.tyre_model!="sphere" && request.tyre_model!="pneumatic") throw std::invalid_argument("unknown tyre model '"+request.tyre_model+"'; available: sphere, pneumatic");
-    if(request.tyre_model!="sphere" && request.mode!="ride") throw std::invalid_argument("tyre model '"+request.tyre_model+"' is ride-mode only");
     auto rider=resolve_rider(request.rider?RiderArg(*request.rider):RiderArg(std::monostate{}),request.include_rider,"lumped");
     if(rider.variant=="seated" && request.mode!="ride") throw std::invalid_argument("the seated rider is a ride-mode model; mode '"+request.mode+"' takes 'none' or 'lumped'");
     std::optional<SeatedPose> seated;

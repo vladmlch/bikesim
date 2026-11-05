@@ -313,14 +313,6 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "equilibrium pose resolves profile-adjacent");
     expect_resolved(cfg_pneumatic, "config/resolved/pneumatic.json",
                     "config/resolved/pneumatic.json");
-
-    const auto cfg_legacy =
-        cfg::load_physics(bt::fixture("config/legacy.toml"));
-    bt::require(cfg_legacy.physics_mode == "legacy", "legacy mode");
-    bt::require(cfg_legacy.drive_mode.has_value() &&
-                    *cfg_legacy.drive_mode == "ideal_speed_control",
-                "legacy drive mode resolved");
-    bt::require(cfg_legacy.timestep_s == 0.0005, "declared default dt");
 }
 
 // ---- variant profiles ------------------------------------------------------
@@ -426,6 +418,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
             "tuple_scalar.toml", "[resistance]\npoint_body_m = 0.5\n")));
+    });
+
+    // A legacy-mode document fails at the domain boundary — 'physical' is
+    // the only accepted physics_mode.
+    invalid_with("unknown physics_mode 'legacy'; legacy mode was removed, "
+                 "use physical", [&] {
+        discard(cfg::load_physics(stage("legacy.toml",
+                                        "physics_mode = \"legacy\"\n")));
     });
 
     // A missing file reports the OS failure with the staged path — a stable
@@ -553,16 +553,16 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
     // The two-layer mapping carries the base's RESOLVED values verbatim:
     // Python's resolve_physics_config(asdict(resolved_base), overrides)
-    // throws when a resolved field violates the new mode — verified against
-    // the source: switching a resolved legacy base (pitch_assist=True) to
-    // physical mode raises 'external pitch assist is forbidden in physical
-    // mode'. An unresolved SimulationPhysicsConfig{} base instead carries
-    // None for the derived fields, so post_init resolves them for the new
-    // mode (drive_mode='coast', pitch_assist=False). Both behaviors locked.
+    // throws when a resolved field violates the mode — an override setting
+    // pitch_assist=true on the resolved physical base raises 'external
+    // pitch assist is forbidden in physical mode'. An unresolved
+    // SimulationPhysicsConfig{} base instead carries None for the derived
+    // fields, so post_init resolves them (drive_mode='coast',
+    // pitch_assist=False). Both behaviors locked.
     invalid_with(
         "external pitch assist is forbidden in physical mode", [] {
             discard(cfg::resolve_physics(
-                make_object({{"physics_mode", make_text("physical")}}),
+                make_object({{"pitch_assist", make_bool(true)}}),
                 cfg::default_physics()));
         });
     {
@@ -571,7 +571,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             cfg::SimulationPhysicsConfig{});
         bt::require(unresolved.drive_mode.has_value() &&
                         *unresolved.drive_mode == "coast",
-                    "unresolved base resolves drive_mode for the new mode");
+                    "unresolved base resolves drive_mode");
         bt::require(unresolved.pitch_assist.has_value() &&
                         !*unresolved.pitch_assist,
                     "physical mode resolves pitch_assist false");

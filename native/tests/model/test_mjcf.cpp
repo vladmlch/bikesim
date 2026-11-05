@@ -244,13 +244,9 @@ void crank_zero_is_horizontal() {
 void errors_and_ownership() {
     auto request=physical();request->mode="stand";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
-    request=physical();request->tyre_model="pneumatic";
-    bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=physical();request->rider->variant="lumped"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=std::make_unique<mdl::BuildRequest>();request->crank_joint=true;
-    bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
-    request=std::make_unique<mdl::BuildRequest>();request->tyre_model="unknown";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=physical();request->masses.battery_mass=0.;
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});

@@ -2,7 +2,7 @@
   "config_class": "SimulationPhysicsConfig",
   "fields": [
     {
-      "default": "legacy",
+      "default": "physical",
       "default_factory": null,
       "name": "physics_mode",
       "type": "<class 'str'>"

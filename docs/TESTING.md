@@ -434,6 +434,13 @@ carry `physics.drive.battery`. Replay and initial-state transfer accept that
 section only when it is disabled (`configuration/legacy_battery.hpp`); a
 recorded enabled battery is rejected as an incompatible execution.
 
+Documents written before the seated-only rider fields left `RiderSpecs`
+(`legs`, the three load shares, the three resonances, `damping_ratio`, the
+saddle interface spring/damper) still carry them in the rider section.
+Replay and initial-state transfer accept them only at their shipped
+defaults (`configuration/legacy_rider.hpp`); any other value is rejected by
+name.
+
 Bitwise curve interpolation depends on this platform's NumPy build. Its scalar
 interpolation uses a fused multiply/add: for the segment `(0,80)` to `(43,71)`
 at 10 rpm, separate multiply/add yields `0x1.37a0be82fa0bep+6`, while NumPy and

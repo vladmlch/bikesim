@@ -58,7 +58,7 @@ void InputState::apply(Action action) {
 }
 double InputState::brake_demand() const noexcept { return braking ? brake_strength : 0.; }
 std::string help_text(Mode mode) {
-    std::string const controls = "C/1/2 camera | T telemetry | G markers | Q/Escape close | F6/F7/F8 speed";
+    std::string controls = "C/1/2 camera | T telemetry | G markers | Q/Escape close | F6/F7/F8 speed";
     if (mode == Mode::research) return "Space pause | B brakes | R close/reset | " + controls;
     if (mode == Mode::inspection) return "Space pause | R restart | Left/Right seek 1 s (Shift 0.1 s) | Up/Down speed x1.5 | " + controls;
     if (mode == Mode::checked_replay) return "Space pause | R restart | " + controls;

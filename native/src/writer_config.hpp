@@ -933,7 +933,7 @@ namespace nativecfg {
                          "reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s",
                          "reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"));
             exact(s, keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), keys());
-            exact(a, keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","gate_min_crank_rad_s","cutoff_mps","taper_width_mps","mode"), keys("profile","torque_curve"));
+            exact(a, keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","release_hold_s","cutoff_mps","taper_width_mps","mode"), keys("profile","torque_curve"));
             out.gearing = {
                 .front_teeth = integer(g, "front_teeth"), .rear_teeth = integer(g, "rear_teeth"),
                 .chain_pitch_m = positive(num(g, "chain_pitch_m"), g.child("chain_pitch_m"))
@@ -1019,7 +1019,7 @@ namespace nativecfg {
             ac.tau = positive(num(a, "tau"), a.child("tau"));
             ac.slew = positive(num(a, "slew"), a.child("slew"));
             ac.engage_torque_nm = nonnegative(num(a, "engage_torque_nm"), a.child("engage_torque_nm"));
-            ac.gate_min_crank_rad_s = nonnegative(num(a, "gate_min_crank_rad_s"), a.child("gate_min_crank_rad_s"));
+            ac.release_hold_s = nonnegative(num(a, "release_hold_s"), a.child("release_hold_s"));
             ac.cutoff_mps = nonnegative(num(a, "cutoff_mps"), a.child("cutoff_mps"));
             ac.taper_width_mps = positive(num(a, "taper_width_mps"), a.child("taper_width_mps"));
             ac.mode = str(a, "mode");

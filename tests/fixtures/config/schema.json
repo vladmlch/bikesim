@@ -720,9 +720,9 @@
               "type": "<class 'float'>"
             },
             {
-              "default": 0.08726646259971647,
+              "default": 0.3,
               "default_factory": null,
-              "name": "gate_min_crank_rad_s",
+              "name": "release_hold_s",
               "type": "<class 'float'>"
             },
             {

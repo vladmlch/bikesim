@@ -453,8 +453,7 @@ void post_init(const MotorProfile &profile) {
           {"cadence_support_max_rpm",
            &MotorProfile::cadence_support_max_rpm},
           {"cutoff_mps", &MotorProfile::cutoff_mps},
-          {"taper_width_mps", &MotorProfile::taper_width_mps},
-          {"gate_min_crank_rad_s", &MotorProfile::gate_min_crank_rad_s}})
+          {"taper_width_mps", &MotorProfile::taper_width_mps}})
         scalar(profile.*member, name, std::nullopt, true);
     if (!nonblank(profile.name)) fail("motor profile requires a name");
     if (profile.rated_power_w > profile.peak_power_w)
@@ -495,14 +494,12 @@ void post_init(AssistConfig &config) {
     double tau = config.tau;
     double cutoff_mps = config.cutoff_mps;
     double taper_width_mps = config.taper_width_mps;
-    double gate_min_crank_rad_s = config.gate_min_crank_rad_s;
     if (profile != nullptr) {
         max_torque = profile->peak_torque_nm;
         max_power = profile->peak_power_w;
         tau = profile->torque_tau_s;
         cutoff_mps = profile->cutoff_mps;
         taper_width_mps = profile->taper_width_mps;
-        gate_min_crank_rad_s = profile->gate_min_crank_rad_s;
         // `mode in p.mode_gains` — the four fixed keys.
         if (!in_set(config.mode,
                     std::initializer_list<std::string_view>{"eco", "tour",
@@ -515,7 +512,7 @@ void post_init(AssistConfig &config) {
     scalar(max_torque, "max_torque", 0.);
     scalar(max_power, "max_power", 0.);
     scalar(config.engage_torque_nm, "engage_torque_nm", 0.);
-    scalar(gate_min_crank_rad_s, "gate_min_crank_rad_s", 0.);
+    scalar(config.release_hold_s, "release_hold_s", 0.);
     scalar(cutoff_mps, "cutoff_mps", 0.);
     scalar(tau, "assist lag", std::nullopt, true);
     scalar(config.slew, "assist slew", std::nullopt, true);

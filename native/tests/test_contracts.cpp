@@ -123,7 +123,7 @@ namespace {
     drivetrain::AssistConfig valid_assist_config() {
         return {
             .gain = 1.5, .max_torque = 90., .max_power = 600., .tau = .08,
-            .slew = 400., .engage_torque_nm = 5., .gate_min_crank_rad_s = 1.,
+            .slew = 400., .engage_torque_nm = 5., .release_hold_s = .3,
             .cutoff_mps = 11.1, .taper_width_mps = 1.5,
             .torque_curve = std::nullopt, .profile = std::nullopt, .mode = "turbo"
         };
@@ -283,7 +283,7 @@ namespace {
         require_invalid_assist_config([](auto &c) { c.max_torque = -1.; });
         require_invalid_assist_config([](auto &c) { c.max_power = std::numeric_limits<double>::quiet_NaN(); });
         require_invalid_assist_config([](auto &c) { c.engage_torque_nm = -1.; });
-        require_invalid_assist_config([](auto &c) { c.gate_min_crank_rad_s = -1.; });
+        require_invalid_assist_config([](auto &c) { c.release_hold_s = -1.; });
         require_invalid_assist_config([](auto &c) { c.cutoff_mps = -1.; });
     }
 
@@ -1600,6 +1600,8 @@ namespace {
     bool same(const drivetrain::AssistSnapshot &a,
               const drivetrain::AssistSnapshot &b) {
         return same(a.torque, b.torque) && same(a.last_gain, b.last_gain) &&
+               same(a.hold_power_w, b.hold_power_w) &&
+               same(a.release_hold_left_s, b.release_hold_left_s) &&
                a.pedaling == b.pedaling;
     }
     bool same(const drivetrain::PendingActuation &a,

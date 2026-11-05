@@ -283,7 +283,6 @@ Value drive(const cfg::SimulationPhysicsConfig& physics_config, const Value& doc
         set(assist, "slew", real(std::max(a.slew, p->peak_torque_nm / p->torque_tau_s)));
         set(assist, "cutoff_mps", real(p->cutoff_mps));
         set(assist, "taper_width_mps", real(p->taper_width_mps));
-        set(assist, "gate_min_crank_rad_s", real(p->gate_min_crank_rad_s));
         set(assist, "profile", Value{Object{{"mode_gains", Value{Object{
             {"eco", real(p->mode_gains.eco)}, {"tour", real(p->mode_gains.tour)},
             {"emtb", reals(p->mode_gains.emtb)}, {"turbo", real(p->mode_gains.turbo)}}}},

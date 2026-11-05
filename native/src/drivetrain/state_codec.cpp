@@ -275,7 +275,8 @@ namespace {
         exact(s, ncd::keys("rear_teeth", "from_teeth", "cooldown_s",
                               "cut_remaining_s", "shift_count", "direction",
                               "cadence_ema", "required_ema"));
-        exact(a, ncd::keys("torque", "pedaling", "last_gain"));
+        exact(a, ncd::keys("torque", "pedaling", "last_gain",
+                              "hold_power_w", "release_hold_left_s"));
         out.pedaling = {
             .coasting = boolean(p, "coasting"),
             .target_phase_rad = optional_num(p, "target_phase_rad"),
@@ -294,6 +295,8 @@ namespace {
             .required_ema = optional_num(s, "required_ema")};
         out.assist = {.torque = num(a, "torque"),
                       .last_gain = num(a, "last_gain"),
+                      .hold_power_w = num(a, "hold_power_w"),
+                      .release_hold_left_s = num(a, "release_hold_left_s"),
                       .pedaling = boolean(a, "pedaling")};
     }
 
@@ -420,6 +423,9 @@ namespace {
         a.emplace_back("torque", real_value(s.assist.torque));
         a.emplace_back("pedaling", bio::Value{s.assist.pedaling});
         a.emplace_back("last_gain", real_value(s.assist.last_gain));
+        a.emplace_back("hold_power_w", real_value(s.assist.hold_power_w));
+        a.emplace_back("release_hold_left_s",
+                       real_value(s.assist.release_hold_left_s));
         bio::Value::Object out;
         out.emplace_back("pedaling", bio::Value{std::move(p)});
         out.emplace_back("shifting", bio::Value{std::move(sh)});

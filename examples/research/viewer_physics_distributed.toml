@@ -64,8 +64,9 @@ rollback_demand = 1.0
 # Turbo 3.4, taper 23-25 km/h. The profile owns those numbers; only the
 # cadence envelope and the engagement threshold are declared here.
 # RU: режим ассиста: eco | tour | emtb | turbo. Мотор = множитель x момент
-# на педалях через лаг 40 мс; ассист только при шатуне вперёд > 5 град/с и
-# моменте стопы > engage_torque_nm. Stall-отсечки и boost нет.
+# на педалях через лаг 40 мс; вал мотора не связан с шатуном жёстко, шатун
+# ассист не глушит. При ослаблении нажима мотор release_hold_s держит
+# прежнюю мощность (выбег, Р1). Stall-отсечки и boost нет.
 profile = "bosch_cx_gen4"
 mode = "turbo"
 # Torque envelope vs crank rpm (crank == motor shaft with the rigid
@@ -74,6 +75,9 @@ mode = "turbo"
 torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
 # Sensor noise floor: measured pedal torque below this is "not pedalling".
 engage_torque_nm = 4.0
+# P1 run-on: after the rider eases off the motor holds its delivered
+# power (torque x shaft speed) for this window before following the tau lag.
+release_hold_s = 0.3
 
 [drive.gearing]
 front_teeth = 22

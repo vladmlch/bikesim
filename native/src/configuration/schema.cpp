@@ -621,7 +621,7 @@ bool schema_entry(std::string_view name, std::string_view &required,
           .optional = ""}},
         {.name = "drive.assist", .entry =
          {.required = "gain max_torque max_power tau slew engage_torque_nm "
-          "gate_min_crank_rad_s cutoff_mps taper_width_mps mode",
+          "release_hold_s cutoff_mps taper_width_mps mode",
           .optional = "profile torque_curve"}},
         {.name = "drive.assist.profile", .entry =
          {.required = "mode_gains emtb_full_gain_at_nm",

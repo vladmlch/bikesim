@@ -62,6 +62,8 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 "(120.1,47.7),(180,0))");
     bt::require(assist.engage_torque_nm == 4.,
                 "assist engages at 4 Nm");
+    bt::require(assist.release_hold_s == .3,
+                "the motor runs on for .3 s after the rider eases off");
 }
 
 // test_rider_numbers

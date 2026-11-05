@@ -891,9 +891,8 @@ namespace drivetrain {
                           in.control.human_torque_nm);
         last.set(TelemetryField::assist_demand_gated,
                  in.braking ||
-                 m.assist_sensor <= config_.policies.assist.engage_torque_nm ||
-                 m.omega_crank <=
-                 config_.policies.assist.gate_min_crank_rad_s);
+                 (m.assist_sensor <= config_.policies.assist.engage_torque_nm &&
+                  bank.assist.release_hold_left_s <= 0.));
         last.set(TelemetryField::assist_sensor_nm, m.assist_sensor);
         last.set(TelemetryField::human_command_nm, m.ps.effort_nm);
         // The PedalMode ordinal doubles as the rider_mode label index

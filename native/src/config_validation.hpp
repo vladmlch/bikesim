@@ -158,7 +158,7 @@ namespace drivetrain {
         validation::positive(s.tau, "config.drive.assist.tau");
         validation::positive(s.slew, "config.drive.assist.slew");
         validation::nonnegative(s.engage_torque_nm, "config.drive.assist.engage_torque_nm");
-        validation::nonnegative(s.gate_min_crank_rad_s, "config.drive.assist.gate_min_crank_rad_s");
+        validation::nonnegative(s.release_hold_s, "config.drive.assist.release_hold_s");
         validation::nonnegative(s.cutoff_mps, "config.drive.assist.cutoff_mps");
         validation::positive(s.taper_width_mps, "config.drive.assist.taper_width_mps");
         if (s.taper_width_mps > s.cutoff_mps) throw std::invalid_argument("config.drive.assist.taper_width_mps");

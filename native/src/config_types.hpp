@@ -46,7 +46,7 @@ namespace drivetrain {
 
     struct AssistConfig {
         double gain{}, max_torque{}, max_power{}, tau{}, slew{}, engage_torque_nm{};
-        double gate_min_crank_rad_s{}, cutoff_mps{}, taper_width_mps{};
+        double release_hold_s{}, cutoff_mps{}, taper_width_mps{};
         std::optional<std::vector<std::array<double, 2> > > torque_curve;
         std::optional<MotorProfile> profile;
         std::string mode;
@@ -75,6 +75,11 @@ namespace drivetrain {
 
     struct AssistSnapshot {
         double torque{}, last_gain{};
+        // Motor run-on (P1): the power captured when the rider target last
+        // dropped below the delivered torque, and the window left to hold it.
+        // hold_power_w > 0 with an expired window marks a spent hold — it is
+        // not re-armed until the target rises again.
+        double hold_power_w{}, release_hold_left_s{};
         bool pedaling{};
     };
 

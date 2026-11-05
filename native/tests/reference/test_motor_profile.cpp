@@ -24,7 +24,6 @@ void test_bosch_profile_values_are_the_recalled_unverified_set() {
     bt::require(profile->torque_tau_s == .04, "recalled torque lag");
     near(profile->cutoff_mps, 25. / 3.6, "recalled cutoff");
     near(profile->taper_width_mps, 2. / 3.6, "recalled taper");
-    near(profile->gate_min_crank_rad_s, 5. * std::numbers::pi / 180., "recalled crank gate");
     bt::require(profile->provenance.find("unverified") != std::string::npos &&
         profile->provenance.find("no web lookup") != std::string::npos, "unverified provenance is retained");
 }
@@ -69,7 +68,7 @@ void test_profile_rejects_invalid_data(const bike::io::Value& valid_writer) {
         [](auto& p) { p.name.clear(); }, [](auto& p) { p.provenance = "  "; },
         [](auto& p) { p.taper_width_mps = 8.; }, [](auto& p) { p.peak_torque_nm = 0.; },
         [](auto& p) { p.rated_power_w = 700.; }, [nan](auto& p) { p.torque_tau_s = nan; },
-        [inf](auto& p) { p.gate_min_crank_rad_s = inf; },
+        [inf](auto& p) { p.cadence_support_max_rpm = inf; },
         [](auto& p) { p.mode_gains.emtb = {3.4, 1.4}; }, [nan](auto& p) { p.mode_gains.eco = nan; }};
     for (const auto& change : changes) {
         auto profile = cfg::kBoschCxGen4; change(profile);
@@ -90,7 +89,6 @@ void test_profile_rejects_invalid_data(const bike::io::Value& valid_writer) {
     }
 }
 void test_pedelec_cap_is_a_permission_not_a_throttle(const drivetrain::AssistConfig& config) {
-    const double gate_rpm = 5. / 6.;
     const double one_radian_per_second_rpm = 60. / (2. * std::numbers::pi);
     // The native API returns delivered torque, so the uncapped permission is
     // observed as the full 3.4*10 Nm rider request. It exposes no infinity cap.
@@ -105,15 +103,16 @@ void test_pedelec_cap_is_a_permission_not_a_throttle(const drivetrain::AssistCon
     bt::require(delivered(10., one_radian_per_second_rpm, std::nullopt, true) == 0., "braking denies permission");
     bt::require(delivered(0., one_radian_per_second_rpm, std::nullopt, false) == 0., "zero effort denies permission");
     bt::require(delivered(-3., one_radian_per_second_rpm, std::nullopt, false) == 0., "negative effort denies permission");
-    bt::require(delivered(10., gate_rpm, std::nullopt, false) == 0., "exact crank gate denies permission");
-    bt::require(delivered(10., -one_radian_per_second_rpm, std::nullopt, false) == 0., "backward crank denies permission");
-    near(delivered(10., gate_rpm * 1.01, std::nullopt, false), 34., "above crank gate grants full support");
+    // The crank-speed gate is gone with the motor clutch: cadence near or
+    // below zero no longer denies permission — sensed effort owns that now.
+    near(delivered(10., 0., std::nullopt, false), 34., "stopped crank grants full support");
+    near(delivered(10., -one_radian_per_second_rpm, std::nullopt, false), 34., "backward crank grants full support");
 }
 void test_pedelec_cap_rejects_invalid_inputs(const drivetrain::AssistConfig& config) {
     AssistController c(config);
     bt::invalid([&] { (void)c.step(std::numeric_limits<double>::quiet_NaN(), 60., 0., false, .001); });
     bt::invalid([&] { (void)c.step(10., std::numeric_limits<double>::infinity(), 0., false, .001); });
-    auto bad = config; bad.gate_min_crank_rad_s = -.1;
+    auto bad = config; bad.release_hold_s = -.1;
     bt::invalid([&] { (void)AssistController(bad); });
     for (double cap : {-1., std::numeric_limits<double>::infinity()})
         bt::invalid([&] { (void)c.step(10., 60., 0., false, .001, cap); });

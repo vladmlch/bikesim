@@ -167,7 +167,6 @@ struct MotorProfile {
     double cadence_support_max_rpm;
     double cutoff_mps;
     double taper_width_mps;
-    double gate_min_crank_rad_s;
     std::string provenance;
 };
 
@@ -176,7 +175,6 @@ struct MotorProfile {
 inline const MotorProfile kBoschCxGen4{
     .name="bosch_performance_line_cx_gen4", .peak_torque_nm=85., .rated_power_w=250., .peak_power_w=600., .torque_tau_s=.04,
     .mode_gains={.eco=.6, .tour=1.4, .emtb={1.4, 3.4}, .turbo=3.4}, .emtb_full_gain_at_nm=40., .cadence_support_max_rpm=120., .cutoff_mps=25. / 3.6, .taper_width_mps=2. / 3.6,
-    .gate_min_crank_rad_s=0.08726646259971647 /* radians(5) */,
     .provenance="Bosch Performance Line CX Gen 4 (no ABS); recalled from memory "
     "2026-10-04, unverified, no web lookup by user instruction"};
 [[nodiscard]] const MotorProfile* find_motor_profile(std::string_view name);
@@ -209,7 +207,7 @@ struct TireBackendConfig {
 };
 
 struct AssistConfig {
-    // A named profile owns torque/power/lag/cutoff/taper/gate; explicit
+    // A named profile owns torque/power/lag/cutoff/taper; explicit
     // values describe a synthetic motor when no profile is selected.
     std::optional<std::string> profile;
     std::string mode = "turbo";
@@ -219,7 +217,7 @@ struct AssistConfig {
     double tau = .05;
     double slew = 400.;
     double engage_torque_nm = 4.;
-    double gate_min_crank_rad_s = 0.08726646259971647;  // radians(5.)
+    double release_hold_s = .3;  // motor run-on after the rider eases off; unverified
     double cutoff_mps = 25. / 3.6;
     double taper_width_mps = 2. / 3.6;
     std::optional<std::vector<std::array<double, 2>>> torque_curve;
@@ -702,7 +700,7 @@ inline constexpr auto kAssistConfigFields = std::to_array<FieldDecl>({
     REAL(AssistConfig, tau),
     REAL(AssistConfig, slew),
     REAL(AssistConfig, engage_torque_nm),
-    REAL(AssistConfig, gate_min_crank_rad_s),
+    REAL(AssistConfig, release_hold_s),
     REAL(AssistConfig, cutoff_mps),
     REAL(AssistConfig, taper_width_mps),
     {.name="torque_curve", .type="tuple[tuple[float, float], ...] | None",

@@ -601,7 +601,7 @@ const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone
     {{"drive", "shifting", "upshift_slip_limit_mps"}},
     {{"drive", "assist", "gain"}}, {{"drive", "assist", "max_torque"}},
     {{"drive", "assist", "max_power"}}, {{"drive", "assist", "engage_torque_nm"}},
-    {{"drive", "assist", "gate_min_crank_rad_s"}}, {{"drive", "assist", "cutoff_mps"}},
+    {{"drive", "assist", "release_hold_s"}}, {{"drive", "assist", "cutoff_mps"}},
 };
 
 Value without_profile() {
@@ -955,7 +955,7 @@ void test_zero_disable_policy_fields_remain_bitwise_valid() {
     source.shifting.shift_cooldown_s = 0.; source.shifting.shift_cut_duration_s = 0.;
     source.shifting.cadence_smoothing_tau_s = 0.; source.shifting.upshift_slip_limit_mps = 0.;
     source.assist.gain = 0.; source.assist.max_torque = 0.; source.assist.max_power = 0.;
-    source.assist.engage_torque_nm = 0.; source.assist.gate_min_crank_rad_s = 0.;
+    source.assist.engage_torque_nm = 0.; source.assist.release_hold_s = 0.;
     auto const stepper = drivetrain_reference::pair(source);
     drivetrain_reference::components(golden,
         drivetrain_reference::components(*stepper, .001, 0.));

@@ -81,7 +81,8 @@ namespace drivetrain {
         void reset() noexcept { state_ = {}; }
 
         [[nodiscard]] PedalingState update(double phase_rad, double rate_rad_s, double required_cadence_rpm,
-                                           double effort_nm, double dt, bool enabled = true, bool braking = false);
+                                           double effort_nm, double dt, bool enabled = true, bool braking = false,
+                                           std::optional<double> shaft_rad_s = std::nullopt);
 
         [[nodiscard]] const PedalingSnapshot &state() const noexcept { return state_; }
 

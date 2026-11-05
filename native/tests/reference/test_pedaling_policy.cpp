@@ -93,6 +93,41 @@ void test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning() {
     bt::require(state.mode == PedalMode::pedaling && state.required_cadence_rpm == 160.,
                 "stopped crank resumes despite spinning freehub wheel");
 }
+void test_open_clutch_never_wishes_below_the_shaft() {
+    // Plan 2026-11-05-clutch-pedaling-fixes task 2 (Р2): the crank-rate
+    // wish is the ceiling the rider spins up to, not a target the crank is
+    // braked down to. While the one-way motor clutch is open the shaft
+    // outruns the crank, and a wish below it holds the crank back and
+    // starves the legs — the wish meets the shaft so the crank comes up
+    // and the clutch re-engages.
+    const double crank = 60. * rpm_to_rad_s, shaft = 110. * rpm_to_rad_s;
+    PedalingPolicy policy(pedaling_config(.35));
+    const auto open = policy.update(0., crank, 110., 30., .001, true, false, shaft);
+    bt::require(open.mode == PedalMode::pedaling, "the lagging crank keeps pedaling");
+    bt::require(open.target_rate_rad_s >= shaft,
+                "the wish is not below the shaft while the clutch is open");
+    // The backdriven stall signature: a crank ringing negative still gets a
+    // wish at the shaft, not its own slowed EMA.
+    const auto backdriven = policy.update(0., -4.5, 110., 30., .001, true, false, shaft);
+    bt::require(backdriven.target_rate_rad_s >= shaft,
+                "a backward-ringing crank still meets the shaft");
+    // Rigid link (the shaft arg absent) and an engaged clutch (shaft not
+    // faster than the crank) keep the min(required, ema) wish — the floor
+    // never engages there.
+    const auto rigid = PedalingPolicy(pedaling_config(.35)).update(0., crank, 110., 30., .001);
+    drive_reference::near(rigid.target_rate_rad_s, crank, "rigid link keeps the ema wish");
+    const auto engaged = PedalingPolicy(pedaling_config(.35))
+                             .update(0., crank, 110., 30., .001, true, false, crank);
+    drive_reference::near(engaged.target_rate_rad_s, crank, "engaged clutch keeps the ema wish");
+    // Coasting keeps its own decaying target — the floor is pedaling-only.
+    PedalingPolicy coasting(pedaling_config(.35));
+    drivetrain::PedalingState state;
+    for (int i = 0; i < 1500; ++i) state = coasting.update(0., 160. * rpm_to_rad_s, 160., 30., .001);
+    bt::require(state.mode == PedalMode::coasting, "sustained cadence coasts");
+    const auto hold = coasting.update(0., 0., 160., 30., .001, true, false, shaft);
+    bt::require(hold.mode == PedalMode::coasting && hold.target_rate_rad_s < shaft,
+                "coasting keeps its decaying target below the shaft");
+}
 } // namespace
 int main() { return bt::run([] {
     test_reposition_knobs_exist_and_mode_domain_is_unchanged();
@@ -104,4 +139,5 @@ int main() { return bt::run([] {
     test_coast_tau_must_be_nonnegative();
     test_wheel_implied_cadence_does_not_stop_legs_below_their_limit();
     test_stopped_cranks_resume_while_the_open_freehub_wheel_keeps_turning();
+    test_open_clutch_never_wishes_below_the_shaft();
 }); }

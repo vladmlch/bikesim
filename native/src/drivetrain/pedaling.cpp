@@ -25,10 +25,12 @@ namespace drivetrain {
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror pedaling.py
     PedalingState PedalingPolicy::update(double phase, double rate, double required, double effort,
-                                         double dt, bool enabled, bool braking) {
+                                         double dt, bool enabled, bool braking,
+                                         std::optional<double> shaft_rad_s) {
         finite(phase, "crank phase");
         finite(rate, "crank rate");
         finite(required, "required cadence");
+        finite_optional(shaft_rad_s, "shaft rate");
         nonnegative(effort, "rider effort");
         positive(dt, "pedaling interval");
         required = std::max(required, 0.);
@@ -76,9 +78,20 @@ namespace drivetrain {
             // wheel-implied rate falls (the engaged sweep decelerates the
             // crank) the wish tracks instantly, since the drivetrain
             // decelerates the legs whether they intend it or not.
-            const double wish = validation::derived(
+            double wish = validation::derived(
                 std::max(std::min(required, engaged(state_.cadence_ema)) * 2. * std::numbers::pi / 60., 0.),
                 "PedalingPolicy.target_rate");
+            // The wish is a ceiling the rider spins the crank up to, not a
+            // target the crank is braked down to. While the one-way motor
+            // clutch is open the shaft outruns the crank; a wish below the
+            // shaft would hold the crank back and keep the legs unloaded,
+            // so it floors at the shaft and the crank comes up until the
+            // clutch re-engages. A rigid link reads shaft == crank and the
+            // floor never engages; only ordinary pedaling gets it — the
+            // coasting and crank-reposition targets keep their own rates.
+            const double shaft = shaft_rad_s.value_or(rate);
+            if (shaft > rate)
+                wish = std::max(wish, shaft);
             return {
                 .mode = PedalMode::pedaling, .reason = CoastReason::none, .effort_nm = effort, .required_cadence_rpm = required,
                 .target_phase_rad = std::nullopt, .target_rate_rad_s = wish

@@ -732,7 +732,8 @@ namespace drivetrain {
         }
         auto result = pedaling.update(q[static_cast<std::size_t>(crank.qpos)],
                                       v[static_cast<std::size_t>(crank.dof)], required,
-                                      effort, in.dt, enabled, in.braking);
+                                      effort, in.dt, enabled, in.braking,
+                                      v[static_cast<std::size_t>(shaft_joint_.dof)]);
         if (in.ceiling)
             result.effort_nm = std::min(
                 result.effort_nm,

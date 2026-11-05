@@ -93,7 +93,7 @@ none exists.
 was removed at T63 and the switch survives as fail-closed CLI surface.
 `--time-scale` is accepted
 only for interactive physical/research runs, with values 1, 2, 4 and 8; absent
-means 1. Supplying it to a headless, legacy or track-preview run is an error,
+means 1. Supplying it to a headless or track-preview run is an error,
 including an explicit `--time-scale 1`.
 
 The supplied welded profile remains at **0.00125 s**. Playback never edits the
@@ -132,8 +132,7 @@ experimental multi-contact `distributed_2d_reference` tyre (unvalidated
 material; see
 [the native distributed tyre audit](superpowers/audits/2026-10-11-native-distributed-tire.md)),
 `ideal_mid_drive`, no motor clutch and zero reflected rotor inertia. Native
-selection does not add elastic-chain, alternative-support or legacy drive
-support.
+selection does not add elastic-chain or alternative-support drive support.
 
 Held brakes distinguish rolling from standstill. While a wheel turns, physical
 braking is the solved static-friction bound (`dof_frictionloss`) and the
@@ -147,7 +146,7 @@ below `brake_hold_engage_radps`, and a bounded spring–damper torque
 thresholds give hysteresis, the hold reports as its own `brake_hold` force
 component and folds into energy-loss accounting, and it resets with each
 episode. Setting the hold torque or stiffness to zero disables the bite and
-preserves the legacy fade-only behaviour.
+preserves the fade-only behaviour.
 
 The `pneumatic` tyre's model contract, fitted constants and literature targets —
 the sections the code cites as `RIDE.md §3.1`, `§4.1`, `§11.2` and `§12 item 10`,
@@ -164,7 +163,7 @@ R seals the current generation in RAM and resets the same compiled setup.
 
 Physical/research persistence now requires `--record`; `--out` alone does not
 enable it. The ordinary new recording adapter requires `--backend native`.
-Without recording there are no automatic preview CSV, per-generation legacy
+Without recording there are no automatic preview CSV, per-generation
 bundles or recording-derived HTML files. With recording, every accounted interval
 and all reset-separated episodes remain in RAM until launch close. Finalization
 publishes one exclusive run directory containing `run.duckdb`, `manifest.json` and

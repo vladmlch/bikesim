@@ -1,6 +1,7 @@
-# Welded-rider research profile: pinned seated rider (saddle pin, spindle foot
-# connects, bar connects), ideal mid-drive, Bosch CX Gen 4 assist
-# (recalled, unverified). Default for bike-ride and the acceptance rides.
+# Welded-rider research profile: rider pinned to the saddle (saddle pin,
+# spindle foot connects, bar connects), ideal mid-drive, Bosch CX Gen 4
+# assist (recalled, unverified). Default for bike-ride and the acceptance
+# rides.
 physics_mode = "physical"
 drive_mode = "articulated_effort"
 timestep_s = 0.00125

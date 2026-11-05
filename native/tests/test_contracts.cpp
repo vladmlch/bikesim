@@ -2428,11 +2428,11 @@ namespace {
     // actuators) plus every name the remaining try_* entries resolve —
     // collision-disabled sphere contact geoms on both wheel bodies (brake
     // and tire), brake actuators on the wheel spins, the limited
-    // suspension slides, an unlimited rider slide, and the compiled
-    // 'terrain' hfield. The raster is patched after load so the front
-    // wheel's contact window covers a height change and measured ticks
-    // run ProfileQuery's candidate path — never the flat-window early
-    // return; the rear wheel stays on the flat path.
+    // suspension slides, and the compiled 'terrain' hfield. The raster is
+    // patched after load so the front wheel's contact window covers a
+    // height change and measured ticks run ProfileQuery's candidate path —
+    // never the flat-window early return; the rear wheel stays on the flat
+    // path.
     constexpr std::string_view warm_xml = R"XML(
 <mujoco><option timestep=".0002" gravity="0 0 0"/>
 <default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
@@ -2447,7 +2447,6 @@ namespace {
   <body name="pedal_rear"><joint name="pedal_rear_spin" axis="0 1 0"/><geom/></body>
   <body name="fork"><joint name="fork_stroke" type="slide" axis="0 0 1" limited="true" range="0 .15"/><geom/></body>
   <body name="shock"><joint name="shock_stroke" type="slide" axis="0 0 1" limited="true" range="0 .075"/><geom/></body>
-  <body name="saddle"><joint name="saddle_z" type="slide" axis="0 0 1"/><geom/></body>
 </body></worldbody>
 <tendon><fixed name="ideal_mid_drive_freehub" limited="true" range="-100 0"><joint joint="crank_spin" coef="1.4166666666666667"/><joint joint="rear_wheel_spin" coef="-1"/></fixed></tendon>
 <actuator><motor name="human_crank" joint="crank_spin"/><motor name="mid_drive" joint="crank_spin"/><motor name="front_brake" joint="front_wheel_spin"/><motor name="rear_brake" joint="rear_wheel_spin"/></actuator>
@@ -2614,10 +2613,10 @@ namespace {
     }
 
     // Model + data seeded to a steady ride pose — carrier sag, spinning
-    // crank/wheels, compressed suspension and a settled rider — so every
-    // warm tick sees nonzero inputs. The forward runs before the hfield
-    // patch: the profile compile reads geom transforms from the data,
-    // while the bump only changes raster VALUES.
+    // crank/wheels and compressed suspension — so every warm tick sees
+    // nonzero inputs. The forward runs before the hfield patch: the
+    // profile compile reads geom transforms from the data, while the bump
+    // only changes raster VALUES.
     struct WarmContext {
         drivetrain::OwnedModel model;
         drivetrain::OwnedData data;
@@ -2634,8 +2633,6 @@ namespace {
                      joint_qpos(model.get(), "fork_stroke"))] = .04;
             qpos[static_cast<std::size_t>(
                      joint_qpos(model.get(), "shock_stroke"))] = .02;
-            qpos[static_cast<std::size_t>(
-                     joint_qpos(model.get(), "saddle_z"))] = .005;
             qvel[static_cast<std::size_t>(
                      joint_dof(model.get(), "root_x"))] = 2.;
             qvel[static_cast<std::size_t>(

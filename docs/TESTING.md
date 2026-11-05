@@ -1005,8 +1005,9 @@ force, control, energy or geometry publication.
 Integer click/token clipping remains intentional normalization. Air pressure
 setters/calibration retain their 10 psi floor after domain/derived-value checks.
 Declared unreachable air travel is permitted when the evaluated chamber is
-usable. Legacy HBO may start beyond travel and keeps its negative-denominator
-clamped branch; an activated zero denominator is rejected. Zero coast/filter
+usable. The legacy damper curve was removed with legacy mode (2026-11-04);
+its HBO could start beyond travel and kept a negative-denominator clamped
+branch. An activated zero denominator is rejected. Zero coast/filter
 and rider-effort slew values retain their existing disabled branches; assist
 lag/slew/taper denominators remain positive. Zero physical damping, torque,
 power and energy limits are retained where their existing branches permit them.
@@ -1144,7 +1145,6 @@ Clang, empty otherwise):
 | `SuspensionWriter::try_components_into` | `ok`, `invalid_input` |
 | `BrakeWriter::try_compute_into` | `ok`, `invalid_input` |
 | `ResistanceWriter::try_components_into` | `ok`, `invalid_input` |
-| `RiderForcesWriter::try_compute_into` | `ok`, `invalid_input` |
 | `TireWriter::try_compute_into` | `ok`, `invalid_input` |
 | `drivetrain::DrivetrainWriter::try_components_into` | `ok`, `invalid_input`, `invalid_geometry`, `pending_actuation` |
 | `Stepper::try_step` / `Stepper::try_forward` | engine `ErrorBuffer` (fixed storage) |
@@ -1153,7 +1153,7 @@ Clang, empty otherwise):
 The throwing convenience surfaces (`components()`, `qfrc()`, `torques()`,
 the boxed `Stepper` methods) route through the same `*_into` writers over
 construction-sized member scratch (`Stepper::suspension_views_`,
-`resistance_views_`, `tire_out_`, `rider_out_`); their only allocation is
+`resistance_views_`, `tire_out_`); their only allocation is
 the returned boxed object. Writer scratch is sized at construction:
 `ProfileQuery` owns its candidate/keep-mask/near/normal/dot vectors, the
 tire writer owns output/Jacobian/staging buffers, and the drivetrain owns
@@ -1208,11 +1208,9 @@ counts (Apple clang 21, arm64, `native/build`):
 | drive/ideal_mid_drive op_reset / op_restore | 1 / 4 (5) | recorded — out of claim |
 | drive/geometric_ideal_mid_drive op_reset / op_restore | 7 / 10 (13) | recorded — out of claim |
 | drive/*/boxed | 0 (0–2 freed) | recorded — boxed surface |
-| suspension_legacy core / boxed | 0 / 8 (8) | core asserted, boxed recorded |
 | suspension_physical core / boxed | 0 / 9 (9) | core asserted, boxed recorded |
 | brake core / boxed | 0 / 0 | core asserted, boxed recorded |
 | resistance core / boxed | 0 / 5 (5) | core asserted, boxed recorded |
-| rider core / boxed | 0 / 1 (1) | core asserted, boxed recorded |
 | tire_configured, tire_track core / boxed | 0 / 1 (1) | core asserted, boxed recorded |
 | engine/forward | 0 (0) | asserted zero |
 | */construction | nonzero | recorded — scratch and first-engagement sizing live here |

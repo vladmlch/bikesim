@@ -1,6 +1,6 @@
 # Distributed-tyre research profile: the welded rider on the experimental multi-contact
-# tyre backend. Pinned seated rider (saddle pin, spindle foot connects, bar
-# connects), ideal mid-drive, Bosch CX Gen 4 assist (recalled, unverified).
+# tyre backend. Rider pinned to the saddle (saddle pin, spindle foot connects,
+# bar connects), ideal mid-drive, Bosch CX Gen 4 assist (recalled, unverified).
 physics_mode = "physical"
 drive_mode = "articulated_effort"
 timestep_s = 0.00125

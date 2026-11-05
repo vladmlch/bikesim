@@ -26,8 +26,7 @@ native artifact.
 recording. Ordinary physical `bike-ride --backend native` supports capture in
 headless and viewer modes. `bike-research` and `bike-ride --research` support
 capture. The Python research/execution routes that once shared this surface were
-removed at T63. Legacy/nonphysical and preview modes reject the
-new recording flag.
+removed at T63. The preview mode rejects the new recording flag.
 
 Without recording, physical accounting, live views, checks, sensor delay queues
 and running metrics remain active. Optional sample/command/observation histories,

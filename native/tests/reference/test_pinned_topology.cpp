@@ -226,8 +226,7 @@ void test_joint_profiles_select_present_joints_and_require_them() {
 } // namespace
 
 // The Compiled record embeds the resolved SpindleConfig wire — multi-KiB
-// of automatic storage, over the -Wframe-larger-than=8192 gate like the
-// sibling rider-forces port.
+// of automatic storage, over the -Wframe-larger-than=8192 gate.
 // cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {

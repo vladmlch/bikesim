@@ -76,3 +76,14 @@ with `bike-recording golden freeze`; the before comparison (old golden
 against the new program) is kept in `docs/superpowers/audits/2026-11-04-no-joint-damping-episode-{before,after}.txt`. The
 linux-aarch64 goldens are not re-recorded yet and are stale until the
 container run.
+
+## Note 2026-11-05: legacy mode, the stand model modes and the seated rider variant removed
+
+The legacy physics mode (`physics_mode = "legacy"`), the stand model
+modes, the legacy damper curve and the `seated` rider variant with its
+`rider_forces` writer were removed; their code paths, CLI flags and
+consumed goldens are deleted. Physical mode is the only ride/research
+mode and a legacy `physics_mode` document now fails validation loudly
+(`native/src/configuration/schema.cpp`). Goldens that only the removed
+paths consumed were deleted with them; fixtures retained for other
+controls are unchanged.

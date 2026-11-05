@@ -2438,7 +2438,6 @@ double PhysicalStep::loss_increment(
     }
     loss += diag_number(last, "freehub_dissipation_power_w") * dt;
     loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
-    loss += diag_number(last, "motor_freewheel_dissipation_power_w") * dt;
     if (stepper_->has_tire())
         loss += stepper_->tire_writer().brush_loss_step_j() +
             stepper_->tire_writer().radial_dissipation_power_w() * dt;

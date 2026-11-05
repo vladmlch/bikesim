@@ -28,8 +28,7 @@ namespace drivetrain {
                             config.drive_mode == "articulated_effort";
         // Topology is selected by the config, not discovered from the snapshot.
         if (s.ideal_hub.has_value() != effort ||
-            s.clutch.has_value() != (effort && config.motor_clutch) ||
-            s.freewheel.has_value() != (effort && config.rotor_inertia_kgm2 > 0.))
+            s.clutch.has_value() != (effort && config.motor_clutch))
             throw std::invalid_argument("transmission topology");
         // A pending actuation exists only after a compute that also set the clock.
         if (s.pending_actuation && !s.last_time_s)
@@ -47,8 +46,7 @@ namespace drivetrain {
              !std::ranges::contains(cassette, s.shifting.from_teeth)))
             throw std::invalid_argument("shifter teeth outside the cassette");
         // Auxiliary transmissions are fixed 1:1 one-way clutches.
-        for (const auto *aux: {s.clutch ? &*s.clutch : nullptr,
-                               s.freewheel ? &*s.freewheel : nullptr})
+        for (const auto *aux: {s.clutch ? &*s.clutch : nullptr})
             if (aux && (aux->ratio != 1. || aux->rear_teeth != 3 ||
                         aux->coefficients.size() != 1 || aux->coefficients[0] != 1.))
                 throw std::invalid_argument("auxiliary transmission topology");
@@ -118,18 +116,15 @@ namespace drivetrain {
             };
             joints_.emplace(name, j);
         }
-        for (const char *name: {"drive_shaft_spin", "rotor_spin"}) {
-            const std::string key(name);
-            if ((key == "drive_shaft_spin" && config_.motor_clutch) ||
-                (key == "rotor_spin" && config_.rotor_inertia_kgm2 > 0.)) {
-                const int id = resolve(m, mjOBJ_JOINT, name);
-                topology::joint(m, id, name, mjJNT_HINGE, {0., 1., 0.});
-                Joint const j{
-                    .qpos = buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)],
-                    .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
-                };
-                joints_.emplace(name, j);
-            }
+        if (config_.motor_clutch) {
+            const char *name = "drive_shaft_spin";
+            const int id = resolve(m, mjOBJ_JOINT, name);
+            topology::joint(m, id, name, mjJNT_HINGE, {0., 1., 0.});
+            Joint const j{
+                .qpos = buffer(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(id)],
+                .dof = buffer(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(id)]
+            };
+            joints_.emplace(name, j);
         }
         // joints_ is immutable from here on — resolve the warm-path lookups
         // once (see the cache members' comment in the header for why a
@@ -140,8 +135,7 @@ namespace drivetrain {
         shaft_joint_ =
                 joints_.contains("drive_shaft_spin")
                     ? joints_.at("drive_shaft_spin")
-                    : joints_.contains("rotor_spin") ? joints_.at("rotor_spin")
-                                                     : crank_joint_;
+                    : crank_joint_;
         if (config_.drive_mode == "articulated_effort" && human_actuator_ >= 0)
             throw std::invalid_argument(
                 "articulated effort must not have a human_crank actuator");
@@ -165,11 +159,6 @@ namespace drivetrain {
                     m, GearingConfig{.front_teeth = 3, .rear_teeth = 3, .chain_pitch_m = .0127},
                     false, "crank_clutch",
                     "crank_spin", "drive_shaft_spin");
-            if (config_.rotor_inertia_kgm2 > 0.)
-                freewheel_ = std::make_unique<Transmission>(
-                    m, GearingConfig{.front_teeth = 3, .rear_teeth = 3, .chain_pitch_m = .0127},
-                    false, "motor_freewheel",
-                    "rotor_spin", "crank_spin");
         }
         // Rows are emitted in the declared force-component order — the
         // table position IS the serialized slot (pinned by the
@@ -280,8 +269,7 @@ namespace drivetrain {
         next.shifting.rear_teeth = next.shifting.from_teeth =
                 config_.policies.gearing.rear_teeth;
         detail::TickBank &staging = banks_.at(0);
-        staging.ideal_hub_staged = staging.clutch_staged =
-                staging.freewheel_staged = false;
+        staging.ideal_hub_staged = staging.clutch_staged = false;
         next.angles = DriveAngles{.values = {angle(crank_), 0.},
                                   .count = 1};
         if (ideal_hub_) {
@@ -328,13 +316,6 @@ namespace drivetrain {
             staging.clutch_staged = true;
             committed_into(*staging.clutch, next.clutch);
         }
-        if (freewheel_) {
-            freewheel_->stage_reset_into(
-                data_, staging.freewheel ? *staging.freewheel
-                                         : staging.freewheel.emplace());
-            staging.freewheel_staged = true;
-            committed_into(*staging.freewheel, next.freewheel);
-        }
         // Lane-equivalent of the former seed map — only these fields and the
         // shift block publish on reset, matching the sparse wire dict. The
         // lanes write into next.last in place (the copy-assign above left
@@ -344,9 +325,6 @@ namespace drivetrain {
         last.set(TelemetryField::motor_torque_nm, 0.);
         last.set(TelemetryField::human_torque_nm, 0.);
         last.set(TelemetryField::freehub_torque_nm, 0.);
-        last.set(TelemetryField::motor_freewheel_engaged, false);
-        last.set(TelemetryField::motor_freewheel_torque_nm, 0.);
-        last.set(TelemetryField::motor_freewheel_dissipation_power_w, 0.);
         shifts(last, next.shifting, next.shift_time_s);
         // Open-label lanes are the only telemetry storage a marked tick
         // can grow: set_open writes them every tick and the snapshot
@@ -369,8 +347,7 @@ namespace drivetrain {
         // prepared vectors. Bank 0's update slots ARE the staging slots —
         // skip them so the staged candidates survive to commit.
         const bool hub_staged = staging.ideal_hub_staged,
-                clutch_staged = staging.clutch_staged,
-                freewheel_staged = staging.freewheel_staged;
+                clutch_staged = staging.clutch_staged;
         for (auto &bank: banks_) {
             bank.snapshot = next;
             // Copy-assign preserves lane presence but not string
@@ -388,8 +365,7 @@ namespace drivetrain {
             bank.shifting = next.shifting;
             bank.assist = next.assist;
             bank.ctrl_count = 0;
-            bank.ideal_hub_staged = bank.clutch_staged =
-                    bank.freewheel_staged = false;
+            bank.ideal_hub_staged = bank.clutch_staged = false;
             bank.component_count = components_.size();
             for (std::size_t i = 0; i < bank.components.size(); ++i) {
                 bank.components[i].assign(transmission_.size(), 0.);
@@ -419,8 +395,6 @@ namespace drivetrain {
                         bank.ideal_hub);
             seed_update(clutch_.get(), staging.clutch, clutch_staged,
                         bank.clutch);
-            seed_update(freewheel_.get(), staging.freewheel, freewheel_staged,
-                        bank.freewheel);
         }
         for (auto &bank: settlement_banks_) {
             bank.write_count = 0;
@@ -456,8 +430,6 @@ namespace drivetrain {
                        bank.ideal_solve);
             seed_solve(clutch_.get(), staging.clutch, clutch_staged,
                        bank.clutch_solve);
-            seed_solve(freewheel_.get(), staging.freewheel, freewheel_staged,
-                       bank.freewheel_solve);
         }
         // Commit: guarded model writes publish first (an engine failure
         // poisons the owning Stepper per the E1 contract), then the policy
@@ -467,8 +439,6 @@ namespace drivetrain {
             live_model_dirty_ |= ideal_hub_->commit(*staging.ideal_hub);
         if (clutch_staged)
             live_model_dirty_ |= clutch_->commit(*staging.clutch);
-        if (freewheel_staged)
-            live_model_dirty_ |= freewheel_->commit(*staging.freewheel);
         shifting_.reset();
         assist_.reset();
         pedaling_.reset();
@@ -624,8 +594,7 @@ namespace drivetrain {
         bank.ctrl_count = 0;
         bank.component_count = 0;
         bank.snapshot = live_;
-        bank.ideal_hub_staged = bank.clutch_staged =
-                bank.freewheel_staged = false;
+        bank.ideal_hub_staged = bank.clutch_staged = false;
         bank.shifting = shifting_.state();
         bank.assist = assist_.state();
         // The pedaling policy always advances on a detached candidate; only a
@@ -664,8 +633,6 @@ namespace drivetrain {
                bank.snapshot.ideal_hub);
         mirror(clutch_.get(), bank.clutch, bank.clutch_staged,
                bank.snapshot.clutch);
-        mirror(freewheel_.get(), bank.freewheel, bank.freewheel_staged,
-               bank.snapshot.freewheel);
     }
 
     // Every candidate is validated while staged so commit()'s publication is
@@ -792,8 +759,7 @@ namespace drivetrain {
         bank.probe = !in.advance;
         bank.ctrl_count = 0;
         bank.snapshot = live_;
-        bank.ideal_hub_staged = bank.clutch_staged =
-                bank.freewheel_staged = false;
+        bank.ideal_hub_staged = bank.clutch_staged = false;
         bank.pedaling = pedaling_.state();
         bank.shifting = shifting_.state();
         bank.assist = assist_.state();
@@ -819,12 +785,6 @@ namespace drivetrain {
                     data_, bank.clutch ? *bank.clutch
                                        : bank.clutch.emplace());
                 bank.clutch_staged = true;
-            }
-            if (freewheel_) {
-                freewheel_->stage_prepare_into(
-                    data_, bank.freewheel ? *bank.freewheel
-                                          : bank.freewheel.emplace());
-                bank.freewheel_staged = true;
             }
         }
         stage_components_telemetry(bank, in,
@@ -951,9 +911,6 @@ namespace drivetrain {
                  m.ps.target_rate_rad_s);
         last.set(TelemetryField::motor_request_nm, m.request);
         last.set(TelemetryField::motor_torque_nm, m.delivered);
-        last.set(TelemetryField::motor_freewheel_engaged, m.delivered > 0.);
-        last.set(TelemetryField::motor_freewheel_torque_nm, m.delivered);
-        last.set(TelemetryField::motor_freewheel_dissipation_power_w, 0.);
         last.set(TelemetryField::motor_limited_request_nm, m.safety);
         last.set_optional(TelemetryField::motor_setpoint_nm,
                           in.control.motor_torque_nm);
@@ -1016,9 +973,6 @@ namespace drivetrain {
         if (bank.clutch_staged)
             live_model_dirty_ |=
                 clutch_->commit(engaged(bank.clutch));
-        if (bank.freewheel_staged)
-            live_model_dirty_ |=
-                freewheel_->commit(engaged(bank.freewheel));
         // Memory-only publication: every candidate was fully evaluated and
         // validated during staging, so the writes below are copies into
         // preallocated extents.
@@ -1135,13 +1089,7 @@ namespace drivetrain {
                      .torque = TelemetryField::crank_clutch_torque_nm,
                      .engaged = TelemetryField::crank_clutch_engaged,
                      .dissipation =
-                         TelemetryField::crank_clutch_dissipation_power_w},
-                 Aux{.transmission = freewheel_.get(),
-                     .slot = &bank.freewheel_solve,
-                     .torque = TelemetryField::motor_freewheel_torque_nm,
-                     .engaged = TelemetryField::motor_freewheel_engaged,
-                     .dissipation =
-                         TelemetryField::motor_freewheel_dissipation_power_w}})
+                         TelemetryField::crank_clutch_dissipation_power_w}})
             if (aux.transmission) {
                 SolvedTransmission &solved =
                         *aux.slot ? **aux.slot : aux.slot->emplace();
@@ -1203,8 +1151,6 @@ namespace drivetrain {
             ideal_hub_->commit(*bank.ideal_solve);
         if (bank.clutch_solve)
             clutch_->commit(*bank.clutch_solve);
-        if (bank.freewheel_solve)
-            freewheel_->commit(*bank.freewheel_solve);
         for (std::size_t i = 0; i < bank.write_count; ++i)
             live_.last.apply(bank.writes[i].field, bank.writes[i].value);
         if (bank.assist)
@@ -1243,7 +1189,6 @@ namespace drivetrain {
         s.assist = assist_.state();
         s.ideal_hub = ideal_hub_ ? std::optional(ideal_hub_->state()) : std::nullopt;
         s.clutch = clutch_ ? std::optional(clutch_->state()) : std::nullopt;
-        s.freewheel = freewheel_ ? std::optional(freewheel_->state()) : std::nullopt;
         return s;
     }
 
@@ -1270,8 +1215,7 @@ namespace drivetrain {
         }
         for (const auto &pair: {
                  std::pair{ideal_hub_.get(), &s.ideal_hub},
-                 std::pair{clutch_.get(), &s.clutch},
-                 std::pair{freewheel_.get(), &s.freewheel}
+                 std::pair{clutch_.get(), &s.clutch}
              }) {
             if (static_cast<bool>(pair.first) != pair.second->has_value())
                 throw std::invalid_argument("transmission topology");
@@ -1287,8 +1231,6 @@ namespace drivetrain {
             live_model_dirty_ |= ideal_hub_->restore(engaged(s.ideal_hub));
         if (clutch_)
             live_model_dirty_ |= clutch_->restore(engaged(s.clutch));
-        if (freewheel_)
-            live_model_dirty_ |= freewheel_->restore(engaged(s.freewheel));
         pedaling_ = p;
         shifting_ = std::move(sh);
         assist_ = std::move(a);

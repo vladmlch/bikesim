@@ -594,7 +594,7 @@ bool schema_entry(std::string_view name, std::string_view &required,
          {.required = "gearing pedaling shifting assist "
           "drive_mode transmission_model human_torque_nm "
           "torque_ripple crank_phase_rad "
-          "rotor_inertia_kgm2 motor_clutch "
+          "motor_clutch "
           "brake_ceiling_nm",
           .optional = "brake_hold_torque_nm brake_hold_stiffness_nm_rad "
           "brake_hold_damping_nms_rad brake_hold_engage_radps "

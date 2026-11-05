@@ -51,12 +51,6 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         geom(shaft,"geom_drive_shaft_ring","cylinder",{{"fromto","0 -0.015 0 0 0.015 0"},{"size",g(radius)},{"mass","0"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
         set_inertia(shaft,shaft_mass,{},ring_inertia(shaft_mass,.015,radius,.03));
     }
-    const double rotor=drive.rotor_inertia_kgm2;
-    if(rotor>0.) {
-        auto& body_=frame.add("body",{{"name","motor_rotor"},{"pos","0 0 0"}});
-        joint(body_,"rotor_spin","hinge",{{"axis","0 1 0"}});
-        set_inertia(body_,.3,{},diagonal(rotor/2.,rotor,rotor/2.));
-    }
     for(int index=0;index<2;++index) {
         const std::string side=index==0?"front":"rear";const double sign=index==0?-1.:1.;
         auto& pedal=required(root,"body","pedal_"+side);
@@ -114,12 +108,8 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
             auto& tendon=fixed_tendon(root,"crank_clutch",cfg.closure_time_constant_s);
             tendon_joint(tendon,"crank_spin",1.);tendon_joint(tendon,"drive_shaft_spin",-1.);
         }
-        if(rotor>0.) {
-            auto& tendon=fixed_tendon(root,"motor_freewheel",cfg.closure_time_constant_s);
-            tendon_joint(tendon,"rotor_spin",1.);tendon_joint(tendon,"crank_spin",-1.);
-        }
         if(drive.transmission_model=="geometric_ideal_mid_drive") finalize_geometric_transmission(root,cfg);
-        actuators.add("motor",{{"name","mid_drive"},{"joint",rotor>0.?"rotor_spin":driver},{"gear","1"},{"ctrllimited","true"},{"ctrlrange","0 "+g(drive.assist.effective_max_torque())}});
+        actuators.add("motor",{{"name","mid_drive"},{"joint",driver},{"gear","1"},{"ctrllimited","true"},{"ctrlrange","0 "+g(drive.assist.effective_max_torque())}});
     }
     if(cfg.drive_mode=="crank_effort") actuators.add("motor",{{"name","human_crank"},{"joint","crank_spin"},{"gear","1"}});
 }

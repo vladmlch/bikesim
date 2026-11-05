@@ -39,7 +39,7 @@ void test_force_staging() {
 // Source: test_solved_intervals, ten real mj_step intervals per topology.
 void test_solved_intervals() {
     for (auto mode : {"crank_effort", "articulated_effort"}) for (bool const sparse : {false, true})
-        for (auto const kind : kinds) for (auto topology : {"plain", "clutch", "rotor"}) {
+        for (auto const kind : kinds) for (auto topology : {"plain", "clutch"}) {
             auto golden = node("test_solved_intervals", std::string(mode) + "-" + (sparse ? "sparse-" : "dense-") +
                 std::string(kind) + "-" + topology);
             auto owner = pair(kind, mode, topology, sparse);
@@ -191,7 +191,7 @@ void test_invalid_config() {
     struct Bad { std::string_view key; Value value; };
     const std::array cases{Bad{.key="drive_mode", .value=text("unknown")}, Bad{.key="transmission_model", .value=text("unknown")},
         Bad{.key="torque_ripple", .value=real(1.)}, Bad{.key="motor_clutch", .value=integer(1)}, Bad{.key="chain_k_n_m", .value=real(0.)},
-        Bad{.key="rotor_inertia_kgm2", .value=Value{bike::io::Number{"inf"}}}};
+        Bad{.key="human_torque_nm", .value=Value{bike::io::Number{"inf"}}}};
     const auto initial = writer_config(source());
     for (const auto& item : cases) {
         auto candidate = initial; set(member(candidate, "drive"), item.key, item.value);
@@ -363,15 +363,12 @@ void test_real_solved_request_violation() {
 // Source: the removed elastic_chain variant rejects at the public config and
 // native wire gates (the mid-drive-only topology rules went away with it).
 void test_elastic_transmission_rejects() {
-    for (auto topology : {"clutch", "rotor"}) {
-        auto input = source("elastic_chain", topology);
-        bt::invalid([&] { cfg::detail::post_init(input); });
-        auto wire = writer_config(source()); auto& drive = member(wire, "drive");
-        set(drive, "transmission_model", text("elastic_chain"));
-        set(drive, "motor_clutch", Value{std::string_view(topology) == "clutch"});
-        set(drive, "rotor_inertia_kgm2", real(std::string_view(topology) == "rotor" ? .2 : 0.));
-        bt::invalid([&] { (void)nativecfg::decode(wire); });
-    }
+    auto input = source("elastic_chain", "clutch");
+    bt::invalid([&] { cfg::detail::post_init(input); });
+    auto wire = writer_config(source()); auto& drive = member(wire, "drive");
+    set(drive, "transmission_model", text("elastic_chain"));
+    set(drive, "motor_clutch", Value{true});
+    bt::invalid([&] { (void)nativecfg::decode(wire); });
 }
 // Source: test_optional_project_and_initial_gearing. The Python attribute
 // deletion/SimpleNamespace paths belong to the removed adapter; the native
@@ -411,13 +408,14 @@ void test_diagnostic_ratio_and_integer_ranges() {
     }
 }
 // Source: test_genuine_wheel_and_rotor_overrun; all eight physical intervals
-// retain the unrelated joint-limit constraint and zero freehub torque.
+// retain the unrelated joint-limit constraint and zero freehub torque. The
+// rotor freewheel is gone (2026-11-05) — the overrun now exercises the
+// surviving crank-clutch topology.
 void test_genuine_wheel_and_rotor_overrun() {
     for (auto const kind : kinds) {
         auto golden = node("test_genuine_wheel_and_rotor_overrun", kind);
-        const std::string_view topology = "rotor";
-        auto owner = pair(kind, "crank_effort", topology);
-        velocity(*owner, "rear_wheel_spin", 12.); if (topology == "rotor") velocity(*owner, "rotor_spin", 2.);
+        auto owner = pair(kind, "crank_effort", "clutch");
+        velocity(*owner, "rear_wheel_spin", 12.); velocity(*owner, "drive_shaft_spin", 2.);
         reset_engine_state(*owner);
         for (int i = 0; i < 8; ++i) {
             const auto forces = components(*owner, .0002, 2.); components(golden, forces); step(*owner, forces);

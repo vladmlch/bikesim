@@ -87,8 +87,7 @@ namespace drivetrain {
     struct DriveConfig {
         DrivePolicyConfig policies;
         std::string drive_mode, transmission_model;
-        double human_torque_nm{}, torque_ripple{}, crank_phase_rad{},
-                rotor_inertia_kgm2{};
+        double human_torque_nm{}, torque_ripple{}, crank_phase_rad{};
         // StaticBrakeApplier's ceiling (physical_config drive section) —
         // the runtime's static-brake owner reads it; the drivetrain writer
         // itself never does. The brake_hold_* block is the latched standstill

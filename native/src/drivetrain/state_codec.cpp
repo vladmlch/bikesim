@@ -477,8 +477,7 @@ DriveSnapshot decode_drive_snapshot(const bio::Value &value) {
     const Dict d = mapping(VNode{&value}, "state.drive");
     exact(d, ncd::keys("policies", "shift_time_s", "last_time_s",
                           "angles", "last", "probe_last",
-                          "pending_actuation", "ideal_hub", "clutch",
-                          "freewheel"));
+                          "pending_actuation", "ideal_hub", "clutch"));
     DriveSnapshot s;
     decode_policies(section(d, "policies"), s);
     s.shift_time_s = optional_num(d, "shift_time_s");
@@ -506,8 +505,6 @@ DriveSnapshot decode_drive_snapshot(const bio::Value &value) {
     s.ideal_hub = decode_transmission(field(d, "ideal_hub"),
                                       d.child("ideal_hub"));
     s.clutch = decode_transmission(field(d, "clutch"), d.child("clutch"));
-    s.freewheel = decode_transmission(field(d, "freewheel"),
-                                      d.child("freewheel"));
     return s;
 }
 
@@ -544,7 +541,6 @@ bio::Value encode_drive_snapshot(const DriveSnapshot &s) {
     }
     out.emplace_back("ideal_hub", transmission_value(s.ideal_hub));
     out.emplace_back("clutch", transmission_value(s.clutch));
-    out.emplace_back("freewheel", transmission_value(s.freewheel));
     return bio::Value{std::move(out)};
 }
 

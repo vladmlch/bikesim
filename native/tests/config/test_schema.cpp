@@ -198,7 +198,6 @@ cfg::SimulationPhysicsConfig welded_profile() {
     c.tires.rear.mu = 1.1;
     c.drive.transmission_model = "ideal_mid_drive";
     c.drive.motor_clutch = false;
-    c.drive.rotor_inertia_kgm2 = 0.0;
     auto& pedaling = c.drive.pedaling;
     pedaling.enabled = true;
     pedaling.coast_above_rpm = 120.0;
@@ -633,7 +632,6 @@ void test_defaults() {
                 "TireBackendConfig defaults");
     bt::require(c.drive.transmission_model == "ideal_mid_drive" &&
                     !c.drive.motor_clutch &&
-                    c.drive.rotor_inertia_kgm2 == 0. &&
                     c.drive.gearing.front_teeth == 34 &&
                     c.drive.gearing.rear_teeth == 24 &&
                     !c.drive.assist.profile.has_value() &&
@@ -721,10 +719,11 @@ void test_schema() {
     bt::require(io::as_array(tires, "fields.tires.fields").size() == 9,
                 "tires field count");
     const Value& drive = member(fields[7], "fields", "fields.drive");
-    // 16 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive)
-    // and the four elastic-chain members chain_k_n_m, chain_c_ns_m,
-    // freehub_k_nm_rad, freehub_c_nms_rad.
-    bt::require(io::as_array(drive, "fields.drive.fields").size() == 16,
+    // 15 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive),
+    // the four elastic-chain members chain_k_n_m, chain_c_ns_m,
+    // freehub_k_nm_rad, freehub_c_nms_rad, and rotor_inertia_kgm2 (the
+    // rotor freewheel was removed 2026-11-05).
+    bt::require(io::as_array(drive, "fields.drive.fields").size() == 15,
                 "drive field count");
     // 67 = 69 minus leg_track_damping_nms_rad (no joint damping in any
     // form) and coupled_task_control (removed with its welded-rider mode).
@@ -826,6 +825,23 @@ transmission_model = "elastic_chain"
                 "the declared default is the ideal drive");
 }
 
+// The rotor freewheel was removed (user, 2026-11-05): the drivetrain keeps
+// exactly two one-way clutches — the rear freehub and the motor clutch. An
+// old document still naming the reflected-inertia key is rejected at the
+// TOML construction gate like every other removed member.
+[[gnu::noinline]] void test_rotor_inertia_key_is_rejected() {
+    const Value document = cfg::detail::merge_values(
+        cfg::detail::plain_document(
+            cfg::to_value(cfg::default_physics())),
+        cfg::detail::parse_toml(R"([drive]
+rotor_inertia_kgm2 = 0.0
+)",
+                                "rotor_inertia_kgm2 rejection"));
+    expect_invalid(
+        "unknown PhysicalDriveConfig parameter(s): rotor_inertia_kgm2",
+        [&] { (void) cfg::detail::construct_config(document); });
+}
+
 void test_validation() {
     // The brief's mandatory red-line case plus exact diagnostics.
     case_from_default("timestep_s must be finite and positive",
@@ -901,12 +917,6 @@ void test_validation() {
         });
 
     // Drive/transmission rules inside PhysicalDriveConfig.__post_init__.
-    case_from_welded(
-        "rotor freewheel and the legacy crank clutch are exclusive",
-        [](cfg::SimulationPhysicsConfig& c) {
-            c.drive.rotor_inertia_kgm2 = 0.2;
-            c.drive.motor_clutch = true;
-        });
     case_from_welded("initial rear sprocket must belong to the cassette",
                      [](cfg::SimulationPhysicsConfig& c) {
                          c.drive.gearing.rear_teeth = 99;
@@ -922,12 +932,6 @@ void test_validation() {
                           c.drive.transmission_model = "ideal_mid_drive";
                           c.drive.motor_clutch = true;
                       });
-    case_from_welded("drive.rotor_inertia_kgm2 requires an effort drive mode",
-                     [](cfg::SimulationPhysicsConfig& c) {
-                         c.drive_mode = "coast";
-                         c.seated_climb.enabled = false;
-                         c.drive.rotor_inertia_kgm2 = 0.2;
-                     });
     case_from_welded(
         "drive.pedaling.reposition_on_stall requires "
         "articulated.pedal_attachment = 'spindle'",
@@ -1659,6 +1663,7 @@ int main() {
         test_defaults();
         test_schema();
         test_elastic_chain_is_rejected();
+        test_rotor_inertia_key_is_rejected();
         test_validation();
         test_aliases_and_resolution();
         test_resolved_profiles();

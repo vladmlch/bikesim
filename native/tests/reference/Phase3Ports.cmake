@@ -155,8 +155,8 @@ bike_add_reference_test(native_input_contracts ENGINE
   LABELS t52 contracts)
 bike_add_reference_test(drivetrain_policy_clone ENGINE
   SOURCES test_drivetrain_policy_clone.cpp LIBRARIES bike_app LABELS t52 drive)
-bike_add_reference_test(motor_freewheel_topology ENGINE
-  SOURCES test_motor_freewheel_topology.cpp LIBRARIES bike_app LABELS t52 drive slow)
+bike_add_reference_test(motor_clutch_topology ENGINE
+  SOURCES test_motor_clutch_topology.cpp LIBRARIES bike_app LABELS t52 drive slow)
 bike_add_reference_test(golden_episode_regressions ENGINE
   SOURCES test_golden_episode_regressions.cpp LIBRARIES bike_golden
   LABELS t52 episode golden slow)

@@ -172,7 +172,7 @@ void checks_drive_welded() {
                     !state->last_time_s.has_value(),
                 "absent-valued wire members decode to absent optionals");
     bt::require(!state->pending_actuation.has_value() &&
-                    !state->clutch.has_value() && !state->freewheel.has_value(),
+                    !state->clutch.has_value(),
                 "null transmissions/actuation decode to empty optionals");
     bt::require(state->ideal_hub.has_value() &&
                     state->ideal_hub->rear_teeth == 51 &&
@@ -225,10 +225,10 @@ void checks_drive_roundtrip() {
         drivetrain::decode_drive_snapshot(input));
     const bio::Value encoded = encode_back_drive(*state);
     expect_round_trip("state/drive.canonical.json", input, encoded);
-    constexpr std::array<std::string_view, 10> kDriveOrder{
+    constexpr std::array<std::string_view, 9> kDriveOrder{
         "policies",   "shift_time_s", "last_time_s",
         "angles",       "last",        "probe_last",
-        "pending_actuation", "ideal_hub", "clutch", "freewheel"};
+        "pending_actuation", "ideal_hub", "clutch"};
     bt::require(member_names(object_of(encoded)) ==
                     std::vector<std::string_view>(kDriveOrder.begin(),
                                                   kDriveOrder.end()),
@@ -307,8 +307,7 @@ void checks_drive_invalid() {
              "assist":{"torque":0.0,"pedaling":false,"last_gain":0.0}},
              "shift_time_s":null,"last_time_s":null,
              "angles":null,"last":{},"probe_last":null,
-             "pending_actuation":null,"ideal_hub":null,"clutch":null,
-             "freewheel":null})"));
+             "pending_actuation":null,"ideal_hub":null,"clutch":null})"));
     });
 }
 

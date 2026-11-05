@@ -23,10 +23,6 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
         extra += R"(<body name="drive_shaft"><joint name="drive_shaft_spin" axis="0 1 0"/><geom size=".04" mass="1"/></body>)";
         names.emplace_back("drive_shaft_spin");
     }
-    if (topology == "rotor") {
-        extra += R"(<body name="rotor"><joint name="rotor_spin" axis="0 1 0"/><inertial pos="0 0 0" mass="1" diaginertia=".2 .2 .2"/></body>)";
-        names.emplace_back("rotor_spin");
-    }
     const std::string driver = topology == "clutch" ? "drive_shaft_spin" : "crank_spin";
     std::string tendon;
     if (kind == "ideal_mid_drive")
@@ -38,9 +34,8 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
         tendon += "</fixed>";
     }
     if (topology == "clutch") tendon += R"(<fixed name="crank_clutch" limited="true" range="-100 0"><joint joint="crank_spin" coef="1"/><joint joint="drive_shaft_spin" coef="-1"/></fixed>)";
-    if (topology == "rotor") tendon += R"(<fixed name="motor_freewheel" limited="true" range="-100 0"><joint joint="rotor_spin" coef="1"/><joint joint="crank_spin" coef="-1"/></fixed>)";
     const std::string human = mode == "crank_effort" ? R"(<motor name="human_crank" joint="crank_spin"/>)" : "";
-    const std::string motor = topology == "rotor" ? "rotor_spin" : driver;
+    const std::string motor = driver;
     return R"(<mujoco><option timestep=".0002" gravity="0 0 0" jacobian=")" + std::string(sparse ? "sparse" : "dense") + R"("/>
     <default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
     <worldbody><body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><joint name="frame_pitch" axis="0 1 0"/><geom/>
@@ -55,7 +50,7 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
 inline cfg::PhysicalDriveConfig source(std::string_view kind = "ideal_mid_drive", // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
                                        std::string_view topology = "plain") {
     cfg::PhysicalDriveConfig result; result.transmission_model = kind; result.human_torque_nm = 20.;
-    result.motor_clutch = topology == "clutch"; result.rotor_inertia_kgm2 = topology == "rotor" ? .2 : 0.;
+    result.motor_clutch = topology == "clutch";
     return result;
 }
 inline Value writer_config(const cfg::PhysicalDriveConfig& source, std::string_view mode = "crank_effort") {
@@ -77,7 +72,7 @@ inline std::unique_ptr<Stepper> pair(const cfg::PhysicalDriveConfig& source,
     position[static_cast<std::size_t>(bike::model::joint_address(*fixture.model, "rear_carrier").first)] = .013;
     velocity[static_cast<std::size_t>(fixture.dof("crank_spin"))] = 4.;
     velocity[static_cast<std::size_t>(fixture.dof("rear_wheel_spin"))] = 5.;
-    if (topology != "plain") velocity[static_cast<std::size_t>(fixture.dof(topology == "rotor" ? "rotor_spin" : "drive_shaft_spin"))] = 4.5;
+    if (topology == "clutch") velocity[static_cast<std::size_t>(fixture.dof("drive_shaft_spin"))] = 4.5;
     engine::forward(fixture.model.get(), fixture.data.get());
     const auto image = bike::initialization::capture_model_image(*fixture.model);
     auto result = std::make_unique<Stepper>(image.mjb, nativecfg::decode(writer_config(source, mode)));

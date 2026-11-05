@@ -64,7 +64,7 @@ namespace drivetrain {
         DriveTelemetry last;
         std::optional<DriveTelemetry> probe_last;
         std::optional<PendingActuation> pending_actuation;
-        std::optional<TransmissionSnapshot> ideal_hub, clutch, freewheel;
+        std::optional<TransmissionSnapshot> ideal_hub, clutch;
     };
 
     // Snapshot↔config relational invariants. restore() runs this before any
@@ -157,9 +157,8 @@ namespace drivetrain {
             // first staged so their vectors/telemetry lanes keep capacity;
             // the *_staged flags track whether the CURRENT tick refreshed
             // them.
-            std::optional<TransmissionUpdate> ideal_hub, clutch, freewheel;
-            bool ideal_hub_staged = false, clutch_staged = false,
-                    freewheel_staged = false;
+            std::optional<TransmissionUpdate> ideal_hub, clutch;
+            bool ideal_hub_staged = false, clutch_staged = false;
             // advance publishes the whole candidate; probe publishes only
             // the declared probe telemetry (components + probe_last
             // diagnostics).
@@ -186,8 +185,7 @@ namespace drivetrain {
             // engaged once first staged so state swaps keep their storage;
             // engagement tracks the topology (staged every settle when the
             // transmission exists).
-            std::optional<SolvedTransmission> ideal_solve, clutch_solve,
-                    freewheel_solve;
+            std::optional<SolvedTransmission> ideal_solve, clutch_solve;
             std::optional<AssistSnapshot> assist;
             // Pending actuation is consumed only when the settlement
             // commits.
@@ -202,7 +200,7 @@ namespace drivetrain {
     // view over one of the writer's two fixed banks. stage_prepare /
     // stage_components build every candidate up front — policy snapshots,
     // force rows, actuator writes, diagnostics and (through E2's
-    // TransmissionUpdate) the staged model updates for hub/clutch/freewheel —
+    // TransmissionUpdate) the staged model updates for hub/clutch —
     // so a rejection anywhere publishes nothing. commit() runs the guarded
     // model writes first, then publishes the memory-only remainder.
     //
@@ -403,13 +401,13 @@ namespace drivetrain {
         // heap-allocates once per tick. The joint set never changes after
         // the ctor, so the tick path reads these cached values instead of
         // paying a map lookup (and a possible allocation) per tick.
-        // shaft_joint_ caches the drive-shaft → rotor → crank fallback chain.
+        // shaft_joint_ caches the drive-shaft → crank fallback chain.
         Joint crank_joint_{}, wheel_joint_{}, shaft_joint_{};
         int human_actuator_ = absent_id, motor_actuator_ = absent_id;
         PedalingPolicy pedaling_;
         CadenceShifter shifting_;
         AssistController assist_;
-        std::unique_ptr<Transmission> ideal_hub_, clutch_, freewheel_;
+        std::unique_ptr<Transmission> ideal_hub_, clutch_;
         DriveSnapshot live_;
         // Detached snapshot staging for reset()/restore(): keeping the
         // candidate in a member keeps those cold paths under the 8192-byte

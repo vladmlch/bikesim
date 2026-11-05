@@ -114,7 +114,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     input = bike::initialization::read_setup_request(request_file);
     bt::require(input.model.physics.value().initial_front_brake == .25, "request override precedence"); // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     input.model.physics.value().drive.motor_clutch = true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
-    input.model.physics.value().drive.rotor_inertia_kgm2 = .02; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    input.model.physics.value().drive_mode = "coast"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     bt::invalid([&] { (void)bike::app::prepare(input); });
     bt::require(!std::filesystem::exists(directory.path / "runs") &&
         !std::filesystem::exists(directory.path / "manifest.json"),

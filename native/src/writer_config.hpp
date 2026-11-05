@@ -1061,14 +1061,12 @@ namespace nativecfg {
         NATIVE_DIAG_POP
 
         // config.drive itself: the policy subtree plus the drive-only
-        // scalars — the cross-field exclusion rules (rotor/clutch
-        // exclusive, passive drive modes reject rotor/clutch) stay in
-        // this one decode so the nb adapter and the Value boundary share
-        // them verbatim.
+        // scalars — the passive-mode clutch gate stays in this one decode
+        // so the nb adapter and the Value boundary share it verbatim.
         template <class N>
         [[nodiscard]] drivetrain::DriveConfig decode_drive(const Dict<N> &d) {
             drivetrain::DriveConfig c;
-            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
+            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
             c.policies = decode_drive_policies(d, extra_keys);
             c.drive_mode = str(d, "drive_mode");
             c.transmission_model = str(d, "transmission_model");
@@ -1083,8 +1081,6 @@ namespace nativecfg {
             if (c.torque_ripple >= 1.)
                 throw std::invalid_argument("torque_ripple");
             c.crank_phase_rad = num(d, "crank_phase_rad");
-            c.rotor_inertia_kgm2 =
-                    nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
             c.brake_ceiling_nm =
                     nonnegative(num(d, "brake_ceiling_nm"), "brake_ceiling_nm");
             // The standstill bite keys are optional: an absent key keeps the
@@ -1104,11 +1100,9 @@ namespace nativecfg {
             if (c.brake_hold_release_radps < c.brake_hold_engage_radps)
                 throw std::invalid_argument("brake hold release must not precede engage");
             c.motor_clutch = boolean(d, "motor_clutch");
-            if (c.motor_clutch && c.rotor_inertia_kgm2 > 0.)
-                throw std::invalid_argument("rotor and clutch are exclusive");
             if ((c.drive_mode == "coast" || c.drive_mode == "ideal_speed_control") &&
-                (c.motor_clutch || c.rotor_inertia_kgm2 > 0.))
-                throw std::invalid_argument("passive drive cannot use rotor/clutch");
+                c.motor_clutch)
+                throw std::invalid_argument("passive drive cannot use the motor clutch");
             return c;
         }
 

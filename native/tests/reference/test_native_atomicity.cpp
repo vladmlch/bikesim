@@ -248,17 +248,14 @@ void test_rejected_timestamp_advance_is_atomic() {
 
 // Source: native_atomicity/rejected_shift_preserves_auxiliary_transmissions
 void test_rejected_shift_preserves_auxiliary_transmissions() {
-    for (auto topology : {"clutch", "rotor"}) {
-        auto owner = shifted_pair(kGeometric, invalid_cassette(), topology);
-        spin(*owner);
-        const auto before = frozen(*owner);
-        (void)rejected<std::invalid_argument>(
-            [&] { (void)owner->drive().prepare({}, .1, false, true, true, true, {}, {}); });
-        bt::require(frozen(*owner) == before, "rejected shift preserves auxiliary transmissions");
-        const auto auxiliary = std::string_view(topology) == "clutch" ? "clutch" : "freewheel";
-        bt::require(bike::io::as_double(field(field(state(*owner), auxiliary), "ratio"), "ratio") == 1.,
-                    "auxiliary transmission stays at its unit ratio");
-    }
+    auto owner = shifted_pair(kGeometric, invalid_cassette(), "clutch");
+    spin(*owner);
+    const auto before = frozen(*owner);
+    (void)rejected<std::invalid_argument>(
+        [&] { (void)owner->drive().prepare({}, .1, false, true, true, true, {}, {}); });
+    bt::require(frozen(*owner) == before, "rejected shift preserves auxiliary transmissions");
+    bt::require(bike::io::as_double(field(field(state(*owner), "clutch"), "ratio"), "ratio") == 1.,
+                "auxiliary transmission stays at its unit ratio");
 }
 
 // Source: native_atomicity/probe_controls_do_not_publish
@@ -498,9 +495,9 @@ void test_sparse_last_settle_debits_once() {
     // exactly-once settlement — the detached map republishes the telemetry,
     // the solved assist torque publishes once, and a second settle changes
     // nothing.
-    const std::array<std::pair<std::string_view, std::string_view>, 6> combos{{
-        {"ideal_mid_drive", "plain"}, {"ideal_mid_drive", "clutch"}, {"ideal_mid_drive", "rotor"},
-        {kGeometric, "plain"}, {kGeometric, "clutch"}, {kGeometric, "rotor"}}};
+    const std::array<std::pair<std::string_view, std::string_view>, 4> combos{{
+        {"ideal_mid_drive", "plain"}, {"ideal_mid_drive", "clutch"},
+        {kGeometric, "plain"}, {kGeometric, "clutch"}}};
     for (const auto& [kind, topology] : combos) {
         auto owner = pair(kind, "crank_effort", topology);
         std::vector<double> control;
@@ -529,7 +526,7 @@ void test_sparse_last_settle_debits_once() {
         bt::require(canonical_json(field(settled, "policies")) ==
                         canonical_json(field(control_state, "policies")),
                     "sparse settle lands identical policy state");
-        for (auto name : {"ideal_hub", "clutch", "freewheel"})
+        for (auto name : {"ideal_hub", "clutch"})
             bt::require(canonical_json(field(settled, name)) ==
                             canonical_json(field(control_state, name)),
                         "sparse settle lands identical transmission state");

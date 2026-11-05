@@ -8,7 +8,6 @@ namespace drivetrain {
 // platform/oracle gates have actually run for these existing writer branches.
 struct Capability {
     bool motor_clutch = true;
-    bool reflected_rotor = true;
 };
 [[nodiscard]] Capability implemented_capabilities() noexcept;
 
@@ -17,11 +16,10 @@ struct MotorTopology {
     const char* reduction_driver;
     const char* reduction_body;
     bool crank_clutch;
-    bool motor_freewheel;
 };
 
 // Shared typed selection for the actual writer, setup and topology tests.
-// Validates incompatible elastic-chain/clutch/rotor/shifting combinations.
+// Validates incompatible elastic-chain/clutch/shifting combinations.
 [[nodiscard]] MotorTopology motor_topology(const DriveConfig& config);
 
 } // namespace drivetrain

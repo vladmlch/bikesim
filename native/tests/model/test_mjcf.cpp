@@ -107,8 +107,8 @@ void require_no_joint_damping(const mjModel& model,std::string_view label) {
 // 'tendon_limit:' rows to the elastic closure channel (runtime/accounting.cpp
 // raw_work), so a new limited tendon must be classified there on purpose.
 void require_limited_tendons_are_closures(const mjModel& model,std::string_view label) {
-    static constexpr std::array<std::string_view,4> closures{
-        "ideal_mid_drive_freehub","geometric_mid_drive_freehub","crank_clutch","motor_freewheel"};
+    static constexpr std::array<std::string_view,3> closures{
+        "ideal_mid_drive_freehub","geometric_mid_drive_freehub","crank_clutch"};
     const auto limited=std::views::counted(model.tendon_limited,model.ntendon);
     for(int tendon=0;tendon<model.ntendon;++tendon) {
         if(limited[static_cast<std::size_t>(tendon)]==0) continue;
@@ -163,13 +163,6 @@ void physical_profiles_and_topology() {
     require_no_joint_damping(*clutch,"motor clutch");
     require_limited_tendons_are_closures(*clutch,"motor clutch");
     id(*clutch,mjOBJ_JOINT,"drive_shaft_spin");id(*clutch,mjOBJ_TENDON,"crank_clutch");
-    request=physical();request->physics->drive.rotor_inertia_kgm2=.2; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
-    const auto rotor=mdl::compile_mjcf(mdl::generate_mjcf(*request));
-    require_no_joint_damping(*rotor,"rotor inertia");
-    require_limited_tendons_are_closures(*rotor,"rotor inertia");
-    id(*rotor,mjOBJ_JOINT,"rotor_spin");id(*rotor,mjOBJ_TENDON,"motor_freewheel");
-    request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
-    bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
     request=physical();request->physics->drive.transmission_model="geometric_ideal_mid_drive"; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto geometric=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*geometric,"geometric mid drive");
@@ -234,6 +227,19 @@ void crank_zero_is_horizontal() {
         bt::require(std::abs(dx) > .2, "spindles a crank diameter apart along x");
     }
 }
+// Two one-way clutches only (user, 2026-11-05): the rear freehub and the
+// motor clutch. The rotor freewheel and its body are gone, and an old
+// document naming rotor_inertia_kgm2 is rejected.
+void drivetrain_has_two_one_way_clutches() {
+    auto request = physical("viewer_physics_welded.toml");
+    request->physics->drive.motor_clutch = true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; -> is the loud check
+    const auto model = mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    bt::require(mj_name2id(model.get(), mjOBJ_TENDON, "ideal_mid_drive_freehub") >= 0, "freehub present");
+    bt::require(mj_name2id(model.get(), mjOBJ_TENDON, "crank_clutch") >= 0, "motor clutch present");
+    bt::require(mj_name2id(model.get(), mjOBJ_TENDON, "motor_freewheel") < 0, "no rotor freewheel");
+    bt::require(mj_name2id(model.get(), mjOBJ_BODY, "motor_rotor") < 0, "no rotor body");
+    bt::require(mj_name2id(model.get(), mjOBJ_JOINT, "rotor_spin") < 0, "no rotor joint");
+}
 void errors_and_ownership() {
     auto request=physical();request->mode="stand";
     bt::invalid([&]{(void)mdl::generate_mjcf(*request);});
@@ -260,4 +266,4 @@ void errors_and_ownership() {
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }
 } // namespace
-int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();errors_and_ownership();});}
+int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();errors_and_ownership();});}

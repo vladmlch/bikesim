@@ -668,12 +668,6 @@
           "type": "<class 'bool'>"
         },
         {
-          "default": 0.0,
-          "default_factory": null,
-          "name": "rotor_inertia_kgm2",
-          "type": "<class 'float'>"
-        },
-        {
           "default": null,
           "default_factory": "AssistConfig",
           "fields": [

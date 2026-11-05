@@ -149,7 +149,6 @@
       "rollback_release_mps": 0.0,
       "stop_time_s": 0.35
     },
-    "rotor_inertia_kgm2": 0.0,
     "shifting": {
       "cadence_smoothing_tau_s": 0.35,
       "cassette": {

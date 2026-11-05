@@ -706,7 +706,7 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
 // (e181666b added this record after the batch's first port): 'equality:*'
 // rows are soft spring-damper closures whose work is elastic exchange.
 // 'tendon_limit:*' rows are the drivetrain's one-way closures (freehub,
-// crank clutch, motor freewheel), built with the same closure time constant,
+// crank clutch), built with the same closure time constant,
 // so they charge the closure channel too; joint-limit rows stay numerical
 // constraint work. The native partition is raw_work's closure lift inside
 // account_energy, exercised end-to-end

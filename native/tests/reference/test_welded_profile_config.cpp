@@ -42,8 +42,6 @@ void test_rigid_crank_topology_is_the_default() {
                 "the welded profile selects the rigid crank topology");
     bt::require(drive.motor_clutch == false,
                 "no one-way motor clutch on the rigid topology");
-    bt::require(drive.rotor_inertia_kgm2 == 0.,
-                "no reflected motor inertia");
     bt::require(drive.human_torque_nm == 0.,
                 "effort comes from seated_climb, not a crank torque");
 }

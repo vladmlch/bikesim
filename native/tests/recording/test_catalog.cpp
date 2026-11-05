@@ -44,7 +44,10 @@ void catalog_contract() {
     // channel_drive.{chain_extension_m, chain_extension_rate_mps,
     // chain_tension_n, chain_energy_j, chain_dissipation_power_w,
     // chain_power_w, freehub_energy_j, freehub_deflection_rad}.
-    bt::require(count == 479, "full reviewed catalog retains all 479 repeated/nested descriptor occurrences");
+    // 476 = 479 minus the removed rotor-freewheel telemetry keys:
+    // channel_drive.{motor_freewheel_dissipation_power_w,
+    // motor_freewheel_engaged, motor_freewheel_torque_nm}.
+    bt::require(count == 476, "full reviewed catalog retains all 476 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

@@ -2161,66 +2161,6 @@ R"CATALOG(          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::Drive
           "frame": "n/a",
           "path": [
             "drive",
-            "motor_freewheel_engaged"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "motor_freewheel_engaged",
-          "dtype": "boolean",
-          "unit": "n/a",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "motor-side freewheel carrying torque"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "motor_freewheel_torque_nm"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "motor_freewheel_torque_nm",
-          "dtype": "double",
-          "unit": "N·m",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "solved",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "motor-side freewheel transmitted torque"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "motor_freewheel_dissipation_power_w"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "motor_freewheel_dissipation_power_w",
-          "dtype": "double",
-          "unit": "W",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "motor freewheel overrun dissipation"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
             "crank_clutch_torque_nm"
           ],
           "aliases": [],

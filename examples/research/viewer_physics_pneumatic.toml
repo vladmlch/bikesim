@@ -36,16 +36,13 @@ tier = "fast"
 
 [drive]
 # Real mid-drive topology: the chainring sits on the crank spindle (rigid
-# crank/chainring through the torque sensor); the motor pushes through a
-# one-way freewheel; the cassette freehub is the only other one-way element.
-# RU: шатун жёстко со звездой, мотор через обгонную муфту. motor_clutch=true —
-# legacy-топология (муфта шатун→вал) только для регрессионного A/B.
+# crank/chainring through the torque sensor) and the motor drives the crank
+# directly; the cassette freehub is the only one-way element. The separate
+# rotor freewheel was removed 2026-11-05. RU: шатун жёстко со звездой, мотор
+# на шатун напрямую. motor_clutch=true — топология с муфтой шатун→вал
+# только для регрессионного A/B.
 transmission_model = "ideal_mid_drive"
 motor_clutch = false
-# Reflected rotor inertia at the crank, kg*m^2. 0 = stateless rotor (the
-# freewheel degenerates to tau_motor >= 0). ~0.1-0.3 is the recalled order of
-# magnitude for a mid-drive (unverified); set >0 for an inertial-rotor A/B.
-rotor_inertia_kgm2 = 0.0
 
 [drive.pedaling]
 enabled = true

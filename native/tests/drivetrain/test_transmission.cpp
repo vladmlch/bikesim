@@ -31,16 +31,14 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void native_topologies() {
     const auto available = drivetrain::implemented_capabilities();
-    bt::require(available.motor_clutch && available.reflected_rotor,
-        "native availability includes existing clutch and rotor branches");
-    struct Variant { std::string_view family; bool clutch; double rotor; };
+    bt::require(available.motor_clutch,
+        "native availability includes the existing clutch branch");
+    struct Variant { std::string_view family; bool clutch; };
     constexpr std::array variants{
-        Variant{.family="ideal_mid_drive", .clutch=false, .rotor=0.},
-        Variant{.family="ideal_mid_drive", .clutch=true, .rotor=0.},
-        Variant{.family="ideal_mid_drive", .clutch=false, .rotor=.02},
-        Variant{.family="geometric_ideal_mid_drive", .clutch=false, .rotor=0.},
-        Variant{.family="geometric_ideal_mid_drive", .clutch=true, .rotor=0.},
-        Variant{.family="geometric_ideal_mid_drive", .clutch=false, .rotor=.02}};
+        Variant{.family="ideal_mid_drive", .clutch=false},
+        Variant{.family="ideal_mid_drive", .clutch=true},
+        Variant{.family="geometric_ideal_mid_drive", .clutch=false},
+        Variant{.family="geometric_ideal_mid_drive", .clutch=true}};
     const auto track = bike::terrain::load_track(bt::fixture("tracks/flat.toml"));
     for (const auto& variant : variants) {
         auto request = std::make_unique<bike::model::BuildRequest>();
@@ -51,7 +49,6 @@ void native_topologies() {
         auto& source = request->physics->drive;
         source.transmission_model = variant.family;
         source.motor_clutch = variant.clutch;
-        source.rotor_inertia_kgm2 = variant.rotor;
         source.shifting.enabled = false;
         runtime::validate_native_supported(*request->physics, *request->rider);
         auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*request));
@@ -61,7 +58,7 @@ void native_topologies() {
         const int actuator = bike::model::required_id(*model, mjOBJ_ACTUATOR, "mid_drive");
         const int target = bike::model::required_id(*model, mjOBJ_JOINT, topology.actuator_joint);
         bt::require(std::views::counted(model->actuator_trnid, 2 * model->nu)[2U*static_cast<std::size_t>(actuator)] == target,
-            "motor actuator targets the selected crank, shaft or rotor joint");
+            "motor actuator targets the selected crank or drive-shaft joint");
 
         drivetrain::OwnedData const data(engine::make_data(model.get()));
         engine::forward(model.get(), data.get());
@@ -70,9 +67,8 @@ void native_topologies() {
         const auto initial = std::make_unique<drivetrain::DriveSnapshot>(writer->state());
         bt::require(initial->ideal_hub.has_value(),
             "reset state carries the ideal freehub topology");
-        bt::require(initial->clutch.has_value() == variant.clutch &&
-            initial->freewheel.has_value() == (variant.rotor > 0.),
-            "auxiliary clutch and rotor state are neither dropped nor invented");
+        bt::require(initial->clutch.has_value() == variant.clutch,
+            "auxiliary clutch state is neither dropped nor invented");
         const auto before = bike::io::canonical_json(drivetrain::encode_drive_snapshot(*initial));
 
         drivetrain::TickInputs tick;
@@ -99,10 +95,6 @@ void native_topologies() {
             "complete drive state roundtrips across each transmission family");
 
         auto invalid = *config.drive;
-        invalid.motor_clutch = true;
-        invalid.rotor_inertia_kgm2 = .02;
-        bt::invalid([&] { (void)drivetrain::motor_topology(invalid); });
-        invalid = *config.drive;
         invalid.transmission_model = "elastic_chain";
         invalid.motor_clutch = true;
         bt::invalid([&] { (void)drivetrain::motor_topology(invalid); });

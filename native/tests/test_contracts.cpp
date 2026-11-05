@@ -1620,8 +1620,7 @@ namespace {
                same(a.angles, b.angles) && same(a.last, b.last) &&
                same(a.probe_last, b.probe_last) &&
                same(a.pending_actuation, b.pending_actuation) &&
-               same(a.ideal_hub, b.ideal_hub) && same(a.clutch, b.clutch) &&
-               same(a.freewheel, b.freewheel);
+               same(a.ideal_hub, b.ideal_hub) && same(a.clutch, b.clutch);
     }
 
     // The operation's observable result folded into comparable bits. Boxing
@@ -1670,12 +1669,6 @@ namespace {
                      "size=\".04\" mass=\"1\"/></body>";
             names.emplace_back("drive_shaft_spin");
         }
-        if (topology == "rotor") {
-            extra += "<body name=\"rotor\"><joint name=\"rotor_spin\" "
-                     "axis=\"0 1 0\"/><inertial pos=\"0 0 0\" mass=\"1\" "
-                     "diaginertia=\".2 .2 .2\"/></body>";
-            names.emplace_back("rotor_spin");
-        }
         const std::string_view driver =
                 topology == "clutch" ? "drive_shaft_spin" : "crank_spin";
         if (kind == "ideal_mid_drive") {
@@ -1697,13 +1690,7 @@ namespace {
                       "range=\"-100 0\"><joint joint=\"crank_spin\" "
                       "coef=\"1\"/><joint joint=\"drive_shaft_spin\" "
                       "coef=\"-1\"/></fixed>";
-        if (topology == "rotor")
-            tendon += "<fixed name=\"motor_freewheel\" limited=\"true\" "
-                      "range=\"-100 0\"><joint joint=\"rotor_spin\" "
-                      "coef=\"1\"/><joint joint=\"crank_spin\" "
-                      "coef=\"-1\"/></fixed>";
-        const std::string_view motor_joint =
-                topology == "rotor" ? "rotor_spin" : driver;
+        const std::string_view motor_joint = driver;
         std::string xml =
                 "<mujoco><option timestep=\".0002\" gravity=\"0 0 0\"/>"
                 "<default><geom type=\"sphere\" size=\".05\" mass=\"1\" "
@@ -1771,7 +1758,6 @@ namespace {
             .transmission_model = std::string(kind),
             .human_torque_nm = 20., .torque_ripple = .35,
             .crank_phase_rad = 0.,
-            .rotor_inertia_kgm2 = topology == "rotor" ? .2 : 0.,
             .motor_clutch = topology == "clutch"};
     }
 
@@ -1798,8 +1784,6 @@ namespace {
             qvel[static_cast<std::size_t>(joint_dof(model.get(), "rear_wheel_spin"))] = 5.;
             if (topology == "clutch")
                 qvel[static_cast<std::size_t>(joint_dof(model.get(), "drive_shaft_spin"))] = 4.5;
-            if (topology == "rotor")
-                qvel[static_cast<std::size_t>(joint_dof(model.get(), "rotor_spin"))] = 4.5;
             mj_forward(model.get(), d);
             writer.reset();
         }
@@ -2040,8 +2024,6 @@ namespace {
                          .assist = true, .shifting = true},
                  Variant{.kind = "ideal_mid_drive", .topology = "clutch",
                          .assist = true, .shifting = false},
-                 Variant{.kind = "ideal_mid_drive", .topology = "rotor",
-                         .assist = true, .shifting = false},
                  Variant{.kind = "ideal_mid_drive", .topology = "plain",
                          .assist = false, .shifting = false},
                  Variant{.kind = "geometric_ideal_mid_drive",
@@ -2052,9 +2034,6 @@ namespace {
                          .shifting = true},
                  Variant{.kind = "geometric_ideal_mid_drive",
                          .topology = "clutch", .assist = true,
-                         .shifting = false},
-                 Variant{.kind = "geometric_ideal_mid_drive",
-                         .topology = "rotor", .assist = true,
                          .shifting = false},
                  Variant{.kind = "geometric_ideal_mid_drive",
                          .topology = "plain", .assist = false,

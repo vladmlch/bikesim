@@ -82,7 +82,7 @@ StepWork raw_work(const RawStep &raw, double dt_s) {
     }
     // Closure rows are charged to the elastic channel: 'equality:' rows are
     // the weld/closure springs, and 'tendon_limit:' rows are the drivetrain's
-    // one-way closures (freehub, crank clutch, motor freewheel). Both are soft
+    // one-way closures (freehub, crank clutch). Both are soft
     // constraints built on closure_time_constant_s and model mechanical
     // compliance, not solver error: a freehub taking up the first pedal load
     // absorbs work while the rider's and motor's work is still near zero, which

@@ -14,13 +14,13 @@
 // validate_supported: the native capability set is *broader* by design.
 // Python's port-qualification gate requires pedal=spindle / saddle=pin /
 // grip=connect, drive_mode=articulated_effort, transmission
-// ideal_mid_drive, motor_clutch=false, rotor_inertia=0, and a ported tire
+// ideal_mid_drive, motor_clutch=false, and a ported tire
 // backend. The native matrix accepts the whole known drive-dispatch set
 // (articulated_effort/crank_effort/coast/ideal_speed_control), routes
 // non-spindle pedal attachments to the legacy controller paths (with the
 // allocation numeric identity recorded in the report), accepts
 // native_reference contact dispatch, both remaining transmission models,
-// mid-drive motor clutch/rotor inertia, and a tabulated tire material —
+// the mid-drive motor clutch, and a tabulated tire material —
 // see capabilities.cpp. The ported contract therefore asserts the native
 // boundary's own verdicts and the field-path naming contract where the
 // boundary does reject; the differences are documented here and in the
@@ -136,18 +136,13 @@ void test_native_capability_rejects_unsupported_structure() {
         config.tires.surface_mode = "configured";
         require_rejected(config, rider, "tires.surface_mode");
     }
-    // Mid-drive rotor inertia and motor clutch are schema-valid under
-    // ideal_mid_drive + articulated_effort; the capability set does not
-    // gate them further.
+    // The mid-drive motor clutch is schema-valid under ideal_mid_drive +
+    // articulated_effort; the capability set does not gate it further.
     {
         cfg::SimulationPhysicsConfig config = base;
         config.drive.motor_clutch = true;
         require_supported(config, rider,
                           "motor clutch under mid-drive effort accepted");
-        config = base;
-        config.drive.rotor_inertia_kgm2 = .001;
-        require_supported(config, rider,
-                          "rotor inertia under mid-drive accepted");
     }
 }
 

@@ -807,10 +807,10 @@ void test_drive_restore_cassette_membership_when_shifter_enabled() {
 
 // native_state_restore/drive_restore_rejects_auxiliary_transmission_drift/topology-name-key-value
 void test_drive_restore_rejects_auxiliary_transmission_drift() {
-    // Clutch/freewheel transmissions are fixed 1:1 one-way clutches with a
-    // single unit coefficient — the snapshot cannot retopologize them.
+    // The crank clutch is a fixed 1:1 one-way clutch with a single unit
+    // coefficient — the snapshot cannot retopologize it.
     for (const auto &[topology, name] :
-         {std::pair{"clutch", "clutch"}, std::pair{"rotor", "freewheel"}})
+         {std::pair{"clutch", "clutch"}})
         for (const std::size_t which :
              {std::size_t{0}, std::size_t{1}, std::size_t{2},
               std::size_t{3}}) {

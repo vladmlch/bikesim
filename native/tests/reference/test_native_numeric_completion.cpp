@@ -589,7 +589,6 @@ const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone
     {{"tire", "significant_delta_m"}},
     {{"tire", "significance_fraction"}},
     {{"drive", "human_torque_nm"}}, {{"drive", "torque_ripple"}},
-    {{"drive", "rotor_inertia_kgm2"}},
     {{"drive", "pedaling", "resume_below_rpm"}},
     {{"drive", "pedaling", "coast_cadence_tau_s"}},
     {{"drive", "pedaling", "mash_cadence_rpm"}},

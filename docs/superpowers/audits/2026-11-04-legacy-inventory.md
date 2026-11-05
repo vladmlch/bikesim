@@ -75,7 +75,7 @@ handle. Two plan-coverage gaps were found (not stop-condition hits — see
 | `native/src/legacy/controls.hpp:131–139`; `controls.cpp:318–330` def | deleted (moved to `bike::runtime::RunLimits`) | T2 produces, T8 deletes |
 | `native/src/cli/ride.cpp:130` in `physical_run` | switched | T2 |
 | `native/src/runtime/realtime_driver.cpp:49,131` | switched | T2 |
-| `native/src/legacy/ride.cpp:435–436`; `ride.hpp:92` | deleted | T8 |
+| `native/src/legacy/ride.cpp:435–436`; `ride.hpp:92–94` (`default_limits` + `run(const RunLimits&, …)`) | deleted | T8 |
 | `native/tests/legacy/test_metrics.cpp:61` | deleted | T8 |
 
 ### `termination_reason`
@@ -108,7 +108,7 @@ handle. Two plan-coverage gaps were found (not stop-condition hits — see
 | `native/src/legacy/tyre.hpp:32,33,48`; `tyre.cpp:23,27` (return `nativecfg::PneumaticTyreSpec` via `using TyreSpecs =`) | deleted (moved to `bt::tyres::front_tyre`/`rear_tyre`) | T4 produces, T8 deletes |
 | `native/src/viz/ride.cpp:109` inside `tyre_plot` | deleted | T7 |
 | `native/tests/legacy/test_ride.cpp:37` (`front_tyre` only) | deleted | T8 |
-| `native/tests/reference/pneumatic_tire_fixture.hpp:59,60,80`; `test_tyre_road_profile.cpp:84`; `test_native_pneumatic_carcass.cpp` (9 sites); `test_native_pneumatic_model.cpp` (16 sites) | switched | T4 |
+| `native/tests/reference/pneumatic_tire_fixture.hpp:59,60,80`; `test_tyre_road_profile.cpp:84`; `test_native_pneumatic_carcass.cpp` (11 sites: 9 `front_tyre` + 2 `rear_tyre`); `test_native_pneumatic_model.cpp` (19 sites: 18 `front_tyre` + 1 `rear_tyre`) | switched | T4 |
 
 ### `tier_spec` (legacy function)
 
@@ -242,7 +242,7 @@ handle. Two plan-coverage gaps were found (not stop-condition hits — see
 
 | file:line | status | task |
 |---|---|---|
-| `native/src/cli/application.hpp:24` decl; `application.cpp:20` dispatch; `cli/playground.cpp:6` def; `cli/simulation.cpp:28` dispatch | deleted | T8 |
+| `native/src/cli/application.hpp:24` decl; `application.cpp:20` dispatch; `cli/playground.cpp:6` def; `cli/simulation.cpp:15` (`args.flag("playground")` in `defaults`), `:27` (`export_playground_models` call — renamed `export_models` by T8a), `:28` (`playground_command` dispatch) | deleted | T8 (`:15,:28`), T8a (`:27`) |
 
 ### `make_playground`
 
@@ -292,11 +292,12 @@ handle. Two plan-coverage gaps were found (not stop-condition hits — see
 |---|---|---|
 | `native/src/configuration/schema.cpp:505,593–596`; `config_types.hpp:344–365`; `config_validation.hpp:213–221`; `writer_config.hpp:47,57,324,476–485,864–880,1183–1184` | deleted | T11 |
 | `native/src/runtime/step.cpp:31,1304–1307,2339–2341,2482–2485`; `stepper.cpp:14,154–156,353–356`; `stepper.hpp:344,369,501` | deleted | T11 |
-| `native/src/runtime/project_config.cpp:436` (emits section for seated rider only) | deleted | T11 |
+| `native/src/runtime/project_config.cpp:425–437` (`variant == "seated"` guard at `:427` gates the emit at `:436`) | deleted | T11 |
 | `native/src/initialization/legacy_equilibrium.hpp:33`; `legacy_equilibrium.cpp:51`; `legacy/ride.cpp:113,138,219,249`; `legacy/rider.hpp:8` | deleted | T8 |
 | tests per T11 list (`test_native_rider_forces.cpp`, `test_writer_config.cpp:79,91,183`, `test_native_input_contracts.cpp:139,182,219,570`, `test_native_numeric_completion.cpp:143,181,534,764–766`, `test_contracts.cpp:21,395,442–449,2640`) | edited/deleted | T11 |
 | `tests/fixtures/golden/*/native_rider_forces/` (incl. `rider_forces_qfrc_bitwise.json`) | deleted | T11 |
 | `tests/fixtures/golden/*/native_suspension/legacy_env/wire.json` | deleted | T10 |
+| `docs/TESTING.md:980,1072,1128` (`-k '… native_rider_forces …'` selectors and the `test_native_rider_forces.py` row) | edited | T12 |
 | `docs/research/simulation-audit-2026-10-07.md`; `docs/superpowers/plans/2026-11-03-gpu-shared-physics-master.md`, `2026-11-04-no-joint-damping.md` | **kept** — historical docs | — |
 
 ### `has_rider_forces`
@@ -332,9 +333,10 @@ handle. Two plan-coverage gaps were found (not stop-condition hits — see
 |---|---|---|
 | `native/src/runtime/project_config.cpp:125,126,136,143,169` (`legacy_behavior = true` switch + wire writes) | edited — writes become constant `false` | T10 |
 | `native/src/writers/suspension.cpp:202` `sd_legacy_damping_force`; `:230,231,262,263,272` branches; `:411,421` HBO guards; `physical_` member `:381,389,429,534,540,550,618` | deleted | T10 |
-| `native/src/writer_config.hpp:531–534`; `config_validation.hpp:92`; `configuration/schema.cpp:1108` | edited — accept `physical` only, reject `legacy_behavior == true` | T10 |
+| `native/src/writer_config.hpp:348,353,359,565–598` (schema key sets naming `"legacy_behavior"`, the schema-1 rejection at `:565–566`, and the `req_bool` reads into `fork_damper`/`shock_damper`/`coil.legacy_behavior` at `:568–570,581,598`) | edited — T10 gates exactly these reads to reject `legacy_behavior == true` | T10 |
+| `native/src/writer_config.hpp:531–535` (`config.suspension.physics_mode` check — a different symbol's site, same edit); `config_validation.hpp:92`; `configuration/schema.cpp:1108` | edited — accept `physical` only | T10 |
 | Wire field kept always-false: `config_types.hpp:144,152,161`; `schema.cpp:523–536,672,1114–1119`; `config_validation.hpp:60,73`; `validate.cpp:1188–1204,1422–1464` (HBO validation + ctor defaults) | **kept** — T10 keeps the field; reads stay correct under always-false | T10 (implicit) |
-| `native/src/model/suspension_setup.hpp:173,260,303,375`; `suspension_setup.cpp:140–161,549–567,733–735,845–847,913,946,1009–1018` | **kept — flag**: shared physical/legacy file with `legacy_behavior` fields and `if (legacy_behavior)` branches; not in T10's Files list; stays consistent because the flag is always false (branches become dead code) | — (see notes) |
+| `native/src/model/suspension_setup.hpp:173,178,181,260,303,375` (fields, `legacy_behavior()`/`set_legacy_behavior` accessors, ctor params); `suspension_setup.cpp:140–161,549–567,733–735,845–847,913,946,1009–1018` | **kept — flag**: shared physical/legacy file with `legacy_behavior` fields and `if (legacy_behavior)` branches; not in T10's Files list; stays consistent because the flag is always false (branches become dead code) | — (see notes) |
 | `native/tests/reference/test_native_numeric_completion.cpp:427,431,876`; `test_native_numeric_domains.cpp:102`; `test_native_input_contracts.cpp` (9 hits); `test_writer_config.cpp` (9 hits); `test_contracts.cpp` (3 hits) — the `true` cases | deleted per T10 Step-1 sweep | T10 |
 | `native/tests/model/test_inertia.cpp:1759–1785` (asserts wire field == damper field, both false) | **kept** — still valid | — |
 | `tests/fixtures/**/config.json`, `tests/fixtures/golden/*/…/wire.json`, `tests/fixtures/model/dampers.json` with `"legacy_behavior": false` | **kept** — bytes unchanged (field stays, always false) | — |

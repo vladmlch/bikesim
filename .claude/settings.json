@@ -1,4 +1,9 @@
 {
+    "permissions": {
+        "allow": [
+            "Bash(bash .claude/skills/devin-orchestration/scripts/devin-run.sh:*)"
+        ]
+    },
     "hooks": {
         "SessionStart": [
         ],

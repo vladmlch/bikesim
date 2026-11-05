@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
         close_on_finish_contract();
         // Real command dispatch is registered for later execution. No simulator
         // is constructed by help, including the standalone analyst executable.
-        bt::require(argc == 2, "command directory is supplied by CTest");
+        bt::require(argc == 3, "command directory and bike-native-ride are supplied by CTest");
         const auto raw=bike::platform::main_arguments(argc,argv);
         const auto bin = std::filesystem::path(raw[1]);
         for (const auto& name : command_names()) {
@@ -164,6 +164,18 @@ int main(int argc, char** argv) {
         }
         const auto rejected = bike::platform::run({(bin / "bike-research").string(), "--duration", "not-a-number"}, bin);
         bt::require(rejected.exit_code == 2 && !rejected.err.empty(), "configuration errors keep CLI exit 2");
+        // bike-native-ride owns its option parser: the removed legacy-only
+        // flags are unknown options now, and help drops the legacy block.
+        const auto native_ride = std::filesystem::path(raw[2]);
+        for (const auto* flag : {"--legacy-drive", "--assist-mode", "--legacy-tyre", "--legacy-tyre-tier"}) {
+            const auto removed = bike::platform::run({native_ride.string(),
+                "--physics-config", bt::fixture("config/viewer_physics_welded.toml").string(), flag, "motor"}, bin);
+            bt::require(removed.exit_code == 2 && removed.err.find("unknown option") != std::string::npos,
+                std::string("bike-native-ride rejects ") + flag + " as unknown (" + removed.err + ")");
+        }
+        const auto native_help = bike::platform::run({native_ride.string(), "--help"}, bin);
+        bt::require(native_help.exit_code == 0 && native_help.out.find("Legacy mode") == std::string::npos,
+            "bike-native-ride help lists no legacy option block");
         settled_pose_loads_into_ride(bin);
         bike::BikeConfig first, second;
         first.damper_clicks.fork_hsc = 0;

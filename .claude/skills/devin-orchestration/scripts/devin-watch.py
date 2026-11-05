@@ -89,10 +89,16 @@ def main() -> int:
     ap.add_argument("run_dir", type=Path)
     ap.add_argument("--stall-min", type=float, default=15)
     ap.add_argument("--poll", type=float, default=30)
+    ap.add_argument("--grace", type=float, default=60,
+                    help="seconds a missing or dead pid may persist before the run counts as gone")
     args = ap.parse_args()
     run_dir = args.run_dir.resolve()
 
     last_id, last_change = None, time.time()
+    # devin-run.sh writes `attempt` before `pid`, and a resumed attempt briefly
+    # sees the previous attempt's dead pid: only a pid that stays missing or
+    # dead for the whole grace period means the wrapper is gone.
+    gone_since = None
     while True:
         attempt = read(run_dir / "attempt")
         exit_code = read(run_dir / f"exit_code.{attempt}") if attempt else None
@@ -101,8 +107,12 @@ def main() -> int:
             return 0
         pid = read(run_dir / "pid")
         if attempt and not alive(pid):
-            print(f"devin attempt {attempt}: process {pid} gone without exit_code (wrapper killed?)")
-            return 1
+            gone_since = gone_since or time.time()
+            if time.time() - gone_since >= args.grace:
+                print(f"devin attempt {attempt}: process {pid} gone without exit_code (wrapper killed?)")
+                return 1
+        else:
+            gone_since = None
 
         session_id = read(run_dir / "session_id")
         node = latest_node(session_id) if session_id else None

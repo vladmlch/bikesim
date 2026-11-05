@@ -35,7 +35,7 @@ inline std::string model_xml(std::string_view kind, std::string_view mode = "cra
     }
     if (topology == "clutch") tendon += R"(<fixed name="crank_clutch" limited="true" range="-100 0"><joint joint="crank_spin" coef="1"/><joint joint="drive_shaft_spin" coef="-1"/></fixed>)";
     const std::string human = mode == "crank_effort" ? R"(<motor name="human_crank" joint="crank_spin"/>)" : "";
-    const std::string motor = driver;
+    const std::string &motor = driver;
     return R"(<mujoco><option timestep=".0002" gravity="0 0 0" jacobian=")" + std::string(sparse ? "sparse" : "dense") + R"("/>
     <default><geom type="sphere" size=".05" mass="1" contype="0" conaffinity="0"/><joint damping="0"/></default>
     <worldbody><body name="frame"><joint name="root_x" type="slide" axis="1 0 0"/><joint name="frame_pitch" axis="0 1 0"/><geom/>

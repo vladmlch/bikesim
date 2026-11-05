@@ -882,7 +882,6 @@ namespace drivetrain {
                  config_.transmission_model == "ideal_mid_drive");
         last.set(TelemetryField::freehub_torque_nm, 0.);
         last.set(TelemetryField::freehub_engaged, false);
-        last.set(TelemetryField::freehub_dissipation_power_w, 0.);
         last.set(TelemetryField::cadence_rpm, m.cadence);
         last.set(TelemetryField::crank_rad_s, m.omega_crank);
         last.set(TelemetryField::drive_shaft_rad_s, m.omega);
@@ -1081,15 +1080,13 @@ namespace drivetrain {
         struct Aux {
             Transmission *transmission;
             std::optional<SolvedTransmission> *slot;
-            TelemetryField torque, engaged, dissipation;
+            TelemetryField torque, engaged;
         };
         for (const Aux &aux: {
                  Aux{.transmission = clutch_.get(),
                      .slot = &bank.clutch_solve,
                      .torque = TelemetryField::crank_clutch_torque_nm,
-                     .engaged = TelemetryField::crank_clutch_engaged,
-                     .dissipation =
-                         TelemetryField::crank_clutch_dissipation_power_w}})
+                     .engaged = TelemetryField::crank_clutch_engaged}})
             if (aux.transmission) {
                 SolvedTransmission &solved =
                         *aux.slot ? **aux.slot : aux.slot->emplace();
@@ -1101,17 +1098,12 @@ namespace drivetrain {
                         f[static_cast<std::size_t>(aux.transmission->driven_dof())];
                 record(aux.torque, torque);
                 record(aux.engaged, torque > 1e-8);
-                record(aux.dissipation,
-                       std::max(0., torque * aux.transmission->relative_rate(data_)));
             }
         if (ideal_hub_) {
             const double torque =
                     transmission_[static_cast<std::size_t>(ideal_hub_->driven_dof())];
             record(TelemetryField::freehub_torque_nm, torque);
             record(TelemetryField::freehub_engaged, torque > 1e-8);
-            if (config_.motor_clutch)
-                record(TelemetryField::freehub_dissipation_power_w,
-                       std::max(0., torque * ideal_hub_->relative_rate(data_)));
             // Merge from the staged candidate — not the live diagnostics,
             // which publish only at commit. Every merged field is a
             // declared lane, so a duplicate key simply records twice and

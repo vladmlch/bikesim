@@ -169,8 +169,6 @@ namespace drivetrain {
         // Convenience: stage + commit, returning the persistent force span.
         std::span<const double> solved(mjData *data);
 
-        double relative_rate(const mjData *data) const;
-
         TransmissionSnapshot state() const;
 
         // state() into caller storage — copy-assigns into the snapshot so a

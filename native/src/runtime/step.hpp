@@ -393,8 +393,7 @@ private:
     [[nodiscard]] double
     loss_increment(const std::vector<std::pair<
                        std::string, std::vector<double>>> &components,
-                   std::span<const double> velocity, double dt,
-                   const drivetrain::Diagnostics &drive_last) const;
+                   std::span<const double> velocity, double dt) const;
     [[nodiscard]] WireObject
     balance_channel(double front, double rear, bool braking,
                     bool rider_enabled);

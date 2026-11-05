@@ -167,7 +167,7 @@ struct CycleEnv {
     int crank_qpos = -1, crank_dof = -1;
 };
 
-CycleEnv cycle_env() {
+CycleEnv cycle_env(bool motor_clutch = false) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     // _environment: viewer_physics_welded + a 200 m flat probe track +
@@ -176,6 +176,7 @@ CycleEnv cycle_env() {
     // the oracle's make_environment settles fresh too.
     request.setup.model.physics = cfg::load_physics(
         repo_file("examples/research/viewer_physics_welded.toml"));
+    request.setup.model.physics->drive.motor_clutch = motor_clutch;
     request.setup.model.mode = "ride";
     request.setup.model.crank_joint = true;
     request.setup.model.rider =
@@ -485,6 +486,53 @@ void test_free_coast_is_an_intent_not_a_crank_lock() {
                 "the cranks were spinning before the coast");
 }
 
+// AGENTS.md «Передача» (2026-11-05): one-way clutch engagement is not a
+// loss. With the motor clutch on, the per-step loss equals the material
+// losses (suspension dampers, tyres) alone: the clutch and freehub add
+// none, and their solver work shows up only in the closure channel.
+void test_clutch_engagement_is_not_a_loss() {
+    auto env = cycle_env(/*motor_clutch=*/true);
+    const runtime::RideControl control{.motor_torque_nm = 0.,
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 40.,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
+    // 2 s of pedalling at the 10 ms research control window.
+    for (int i = 0;
+         i < 200 && !env.runtime->snapshot().outcome &&
+         env.runtime->snapshot().step < env.max_steps;
+         ++i)
+        (void)env.runtime->advance(
+            env.runtime->snapshot().step + env.period, control, 0., 0.,
+            std::nullopt);
+    double closure_absolute_max = 0.;
+    bool clutch_ever_engaged = false;
+    for (const auto &row : intervals_of(*env.runtime)) {
+        const auto &drive =
+            sw::object(sw::required(row->channels, "drive"));
+        bt::require(
+            sw::find(drive, "crank_clutch_dissipation_power_w") == nullptr,
+            "no clutch loss column");
+        bt::require(
+            sw::find(drive, "freehub_dissipation_power_w") == nullptr,
+            "no freehub loss column");
+        const auto &energy =
+            sw::object(sw::required(row->channels, "energy"));
+        bt::require(sw::boolean(sw::required(energy, "constraint_work_ok")),
+                    "energy.constraint_work never fires on engagement");
+        closure_absolute_max =
+            std::max(closure_absolute_max,
+                     sw::number(sw::required(energy, "closure_absolute_j")));
+        if (const auto *engaged = sw::find(drive, "crank_clutch_engaged"))
+            clutch_ever_engaged |= sw::boolean(*engaged);
+    }
+    bt::require(clutch_ever_engaged,
+                "the motor clutch actually engaged while pedalling");
+    bt::require(
+        closure_absolute_max > 0.,
+        "clutch and freehub engagement work lands in the closure channel");
+}
+
 // test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_
 // queue — the queue seam is Python-side (see the file header); the
 // contract is the cadence wish reaching the same call's applied control.
@@ -520,6 +568,7 @@ int main() {
         test_first_pedal_command_and_restart_respect_configured_effort_slew();
         test_strict_flat_cycle_delivers_and_stays_within_budgets();
         test_free_coast_is_an_intent_not_a_crank_lock();
+        test_clutch_engagement_is_not_a_loss();
         test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue();
     });
 }

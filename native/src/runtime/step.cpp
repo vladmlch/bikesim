@@ -1724,7 +1724,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             wire_set(signals_in, "tires", Wire(in.tires));
             update_intent_signals(signals_in);
         }
-        in.loss_step = loss_increment(components, v, dt, drive_last);
+        in.loss_step = loss_increment(components, v, dt);
         if (rider_control_.has_value())
             in.rider_diag =
                 stepper_->rider_contacts().state().diagnostics;
@@ -2406,8 +2406,7 @@ PhysicalStep::energy_state() {
 double PhysicalStep::loss_increment(
     const std::vector<std::pair<std::string, std::vector<double>>>
         &components,
-    std::span<const double> velocity, double dt,
-    const drivetrain::Diagnostics &last) const {
+    std::span<const double> velocity, double dt) const {
     NeumaierSum acc;
     for (const char *name:
          {"fork_damper", "shock_damper", "shock_hbo"})
@@ -2436,8 +2435,9 @@ double PhysicalStep::loss_increment(
         const auto *f = ordered_at(components, "brake_hold");
         loss += std::max(0., -(f != nullptr ? dot(*f, velocity) : 0.)) * dt;
     }
-    loss += diag_number(last, "freehub_dissipation_power_w") * dt;
-    loss += diag_number(last, "crank_clutch_dissipation_power_w") * dt;
+    // One-way clutch engagement is solver work on a tendon limit, charged
+    // to the closure channel (accounting.cpp raw_work), never a loss —
+    // AGENTS.md «Передача», 2026-11-05.
     if (stepper_->has_tire())
         loss += stepper_->tire_writer().brush_loss_step_j() +
             stepper_->tire_writer().radial_dissipation_power_w() * dt;

@@ -156,7 +156,7 @@ inline WireObject drive_channels(double brake) {
         {"omits_suspension_coupling", Wire{true}},
         {"freehub_torque_nm", Wire{0.}},
         {"freehub_engaged", Wire{true}},
-        {"freehub_dissipation_power_w", Wire{0.}}, {"freehub_power_w", Wire{0.}},
+        {"freehub_power_w", Wire{0.}},
         {"cadence_rpm", Wire{0.}}, {"crank_rad_s", Wire{0.}},
         {"drive_shaft_rad_s", Wire{0.}}, {"crank_phase_rad", Wire{0.}},
         {"human_torque_nm", Wire{0.}}, {"human_sensor_nm", Wire{0.}},

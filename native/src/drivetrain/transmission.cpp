@@ -156,12 +156,6 @@ namespace drivetrain {
                q[static_cast<std::size_t>(driven_qpos_)];
     }
 
-    double Transmission::relative_rate(const mjData *d) const {
-        const auto v = buffer(d->qvel, model_->nv);
-        return state_.ratio * v[static_cast<std::size_t>(driver_dof_)] -
-               v[static_cast<std::size_t>(driven_dof_)];
-    }
-
     double Transmission::geometry(mjData *d) {
         mj_kinematics(model_, d);
         mj_comPos(model_, d);

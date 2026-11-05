@@ -47,7 +47,11 @@ void catalog_contract() {
     // 476 = 479 minus the removed rotor-freewheel telemetry keys:
     // channel_drive.{motor_freewheel_dissipation_power_w,
     // motor_freewheel_engaged, motor_freewheel_torque_nm}.
-    bt::require(count == 476, "full reviewed catalog retains all 476 repeated/nested descriptor occurrences");
+    // 474 = 476 minus the clutch-engagement loss columns:
+    // channel_drive.{crank_clutch_dissipation_power_w,
+    // freehub_dissipation_power_w} — engagement is closure work, never a
+    // loss (AGENTS.md «Передача», 2026-11-05).
+    bt::require(count == 474, "full reviewed catalog retains all 474 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

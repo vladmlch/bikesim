@@ -1690,7 +1690,7 @@ namespace {
                       "range=\"-100 0\"><joint joint=\"crank_spin\" "
                       "coef=\"1\"/><joint joint=\"drive_shaft_spin\" "
                       "coef=\"-1\"/></fixed>";
-        const std::string_view motor_joint = driver;
+        const std::string_view &motor_joint = driver;
         std::string xml =
                 "<mujoco><option timestep=\".0002\" gravity=\"0 0 0\"/>"
                 "<default><geom type=\"sphere\" size=\".05\" mass=\"1\" "

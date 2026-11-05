@@ -1560,26 +1560,6 @@ R"CATALOG({
           "frame": "n/a",
           "path": [
             "drive",
-            "freehub_dissipation_power_w"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "freehub_dissipation_power_w",
-          "dtype": "double",
-          "unit": "W",
-          "phase": "interval",
-          "optional": false,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier._compute_components",
-          "description": "freehub overrun dissipation"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
             "freehub_power_w"
           ],
           "aliases": [],
@@ -2196,26 +2176,6 @@ R"CATALOG(          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::Drive
           "measurement": "solved",
           "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
           "description": "crank clutch carrying torque"
-        },
-        {
-          "frame": "n/a",
-          "path": [
-            "drive",
-            "crank_clutch_dissipation_power_w"
-          ],
-          "aliases": [],
-          "shape": null,
-          "axes": null,
-          "except_keys": [],
-          "children": [],
-          "key": "crank_clutch_dissipation_power_w",
-          "dtype": "double",
-          "unit": "W",
-          "phase": "interval",
-          "optional": true,
-          "measurement": "derived",
-          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::DrivetrainForceApplier.settle_actuation",
-          "description": "crank clutch catch dissipation"
         },
         {
           "frame": "n/a",

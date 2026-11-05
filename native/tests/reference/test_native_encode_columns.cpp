@@ -187,7 +187,6 @@ WireObject drive_channels(double speed = 0., const WireObject &drive_over = {},
     drive.emplace_back("omits_suspension_coupling", Wire{true});
     drive.emplace_back("freehub_torque_nm", Wire{8.0 + speed});
     drive.emplace_back("freehub_engaged", Wire{speed < 0.5});
-    drive.emplace_back("freehub_dissipation_power_w", Wire{speed != 0.0 ? -0.0 : 0.1});
     drive.emplace_back("freehub_power_w", Wire{12.1});
     drive.emplace_back("cadence_rpm", Wire{80.0 + speed});
     drive.emplace_back("crank_rad_s", Wire{8.4 + speed});
@@ -219,7 +218,6 @@ WireObject drive_channels(double speed = 0., const WireObject &drive_over = {},
     drive.emplace_back("motor_shaft_power_w", Wire{150.0});
     drive.emplace_back("crank_clutch_torque_nm", Wire{0.3});
     drive.emplace_back("crank_clutch_engaged", Wire{false});
-    drive.emplace_back("crank_clutch_dissipation_power_w", Wire{0.0});
     drive.emplace_back("gear_front_teeth", Wire{std::int64_t{44}});
     drive.emplace_back("gear_rear_teeth", Wire{std::int64_t{16}});
     drive.emplace_back("gear_ratio", Wire{2.75});

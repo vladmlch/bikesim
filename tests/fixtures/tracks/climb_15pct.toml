@@ -1,0 +1,8 @@
+# 15 % grade climb track fixture for bike-ride and bike-research.
+# Track of the 2026-11-06 leg-control experiments (flat 10 m run-in, 4 m ramp, then 15 % grade).
+
+name = "diag_climb_15pct"
+length_m = 150.0
+description = "Test-matched climb: flat 10 m, 4 m ramp, 136 m at 15% (test_realistic_pedelec_acceptance knots)"
+surface = "asphalt"
+grade_profile = { knots = [[0.0, 0.0], [10.0, 0.0], [14.0, 0.15], [150.0, 0.15]] }

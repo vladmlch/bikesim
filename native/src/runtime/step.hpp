@@ -126,6 +126,15 @@ numerical_constraint_powers(const mjModel *model, const mjData *data,
 [[nodiscard]] std::vector<int> connect_equality_rows(const mjModel *model,
                                                    const mjData *data);
 
+// Elastic energy parked in the closure rows (equality welds and
+// tendon-limit one-way closures — the same row set raw_work charges to
+// the elastic closure channel). MuJoCo's aref is a spring-damper in
+// acceleration space, aref = -B*vel - K*I*(pos-margin); scaled by the
+// row's regularized mass efc_D its spring stores 1/2*D*K*I*(pos-margin)^2.
+// Re-derived from the live arena on every call — a slack one-way
+// closure or an inactive weld contributes nothing.
+[[nodiscard]] double closure_stored_energy(const mjData *data);
+
 // telemetry_v2.py ForceSample — the interval-start force capture the
 // loss ledger reads back (engine_passive_loss_power takes its qpos).
 struct ForceSample {

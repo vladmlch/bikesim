@@ -958,6 +958,34 @@ std::vector<int> connect_equality_rows(const mjModel *model,
     return rows;
 }
 
+// closure_stored_energy — elastic energy parked in the closure rows
+// (equality welds and tendon-limit one-way closures), evaluated per row
+// from the solver's own constraint state. MuJoCo's aref is a
+// spring-damper in acceleration space: aref = -B*vel - K*I*(pos-margin)
+// (engine_core_constraint.c, mj_referenceConstraint). Scaled by the
+// row's regularized mass efc_D, the aref spring's stored energy is
+// 1/2*D*K*I*(pos-margin)^2. Rows absent from the arena contribute
+// nothing — a slack one-way closure stores none.
+double closure_stored_energy(const mjData *data) {
+    const int nefc = data->nefc;
+    const auto efc_type = ibuf(data->efc_type, nefc);
+    const auto efc_pos = buf(data->efc_pos, nefc);
+    const auto efc_margin = buf(data->efc_margin, nefc);
+    const auto efc_D = buf(data->efc_D, nefc);
+    const auto efc_KBIP = buf(data->efc_KBIP, static_cast<mjtSize>(4) * nefc);
+    double energy = 0.;
+    for (int i = 0; i < nefc; ++i) {
+        const std::size_t u = static_cast<std::size_t>(i);
+        if (efc_type[u] != mjCNSTR_EQUALITY &&
+            efc_type[u] != mjCNSTR_LIMIT_TENDON)
+            continue;
+        const double x = efc_pos[u] - efc_margin[u];
+        energy += .5 * efc_D[u] * efc_KBIP[4 * u] * efc_KBIP[4 * u + 2] *
+                  x * x;
+    }
+    return energy;
+}
+
 // ---- construction ------------------------------------------------------
 
 PhysicalStep::PhysicalStep(
@@ -2329,6 +2357,7 @@ WireObject PhysicalStep::stored_terms() const {
         wire_set(out, "engine_joint_" + std::to_string(j),
                  Wire(.5 * jnt_stiff[u] * q * q));
     }
+    wire_set(out, "closures", Wire(closure_stored_energy(d)));
     return out;
 }
 

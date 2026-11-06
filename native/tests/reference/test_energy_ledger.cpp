@@ -18,6 +18,11 @@
 //   12 test_closed_ideal_constraint_does_no_work
 //   13 test_inelastic_impact_loss_is_physical_not_constraint_credit
 //   14 test_friction_loss_is_nonnegative_and_consistent
+//   15 test_closure_stored_energy_balances_load_unload_cycle — native-only
+//      record (crank-coupling plan, 2026-11-06, task 1): the elastic energy
+//      parked in a one-way closure belongs to `total`, so one load/unload
+//      cycle of a limited tendon leaves only the share the compliant
+//      constraint actually dissipates outside the ledger.
 //
 // The oracle's neutral-runtime seams (`runtime_for_raws`/`neutral_raw` in
 // test_monitor_strictness.py, imported by this file) live in
@@ -688,6 +693,66 @@ void test_friction_loss_is_nonnegative_and_consistent() {
     bt::require(kinetic1 < kinetic0, "the model cannot create energy");
 }
 
+// test_closure_stored_energy_balances_load_unload_cycle — one load/unload
+// cycle of a one-way drivetrain closure: a light driver presses a heavy
+// driven side through a limited fixed tendon (the freehub/crank-clutch
+// shape). The compliant constraint parks elastic take-up energy while the
+// load holds and returns it on release; only the damper's share is lost.
+// With the closure term inside the energy, the ledger's uncovered gap
+// stays within that dissipated share; without it the whole parked amount
+// reads as missing energy.
+void test_closure_stored_energy_balances_load_unload_cycle() {
+    const auto model = load_xml(
+        R"XML(<mujoco><option gravity="0 0 0" timestep=".0005"/>
+<worldbody>
+<body><joint name="driver" type="slide" axis="1 0 0"/><inertial mass=".005" pos="0 0 0" diaginertia="1 1 1"/></body>
+<body><joint name="driven" type="slide" axis="1 0 0"/><inertial mass="5" pos="0 0 0" diaginertia="1 1 1"/></body>
+</worldbody>
+<tendon><fixed name="freehub_like" limited="true" range="-10 0" solreflimit=".004 1">
+<joint joint="driver" coef="1"/><joint joint="driven" coef="-1"/></fixed></tendon>
+</mujoco>)XML",
+        "closure-cycle model");
+    const auto data = data_of(model.get());
+    engine::forward(model.get(), data.get());
+    const double dt = model->opt.timestep;
+    // Ramp up, hold, ramp down: the freehub take-up/release shape.
+    const auto force_of = [](double t) {
+        if (t < .15) return 60. * t / .15;
+        if (t < .30) return 60.;
+        if (t < .45) return 60. * (1. - (t - .30) / .15);
+        return 0.;
+    };
+    const auto qvel = model_access::mutable_buffer(data->qvel, model->nv);
+    const auto applied =
+        model_access::mutable_buffer(data->qfrc_applied, model->nv);
+    double work = 0., previous = 0.;
+    double peak_stored = 0., gap_with = 0., gap_without = 0.;
+    for (int i = 0; i < 1200; ++i) {
+        const double force = force_of(data->time);
+        std::vector<double> v_mid =
+            copy(model_access::readonly_buffer(data->qvel, model->nv));
+        applied[0] = force;
+        engine::step(model.get(), data.get());
+        for (std::size_t j = 0; j < v_mid.size(); ++j)
+            v_mid[j] = .5 * (v_mid[j] + qvel[j]);
+        work += .5 * (previous + force) * v_mid[0] * dt;
+        previous = force;
+        const double stored =
+            runtime::closure_stored_energy(data.get());
+        const double energy = energy_of(model.get(), data.get());
+        peak_stored = std::max(peak_stored, stored);
+        gap_with =
+            std::max(gap_with, std::abs(energy + stored - work));
+        gap_without = std::max(gap_without, std::abs(energy - work));
+    }
+    bt::require(peak_stored > .1,
+                "the load phase parks real elastic energy");
+    bt::require(gap_without > .5 * peak_stored,
+                "without the term the parked energy reads as missing");
+    bt::require(gap_with < .4 * peak_stored,
+                "with the term only the dissipated share stays open");
+}
+
 } // namespace
 
 int main() {
@@ -708,5 +773,6 @@ int main() {
         test_closed_ideal_constraint_does_no_work();
         test_inelastic_impact_loss_is_physical_not_constraint_credit();
         test_friction_loss_is_nonnegative_and_consistent();
+        test_closure_stored_energy_balances_load_unload_cycle();
     });
 }

@@ -49,6 +49,18 @@ void test_motor_clutch_topology_is_the_default() {
                 "effort comes from seated_climb, not a crank torque");
 }
 
+// test_relaxation_is_kinetic_for_the_rotor_drive
+// With a 0.2 kg·m² rotor the drivetrain equilibrates through a mode slower
+// than cycle's fixed 20 ms reset window: on the 15 % climb diag the cycle
+// settle needed 146368 steps vs the 64000-step contract (welded, measured
+// 2026-11-06); kinetic's energy-adaptive window settled the same pose in
+// 966. The switch is a mechanism ruling, not tuning — budget and tolerance
+// are untouched.
+void test_relaxation_is_kinetic_for_the_rotor_drive() {
+    bt::require(profile().equilibrium_relaxation == "kinetic",
+                "the rotor drivetrain settles on the kinetic schedule");
+}
+
 // test_assist_is_bosch_turbo_with_the_declared_envelope
 void test_assist_is_bosch_turbo_with_the_declared_envelope() {
     const auto &assist = profile().drive.assist;
@@ -141,6 +153,7 @@ void test_rider_numbers() {
 int main() {
     return bt::run([] {
         test_motor_clutch_topology_is_the_default();
+        test_relaxation_is_kinetic_for_the_rotor_drive();
         test_assist_is_bosch_turbo_with_the_declared_envelope();
         test_rider_numbers();
     });

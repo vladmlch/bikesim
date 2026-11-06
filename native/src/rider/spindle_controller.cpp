@@ -1216,12 +1216,33 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                      ? -config_.coasting_brake_limit_nm
                                      : held;
             }
+            // User ruling 2026-11-06 (rider-leg-control plan, task 1б):
+            // a rider who has stopped pedalling can only hold the
+            // pedals back — slow them or keep them still — and never
+            // pushes them forward. Each servo term therefore applies
+            // only while it opposes the crank's own motion, so the
+            // request never puts positive power into a moving crank:
+            // the rate damper brakes a moving crank toward its stop
+            // trajectory (a crank at rest has nothing to slow and must
+            // not be started), and the pedal-press hold answers on the
+            // same side. Below kCoastStoppedRateRadS the crank counts
+            // as stopped and the hold applies in full — the strict
+            // gate is discontinuous at rest for any nonzero hold, and
+            // the chatter it injected through the leg targets
+            // destabilised the braked relaxation.
+            constexpr double kCoastStoppedRateRadS = .1;
+            const double damp =
+                config_.coasting_brake_d_nm_s_rad *
+                (command.crank_target_rate_rad_s - rate);
+            const double braking_damp = damp * rate >= 0. ? 0. : damp;
+            const double braking_hold =
+                std::abs(rate) < kCoastStoppedRateRadS
+                    ? coast_hold_nm_
+                : coast_hold_nm_ * rate > 0. ? 0.
+                                             : coast_hold_nm_;
             // NaN must propagate like np.clip does (both branches' NaN
             // comparisons are false, so raw survives untouched).
-            const double raw =
-                config_.coasting_brake_d_nm_s_rad *
-                    (command.crank_target_rate_rad_s - rate) +
-                coast_hold_nm_;
+            const double raw = braking_damp + braking_hold;
             total = raw > config_.coasting_brake_limit_nm
                         ? config_.coasting_brake_limit_nm
                     : raw < -config_.coasting_brake_limit_nm

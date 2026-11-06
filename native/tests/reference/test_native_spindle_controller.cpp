@@ -570,6 +570,122 @@ void test_free_crank_spins_up_under_descending_leg_weight() {
                 "forward instead of settling at the coasting brake's ~0");
 }
 
+// User ruling 2026-11-06 (rider-leg-control plan, task 1б): a rider who
+// has stopped pedalling (PedalMode::coasting — mean_crank_torque_nm = 0)
+// can only hold the pedals back — slow them or keep them still — and
+// never pushes them forward. The servo's requested crank torque reads
+// back through allocation diagnostics' crank_task_nm; it must oppose the
+// crank's own motion, never put positive power into it.
+void test_spindle_coasting_servo_never_pushes_the_crank() {
+    // Crank slower than the decaying stop trajectory: the rate damper
+    // wants +D·(target-rate) forward — the request must stay on the
+    // braking side instead of pulling the crank up to speed.
+    {
+        Plant plant = make_plant();
+        stage(plant, .35, 4.);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = 0.;
+        command.crank_target_phase_rad = 1.2;
+        command.crank_target_rate_rad_s = 6.;
+        (void)plant.controller->compute(plant.data, command, true,
+                                        .00125, false);
+        const double task = plant.controller->state()
+                                .allocation_diagnostics.crank_task_nm;
+        bt::require(task <= 0.,
+                    std::format("trailing crank: servo task {:.6f} N.m "
+                                "drives the crank forward at 4 rad/s",
+                                task));
+        // The weld-press hold obeys the same rule: a pull-back reading
+        // it would need positive torque to cancel is left standing
+        // rather than pushed through the crank.
+        Plant pulled = make_plant();
+        stage(pulled, .35, 4.);
+        (void)pulled.controller->compute(pulled.data, command, true,
+                                         .00125, false, std::nullopt,
+                                         false, -5.);
+        const double task_pull = pulled.controller->state()
+                                     .allocation_diagnostics
+                                     .crank_task_nm;
+        bt::require(task_pull <= 0.,
+                    std::format("trailing crank, pull-back press: servo "
+                                "task {:.6f} N.m still drives forward",
+                                task_pull));
+    }
+    // Crank faster than the stop trajectory: the damper brakes exactly
+    // as before — D·(target-rate) = 2·(6-8) = -4 N·m.
+    {
+        Plant plant = make_plant();
+        stage(plant, .35, 8.);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = 0.;
+        command.crank_target_phase_rad = 1.2;
+        command.crank_target_rate_rad_s = 6.;
+        (void)plant.controller->compute(plant.data, command, true,
+                                        .00125, false);
+        const double task = plant.controller->state()
+                                .allocation_diagnostics.crank_task_nm;
+        bt::require(task == -4.,
+                    std::format("overrunning crank: servo task {:.6f} "
+                                "N.m no longer brakes to the stop "
+                                "trajectory", task));
+    }
+    // Crank at rest under a still-positive trajectory: the damper may
+    // not push it back up to speed, while the weld-press hold still
+    // holds — a +5 N·m resting press is cancelled by -5.
+    {
+        Plant plant = make_plant();
+        stage(plant, .35, 0.);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = 0.;
+        command.crank_target_phase_rad = 1.2;
+        command.crank_target_rate_rad_s = 6.;
+        (void)plant.controller->compute(plant.data, command, true,
+                                        .00125, false, std::nullopt,
+                                        false, 5.);
+        const double task = plant.controller->state()
+                                .allocation_diagnostics.crank_task_nm;
+        bt::require(task == -5.,
+                    std::format("stopped crank: servo task {:.6f} N.m "
+                                "instead of the -5 N.m press-cancel "
+                                "hold", task));
+    }
+    // "Stopped" has finite width — 0.1 rad/s, far below any real
+    // coasting rate — so a held crank sees no gate chatter. Below the
+    // band the press-cancel applies in full even while the crank
+    // creeps; above it the gate bites again and a pull-back cancel is
+    // refused.
+    {
+        Plant creeping = make_plant();
+        stage(creeping, .35, .05);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = 0.;
+        command.crank_target_phase_rad = 1.2;
+        command.crank_target_rate_rad_s = 6.;
+        (void)creeping.controller->compute(creeping.data, command, true,
+                                           .00125, false, std::nullopt,
+                                           false, -5.);
+        const double task_creep = creeping.controller->state()
+                                      .allocation_diagnostics
+                                      .crank_task_nm;
+        bt::require(task_creep == 5.,
+                    std::format("creeping crank: servo task {:.6f} N.m "
+                                "instead of the +5 N.m press-cancel "
+                                "hold", task_creep));
+        Plant moving = make_plant();
+        stage(moving, .35, .2);
+        (void)moving.controller->compute(moving.data, command, true,
+                                         .00125, false, std::nullopt,
+                                         false, -5.);
+        const double task_moving = moving.controller->state()
+                                       .allocation_diagnostics
+                                       .crank_task_nm;
+        bt::require(task_moving <= 0.,
+                    std::format("moving crank past the stopped band: "
+                                "servo task {:.6f} N.m drives forward",
+                                task_moving));
+    }
+}
+
 void test_spindle_compute_posture_matches_python() {
     rider::RiderPosture offset;
     offset.torso_lean_rad = -.2;
@@ -959,6 +1075,7 @@ int main() {
         test_spindle_waveform_rejects_bad_inputs();
         test_effort_ceiling_rejects_bad_inputs();
         test_free_crank_spins_up_under_descending_leg_weight();
+        test_spindle_coasting_servo_never_pushes_the_crank();
         test_spindle_compute_matches_python();
         test_spindle_rear_chain_effort_matches_python();
         test_spindle_disabled_command_matches_python();

@@ -178,8 +178,19 @@ struct WindowRow {
         interval_violations;
 };
 
+// The recorded physical-interval channels the shift replica reads —
+// record_decimation 1 puts one of these per advancing physics step, the
+// grid the live shifter itself updates on.
+struct IntervalRow {
+    double t = 0., required = 0.;
+    int gear = 0, shift_from = 0;
+    std::string shift_direction;
+    bool shift = false;
+};
+
 struct RideResult {
     std::vector<WindowRow> rows;
+    std::vector<IntervalRow> intervals;
     std::size_t interval_rows = 0;
     // env.reason — 'finish' when position reaches the track length,
     // 'duration' at max_steps, the terminal outcome otherwise.
@@ -224,13 +235,25 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
     }
     (void)env.runtime->advance(snapshot.step + env.control_steps, control, 0.,
                                0., std::nullopt);
-    const auto intervals = env.runtime->recorded_intervals();
+    const auto recorded = env.runtime->recorded_intervals();
     WindowRow row;
-    for (const auto &sample : intervals) {
+    for (const auto &sample : recorded) {
       if (sample->interval_id <= last_interval)
         continue;
       last_interval = sample->interval_id;
       ++result.interval_rows;
+      const auto &drive = section(sample->channels, "drive");
+      IntervalRow &interval = result.intervals.emplace_back();
+      interval.t = sample->time_s;
+      interval.required =
+          sw::number(sw::required(drive, "required_cadence_rpm"));
+      interval.shift = sw::boolean(sw::required(drive, "shift_active"));
+      interval.gear = static_cast<int>(
+          sw::number(sw::required(drive, "gear_rear_teeth")));
+      interval.shift_from = static_cast<int>(
+          sw::number(sw::required(drive, "shift_from_teeth")));
+      interval.shift_direction =
+          sw::string(sw::required(drive, "shift_direction"));
       auto violations = violation_strings(*sample);
       if (!violations.empty())
         row.interval_violations.emplace_back(
@@ -346,25 +369,38 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
     // lands on the nearest cog whose wheel-implied landing cadence falls
     // inside the band — or, when no cog can reach it, the last cog in the
     // shift direction. The shifter's required_ema is not published, so it
-    // is replayed here from required_cadence_rpm with the configured
-    // smoothing tau; on shift rows the published value already reads the
-    // post-shift ratio, which keeps the replica approximate — the band
-    // comparisons below carry a small epsilon for that.
-    std::vector<double> required_ema(result.rows.size(), 0.);
-    for (std::size_t i = 0; i < result.rows.size(); ++i) {
+    // is replayed here from required_cadence_rpm over the recorded
+    // physical intervals — the grid the live shifter itself updates on —
+    // with the configured smoothing tau. A detected shift interval then
+    // applies the live commit-time reset required_ema = landing
+    // (shifting.cpp): the stored value keeps the decision-time reading the
+    // landing checks use, while the reset carries into the following
+    // intervals. The published required cadence on a commit interval is
+    // already a step into the staged ratio sweep, so the replica is still
+    // approximate — the band comparisons below carry a small epsilon for
+    // that.
+    std::vector<std::size_t> commits;
+    for (std::size_t i = 1; i < result.intervals.size(); ++i)
+        if (result.intervals[i].shift && !result.intervals[i - 1].shift)
+            commits.push_back(i);
+    std::vector<double> required_ema(result.intervals.size(), 0.);
+    double ema = 0.;
+    for (std::size_t i = 0; i < result.intervals.size(); ++i) {
         const double dt =
-            i ? result.rows[i].t - result.rows[i - 1].t : 0.;
+            i ? result.intervals[i].t - result.intervals[i - 1].t : 0.;
         const double alpha = env.shift_cadence_tau_s <= 0. || dt <= 0.
                                  ? 1.
                                  : std::min(1., dt / env.shift_cadence_tau_s);
-        required_ema[i] = i ? required_ema[i - 1] +
-                                  alpha * (result.rows[i].required -
-                                           required_ema[i - 1])
-                            : result.rows[i].required;
+        ema = i ? ema + alpha * (result.intervals[i].required - ema)
+                : result.intervals[i].required;
+        required_ema[i] = ema;
+        if (std::ranges::binary_search(commits, i))
+            ema = ema * static_cast<double>(result.intervals[i].gear) /
+                  result.intervals[i].shift_from;
     }
     int upshifts = 0;
-    for (const std::size_t shift : shifts) {
-        const WindowRow &row = result.rows[shift];
+    for (const std::size_t shift : commits) {
+        const IntervalRow &row = result.intervals[shift];
         const bool up = row.shift_direction == "up";
         const auto landing_of = [&](int teeth) {
             return required_ema[shift] * teeth / row.shift_from;

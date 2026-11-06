@@ -673,8 +673,14 @@ namespace drivetrain {
             // already carries a staged prepare, the ratio staging composes
             // onto it (sequential prepare→set_ratio order preserved).
             shifting_scratch_ = shifting_;
+            // The shift decision reads the chainring — the motor-shaft
+            // speed (user ruling of 2026-11-06): the one-way clutch keeps
+            // crank <= shaft, so the shaft speed IS the chainring speed in
+            // every state, and on a rigid link shaft_joint_ falls back to
+            // the crank joint. A rider whose pedals spin without load
+            // upshifts; only the shaft sees that "too easy".
             const bool shifted = shifting_scratch_.update(
-                v[static_cast<std::size_t>(crank.dof)] * 60. / (2. * std::numbers::pi),
+                v[static_cast<std::size_t>(shaft_joint_.dof)] * 60. / (2. * std::numbers::pi),
                 required, in.dt, enabled && effort > 0., in.braking, in.contact, in.slip);
             const auto stage_ratio = [this, &bank](double ratio) {
                 // Compose onto the candidate already staged this tick or

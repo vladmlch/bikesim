@@ -151,6 +151,56 @@ void test_shifting_prepared_state_and_clock() {
         owner->drive().reset(); state(golden, *owner); golden.done();
     }
 }
+// Ruling of 2026-11-06: the shifter decides on the CHAINRING cadence —
+// the motor-shaft speed. The one-way clutch keeps crank <= shaft, so the
+// shaft speed is the chainring speed in every state; a rider whose pedals
+// spin without resistance feels "too easy" and upshifts. On a rigid link
+// shaft == crank and the decision is unchanged.
+void test_shifter_decides_on_the_chainring_cadence() {
+    constexpr double rpm = 2. * std::numbers::pi / 60.;
+    // The configured gear is 34/24 and the band is [65,85], so a 90 rpm
+    // wheel-implied cadence lands a 24 -> 21 upshift at 78.75 rpm — in band.
+    const double wheel = 90. * 34. / 24. * rpm;
+    const auto configured = [](std::string_view topology) {
+        auto input = source("ideal_mid_drive", topology);
+        input.shifting.enabled = true;
+        input.shifting.cadence_smoothing_tau_s = 0.;
+        input.pedaling.enabled = true;
+        return input;
+    };
+    // Clutch open: the crank sits at 75 rpm inside the band while the
+    // chainring runs at 95 — the upshift must still fire.
+    {
+        auto owner = pair(configured("clutch"), "crank_effort", "clutch");
+        velocity(*owner, "crank_spin", 75. * rpm);
+        velocity(*owner, "drive_shaft_spin", 95. * rpm);
+        velocity(*owner, "rear_wheel_spin", wheel);
+        reset_engine_state(*owner);
+        (void)owner->drive().prepare({}, .01, false, true, true, true, std::nullopt, std::nullopt);
+        const auto &shifted = owner->drive().state().shifting;
+        bt::require(shifted.rear_teeth == 21 && shifted.direction == "up",
+                    "open clutch: the hot chainring upshifts 24 -> 21 while the crank sits in-band");
+    }
+    // Engaged-equivalent (crank == shaft) and the rigid link make the same
+    // decision the crank input made before: in-band holds, hot upshifts.
+    for (const double cadence : {75., 95.}) {
+        auto clutched = pair(configured("clutch"), "crank_effort", "clutch");
+        velocity(*clutched, "crank_spin", cadence * rpm);
+        velocity(*clutched, "drive_shaft_spin", cadence * rpm);
+        velocity(*clutched, "rear_wheel_spin", wheel);
+        reset_engine_state(*clutched);
+        (void)clutched->drive().prepare({}, .01, false, true, true, true, std::nullopt, std::nullopt);
+        auto rigid = pair(configured("plain"));
+        velocity(*rigid, "crank_spin", cadence * rpm);
+        velocity(*rigid, "rear_wheel_spin", wheel);
+        reset_engine_state(*rigid);
+        (void)rigid->drive().prepare({}, .01, false, true, true, true, std::nullopt, std::nullopt);
+        const int expected = cadence > 85. ? 21 : 24;
+        bt::require(clutched->drive().state().shifting.rear_teeth == expected &&
+                    rigid->drive().state().shifting.rear_teeth == expected,
+                    "shaft == crank: clutch-engaged and rigid decisions match at " + std::to_string(cadence) + " rpm");
+    }
+}
 // Settlement uses the actual actuator effort: the mid-drive control is halved
 // between compute and settle, and the settled force must follow it.
 void test_actual_actuator_force() {
@@ -523,6 +573,7 @@ int main() {
         // First, before the golden nodes: a stale golden aborts the run, and
         // this non-golden check must still execute while recordings are stale.
         test_ideal_drive_applies_no_bearing_drag();
+        test_shifter_decides_on_the_chainring_cadence();
         test_chain_core(); test_force_staging(); test_solved_intervals();
         test_atomic_state_inputs_and_probes(); test_projection(); test_no_drive();
         test_transmission_core(); test_random_multiturn_staging(); test_shifting_prepared_state_and_clock();

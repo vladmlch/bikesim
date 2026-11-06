@@ -134,10 +134,15 @@ namespace drivetrain {
         validation::positive(s.target_cadence_max_rpm, "config.drive.shifting.target_cadence_max_rpm");
         validation::nonnegative(s.shift_cooldown_s, "config.drive.shifting.shift_cooldown_s");
         validation::nonnegative(s.shift_cut_duration_s, "config.drive.shifting.shift_cut_duration_s");
-        validation::nonnegative(s.torque_factor, "config.drive.shifting.torque_factor");
+        validation::nonnegative(s.torque_factor_larger_cog, "config.drive.shifting.torque_factor_larger_cog");
+        validation::nonnegative(s.torque_factor_smaller_cog, "config.drive.shifting.torque_factor_smaller_cog");
         validation::nonnegative(s.cadence_smoothing_tau_s, "config.drive.shifting.cadence_smoothing_tau_s");
         validation::nonnegative(s.upshift_slip_limit_mps, "config.drive.shifting.upshift_slip_limit_mps");
-        if (s.target_cadence_max_rpm <= s.target_cadence_min_rpm || s.shift_cut_duration_s > s.shift_cooldown_s || s.torque_factor > 1.)
+        if (s.torque_factor_larger_cog > 1.)
+            throw std::invalid_argument("config.drive.shifting.torque_factor_larger_cog");
+        if (s.torque_factor_smaller_cog > 1.)
+            throw std::invalid_argument("config.drive.shifting.torque_factor_smaller_cog");
+        if (s.target_cadence_max_rpm <= s.target_cadence_min_rpm || s.shift_cut_duration_s > s.shift_cooldown_s)
             throw std::invalid_argument("config.drive.shifting.timing_band");
         if (s.upshift_slip_mode != "legacy_signed" && s.upshift_slip_mode != "magnitude")
             throw std::invalid_argument("config.drive.shifting.upshift_slip_mode");

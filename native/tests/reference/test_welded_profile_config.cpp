@@ -127,8 +127,36 @@ void test_rider_numbers() {
     bt::require(shifting.target_cadence_min_rpm == 75. &&
                     shifting.target_cadence_max_rpm == 110.,
                 "the shift window is 75-110 rpm");
-    bt::require(shifting.torque_factor == .3,
-                "the shift torque derate is .3");
+    bt::require(shifting.torque_factor_larger_cog == .8 &&
+                    shifting.torque_factor_smaller_cog == .3,
+                "the shift derate is .8 to a larger cog and .3 to a smaller");
+    // torque_factor is gone: a document that still carries the removed
+    // single-derate key under [drive.shifting] fails to load.
+    {
+        const std::string source = bt::text(repo_file(
+            "examples/research/viewer_physics_welded.toml"));
+        const std::string table = "[drive.shifting]";
+        const auto anchor = source.find(table);
+        bt::require(anchor != std::string::npos,
+                    "the welded document keeps a [drive.shifting] table");
+        std::string injected(source);
+        injected.insert(anchor + table.size(), "\ntorque_factor = 0.3");
+        const bt::TemporaryDirectory dir("welded-legacy-shift-factor");
+        const auto path = dir.path() / "physics.toml";
+        { std::ofstream out(path); out << injected; }
+        bool threw = false;
+        try {
+            (void)cfg::load_physics(path);
+        } catch (const std::invalid_argument &failure) {
+            threw = true;
+            bt::require(
+                std::string_view(failure.what()).find("torque_factor") !=
+                    std::string_view::npos,
+                "the load rejection names the removed shift key");
+        }
+        bt::require(threw,
+                    "the schema rejects the removed torque_factor key");
+    }
     const auto &climb = profile().seated_climb;
     bt::require(climb.enabled && climb.target_crank_power_w == 250.,
                 "seated climb is enabled at a 250 W target");

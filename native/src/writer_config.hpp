@@ -932,7 +932,7 @@ namespace nativecfg {
                          "reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s",
                          "reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s",
                          "reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"));
-            exact(s, keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), keys());
+            exact(s, keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor_larger_cog","torque_factor_smaller_cog","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), keys());
             exact(a, keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","release_hold_s","cutoff_mps","taper_width_mps","mode"), keys("profile","torque_curve"));
             out.gearing = {
                 .front_teeth = integer(g, "front_teeth"), .rear_teeth = integer(g, "rear_teeth"),
@@ -1002,14 +1002,19 @@ namespace nativecfg {
             sh.target_cadence_max_rpm = positive(num(s, "target_cadence_max_rpm"), s.child("target_cadence_max_rpm"));
             sh.shift_cooldown_s = nonnegative(num(s, "shift_cooldown_s"), s.child("shift_cooldown_s"));
             sh.shift_cut_duration_s = nonnegative(num(s, "shift_cut_duration_s"), s.child("shift_cut_duration_s"));
-            sh.torque_factor = nonnegative(num(s, "torque_factor"), s.child("torque_factor"));
+            sh.torque_factor_larger_cog = nonnegative(num(s, "torque_factor_larger_cog"), s.child("torque_factor_larger_cog"));
+            sh.torque_factor_smaller_cog = nonnegative(num(s, "torque_factor_smaller_cog"), s.child("torque_factor_smaller_cog"));
             sh.cadence_smoothing_tau_s = nonnegative(num(s, "cadence_smoothing_tau_s"), s.child("cadence_smoothing_tau_s"));
             sh.upshift_slip_limit_mps = nonnegative(num(s, "upshift_slip_limit_mps"), s.child("upshift_slip_limit_mps"));
             sh.upshift_slip_mode = str(s, "upshift_slip_mode");
             if (sh.upshift_slip_mode != "legacy_signed" && sh.upshift_slip_mode != "magnitude")
                 invalid(s.child("upshift_slip_mode"), "unsupported mode");
-            if (sh.target_cadence_max_rpm <= sh.target_cadence_min_rpm || sh.shift_cut_duration_s > sh.shift_cooldown_s ||
-                sh.torque_factor > 1.) throw std::invalid_argument(s.path);
+            if (sh.torque_factor_larger_cog > 1.)
+                invalid(s.child("torque_factor_larger_cog"), "must not exceed one");
+            if (sh.torque_factor_smaller_cog > 1.)
+                invalid(s.child("torque_factor_smaller_cog"), "must not exceed one");
+            if (sh.target_cadence_max_rpm <= sh.target_cadence_min_rpm || sh.shift_cut_duration_s > sh.shift_cooldown_s) throw
+                    std::invalid_argument(s.path);
             if (sh.enabled && std::ranges::find(sh.cassette, out.gearing.rear_teeth) == sh.cassette.end()) throw
                     std::invalid_argument(g.child("rear_teeth"));
             auto &ac = out.assist;

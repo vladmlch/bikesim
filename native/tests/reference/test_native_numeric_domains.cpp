@@ -110,19 +110,20 @@ void test_activated_zero_hbo_denominator_rejected() {
 }
 void test_mutated_policy_configs_are_rejected() {
     const auto original = drive_reference::projected_policies(drive_reference::turbo_source());
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 11; ++i) {
         auto candidate = original;
         switch (i) {
         case 0: candidate.pedaling.stop_time_s = 0.; break;
         case 1: candidate.pedaling.coast_cadence_tau_s = -1.; break;
         case 2: candidate.pedaling.effort_slew_nm_s = -1.; break;
         case 3: candidate.shifting.shift_cooldown_s = -1.; break;
-        case 4: candidate.shifting.torque_factor = 1.1; break;
+        case 4: candidate.shifting.torque_factor_larger_cog = 1.1; break;
         case 5: candidate.shifting.cadence_smoothing_tau_s = -1.; break;
         case 6: candidate.assist.tau = 0.; break;
         case 7: candidate.assist.slew = 0.; break;
         case 8: candidate.assist.gain = -1.; break;
         case 9: candidate.assist.taper_width_mps = 0.; break;
+        case 10: candidate.shifting.torque_factor_smaller_cog = 1.1; break;
         default: throw std::logic_error("invalid fixture case");
         }
         bt::invalid([&] { drivetrain::validate(candidate); });

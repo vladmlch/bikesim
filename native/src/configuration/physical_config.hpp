@@ -268,7 +268,8 @@ struct ShiftingConfig {
     double target_cadence_max_rpm = 85.;
     double shift_cooldown_s = .4;
     double shift_cut_duration_s = .2;
-    double torque_factor = .3;
+    double torque_factor_larger_cog = .8;
+    double torque_factor_smaller_cog = .3;
     double cadence_smoothing_tau_s = .35;
     double upshift_slip_limit_mps = .5;
     std::string upshift_slip_mode = "legacy_signed";
@@ -756,7 +757,8 @@ inline constexpr auto kShiftingConfigFields = std::to_array<FieldDecl>({
     REAL(ShiftingConfig, target_cadence_max_rpm),
     REAL(ShiftingConfig, shift_cooldown_s),
     REAL(ShiftingConfig, shift_cut_duration_s),
-    REAL(ShiftingConfig, torque_factor),
+    REAL(ShiftingConfig, torque_factor_larger_cog),
+    REAL(ShiftingConfig, torque_factor_smaller_cog),
     REAL(ShiftingConfig, cadence_smoothing_tau_s),
     REAL(ShiftingConfig, upshift_slip_limit_mps),
     STR(ShiftingConfig, upshift_slip_mode),

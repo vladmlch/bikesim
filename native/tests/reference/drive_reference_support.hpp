@@ -83,7 +83,8 @@ inline drivetrain::CadenceShifter shifter(int rear = 28, double tau = 0.) { // N
         .cassette = {10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51},
         .target_cadence_min_rpm = 75., .target_cadence_max_rpm = 110.,
         .shift_cooldown_s = .4, .shift_cut_duration_s = .2,
-        .torque_factor = .3, .cadence_smoothing_tau_s = tau,
+        .torque_factor_larger_cog = .8, .torque_factor_smaller_cog = .3,
+        .cadence_smoothing_tau_s = tau,
         .upshift_slip_limit_mps = .5, .upshift_slip_mode = "legacy_signed"};
     return drivetrain::CadenceShifter(
         {.front_teeth = 22, .rear_teeth = rear, .chain_pitch_m = .0127}, std::move(config));

@@ -616,8 +616,9 @@ bool schema_entry(std::string_view name, std::string_view &required,
           "reposition_noop_rad"}},
         {.name = "drive.shifting", .entry =
          {.required = "enabled cassette target_cadence_min_rpm target_cadence_max_rpm "
-          "shift_cooldown_s shift_cut_duration_s torque_factor "
-          "cadence_smoothing_tau_s upshift_slip_limit_mps upshift_slip_mode",
+          "shift_cooldown_s shift_cut_duration_s torque_factor_larger_cog "
+          "torque_factor_smaller_cog cadence_smoothing_tau_s "
+          "upshift_slip_limit_mps upshift_slip_mode",
           .optional = ""}},
         {.name = "drive.assist", .entry =
          {.required = "gain max_torque max_power tau slew engage_torque_nm "

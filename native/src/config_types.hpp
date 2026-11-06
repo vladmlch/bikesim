@@ -36,7 +36,7 @@ namespace drivetrain {
         bool enabled{};
         std::vector<int> cassette;
         double target_cadence_min_rpm{}, target_cadence_max_rpm{}, shift_cooldown_s{};
-        double shift_cut_duration_s{}, torque_factor{}, cadence_smoothing_tau_s{}, upshift_slip_limit_mps{};
+        double shift_cut_duration_s{}, torque_factor_larger_cog{}, torque_factor_smaller_cog{}, cadence_smoothing_tau_s{}, upshift_slip_limit_mps{};
         std::string upshift_slip_mode;
     };
 

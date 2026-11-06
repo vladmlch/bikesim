@@ -212,8 +212,7 @@ namespace drivetrain {
         // carried — the key stays present either way.
         d.set_optional(TelemetryField::shift_time_s, shift_time_s);
         d.set(TelemetryField::shift_torque_factor,
-              s.cut_remaining_s > 0. ? config_.policies.shifting.torque_factor
-                                     : 1.);
+              shift_torque_factor(config_.policies.shifting, s));
     }
 
     // Post-commit snapshot view of a staged update: Transmission::state()

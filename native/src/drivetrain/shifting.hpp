@@ -67,6 +67,28 @@ namespace drivetrain {
         return std::nullopt;
     }
 
+    // The rider-effort factor in force while a shift cut runs, keyed to the
+    // direction of the shift in progress (ruling of 2026-10-03): a downshift
+    // lands on a LARGER cog (easier gear), so the rider keeps
+    // torque_factor_larger_cog of the effort; an upshift lands on a SMALLER
+    // cog (harder gear) and keeps torque_factor_smaller_cog. Outside a cut —
+    // or on a snapshot that carries no direction — the factor is 1.
+    [[nodiscard]] inline double
+    shift_torque_factor(const ShiftingConfig &config,
+                        const ShiftingSnapshot &state) noexcept {
+        if (state.cut_remaining_s <= 0.) {
+            return 1.;
+        }
+        const auto direction = shift_direction(state.direction);
+        if (direction == ShiftDirection::down) {
+            return config.torque_factor_larger_cog;
+        }
+        if (direction == ShiftDirection::up) {
+            return config.torque_factor_smaller_cog;
+        }
+        return 1.;
+    }
+
     class CadenceShifter {
     public:
         CadenceShifter(GearingConfig gearing, ShiftingConfig config) : gearing_(gearing), config_(std::move(config)) {
@@ -105,7 +127,7 @@ namespace drivetrain {
             return static_cast<double>(gearing_.front_teeth) / state_.rear_teeth;
         }
         [[nodiscard]] double torque_factor() const noexcept {
-            return state_.cut_remaining_s > 0. ? config_.torque_factor : 1.;
+            return shift_torque_factor(config_, state_);
         }
         [[nodiscard]] const ShiftingSnapshot &state() const noexcept { return state_; }
 

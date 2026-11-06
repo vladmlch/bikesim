@@ -226,7 +226,8 @@ cfg::SimulationPhysicsConfig welded_profile() {
     shifting.target_cadence_max_rpm = 110.0;
     shifting.shift_cooldown_s = 0.4;
     shifting.shift_cut_duration_s = 0.2;
-    shifting.torque_factor = 0.3;
+    shifting.torque_factor_larger_cog = 0.8;
+    shifting.torque_factor_smaller_cog = 0.3;
     shifting.cadence_smoothing_tau_s = 0.35;
     shifting.upshift_slip_limit_mps = 0.5;
     auto& articulated = c.articulated;

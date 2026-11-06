@@ -115,7 +115,8 @@ namespace {
             .enabled = true, .cassette = {11, 13, 15, 18, 21, 24, 28},
             .target_cadence_min_rpm = 70., .target_cadence_max_rpm = 95.,
             .shift_cooldown_s = .5, .shift_cut_duration_s = .15,
-            .torque_factor = .5, .cadence_smoothing_tau_s = .3,
+            .torque_factor_larger_cog = .8, .torque_factor_smaller_cog = .5,
+            .cadence_smoothing_tau_s = .3,
             .upshift_slip_limit_mps = .05, .upshift_slip_mode = "legacy_signed"
         };
     }
@@ -235,7 +236,8 @@ namespace {
         invalid_shifting([](auto &s) { s.target_cadence_max_rpm = s.target_cadence_min_rpm; });
         invalid_shifting([](auto &s) { s.target_cadence_min_rpm = 0.; });
         invalid_shifting([](auto &s) { s.shift_cut_duration_s = s.shift_cooldown_s + 1.; });
-        invalid_shifting([](auto &s) { s.torque_factor = 1.5; });
+        invalid_shifting([](auto &s) { s.torque_factor_larger_cog = 1.5; });
+        invalid_shifting([](auto &s) { s.torque_factor_smaller_cog = 1.5; });
         invalid_shifting([](auto &s) { s.shift_cooldown_s = -1.; });
         invalid_shifting([](auto &s) { s.cadence_smoothing_tau_s = -1.; });
         invalid_shifting([](auto &s) {
@@ -261,6 +263,88 @@ namespace {
             require(shifter.state().rear_teeth == 34,
                     "disabled shifter accepts a gear outside the cassette");
         }
+    }
+
+    void test_shift_torque_factor_follows_direction() {
+        // Ruling of 2026-10-03: during the cut the rider keeps 80 % effort
+        // shifting to a LARGER cog (direction "down", easier gear) and 30 %
+        // shifting to a SMALLER cog (direction "up", harder gear); outside
+        // a cut the factor is 1.
+        auto shifting = valid_shifting_config();
+        shifting.torque_factor_larger_cog = .8;
+        shifting.torque_factor_smaller_cog = .3;
+        shifting.cadence_smoothing_tau_s = 0.; // decide on the instant cadence
+        auto gearing = valid_gearing_config();
+        {   // No committed shift: full effort, and the telemetry helper
+            // reports the same factor the policy applies.
+            gearing.rear_teeth = 18;
+            drivetrain::CadenceShifter idle(gearing, shifting);
+            require(!idle.update(80., 80., .01) &&
+                    idle.torque_factor() == 1.,
+                    "an in-band cadence commits no cut and keeps full effort");
+            require(drivetrain::shift_torque_factor(shifting, idle.state()) == 1.,
+                    "telemetry reports full effort outside a cut");
+        }
+        {   // Downshift 11 -> 15 (larger cog): the cut keeps 80 % effort.
+            gearing.rear_teeth = 11;
+            drivetrain::CadenceShifter down(gearing, shifting);
+            require(down.update(60., 55., .01) &&
+                    down.state().direction == "down" &&
+                    down.state().cut_remaining_s > 0.,
+                    "the low cadence commits a downshift cut");
+            require(down.torque_factor() == .8,
+                    "shifting to a larger cog keeps 80 % of rider effort");
+            require(drivetrain::shift_torque_factor(shifting, down.state()) == .8,
+                    "telemetry reports the applied larger-cog factor");
+            for (int i = 0; i < 40 && down.state().cut_remaining_s > 0.; ++i)
+                (void)down.update(80., 80., .01);
+            require(down.torque_factor() == 1.,
+                    "an expired cut restores full effort");
+        }
+        {   // Upshift 24 -> 21 (smaller cog): the cut keeps 30 % effort.
+            gearing.rear_teeth = 24;
+            drivetrain::CadenceShifter up(gearing, shifting);
+            require(up.update(96., 96., .01) &&
+                    up.state().direction == "up" &&
+                    up.state().cut_remaining_s > 0.,
+                    "the high cadence commits an upshift cut");
+            require(up.torque_factor() == .3,
+                    "shifting to a smaller cog keeps 30 % of rider effort");
+            require(drivetrain::shift_torque_factor(shifting, up.state()) == .3,
+                    "telemetry reports the applied smaller-cog factor");
+        }
+        {   // A cut whose snapshot carries no direction derates nothing.
+            drivetrain::ShiftingSnapshot snapshot;
+            snapshot.direction = "none";
+            snapshot.cut_remaining_s = .1;
+            require(drivetrain::shift_torque_factor(shifting, snapshot) == 1.,
+                    "a directionless cut keeps full effort");
+        }
+    }
+
+    void test_shift_torque_factor_bounds_name_the_key() {
+        const auto rejected = [](auto mutate, std::string_view key) {
+            auto shifting = valid_shifting_config();
+            mutate(shifting);
+            bool threw = false;
+            try {
+                drivetrain::validate(shifting);
+            } catch (const std::invalid_argument &error) {
+                threw = true;
+                require(std::string_view(error.what()).find(key) !=
+                            std::string_view::npos,
+                        "the bound rejection names the factor key");
+            }
+            require(threw, "an out-of-band shift factor is rejected");
+        };
+        rejected([](auto &s) { s.torque_factor_larger_cog = 1.5; },
+                 "torque_factor_larger_cog");
+        rejected([](auto &s) { s.torque_factor_larger_cog = -.1; },
+                 "torque_factor_larger_cog");
+        rejected([](auto &s) { s.torque_factor_smaller_cog = 1.5; },
+                 "torque_factor_smaller_cog");
+        rejected([](auto &s) { s.torque_factor_smaller_cog = -.1; },
+                 "torque_factor_smaller_cog");
     }
 
     // One rejection check per call; keeping the mutated construction inside
@@ -1743,7 +1827,8 @@ namespace {
             .enabled = shifting_enabled, .cassette = {24, 28},
             .target_cadence_min_rpm = 65., .target_cadence_max_rpm = 85.,
             .shift_cooldown_s = .4, .shift_cut_duration_s = .2,
-            .torque_factor = .3, .cadence_smoothing_tau_s = .35,
+            .torque_factor_larger_cog = .8, .torque_factor_smaller_cog = .3,
+            .cadence_smoothing_tau_s = .35,
             .upshift_slip_limit_mps = .5,
             .upshift_slip_mode = "legacy_signed"};
         drivetrain::AssistConfig assist = valid_assist_config();
@@ -4126,6 +4211,8 @@ namespace {
         {.name = "pedaling_policy_valid_transition", .run = test_pedaling_policy_valid_transition},
         {.name = "pedaling_ctor_domain", .run = test_pedaling_ctor_domain},
         {.name = "shifter_ctor_domain", .run = test_shifter_ctor_domain},
+        {.name = "shift_torque_factor_follows_direction", .run = test_shift_torque_factor_follows_direction},
+        {.name = "shift_torque_factor_bounds_name_the_key", .run = test_shift_torque_factor_bounds_name_the_key},
         {.name = "assist_ctor_domain", .run = test_assist_ctor_domain},
         {.name = "freehub_ctor_domain", .run = test_freehub_ctor_domain},
         {.name = "writer_config_domains", .run = test_writer_config_domains},

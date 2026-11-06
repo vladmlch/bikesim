@@ -607,8 +607,12 @@ void post_init(ShiftingConfig &config) {
     scalar(config.upshift_slip_limit_mps, "upshift rear slip limit", 0.);
     if (config.shift_cut_duration_s > config.shift_cooldown_s)
         fail("shift torque cut must not outlast the cooldown");
-    if (scalar(config.torque_factor, "shift torque factor", 0.) > 1.)
-        fail("shift torque factor must not exceed one");
+    if (scalar(config.torque_factor_larger_cog,
+               "torque_factor_larger_cog", 0.) > 1.)
+        fail("torque_factor_larger_cog must not exceed one");
+    if (scalar(config.torque_factor_smaller_cog,
+               "torque_factor_smaller_cog", 0.) > 1.)
+        fail("torque_factor_smaller_cog must not exceed one");
 }
 
 void post_init(PhysicalDriveConfig &config) {
@@ -1235,16 +1239,22 @@ void shifting_config(const ShiftingConfig &config,
                     &ShiftingConfig::shift_cooldown_s},
           {"ShiftingConfig.shift_cut_duration_s",
            &ShiftingConfig::shift_cut_duration_s},
-          {"ShiftingConfig.torque_factor", &ShiftingConfig::torque_factor},
+          {"ShiftingConfig.torque_factor_larger_cog",
+           &ShiftingConfig::torque_factor_larger_cog},
+          {"ShiftingConfig.torque_factor_smaller_cog",
+           &ShiftingConfig::torque_factor_smaller_cog},
           {"ShiftingConfig.cadence_smoothing_tau_s",
            &ShiftingConfig::cadence_smoothing_tau_s},
           {"ShiftingConfig.upshift_slip_limit_mps",
            &ShiftingConfig::upshift_slip_limit_mps}})
         scalar(config.*member, name, 0.);
+    if (config.torque_factor_larger_cog > 1.)
+        fail("ShiftingConfig.torque_factor_larger_cog must not exceed one");
+    if (config.torque_factor_smaller_cog > 1.)
+        fail("ShiftingConfig.torque_factor_smaller_cog must not exceed one");
     if (config.target_cadence_max_rpm <= config.target_cadence_min_rpm ||
-        config.shift_cut_duration_s > config.shift_cooldown_s ||
-        config.torque_factor > 1.)
-        fail("ShiftingConfig: invalid timing/cadence/torque band");
+        config.shift_cut_duration_s > config.shift_cooldown_s)
+        fail("ShiftingConfig: invalid timing/cadence band");
     if (config.upshift_slip_mode != "legacy_signed" &&
         config.upshift_slip_mode != "magnitude")
         fail("ShiftingConfig.upshift_slip_mode: unsupported mode");

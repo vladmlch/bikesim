@@ -312,6 +312,7 @@ runtime::RawStep effort_raw(std::int64_t i, double qpos, double speed, // NOLINT
     auto step = raw(i);
     step.qpos = {qpos};
     step.qvel = {speed};
+    step.qvel_mid = step.qvel;
     step.actuator_force = {actuator};
     step.qfrc_passive = {passive};
     step.effort_base = {};
@@ -720,6 +721,7 @@ void test_equality_rows_charge_the_closure_channel_not_the_bound() {
     // the oracle's step_work(np.array([400.]), 100., ...) inputs through the
     // raw's component fold.
     step.qvel = {1.};
+    step.qvel_mid = step.qvel;
     step.components = {{"human_crank", {400.}}, {"mid_drive", {100.}}};
     // Rows in insertion order; the partition keeps first-appearance order
     // within each class, so the partitions are constraint [-.5] and closure

@@ -77,8 +77,8 @@ StepWork raw_work(const RawStep &raw, double dt_s) {
     double motor = 0.;
     for (const auto &[name, force] : raw.components) {
         if (name == "human_crank" || name.starts_with("act_rider_"))
-            muscle.push_back(dot(force, raw.qvel));
-        if (name == "mid_drive") motor = dot(force, raw.qvel);
+            muscle.push_back(dot(force, raw.qvel_mid));
+        if (name == "mid_drive") motor = dot(force, raw.qvel_mid);
     }
     // Closure rows are charged to the elastic channel: 'equality:' rows are
     // the weld/closure springs, and 'tendon_limit:' rows are the drivetrain's
@@ -142,7 +142,7 @@ double external_work(const RawStep &raw, double dt_s) {
             return entry.first == name;
         });
         if (found == raw.components.end()) continue;
-        const double value = dot(found->second, raw.qvel) * dt_s;
+        const double value = dot(found->second, raw.qvel_mid) * dt_s;
         const double next = sum + value;
         correction += std::abs(sum) >= std::abs(value)
                           ? (sum - next) + value : (value - next) + sum;
@@ -237,7 +237,7 @@ void add_detail(WireObject &channels, const RawStep &raw, Wire endpoint_mass,
     for (const auto &[name, force] : raw.components) {
         const Wire *previous = find(history.work_j, name);
         component_work.emplace_back(name, Wire((previous == nullptr ? 0. : number(*previous)) +
-                                                dot(force, raw.qvel) * dt_s));
+                                                dot(force, raw.qvel_mid) * dt_s));
     }
     set(channels, "component_work_j", Wire(std::move(component_work)));
     set(channels, "rider_control", Wire(terms_wire(effort.terms)));
@@ -670,6 +670,8 @@ void PeriodAccounting::flush_local() {
                 std::abs(constraints.interval_end_s - raw.end_time_s) > 1e-12 ||
                 !std::ranges::equal(constraints.qvel_start, raw.qvel))
                 throw std::invalid_argument("constraint snapshot does not match the physical interval");
+            if (raw.qvel_mid.size() != raw.qvel.size())
+                throw std::invalid_argument("interval midpoint velocity does not match the physical interval");
             auto attachments = evaluate_attachments(raw, workspace_);
             auto effort = effort_context_ ? observe_effort_impl(raw, *effort_context_, config_.timestep_s)
                 : controller_ ? observe_effort(raw, *controller_, config_.timestep_s) : EffortObservation{};

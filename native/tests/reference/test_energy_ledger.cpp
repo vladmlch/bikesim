@@ -23,6 +23,12 @@
 //      parked in a one-way closure belongs to `total`, so one load/unload
 //      cycle of a limited tendon leaves only the share the compliant
 //      constraint actually dissipates outside the ledger.
+//   16 test_work_ledger_integrates_at_the_interval_midpoint and
+//      test_publish_raw_carries_the_interval_midpoint_velocity — native-only
+//      record (crank-coupling plan, 2026-11-06): the +48 J rectangle-rule
+//      drift of .scratch/devin/2026-11-06-diag-48j/report.md is fixed by
+//      charging every integrated F·v·dt channel the interval-midpoint
+//      velocity — the same convention records 12-15 apply by hand.
 //
 // The oracle's neutral-runtime seams (`runtime_for_raws`/`neutral_raw` in
 // test_monitor_strictness.py, imported by this file) live in
@@ -51,16 +57,19 @@
 #include "model_access.hpp"
 #include "drivetrain/transmission.hpp"
 #include "research/evidence.hpp"
+#include "rider_control_reference_support.hpp"
 #include "runtime/accounting.hpp"
 #include "runtime/samples.hpp"
 #include "runtime/status.hpp"
 #include "runtime/step.hpp"
 #include "strictness_reference_support.hpp"
 #include "support/fixture_test.hpp"
+#include "terrain/trackfile.hpp"
 
 namespace {
 
 namespace wire = runtime::sample_wire;
+namespace rr = rider_control_reference;
 using strictness_support::neutral_raw;
 using strictness_support::runtime_for_raws;
 
@@ -471,6 +480,7 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
     auto raw = neutral_raw(0);
     raw.qpos = copy(model_access::readonly_buffer(data->qpos, model->nq));
     raw.qvel = copy(model_access::readonly_buffer(data->qvel, model->nv));
+    raw.qvel_mid = raw.qvel;
     raw.components = parts;
     raw.numerical_constraint_power_w = powers;
     raw.constraint_snapshot.qvel_start = raw.qvel;
@@ -753,6 +763,94 @@ void test_closure_stored_energy_balances_load_unload_cycle() {
                 "with the term only the dissipated share stays open");
 }
 
+// ---- record 16: interval-midpoint work quadrature (native-only) --------
+// The +48 J ledger drift (.scratch/devin/2026-11-06-diag-48j/report.md):
+// every integrated F·v·dt channel charges the interval-midpoint velocity
+// .5*(v_start + v_end) — the same convention records 12-15 apply by hand —
+// because mechanical_energy_j is the POST-step energy. Start velocity
+// under-integrates each channel by .5*F*dv*dt (first order in dt); end
+// velocity would over-integrate by the same amount, so the midpoint is
+// the only second-order quadrature consistent with the endpoint state.
+void test_work_ledger_integrates_at_the_interval_midpoint() {
+    const auto accounting = runtime_for_raws();
+    // One dof, forces constant over the interval: v_start=0, v_end=2, so
+    // the quadrature sees qvel_mid=1. mechanical_energy_j is the post-
+    // step total set to exactly the midpoint work sum, so the residual
+    // vanishes only under the midpoint convention.
+    auto step = neutral_raw(0);
+    step.qvel = {0.};
+    step.qvel_mid = {1.};
+    step.components = {{"external", {100.}},
+                       {"human_crank", {200.}},
+                       {"mid_drive", {50.}}};
+    constexpr double dt = strictness_support::kDt;
+    step.mechanical_energy_j = (100. + 200. + 50.) * dt;
+    step.constraint_snapshot.qvel_start = step.qvel;
+    accounting->push(std::move(step));
+    accounting->flush();
+    const auto &energy = accounting->state().energy;
+    bt::require(energy.external_work_j == 100. * dt,
+                "external work integrates the midpoint velocity");
+    bt::require(energy.muscle_signed_j == 200. * dt &&
+                energy.motor_signed_j == 50. * dt,
+                "muscle and motor work integrate the midpoint velocity");
+    bt::require(std::abs(energy.residual_j) < 1e-15,
+                "midpoint work balances the post-step energy exactly");
+    const auto &sample = accounting->pending_samples().front();
+    const auto &component_work = wire::object(
+        wire::required(sample->channels, "component_work_j"));
+    bt::require(wire::number(wire::required(component_work, "external")) ==
+                    100. * dt,
+                "component_work_j accumulates at the midpoint velocity");
+    // A midpoint velocity inconsistent with the interval width is
+    // rejected at close — the producer must always stage it.
+    const auto broken = runtime_for_raws();
+    auto bad = neutral_raw(0);
+    bad.qvel = {0., 0.};
+    bad.qvel_mid = {0.};
+    bad.constraint_snapshot.qvel_start = bad.qvel;
+    broken->push(std::move(bad));
+    bt::invalid([&] { broken->flush(); });
+}
+
+// _environment's flat probe track (test_closed_form_rider.cpp's shape).
+bike::terrain::TrackSpec flat_probe_track() {
+    return bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
+        "name = \"probe\"\nlength_m = 300.0\nsurface = \"hardpack\"\n"
+        "grade_profile = { knots = [[0.0, 0.0], [300.0, 0.0]] }\n"));
+}
+
+// publish_raw stages .5*(v_start + v_end) itself — the production fill
+// the fixture leg above bypasses by staging the field directly.
+void test_publish_raw_carries_the_interval_midpoint_velocity() {
+    const auto rig = rr::pinned_rig({}, flat_probe_track());
+    // A few control ticks so the drivetrain and wheels carry speed — the
+    // midpoint is only exercised where start and end velocities differ.
+    (void)rr::advance_env_steps(*rig->physical, 4);
+    const mjModel *m = rig->stepper->model();
+    const mjData *d = rig->stepper->data();
+    const auto before =
+        copy(model_access::readonly_buffer(d->qvel, m->nv));
+    const auto raw = rig->physical->advance_physics(
+        0., 0., std::nullopt, rr::idle_control());
+    const auto after =
+        copy(model_access::readonly_buffer(d->qvel, m->nv));
+    bt::require(raw.qvel_mid.size() == before.size(),
+                "the raw carries an nv-wide midpoint velocity");
+    double moved = 0.;
+    bool midpoint = true, start = true;
+    for (std::size_t i = 0; i < before.size(); ++i) {
+        midpoint = midpoint &&
+            raw.qvel_mid[i] == .5 * (before[i] + after[i]);
+        start = start && raw.qvel[i] == before[i];
+        moved = std::max(moved, std::abs(after[i] - before[i]));
+    }
+    bt::require(moved > 1e-9,
+                "the interval actually accelerates some degree of freedom");
+    bt::require(start, "raw.qvel stays the interval-start velocity");
+    bt::require(midpoint, "raw.qvel_mid is .5*(v_start + v_end)");
+}
+
 } // namespace
 
 int main() {
@@ -774,5 +872,7 @@ int main() {
         test_inelastic_impact_loss_is_physical_not_constraint_credit();
         test_friction_loss_is_nonnegative_and_consistent();
         test_closure_stored_energy_balances_load_unload_cycle();
+        test_work_ledger_integrates_at_the_interval_midpoint();
+        test_publish_raw_carries_the_interval_midpoint_velocity();
     });
 }

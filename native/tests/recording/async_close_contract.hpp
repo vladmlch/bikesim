@@ -26,7 +26,7 @@ inline runtime::RawStep raw(std::int64_t id) {
     runtime::RawStep result;
     result.interval_id=id;result.time_s=static_cast<double>(id)*.001;
     result.end_time_s=static_cast<double>(id+1)*.001;
-    result.qpos={-0.};result.qvel={1.};result.qfrc_passive={0.};
+    result.qpos={-0.};result.qvel={1.};result.qvel_mid={1.};result.qfrc_passive={0.};
     result.components={{"chain",{2.}}};
     result.full=id%2==0;
     if(result.full){result.mechanical_energy_j=100.;result.elastic_energy_j=runtime::WireObject{};}

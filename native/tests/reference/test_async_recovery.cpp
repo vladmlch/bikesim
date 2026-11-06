@@ -39,6 +39,7 @@ using runtime::ReferenceFailure;
     step.end_time_s = static_cast<double>(i + 1) * dt;
     step.qpos.assign(4, 0.);
     step.qvel.assign(4, 0.);
+    step.qvel_mid = step.qvel;
     step.components = {{"chain", {1., 1., 1., 1.}}};
     step.qfrc_passive.assign(4, 0.);
     step.loss_step_j = .1;

@@ -40,6 +40,8 @@ constexpr double kDt = .0005;
     raw.end_time_s = static_cast<double>(i + 1) * kDt;
     raw.qpos = {0.};
     raw.qvel = qvel.has_value() ? *qvel : std::vector<double>{0.};
+    // A constant-velocity fixture interval: the midpoint equals qvel.
+    raw.qvel_mid = raw.qvel;
     // numerical_constraint_power_w={name:float(force@qvel) for name,force
     // in components.items() if name in (...)} — same insertion order.
     for (const auto &[name, force] : components) {

@@ -76,7 +76,11 @@ struct ConstraintSnapshot {
 struct RawStep {
     std::int64_t interval_id = 0;
     double time_s = 0., end_time_s = 0.;
-    std::vector<double> qpos, qvel;
+    // qpos/qvel are the interval-start state; qvel_mid is the interval
+    // midpoint .5*(v_start + v_end) — the quadrature velocity every
+    // integrated F.v.dt work/loss channel shares so the ledger is
+    // consistent with the post-step mechanical energy to O(dt^2).
+    std::vector<double> qpos, qvel, qvel_mid;
     std::vector<std::pair<std::string, std::vector<double>>> components;
     std::vector<std::pair<std::string, rider::AttachmentRaw>>
         attachment_raw;
@@ -112,11 +116,13 @@ struct RawStep {
 [[nodiscard]] std::vector<std::pair<std::string, std::vector<double>>>
 constraint_components(const mjModel *model, const mjData *data,
                       std::vector<double> &weights);
-// Per '{kind}:{efc_id}' accumulated force*(J@v) in row order; dict key
-// order is first-appearance order.
+// Per '{kind}:{efc_id}' accumulated force*(J@quadrature) in row order;
+// dict key order is first-appearance order. `quadrature` is the caller's
+// interval velocity — the production ledger passes the midpoint so the
+// integrated row work shares the post-step energy's convention.
 [[nodiscard]] std::vector<std::pair<std::string, double>>
 numerical_constraint_powers(const mjModel *model, const mjData *data,
-                            std::span<const double> incoming,
+                            std::span<const double> quadrature,
                             std::vector<double> &velocity);
 
 // physical_runtime.py _connect_equality_rows — equality rows owned by
@@ -453,6 +459,10 @@ private:
         std::vector<std::pair<std::string, std::vector<double>>> components;
         std::array<int, 3> warning_counts{};
         // Produced by solve_tail, consumed by publish_raw.
+        // qvel_mid: the interval-midpoint velocity .5*(v + d->qvel) —
+        // the quadrature the integrated work/loss ledgers charge (the
+        // instantaneous power channels keep the start velocity).
+        std::vector<double> qvel_mid{};
         std::vector<std::pair<std::string, double>> constraint_powers{};
         writers::RiderSettleOutcome settle{};
         std::vector<std::pair<std::string, rider::AttachmentRaw>> raw_map{};

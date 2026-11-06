@@ -105,6 +105,7 @@ void test_bulk_road_queries_match_two_hundred_scalar_windows() {
     raw.end_time_s = .00125;
     raw.qpos.assign(static_cast<std::size_t>(m->nq), 0.);
     raw.qvel.assign(static_cast<std::size_t>(m->nv), 0.);
+    raw.qvel_mid = raw.qvel;
     raw.attachment_raw = {{"foot_front", std::move(captured)}};
     raw.mechanical_energy_j = 1.;
     raw.elastic_energy_j = runtime::WireObject{};

@@ -890,15 +890,16 @@ ForceMap constraint_components(const mjModel *model, const mjData *data,
 }
 
 // numerical_constraint_powers — per '{kind}:{efc_id}' accumulated
-// force*(J@v) in row order; dict key order is first-appearance order.
+// force*(J@quadrature) in row order; dict key order is first-appearance
+// order. `quadrature` is the caller's interval velocity.
 std::vector<std::pair<std::string, double>>
 numerical_constraint_powers(const mjModel *model, const mjData *data,
-                            std::span<const double> incoming,
+                            std::span<const double> quadrature,
                             std::vector<double> &velocity) {
     const int nefc = data->nefc;
     velocity.assign(static_cast<std::size_t>(nefc), 0.);
     if (nefc > 0)
-        engine::mul_jac_vec(model, data, velocity.data(), incoming.data());
+        engine::mul_jac_vec(model, data, velocity.data(), quadrature.data());
     const auto efc_type = ibuf(data->efc_type, nefc);
     const auto efc_id = ibuf(data->efc_id, nefc);
     const auto efc_force = buf(data->efc_force, nefc);
@@ -1667,8 +1668,19 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         ForceMap components = std::move(in.components);
         const std::array<int, 3> warning_counts = in.warning_counts;
         const std::span<const mjWarningStat> warnings(d->warning);
+        // The interval-midpoint velocity .5*(v_start + v_end) — the
+        // quadrature every integrated F.v.dt work/loss channel shares so
+        // the ledger matches the post-step mechanical energy to second
+        // order (the +48 J rectangle-rule drift, diag-48j 2026-11-06).
+        // d->qvel already holds the post-step velocity (advance_body's
+        // engine::step ran); forces, the snapshot identity and the
+        // instantaneous power channels keep the start velocity.
+        in.qvel_mid.resize(nv);
+        const auto qvel_end = buf(d->qvel, m->nv);
+        for (std::size_t i = 0; i < nv; ++i)
+            in.qvel_mid[i] = .5 * (v[i] + qvel_end[i]);
         in.constraint_powers =
-            numerical_constraint_powers(m, d, v, mul_scratch_);
+            numerical_constraint_powers(m, d, in.qvel_mid, mul_scratch_);
         static constexpr std::array<int, 3> watched = {
             mjWARN_BADQPOS, mjWARN_BADQVEL, mjWARN_BADQACC};
         static constexpr std::array<const char *, 3> watched_names = {
@@ -1752,7 +1764,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             wire_set(signals_in, "tires", Wire(in.tires));
             update_intent_signals(signals_in);
         }
-        in.loss_step = loss_increment(components, v, dt);
+        in.loss_step = loss_increment(components, in.qvel_mid, dt);
         if (rider_control_.has_value())
             in.rider_diag =
                 stepper_->rider_contacts().state().diagnostics;
@@ -1990,6 +2002,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.end_time_s = d->time;
         raw.qpos = q;
         raw.qvel = v;
+        raw.qvel_mid = std::move(in.qvel_mid);
         raw.components = std::move(components);
         raw.attachment_raw = std::move(in.raw_map);
         raw.actuator_force = std::move(in.solved_actuator);

@@ -49,6 +49,37 @@ void test_motor_clutch_topology_is_the_default() {
                 "effort comes from seated_climb, not a crank torque");
 }
 
+// test_rotor_inertia_is_the_audit_value
+// The 0.2 kg·m² reflected rotor inertia (drive audit 2026-10-07,
+// unverified) rides [drive] rotor_inertia_kgm2 through the usual schema →
+// validation path; negatives reject on load.
+void test_rotor_inertia_is_the_audit_value() {
+    bt::require(profile().drive.rotor_inertia_kgm2 == .2,
+                "the welded research profile carries the audited rotor inertia");
+    const std::string source = bt::text(repo_file(
+        "examples/research/viewer_physics_welded.toml"));
+    const std::string key = "rotor_inertia_kgm2 = 0.2";
+    const auto anchor = source.find(key);
+    bt::require(anchor != std::string::npos,
+                "the welded document carries the rotor key");
+    std::string injected(source);
+    injected.replace(anchor, key.size(), "rotor_inertia_kgm2 = -0.2");
+    const bt::TemporaryDirectory dir("welded-negative-rotor");
+    const auto path = dir.path() / "physics.toml";
+    { std::ofstream out(path); out << injected; }
+    bool threw = false;
+    try {
+        (void)cfg::load_physics(path);
+    } catch (const std::invalid_argument &failure) {
+        threw = true;
+        bt::require(
+            std::string_view(failure.what()).find("rotor_inertia_kgm2") !=
+                std::string_view::npos,
+            "the load rejection names the rotor key");
+    }
+    bt::require(threw, "the schema rejects a negative rotor inertia");
+}
+
 // test_relaxation_is_kinetic_for_the_rotor_drive
 // With a 0.2 kg·m² rotor the drivetrain equilibrates through a mode slower
 // than cycle's fixed 20 ms reset window: on the 15 % climb diag the cycle
@@ -153,6 +184,7 @@ void test_rider_numbers() {
 int main() {
     return bt::run([] {
         test_motor_clutch_topology_is_the_default();
+        test_rotor_inertia_is_the_audit_value();
         test_relaxation_is_kinetic_for_the_rotor_drive();
         test_assist_is_bosch_turbo_with_the_declared_envelope();
         test_rider_numbers();

@@ -258,6 +258,16 @@ void verify_configuration(const ReplayInput& input, const research::PreparedEnvi
         auto* pedaling = drive ? find_mutable(*drive, "pedaling") : nullptr;
         if (rec_pedaling && pedaling && !find(*rec_pedaling, "reposition_on_stall"))
             drop_if_default_reposition(*pedaling);
+        // Recipes recorded while [drive] rotor_inertia_kgm2 was removed
+        // carry no such key: they ran the rotorless model — the field's
+        // declared default — so a default reconstruction drops the key and
+        // still verifies. A non-default value never matches.
+        if (drive && !find(*rec_drive, "rotor_inertia_kgm2"))
+            std::erase_if(std::get<io::Value::Object>(drive->data),
+                          [](const auto& entry) {
+                              return entry.first == "rotor_inertia_kgm2" &&
+                                     at_default(entry.second, 0.);
+                          });
     }
     set(reconstructed, "physics", std::move(physics));
     const auto actual_hashable = configuration_hashable(reconstructed), expected_hashable = configuration_hashable(expected);

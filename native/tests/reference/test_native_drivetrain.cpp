@@ -420,6 +420,38 @@ void test_elastic_transmission_rejects() {
     set(drive, "motor_clutch", Value{true});
     bt::invalid([&] { (void)nativecfg::decode(wire); });
 }
+// The 0.2 kg·m² drive-inertia ruling (2026-11-06): [drive]
+// rotor_inertia_kgm2 rides the same schema → validation → projection →
+// writer-config path as the other drive keys. A positive value requires an
+// effort drive mode (the rotor is the motor shaft's); an absent or zero key
+// remains the rotorless model.
+void test_rotor_inertia_wire_contract() {
+    auto input = source();
+    input.rotor_inertia_kgm2 = .2;
+    const auto projected = field(writer_config(input), "drive");
+    bt::require(bike::io::as_double(field(projected, "rotor_inertia_kgm2"),
+                                    "rotor_inertia_kgm2") == .2,
+        "projection emits the rotor inertia");
+    const auto decoded = nativecfg::decode(writer_config(input));
+    bt::require(decoded.drive.has_value() &&
+                decoded.drive->rotor_inertia_kgm2 == .2, // NOLINT(bugprone-unchecked-optional-access) has_value() guards the arrow
+        "writer decode restores the projected rotor inertia");
+    auto absent = writer_config(source());
+    policy_reference::erase(member(absent, "drive"), "rotor_inertia_kgm2");
+    const auto defaulted = nativecfg::decode(absent);
+    bt::require(defaulted.drive.has_value() &&
+                defaulted.drive->rotor_inertia_kgm2 == 0., // NOLINT(bugprone-unchecked-optional-access) has_value() guards the arrow
+        "an absent rotor key decodes to the rotorless default");
+    auto negative = writer_config(input);
+    set(member(negative, "drive"), "rotor_inertia_kgm2", real(-.5));
+    bt::invalid([&] { (void)nativecfg::decode(negative); });
+    input.rotor_inertia_kgm2 = -.1;
+    bt::invalid([&] { cfg::detail::post_init(input); });
+    cfg::SimulationPhysicsConfig passive;
+    passive.drive_mode = "coast";
+    passive.drive.rotor_inertia_kgm2 = .2;
+    bt::invalid([&] { cfg::post_init(passive); });
+}
 // Source: test_optional_project_and_initial_gearing. The Python attribute
 // deletion/SimpleNamespace paths belong to the removed adapter; the native
 // optional writer-config contract is exercised directly here and in no_drive.
@@ -574,6 +606,7 @@ int main() {
         // this non-golden check must still execute while recordings are stale.
         test_ideal_drive_applies_no_bearing_drag();
         test_shifter_decides_on_the_chainring_cadence();
+        test_rotor_inertia_wire_contract();
         test_chain_core(); test_force_staging(); test_solved_intervals();
         test_atomic_state_inputs_and_probes(); test_projection(); test_no_drive();
         test_transmission_core(); test_random_multiturn_staging(); test_shifting_prepared_state_and_clock();

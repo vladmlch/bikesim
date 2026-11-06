@@ -189,6 +189,7 @@ namespace drivetrain {
         validation::nonnegative(s.torque_ripple, "config.drive.torque_ripple");
         if (s.torque_ripple >= 1.) throw std::invalid_argument("config.drive.torque_ripple");
         validation::finite(s.crank_phase_rad, "config.drive.crank_phase_rad");
+        validation::nonnegative(s.rotor_inertia_kgm2, "config.drive.rotor_inertia_kgm2");
         if (s.drive_mode != "crank_effort" && s.drive_mode != "articulated_effort" &&
             s.drive_mode != "coast" && s.drive_mode != "ideal_speed_control")
             throw std::invalid_argument("config.drive.drive_mode");

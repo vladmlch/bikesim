@@ -622,6 +622,7 @@ void post_init(PhysicalDriveConfig &config) {
     if (config.transmission_model != "ideal_mid_drive" &&
         config.transmission_model != "geometric_ideal_mid_drive")
         fail("unknown transmission model");
+    scalar(config.rotor_inertia_kgm2, "rotor_inertia_kgm2", 0.);
     post_init(config.shifting);
     if (config.shifting.enabled &&
         std::ranges::find(config.shifting.cassette,
@@ -1065,6 +1066,10 @@ void post_init(SimulationPhysicsConfig &config) {
         *config.drive_mode != "crank_effort" &&
         *config.drive_mode != "articulated_effort")
         fail("drive.motor_clutch requires an effort drive mode");
+    if (config.drive.rotor_inertia_kgm2 > 0. &&
+        *config.drive_mode != "crank_effort" &&
+        *config.drive_mode != "articulated_effort")
+        fail("drive.rotor_inertia_kgm2 requires an effort drive mode");
 }
 
 SimulationPhysicsConfig default_physics() {

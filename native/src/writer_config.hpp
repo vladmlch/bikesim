@@ -1061,12 +1061,13 @@ namespace nativecfg {
         NATIVE_DIAG_POP
 
         // config.drive itself: the policy subtree plus the drive-only
-        // scalars — the passive-mode clutch gate stays in this one decode
-        // so the nb adapter and the Value boundary share it verbatim.
+        // scalars — the passive-mode rotor/clutch gate stays in this one
+        // decode so the nb adapter and the Value boundary share it
+        // verbatim.
         template <class N>
         [[nodiscard]] drivetrain::DriveConfig decode_drive(const Dict<N> &d) {
             drivetrain::DriveConfig c;
-            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
+            constexpr auto extra_keys = keys("drive_mode","transmission_model","human_torque_nm","torque_ripple","crank_phase_rad","rotor_inertia_kgm2","motor_clutch","brake_ceiling_nm","brake_hold_torque_nm","brake_hold_stiffness_nm_rad","brake_hold_damping_nms_rad","brake_hold_engage_radps","brake_hold_release_radps");
             c.policies = decode_drive_policies(d, extra_keys);
             c.drive_mode = str(d, "drive_mode");
             c.transmission_model = str(d, "transmission_model");
@@ -1081,6 +1082,12 @@ namespace nativecfg {
             if (c.torque_ripple >= 1.)
                 throw std::invalid_argument("torque_ripple");
             c.crank_phase_rad = num(d, "crank_phase_rad");
+            // The rotor key is optional: an absent key keeps the rotorless
+            // model (the field's declared default), so configs recorded
+            // while the key was gone still decode their recorded behavior.
+            if (d.contains("rotor_inertia_kgm2"))
+                c.rotor_inertia_kgm2 =
+                        nonnegative(num(d, "rotor_inertia_kgm2"), "rotor_inertia_kgm2");
             c.brake_ceiling_nm =
                     nonnegative(num(d, "brake_ceiling_nm"), "brake_ceiling_nm");
             // The standstill bite keys are optional: an absent key keeps the
@@ -1101,8 +1108,8 @@ namespace nativecfg {
                 throw std::invalid_argument("brake hold release must not precede engage");
             c.motor_clutch = boolean(d, "motor_clutch");
             if ((c.drive_mode == "coast" || c.drive_mode == "ideal_speed_control") &&
-                c.motor_clutch)
-                throw std::invalid_argument("passive drive cannot use the motor clutch");
+                (c.motor_clutch || c.rotor_inertia_kgm2 > 0.))
+                throw std::invalid_argument("passive drive cannot use the motor clutch or rotor inertia");
             return c;
         }
 

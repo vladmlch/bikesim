@@ -49,6 +49,8 @@ tier = "fast"
 # RU: педаль вперёд — зацепление, назад — свободно; муфт две: в моторе и втулка.
 transmission_model = "ideal_mid_drive"
 motor_clutch = true
+# Reflected rotor inertia from the 2026-10-07 drive audit — unverified.
+rotor_inertia_kgm2 = 0.2
 
 [drive.pedaling]
 enabled = true

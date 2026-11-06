@@ -51,6 +51,19 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         geom(shaft,"geom_drive_shaft_ring","cylinder",{{"fromto","0 -0.015 0 0 0.015 0"},{"size",g(radius)},{"mass","0"},{"material","mat_metal"},{"contype","0"},{"conaffinity","0"}});
         set_inertia(shaft,shaft_mass,{},ring_inertia(shaft_mass,.015,radius,.03));
     }
+    const double rotor=drive.rotor_inertia_kgm2;
+    if(rotor>0.) {
+        // The 0.2 kg·m² ruling (2026-11-06): the motor rotor is a real
+        // body welded to the drive axis — the shaft behind the crank
+        // clutch, or the crank on a rigid drive. The value is already
+        // reflected to the crank coordinate (shaft:crank is 1:1) and the
+        // body COM sits on the axis, so the inertial yy term is the
+        // requested moment. No joint, no freewheel, no armature: the
+        // rotor shares the axis' one dof.
+        auto& carrier=drive.motor_clutch?required(root,"body","drive_shaft"):crank;
+        auto& rotor_body=carrier.add("body",{{"name","motor_rotor"},{"pos","0 0 0"}});
+        set_inertia(rotor_body,.3,{},diagonal(rotor/2.,rotor,rotor/2.));
+    }
     for(int index=0;index<2;++index) {
         const std::string side=index==0?"front":"rear";const double sign=index==0?-1.:1.;
         auto& pedal=required(root,"body","pedal_"+side);

@@ -51,7 +51,7 @@ std::string render(const Query& query) {
             display(Value{extent}) + "`.\n\nCompleted control transitions: `" + raw(episode, "complete_control_steps") +
             "`. Checked research replay eligible: `" + raw(episode, "replay_eligible") + "` (contract `" + raw(episode, "replay_contract_version") +
             "`).\n\n### Outcome, validity and first failure\n\nEvidence: `episodes.summary_json`, selected by `episode_id`.\n\n```json\n" +
-            pretty_json(select_optional(saved, {"outcome", "model_status", "first_failure", "failure", "tail_failure",
+            pretty_json(select_optional(saved, {"outcome", "model_status", "rider_support", "first_failure", "failure", "tail_failure",
                 "source_changed_during_run", "execution_changed_during_run"})) +
             "\n```\n\n### Important events\n\nSource events keep their recorded classification. `derived_transition` events describe retained channel changes "
             "under a named rule; they are not controller explanations.\n\nClock semantics: `received_wall_s` is the monotonic receipt timestamp "

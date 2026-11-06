@@ -51,7 +51,11 @@ void catalog_contract() {
     // channel_drive.{crank_clutch_dissipation_power_w,
     // freehub_dissipation_power_w} — engagement is closure work, never a
     // loss (AGENTS.md «Передача», 2026-11-05).
-    bt::require(count == 474, "full reviewed catalog retains all 474 repeated/nested descriptor occurrences");
+    // 480 = 474 plus the six unilateral rider support reaction channels:
+    // channel_rider.{front_pedal_press_n, front_pedal_shear_n,
+    // rear_pedal_press_n, rear_pedal_shear_n, saddle_support_n,
+    // saddle_shear_n} (AGENTS.md «Райдер», 2026-11-06).
+    bt::require(count == 480, "full reviewed catalog retains all 480 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

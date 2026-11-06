@@ -791,8 +791,31 @@ WireObject wire_effort(const rider::EffortDiagnostics &d) {
     return out;
 }
 
+void wire_support_reactions(const writers::RiderSettleOutcome &settle,
+                            WireObject &out) {
+    if (settle.front_pedal_reaction.has_value()) {
+        out.emplace_back("front_pedal_press_n",
+                         Wire(settle.front_pedal_reaction->normal_n));
+        out.emplace_back("front_pedal_shear_n",
+                         Wire(settle.front_pedal_reaction->shear_n));
+    }
+    if (settle.rear_pedal_reaction.has_value()) {
+        out.emplace_back("rear_pedal_press_n",
+                         Wire(settle.rear_pedal_reaction->normal_n));
+        out.emplace_back("rear_pedal_shear_n",
+                         Wire(settle.rear_pedal_reaction->shear_n));
+    }
+    if (settle.saddle_reaction.has_value()) {
+        out.emplace_back("saddle_support_n",
+                         Wire(settle.saddle_reaction->normal_n));
+        out.emplace_back("saddle_shear_n",
+                         Wire(settle.saddle_reaction->shear_n));
+    }
+}
+
 // settle_welds' result dict — support/pedal/grip entries in insertion
-// order, then the conditional 'crank_torque_nm' tail.
+// order, then the conditional 'crank_torque_nm' tail and the frame-axis
+// unilateral support reactions.
 WireObject
 wire_settled_welds(const writers::RiderSettleOutcome &settle) {
     WireObject out;
@@ -801,6 +824,7 @@ wire_settled_welds(const writers::RiderSettleOutcome &settle) {
     if (settle.crank_torque_nm_appended)
         out.emplace_back("crank_torque_nm",
                          Wire(settle.crank_torque_nm));
+    wire_support_reactions(settle, out);
     return out;
 }
 
@@ -1959,6 +1983,13 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
                                   Wire(std::move(capacity)));
             channels.emplace_back("rider_lean_limit_rad",
                                   wire_opt(st.lean_limit_rad));
+        }
+        {
+            WireObject weld_reactions;
+            wire_support_reactions(settle, weld_reactions);
+            if (!weld_reactions.empty())
+                channels.emplace_back("rider_welds",
+                                      Wire(std::move(weld_reactions)));
         }
         WireObject diagnostics;
         diagnostics.emplace_back(

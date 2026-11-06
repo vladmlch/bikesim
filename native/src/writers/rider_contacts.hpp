@@ -208,6 +208,17 @@ namespace writers {
         std::vector<std::string> errors;
     };
 
+    // Frame-projected unilateral support reaction from MuJoCo's solved
+    // equality constraint force (efc_force on the connect rows).
+    // normal_n is along the bicycle frame's up axis (+z_frame: positive =
+    // pushes the foot/pelvis up = unilateral compression; negative = pulls
+    // the foot/pelvis down = impossible on a flat pedal or saddle).
+    // shear_n is along the bicycle frame's forward axis (+x_frame).
+    struct RiderSupportReaction {
+        double normal_n = 0.;
+        double shear_n = 0.;
+    };
+
     // settle_welds' return value parts: the result dict as ordered
     // entries plus the conditional 'crank_torque_nm' tail, and the
     // measurement block the call latched into
@@ -216,6 +227,9 @@ namespace writers {
         std::vector<std::pair<std::string, RiderSettledEntry>> entries;
         bool crank_torque_nm_appended = false;
         double crank_torque_nm = 0.;
+        std::optional<RiderSupportReaction> saddle_reaction;
+        std::optional<RiderSupportReaction> front_pedal_reaction;
+        std::optional<RiderSupportReaction> rear_pedal_reaction;
         RiderAttachmentMeasurement measurement;
     };
 

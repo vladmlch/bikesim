@@ -82,6 +82,7 @@ io::Value physical_summary(runtime::NativeRideRuntime const& environment,const i
     set(result,"model_status",research::wire_value(runtime::Wire{frame.state.model_status}));
     set(result,"component_work_j",field(history,"work_j"));
     set(result,"airtime_threshold_s",field(history,"airtime_s"));set(result,"duration_s",field(history,"duration_s"));
+    set(result,"rider_support",field(history,"rider_support"));
     set(result,"input_identity_at_finalization",recording::input_identity_at_finalization(metadata));
     return result;
 }

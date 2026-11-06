@@ -929,6 +929,28 @@ namespace writers {
         const std::span<const double> xmat =
             model_access::readonly_buffer(data->xmat, 9 * model_->nbody,
                                           "xmat");
+        // Pedal platform orientation vs. frame axes:
+        // In model/drivetrain.cpp, pedal_front and pedal_rear are attached
+        // to crank_arm with unactuated, undamped hinge joints
+        // (pedal_front_spin / pedal_rear_spin, axis="0 1 0"). Under
+        // pedal_attachment = "spindle" (model/articulated_rider.cpp),
+        // connect_foot_front and connect_foot_rear are 3-DOF point
+        // equalities (mjEQ_CONNECT) anchored at the pedal spindle origin
+        // (0, 0, 0) in pedal_* coordinates, which applies zero torque to
+        // the pedal body and leaves the pedal platform orientation
+        // physically undefined during the ride; meanwhile rider_foot_* has
+        // rider_ankle_* locked (lock_ankles = true) and pitches with
+        // rider_shank_*. Because the model does not define an independent
+        // pedal platform orientation, both pedal press/shear and saddle
+        // support/shear project MuJoCo's solved equality constraint force
+        // on the rider (data->efc_force via equality_.force_on_rider) onto
+        // the bicycle frame body's up axis (+z_frame: positive = pushes the
+        // foot/pelvis up = unilateral compression; negative = pulls down =
+        // impossible on a flat pedal or saddle) and fore-aft axis
+        // (+x_frame: positive = forward shear on the rider).
+        const Mat3 frame = mat3_at(xmat, frame_);
+        const Vec3 frame_up{frame[2], frame[5], frame[8]};
+        const Vec3 frame_forward{frame[0], frame[3], frame[6]};
         RiderSettleOutcome outcome;
         for (std::size_t si = 0; si < kSupportCount; ++si) {
             const bool linked = si == 0 ? linked_saddle_ : linked_pedals_;
@@ -975,6 +997,17 @@ namespace writers {
                 blas::ddot(3, force.data(), 1, n.data(), 1);
             const double shear =
                 blas::ddot(3, force.data(), 1, tangent.data(), 1);
+            const RiderSupportReaction frame_reaction{
+                .normal_n =
+                    blas::ddot(3, force.data(), 1, frame_up.data(), 1),
+                .shear_n =
+                    blas::ddot(3, force.data(), 1, frame_forward.data(), 1)};
+            if (si == 0)
+                outcome.saddle_reaction = frame_reaction;
+            else if (si == 1)
+                outcome.front_pedal_reaction = frame_reaction;
+            else
+                outcome.rear_pedal_reaction = frame_reaction;
             outcome.entries.emplace_back(
                 std::string(kSupportNames[si]),
                 RiderSettledEntry{

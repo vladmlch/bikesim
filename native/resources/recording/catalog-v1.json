@@ -5859,7 +5859,13 @@
           "shape": null,
           "axes": null,
           "except_keys": [
-            "crank_torque_nm"
+            "crank_torque_nm",
+            "front_pedal_press_n",
+            "front_pedal_shear_n",
+            "rear_pedal_press_n",
+            "rear_pedal_shear_n",
+            "saddle_shear_n",
+            "saddle_support_n"
           ],
           "children": [
             {
@@ -5992,6 +5998,126 @@
           "measurement": "solved",
           "source": "src/bike_sim/sim/ride/rider_contacts.py::RiderContactApplier.settle_welds",
           "description": "crank torque delivered through the pedal welds (crank-side torque)"
+        },
+        {
+          "frame": "frame",
+          "path": [
+            "rider_welds",
+            "front_pedal_press_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "front_pedal_press_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": true,
+          "measurement": "solved",
+          "source": "native/src/writers/rider_contacts.cpp::RiderContactWriter::settle_welds",
+          "description": "front pedal connect force on the foot along the bicycle frame up axis (positive = pedal pushes foot up, negative = pedal pulls foot down)"
+        },
+        {
+          "frame": "frame",
+          "path": [
+            "rider_welds",
+            "front_pedal_shear_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "front_pedal_shear_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": true,
+          "measurement": "solved",
+          "source": "native/src/writers/rider_contacts.cpp::RiderContactWriter::settle_welds",
+          "description": "front pedal connect fore-aft shear force on the foot along the bicycle frame forward axis"
+        },
+        {
+          "frame": "frame",
+          "path": [
+            "rider_welds",
+            "rear_pedal_press_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rear_pedal_press_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": true,
+          "measurement": "solved",
+          "source": "native/src/writers/rider_contacts.cpp::RiderContactWriter::settle_welds",
+          "description": "rear pedal connect force on the foot along the bicycle frame up axis (positive = pedal pushes foot up, negative = pedal pulls foot down)"
+        },
+        {
+          "frame": "frame",
+          "path": [
+            "rider_welds",
+            "rear_pedal_shear_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rear_pedal_shear_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": true,
+          "measurement": "solved",
+          "source": "native/src/writers/rider_contacts.cpp::RiderContactWriter::settle_welds",
+          "description": "rear pedal connect fore-aft shear force on the foot along the bicycle frame forward axis"
+        },
+        {
+          "frame": "frame",
+          "path": [
+            "rider_welds",
+            "saddle_support_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "saddle_support_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": true,
+          "measurement": "solved",
+          "source": "native/src/writers/rider_contacts.cpp::RiderContactWriter::settle_welds",
+          "description": "saddle connect force on the pelvis along the bicycle frame up axis (positive = supports pelvis from below, negative = pulls pelvis down)"
+        },
+        {
+          "frame": "frame",
+          "path": [
+            "rider_welds",
+            "saddle_shear_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "saddle_shear_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": true,
+          "measurement": "solved",
+          "source": "native/src/writers/rider_contacts.cpp::RiderContactWriter::settle_welds",
+          "description": "saddle connect fore-aft shear force on the pelvis along the bicycle frame forward axis"
         },
         {
           "frame": "n/a",

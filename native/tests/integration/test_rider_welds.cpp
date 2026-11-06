@@ -340,6 +340,300 @@ void test_steep_grade_saddle_shear_exceeds_friction() {
     }
 }
 
+// A rider sitting still with no effort on flat ground gives saddle support > 0
+// of the right order (most of the rider's weight minus what feet and hands
+// carry) and pedal press >= 0 on both pedals, both in per-interval rider_welds
+// channels and in the per-ride rider_support summary.
+void test_sitting_still_gives_positive_saddle_support_and_nonnegative_pedal_press() {
+    auto runtime = weld_env(0., 1);
+    const runtime::RideControl control{.motor_torque_nm = 0.,
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 0.,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
+    double weight = 0.;
+    bike::validation::RuntimeRigAccess::inspect(
+        *runtime, [&](const Stepper &stepper,
+                      const runtime::PhysicalStep &) {
+            weight = rider_weight(stepper.model());
+        });
+    for (int i = 0; i < 200; ++i) {
+        if (runtime->snapshot().outcome.has_value()) break;
+        (void)runtime->advance(runtime->snapshot().step + 1, control, 1.,
+                               1., std::nullopt);
+    }
+    const auto rows = runtime->recorded_intervals();
+    bt::require(rows.size() >= 100,
+                "sitting still produced recorded intervals");
+    const std::size_t first = rows.size() / 2;
+    double mean_saddle_support = 0.;
+    double mean_front_press = 0.;
+    double mean_rear_press = 0.;
+    double mean_grip_vertical = 0.;
+    std::size_t count = 0;
+    for (std::size_t i = first; i < rows.size(); ++i) {
+        const auto &channels = rows[i]->channels;
+        const auto *welds_wire = sw::find(channels, "rider_welds");
+        bt::require(welds_wire != nullptr,
+                    "every recorded interval carries rider_welds");
+        const auto &welds = sw::object(*welds_wire);
+        const double front_press =
+            sw::number(sw::required(welds, "front_pedal_press_n"));
+        const double front_shear =
+            sw::number(sw::required(welds, "front_pedal_shear_n"));
+        const double rear_press =
+            sw::number(sw::required(welds, "rear_pedal_press_n"));
+        const double rear_shear =
+            sw::number(sw::required(welds, "rear_pedal_shear_n"));
+        const double saddle_support =
+            sw::number(sw::required(welds, "saddle_support_n"));
+        const double saddle_shear =
+            sw::number(sw::required(welds, "saddle_shear_n"));
+        bt::require(std::isfinite(front_shear) &&
+                        std::isfinite(rear_shear) &&
+                        std::isfinite(saddle_shear),
+                    "fore-aft shear channels are finite");
+        bt::require(front_press >= 0. && rear_press >= 0.,
+                    "sitting still with no effort keeps pedal press >= 0");
+        bt::require(saddle_support > .3 * weight,
+                    "sitting still gives positive saddle support of the "
+                    "right order");
+        const auto &left_grip =
+            sw::object(sw::required(welds, "grip_left"));
+        const auto &right_grip =
+            sw::object(sw::required(welds, "grip_right"));
+        const double grip_z =
+            sw::number(
+                sw::array(sw::required(left_grip, "force_on_rider_n")).at(2)) +
+            sw::number(
+                sw::array(sw::required(right_grip, "force_on_rider_n")).at(2));
+        mean_saddle_support += saddle_support;
+        mean_front_press += front_press;
+        mean_rear_press += rear_press;
+        mean_grip_vertical += grip_z;
+        ++count;
+    }
+    const double n = static_cast<double>(count);
+    const double expected_saddle =
+        weight - (mean_front_press + mean_rear_press + mean_grip_vertical) / n;
+    bt::require(std::abs(mean_saddle_support / n - expected_saddle) <=
+                    .01 * weight,
+                "saddle support equals rider weight minus what feet and "
+                "hands carry");
+
+    const auto accounting = runtime->accounting_state();
+    const auto &history = sw::object(sw::required(accounting, "history"));
+    const auto &support_summary =
+        sw::object(sw::required(history, "rider_support"));
+    for (const char *key : {"front_pedal", "rear_pedal", "saddle"}) {
+        const auto &entry =
+            sw::object(sw::required(support_summary, key));
+        const double min_n = sw::number(sw::required(entry, "min_n"));
+        const double below_zero_share =
+            sw::number(sw::required(entry, "below_zero_share"));
+        const double below_minus_50n_share =
+            sw::number(sw::required(entry, "below_minus_50n_share"));
+        bt::require(min_n >= 0.,
+                    "sitting still summary min_n stays non-negative");
+        bt::require(below_zero_share == 0. &&
+                        below_minus_50n_share == 0.,
+                    "sitting still summary has zero pulling time share");
+    }
+    bt::require(
+        sw::number(sw::required(
+            sw::object(sw::required(support_summary, "saddle")), "min_n")) >
+            .3 * weight,
+        "sitting still summary saddle min_n is of the right order");
+}
+
+// Sign convention check on MuJoCo's solved equality constraint force:
+// pushing the foot or pelvis down increases the upward reaction from the
+// pedal/saddle (positive press/support); pulling the foot or pelvis up past
+// gravity makes the connect constraint pull the rider down (negative
+// press/support = impossible on a flat pedal or unilateral saddle).
+void test_pedal_press_and_saddle_support_sign_convention() {
+    auto runtime = weld_env(0., 1);
+    bike::validation::RuntimeRigAccess::inspect(
+        *runtime, [&](const Stepper &stepper,
+                      const runtime::PhysicalStep &) {
+            const mjModel *m = stepper.model();
+            std::unique_ptr<mjData, decltype(&mj_deleteData)> d(
+                mj_copyData(nullptr, m, stepper.data()), mj_deleteData);
+            writers::RiderContactWriter writer = stepper.rider_contacts();
+
+            const auto body_id = [m](const char *name) {
+                const int id = mj_name2id(m, mjOBJ_BODY, name);
+                bt::require(id >= 0, name);
+                return static_cast<std::size_t>(id);
+            };
+            const std::size_t foot_front = body_id("rider_foot_front");
+            const std::size_t pedal_front = body_id("pedal_front");
+            const std::size_t foot_rear = body_id("rider_foot_rear");
+            const std::size_t pedal_rear = body_id("pedal_rear");
+            const std::size_t pelvis = body_id("rider_pelvis");
+            const std::size_t frame = body_id("frame");
+            const auto xfrc =
+                model_access::mutable_buffer(d->xfrc_applied, 6 * m->nbody);
+
+            const auto eval = [&]() {
+                engine::forward(m, d.get());
+                return writer.settle_welds(d.get(), std::nullopt, false,
+                                           nullptr);
+            };
+
+            std::ranges::fill(xfrc, 0.);
+            const auto base = eval();
+            bt::require(base.front_pedal_reaction.has_value() &&
+                            base.rear_pedal_reaction.has_value() &&
+                            base.saddle_reaction.has_value(),
+                        "settled welds populate unilateral support reactions");
+            const double base_front = base.front_pedal_reaction->normal_n;
+            const double base_rear = base.rear_pedal_reaction->normal_n;
+            const double base_saddle = base.saddle_reaction->normal_n;
+            bt::require(base_front >= 0. && base_rear >= 0. &&
+                            base_saddle > 0.,
+                        "baseline static reactions are non-negative");
+
+            // Push front foot down against front pedal (-z on foot, +z support
+            // on pedal -> pedal pushes foot up -> positive press increases).
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * foot_front + 2] = -250.;
+            xfrc[6 * pedal_front + 2] = 250.;
+            const auto front_pushed = eval();
+            bt::require(front_pushed.front_pedal_reaction->normal_n >
+                            base_front + 150.,
+                        "pushing front foot down makes front pedal press "
+                        "more positive");
+
+            // Pull front foot up away from front pedal (+z on foot, -z on
+            // pedal -> pedal pulls foot down -> press becomes negative).
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * foot_front + 2] = 400.;
+            xfrc[6 * pedal_front + 2] = -400.;
+            const auto front_pulled = eval();
+            bt::require(front_pulled.front_pedal_reaction->normal_n < -50.,
+                        "pulling front foot up makes front pedal press "
+                        "negative");
+
+            // Push front foot backward relative to front pedal (-x on foot, +x
+            // on pedal -> pedal pushes foot forward -> fore-aft shear > base).
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * foot_front + 0] = -150.;
+            xfrc[6 * pedal_front + 0] = 150.;
+            const auto front_aft = eval();
+            bt::require(front_aft.front_pedal_reaction->shear_n >
+                            base.front_pedal_reaction->shear_n + 50.,
+                        "pushing front foot backward makes fore-aft pedal "
+                        "shear more positive");
+
+            // Push rear foot down vs pull up.
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * foot_rear + 2] = -250.;
+            xfrc[6 * pedal_rear + 2] = 250.;
+            const auto rear_pushed = eval();
+            bt::require(rear_pushed.rear_pedal_reaction->normal_n >
+                            base_rear + 150.,
+                        "pushing rear foot down makes rear pedal press "
+                        "more positive");
+
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * foot_rear + 2] = 400.;
+            xfrc[6 * pedal_rear + 2] = -400.;
+            const auto rear_pulled = eval();
+            bt::require(rear_pulled.rear_pedal_reaction->normal_n < -50.,
+                        "pulling rear foot up makes rear pedal press "
+                        "negative");
+
+            // Push pelvis down vs lift pelvis up relative to frame.
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * pelvis + 2] = -300.;
+            xfrc[6 * frame + 2] = 300.;
+            const auto saddle_pushed = eval();
+            bt::require(saddle_pushed.saddle_reaction->normal_n >
+                            base_saddle + 150.,
+                        "pushing pelvis down makes saddle support more "
+                        "positive");
+
+            std::ranges::fill(xfrc, 0.);
+            xfrc[6 * pelvis + 2] = 1200.;
+            xfrc[6 * frame + 2] = -1200.;
+            const auto saddle_pulled = eval();
+            bt::require(saddle_pulled.saddle_reaction->normal_n < -50.,
+                        "lifting pelvis past its weight makes saddle support "
+                        "negative");
+        });
+}
+
+// Per-ride summary tracks the most negative value, time share below 0 N,
+// and time share below -50 N for each of the three unilateral contacts.
+void test_rider_support_summary_accumulates_negative_shares() {
+    struct StepSpec {
+        std::int64_t id = 0;
+        double t0 = 0.;
+        double t1 = 0.;
+        double front_n = 0.;
+        double rear_n = 0.;
+        double saddle_n = 0.;
+    };
+    struct ExpectedSummary {
+        const char *key = nullptr;
+        double min_n = 0.;
+        double share_0 = 0.;
+        double share_50 = 0.;
+    };
+    runtime::WorkHistory history;
+    const auto add_step = [&](const StepSpec &s) {
+        runtime::PhysicalSampleData sample;
+        sample.interval_id = s.id;
+        sample.time_s = s.t0;
+        sample.end_time_s = s.t1;
+        runtime::WireObject tires;
+        for (const char *wheel : {"front", "rear"}) {
+            runtime::WireObject w;
+            sw::set(w, "patches", runtime::Wire(runtime::WireArray{}));
+            sw::set(tires, wheel, runtime::Wire(std::move(w)));
+        }
+        sw::set(sample.channels, "tires", runtime::Wire(std::move(tires)));
+        runtime::WireObject welds;
+        sw::set(welds, "front_pedal_press_n", runtime::Wire(s.front_n));
+        sw::set(welds, "rear_pedal_press_n", runtime::Wire(s.rear_n));
+        sw::set(welds, "saddle_support_n", runtime::Wire(s.saddle_n));
+        sw::set(sample.channels, "rider_welds",
+                runtime::Wire(std::move(welds)));
+        history.add(sample);
+    };
+    // 4 equal intervals of 0.25 s (total 1.0 s):
+    // front_pedal: +100, -10, -60, +50 -> min=-60, <0 share=0.5, <-50 share=0.25
+    // rear_pedal:  +80,  +20, -80, -70 -> min=-80, <0 share=0.5, <-50 share=0.5
+    // saddle:      +400, +300, -20, +200 -> min=-20, <0 share=0.25, <-50 share=0.0
+    add_step({.id = 0, .t0 = 0.00, .t1 = 0.25, .front_n = 100., .rear_n = 80., .saddle_n = 400.});
+    add_step({.id = 1, .t0 = 0.25, .t1 = 0.50, .front_n = -10., .rear_n = 20., .saddle_n = 300.});
+    add_step({.id = 2, .t0 = 0.50, .t1 = 0.75, .front_n = -60., .rear_n = -80., .saddle_n = -20.});
+    add_step({.id = 3, .t0 = 0.75, .t1 = 1.00, .front_n = 50., .rear_n = -70., .saddle_n = 200.});
+
+    const auto wire = history.as_wire();
+    const auto &support = sw::object(sw::required(wire, "rider_support"));
+    const auto check = [&](const ExpectedSummary &e) {
+        const auto &entry = sw::object(sw::required(support, e.key));
+        bt::require(
+            std::abs(sw::number(sw::required(entry, "min_n")) - e.min_n) <
+                1e-12,
+            "summary min_n matches most negative value");
+        bt::require(
+            std::abs(sw::number(sw::required(entry, "below_zero_share")) -
+                     e.share_0) < 1e-12,
+            "summary below_zero_share matches time share < 0 N");
+        bt::require(
+            std::abs(
+                sw::number(sw::required(entry, "below_minus_50n_share")) -
+                e.share_50) < 1e-12,
+            "summary below_minus_50n_share matches time share < -50 N");
+    };
+    check({.key = "front_pedal", .min_n = -60., .share_0 = .5, .share_50 = .25});
+    check({.key = "rear_pedal", .min_n = -80., .share_0 = .5, .share_50 = .5});
+    check({.key = "saddle", .min_n = -20., .share_0 = .25, .share_50 = 0.});
+}
+
 } // namespace
 
 int main() {
@@ -348,5 +642,8 @@ int main() {
         test_contact_diagnostics_carry_the_solved_weight();
         test_torque_sensor_reads_the_previous_solved_crank_torque();
         test_steep_grade_saddle_shear_exceeds_friction();
+        test_sitting_still_gives_positive_saddle_support_and_nonnegative_pedal_press();
+        test_pedal_press_and_saddle_support_sign_convention();
+        test_rider_support_summary_accumulates_negative_shares();
     });
 }

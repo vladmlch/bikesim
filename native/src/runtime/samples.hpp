@@ -111,11 +111,19 @@ struct OwnedNativeEpisode {
                                         const ColumnLayout &layout);
 
 struct WorkHistory {
+    struct SupportSummary {
+        std::optional<double> min_n;
+        double below_zero_s = 0.;
+        double below_minus_50n_s = 0.;
+        double observed_duration_s = 0.;
+    };
+
     WireObject work_j;
     std::optional<std::int64_t> last_id;
     std::optional<double> last_end;
     std::array<std::array<double, 3>, 2> airtime_s{};
     double duration_s = 0.;
+    std::array<SupportSummary, 3> rider_support{};
 
     void add(const PhysicalSampleData &sample);
     [[nodiscard]] WireObject as_wire() const;

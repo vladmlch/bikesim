@@ -473,14 +473,46 @@ void WorkHistory::add(const PhysicalSampleData &sample) {
                 airtime[side][threshold] += sample.dt_s();
                 finite(airtime[side][threshold], "accumulated airtime", true);
             }
+    constexpr std::array<std::string_view, 3> kSupportChannelKeys{
+        "front_pedal_press_n", "rear_pedal_press_n", "saddle_support_n"};
+    auto support = rider_support;
+    if (const Wire *welds_wire = find(sample.channels, "rider_welds");
+        welds_wire != nullptr && !is_none(*welds_wire)) {
+        const auto &welds = object(*welds_wire);
+        for (std::size_t i = 0; i < kSupportChannelKeys.size(); ++i) {
+            const Wire *val_wire = find(welds, kSupportChannelKeys[i]);
+            if (val_wire == nullptr || is_none(*val_wire)) continue;
+            const double val = number(*val_wire);
+            finite(val, kSupportChannelKeys[i]);
+            auto &entry = support[i];
+            entry.min_n =
+                entry.min_n.has_value() ? std::min(*entry.min_n, val) : val;
+            entry.observed_duration_s += sample.dt_s();
+            finite(entry.observed_duration_s, "accumulated support duration",
+                   true);
+            if (val < 0.) {
+                entry.below_zero_s += sample.dt_s();
+                finite(entry.below_zero_s, "accumulated support below_zero_s",
+                       true);
+            }
+            if (val < -50.) {
+                entry.below_minus_50n_s += sample.dt_s();
+                finite(entry.below_minus_50n_s,
+                       "accumulated support below_minus_50n_s", true);
+            }
+        }
+    }
     work_j = std::move(updated);
     airtime_s = airtime;
+    rider_support = support;
     duration_s = duration;
     last_id = sample.interval_id;
     last_end = sample.end_time_s;
 }
 
 WireObject WorkHistory::as_wire() const {
+    constexpr std::array<std::string_view, 3> kSupportSummaryKeys{
+        "front_pedal", "rear_pedal", "saddle"};
     WireObject airtime;
     for (std::size_t side = 0; side < kSides.size(); ++side) {
         WireObject buckets;
@@ -488,16 +520,44 @@ WireObject WorkHistory::as_wire() const {
             buckets.emplace_back(kThresholdNames[threshold], Wire(airtime_s[side][threshold]));
         airtime.emplace_back(kSides[side], Wire(std::move(buckets)));
     }
+    WireObject support;
+    for (std::size_t i = 0; i < kSupportSummaryKeys.size(); ++i) {
+        const auto &s = rider_support[i];
+        const double share_0 =
+            s.observed_duration_s > 0.
+                ? s.below_zero_s / s.observed_duration_s
+                : 0.;
+        const double share_50 =
+            s.observed_duration_s > 0.
+                ? s.below_minus_50n_s / s.observed_duration_s
+                : 0.;
+        WireObject entry{
+            {"min_n", s.min_n.has_value() ? Wire(*s.min_n) : Wire(nullptr)},
+            {"below_zero_s", Wire(s.below_zero_s)},
+            {"below_minus_50n_s", Wire(s.below_minus_50n_s)},
+            {"below_zero_share", Wire(share_0)},
+            {"below_minus_50n_share", Wire(share_50)},
+            {"observed_duration_s", Wire(s.observed_duration_s)}};
+        support.emplace_back(kSupportSummaryKeys[i], Wire(std::move(entry)));
+    }
     return {{"work_j", Wire(work_j)},
             {"last_id", last_id.has_value() ? Wire(*last_id) : Wire(nullptr)},
             {"last_end", last_end.has_value() ? Wire(*last_end) : Wire(nullptr)},
-            {"airtime_s", Wire(std::move(airtime))}, {"duration_s", Wire(duration_s)}};
+            {"airtime_s", Wire(std::move(airtime))},
+            {"duration_s", Wire(duration_s)},
+            {"rider_support", Wire(std::move(support))}};
 }
 
 WorkHistory WorkHistory::from_wire(const WireObject &value) {
-    constexpr std::array<std::string_view, 5> keys{
+    constexpr std::array<std::string_view, 5> legacy_keys{
         "work_j", "last_id", "last_end", "airtime_s", "duration_s"};
-    exact(value, keys, "state.runtime.history");
+    constexpr std::array<std::string_view, 6> keys{
+        "work_j", "last_id", "last_end", "airtime_s", "duration_s",
+        "rider_support"};
+    if (find(value, "rider_support") != nullptr)
+        exact(value, keys, "state.runtime.history");
+    else
+        exact(value, legacy_keys, "state.runtime.history");
     WorkHistory result;
     result.work_j = object(required(value, "work_j"));
     for (const auto &[name, work] : result.work_j)
@@ -523,6 +583,43 @@ WorkHistory WorkHistory::from_wire(const WireObject &value) {
         for (std::size_t threshold = 0; threshold < kThresholdNames.size(); ++threshold) {
             result.airtime_s[side][threshold] = number(required(buckets, kThresholdNames[threshold]));
             finite(result.airtime_s[side][threshold], "state.runtime.history.airtime_s", true);
+        }
+    }
+    if (const Wire *support_wire = find(value, "rider_support");
+        support_wire != nullptr) {
+        constexpr std::array<std::string_view, 3> kSupportSummaryKeys{
+            "front_pedal", "rear_pedal", "saddle"};
+        constexpr std::array<std::string_view, 6> kSupportEntryKeys{
+            "min_n", "below_zero_s", "below_minus_50n_s",
+            "below_zero_share", "below_minus_50n_share",
+            "observed_duration_s"};
+        const auto &support = object(*support_wire);
+        exact(support, kSupportSummaryKeys,
+              "state.runtime.history.rider_support");
+        for (std::size_t i = 0; i < kSupportSummaryKeys.size(); ++i) {
+            const auto &entry =
+                object(required(support, kSupportSummaryKeys[i]));
+            exact(entry, kSupportEntryKeys,
+                  "state.runtime.history.rider_support.entry");
+            auto &dst = result.rider_support[i];
+            if (!is_none(required(entry, "min_n"))) {
+                dst.min_n = number(required(entry, "min_n"));
+                finite(*dst.min_n,
+                       "state.runtime.history.rider_support.min_n");
+            }
+            dst.below_zero_s = number(required(entry, "below_zero_s"));
+            finite(dst.below_zero_s,
+                   "state.runtime.history.rider_support.below_zero_s", true);
+            dst.below_minus_50n_s =
+                number(required(entry, "below_minus_50n_s"));
+            finite(dst.below_minus_50n_s,
+                   "state.runtime.history.rider_support.below_minus_50n_s",
+                   true);
+            dst.observed_duration_s =
+                number(required(entry, "observed_duration_s"));
+            finite(dst.observed_duration_s,
+                   "state.runtime.history.rider_support.observed_duration_s",
+                   true);
         }
     }
     return result;

@@ -48,7 +48,8 @@ io::Value physical_summary(const runtime::OwnedResearchEpisode& episode) {
     set(out, "energy", wire_value(wire::required(accounting, "energy")));
     set(out, "model_status", wire_value(runtime::Wire{episode.final_snapshot.model_status}));
     for (const auto& [source, destination] : {std::pair{"work_j", "component_work_j"},
-                                           std::pair{"airtime_s", "airtime_threshold_s"}, std::pair{"duration_s", "duration_s"}})
+                                           std::pair{"airtime_s", "airtime_threshold_s"}, std::pair{"duration_s", "duration_s"},
+                                           std::pair{"rider_support", "rider_support"}})
         if (const auto* value = wire::find(history, source)) set(out, destination, wire_value(*value));
     if (const auto* setup = member(episode.configuration.metadata, "setup"))
         if (const auto* equilibrium = member(*setup, "equilibrium")) set(out, "equilibrium", *equilibrium);

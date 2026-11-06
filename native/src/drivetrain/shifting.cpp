@@ -44,19 +44,43 @@ namespace drivetrain {
             std::min(cadence, required) < 0.) return finish(false);
         int selected = next.rear_teeth;
         ShiftDirection direction = ShiftDirection::none;
-        // One cassette position per shift (ruling Р3, plan
-        // 2026-11-05-clutch-pedaling-fixes task 4): cadence above the band
-        // steps one cog harder, below it one cog easier. If the cadence is
-        // still out of band when the cooldown ends the step repeats. The
-        // landing guard below keeps its veto on the single step; the
-        // cassette is sorted ascending after validation.
+        // Nearest in-band cog per shift (ruling of 2026-11-06, superseding
+        // Р3's strict one-cog step): scan candidates from the adjacent cog
+        // toward the shift direction and take the first whose wheel-implied
+        // landing cadence lands inside the band — usually the adjacent cog,
+        // further only as far as needed. When no cog lands inside, the
+        // fallback is the last cog in the shift direction; the landing veto
+        // below then decides whether even that commits. The cassette is
+        // sorted ascending after validation, so the reverse (descending)
+        // scan walks smaller cogs nearest-first and the forward scan walks
+        // larger cogs nearest-first.
         if (engaged(next.cadence_ema) > config_.target_cadence_max_rpm) {
-            for (const int teeth : std::views::reverse(config_.cassette))
-                if (teeth < next.rear_teeth) { selected = teeth; break; }
+            int fallback = next.rear_teeth;
+            for (const int teeth : std::views::reverse(config_.cassette)) {
+                if (teeth >= next.rear_teeth) continue;
+                fallback = teeth;  // the last candidate is the smallest cog
+                const double landing = engaged(next.required_ema) * teeth / next.rear_teeth;
+                if (landing >= config_.target_cadence_min_rpm &&
+                    landing <= config_.target_cadence_max_rpm) {
+                    selected = teeth;
+                    break;
+                }
+            }
+            if (selected == next.rear_teeth) selected = fallback;
             direction = ShiftDirection::up;
         } else if (engaged(next.cadence_ema) < config_.target_cadence_min_rpm) {
-            for (const int teeth : config_.cassette)
-                if (teeth > next.rear_teeth) { selected = teeth; break; }
+            int fallback = next.rear_teeth;
+            for (const int teeth : config_.cassette) {
+                if (teeth <= next.rear_teeth) continue;
+                fallback = teeth;  // the last candidate is the largest cog
+                const double landing = engaged(next.required_ema) * teeth / next.rear_teeth;
+                if (landing >= config_.target_cadence_min_rpm &&
+                    landing <= config_.target_cadence_max_rpm) {
+                    selected = teeth;
+                    break;
+                }
+            }
+            if (selected == next.rear_teeth) selected = fallback;
             direction = ShiftDirection::down;
         } else return finish(false);
         if (selected == next.rear_teeth) return finish(false);

@@ -74,6 +74,8 @@ struct PedelecEnv {
     double track_length_m = 0.;
     int root_x_dof = -1, root_x_qpos = -1;
     std::vector<int> cassette;
+    double shift_band_min_rpm = 0., shift_band_max_rpm = 0.,
+           shift_cadence_tau_s = 0.;
 };
 
 // _environment(tmp_path, track, duration_s): welded physics + the probe
@@ -101,13 +103,25 @@ struct PedelecEnv {
     // not a step multiple — .005 is the 4-step period the other welded
     // fixtures use.
     request.sensors.sample_period_s = .005;
+    // prepare_environment consumes the request's physics — copy what the
+    // shift check needs before the move.
     const auto cassette =
         request.setup.model.physics->drive.shifting.cassette;
+    const auto band_min =
+        request.setup.model.physics->drive.shifting.target_cadence_min_rpm;
+    const auto band_max =
+        request.setup.model.physics->drive.shifting.target_cadence_max_rpm;
+    const auto cadence_tau =
+        request.setup.model.physics->drive.shifting.cadence_smoothing_tau_s;
     const auto prepared = research::prepare_environment(std::move(owner));
     PedelecEnv env;
     env.cassette = cassette;
-    // Adjacency in the one-cog check below is positional: sort here the
-    // same way the shifter constructor normalizes its own copy.
+    env.shift_band_min_rpm = band_min;
+    env.shift_band_max_rpm = band_max;
+    env.shift_cadence_tau_s = cadence_tau;
+    // Position in the scan order is what the nearest-in-band check below
+    // reasons about: sort here the same way the shifter constructor
+    // normalizes its own copy.
     std::ranges::sort(env.cassette);
     env.control_steps = prepared->bootstrap.config.control_steps;
     env.max_steps = prepared->bootstrap.config.max_steps;
@@ -153,7 +167,7 @@ violation_strings(const runtime::PhysicalSampleData &sample) {
 // _sample_row: only the fields the four asserts consume.
 struct WindowRow {
     double t = 0., v = 0., x = 0.;
-    double cadence = 0., human = 0., motor = 0.;
+    double cadence = 0., human = 0., motor = 0., required = 0.;
     std::string mode;
     int gear = 0, shift_from = 0;
     std::string shift_direction;
@@ -241,6 +255,8 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
         sw::number(sw::required(drive, "shift_from_teeth")));
     row.shift_direction =
         sw::string(sw::required(drive, "shift_direction"));
+    row.required =
+        sw::number(sw::required(drive, "required_cadence_rpm"));
     row.balance_lost = sw::boolean(sw::required(
         section(sample.channels, "rider_balance"), "balance_lost"));
     result.rows.push_back(std::move(row));
@@ -325,20 +341,58 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
     for (std::size_t i = 1; i < result.rows.size(); ++i)
         if (result.rows[i].shift && !result.rows[i - 1].shift)
             shifts.push_back(i);
-    // Ruling Р4 (plan 2026-11-05-clutch-pedaling-fixes task 4): the
-    // shifts.size() >= 5 bar was a stall workaround and is removed. The
-    // behavioural checks are: the flat launch produces at least one
-    // upshift, every shift steps exactly one cassette position, and the
-    // motor-through-shift check below runs over all shifts found.
+    // Ruling of 2026-11-06 (superseding the strict one-cog check): the
+    // flat launch produces at least one upshift, and every detected shift
+    // lands on the nearest cog whose wheel-implied landing cadence falls
+    // inside the band — or, when no cog can reach it, the last cog in the
+    // shift direction. The shifter's required_ema is not published, so it
+    // is replayed here from required_cadence_rpm with the configured
+    // smoothing tau; on shift rows the published value already reads the
+    // post-shift ratio, which keeps the replica approximate — the band
+    // comparisons below carry a small epsilon for that.
+    std::vector<double> required_ema(result.rows.size(), 0.);
+    for (std::size_t i = 0; i < result.rows.size(); ++i) {
+        const double dt =
+            i ? result.rows[i].t - result.rows[i - 1].t : 0.;
+        const double alpha = env.shift_cadence_tau_s <= 0. || dt <= 0.
+                                 ? 1.
+                                 : std::min(1., dt / env.shift_cadence_tau_s);
+        required_ema[i] = i ? required_ema[i - 1] +
+                                  alpha * (result.rows[i].required -
+                                           required_ema[i - 1])
+                            : result.rows[i].required;
+    }
     int upshifts = 0;
     for (const std::size_t shift : shifts) {
         const WindowRow &row = result.rows[shift];
-        const auto from = std::ranges::find(env.cassette, row.shift_from);
-        const auto to = std::ranges::find(env.cassette, row.gear);
-        bt::require(from != env.cassette.end() && to != env.cassette.end() &&
-                        std::abs(to - from) == 1,
-                    "every shift moves exactly one cog");
-        if (row.shift_direction == "up") ++upshifts;
+        const bool up = row.shift_direction == "up";
+        const auto landing_of = [&](int teeth) {
+            return required_ema[shift] * teeth / row.shift_from;
+        };
+        // Nearest-cog property: a cog nearer than the pick was skipped
+        // only because its landing could not reach the band.
+        for (const int teeth : env.cassette) {
+            const bool nearer =
+                up ? teeth > row.gear && teeth < row.shift_from
+                   : teeth < row.gear && teeth > row.shift_from;
+            if (!nearer) continue;
+            bt::require(up ? landing_of(teeth) >
+                                env.shift_band_max_rpm - .5
+                           : landing_of(teeth) <
+                                 env.shift_band_min_rpm + .5,
+                        "every shift lands on the nearest cog that brings "
+                        "the landing cadence into the band");
+        }
+        const double landing = landing_of(row.gear);
+        const bool in_band =
+            landing >= env.shift_band_min_rpm - .5 &&
+            landing <= env.shift_band_max_rpm + .5;
+        const int last =
+            up ? env.cassette.front() : env.cassette.back();
+        bt::require(in_band || row.gear == last,
+                    "every shift lands in the band or falls back to the "
+                    "last cog in the shift direction");
+        if (up) ++upshifts;
     }
     bt::require(upshifts >= 1,
                 "the 22/51 flat launch produces at least one upshift");

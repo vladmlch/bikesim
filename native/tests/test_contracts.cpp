@@ -181,13 +181,15 @@ namespace {
             require(shifter.state().rear_teeth == 18,
                     "unsorted but unique cassette stays in the valid domain");
         }
-        {   // Sorted access after unsorted construction: the one-cog step
-            // picks the adjacent cog in cassette order, so an unsorted
-            // stored order would land on the wrong neighbour. Upshift from
-            // 24T at 96 rpm steps to 21T (landing 96*21/24 = 84 clears the
-            // 70 floor); raw stored order would reach 15T. Downshift from
-            // 13T at 60 rpm steps to 15T (69.2 under the 95 ceiling); raw
-            // stored order would reach 28T.
+        {   // Sorted access after unsorted construction: the in-band scan
+            // walks candidates nearest-first in cassette order, so an
+            // unsorted stored order would land on the wrong cog. Upshift
+            // from 24T at 96 rpm picks 21T (96*21/24 = 84 is the first
+            // landing inside [70,95] scanning smaller cogs); raw stored
+            // order would reach 18T (72) after skipping 15T (60) and 13T
+            // (52). Downshift from 11T at wheel cadence 55 picks 15T
+            // (55*15/11 = 75 in band after 13T's 65 misses); raw stored
+            // order would reach 18T (90) first.
             auto gearing = valid_gearing_config();
             auto shifting = valid_shifting_config();
             shifting.cassette = {28, 11, 21, 18, 13, 15, 24};
@@ -197,9 +199,9 @@ namespace {
             require(up.update(96., 96., .01) && up.state().rear_teeth == 21 &&
                     up.state().direction == "up",
                     "unsorted cassette upshifts in sorted-cassette order");
-            gearing.rear_teeth = 13;
+            gearing.rear_teeth = 11;
             drivetrain::CadenceShifter down(gearing, shifting);
-            require(down.update(60., 60., .01) && down.state().rear_teeth == 15 &&
+            require(down.update(60., 55., .01) && down.state().rear_teeth == 15 &&
                     down.state().direction == "down",
                     "unsorted cassette downshifts in sorted-cassette order");
         }

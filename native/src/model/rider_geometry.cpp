@@ -248,7 +248,7 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
             geometry::pedal_points(crank_m);
     const Vec3 ankle_offset{0.0, 0.0, ANKLE_ABOVE_PEDAL_M};
     const Vec3 ankle_front = v_add(pedal_front, ankle_offset);
-    const Vec3 ankle_rear = v_add(pedal_rear, ankle_offset);
+    Vec3 ankle_rear{};
 
     const double l_thigh = rider.segment_length("thigh");
     const double l_shank = rider.segment_length("shank");
@@ -261,7 +261,22 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
     try {
         knee_front =
                 two_link_ik(hip, ankle_front, l_thigh, l_shank, "+x");
-        knee_rear = two_link_ik(hip, ankle_rear, l_thigh, l_shank, "+x");
+        const Vec3 front_leg_vec = v_sub(pedal_front, knee_front);
+        const double l2_front = gd::np_norm3(front_leg_vec);
+        knee_rear =
+                two_link_ik(hip, pedal_rear, l_thigh, l2_front, "+x");
+        const Vec3 rear_leg_vec = v_sub(pedal_rear, knee_rear);
+        const Vec3 u_front = v_div(front_leg_vec, l2_front);
+        const Vec3 u_rear = v_div(rear_leg_vec, l2_front);
+        const Vec3 shank_front = v_sub(ankle_front, knee_front);
+        const double s_par =
+                shank_front[0] * u_front[0] + shank_front[2] * u_front[2];
+        const double s_perp =
+                -shank_front[0] * u_front[2] + shank_front[2] * u_front[0];
+        ankle_rear = Vec3{
+                knee_rear[0] + s_par * u_rear[0] - s_perp * u_rear[2],
+                0.0,
+                knee_rear[2] + s_par * u_rear[2] + s_perp * u_rear[0]};
     } catch (const std::invalid_argument &exc) {
         throw std::invalid_argument(
                 std::string("the rider's legs do not reach the pedals "

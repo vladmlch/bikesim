@@ -132,7 +132,12 @@ void finish_rider_attachments(Element& root,const BuildContext& c) {
     for(const char* side:{"front","rear"}) {
         const std::string suffix=side;
         if(cfg.articulated.pedal_attachment=="weld") equality.add("weld",{{"name","weld_foot_"+suffix},{"body1","rider_foot_"+suffix},{"body2","pedal_"+suffix},{"solref",g(solref)+" 1"}});
-        if(cfg.articulated.pedal_attachment=="spindle") equality.add("connect",{{"name","connect_foot_"+suffix},{"body1","rider_foot_"+suffix},{"body2","pedal_"+suffix},{"anchor","0 0 "+g(-ANKLE_ABOVE_PEDAL_M)},{"solref",g(solref)+" 1"}});
+        if(cfg.articulated.pedal_attachment=="spindle") {
+            const Vec3 anchor=c.articulated?sub(suffix=="front"?c.articulated->pedal_front:c.articulated->pedal_rear,
+                                                suffix=="front"?c.articulated->ankle_front:c.articulated->ankle_rear)
+                                           :Vec3{0.,0.,-ANKLE_ABOVE_PEDAL_M};
+            equality.add("connect",{{"name","connect_foot_"+suffix},{"body1","rider_foot_"+suffix},{"body2","pedal_"+suffix},{"anchor",vec17(anchor)},{"solref",g(solref)+" 1"}});
+        }
     }
     if(cfg.articulated.saddle_attachment=="weld") equality.add("weld",{{"name","weld_saddle"},{"body1","rider_pelvis"},{"body2","frame"},{"solref",g(solref)+" 1"}});
     else if(cfg.articulated.saddle_attachment=="pin") add_saddle_pin(root,solref);

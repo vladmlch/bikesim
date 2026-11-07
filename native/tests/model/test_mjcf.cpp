@@ -444,9 +444,14 @@ void de_leva_leg_segment_com_and_inertia() {
         }
 
         // Foot geometry and inertia
-        bt::require(std::abs(body_ipos[foot_id * 3 + 0]) < 1e-9, "foot COM x is centered on ankle link");
+        const auto connect_id = static_cast<std::size_t>(id(*model, mjOBJ_EQUALITY, ("connect_foot_" + std::string(side)).c_str()));
+        const auto eq_data = std::views::counted(model->eq_data, static_cast<std::ptrdiff_t>(model->neq * mjNEQDATA));
+        const double foot_vec_x = eq_data[connect_id * mjNEQDATA + 0];
+        const double foot_vec_z = eq_data[connect_id * mjNEQDATA + 2];
+        bt::require(std::abs(std::hypot(foot_vec_x, foot_vec_z) - 0.115) < 1e-6, "foot link length is 0.115 m");
+        bt::require(std::abs(body_ipos[foot_id * 3 + 0] - 0.5 * foot_vec_x) < 1e-6, "foot COM x is centered on ankle link");
         bt::require(std::abs(body_ipos[foot_id * 3 + 1]) < 1e-9, "foot COM y is planar 0");
-        bt::require(std::abs(body_ipos[foot_id * 3 + 2] - (-0.0575)) < 1e-6, "foot COM z remains at midpoint of -0.115 m link");
+        bt::require(std::abs(body_ipos[foot_id * 3 + 2] - 0.5 * foot_vec_z) < 1e-6, "foot COM z remains at midpoint of 0.115 m link");
 
         constexpr double kRealFootLengthM = 0.2668;
         const double foot_mass = body_mass[foot_id];
@@ -466,6 +471,70 @@ void de_leva_leg_segment_com_and_inertia() {
         }
     }
 }
+// With lock_ankles, both feet are fixed at the same shank-to-foot angle
+// (the front leg's build-pose angle), giving equal knee-to-pedal-spindle
+// distance L2 on both legs and consistent connect_foot_* anchors.
+void symmetric_locked_ankles_equal_knee_to_spindle_distance() {
+    const auto request = physical("viewer_physics_welded.toml");
+    const auto pose = mdl::geometry_pose(*request->rider, request->bike); // NOLINT(bugprone-unchecked-optional-access)
+    const double pose_l2_front = std::hypot(
+        pose.pedal_front[0] - pose.knee_front[0],
+        pose.pedal_front[2] - pose.knee_front[2]);
+    const double pose_l2_rear = std::hypot(
+        pose.pedal_rear[0] - pose.knee_rear[0],
+        pose.pedal_rear[2] - pose.knee_rear[2]);
+    bt::require(std::abs(pose_l2_front - pose_l2_rear) < 1e-9,
+                "geometry_pose knee-to-pedal-spindle distance equal on both legs (front=" +
+                    std::to_string(pose_l2_front) + ", rear=" + std::to_string(pose_l2_rear) + ")");
+
+    const auto model = mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    auto data = std::unique_ptr<mjData, decltype(&mj_deleteData)>(mj_makeData(model.get()), mj_deleteData);
+    mj_resetData(model.get(), data.get());
+    mj_kinematics(model.get(), data.get());
+    const auto xpos = std::views::counted(data->xpos, static_cast<std::ptrdiff_t>(model->nbody * 3));
+    const auto eq_data = std::views::counted(model->eq_data, static_cast<std::ptrdiff_t>(model->neq * mjNEQDATA));
+
+    const auto leg_metrics = [&](const char* side) {
+        const auto shank_id = static_cast<std::size_t>(id(*model, mjOBJ_BODY, ("rider_shank_" + std::string(side)).c_str()));
+        const auto foot_id = static_cast<std::size_t>(id(*model, mjOBJ_BODY, ("rider_foot_" + std::string(side)).c_str()));
+        const auto pedal_id = static_cast<std::size_t>(id(*model, mjOBJ_BODY, ("pedal_" + std::string(side)).c_str()));
+        const auto connect_id = static_cast<std::size_t>(id(*model, mjOBJ_EQUALITY, ("connect_foot_" + std::string(side)).c_str()));
+
+        const double knee_x = xpos[shank_id * 3 + 0];
+        const double knee_z = xpos[shank_id * 3 + 2];
+        const double ankle_x = xpos[foot_id * 3 + 0];
+        const double ankle_z = xpos[foot_id * 3 + 2];
+        const double pedal_x = xpos[pedal_id * 3 + 0];
+        const double pedal_z = xpos[pedal_id * 3 + 2];
+
+        const double foot_dx = pedal_x - ankle_x;
+        const double foot_dz = pedal_z - ankle_z;
+        const double anchor_x = eq_data[connect_id * mjNEQDATA + 0];
+        const double anchor_y = eq_data[connect_id * mjNEQDATA + 1];
+        const double anchor_z = eq_data[connect_id * mjNEQDATA + 2];
+        bt::require(std::abs(anchor_x - foot_dx) < 1e-6 &&
+                        std::abs(anchor_y) < 1e-9 &&
+                        std::abs(anchor_z - foot_dz) < 1e-6,
+                    std::string("connect_foot_") + side + " anchor matches pedal-minus-ankle vector");
+
+        const double shank_dx = ankle_x - knee_x;
+        const double shank_dz = ankle_z - knee_z;
+        const double shank_len = std::hypot(shank_dx, shank_dz);
+        const double foot_len = std::hypot(foot_dx, foot_dz);
+        bt::require(std::abs(foot_len - 0.115) < 1e-9, std::string(side) + " foot link length is 0.115 m");
+        const double cos_bend = (shank_dx * foot_dx + shank_dz * foot_dz) / (shank_len * foot_len);
+        const double l2 = std::hypot(pedal_x - knee_x, pedal_z - knee_z);
+        return std::pair{l2, cos_bend};
+    };
+
+    const auto [l2_front, cos_front] = leg_metrics("front");
+    const auto [l2_rear, cos_rear] = leg_metrics("rear");
+    bt::require(std::abs(l2_front - l2_rear) < 1e-9,
+                "compiled model knee-to-pedal-spindle distance equal on both legs (front=" +
+                    std::to_string(l2_front) + ", rear=" + std::to_string(l2_rear) + ")");
+    bt::require(std::abs(cos_front - cos_rear) < 1e-9,
+                "shank-to-foot angle equal on both legs");
+}
 } // namespace
 int main(int argc, char* argv[]) {
 #if defined(__clang__)
@@ -479,5 +548,8 @@ int main(int argc, char* argv[]) {
     if (args.size() > 1 && std::string_view(args[1]) == "de_leva") {
         return bt::run(de_leva_leg_segment_com_and_inertia);
     }
-    return bt::run([]{de_leva_leg_segment_com_and_inertia();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
+    if (args.size() > 1 && std::string_view(args[1]) == "symmetric_ankles") {
+        return bt::run(symmetric_locked_ankles_equal_knee_to_spindle_distance);
+    }
+    return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
 }

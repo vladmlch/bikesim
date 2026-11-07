@@ -377,5 +377,107 @@ void errors_and_ownership() {
     const auto text=mdl::xml::document(escaped);
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");
 }
+// Leg segment COM and inertia follow de Leva (1996) Table 4 (male):
+// thigh COM at 0.4095 of hip-to-knee from hip, radii (0.329, 0.329, 0.149);
+// shank COM at 0.4459 of knee-to-ankle from knee, radii (0.251, 0.246, 0.102) for KJC->AJC;
+// foot radii (0.257, 0.245, 0.124) against real heel-to-toe length 0.2668 m, COM at midpoint.
+void de_leva_leg_segment_com_and_inertia() {
+    const auto request = physical("viewer_physics_welded.toml");
+    const auto model = mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    const auto body_pos = std::views::counted(model->body_pos, static_cast<std::ptrdiff_t>(model->nbody * 3));
+    const auto body_ipos = std::views::counted(model->body_ipos, static_cast<std::ptrdiff_t>(model->nbody * 3));
+    const auto body_mass = std::views::counted(model->body_mass, static_cast<std::ptrdiff_t>(model->nbody));
+    const auto body_inertia = std::views::counted(model->body_inertia, static_cast<std::ptrdiff_t>(model->nbody * 3));
+    for (const auto* side : {"front", "rear"}) {
+        const auto thigh_id = static_cast<std::size_t>(id(*model, mjOBJ_BODY, ("rider_thigh_" + std::string(side)).c_str()));
+        const auto shank_id = static_cast<std::size_t>(id(*model, mjOBJ_BODY, ("rider_shank_" + std::string(side)).c_str()));
+        const auto foot_id = static_cast<std::size_t>(id(*model, mjOBJ_BODY, ("rider_foot_" + std::string(side)).c_str()));
+
+        // Thigh geometry and inertia
+        const double shank_x = body_pos[shank_id * 3 + 0];
+        const double shank_z = body_pos[shank_id * 3 + 2];
+        const double thigh_len = std::hypot(shank_x, shank_z);
+        bt::require(thigh_len > 0.4 && thigh_len < 0.5, "thigh length realistic");
+        bt::require(std::abs(body_ipos[thigh_id * 3 + 0] - 0.4095 * shank_x) < 1e-9, "thigh COM x matches de Leva 0.4095");
+        bt::require(std::abs(body_ipos[thigh_id * 3 + 1]) < 1e-9, "thigh COM y is planar 0");
+        bt::require(std::abs(body_ipos[thigh_id * 3 + 2] - 0.4095 * shank_z) < 1e-9, "thigh COM z matches de Leva 0.4095");
+
+        const double thigh_mass = body_mass[thigh_id];
+        const double exp_thigh_long = thigh_mass * (0.149 * thigh_len) * (0.149 * thigh_len);
+        const double exp_thigh_trans = thigh_mass * (0.329 * thigh_len) * (0.329 * thigh_len);
+        const double exp_thigh_sag = thigh_mass * (0.329 * thigh_len) * (0.329 * thigh_len);
+        std::array<double, 3> exp_thigh_inertia{exp_thigh_long, exp_thigh_trans, exp_thigh_sag};
+        std::ranges::sort(exp_thigh_inertia);
+        std::array<double, 3> actual_thigh_inertia{
+            body_inertia[thigh_id * 3 + 0],
+            body_inertia[thigh_id * 3 + 1],
+            body_inertia[thigh_id * 3 + 2]};
+        std::ranges::sort(actual_thigh_inertia);
+        for (std::size_t i = 0; i < 3; ++i) {
+            bt::require(std::abs(actual_thigh_inertia[i] - exp_thigh_inertia[i]) < 1e-8,
+                        "thigh principal inertia matches de Leva");
+        }
+
+        // Shank geometry and inertia
+        const double foot_x = body_pos[foot_id * 3 + 0];
+        const double foot_z = body_pos[foot_id * 3 + 2];
+        const double shank_len = std::hypot(foot_x, foot_z);
+        bt::require(shank_len > 0.4 && shank_len < 0.5, "shank length realistic");
+        bt::require(std::abs(body_ipos[shank_id * 3 + 0] - 0.4459 * foot_x) < 1e-9, "shank COM x matches de Leva 0.4459");
+        bt::require(std::abs(body_ipos[shank_id * 3 + 1]) < 1e-9, "shank COM y is planar 0");
+        bt::require(std::abs(body_ipos[shank_id * 3 + 2] - 0.4459 * foot_z) < 1e-9, "shank COM z matches de Leva 0.4459");
+
+        const double shank_mass = body_mass[shank_id];
+        const double exp_shank_long = shank_mass * (0.102 * shank_len) * (0.102 * shank_len);
+        const double exp_shank_trans = shank_mass * (0.246 * shank_len) * (0.246 * shank_len);
+        const double exp_shank_sag = shank_mass * (0.251 * shank_len) * (0.251 * shank_len);
+        std::array<double, 3> exp_shank_inertia{exp_shank_long, exp_shank_trans, exp_shank_sag};
+        std::ranges::sort(exp_shank_inertia);
+        std::array<double, 3> actual_shank_inertia{
+            body_inertia[shank_id * 3 + 0],
+            body_inertia[shank_id * 3 + 1],
+            body_inertia[shank_id * 3 + 2]};
+        std::ranges::sort(actual_shank_inertia);
+        for (std::size_t i = 0; i < 3; ++i) {
+            bt::require(std::abs(actual_shank_inertia[i] - exp_shank_inertia[i]) < 1e-8,
+                        "shank principal inertia matches de Leva");
+        }
+
+        // Foot geometry and inertia
+        bt::require(std::abs(body_ipos[foot_id * 3 + 0]) < 1e-9, "foot COM x is centered on ankle link");
+        bt::require(std::abs(body_ipos[foot_id * 3 + 1]) < 1e-9, "foot COM y is planar 0");
+        bt::require(std::abs(body_ipos[foot_id * 3 + 2] - (-0.0575)) < 1e-6, "foot COM z remains at midpoint of -0.115 m link");
+
+        constexpr double kRealFootLengthM = 0.2668;
+        const double foot_mass = body_mass[foot_id];
+        const double exp_foot_long = foot_mass * (0.124 * kRealFootLengthM) * (0.124 * kRealFootLengthM);
+        const double exp_foot_trans = foot_mass * (0.245 * kRealFootLengthM) * (0.245 * kRealFootLengthM);
+        const double exp_foot_sag = foot_mass * (0.257 * kRealFootLengthM) * (0.257 * kRealFootLengthM);
+        std::array<double, 3> exp_foot_inertia{exp_foot_long, exp_foot_trans, exp_foot_sag};
+        std::ranges::sort(exp_foot_inertia);
+        std::array<double, 3> actual_foot_inertia{
+            body_inertia[foot_id * 3 + 0],
+            body_inertia[foot_id * 3 + 1],
+            body_inertia[foot_id * 3 + 2]};
+        std::ranges::sort(actual_foot_inertia);
+        for (std::size_t i = 0; i < 3; ++i) {
+            bt::require(std::abs(actual_foot_inertia[i] - exp_foot_inertia[i]) < 1e-8,
+                        "foot principal inertia matches de Leva from real foot length");
+        }
+    }
+}
 } // namespace
-int main() {return bt::run([]{captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});}
+int main(int argc, char* argv[]) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
+#endif
+    const std::span<char*> args(argv, static_cast<std::size_t>(argc));
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+    if (args.size() > 1 && std::string_view(args[1]) == "de_leva") {
+        return bt::run(de_leva_leg_segment_com_and_inertia);
+    }
+    return bt::run([]{de_leva_leg_segment_com_and_inertia();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
+}

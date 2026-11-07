@@ -1,8 +1,31 @@
 #include "builder_internal.hpp"
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 namespace bike::model::detail {
+namespace {
+struct RadiiOfGyration { double sag; double trans; double lon; };
+
+void planar_segment_inertia(Mat3& out, double mass, const Vec3& vector, RadiiOfGyration k) {
+    const double length = std::sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]);
+    if (length <= 0.) throw std::invalid_argument("segment length must be positive");
+    const double ux = vector[0] / length;
+    const double uz = vector[2] / length;
+    const double l_sag = k.sag * length;
+    const double l_trans = k.trans * length;
+    const double l_long = k.lon * length;
+    const double i_sag = mass * l_sag * l_sag;
+    const double i_trans = mass * l_trans * l_trans;
+    const double i_long = mass * l_long * l_long;
+    const double ixx = i_trans * uz * uz + i_long * ux * ux;
+    const double iyy = i_sag;
+    const double izz = i_trans * ux * ux + i_long * uz * uz;
+    const double ixz = (i_long - i_trans) * ux * uz;
+    out = Mat3{ixx, 0., ixz, 0., iyy, 0., ixz, 0., izz};
+}
+} // namespace
+
 void build_articulated_rider(Element& world,const ArticulatedPose& pose,const SegmentMasses& masses,
                              const configuration::JointEnvelopeMap* envelopes,bool lock_ankles) {
     std::set<std::string> expected{"pelvis","torso","head"},actual;
@@ -28,7 +51,32 @@ void build_articulated_rider(Element& world,const ArticulatedPose& pose,const Se
             owner.add("joint",std::move(attributes));
         }
         const auto vector=sub(end,start);const double mass=mass_for(key);
-        inertial(owner,mass,div(vector,2.),segment_inertia(mass,vector,radius));
+        Vec3 com=div(vector,2.);
+        Mat3 tensor{};
+        if(key.starts_with("thigh_")) {
+            constexpr double kComFrac=0.4095;
+            com=mul(vector,kComFrac);
+            planar_segment_inertia(tensor,mass,vector,{.sag=0.329,.trans=0.329,.lon=0.149});
+        } else if(key.starts_with("shank_")) {
+            constexpr double kComFrac=0.4459;
+            com=mul(vector,kComFrac);
+            planar_segment_inertia(tensor,mass,vector,{.sag=0.251,.trans=0.246,.lon=0.102});
+        } else if(key.starts_with("foot_")) {
+            constexpr double kRealFootLengthM=0.2668;
+            constexpr double kSagK=0.257;
+            constexpr double kTransK=0.245;
+            constexpr double kLongK=0.124;
+            const double l_long=kLongK*kRealFootLengthM;
+            const double l_sag=kSagK*kRealFootLengthM;
+            const double l_trans=kTransK*kRealFootLengthM;
+            const double i_long=mass*l_long*l_long;
+            const double i_sag=mass*l_sag*l_sag;
+            const double i_trans=mass*l_trans*l_trans;
+            tensor=Mat3{i_long,0.,0.,0.,i_sag,0.,0.,0.,i_trans};
+        } else {
+            tensor=segment_inertia(mass,vector,radius);
+        }
+        inertial(owner,mass,com,tensor);
         geom(owner,"geom_rider_"+key,"capsule",{{"fromto","0 0 0 "+vec17(vector)},{"size",repr(radius)},
             {"mass","0"},{"contype","0"},{"conaffinity","0"},{"rgba",".35 .45 .6 1"}});
         return owner;

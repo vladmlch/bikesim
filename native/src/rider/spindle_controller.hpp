@@ -78,7 +78,6 @@ struct SpindleConfig {
     // command. nullopt falls back to the capability bound bitwise.
     std::optional<double> delivered_positive_power_budget_w;
     std::optional<double> delivered_joint_power_budget_w;
-    double activation_tau_s = 0.;
     double pedal_torque_ripple = 0.;
     double return_foot_preload_n = 0.;
     double coasting_brake_d_nm_s_rad = 0.;
@@ -278,8 +277,6 @@ public:
     struct State {
         bool enabled = true;
         bool command_enabled = true;
-        std::vector<double> active_state;
-        std::optional<double> activation_time_s;
         // rider_control.py `_coast_hold_nm` — the weld-press servo hold.
         // Python keeps it off the 18-key `state_dict()` wire; it travels on
         // the equilibrium material's flat `state_control_coast_hold_nm`
@@ -386,10 +383,9 @@ private:
     [[nodiscard]] std::vector<double>
     limit_torques(std::span<const double> torques, const mjData *data,
                   std::span<const char> filled = {}) const;
-    // finalize_effort — activation/bounds re-check plus diagnostics.
+    // finalize_effort — bounds re-check plus diagnostics.
     [[nodiscard]] std::vector<double>
-    finalize_effort(mjData *data, std::span<const double> torques,
-                    bool advance, double dt_s, bool steady_state);
+    finalize_effort(mjData *data, std::span<const double> torques);
 
     const mjModel *model_;
     SpindlePose pose_;
@@ -445,8 +441,6 @@ private:
     // entries preserve the oracle's dict insertion order on the wire.
     bool enabled_ = true;
     bool command_enabled_ = true;
-    std::vector<double> active_state_;
-    std::optional<double> activation_time_s_;
     NamedEntries<JointTerms> last_terms_;
     NamedEntries<std::array<double,2>> pd_split_;
     NamedEntries<bool> saturated_ik_{{"front", false}, {"rear", false}};

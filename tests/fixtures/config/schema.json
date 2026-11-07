@@ -1251,12 +1251,6 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.0,
-          "default_factory": null,
-          "name": "activation_tau_s",
-          "type": "<class 'float'>"
-        },
-        {
           "default": null,
           "default_factory": null,
           "name": "active_positive_power_limit_w",

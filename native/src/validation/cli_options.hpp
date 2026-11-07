@@ -20,7 +20,7 @@ public:
             {"--physics-config","physics_profile"},{"--track","track"},{"--mode","mode"},
             {"--backend","backend"},{"--transmission","transmission"},{"--output","output"},
             {"--phase","phase"},{"--dt","dt_s"},{"--timestep","dt_s"},{"--dx","dx_m"},
-            {"--duration","duration_s"},{"--activation-tau","activation_tau_s"},
+            {"--duration","duration_s"},
             {"--jobs","jobs"},{"--repeats","repeats"},{"--cases","cases"},
             {"--scenarios","names"},{"--time-steps","time_steps"},{"--road-steps","road_steps"},
             {"--station-counts","station_counts"},{"--dt-values","dt_values_s"},
@@ -32,7 +32,7 @@ public:
         // envelope. The other fields must be consumed by this exact operation.
         bool allowed=field=="config"||field=="root"||field=="report"||field=="output";
         static const std::map<std::string_view,std::set<std::string_view>> fields{
-            {"rider_replay",{"physics_profile","track","duration_s","dt_s","mode","activation_tau_s"}},
+            {"rider_replay",{"physics_profile","track","duration_s","dt_s","mode"}},
             {"rider_factor_matrix",{"physics_profile"}},
             {"drive_suspension_rig",{}},{"contact_resolution",{}},
             {"fidelity_sweep",{"cases","backend","transmission","include_stations","jobs","time_steps","road_steps","station_counts","physics_profile"}},

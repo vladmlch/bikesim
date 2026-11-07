@@ -420,7 +420,6 @@
       },
       "physics": {
         "articulated": {
-          "activation_tau_s": 0.025,
           "active_positive_power_limit_w": 450.0,
           "arm_reach_fraction": 0.92,
           "balance_dwell_s": 0.5,

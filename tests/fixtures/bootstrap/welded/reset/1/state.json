@@ -779,16 +779,6 @@
     }
   },
   "rider_controller": {
-    "activation_time_s": null,
-    "active_state": {
-      "$array": "bootstrap/welded/reset/1/state.arrays/a015.f64",
-      "dtype": "<f8",
-      "order": "C",
-      "sha256": "3d3334344cc584f3df59eec018c0e7bbd5e21a5bbbd88f6edd6dab5695a9eb9c",
-      "shape": [
-        9
-      ]
-    },
     "allocation_diagnostics": {
       "crank_task_nm": -0.005405130551425278,
       "crank_task_shortfall_nm": 4.527716063264088,

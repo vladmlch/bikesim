@@ -392,7 +392,6 @@ struct ArticulatedConfig {
     std::optional<std::string> joint_envelope_path;
     double joint_envelope_soft_margin_rad = .1;
     double joint_envelope_soft_k_nm_rad = 100.;
-    double activation_tau_s = 0.;
     std::optional<double> active_positive_power_limit_w;
     // Reference seated plant budgets (spec S3).
     double foot_mu = .9;
@@ -863,7 +862,6 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
      .nested2=nullptr},
     REAL(ArticulatedConfig, joint_envelope_soft_margin_rad),
     REAL(ArticulatedConfig, joint_envelope_soft_k_nm_rad),
-    REAL(ArticulatedConfig, activation_tau_s),
     {.name="active_positive_power_limit_w", .type="float | None",
      .kind=FieldKind::OptionalReal,
      .offset=offsetof(ArticulatedConfig, active_positive_power_limit_w), .required=false, .factory="",

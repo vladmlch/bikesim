@@ -3,7 +3,6 @@
 // constrained allocation. Contact reactions remain in RiderContactWriter.
 #include "legacy_controller.hpp"
 #include "force_requests.hpp"
-#include "activation_allocation.hpp"
 #include "support_geometry.hpp"
 #include "../contact/laws.hpp"
 #include "../diag.hpp"
@@ -242,7 +241,7 @@ std::array<double,2> LegacyController::estimate(const mjData& data,std::size_t s
 
 ResponseRequest LegacyController::allocation_request(const mjData& data,std::span<const double> intent,double dt,bool steady,std::optional<double> crank) const {
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) LegacyController is only constructed with an engaged legacy config
-    const auto& m=*c_.model_;const auto& cfg=*c_.config_.legacy;ResponseRequest out;out.config=cfg;out.torque_intent.assign(intent.begin(),intent.end());out.activation_state=c_.active_state_;out.attachments=attachments_;out.rider_dofs=rider_dofs_;out.bike_dofs=bike_dofs_;out.pelvis_body=c_.pelvis_body_;out.crank_dof=c_.crank_spin_dof_;out.rider_mass_kg=c_.rider_mass_;out.dt_s=dt;out.steady_state=steady;out.crank_torque_nm=crank;
+    const auto& m=*c_.model_;const auto& cfg=*c_.config_.legacy;ResponseRequest out;out.config=cfg;out.torque_intent.assign(intent.begin(),intent.end());out.attachments=attachments_;out.rider_dofs=rider_dofs_;out.bike_dofs=bike_dofs_;out.pelvis_body=c_.pelvis_body_;out.crank_dof=c_.crank_spin_dof_;out.rider_mass_kg=c_.rider_mass_;out.dt_s=dt;out.steady_state=steady;out.crank_torque_nm=crank;
     const auto qvel=model_access::readonly_buffer(data.qvel,m.nv,"qvel");
     const auto act_forcelimited=model_access::readonly_buffer(m.actuator_forcelimited,m.nu,"actuator_forcelimited");
     const auto act_forcerange=model_access::readonly_buffer(m.actuator_forcerange,m.nu*2,"actuator_forcerange");
@@ -359,24 +358,21 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     c_.support_diagnostics_.legacy=std::move(support_diagnostics);
     Vector inertia(static_cast<std::size_t>(m.nv));engine::mul_m(&m,&data,inertia.data(),desired_accel.data());Vector requested(nt);
     for(std::size_t i=0;i<nt;++i){const auto&j=c_.joints_[i];posture[i]+=qfrc_bias[static_cast<std::size_t>(j.dof_adr)]+support_force[static_cast<std::size_t>(j.dof_adr)]+inertia[static_cast<std::size_t>(j.dof_adr)];if(j.name.starts_with("rider_hip_"))posture[i]-=.5*pitch;requested[i]=posture[i]+pedaling[i];}
-    const double gain=steady||cfg.activation_tau_s==0.?1.:-std::expm1(-dt/cfg.activation_tau_s);const auto target_torque=steady ? requested : ::spindle::activation_step(c_.active_state_,requested,dt,cfg.activation_tau_s);
     ResponseAllocation allocated;double used_scale=1.;
     const Vector effort_ladder{1.,.5,.25};
     for(double const scale:effort_ladder) {
-        auto wish=target_torque;for(std::size_t i=0;i<nt;++i)wish[i]-=(1.-scale)*gain*pedaling[i];auto request=allocation_request(data,wish,dt,steady,std::nullopt);request.effort_scale=scale;
+        auto wish=requested;for(std::size_t i=0;i<nt;++i)wish[i]-=(1.-scale)*pedaling[i];auto request=allocation_request(data,wish,dt,steady,std::nullopt);request.effort_scale=scale;
         allocated=std::ranges::all_of(attachments_,[](const auto&a){return a.equality_id>=0;})?allocate_response(m,data,request,c_.allocation_memory_):allocate_uncoupled(data,request,support,estimates);used_scale=scale;if(allocated.allocation.feasible)break;
     }
     allocated.effort_scale=used_scale;allocated.qpos.assign(qpos.begin(),qpos.end());allocated.qvel.assign(qvel.begin(),qvel.end());allocated.time_s=data.time;
     c_.allocation_diagnostics_={};c_.allocation_diagnostics_.present=true;c_.allocation_diagnostics_.invalid_controller=!allocated.allocation.feasible;c_.allocation_diagnostics_.solution_excitation_nm=allocated.excitation;c_.allocation_diagnostics_.legacy=allocated;
-    // Final actuator check uses exactly the solved excitation and preserves
-    // latent (pre-clamp) state. An infeasible support fallback stays flagged.
-    if(advance&&!steady&&cfg.activation_tau_s>0.&&c_.activation_time_s_&&data.time<=*c_.activation_time_s_)throw std::invalid_argument("rider activation advances once per timestamp");
-    const bool effort_model=cfg.activation_tau_s>0.||cfg.active_positive_power_limit_w.has_value()||c_.config_.has_strength;
-    const auto latent=effort_model ? (steady ? allocated.excitation : ::spindle::activation_step(c_.active_state_,allocated.excitation,dt,cfg.activation_tau_s)) : allocated.torque;auto active=latent;
+    // Final actuator check uses the solved excitation. An infeasible support fallback stays flagged.
+    const bool effort_model=cfg.active_positive_power_limit_w.has_value()||c_.config_.has_strength;
+    const auto& latent=effort_model ? allocated.excitation : allocated.torque;auto active=latent;
     if(effort_model)for(std::size_t i=0;i<nt;++i)active[i]=std::clamp(active[i],allocated.lower_torque_nm[i],allocated.upper_torque_nm[i]);
     Vector speeds(nt);for(std::size_t i=0;i<nt;++i)speeds[i]=qvel[static_cast<std::size_t>(c_.joints_[i].dof_adr)];if(effort_model&&cfg.active_positive_power_limit_w)active=::spindle::limit_positive_power(active,speeds,*cfg.active_positive_power_limit_w);
     for(std::size_t i=0;i<nt;++i)if(std::abs(active[i]-allocated.torque[i])>1e-7+1e-9*std::abs(allocated.torque[i]))throw std::runtime_error("allocated rider torque is outside final actuator limits");
-    if(advance&&effort_model){c_.active_state_=latent;c_.activation_time_s_=steady||cfg.activation_tau_s==0.?std::nullopt:std::optional<double>(data.time);}else if(!advance)c_.pedal_recovery_=original_recovery;
+    if(!advance)c_.pedal_recovery_=original_recovery;
     c_.last_terms_.clear();c_.effort_diagnostics_={};auto& effort=c_.effort_diagnostics_;effort.present=true;effort.positive_power_limit_w=cfg.active_positive_power_limit_w;effort.observation="incoming_request";
     Vector positive(nt);
     for(std::size_t i=0;i<nt;++i) {

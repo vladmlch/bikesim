@@ -5,6 +5,7 @@
 physics_mode = "physical"
 drive_mode = "articulated_effort"
 timestep_s = 0.00125
+control_period_s = 0.00125
 closure_time_constant_s = 0.0025
 initial_speed_mps = 0.0
 initial_front_brake = 1.0
@@ -118,15 +119,6 @@ cadence_smoothing_tau_s = 0.05
 upshift_slip_limit_mps = 0.5
 
 [articulated]
-# Muscle activation lag: commanded joint torque is filtered once per control
-# tick through a first-order activation model. A real muscle cannot change
-# force on the 1.25 ms physics step; without the lag each 5 ms tick step is a
-# torque impulse that rings the compliant foot/grip/saddle welds, and the
-# weld-velocity work the constraint ledger counts swamps the quiet pedaling
-# the strict reference gates on. 25 ms is a sub-physiological activation
-# constant (measured muscle lags are slower), chosen to put the kick above the
-# weld band without delaying the rider's intent.
-activation_tau_s = 0.025
 balance_floor_kmh = 4.0
 balance_dwell_s = 0.5
 balance_grace_s = 3.0

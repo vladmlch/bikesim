@@ -151,7 +151,7 @@ void install_material(SetupContext& context,Material& state){
     // existing restore completes its own validation/allocation before it
     // writes model rows; every following material commit is no-throw.
     if(context.stepper.has_tire())context.stepper.tire_writer().prepare_state(state.tire_names,state.tire_row);
-    if(state.controller){state.controller->activation_time_s.reset();context.physical.rider_control().validate_state(*state.controller);}
+    if(state.controller)context.physical.rider_control().validate_state(*state.controller);
     context.stepper.mutate([&]{context.stepper.drive().restore(state.drive);});
     if(context.stepper.has_tire())context.stepper.tire_writer().commit_prepared_state();
     if(state.controller)context.physical.rider_control().commit_state(std::move(*state.controller));

@@ -607,8 +607,6 @@ SpindleController::~SpindleController() = default;
 
 void SpindleController::reset_activation() {
     allocation_memory_ = {};
-    active_state_.assign(joints_.size(), 0.);
-    activation_time_s_ = std::nullopt;
     coast_hold_nm_ = 0.;
     effort_diagnostics_ = {};
     sole_goal_diagnostics_.clear();
@@ -990,9 +988,7 @@ SpindleController::limit_torques(std::span<const double> torques,
 
 std::vector<double>
 SpindleController::finalize_effort(mjData *data,
-                                   std::span<const double> torques,
-                                   bool advance, double dt_s,
-                                   bool steady_state) {
+                                   std::span<const double> torques) {
     const std::size_t n = joints_.size();
     const auto qpos = model_access::readonly_buffer(
         data->qpos, model_->nq, "qpos");
@@ -1001,41 +997,23 @@ SpindleController::finalize_effort(mjData *data,
     std::vector<double> speeds(n), target(torques.begin(), torques.end());
     for (std::size_t i = 0; i < n; ++i)
         speeds[i] = qvel[static_cast<std::size_t>(joints_[i].dof_adr)];
-    const bool enabled = config_.activation_tau_s > 0. ||
-                         config_.active_positive_power_limit_w.has_value() ||
+    const bool enabled = config_.active_positive_power_limit_w.has_value() ||
                          config_.has_strength;
     std::vector<double> excitation(target), result(target);
     std::vector<std::string> limited_names;
     if (enabled) {
-        if (advance && !steady_state && config_.activation_tau_s > 0. &&
-            activation_time_s_.has_value() &&
-            data->time <= *activation_time_s_)
-            throw std::invalid_argument(
-                "rider activation advances once per timestamp");
         if (allocation_diagnostics_.present) {
             excitation = allocation_diagnostics_.solution_excitation_nm;
         } else {
             // Standalone callers must still obey bounded excitation.
-            const double gain =
-                steady_state || config_.activation_tau_s == 0.
-                    ? 1.
-                    : -std::expm1(-dt_s / config_.activation_tau_s);
-            for (std::size_t i = 0; i < n; ++i)
-                excitation[i] =
-                    (target[i] - (1. - gain) * active_state_[i]) / gain;
             excitation = spindle::bounded_effort(
                 speeds, excitation, config_.joint_limit_nm,
                 config_.joint_speed_limit_rad_s,
                 config_.joint_power_limit_w);
             excitation = strength_limited(excitation, qpos, qvel).first;
         }
-        const std::vector<double> activated =
-            steady_state || !command_enabled_
-                ? excitation
-                : spindle::activation_step(active_state_, excitation, dt_s,
-                                           config_.activation_tau_s);
-        result = limit_torques(activated, data);
-        limited_names = strength_limited(activated, qpos, qvel).second;
+        result = limit_torques(excitation, data);
+        limited_names = strength_limited(excitation, qpos, qvel).second;
         if (config_.active_positive_power_limit_w.has_value())
             result = spindle::limit_positive_power(
                 result, speeds, *config_.active_positive_power_limit_w);
@@ -1044,13 +1022,6 @@ SpindleController::finalize_effort(mjData *data,
                 throw std::runtime_error(
                     "allocated rider torque is outside final actuator "
                     "limits");
-        if (advance) {
-            active_state_ = result;
-            activation_time_s_ =
-                steady_state || config_.activation_tau_s == 0.
-                    ? std::nullopt
-                    : std::optional<double>(data->time);
-        }
     }
     // rider_effort.py:70-71 — positive power is np.max(...).sum(), i.e.
     // numpy's pairwise reduction over all joints, not a sequential fold.
@@ -1107,7 +1078,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             throw;
         }
     }
-    const double dt = dt_s.value_or(model_->opt.timestep);
     const std::size_t n = joints_.size();
     command_enabled_ = command.enabled && enabled_;
     saturated_ik_.clear();
@@ -1439,12 +1409,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
     }
     const std::vector<double> excitation =
         limit_torques(requested, data, requested_filled);
-    const std::vector<double> activated =
-        steady_state || !command_enabled_
-            ? excitation
-            : spindle::activation_step(active_state_, excitation, dt,
-                                       config_.activation_tau_s);
-    const std::vector<double> final = limit_torques(activated, data);
+    const std::vector<double> &final = excitation;
     last_terms_.clear();
     for (std::size_t i = 0; i < n; ++i) {
         const auto &name = joints_[i].name;
@@ -1483,7 +1448,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                .solution_excitation_nm = excitation,
                                .legacy = std::nullopt};
     const std::vector<double> delivered =
-        finalize_effort(data, final, advance, dt, steady_state);
+        finalize_effort(data, final);
     joint_torques_nm_.clear();
     joint_capacity_nm_.clear();
     NamedEntries<double> out;
@@ -1604,9 +1569,7 @@ SpindleController::State SpindleController::state() const {
     State out;
     out.enabled = enabled_;
     out.command_enabled = command_enabled_;
-    out.active_state = active_state_;
-    out.activation_time_s = activation_time_s_;
-    // The weld-press hold leaves the 18-key wire only through the material
+    // The weld-press hold leaves the wire only through the material
     // channel; populate it so capture/material staging sees the live value.
     if (!legacy_) out.coast_hold_nm = coast_hold_nm_;
     out.pd_split = pd_split_;
@@ -1635,15 +1598,10 @@ void SpindleController::restore(const State &state) {
 }
 
 void SpindleController::validate_state(const State &state) const {
-    if (state.active_state.size() != joints_.size())
-        throw std::invalid_argument(
-            "rider_controller.active_state: incorrect sequence width");
     if (state.allocation_memory && !legacy_)
         throw std::invalid_argument("spindle controller cannot restore legacy allocation state");
     if (!legacy_ && !state.pd_split.empty())
         throw std::invalid_argument("spindle controller carries no PD warm split");
-    for (double const x : state.active_state)
-        if (!std::isfinite(x)) throw std::invalid_argument("rider activation state must be finite");
     for (const auto& [name, split] : state.pd_split) {
         (void)joint_index(name);
         if (!std::isfinite(split[0]) || !std::isfinite(split[1]))
@@ -1666,8 +1624,6 @@ void SpindleController::validate_state(const State &state) const {
 void SpindleController::commit_state(State &&state) noexcept {
     enabled_ = state.enabled;
     command_enabled_ = state.command_enabled;
-    active_state_ = std::move(state.active_state);
-    activation_time_s_ = state.activation_time_s;
     coast_hold_nm_ = state.coast_hold_nm.value_or(0.);
     last_terms_ = std::move(state.last_terms);
     pd_split_ = std::move(state.pd_split);

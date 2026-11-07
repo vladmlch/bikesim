@@ -101,20 +101,6 @@ const bio::Value &member(const bio::Value &value, const char *key) {
     return *found;
 }
 
-// Rewrite one number lexeme inside the decoded rider_controller document
-// (the activation-filter fixture sets activation_tau_s 0.025 -> 0.05).
-void set_lexeme(bio::Value &value, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-                std::string_view lexeme) {
-    auto &object = std::get<bio::Value::Object>(value.data);
-    for (auto &[name, entry] : object)
-        if (name == key) {
-            entry.data = bio::Number{std::string(lexeme)};
-            return;
-        }
-    throw std::runtime_error(std::string("config key not found: ") +
-                             std::string(key));
-}
-
 void set_string(bio::Value &value, std::string_view key, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
                 std::string_view text) {
     auto &object = std::get<bio::Value::Object>(value.data);
@@ -127,7 +113,7 @@ void set_string(bio::Value &value, std::string_view key, // NOLINT(bugprone-easi
                              std::string(key));
 }
 
-Plant make_plant(bool activated = false) {
+Plant make_plant() {
     Plant plant;
     const auto mjb = bt::fixture("spindle/pinned/model.mjb");
     plant.model = mj_loadModel(mjb.c_str(), nullptr);
@@ -136,8 +122,7 @@ Plant make_plant(bool activated = false) {
     bt::require(plant.data != nullptr, "mj_makeData");
     bio::Value const doc =
         bio::parse_json(bt::text(bt::fixture("spindle/pinned/config.json")));
-    bio::Value rider_doc = member(doc, "rider_controller");
-    if (activated) set_lexeme(rider_doc, "activation_tau_s", "0.05");
+    bio::Value const rider_doc = member(doc, "rider_controller");
     plant.controller = std::make_unique<rider::SpindleController>(
         plant.model,
         rider::decode_spindle_pose(member(doc, "pose"), "config.pose"),
@@ -717,27 +702,6 @@ void test_spindle_compute_posture_matches_python() {
     }
 }
 
-// ---- activation-filter fixture ---------------------------------------------
-
-void test_spindle_activation_rejects_repeated_timestamp() {
-    Plant plant = make_plant(true);
-    bt::require(plant.controller->config().activation_tau_s > 0.,
-                "activation fixture carries activation_tau_s > 0");
-    stage(plant, .4, 5.);
-    rider::RiderCommand command;
-    command.mean_crank_torque_nm = 60.;
-    (void)plant.controller->compute(plant.data, command, true, .00125,
-                                    false);
-    bool threw = false;
-    try {
-        (void)plant.controller->compute(plant.data, command, true, .00125,
-                                        false);
-    } catch (const std::exception &) {
-        threw = true;
-    }
-    bt::require(threw, "repeated timestamp must reject");
-}
-
 // ---- initialize / envelope / write ----------------------------------------
 
 void test_spindle_initialize_matches_python() {
@@ -882,12 +846,6 @@ void test_spindle_reset_activation_matches_python() {
     (void)plant.controller->compute(plant.data, command, true, .00125,
                                     false);
     plant.controller->reset_activation();
-    const auto state = plant.controller->state();
-    bt::require(std::ranges::all_of(state.active_state,
-                                    [](double v) { return v == 0.; }),
-                "reset zeroes the activation filter state");
-    bt::require(!state.activation_time_s.has_value(),
-                "reset clears activation_time_s");
     bt::oracle::Node node(
         node_id("test_spindle_reset_activation_matches_python"));
     expect_state_close(node, state_document(*plant.controller),
@@ -1082,7 +1040,6 @@ int main() {
         test_spindle_steady_state_bypasses_activation();
         test_spindle_coasting_command_matches_python();
         test_spindle_compute_posture_matches_python();
-        test_spindle_activation_rejects_repeated_timestamp();
         test_spindle_initialize_matches_python();
         test_spindle_initialize_velocity_matches_python();
         test_spindle_envelope_forces_match_python();

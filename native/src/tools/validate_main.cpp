@@ -18,7 +18,7 @@ void help(){std::cout<<
     "bike-validate run CASE [--config FILE.json|FILE.toml] [--root DIRECTORY] [options]\n"
     "bike-validate MODULE [options]\n\n"
     "Modules retain their Python argument names:\n"
-    "  rider-replay: --physics-config --track --duration --timestep --mode --activation-tau --output\n"
+    "  rider-replay: --physics-config --track --duration --timestep --mode --output\n"
     "  rider-factor-matrix: --physics-config --output\n"
     "  drive-suspension-rig, contact-resolution: --output\n"
     "  fidelity-sweep: --output --cases NAME... --backend --transmission --stations --jobs\n"
@@ -68,7 +68,7 @@ int main(int argc,char** argv){
         Value config{Object{}},overrides{Object{}};std::filesystem::path root=std::filesystem::current_path();std::optional<std::filesystem::path> input,report;
         const std::map<std::string,std::string> strings{{"--physics-config","physics_profile"},{"--track","track"},{"--mode","mode"},
             {"--backend","backend"},{"--transmission","transmission"},{"--output","output"},{"--phase","phase"}};
-        const std::map<std::string,std::string> reals{{"--dt","dt_s"},{"--timestep","dt_s"},{"--dx","dx_m"},{"--duration","duration_s"},{"--activation-tau","activation_tau_s"}};
+        const std::map<std::string,std::string> reals{{"--dt","dt_s"},{"--timestep","dt_s"},{"--dx","dx_m"},{"--duration","duration_s"}};
         const std::map<std::string,std::string> integers{{"--jobs","jobs"},{"--repeats","repeats"}};
         const std::map<std::string,std::string> lists{{"--cases","cases"},{"--scenarios","names"},{"--time-steps","time_steps"},
             {"--road-steps","road_steps"},{"--station-counts","station_counts"},{"--dt-values","dt_values_s"}};

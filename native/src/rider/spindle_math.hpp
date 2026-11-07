@@ -123,11 +123,6 @@ namespace spindle {
 
     // ---- rider_activation.py ------------------------------------------------
     [[nodiscard]] std::vector<double>
-    activation_step(std::span<const double> previous,
-                    std::span<const double> target, double dt_s,
-                    double tau_s);
-
-    [[nodiscard]] std::vector<double>
     limit_positive_power(std::span<const double> torque,
                          std::span<const double> velocity, double limit_w);
 

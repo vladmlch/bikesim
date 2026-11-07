@@ -203,19 +203,12 @@ test_final_torques_obey_strength_power_and_accelerating_speed_limits() {
 }
 
 [[gnu::noinline]] void
-test_optional_activation_is_bounded_and_probes_do_not_advance_state() {
-    // closed_form_rider/optional_activation_is_bounded_and_probes_do_not_advance_state
-    auto plant = rr::pinned_model(
-        "examples/research/viewer_physics_welded.toml",
-        [](rider::SpindleConfig &c) { c.activation_tau_s = .05; });
+test_disabled_command_probe_returns_zero_without_advancing_state() {
+    auto plant = rr::pinned_model("examples/research/viewer_physics_welded.toml");
     auto &c = *plant.controller;
-    const auto before = c.state().active_state;
-    const auto probe = c.compute(plant.data.get(), crank_command(40.),
-                                 /*advance=*/false, .005);
-    bt::require(c.state().active_state == before,
-                "advance=False leaves the activation state untouched");
-    const auto actual = c.compute(plant.data.get(), crank_command(40.),
-                                  /*advance=*/true, .005);
+    mjData *d = plant.data.get();
+    const auto probe = c.compute(d, crank_command(40.), /*advance=*/false, .00125);
+    const auto actual = c.compute(d, crank_command(40.), /*advance=*/true, .00125);
     bt::require(actual.size() == probe.size(),
                 "advance and probe publish the same joint set");
     for (std::size_t i = 0; i < actual.size(); ++i) {
@@ -224,44 +217,11 @@ test_optional_activation_is_bounded_and_probes_do_not_advance_state() {
         bt::require(approx(actual[i].second, probe[i].second),
                     "the committed step reproduces the probe torques");
     }
-    const auto active = c.state().active_state;
-    bt::require(active.size() == c.joints().size(),
-                "activation state spans every joint");
-    for (std::size_t i = 0; i < c.joints().size(); ++i) {
-        const double *command = find(actual, c.joints()[i].name);
-        bt::require(command != nullptr && active[i] == *command,
-                    "active_state equals the delivered torques");
-    }
-    rr::expect_invalid(
-        [&] {
-            (void)c.compute(plant.data.get(), crank_command(40.),
-                            /*advance=*/true, .005);
-        },
-        "once per timestamp");
-}
-
-[[gnu::noinline]] void
-test_disabled_activation_probe_returns_zero_without_advancing_state() {
-    // closed_form_rider/disabled_activation_probe_returns_zero_without_advancing_state
-    auto plant = rr::pinned_model(
-        "examples/research/viewer_physics_welded.toml",
-        [](rider::SpindleConfig &c) { c.activation_tau_s = .05; });
-    auto &c = *plant.controller;
-    mjData *d = plant.data.get();
-    (void)c.compute(d, crank_command(40.), /*advance=*/true, .005);
-    const auto before = c.state().active_state;
     const auto disabled = crank_command(0., /*enabled=*/false);
-    const auto torques =
-        c.compute(d, disabled, /*advance=*/false, .005);
+    const auto torques = c.compute(d, disabled, /*advance=*/false, .00125);
     bt::require(!torques.empty(), "the probe still publishes the joint set");
     for (const auto &[n, v] : torques)
         bt::require(v == 0., "a disabled command probes to zero");
-    bt::require(c.state().active_state == before,
-                "a disabled probe does not advance the filter");
-    d->time += .005;
-    (void)c.compute(d, disabled, /*advance=*/true, .005);
-    for (const double v : c.state().active_state)
-        bt::require(v == 0., "a disabled commit zeroes the activation state");
 }
 
 [[gnu::noinline]] void test_flat_launch_delivers_crank_torque() {
@@ -354,8 +314,7 @@ int main() {
         test_upper_pose_target_accounts_for_pelvis_and_frame_pitch();
         test_native_torso_torque_has_restoring_pelvis_reaction();
         test_final_torques_obey_strength_power_and_accelerating_speed_limits();
-        test_optional_activation_is_bounded_and_probes_do_not_advance_state();
-        test_disabled_activation_probe_returns_zero_without_advancing_state();
+        test_disabled_command_probe_returns_zero_without_advancing_state();
         test_flat_launch_delivers_crank_torque();
         test_runtime_produces_front_load_share_without_changing_external_sensors();
     });

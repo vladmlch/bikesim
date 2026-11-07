@@ -1,7 +1,6 @@
 // Source: sim/ride/rider_response_allocation.py, including guards, task
-// coordinate, activation projection and complete/incomplete mode evidence.
+// coordinate and complete/incomplete mode evidence.
 #include "response_allocation.hpp"
-#include "activation_allocation.hpp"
 #include "support_geometry.hpp"
 #include "spindle_math.hpp"
 #include "../diag.hpp"
@@ -104,13 +103,12 @@ std::pair<Matrix,Vector> support_rows(const Matrix& force,const std::array<doubl
 
 ResponseAllocation allocate_response(const mjModel& model,const mjData& data,const ResponseRequest& request,AllocationMemory& memory) {
     const auto& cfg=request.config;const auto nt=request.actuator_dofs.size();
-    if(nt==0 || request.torque_intent.size()!=nt || request.lower_torque_nm.size()!=nt || request.upper_torque_nm.size()!=nt || request.activation_state.size()!=nt || !d::finite(request.torque_intent) || !d::finite(request.lower_torque_nm) || !d::finite(request.upper_torque_nm) || !d::finite(request.activation_state) || !std::isfinite(request.rider_mass_kg) || request.rider_mass_kg<0. || !std::isfinite(request.dt_s) || request.dt_s<0. || (request.crank_torque_nm && !std::isfinite(*request.crank_torque_nm)))throw std::invalid_argument("response allocation request");
-    const bool activated=cfg.activation_tau_s>0. && !request.steady_state;
+    if(nt==0 || request.torque_intent.size()!=nt || request.lower_torque_nm.size()!=nt || request.upper_torque_nm.size()!=nt || !d::finite(request.torque_intent) || !d::finite(request.lower_torque_nm) || !d::finite(request.upper_torque_nm) || !std::isfinite(request.rider_mass_kg) || request.rider_mass_kg<0. || !std::isfinite(request.dt_s) || request.dt_s<0. || (request.crank_torque_nm && !std::isfinite(*request.crank_torque_nm)))throw std::invalid_argument("response allocation request");
     for(std::size_t i=0;i<nt;++i)
         if(request.lower_torque_nm[i]>request.upper_torque_nm[i])
             throw std::invalid_argument("empty rider actuator bounds");
     const auto constant=2*nt,base=constant+1;
-    std::size_t nz=base+(activated?nt:0);std::optional<std::size_t> task;
+    std::size_t nz=base;std::optional<std::size_t> task;
     if(request.crank_torque_nm){task=nz;++nz;}
     const auto qvel=model_access::readonly_buffer(data.qvel,model.nv,"qvel");
     Vector speed(nt),lower(nz,-inf),upper(nz,inf),target(nz,0.),scales(nz,1.);
@@ -123,26 +121,10 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
     lower[constant]=upper[constant]=target[constant]=1.;
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) a crank task is only emitted when crank torque was requested
     if(task)target[task.value()]=request.crank_torque_nm.value()/crank_task_scale_nm;
-    std::optional<ActivationLaw> activation;std::vector<std::size_t> ti(nt),ei;
-    std::ranges::iota(ti,0U);
-    if(activated) {
-        ei.resize(nt);std::ranges::iota(ei,base);
-        activation.emplace(request.activation_state,speed,request.lower_torque_nm,request.upper_torque_nm,request.dt_s,cfg.activation_tau_s,cfg.active_positive_power_limit_w);
-        Vector excitation(nt);
-        for(std::size_t i=0;i<nt;++i) {
-            lower[ei[i]]=lower[i];upper[ei[i]]=upper[i];scales[ei[i]]=50.;
-            const double gain=activation->gain();
-            // dt=0 is a constant activation law; excitation is immaterial
-            // but remains finite/in-envelope rather than dividing by zero.
-            const double desired=gain==0.?request.activation_state[i]:(request.torque_intent[i]-(1.-gain)*request.activation_state[i])/gain;
-            excitation[i]=std::clamp(desired,request.lower_torque_nm[i],request.upper_torque_nm[i]);target[ei[i]]=excitation[i]/50.;
-        }
-        const auto delivered=activation->delivered(excitation);for(std::size_t i=0;i<nt;++i)target[i]=delivered[i]/50.;
-    }
     for(std::size_t i=0;i<nz;++i)target[i]=std::clamp(target[i],lower[i],upper[i]);
     ConstraintDynamics kernel(model,data,request.actuator_dofs);
     Vector fallback=target;
-    if(!activation && cfg.active_positive_power_limit_w) {
+    if(cfg.active_positive_power_limit_w) {
         Vector torque(nt);for(std::size_t i=0;i<nt;++i)torque[i]=fallback[i]*50.;
         torque=::spindle::limit_positive_power(torque,speed,*cfg.active_positive_power_limit_w);
         for(std::size_t i=0;i<nt;++i)fallback[i]=torque[i]/50.;
@@ -211,7 +193,6 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
         if(base_empty)++pruned;
         auto branch_result=select_allocation_branch(target,[&](const std::array<bool,2>& branch,const std::optional<Vector>& x0) {
             auto problem=p;problem.initial=x0;
-            if(activation)problem.extra.push_back(activation->constraint(ti,ei,scales));
             for(std::size_t k=0;k<request.attachments.size();++k)if(request.attachments[k].name.starts_with("grip")) {
                 const auto pelvis=row3(data.xpos,request.pelvis_body,static_cast<int>(model.nbody));std::array<double,2> direction{pelvis[0]-points[k][0],pelvis[2]-points[k][2]};
                 const double length=d::norm(direction);if(length==0.)throw std::invalid_argument("allocation grip direction is undefined");for(double&v:direction)v/=length;
@@ -233,9 +214,7 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
                     ++pruned;return Allocation{.solution=fallback,.feasible=false,.violation=allocation_residual(problem,fallback)};
                 }
             }
-            auto result=allocate(problem);
-            if(activation){result.solution=activation->project(result.solution,ti,ei,scales);result.violation=allocation_residual(problem,result.solution);result.feasible=result.violation<=1e-7;}
-            return result;
+            return allocate(problem);
         },staged_memory);
         payload.branch=branch_result.branch;payloads.push_back(std::move(payload));
         return {.allocation=std::move(branch_result.allocation),.payload_index=payloads.size()-1};
@@ -250,8 +229,7 @@ ResponseAllocation allocate_response(const mjModel& model,const mjData& data,con
     out.acceleration=d::add(result.response.acceleration_offset,d::multiply(result.response.acceleration_matrix,out.torque));
     out.constraint_forces=d::add(result.response.force_offset,d::multiply(result.response.force_matrix,out.torque));
     for(const auto& force:payload.forces){const auto f=d::multiply(force,result.allocation.solution);out.wrenches.insert(out.wrenches.end(),f.begin(),f.begin()+2);out.moments.push_back(f[2]);}
-    out.excitation=out.torque;if(activation)for(std::size_t i=0;i<nt;++i)out.excitation[i]=result.allocation.solution[ei[i]]*50.;
-    out.activation_state=activation?activation->latent(out.excitation):out.torque;
+    out.excitation=out.torque;
     if(task)out.predicted_crank_torque_nm=result.allocation.solution[*task]*crank_task_scale_nm;
     out.modes_tried=result.modes_tried;out.mode_search_complete=result.complete;out.linear_mode_rejections=pruned;
     out.lower_torque_nm=request.lower_torque_nm;out.upper_torque_nm=request.upper_torque_nm;out.saddle_normal_lower_bound_n=cfg.saddle_reserve_weight_fraction*weight;

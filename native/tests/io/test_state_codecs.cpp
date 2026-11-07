@@ -318,7 +318,6 @@ void checks_spindle() {
     const rider::SpindleConfig config =
         rider::decode_spindle_config(config_doc);
     bt::require(config.joint_kp_nm_rad == 600. &&
-                    config.activation_tau_s == 0. &&
                     config.active_positive_power_limit_w.has_value() &&
                     *config.active_positive_power_limit_w == 450.,
                 "spindle config decodes modeled scalars");
@@ -337,8 +336,6 @@ void checks_spindle() {
         rider::decode_spindle_state(state_input, "state.rider_controller");
     bt::require(spindle_state.enabled && spindle_state.command_enabled,
                 "spindle state flags decode");
-    bt::require(spindle_state.active_state.size() == 9,
-                "the welded spindle active_state carries 9 values");
     bt::require(spindle_state.pedal_recovery.size() == 2 &&
                     spindle_state.last_terms.size() == 9,
                 "pedal recovery and joint terms decode");

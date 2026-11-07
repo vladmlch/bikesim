@@ -323,30 +323,6 @@ namespace spindle {
         return result;
     }
 
-    std::vector<double> activation_step(std::span<const double> previous,
-                                        std::span<const double> target,
-                                        double dt_s, double tau_s) {
-        if (previous.size() != target.size())
-            throw std::invalid_argument("invalid activation state");
-        for (const double v : previous)
-            validation::finite(v, "invalid activation state");
-        for (const double v : target)
-            validation::finite(v, "invalid activation state");
-        validation::finite(dt_s, "invalid activation state");
-        validation::finite(tau_s, "invalid activation state");
-        if (dt_s <= 0 || tau_s < 0)
-            throw std::invalid_argument("invalid activation time constants");
-        std::vector<double> out(target.size());
-        if (tau_s == 0) {
-            std::ranges::copy(target, out.begin());
-            return out;
-        }
-        const double decay = std::exp(-dt_s / tau_s);
-        for (std::size_t i = 0; i < out.size(); ++i)
-            out[i] = target[i] + (previous[i] - target[i]) * decay;
-        return out;
-    }
-
     std::vector<double> limit_positive_power(std::span<const double> torque,
                                              std::span<const double> velocity,
                                              double limit_w) {

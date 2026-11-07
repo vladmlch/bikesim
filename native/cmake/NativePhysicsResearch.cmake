@@ -18,7 +18,6 @@ function(bike_add_physics_research native_dir core_target)
     "${native_dir}/src/rider/allocation.cpp"
     "${native_dir}/src/rider/constraint_dynamics.cpp"
     "${native_dir}/src/rider/mode_search.cpp"
-    "${native_dir}/src/rider/activation_allocation.cpp"
     "${native_dir}/src/rider/response_allocation.cpp"
     "${native_dir}/src/rider/response_codec.cpp"
     "${native_dir}/src/rider/legacy_allocation.cpp"

@@ -231,7 +231,6 @@ cfg::SimulationPhysicsConfig welded_profile() {
     shifting.cadence_smoothing_tau_s = 0.05;
     shifting.upshift_slip_limit_mps = 0.5;
     auto& articulated = c.articulated;
-    articulated.activation_tau_s = 0.025;
     articulated.balance_floor_kmh = 4.0;
     articulated.balance_dwell_s = 0.5;
     articulated.balance_grace_s = 3.0;
@@ -726,9 +725,10 @@ void test_schema() {
     // rotor freewheel was removed 2026-11-05).
     bt::require(io::as_array(drive, "fields.drive.fields").size() == 15,
                 "drive field count");
-    // 67 = 69 minus leg_track_damping_nms_rad (no joint damping in any
-    // form) and coupled_task_control (removed with its welded-rider mode).
-    bt::require(fields_named(fields[9], "articulated").size() == 67,
+    // 66 = 69 minus leg_track_damping_nms_rad (no joint damping in any
+    // form), coupled_task_control (removed with its welded-rider mode),
+    // and activation_tau_s (the 25 ms activation filter was removed 2026-11-07).
+    bt::require(fields_named(fields[9], "articulated").size() == 66,
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 19,
                 "seated_climb field count");
@@ -1107,9 +1107,8 @@ void test_resolved_profiles() {
                       c.tires.distributed.station_count = 128;
                       // The distributed TOML is byte-mirrored from the
                       // shipped profile too, but unlike the welded profile
-                      // it does not supply the activation lag or the F1
-                      // delivered/weld envelope fields — reset to defaults.
-                      c.articulated.activation_tau_s = 0.0;
+                      // it does not supply the F1 delivered/weld envelope
+                      // fields — reset to defaults.
                       c.articulated.delivered_positive_power_budget_w =
                           std::nullopt;
                       c.articulated.delivered_joint_power_budget_w =
@@ -1135,9 +1134,8 @@ void test_resolved_profiles() {
                           bt::fixture("config/poses/savage_pneumatic.npz")
                               .string();
                       // Pneumatic profile likewise does not supply the
-                      // welded-only activation lag or F1 delivered/weld
-                      // envelope fields — reset to defaults.
-                      c.articulated.activation_tau_s = 0.0;
+                      // welded-only F1 delivered/weld envelope fields —
+                      // reset to defaults.
                       c.articulated.delivered_positive_power_budget_w =
                           std::nullopt;
                       c.articulated.delivered_joint_power_budget_w =

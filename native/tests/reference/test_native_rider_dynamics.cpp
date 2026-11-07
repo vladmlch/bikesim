@@ -13,7 +13,6 @@
 #include "model_access.hpp"
 #include "numerics/dense.hpp"
 #include "numerics/linear_feasibility.hpp"
-#include "rider/activation_allocation.hpp"
 #include "rider/attachment_wrench.hpp"
 #include "rider/constraint_dynamics.hpp"
 #include "rider/equality_reactions.hpp"
@@ -343,7 +342,6 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
     request.torque_intent = {10.};
     request.lower_torque_nm = {-50.};
     request.upper_torque_nm = {50.};
-    request.activation_state = {0.};
     request.attachments = {weld_front_attachment(*rig.model)};
     request.pelvis_body = mj_name2id(rig.model.get(), mjOBJ_BODY, "rider");
     request.rider_mass_kg = 1.;
@@ -358,118 +356,6 @@ rider::AllocationAttachment weld_front_attachment(const mjModel &model) {
                 "the delivered torque keeps the feasible wish");
     bt::require(approx(result.power[0], result.torque[0], 0., 1e-7),
                 "the solved power is torque times the unit speed");
-}
-
-[[gnu::noinline]] void test_actual_allocation_cannot_jump_outside_bounded_activation_reach() {
-    // rider_dynamics/actual_allocation_cannot_jump_outside_bounded_activation_reach
-    for (const double previous : {0., 35.}) {
-        bt::ModelFixture rig(
-            "<mujoco><option gravity=\"0 0 0\" timestep=\".0005\"/>"
-            "<worldbody><body name=\"bike\"><joint type=\"slide\" axis=\"1 0 0\"/><joint type=\"slide\" axis=\"0 0 1\"/>"
-            "  <joint type=\"hinge\" axis=\"0 1 0\"/><inertial mass=\"1000\" pos=\"0 0 0\" diaginertia=\"1000 1000 1000\"/>"
-            "  <geom name=\"platform\" type=\"box\" size=\".05 .025 .01\" contype=\"0\" conaffinity=\"0\"/></body>"
-            "<body name=\"rider\"><joint type=\"slide\" axis=\"1 0 0\"/><joint type=\"slide\" axis=\"0 0 1\"/>"
-            "  <joint name=\"muscle\" type=\"hinge\" axis=\"0 1 0\"/><inertial mass=\"1\" pos=\"0 0 0\" diaginertia=\"1 1 1\"/>"
-            "  <site name=\"sole\"/></body></worldbody><equality><weld body1=\"rider\" body2=\"bike\"/></equality>"
-            "<actuator><motor joint=\"muscle\" gear=\"1\" forcelimited=\"true\" forcerange=\"-50 50\"/></actuator></mujoco>");
-        const auto applied = model_access::mutable_buffer(
-            rig.data->qfrc_applied, rig.model->nv, "qfrc_applied");
-        applied[4] = -100.;
-        applied[5] = -35.;
-        engine::forward(rig.model.get(), rig.data.get());
-        bike::configuration::ArticulatedConfig config;
-        config.active_positive_power_limit_w = 450.;
-        config.activation_tau_s = .04;
-        const Vector before{previous};
-        const Vector wished = ::spindle::activation_step(before, Vector{50.},
-                                                         .005, .04);
-        rider::ResponseRequest request;
-        request.config = config;
-        request.actuator_dofs = {5};
-        request.rider_dofs = {3, 4, 5};
-        request.bike_dofs = {0, 1, 2};
-        request.torque_intent = wished;
-        request.lower_torque_nm = {-50.};
-        request.upper_torque_nm = {50.};
-        request.activation_state = before;
-        request.attachments = {weld_front_attachment(*rig.model)};
-        request.pelvis_body = mj_name2id(rig.model.get(), mjOBJ_BODY, "rider");
-        request.rider_mass_kg = 1.;
-        request.dt_s = .005;
-        rider::AllocationMemory memory;
-        const auto result = rider::allocate_response(*rig.model, *rig.data,
-                                                     request, memory);
-        if (previous == 0.) {
-            bt::require(!result.allocation.feasible,
-                        "a cold activation state cannot reach the wish");
-            bt::require(std::abs(result.torque[0]) <=
-                            50. * (1. - std::exp(-.005 / .04)) + 1e-7,
-                        "the allocated torque stays inside one activation "
-                        "step's reach");
-        } else {
-            bt::require(result.allocation.feasible,
-                        "a primed activation state reaches the wish");
-            bt::require(result.torque[0] > 30.,
-                        "the delivered torque reflects the primed state");
-        }
-        bt::require(std::abs(result.excitation[0]) <= 50.,
-                    "the solved excitation keeps the joint bound");
-        const Vector step = ::spindle::activation_step(
-            before, result.excitation, .005, .04);
-        allclose(result.torque, step, 0., 1e-7,
-                 "delivered torque is one activation step from state");
-        // finalize_effort delivers the allocated torque and commits exactly
-        // that one activation step into the controller's state.
-        bt::require(approx(step[0], result.torque[0], 0., 1e-9),
-                    "finalize_effort delivers the allocated torque");
-        bt::require(approx(result.activation_state[0], step[0], 0., 1e-9),
-                    "the committed state is exactly one activation step");
-        model_access::mutable_buffer(rig.data->ctrl, rig.model->nu,
-                                     "ctrl")[0] = step[0];
-        engine::forward(rig.model.get(), rig.data.get());
-        const auto qacc = model_access::readonly_buffer(
-            rig.data->qacc, rig.model->nv, "qacc");
-        const Vector solved_qacc{qacc[3], qacc[4], qacc[5]};
-        allclose(solved_qacc, result.rider_acceleration, 0., 1e-8,
-                 "the forward solve reproduces the allocated acceleration");
-    }
-}
-
-[[gnu::noinline]] void test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps() {
-    // rider_dynamics/activation_projection_and_jacobian_include_joint_and_whole_body_clamps
-    {
-      rider::ActivationLaw const clamped({100., 100.}, {10., 10.}, {-40., -40.},
-                                         {40., 40.}, .005, .04, 450.);
-      const auto delivered = clamped.delivered(Vector{40., 40.});
-      allclose(delivered, Vector{22.5, 22.5}, 1e-7, 0.,
-               "whole-body clamped delivery");
-      const auto latent = clamped.latent(Vector{40., 40.});
-      bt::require(std::ranges::all_of(latent, [](double v) { return v > 40.; }),
-                  "the latent excitation stays above the clamp");
-    }
-    {
-      rider::ActivationLaw const law({20., 20.}, {20., 10.}, {-50., -50.},
-                                     {50., 50.}, .005, .04, 450.);
-      const Vector excitation{10., 40.};
-      const double epsilon = 1e-4;
-      const auto analytic = law.derivative(excitation);
-      for (std::size_t i = 0; i < 2; ++i) {
-        auto plus = excitation, minus = excitation;
-        plus[i] += epsilon;
-        minus[i] -= epsilon;
-        const auto forward = law.delivered(plus);
-        const auto backward = law.delivered(minus);
-        for (std::size_t r = 0; r < forward.size(); ++r)
-          bt::require(approx(analytic.values[r * analytic.cols + i],
-                             (forward[r] - backward[r]) / (2. * epsilon), 0.,
-                             1e-8),
-                      "the activation Jacobian matches central differences");
-      }
-        const auto delivered = law.delivered(excitation);
-        bt::require(approx(d::dot(delivered, Vector{20., 10.}), 450.,
-                           1e-6, 1e-12),
-                    "the delivered activation saturates the power budget");
-    }
 }
 
 [[gnu::noinline]] void test_linear_mode_rejection_respects_the_existing_feasibility_tolerance() {
@@ -537,8 +423,6 @@ int main() {
         test_allocation_crosses_from_infeasible_sliding_wish_to_valid_sticking_mode();
         test_predicted_weld_wrench_includes_the_actual_support_moment();
         test_feasible_ten_watt_wish_is_not_suppressed_by_mixing_watts_and_scaled_torque();
-        test_actual_allocation_cannot_jump_outside_bounded_activation_reach();
-        test_activation_projection_and_jacobian_include_joint_and_whole_body_clamps();
         test_linear_mode_rejection_respects_the_existing_feasibility_tolerance();
         test_grip_branch_uses_the_fixed_bar_anchor_when_the_soft_hand_moves();
     });

@@ -779,16 +779,6 @@
     }
   },
   "rider_controller": {
-    "activation_time_s": null,
-    "active_state": {
-      "$array": "ride/state.arrays/a015.f64",
-      "dtype": "<f8",
-      "order": "C",
-      "sha256": "dbe0dc4a22c2474f4eb6dd50abb15b675d7165e99050ccf208fc06f7bbfd1ff6",
-      "shape": [
-        9
-      ]
-    },
     "allocation_diagnostics": {
       "crank_task_nm": -5.2946027007241486e-05,
       "crank_task_shortfall_nm": 4.541426125345684,

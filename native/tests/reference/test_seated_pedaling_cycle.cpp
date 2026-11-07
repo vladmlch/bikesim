@@ -631,6 +631,123 @@ void test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue
                 "through verbatim");
 }
 
+CycleEnv make_strict_ride_env(std::string_view track_rel, double duration_s,
+                              double initial_speed_mps) {
+    auto owner = std::make_unique<research::ResearchRequest>();
+    auto &request = *owner;
+    request.setup.model.physics = cfg::load_physics(
+        repo_file("examples/research/viewer_physics_welded.toml"));
+    request.setup.model.physics->initial_speed_mps = initial_speed_mps;
+    request.setup.model.mode = "ride";
+    request.setup.model.crank_joint = true;
+    request.setup.model.rider =
+        bike::model::rider_from_args("articulated_planar");
+    request.setup.track =
+        bike::terrain::load_track(repo_file(track_rel));
+    request.experiment.duration_s = duration_s;
+    request.experiment.record_decimation = 1;
+    request.experiment.stop_on_model_violation = true;
+    request.sensors = research::SensorConfig{};
+    request.sensors.sample_period_s = .005;
+    const auto articulated = request.setup.model.physics->articulated;
+    const auto prepared = research::prepare_environment(std::move(owner));
+    auto bootstrap = std::make_unique<runtime::RuntimeBootstrap>(
+        std::move(prepared->bootstrap.ride));
+    CycleEnv env;
+    env.period = prepared->bootstrap.config.control_steps;
+    env.max_steps = prepared->bootstrap.config.max_steps;
+    env.budget = articulated.attachment_budget();
+    env.delivered_positive_budget_w =
+        articulated.delivered_positive_budget_w().value_or(750.);
+    env.runtime =
+        std::make_unique<runtime::NativeRideRuntime>(std::move(*bootstrap));
+    bike::validation::RuntimeRigAccess::inspect(
+        *env.runtime, [&](const Stepper &,
+                          const runtime::PhysicalStep &physical) {
+            const auto &controller = physical.rider_control();
+            env.crank_qpos = controller.crank_spin_qpos();
+            env.crank_dof = controller.crank_spin_dof();
+        });
+    return env;
+}
+
+void assert_strict_ride_without_saddle_pull(
+    CycleEnv &env, const runtime::RideControl &control,
+    std::string_view label) {
+    while (!env.runtime->snapshot().outcome.has_value() &&
+           env.runtime->snapshot().step < env.max_steps) {
+        const auto result = env.runtime->advance(
+            env.runtime->snapshot().step + env.period, control, 0., 0.,
+            std::nullopt);
+        if (result.reason == "outcome") break;
+    }
+    const auto snap = env.runtime->snapshot();
+    bt::require(!snap.first_failure.has_value(),
+                std::format("{}: completes in strict mode without model violation",
+                            label)
+                    .c_str());
+    bt::require(snap.step == env.max_steps,
+                std::format("{}: completes full strict horizon (step {} vs max_steps {})",
+                            label, snap.step, env.max_steps)
+                    .c_str());
+    const auto &rows = intervals_of(*env.runtime);
+    bt::require(!rows.empty(), "strict ride recorded intervals");
+    double min_saddle_support_n = std::numeric_limits<double>::infinity();
+    for (const auto &row : rows) {
+        const auto &welds =
+            sw::object(sw::required(row->channels, "rider_welds"));
+        min_saddle_support_n = std::min(
+            min_saddle_support_n,
+            sw::number(sw::required(welds, "saddle_support_n")));
+    }
+    std::cerr << std::format(
+        "[strict {}] steps={}/{}, min_saddle_support_n={:+.2f} N\n",
+        label, snap.step, env.max_steps, min_saddle_support_n);
+    bt::require(min_saddle_support_n >= 0.,
+                std::format("{}: saddle never pulls down (min_saddle_support_n={:+.2f} N >= 0 N)",
+                            label, min_saddle_support_n)
+                    .c_str());
+}
+
+void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
+    for (const std::string_view rel :
+         {"examples/research/viewer_physics_welded.toml",
+          "examples/research/viewer_physics_pneumatic.toml",
+          "examples/research/viewer_physics_distributed.toml"}) {
+        const auto physics = cfg::load_physics(repo_file(rel));
+        bt::require(
+            std::abs(physics.control_period_s - .00125) < 1e-12,
+            std::format("{}: control_period_s is 0.00125 (got {:.6f})",
+                        rel, physics.control_period_s)
+                .c_str());
+    }
+    {
+        auto flat = make_strict_ride_env("tests/fixtures/tracks/flat.toml",
+                                         /*duration_s=*/6.,
+                                         /*initial_speed_mps=*/0.);
+        assert_strict_ride_without_saddle_pull(flat, runtime::RideControl{},
+                                               "flat");
+    }
+    {
+        auto climb = make_strict_ride_env(
+            "tests/fixtures/tracks/climb_15pct.toml", /*duration_s=*/25.,
+            /*initial_speed_mps=*/0.);
+        assert_strict_ride_without_saddle_pull(climb, runtime::RideControl{},
+                                               "climb_15pct");
+    }
+    {
+        auto steady90 = make_strict_ride_env("tests/fixtures/tracks/flat.toml",
+                                             /*duration_s=*/8.,
+                                             /*initial_speed_mps=*/4.);
+        const runtime::RideControl control{.motor_torque_nm = std::nullopt,
+                                           .motor_limit_nm = std::nullopt,
+                                           .human_torque_nm = 24.,
+                                           .crank_target_rate_rad_s = std::nullopt,
+                                           .posture = std::nullopt};
+        assert_strict_ride_without_saddle_pull(steady90, control, "steady90");
+    }
+}
+
 } // namespace
 
 int main() {
@@ -645,5 +762,6 @@ int main() {
         test_free_coast_is_an_intent_not_a_crank_lock();
         test_clutch_engagement_is_not_a_loss();
         test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue();
+        test_every_step_control_profiles_complete_strict_without_saddle_pull();
     });
 }

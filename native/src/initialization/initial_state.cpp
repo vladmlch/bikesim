@@ -126,12 +126,6 @@ void stage_drive_material(const SetupContext& context,const bio::Value::Object& 
     for(const auto& entry:{std::pair{"ideal_boundary",&drive->ideal_hub},std::pair{"clutch_boundary",&drive->clutch}}){const auto boundary=optional_real(field(p,entry.first),entry.first);if(boundary.has_value()!=entry.second->has_value())throw std::invalid_argument("initial transmission topology differs");if(boundary){(*entry.second)->boundary=boundary;(*entry.second)->range[1]=*boundary;}} // NOLINT(bugprone-unchecked-optional-access) has_value() parity with boundary was enforced two lines up
     put_array(material,"state_native_drive",bio::string_array(std::array<std::string,1>{bio::recording_json(drivetrain::encode_drive_snapshot(*drive))},{}));
 }
-void stage_controller_material(const SetupContext& context,const bio::Value::Object& p,StateFile& material){
-    if(!context.physical.rider_present())return;
-    auto controller=std::make_unique<::rider::SpindleController::State>(context.physical.rider_control().state());
-    const auto active=vector(field(p,"active_state"),"active_state",controller->active_state.size());controller->active_state=active;controller->activation_time_s.reset();
-    put_array(material,"state_native_rider_controller",bio::string_array(std::array<std::string,1>{bio::recording_json(::rider::encode_spindle_state(*controller))},{}));
-}
 } // namespace
 
 PhysicalInitialState::PhysicalInitialState(std::string json):payload_json_(std::move(json)){
@@ -151,10 +145,9 @@ PhysicalInitialState PhysicalInitialState::capture(const SetupContext& context){
     const auto state=capture_state(context,context.equilibrium->steps,context.equilibrium->residual_qacc);const auto drive=context.stepper.drive().state();
     bio::Value angles;if(drive.angles)angles=numbers(std::span{drive.angles->values}.first(drive.angles->count));
     bio::Value anchors;if(context.stepper.has_rider_contacts()){bio::Value::Object entries;const auto& rider_state=context.stepper.rider_contacts().state();for(std::size_t side=0;side<2;++side){const auto& anchor=rider_state.grip_anchor_local[side];entries.emplace_back(std::string(writers::kSideNames[side]),anchor?numbers(*anchor):bio::Value{});}anchors=bio::Value{std::move(entries)};}
-    const bio::Value active=context.physical.rider_present()?numbers(context.physical.rider_control().state().active_state):bio::Value{};
     bio::Value::Object p{{"schema_version",integer(2)},{"contract_sha256",string(contract(context))},{"qpos",numbers(context.stepper.qpos())},{"qvel",numbers(context.stepper.qvel())},{"qacc_warmstart",numbers(std::views::counted(d->qacc_warmstart,m->nv))},{"road_x",numbers(road_x)},{"road_z",numbers(road_z)},{"material",material_document(state)},{"equilibrium",equilibrium_value(*context.equilibrium)},
         {"drive",bio::Value{bio::Value::Object{{"angles",std::move(angles)}}}},
-        {"ideal_boundary",drive.ideal_hub?optional(drive.ideal_hub->boundary):bio::Value{}},{"clutch_boundary",drive.clutch?optional(drive.clutch->boundary):bio::Value{}},{"grip_anchor_local",std::move(anchors)},{"active_state",active},{"source_timestep_s",real(m->opt.timestep)},{"source_sha256",string(context.source_identity)}};
+        {"ideal_boundary",drive.ideal_hub?optional(drive.ideal_hub->boundary):bio::Value{}},{"clutch_boundary",drive.clutch?optional(drive.clutch->boundary):bio::Value{}},{"grip_anchor_local",std::move(anchors)},{"source_timestep_s",real(m->opt.timestep)},{"source_sha256",string(context.source_identity)}};
     return PhysicalInitialState(detail::source_json(bio::Value{std::move(p)}));
 }
 
@@ -162,7 +155,6 @@ void PhysicalInitialState::restore(SetupContext& context)const{
     auto const value=payload();const auto& p=bio::as_object(value,"initial state");validated(context,p);require_initializing(context);
     StateFile material=material_state(p);
     stage_drive_material(context,p,material);
-    stage_controller_material(context,p,material);
     std::optional<std::array<std::optional<::rider::Vec3>,2>> anchors;
     if(context.stepper.has_rider_contacts()&&!context.stepper.rider_contacts().welded_grip()){
         anchors.emplace();const auto& root=bio::as_object(field(p,"grip_anchor_local"),"grip_anchor_local");

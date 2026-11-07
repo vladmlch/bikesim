@@ -25,7 +25,7 @@ ResponseAllocation decode_response_allocation(const Value& value,std::string_vie
     const auto* object=std::get_if<Value::Object>(&value.data);if(!object)throw std::invalid_argument(std::string(path)+": expected dict");const auto&o=*object;
     static const std::set<std::string_view> allowed{
         "invalid_controller","feasible","violation","grip_branch","effort_scale","crank_torque_target_nm","solution_crank_torque_nm","saddle_normal_lower_bound_n",
-        "solution_tau","solution_qddot","solution_base_qacc","solution_power","solution_wrenches","solution_moments","solution_constraint_forces","solution_excitation_nm","solution_activation_state_nm","solution_active_lower_nm","solution_active_upper_nm",
+        "solution_tau","solution_qddot","solution_base_qacc","solution_power","solution_wrenches","solution_moments","solution_constraint_forces","solution_excitation_nm","solution_active_lower_nm","solution_active_upper_nm",
         "dynamics_model","constraint_modes_tried","constraint_mode_search_complete","linear_mode_rejections","grip_radius_guard_fraction","allocation_force_guard_n","allocation_moment_guard_nm","solution_qpos","solution_qvel","solution_time_s","numeric_identity"};
     for(const auto&[key,item]:o){(void)item;if(!allowed.contains(key))throw std::invalid_argument(std::string(path)+"."+key+": unknown key");}
     const auto get=[&](std::string_view key)->const Value&{return member(o,key,path);};
@@ -39,8 +39,8 @@ ResponseAllocation decode_response_allocation(const Value& value,std::string_vie
     }
     const auto*b=std::get_if<Value::Array>(&get("grip_branch").data);if(!b||b->size()!=2)throw std::invalid_argument(std::string(path)+": grip branch width");out.branch={boolean((*b)[0],path),boolean((*b)[1],path)};
     out.effort_scale=number(get("effort_scale"),path);out.saddle_normal_lower_bound_n=number(get("saddle_normal_lower_bound_n"),path);out.predicted_crank_torque_nm=maybe("solution_crank_torque_nm");out.crank_torque_target_nm=maybe("crank_torque_target_nm");
-    out.torque=vector(get("solution_tau"),path);out.rider_acceleration=vector(get("solution_qddot"),path);out.base_acceleration=vector(get("solution_base_qacc"),path);out.power=vector(get("solution_power"),path);out.wrenches=vector(get("solution_wrenches"),path);out.excitation=vector(get("solution_excitation_nm"),path);out.activation_state=vector(get("solution_activation_state_nm"),path);out.lower_torque_nm=vector(get("solution_active_lower_nm"),path);out.upper_torque_nm=vector(get("solution_active_upper_nm"),path);
-    for(const auto*v:{&out.power,&out.excitation,&out.activation_state,&out.lower_torque_nm,&out.upper_torque_nm})if(v->size()!=out.torque.size())throw std::invalid_argument(std::string(path)+": actuator vector width mismatch");
+    out.torque=vector(get("solution_tau"),path);out.rider_acceleration=vector(get("solution_qddot"),path);out.base_acceleration=vector(get("solution_base_qacc"),path);out.power=vector(get("solution_power"),path);out.wrenches=vector(get("solution_wrenches"),path);out.excitation=vector(get("solution_excitation_nm"),path);out.lower_torque_nm=vector(get("solution_active_lower_nm"),path);out.upper_torque_nm=vector(get("solution_active_upper_nm"),path);
+    for(const auto*v:{&out.power,&out.excitation,&out.lower_torque_nm,&out.upper_torque_nm})if(v->size()!=out.torque.size())throw std::invalid_argument(std::string(path)+": actuator vector width mismatch");
     for(std::size_t i=0;i<out.torque.size();++i)if(out.lower_torque_nm[i]>out.upper_torque_nm[i])throw std::invalid_argument(std::string(path)+": empty actuator bounds");
     if(const auto*v=io::find_member(o,"solution_moments"))out.moments=vector(*v,path);
     if(const auto*v=io::find_member(o,"solution_constraint_forces"))out.constraint_forces=vector(*v,path);
@@ -63,7 +63,7 @@ Value encode_response_allocation(const ResponseAllocation& a) {
         {"crank_torque_target_nm",optional(a.crank_torque_target_nm)}, {"solution_crank_torque_nm",optional(a.predicted_crank_torque_nm)},
         {"saddle_normal_lower_bound_n",real(a.saddle_normal_lower_bound_n)}, {"solution_tau",values(a.torque)}, {"solution_qddot",values(a.rider_acceleration)},
         {"solution_base_qacc",values(a.base_acceleration)}, {"solution_power",values(a.power)}, {"solution_wrenches",values(a.wrenches)},
-        {"solution_excitation_nm",values(a.excitation)}, {"solution_activation_state_nm",values(a.activation_state)}, {"solution_active_lower_nm",values(a.lower_torque_nm)}, {"solution_active_upper_nm",values(a.upper_torque_nm)}};
+        {"solution_excitation_nm",values(a.excitation)}, {"solution_active_lower_nm",values(a.lower_torque_nm)}, {"solution_active_upper_nm",values(a.upper_torque_nm)}};
     if(a.modes_tried!=0){out.emplace_back("solution_moments",values(a.moments));out.emplace_back("solution_constraint_forces",values(a.constraint_forces));out.emplace_back("dynamics_model",Value{std::string("current_soft_constraint_response")});out.emplace_back("constraint_modes_tried",Value{io::Number{std::to_string(a.modes_tried)}});out.emplace_back("constraint_mode_search_complete",Value{a.mode_search_complete});out.emplace_back("linear_mode_rejections",Value{io::Number{std::to_string(a.linear_mode_rejections)}});out.emplace_back("grip_radius_guard_fraction",real(grip_radius_guard_fraction));out.emplace_back("allocation_force_guard_n",real(support_force_guard_n));out.emplace_back("allocation_moment_guard_nm",real(support_moment_guard_nm));}
     out.emplace_back("solution_qpos",values(a.qpos));out.emplace_back("solution_qvel",values(a.qvel));out.emplace_back("solution_time_s",real(a.time_s));out.emplace_back("numeric_identity",Value{std::string(allocation_numeric_identity)});return Value{std::move(out)};
 }

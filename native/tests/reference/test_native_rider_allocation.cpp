@@ -35,7 +35,6 @@
 #include "model_access.hpp"
 #include "numerics/dense.hpp"
 #include "research/environment.hpp"
-#include "rider/activation_allocation.hpp"
 #include "rider/allocation.hpp"
 #include "rider/attachment_wrench.hpp"
 #include "rider/response_allocation.hpp"
@@ -247,28 +246,17 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 [[gnu::noinline]] void test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish() {
     // rider_allocation/finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish
     // The oracle exercises finalize_effort on a __new__ stub; the delivery
-    // contract — the allocated torque survives activation, strength and
+    // contract — the allocated torque survives strength and
     // power shaping unchanged — is the same free-function chain the
-    // controller publishes (activation_step -> bounded -> power cap).
-    for (const double tau_s : {0., .04}) {
-        const Vector state{0.};
-        const Vector target{10.};
-        const Vector velocity{1.};
-        const double gain =
-            tau_s == 0. ? 1. : -std::expm1(-.005 / tau_s);
-        Vector excitation(gain == 0. ? state
-                                     : Vector{(target[0] -
-                                               (1. - gain) * state[0]) /
-                                                  gain});
-        const auto activated = ::spindle::activation_step(
-            state, excitation, .005, tau_s);
-        auto active = ::spindle::bounded_effort(velocity, activated, 100.,
-                                                20., 250.);
-        active = ::spindle::limit_positive_power(active, velocity, 450.);
-        bt::require(active.size() == 1 && active[0] == 10.,
-                    "the finalizer delivers the allocated torque, not the "
-                    "rebuilt raw wish");
-    }
+    // controller publishes (bounded -> power cap).
+    const Vector target{10.};
+    const Vector velocity{1.};
+    auto active = ::spindle::bounded_effort(velocity, target, 100.,
+                                            20., 250.);
+    active = ::spindle::limit_positive_power(active, velocity, 450.);
+    bt::require(active.size() == 1 && active[0] == 10.,
+                "the finalizer delivers the allocated torque, not the "
+                "rebuilt raw wish");
 }
 
 [[gnu::noinline]] void test_support_moment_constraints_reject_cop_outside_the_physical_patch() {
@@ -299,21 +287,6 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
                                          .gap_m = 0., .half_patch_m = .05};
     bt::require(rcfg::attachment_violations(sample, BUDGET).empty(),
                 "the projected foot sample is inside the attachment budget");
-}
-
-[[gnu::noinline]] void test_activation_dynamics_shape_the_wish_before_support_allocation() {
-    // rider_allocation/activation_dynamics_shape_the_wish_before_support_allocation
-    const Vector state{10.};
-    const double expected = 10. + (50. - 10.) * (1. - std::exp(-.005 / .04));
-    const auto wished = ::spindle::activation_step(state, Vector{50.}, .005,
-                                                   .04);
-    allclose(wished, Vector{expected}, 0., 1e-12, "activation-shaped wish");
-    rider::ActivationLaw const law(state, {1.}, {-50.}, {50.}, .005, .04,
-                                   std::nullopt);
-    bt::require(approx(law.gain(), 1. - std::exp(-.005 / .04), 1e-6, 1e-12),
-                "the activation gain matches the first-order law");
-    bt::require(state == Vector{10.},
-                "shaping the wish does not advance the activation state");
 }
 
 [[gnu::noinline]] void test_intent_is_relaxed_but_physical_limit_is_not() {
@@ -1283,7 +1256,6 @@ welded_attachments(const mjModel &model) {
         request.upper_torque_nm.push_back(hi);
     }
     request.torque_intent.assign(joints.size(), 1e4);
-    request.activation_state = controller.state().active_state;
     request.attachments = welded_attachments(*model);
     for (const char *joint :
          {"rider_root_x", "rider_root_z", "rider_root_pitch"})
@@ -1352,7 +1324,6 @@ int main() {
         test_coupled_support_cone_allows_compression_and_rejects_tension();
         test_finalizer_delivers_allocated_torque_instead_of_rebuilding_raw_wish();
         test_support_moment_constraints_reject_cop_outside_the_physical_patch();
-        test_activation_dynamics_shape_the_wish_before_support_allocation();
         test_intent_is_relaxed_but_physical_limit_is_not();
         test_infeasible_support_is_not_reported_as_valid_stall();
         test_scaled_grip_uses_a_circle_not_a_componentwise_square();

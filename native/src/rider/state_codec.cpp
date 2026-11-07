@@ -725,7 +725,7 @@ namespace {
     // ---- spindle config (parse_spindle_config's frame split) ---------------
 
     constexpr auto kConfigRequiredKeys = keys(
-        "activation_tau_s", "active_positive_power_limit_w",
+        "active_positive_power_limit_w",
         "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
         "balance_grace_s", "bar_support_fraction",
         "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
@@ -828,7 +828,6 @@ namespace {
             d["delivered_positive_power_budget_w"].optional_real(path);
         config.delivered_joint_power_budget_w =
             d["delivered_joint_power_budget_w"].optional_real(path);
-        config.activation_tau_s = d["activation_tau_s"].finite_real(path);
     }
 
     void decode_geometry_scalars(const Dict &d, std::string_view path,
@@ -885,7 +884,7 @@ namespace {
     // ---- spindle state sections ---------------------------------------------
 
     constexpr auto kStateRequiredKeys = keys(
-        "enabled", "command_enabled", "active_state", "activation_time_s",
+        "enabled", "command_enabled",
         "last_terms", "pd_split", "saturated_ik", "ik_reach_limited",
         "joint_torques_nm", "joint_capacity_nm", "lean_limit_rad",
         "last_branch", "last_solution", "pedal_recovery",
@@ -2057,8 +2056,6 @@ SpindleController::State decode_spindle_state(const bio::Value &value,
     SpindleController::State state;
     state.enabled = d["enabled"].boolean(path);
     state.command_enabled = d["command_enabled"].boolean(path);
-    state.active_state = vector(d["active_state"], path);
-    state.activation_time_s = d["activation_time_s"].optional_real(path);
     state.coast_hold_nm = d["coast_hold_nm"].optional_real(path);
     decode_state_terms(d, path, state);
     decode_state_ik(d, path, state);
@@ -2088,8 +2085,6 @@ bio::Value encode_spindle_state(const SpindleController::State &state) {
     out.emplace_back("enabled", bio::Value{state.enabled});
     out.emplace_back("command_enabled",
                      bio::Value{state.command_enabled});
-    out.emplace_back("active_state", vector_value(state.active_state));
-    set_or_none(out, "activation_time_s", state.activation_time_s);
     // Emitted only on spindle-authored states — legacy/Python-authored
     // documents keep the canonical 18 keys.
     if (state.coast_hold_nm.has_value())

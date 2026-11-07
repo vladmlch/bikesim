@@ -91,22 +91,6 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         else context.equilibrium->static_rear_load_n=normal.total();
         context.equilibrium->total_vertical_force_n+=vertical.total();
     }
-    if(physical.rider_present()){
-        auto controller=physical.rider_control().state();
-        if(controller.allocation_diagnostics.legacy && !controller.allocation_diagnostics.legacy->disabled) {
-            // The allocator records pre-clamp latent activation separately
-            // from excitation and delivered torque. Preserve that state at
-            // the equilibrium-to-ride transition together with its warm start.
-            controller.active_state=controller.allocation_diagnostics.legacy->activation_state;
-        } else {
-            controller.active_state.clear();
-            for(const auto& joint:physical.rider_control().joints()){
-                const auto it=std::ranges::find(controller.effort_diagnostics.active_request_nm,joint.name,&std::pair<std::string,double>::first);
-                controller.active_state.push_back(it==controller.effort_diagnostics.active_request_nm.end()?0.:it->second);
-            }
-        }
-        controller.activation_time_s.reset();physical.rider_control().restore(controller);
-    }
     initial_speed(context,physical.snapshots_);stepper.forward();
     if(context.initial_state)context.initial_state->restore(context);
     if(stepper.has_rider_contacts())stepper.mutate([&]{(void)stepper.rider_contacts_settle(std::nullopt,false,nullptr);});

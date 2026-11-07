@@ -26,7 +26,7 @@ struct AllocationAttachment {
 struct ResponseRequest {
     bike::configuration::ArticulatedConfig config;
     std::vector<int> actuator_dofs,rider_dofs,bike_dofs;
-    std::vector<double> torque_intent,lower_torque_nm,upper_torque_nm,activation_state;
+    std::vector<double> torque_intent,lower_torque_nm,upper_torque_nm;
     std::vector<AllocationAttachment> attachments;
     int pelvis_body=-1,crank_dof=-1;
     double rider_mass_kg=0.,dt_s=0.,effort_scale=1.;
@@ -38,7 +38,7 @@ struct ResponseAllocation {
     // The source disabled-controller record has no solver coordinates.
     bool disabled=false;
     std::array<bool,2> branch{true,true};
-    std::vector<double> torque,excitation,activation_state,acceleration,
+    std::vector<double> torque,excitation,acceleration,
         power,wrenches,moments,constraint_forces,lower_torque_nm,upper_torque_nm;
     std::vector<double> rider_acceleration,base_acceleration,qpos,qvel;
     std::optional<double> predicted_crank_torque_nm;

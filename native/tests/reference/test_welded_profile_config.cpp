@@ -112,8 +112,35 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 "the motor runs on for .3 s after the rider eases off");
 }
 
+[[gnu::noinline]] void assert_injected_key_rejected(
+    std::string_view dir_tag, std::string_view table,
+    std::string_view injected_line, std::string_view expected_token,
+    std::string_view message) {
+    const std::string source = bt::text(repo_file(
+        "examples/research/viewer_physics_welded.toml"));
+    const auto anchor = source.find(table);
+    bt::require(anchor != std::string::npos,
+                "the welded document keeps the target table");
+    std::string injected(source);
+    injected.insert(anchor + table.size(), injected_line);
+    const bt::TemporaryDirectory dir(std::string{dir_tag});
+    const auto path = dir.path() / "physics.toml";
+    { std::ofstream out(path); out << injected; }
+    bool threw = false;
+    try {
+        (void)cfg::load_physics(path);
+    } catch (const std::invalid_argument &failure) {
+        threw = true;
+        bt::require(
+            std::string_view(failure.what()).find(expected_token) !=
+                std::string_view::npos,
+            "the load rejection names the removed key");
+    }
+    bt::require(threw, std::string{message});
+}
+
 // test_rider_numbers
-void test_rider_numbers() {
+[[gnu::noinline]] void test_rider_numbers() {
     const auto &pedaling = profile().drive.pedaling;
     bt::require(pedaling.coast_above_rpm == 120.,
                 "coast above 120 rpm");
@@ -132,31 +159,10 @@ void test_rider_numbers() {
                 "the shift derate is .8 to a larger cog and .3 to a smaller");
     // torque_factor is gone: a document that still carries the removed
     // single-derate key under [drive.shifting] fails to load.
-    {
-        const std::string source = bt::text(repo_file(
-            "examples/research/viewer_physics_welded.toml"));
-        const std::string table = "[drive.shifting]";
-        const auto anchor = source.find(table);
-        bt::require(anchor != std::string::npos,
-                    "the welded document keeps a [drive.shifting] table");
-        std::string injected(source);
-        injected.insert(anchor + table.size(), "\ntorque_factor = 0.3");
-        const bt::TemporaryDirectory dir("welded-legacy-shift-factor");
-        const auto path = dir.path() / "physics.toml";
-        { std::ofstream out(path); out << injected; }
-        bool threw = false;
-        try {
-            (void)cfg::load_physics(path);
-        } catch (const std::invalid_argument &failure) {
-            threw = true;
-            bt::require(
-                std::string_view(failure.what()).find("torque_factor") !=
-                    std::string_view::npos,
-                "the load rejection names the removed shift key");
-        }
-        bt::require(threw,
-                    "the schema rejects the removed torque_factor key");
-    }
+    assert_injected_key_rejected(
+        "welded-legacy-shift-factor", "[drive.shifting]",
+        "\ntorque_factor = 0.3", "torque_factor",
+        "the schema rejects the removed torque_factor key");
     const auto &climb = profile().seated_climb;
     bt::require(climb.enabled && climb.target_crank_power_w == 250.,
                 "seated climb is enabled at a 250 W target");
@@ -164,6 +170,8 @@ void test_rider_numbers() {
                 "the crank torque ceiling is 60 Nm");
     bt::require(climb.surge_power_w == 400.,
                 "the surge power is 400 W");
+    bt::require(profile().control_period_s == 0.00125,
+                "the leg controller runs every 1.25 ms physics step");
     const auto &articulated = profile().articulated;
     bt::require(articulated.pedal_torque_ripple == .5,
                 "the pedal torque ripple is .5");
@@ -178,33 +186,18 @@ void test_rider_numbers() {
                 "the pinned plant attachments are spindle/pin/connect");
     // Joint damping does not exist in the model: a document that still
     // carries the removed joint_passive_damping_nms_rad key fails to load.
-    {
-        const std::string source = bt::text(repo_file(
-            "examples/research/viewer_physics_welded.toml"));
-        const std::string table = "[articulated]";
-        const auto anchor = source.find(table);
-        bt::require(anchor != std::string::npos,
-                    "the welded document keeps an [articulated] table");
-        std::string injected(source);
-        injected.insert(anchor + table.size(),
-                        "\njoint_passive_damping_nms_rad = 0.0");
-        const bt::TemporaryDirectory dir("welded-legacy-key");
-        const auto path = dir.path() / "physics.toml";
-        { std::ofstream out(path); out << injected; }
-        bool threw = false;
-        try {
-            (void)cfg::load_physics(path);
-        } catch (const std::invalid_argument &failure) {
-            threw = true;
-            bt::require(
-                std::string_view(failure.what()).find(
-                    "joint_passive_damping_nms_rad") !=
-                    std::string_view::npos,
-                "the load rejection names the removed key");
-        }
-        bt::require(threw,
-                    "the schema rejects joint_passive_damping_nms_rad");
-    }
+    assert_injected_key_rejected(
+        "welded-legacy-key", "[articulated]",
+        "\njoint_passive_damping_nms_rad = 0.0",
+        "joint_passive_damping_nms_rad",
+        "the schema rejects joint_passive_damping_nms_rad");
+    // The 25 ms activation filter is removed completely (2026-11-07): a
+    // document that still carries activation_tau_s under [articulated] fails
+    // to load.
+    assert_injected_key_rejected(
+        "welded-legacy-activation-tau", "[articulated]",
+        "\nactivation_tau_s = 0.025", "activation_tau_s",
+        "the schema rejects activation_tau_s");
 }
 
 } // namespace

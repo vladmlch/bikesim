@@ -988,18 +988,6 @@
     }
   },
   "rider_controller": {
-    "activation_time_s": null,
-    "active_state": [
-      0.5073441097003837,
-      -7.1553179394468875,
-      3.450713320524967,
-      -7.155317939457729,
-      3.450713320540423,
-      0.0,
-      -0.0,
-      0.0,
-      -0.0
-    ],
     "allocation_diagnostics": {
       "crank_task_nm": 0.0,
       "crank_task_shortfall_nm": 0.0,

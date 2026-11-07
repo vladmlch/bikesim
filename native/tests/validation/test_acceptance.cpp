@@ -225,7 +225,7 @@ void cli_option_contract(){
     // Exercise the frontend's actual grammar without invoking a subprocess,
     // opening case inputs, or performing any simulation as part of parsing.
     const std::array<std::pair<std::string_view,std::vector<std::string_view>>,9> modules{{
-        {"rider-replay",{"--physics-config","--track","--duration","--timestep","--mode","--activation-tau","--output"}},
+        {"rider-replay",{"--physics-config","--track","--duration","--timestep","--mode","--output"}},
         {"rider-factor-matrix",{"--physics-config","--output"}},
         {"drive-suspension-rig",{"--output"}},
         {"contact-resolution",{"--output"}},
@@ -239,7 +239,7 @@ void cli_option_contract(){
         bt::invalid([&]{options.accept("--unrecognized");});}
     for(const auto& [module,flag_name]:std::array<std::pair<std::string_view,std::string_view>,7>{{
             {"datasets","--duration"},{"drive-suspension-rig","--dt"},{"contact-resolution","--jobs"},
-            {"rider-replay","--backend"},{"climbing-benchmark","--activation-tau"},
+            {"rider-replay","--backend"},{"climbing-benchmark","--backend"},
             {"fidelity-sweep","--dt"},{"benchmarks","--transmission"}}}){
         CliOptions options(module);bt::invalid([&]{options.accept(flag_name);});
     }

@@ -75,6 +75,20 @@ spindle::LegLoopGeometry pose_geometry(const rider::SpindlePose &pose,
                                        (qp[1] - qm[1]) / (2. * d)};
     rr::allclose(jac, manual, 1e-5, 1e-6,
                  "the analytic Jacobian matches the IK finite difference");
+    for (const double phase : {0., std::numbers::pi / 2., std::numbers::pi,
+                               1.5 * std::numbers::pi}) {
+        const Vec2 spindle = spindle::spindle_xz(crank, .17, phase, 1.);
+        const Vec2 gamma = spindle::leg_vertical_gamma(g, kHip, spindle);
+        const Vec2 q_up =
+            spindle::leg_joint_q(g, kHip, {spindle[0], spindle[1] + d}, 0.);
+        const Vec2 q_dn =
+            spindle::leg_joint_q(g, kHip, {spindle[0], spindle[1] - d}, 0.);
+        const std::array<double, 2> fd{
+            spindle::wrap_angle(q_up[0] - q_dn[0]) / (2. * d),
+            spindle::wrap_angle(q_up[1] - q_dn[1]) / (2. * d)};
+        rr::allclose(gamma, fd, 1e-5, 1e-6,
+                     "leg_vertical_gamma matches finite difference d(q)/d(z)");
+    }
 }
 
 [[gnu::noinline]] void test_unreachable_raises() {

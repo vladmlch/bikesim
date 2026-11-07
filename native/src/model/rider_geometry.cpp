@@ -258,20 +258,23 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
     const double l_hand = rider.segment_length("hand");
 
     Vec3 knee_front, knee_rear;
+    double l2_front = 0.0;
+    double s_par = 0.0;
+    double s_perp = 0.0;
     try {
         knee_front =
                 two_link_ik(hip, ankle_front, l_thigh, l_shank, "+x");
         const Vec3 front_leg_vec = v_sub(pedal_front, knee_front);
-        const double l2_front = gd::np_norm3(front_leg_vec);
+        l2_front = gd::np_norm3(front_leg_vec);
         knee_rear =
                 two_link_ik(hip, pedal_rear, l_thigh, l2_front, "+x");
         const Vec3 rear_leg_vec = v_sub(pedal_rear, knee_rear);
         const Vec3 u_front = v_div(front_leg_vec, l2_front);
         const Vec3 u_rear = v_div(rear_leg_vec, l2_front);
         const Vec3 shank_front = v_sub(ankle_front, knee_front);
-        const double s_par =
+        s_par =
                 shank_front[0] * u_front[0] + shank_front[2] * u_front[2];
-        const double s_perp =
+        s_perp =
                 -shank_front[0] * u_front[2] + shank_front[2] * u_front[0];
         ankle_rear = Vec3{
                 knee_rear[0] + s_par * u_rear[0] - s_perp * u_rear[2],
@@ -284,12 +287,11 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
                 exc.what());
     }
 
-    const Vec3 ankle_bdc =
-            v_add(Vec3{0.0, 0.0, -crank_m}, ankle_offset);
+    const Vec3 pedal_bdc{0.0, 0.0, -crank_m};
     Vec3 knee_bdc;
     try {
         knee_bdc =
-                two_link_ik(hip, ankle_bdc, l_thigh, l_shank, "+x");
+                two_link_ik(hip, pedal_bdc, l_thigh, l2_front, "+x");
     } catch (const std::invalid_argument &exc) {
         throw std::invalid_argument(
                 std::string("the leg does not reach the pedal at bottom "
@@ -299,6 +301,12 @@ SeatedPose solve_seated_pose(const BikeSpecs &specs,
                 " m is too high for a " +
                 gd::py_fixed(rider.height_m, 2) + " m rider");
     }
+    const Vec3 bdc_leg_vec = v_sub(pedal_bdc, knee_bdc);
+    const Vec3 u_bdc = v_div(bdc_leg_vec, l2_front);
+    const Vec3 ankle_bdc{
+            knee_bdc[0] + s_par * u_bdc[0] - s_perp * u_bdc[2],
+            0.0,
+            knee_bdc[2] + s_par * u_bdc[2] + s_perp * u_bdc[0]};
     const double knee_flexion_bdc =
             flexion_deg(hip, knee_bdc, ankle_bdc);
     if (!(KNEE_FLEXION_BDC_MIN_DEG <= knee_flexion_bdc &&

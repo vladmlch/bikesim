@@ -717,6 +717,22 @@ void saddle_height_gives_37_5_deg_bdc_knee_flexion() {
     bt::require(std::abs(rider.saddle_height_m() - 0.8557 * rider.inseam()) < 1e-12,
                 "saddle_height_m equals 0.8557 * inseam (actual=" +
                     std::to_string(rider.saddle_height_m()) + ")");
+    const auto geom = spindle::leg_loop_geometry(
+        {pose.hip[0], pose.hip[2]},
+        {pose.knee_front[0], pose.knee_front[2]},
+        {pose.pedal_front[0], pose.pedal_front[2]}, true);
+    const auto q_bdc = spindle::leg_joint_q(
+        geom, {pose.hip[0], pose.hip[2]}, {0.0, -r_crank}, 0.0);
+    const double neutral_knee_rad =
+        mdl::pose_neutral_anatomical_rad(mdl::geometry_pose(rider, bike),
+                                         "rider_knee_front");
+    const double controller_bdc_deg =
+        (neutral_knee_rad + q_bdc[1]) * 180.0 / std::numbers::pi;
+    bt::require(std::abs(pose.knee_flexion_bdc_deg - controller_bdc_deg) < 1e-12,
+                "solve_seated_pose BDC knee flexion matches locked-ankle controller geometry (actual=" +
+                    std::to_string(pose.knee_flexion_bdc_deg) +
+                    " deg, expected=" + std::to_string(controller_bdc_deg) +
+                    " deg)");
 }
 } // namespace
 int main(int argc, char* argv[]) {

@@ -206,6 +206,42 @@ namespace spindle {
     }
     // NOLINTEND(bugprone-easily-swappable-parameters)
 
+    Vec2 leg_vertical_gamma(const LegLoopGeometry &geometry, Vec2 hip_xz,
+                            Vec2 spindle_pos_xz) {
+        require2(hip_xz, "hip position");
+        require2(spindle_pos_xz, "spindle position");
+        const double thigh =
+            validation::positive(geometry.thigh_m, "thigh length");
+        const double link =
+            validation::positive(geometry.link_m, "rigid shank-foot length");
+        const Vec2 direction{spindle_pos_xz[0] - hip_xz[0],
+                             spindle_pos_xz[1] - hip_xz[1]};
+        const double length = norm2(direction);
+        if (length <= 1e-12 || length > thigh + link + 1e-9 ||
+            length < std::abs(thigh - link) - 1e-9)
+            throw std::invalid_argument("leg loop unreachable");
+        const double hip_cos =
+            (thigh * thigh + length * length - link * link) /
+            (2. * thigh * length);
+        if (!(-1. - 1e-9 <= hip_cos && hip_cos <= 1. + 1e-9))
+            throw std::invalid_argument("leg loop unreachable");
+        const double thigh_angle =
+            planar_angle(direction) -
+            geometry.knee_sign *
+                std::acos(std::min(std::max(hip_cos, -1.), 1.));
+        const double knee_x =
+            hip_xz[0] - thigh * numeric::math_sin(thigh_angle);
+        const double knee_z =
+            hip_xz[1] - thigh * numeric::math_cos(thigh_angle);
+        const double det =
+            -(spindle_pos_xz[1] - hip_xz[1]) * (spindle_pos_xz[0] - knee_x) +
+            (spindle_pos_xz[1] - knee_z) * (spindle_pos_xz[0] - hip_xz[0]);
+        if (std::abs(det) <= 1e-12)
+            return {0., 0.};
+        return {-(spindle_pos_xz[1] - knee_z) / det,
+                (spindle_pos_xz[1] - hip_xz[1]) / det};
+    }
+
     Vec2 leg_shares(double phase_rad) {
         const double downward =
             numeric::math_cos(validation::finite(phase_rad, "crank phase"));

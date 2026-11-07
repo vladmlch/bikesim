@@ -619,10 +619,17 @@ void SpindleController::reset_activation() {
 spindle::Vec2 SpindleController::leg_targets(const mjData *data,
                                              const char *side) {
     const auto s = side_index(side);
+    const auto frame_r = body_mat(model_, data, frame_body_);
     const auto pelvis_r = body_mat(model_, data, pelvis_body_);
-    const double pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
-    const Vec2 hip = xz(joint_anchor(model_, data, hip_joints_[s]));
+    const Mat3 relative_r = mat_t_mul(frame_r, pelvis_r);
+    const double pitch = std::atan2(relative_r[2], relative_r[0]);
+    const Vec3 crank_world = joint_anchor(model_, data, crank_joint_);
+    const Vec2 hip = mat_t_vec_xz(
+        frame_r,
+        vec_sub(joint_anchor(model_, data, hip_joints_[s]), crank_world));
     const Vec3 spindle_world = site_pos(model_, data, pedal_sites_[s]);
+    const Vec2 spindle_local =
+        mat_t_vec_xz(frame_r, vec_sub(spindle_world, crank_world));
     const auto key = std::string(side);
     named_set(sole_targets_, key, spindle_world);
     named_set(sole_goal_diagnostics_, key,
@@ -634,7 +641,7 @@ spindle::Vec2 SpindleController::leg_targets(const mjData *data,
     named_set(saturated_ik_, key, false);
     named_set(ik_reach_limited_, key, false);
     return spindle::leg_joint_q(leg_geometry_[s], hip,
-                                xz(spindle_world), pitch);
+                                spindle_local, pitch);
 }
 
 std::size_t

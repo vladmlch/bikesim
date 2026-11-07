@@ -83,6 +83,12 @@ namespace spindle {
                                          double frame_pitch_rad = 0.,
                                          double phase_offset_rad = 0.);
 
+    // Inverse foot-vertical Jacobian d(hip_q,knee_q)/d(spindle_z) in the
+    // bike frame (+x forward, +z up): maps joint torques (tau_hip, tau_knee)
+    // to downward foot press delta_F_press = -(gamma[0]*tau_hip + gamma[1]*tau_knee).
+    [[nodiscard]] Vec2 leg_vertical_gamma(const LegLoopGeometry &geometry,
+                                          Vec2 hip_xz, Vec2 spindle_pos_xz);
+
     // ---- crank_split.py ----------------------------------------------------
     // leg_shares: downstroke-owning fractions (front, rear).
     [[nodiscard]] Vec2 leg_shares(double phase_rad);

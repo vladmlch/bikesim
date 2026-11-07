@@ -613,6 +613,33 @@ void build_pose_neutral_angles() {
     bt::require(!bt::text(str_path).contains("neutral_anatomical_rad"),
                 "rider_strength_reference.json does not contain hard-coded neutral_anatomical_rad");
 }
+
+// Saddle height = 0.8557 * inseam gives 37.5 deg knee flexion at bottom dead
+// centre in the build pose (chosen 2026-11-07, docs/agents/simulation-decisions.md #5).
+void saddle_height_gives_37_5_deg_bdc_knee_flexion() {
+    const cfg::RiderSpecs rider{};
+    const mdl::BikeSpecs bike{};
+    const auto pose = mdl::solve_seated_pose(bike, rider);
+    const double l1 = rider.segment_length("thigh");
+    const double l2_front = std::hypot(pose.pedal_front[0] - pose.knee_front[0],
+                                       pose.pedal_front[2] - pose.knee_front[2]);
+    const double l2_rear = std::hypot(pose.pedal_rear[0] - pose.knee_rear[0],
+                                      pose.pedal_rear[2] - pose.knee_rear[2]);
+    bt::require(std::abs(l2_front - l2_rear) < 1e-12,
+                "equal knee-to-spindle length on both legs");
+    const double r_crank = bike.crank_length / 1000.0;
+    const double d_bdc = std::hypot(pose.hip[0], pose.hip[2]) + r_crank;
+    const double cos_flex = (d_bdc * d_bdc - l1 * l1 - l2_front * l2_front) /
+                            (2.0 * l1 * l2_front);
+    const double theta_bdc_deg =
+        std::acos(std::clamp(cos_flex, -1.0, 1.0)) * 180.0 / std::numbers::pi;
+    bt::require(std::abs(theta_bdc_deg - 37.5) < 0.05,
+                "build-pose knee flexion at bottom is 37.5 deg within 0.05 deg (actual=" +
+                    std::to_string(theta_bdc_deg) + " deg)");
+    bt::require(std::abs(rider.saddle_height_m() - 0.8557 * rider.inseam()) < 1e-12,
+                "saddle_height_m equals 0.8557 * inseam (actual=" +
+                    std::to_string(rider.saddle_height_m()) + ")");
+}
 } // namespace
 int main(int argc, char* argv[]) {
 #if defined(__clang__)
@@ -632,5 +659,8 @@ int main(int argc, char* argv[]) {
     if (args.size() > 1 && std::string_view(args[1]) == "build_pose_neutral") {
         return bt::run(build_pose_neutral_angles);
     }
-    return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();build_pose_neutral_angles();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
+    if (args.size() > 1 && std::string_view(args[1]) == "saddle_bdc_flexion") {
+        return bt::run(saddle_height_gives_37_5_deg_bdc_knee_flexion);
+    }
+    return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();build_pose_neutral_angles();saddle_height_gives_37_5_deg_bdc_knee_flexion();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
 }

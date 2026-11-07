@@ -1376,10 +1376,10 @@ void test_rider() {
                 "RiderSpecs serializes only the remaining fields");
     bt::require(specs.present() && specs.total_rider_mass() == 80.,
                 "RiderSpecs presence/mass");
-    // Derived helpers: inseam estimate, LeMond saddle height, segment scale.
+    // Derived helpers: inseam estimate, saddle height (0.8557 * inseam), segment scale.
     const double inseam = specs.inseam();
     bt::require(inseam == 0.47 * 1.80, "inseam estimate");
-    bt::require(specs.saddle_height_m() == 0.883 * inseam,
+    bt::require(specs.saddle_height_m() == 0.8557 * inseam,
                 "saddle height");
     bt::require(specs.segment_length("thigh") ==
                     cfg::de_leva_segment_length_fraction("thigh") * 1.80,

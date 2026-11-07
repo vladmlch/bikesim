@@ -48,8 +48,11 @@ inline constexpr std::string_view kDefaultRiderVariant = "lumped";
 inline constexpr double kDeLevaReferenceStatureM = 1.741;
 [[nodiscard]] double de_leva_segment_length_fraction(std::string_view name);
 
-inline constexpr double kInseamStatureRatio = 0.47;      // INSEAM_STATURE_RATIO
-inline constexpr double kLemondSaddleHeightRatio = 0.883; // LEMOND_SADDLE_HEIGHT_RATIO
+inline constexpr double kInseamStatureRatio = 0.47; // INSEAM_STATURE_RATIO
+// Высота седла: 0,8557 от длины ноги по шву вместо 0,883 (LeMond), чтобы
+// колено внизу в стартовой позе было согнуто на 37,5° (при езде около 38,5°)
+// и седло не тянуло райдера вниз (решение 2026-11-07, simulation-decisions.md п. 5).
+inline constexpr double kSaddleHeightToInseamRatio = 0.8557;
 
 // Lumped-variant capsule mass fractions (rider.py authored values).
 inline constexpr double kLumpedTorsoHelmetFraction = 55.0 / 80.0;
@@ -79,9 +82,9 @@ struct RiderSpecs {
     [[nodiscard]] double inseam() const {
         return inseam_m.value_or(kInseamStatureRatio * height_m);
     }
-    // RiderSpecs.saddle_height_m — LeMond BB-center to saddle-top height.
+    // RiderSpecs.saddle_height_m — BB-center to saddle-top height.
     [[nodiscard]] double saddle_height_m() const {
-        return kLemondSaddleHeightRatio * inseam();
+        return kSaddleHeightToInseamRatio * inseam();
     }
     // RiderSpecs.segment_length(name) — de Leva fraction x stature.
     [[nodiscard]] double segment_length(std::string_view name) const;

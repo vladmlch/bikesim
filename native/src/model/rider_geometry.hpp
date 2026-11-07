@@ -46,7 +46,7 @@ using Mat3 = std::array<double, 9>;
 // rider.py module scalars (the shared constants — GRAVITY_MPS2,
 // RIDER_VARIANTS, DEFAULT_RIDER_VARIANT, DE_LEVA_LENGTH_FRACTIONS,
 // DE_LEVA_REFERENCE_STATURE_M, INSEAM_STATURE_RATIO,
-// LEMOND_SADDLE_HEIGHT_RATIO, LUMPED_*_FRACTION — are the T12
+// kSaddleHeightToInseamRatio, LUMPED_*_FRACTION — are the T12
 // configuration constants this layer reuses).
 inline constexpr double HIP_ABOVE_SADDLE_M = 0.060;
 inline constexpr double ANKLE_ABOVE_PEDAL_M = 0.115;

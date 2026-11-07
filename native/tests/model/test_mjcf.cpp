@@ -535,6 +535,84 @@ void symmetric_locked_ankles_equal_knee_to_spindle_distance() {
     bt::require(std::abs(cos_front - cos_rear) < 1e-9,
                 "shank-to-foot angle equal on both legs");
 }
+// Joint zero reference angles (neutral_anatomical_rad) must be derived from
+// the build pose (solve_seated_pose / build_articulated_rider at qpos = 0),
+// with no hard-coded neutral_anatomical_rad keys remaining in the JSON profiles.
+void build_pose_neutral_angles() {
+    const auto request = physical("viewer_physics_welded.toml");
+    const auto pose = mdl::geometry_pose(*request->rider, request->bike); // NOLINT(bugprone-unchecked-optional-access)
+    const auto& art = request->physics->articulated; // NOLINT(bugprone-unchecked-optional-access)
+    const auto env_path = std::filesystem::path(*art.joint_envelope_path); // NOLINT(bugprone-unchecked-optional-access)
+    const auto str_path = std::filesystem::path(*art.joint_strength_path); // NOLINT(bugprone-unchecked-optional-access)
+
+    const auto envelopes = cfg::load_joint_envelopes(env_path);
+    const auto coordinates = cfg::load_strength_coordinates(str_path, cfg::kRiderJoints);
+    const auto rot_y = [](const mdl::Vec3& u, const mdl::Vec3& v) {
+        return std::atan2(u[2] * v[0] - u[0] * v[2], u[0] * v[0] + u[2] * v[2]);
+    };
+    const auto sub3 = [](const mdl::Vec3& a, const mdl::Vec3& b) {
+        return mdl::Vec3{a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+    };
+    const mdl::Vec3 v_torso = sub3(pose.shoulder, pose.hip);
+    const mdl::Vec3 v_torso_down = sub3(pose.hip, pose.shoulder);
+    const mdl::Vec3 v_ua = sub3(pose.elbow, pose.shoulder);
+    const mdl::Vec3 v_fa = sub3(pose.grip, pose.elbow);
+    const mdl::Vec3 v_tf = sub3(pose.knee_front, pose.hip);
+    const mdl::Vec3 v_sf = sub3(pose.ankle_front, pose.knee_front);
+    const mdl::Vec3 v_sf_rev = sub3(pose.knee_front, pose.ankle_front);
+    const mdl::Vec3 v_ff = sub3(pose.pedal_front, pose.ankle_front);
+    const mdl::Vec3 v_tr = sub3(pose.knee_rear, pose.hip);
+    const mdl::Vec3 v_sr = sub3(pose.ankle_rear, pose.knee_rear);
+    const mdl::Vec3 v_sr_rev = sub3(pose.knee_rear, pose.ankle_rear);
+    const mdl::Vec3 v_fr = sub3(pose.pedal_rear, pose.ankle_rear);
+
+    const std::array<std::pair<std::string_view, double>, 11> expected_neutral{{
+        {"rider_hip_rear", -rot_y({0., 0., -1.}, v_tr)},
+        {"rider_knee_rear", +rot_y(v_tr, v_sr)},
+        {"rider_ankle_rear", +rot_y(v_sr_rev, v_fr)},
+        {"rider_hip_front", -rot_y({0., 0., -1.}, v_tf)},
+        {"rider_knee_front", +rot_y(v_tf, v_sf)},
+        {"rider_ankle_front", +rot_y(v_sf_rev, v_ff)},
+        {"rider_torso_hinge", +rot_y({0., 0., 1.}, v_torso)},
+        {"rider_shoulder_left", -rot_y(v_torso_down, v_ua)},
+        {"rider_elbow_left", -rot_y(v_ua, v_fa)},
+        {"rider_shoulder_right", -rot_y(v_torso_down, v_ua)},
+        {"rider_elbow_right", -rot_y(v_ua, v_fa)},
+    }};
+
+    const auto model = mdl::compile_mjcf(mdl::generate_mjcf(*request));
+    const auto jnt_range = std::views::counted(model->jnt_range, static_cast<std::ptrdiff_t>(model->njnt * 2));
+
+    for (const auto& [name_sv, exp_rad] : expected_neutral) {
+        const std::string name(name_sv);
+        const auto env_it = std::ranges::find_if(envelopes, [&](const auto& p) { return p.first == name; });
+        const auto coord_it = std::ranges::find_if(coordinates, [&](const auto& p) { return p.first == name; });
+        bt::require(env_it != envelopes.end() && coord_it != coordinates.end(),
+                    "envelope and strength coordinate present for " + name);
+        bt::require(std::abs(env_it->second.neutral_anatomical_rad - exp_rad) < 1e-12,
+                    name + " envelope neutral_anatomical_rad matches build pose (actual=" +
+                        std::to_string(env_it->second.neutral_anatomical_rad) +
+                        ", expected=" + std::to_string(exp_rad) + ")");
+        bt::require(std::abs(coord_it->second.neutral_anatomical_rad - exp_rad) < 1e-12,
+                    name + " strength coordinate neutral_anatomical_rad matches build pose");
+        bt::require(std::abs(cfg::anatomical_angle(env_it->second, 0.) - exp_rad) < 1e-12,
+                    name + " anatomical_angle at qpos=0 equals build-pose angle");
+        const int jid = mj_name2id(model.get(), mjOBJ_JOINT, name.c_str());
+        if (jid >= 0) {
+            const auto q_range = cfg::joint_q_range(env_it->second);
+            const auto base = static_cast<std::size_t>(jid) * 2;
+            bt::require(std::abs(jnt_range[base] - q_range[0]) < 1e-12 &&
+                            std::abs(jnt_range[base + 1] - q_range[1]) < 1e-12,
+                        name + " compiled joint q range matches pose-derived envelope");
+        }
+    }
+
+    // Raw JSON files must not carry hard-coded neutral_anatomical_rad keys.
+    bt::require(!bt::text(env_path).contains("neutral_anatomical_rad"),
+                "rider_joint_envelope_anatomical.json does not contain hard-coded neutral_anatomical_rad");
+    bt::require(!bt::text(str_path).contains("neutral_anatomical_rad"),
+                "rider_strength_reference.json does not contain hard-coded neutral_anatomical_rad");
+}
 } // namespace
 int main(int argc, char* argv[]) {
 #if defined(__clang__)
@@ -551,5 +629,8 @@ int main(int argc, char* argv[]) {
     if (args.size() > 1 && std::string_view(args[1]) == "symmetric_ankles") {
         return bt::run(symmetric_locked_ankles_equal_knee_to_spindle_distance);
     }
-    return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
+    if (args.size() > 1 && std::string_view(args[1]) == "build_pose_neutral") {
+        return bt::run(build_pose_neutral_angles);
+    }
+    return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();build_pose_neutral_angles();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
 }

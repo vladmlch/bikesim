@@ -657,6 +657,79 @@ ArticulatedPose geometry_pose(const RiderSpecs &rider,
     return out;
 }
 
+namespace {
+[[nodiscard]] double rot_y_angle(const Vec3 &u, const Vec3 &v) noexcept {
+    return std::atan2(u[2] * v[0] - u[0] * v[2],
+                      u[0] * v[0] + u[2] * v[2]);
+}
+} // namespace
+
+double pose_neutral_anatomical_rad(const ArticulatedPose &pose,
+                                   std::string_view joint_name) {
+    if (joint_name == "rider_torso_hinge")
+        return +rot_y_angle({0.0, 0.0, 1.0}, v_sub(pose.shoulder, pose.hip));
+    if (joint_name == "rider_shoulder_left" ||
+        joint_name == "rider_shoulder_right" ||
+        joint_name == "rider_shoulder")
+        return -rot_y_angle(v_sub(pose.hip, pose.shoulder),
+                            v_sub(pose.elbow, pose.shoulder));
+    if (joint_name == "rider_elbow_left" ||
+        joint_name == "rider_elbow_right" ||
+        joint_name == "rider_elbow")
+        return -rot_y_angle(v_sub(pose.elbow, pose.shoulder),
+                            v_sub(pose.grip, pose.elbow));
+    if (joint_name == "rider_hip_front")
+        return -rot_y_angle({0.0, 0.0, -1.0},
+                            v_sub(pose.knee_front, pose.hip));
+    if (joint_name == "rider_knee_front")
+        return +rot_y_angle(v_sub(pose.knee_front, pose.hip),
+                            v_sub(pose.ankle_front, pose.knee_front));
+    if (joint_name == "rider_ankle_front")
+        return +rot_y_angle(v_sub(pose.knee_front, pose.ankle_front),
+                            v_sub(pose.pedal_front, pose.ankle_front));
+    if (joint_name == "rider_hip_rear")
+        return -rot_y_angle({0.0, 0.0, -1.0},
+                            v_sub(pose.knee_rear, pose.hip));
+    if (joint_name == "rider_knee_rear")
+        return +rot_y_angle(v_sub(pose.knee_rear, pose.hip),
+                            v_sub(pose.ankle_rear, pose.knee_rear));
+    if (joint_name == "rider_ankle_rear")
+        return +rot_y_angle(v_sub(pose.knee_rear, pose.ankle_rear),
+                            v_sub(pose.pedal_rear, pose.ankle_rear));
+    throw std::invalid_argument("unknown rider joint: " +
+                                std::string(joint_name));
+}
+
+double pose_neutral_anatomical_rad(const SeatedPose &pose,
+                                   std::string_view joint_name) {
+    const ArticulatedPose articulated{
+        .saddle = pose.saddle,
+        .hip = pose.hip,
+        .shoulder = pose.shoulder,
+        .elbow = pose.elbow,
+        .grip = pose.grip,
+        .head_center = pose.head_center,
+        .knee_front = pose.knee_front,
+        .knee_rear = pose.knee_rear,
+        .ankle_front = pose.ankle_front,
+        .ankle_rear = pose.ankle_rear,
+        .pedal_front = pose.pedal_front,
+        .pedal_rear = pose.pedal_rear,
+    };
+    return pose_neutral_anatomical_rad(articulated, joint_name);
+}
+
 NATIVE_DIAG_POP
 
 } // namespace bike::model
+
+namespace bike::configuration {
+
+double build_pose_neutral_anatomical_rad(std::string_view joint_name,
+                                         const RiderSpecs &rider) {
+    const model::ArticulatedPose pose =
+        model::geometry_pose(rider, geometry::BikeSpecs{});
+    return model::pose_neutral_anatomical_rad(pose, joint_name);
+}
+
+} // namespace bike::configuration

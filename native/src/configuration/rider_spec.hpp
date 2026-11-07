@@ -139,6 +139,11 @@ inline constexpr std::array<std::string_view, 9> kLegacyRiderJoints = {
 using JointEnvelopeMap =
     std::vector<std::pair<std::string, JointEnvelope>>;
 
+// Build-pose (qpos = 0) anatomical angle (radians) for a named rider joint
+// from solve_seated_pose(BikeSpecs{}, rider).
+[[nodiscard]] double build_pose_neutral_anatomical_rad(
+    std::string_view joint_name, const RiderSpecs &rider = RiderSpecs{});
+
 // rider_envelope.py reference_rom_check — joint coordinates in q
 // convention keyed by joint name; returns the violating joint names in
 // envelope order.

@@ -189,4 +189,10 @@ void validate_articulated_pose(const ArticulatedPose &pose);
 [[nodiscard]] ArticulatedPose geometry_pose(const RiderSpecs &rider,
                                             const BikeSpecs &specs);
 
+// Build-pose (qpos = 0) anatomical angle (radians) for a named rider joint.
+[[nodiscard]] double pose_neutral_anatomical_rad(const SeatedPose &pose,
+                                                 std::string_view joint_name);
+[[nodiscard]] double pose_neutral_anatomical_rad(const ArticulatedPose &pose,
+                                                 std::string_view joint_name);
+
 } // namespace bike::model

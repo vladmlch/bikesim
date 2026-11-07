@@ -44,7 +44,9 @@ void build_articulated_rider(Element& world,const ArticulatedPose& pose,const Se
             if(envelopes) {
                 const auto it=std::ranges::find_if(*envelopes,[&](const auto& item){return item.first==joint_name;});
                 if(it==envelopes->end()) throw std::invalid_argument("missing joint envelope: "+joint_name);
-                const auto range=configuration::joint_q_range(it->second);
+                auto env=it->second;
+                env.neutral_anatomical_rad=pose_neutral_anatomical_rad(pose,joint_name);
+                const auto range=configuration::joint_q_range(env);
                 attributes.emplace_back("limited","true");
                 attributes.emplace_back("range",g(geometry::detail::np_degrees(range[0]))+" "+g(geometry::detail::np_degrees(range[1])));
             }

@@ -432,13 +432,15 @@ add_library(bike_configuration STATIC
   "${_bike_native_dir}/src/configuration/physical_config.hpp"
   "${_bike_native_dir}/src/configuration/rider_spec.hpp"
   "${_bike_native_dir}/src/configuration/suspension_spec.hpp"
-  "${_bike_native_dir}/src/configuration/wire_decode.hpp")
+  "${_bike_native_dir}/src/configuration/wire_decode.hpp"
+  "${_bike_native_dir}/src/model/rider_geometry.hpp"
+  "${_bike_native_dir}/src/model/rider_geometry.cpp")
 set_target_properties(bike_configuration PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_apply_native_policy(bike_configuration)
 target_include_directories(bike_configuration SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_rapidjson_ROOT}/include")
-target_link_libraries(bike_configuration PRIVATE bike_io bike_platform
-  bike_rider_math bike::tomlplusplus)
+target_link_libraries(bike_configuration PUBLIC bike_geometry PRIVATE bike_io
+  bike_platform bike_rider_math bike::tomlplusplus)
 
 # bike_geometry: the T14 geometry boundary — the specs.py records with
 # declared defaults, hardpoints.py's headtube/axle/ground/trail/
@@ -516,8 +518,6 @@ add_library(bike_model STATIC
   "${_bike_native_dir}/src/model/checks.hpp"
   "${_bike_native_dir}/src/model/mass.hpp"
   "${_bike_native_dir}/src/model/mass.cpp"
-  "${_bike_native_dir}/src/model/rider_geometry.hpp"
-  "${_bike_native_dir}/src/model/rider_geometry.cpp"
   "${_bike_native_dir}/src/model/suspension_setup.hpp"
   "${_bike_native_dir}/src/model/suspension_setup.cpp")
 set_target_properties(bike_model PROPERTIES POSITION_INDEPENDENT_CODE ON)

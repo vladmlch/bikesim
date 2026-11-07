@@ -1576,12 +1576,13 @@ namespace {
 // Python terms — a bool (type(x) is not int) or a non-integral number.
 // `provenance` stays a raw str slot: a non-string member fails the
 // 'joint range provenance is required' check.
-JointEnvelope envelope_from_object(const bike::io::Value &entry) {
+JointEnvelope envelope_from_object(const bike::io::Value &entry,
+                                   std::string_view name) {
     using bike::io::Value;
     const auto *object = std::get_if<Value::Object>(&entry.data);
     static const std::set<std::string_view> kKeys{
         "direction", "maximum_anatomical_rad", "minimum_anatomical_rad",
-        "neutral_anatomical_rad", "provenance"};
+        "provenance"};
     {
         std::set<std::string_view> keys;
         if (object != nullptr)
@@ -1590,6 +1591,7 @@ JointEnvelope envelope_from_object(const bike::io::Value &entry) {
             fail("invalid joint envelope fields");
     }
     JointEnvelope envelope{};
+    envelope.neutral_anatomical_rad = build_pose_neutral_anatomical_rad(name);
     envelope.direction = 0;  // invalid sentinel — see the comment above
     for (const auto &[key, member] : *object) {
         if (key == "direction") {
@@ -1623,13 +1625,9 @@ JointEnvelope envelope_from_object(const bike::io::Value &entry) {
             const auto *flag = std::get_if<bool>(&member.data);
             if (number == nullptr && flag == nullptr)
                 fail("invalid joint envelope fields");
-            double *slot = nullptr;
-            if (key == "neutral_anatomical_rad")
-                slot = &envelope.neutral_anatomical_rad;
-            else if (key == "minimum_anatomical_rad")
-                slot = &envelope.minimum_anatomical_rad;
-            else
-                slot = &envelope.maximum_anatomical_rad;
+            double *slot = key == "minimum_anatomical_rad"
+                               ? &envelope.minimum_anatomical_rad
+                               : &envelope.maximum_anatomical_rad;
             bool ok = false;
             *slot = flag != nullptr
                 ? (*flag ? 1. : 0.)
@@ -1650,7 +1648,7 @@ JointEnvelopeMap envelope_map(const bike::io::Value &joints,
         if (!requested.contains(name)) continue;
         result.emplace_back(
             std::string(name),
-            envelope_from_object(*bike::io::find_member(*object, name)));
+            envelope_from_object(*bike::io::find_member(*object, name), name));
     }
     return result;
 }
@@ -1809,9 +1807,7 @@ JointEnvelope strength_coordinate(const bike::io::Value &entry,
         throw std::out_of_range("coordinate");
     const auto *coord_object =
         std::get_if<Value::Object>(&coordinate->data);
-    if (coord_object == nullptr || coord_object->size() != 2 ||
-        bike::io::find_member(*coord_object, "neutral_anatomical_rad") ==
-            nullptr ||
+    if (coord_object == nullptr || coord_object->size() != 1 ||
         bike::io::find_member(*coord_object, "direction") == nullptr)
         fail(prefix + ": invalid coordinate convention");
     // `low, high = entry['used_anatomical_range_rad']` — raw unpack; the
@@ -1823,8 +1819,7 @@ JointEnvelope strength_coordinate(const bike::io::Value &entry,
         throw std::out_of_range("used_anatomical_range_rad");
     const auto [low, high] = detail::unpack2(*range_member);
     JointEnvelope envelope;
-    envelope.neutral_anatomical_rad = detail::py_float(
-        *bike::io::find_member(*coord_object, "neutral_anatomical_rad"));
+    envelope.neutral_anatomical_rad = build_pose_neutral_anatomical_rad(name);
     envelope.direction =
         detail::py_int(*bike::io::find_member(*coord_object, "direction"));
     envelope.minimum_anatomical_rad = detail::py_float(low);

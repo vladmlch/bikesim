@@ -1521,7 +1521,9 @@ void test_loaders() {
         ++expected_name;
         bt::require(e.minimum_anatomical_rad < e.maximum_anatomical_rad &&
                         (e.direction == 1 || e.direction == -1) &&
-                        !e.provenance.empty(),
+                        !e.provenance.empty() &&
+                        e.neutral_anatomical_rad ==
+                            cfg::build_pose_neutral_anatomical_rad(name),
                     "envelope domain at " + name);
     }
     // present={} (an engaged empty set) requests no joints; present=None
@@ -1558,6 +1560,22 @@ void test_loaders() {
         bt::fixture("config/rider_strength_reference.json"),
         cfg::kRiderJoints);
     bt::require(coordinates.size() == 11, "strength coordinate count");
+    for (const auto& [name, c] : coordinates) {
+        bt::require(c.neutral_anatomical_rad ==
+                        cfg::build_pose_neutral_anatomical_rad(name),
+                    "strength coordinate neutral angle at " + name);
+    }
+    // Hard-coded neutral_anatomical_rad in coordinate is rejected.
+    {
+        Value entry = io::parse_json(
+            R"({"coordinate":{"neutral_anatomical_rad":0.73,"direction":1},)"
+            R"("used_anatomical_range_rad":[-0.5,1.3],"population":"test"})");
+        expect_invalid("rider_torso_hinge: invalid coordinate convention",
+                       [&] {
+                           (void) cfg::strength_coordinate(
+                               entry, "rider_torso_hinge");
+                       });
+    }
 }
 
 void test_suspension() {
@@ -1658,7 +1676,21 @@ void test_suspension() {
 
 } // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
+#endif
+    const std::span<char*> args(argv, static_cast<std::size_t>(argc));
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+    if (args.size() > 1 && std::string_view(args[1]) == "rider") {
+        return bt::run([] {
+            test_rider();
+            test_loaders();
+        });
+    }
     return bt::run([] {
         physics_mode_is_physical_only();
         test_defaults();

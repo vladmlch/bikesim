@@ -51,6 +51,20 @@ bool approx(double actual, double expected, double rtol = 1e-6,
                 "each joint saturates at its own directional capacity");
 }
 
+[[gnu::noinline]] void test_split_spills_over_when_one_joint_saturates() {
+    const auto cap = [](int, double) { return 100.; };
+    // Unclamped: th = 260 * 2 / 5 = 104 (> 100), tk = 260 * 1 / 5 = 52.
+    // Joint 0 saturates at 100 (delivering 200), spilling the remaining 60
+    // onto joint 1 (tk = 60 <= 100).
+    const auto [th, tk] =
+        spindle::split_joint_torques(260., {2., 1.}, cap);
+    bt::require(approx(th, 100.) && approx(tk, 60.),
+                "when one joint saturates, the remaining demand spills over "
+                "to the other joint within its capacity");
+    bt::require(approx(th * 2. + tk * 1., 260.),
+                "spillover delivers the full requested virtual work");
+}
+
 [[gnu::noinline]] void test_singular_and_zero_capacity_deliver_zero() {
     // crank_split/singular_and_zero_capacity_deliver_zero
     const auto hundred = [](int, double) { return 100.; };
@@ -111,6 +125,83 @@ bool approx(double actual, double expected, double rtol = 1e-6,
                 "the even handover splits the request exactly in half");
 }
 
+[[gnu::noinline]] void test_shares_and_targets_are_continuous_across_dead_centers() {
+    constexpr double kStepRad = 1e-3;
+    for (const double center :
+         {std::numbers::pi / 2., 3. * std::numbers::pi / 2.}) {
+        const auto before = spindle::leg_shares(center - kStepRad);
+        const auto after = spindle::leg_shares(center + kStepRad);
+        bt::require(std::abs(after[0] - before[0]) < .01 &&
+                        std::abs(after[1] - before[1]) < .01,
+                    "leg_shares must be continuous across 90/270 deg without a "
+                    "Heaviside step");
+        const auto sp_f_before =
+            spindle::spindle_xz({0., 0.}, .17, center - kStepRad, 1.);
+        const auto sp_r_before =
+            spindle::spindle_xz({0., 0.}, .17, center - kStepRad, -1.);
+        const auto sp_f_after =
+            spindle::spindle_xz({0., 0.}, .17, center + kStepRad, 1.);
+        const auto sp_r_after =
+            spindle::spindle_xz({0., 0.}, .17, center + kStepRad, -1.);
+        const auto t_before = spindle::leg_crank_targets(
+            40., center - kStepRad, sp_f_before, sp_r_before, {0., 0.}, 15.);
+        const auto t_after = spindle::leg_crank_targets(
+            40., center + kStepRad, sp_f_after, sp_r_after, {0., 0.}, 15.);
+        bt::require(std::abs(t_after[0] - t_before[0]) < .5 &&
+                        std::abs(t_after[1] - t_before[1]) < .5,
+                    "leg_crank_targets must be continuous across 90/270 deg");
+    }
+}
+
+[[gnu::noinline]] void
+test_downstroke_allocation_is_continuous_and_has_no_wrong_sign_hip_after_tdc() {
+    const spindle::Vec2 hip{-.16875, .625};
+    const spindle::LegLoopGeometry geom{
+        .thigh_m = .4182,
+        .link_m = .446007286936,
+        .knee_sign = 1.,
+        .thigh_angle0_rad = 1.15,
+        .link_angle0_rad = .22,
+        .side_sign = 1.,
+    };
+    const auto cap = [](int joint, double sign) {
+        if (joint == 0)
+            return sign >= 0. ? 175. : 70.;
+        return sign >= 0. ? 65. : 110.;
+    };
+    constexpr int kSteps = 3600;
+    spindle::Vec2 prev_torques{};
+    bool has_prev = false;
+    for (int i = 0; i <= kSteps; ++i) {
+        const double phi =
+            (2. * std::numbers::pi * static_cast<double>(i)) /
+            static_cast<double>(kSteps);
+        const auto shares = spindle::leg_shares(phi);
+        const auto jac =
+            spindle::leg_loop_jacobian(geom, hip, {0., 0.}, .165, phi, 0.);
+        const auto torques =
+            spindle::downstroke_joint_torques(40. * shares[0], jac, cap);
+        const double deg = phi * 180. / std::numbers::pi;
+        if (deg >= 270. && deg <= 291.) {
+            bt::require(torques[0] >= 0.,
+                        "hip never gets negative (flexion) task torque right "
+                        "after TDC in [270, 291] deg");
+            bt::require(torques[1] <= 0.,
+                        "knee never gets positive (flexion) task torque around "
+                        "TDC");
+        }
+        if (has_prev) {
+            const double jump = std::hypot(torques[0] - prev_torques[0],
+                                           torques[1] - prev_torques[1]);
+            bt::require(jump < 2.,
+                        "downstroke joint allocation must be continuous in "
+                        "crank angle without step jumps");
+        }
+        prev_torques = torques;
+        has_prev = true;
+    }
+}
+
 [[gnu::noinline]] void test_power_budget_scales_positive_work_only() {
     // crank_split/power_budget_scales_positive_work_only
     // Dict order {'a','b','eccentric','still'} is the array order here.
@@ -132,11 +223,14 @@ int main() {
         test_split_delivers_requested_torque_within_capacity();
         test_split_prefers_stronger_joint();
         test_split_uses_directional_capacity_and_clips();
+        test_split_spills_over_when_one_joint_saturates();
         test_singular_and_zero_capacity_deliver_zero();
         test_shares_sum_to_one();
         test_vertical_handover_and_opposite_power_strokes();
         test_preload_is_downward_virtual_work_in_native_plus_y();
         test_handover_splits_without_preload();
+        test_shares_and_targets_are_continuous_across_dead_centers();
+        test_downstroke_allocation_is_continuous_and_has_no_wrong_sign_hip_after_tdc();
         test_power_budget_scales_positive_work_only();
     });
 }

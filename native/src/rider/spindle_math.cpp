@@ -243,11 +243,18 @@ namespace spindle {
     }
 
     Vec2 leg_shares(double phase_rad) {
+        constexpr double kHandoverCosine = .25;
         const double downward =
             numeric::math_cos(validation::finite(phase_rad, "crank phase"));
         if (std::abs(downward) <= 1e-12)
             return {.5, .5};
-        return downward > 0. ? Vec2{1., 0.} : Vec2{0., 1.};
+        if (downward >= kHandoverCosine)
+            return {1., 0.};
+        if (downward <= -kHandoverCosine)
+            return {0., 1.};
+        const double u = downward / kHandoverCosine;
+        const double front = .5 + .25 * u * (3. - u * u);
+        return {front, 1. - front};
     }
 
     double preload_torque_nm(double preload_n, Vec2 spindle_pos,
@@ -266,16 +273,16 @@ namespace spindle {
         const double total =
             validation::finite(total_nm, "total crank torque");
         const Vec2 shares = leg_shares(phase_rad);
+        const double recovery_front =
+            preload_torque_nm(preload_n, spindle_front_xz, crank_xz);
+        const double recovery_rear =
+            preload_torque_nm(preload_n, spindle_rear_xz, crank_xz);
         if (shares[0] == shares[1])
             return {total / 2., total / 2.};
-        // Front is index 0, rear index 1; `rising` is the smaller share.
-        const bool rising_is_front = shares[0] < shares[1];
-        const Vec2 rising_spindle =
-            rising_is_front ? spindle_front_xz : spindle_rear_xz;
-        const double recovery =
-            preload_torque_nm(preload_n, rising_spindle, crank_xz);
-        return rising_is_front ? Vec2{recovery, total - recovery}
-                               : Vec2{total - recovery, recovery};
+        return {shares[0] * (total - recovery_rear) +
+                    shares[1] * recovery_front,
+                shares[1] * (total - recovery_front) +
+                    shares[0] * recovery_rear};
     }
     // NOLINTEND(bugprone-easily-swappable-parameters)
 

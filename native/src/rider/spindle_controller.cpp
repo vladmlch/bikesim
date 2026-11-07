@@ -1376,13 +1376,18 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             const double weight_crank_nm =
                 -(jacobians[s][0] * leg_gravity[s][0] +
                   jacobians[s][1] * leg_gravity[s][1]);
+            const double weight_share_nm = shares[s] * weight_crank_nm;
             const double muscle_task_nm =
-                command.mean_crank_torque_nm > 0. && shares[s] >= .5
-                    ? std::max(leg_targets_v[s] - weight_crank_nm,
-                               -weight_crank_nm)
+                command.mean_crank_torque_nm > 0.
+                    ? std::max(leg_targets_v[s] - weight_share_nm,
+                               -weight_share_nm)
                     : leg_targets_v[s];
-            const Vec2 torques = spindle::split_joint_torques(
-                muscle_task_nm, jacobians[s], capacity);
+            const Vec2 torques =
+                command.mean_crank_torque_nm > 0.
+                    ? spindle::downstroke_joint_torques(
+                          muscle_task_nm, jacobians[s], capacity)
+                    : spindle::split_joint_torques(
+                          muscle_task_nm, jacobians[s], capacity);
             for (std::size_t i = 0; i < 2; ++i) {
                 const std::size_t slot = joint_index(
                     "rider_" + std::string(i == 0 ? "hip_" : "knee_") +
@@ -1397,9 +1402,8 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 // uncompensated so its weight reaches the pedal; the
                 // rising leg keeps the whole bias term.
                 const double feedforward =
-                    bias[dof] -
-                        (shares[s] >= .5 ? leg_gravity[s][i] : 0.) +
-                        inertia[dof];
+                    bias[dof] - shares[s] * leg_gravity[s][i] +
+                    inertia[dof];
                 requested[slot] = torques[i] + feedforward;
                 requested_filled[slot] = 1;
             }

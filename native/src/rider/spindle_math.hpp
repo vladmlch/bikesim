@@ -110,6 +110,10 @@ namespace spindle {
     [[nodiscard]] Vec2 split_joint_torques(double tau_leg_nm, Vec2 jac,
                                            Capacity &&capacity);
 
+    template<typename Capacity>
+    [[nodiscard]] Vec2 downstroke_joint_torques(double tau_leg_nm, Vec2 jac,
+                                                Capacity &&capacity);
+
     // scale_to_power_budget on parallel arrays (dict order preserved by the
     // caller's iteration order).
     [[nodiscard]] std::vector<double>
@@ -213,9 +217,50 @@ namespace spindle {
             limits[0] = cap(0, torques[0] >= 0. ? 1. : -1.);
             limits[1] = cap(1, torques[1] >= 0. ? 1. : -1.);
         }
+        for (std::size_t i = 0; i < 2; ++i) {
+            if (std::abs(torques[i]) > limits[i]) {
+                torques[i] =
+                    std::max(-limits[i], std::min(limits[i], torques[i]));
+                const std::size_t other = 1U - i;
+                if (std::abs(jac[other]) > 1e-9) {
+                    const double rem = torque - jac[i] * torques[i];
+                    torques[other] = rem / jac[other];
+                    limits[other] = cap(static_cast<int>(other),
+                                        torques[other] >= 0. ? 1. : -1.);
+                }
+            }
+        }
         return Vec2{
             std::max(-limits[0], std::min(limits[0], torques[0])),
             std::max(-limits[1], std::min(limits[1], torques[1]))};
+    }
+
+    template<typename Capacity>
+    inline Vec2 downstroke_joint_torques(double tau_leg_nm, Vec2 jac,
+                                         const Capacity &capacity) {
+        if (tau_leg_nm <= 0.)
+            return split_joint_torques(tau_leg_nm, jac, capacity);
+        const double torque =
+            validation::finite(tau_leg_nm, "leg crank torque");
+        for (const double derivative : jac)
+            validation::finite(derivative, "leg virtual-work Jacobian");
+        const double cap_hip = capacity(0, 1.);
+        const double cap_knee = capacity(1, -1.);
+        if (!std::isfinite(cap_hip) || cap_hip < 0.)
+            throw std::invalid_argument("hip directional capacity");
+        if (!std::isfinite(cap_knee) || cap_knee < 0.)
+            throw std::invalid_argument("knee directional capacity");
+        const double w_hip = cap_hip * cap_hip * jac[0];
+        const double w_knee = cap_knee * cap_knee * jac[1];
+        const double denominator = jac[0] * w_hip + jac[1] * w_knee;
+        if (denominator < 1e-9)
+            return Vec2{0., 0.};
+        const double hip =
+            jac[0] > 0. ? std::min(cap_hip, torque * w_hip / denominator) : 0.;
+        const double knee =
+            jac[1] < 0. ? std::max(-cap_knee, torque * w_knee / denominator)
+                        : 0.;
+        return Vec2{hip, knee};
     }
 
 } // namespace spindle

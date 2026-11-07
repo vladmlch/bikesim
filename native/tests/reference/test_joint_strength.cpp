@@ -398,9 +398,14 @@ test_curve_knots_must_cover_the_used_anatomical_range() {
 [[gnu::noinline]] void
 test_strength_coordinates_agree_with_the_joint_envelope() {
     // joint_strength/strength_coordinates_agree_with_the_joint_envelope
-    const auto coordinates =
-        cfg::load_strength_coordinates(kStrengthPath, joints());
-    const auto envelopes = cfg::load_joint_envelopes(kEnvelopePath);
+    cfg::RiderSpecs rider;
+    rider.variant = "articulated_planar";
+    const auto pose =
+        bike::model::geometry_pose(rider, bike::geometry::BikeSpecs{});
+    const auto coordinates = bike::model::with_pose_neutral_angles(
+        cfg::load_strength_coordinates(kStrengthPath, joints()), pose);
+    const auto envelopes = bike::model::with_pose_neutral_angles(
+        cfg::load_joint_envelopes(kEnvelopePath), pose);
     const auto names_of = [](const auto &map) {
         std::set<std::string> out;
         for (const auto &[name, envelope] : map) out.insert(name);

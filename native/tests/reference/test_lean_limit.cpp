@@ -28,17 +28,22 @@ std::filesystem::path repo_file(std::string_view relative) {
            std::filesystem::path(relative);
 }
 
+model::ArticulatedPose articulated_pose() {
+    bike::configuration::RiderSpecs rider;
+    rider.variant = "articulated_planar";
+    return model::geometry_pose(rider, bike::geometry::BikeSpecs{});
+}
+
 std::map<std::string, spindle::JointEnvelope> envelopes() {
-    const auto loaded = bike::configuration::load_joint_envelopes(
-        repo_file("examples/research/rider_joint_envelope_anatomical.json"));
+    const auto loaded = model::with_pose_neutral_angles(
+        bike::configuration::load_joint_envelopes(
+            repo_file("examples/research/rider_joint_envelope_anatomical.json")),
+        articulated_pose());
     return {loaded.begin(), loaded.end()};
 }
 
 rider::SpindlePose pose() {
-    bike::configuration::RiderSpecs rider;
-    rider.variant = "articulated_planar";
-    const auto articulated =
-        model::geometry_pose(rider, bike::geometry::BikeSpecs{});
+    const auto articulated = articulated_pose();
     return {.hip = articulated.hip,
             .shoulder = articulated.shoulder,
             .elbow = articulated.elbow,

@@ -469,6 +469,7 @@ namespace spindle {
     }
 
     Vec2 joint_q_range(const JointEnvelope &envelope) {
+        validate_joint_envelope(envelope, "joint");
         const double a = (envelope.minimum_anatomical_rad -
                           envelope.neutral_anatomical_rad) /
                          envelope.direction;
@@ -479,10 +480,12 @@ namespace spindle {
     }
 
     double anatomical_angle(const JointEnvelope &envelope, double joint_q) {
-        if (!std::isfinite(joint_q))
+        if (!std::isfinite(envelope.neutral_anatomical_rad) ||
+            !std::isfinite(joint_q))
             throw std::invalid_argument(
                 "anatomical angle needs an envelope and a finite joint "
                 "coordinate");
+        validate_joint_envelope(envelope, "joint");
         const double value =
             envelope.neutral_anatomical_rad + envelope.direction * joint_q;
         return std::atan2(numeric::math_sin(value), numeric::math_cos(value));

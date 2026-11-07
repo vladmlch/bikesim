@@ -195,4 +195,10 @@ void validate_articulated_pose(const ArticulatedPose &pose);
 [[nodiscard]] double pose_neutral_anatomical_rad(const ArticulatedPose &pose,
                                                  std::string_view joint_name);
 
+// Populate each envelope's neutral_anatomical_rad from the build pose and
+// validate that the completed envelope is finite and contains its neutral angle.
+[[nodiscard]] configuration::JointEnvelopeMap
+with_pose_neutral_angles(configuration::JointEnvelopeMap envelopes,
+                         const ArticulatedPose &pose);
+
 } // namespace bike::model

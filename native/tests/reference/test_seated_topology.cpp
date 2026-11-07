@@ -353,10 +353,15 @@ void test_built_pose_anatomical_angles_inside_envelope() {
                 if (mj_name2id(m, mjOBJ_JOINT, std::string(name).c_str()) >=
                     0)
                     present.push_back(name);
-            const auto envelopes = cfg::load_joint_envelopes(
-                repo_file("examples/research/"
-                          "rider_joint_envelope_anatomical.json"),
-                std::span<const std::string_view>(present));
+            const auto pose = bike::model::geometry_pose(
+                bike::model::rider_from_args("articulated_planar"),
+                bike::geometry::BikeSpecs{});
+            const auto envelopes = bike::model::with_pose_neutral_angles(
+                cfg::load_joint_envelopes(
+                    repo_file("examples/research/"
+                              "rider_joint_envelope_anatomical.json"),
+                    std::span<const std::string_view>(present)),
+                pose);
             rider::NamedEntries<double> angles;
             for (const auto name : present) {
                 const int joint =

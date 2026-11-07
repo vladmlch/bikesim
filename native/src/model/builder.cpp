@@ -64,7 +64,10 @@ std::string generate_mjcf(const BuildRequest& request) {
         if(context.articulated) {
             for(auto* value:frame.direct("geom")) if(value->get("name").starts_with("geom_rider_")) (void)frame.remove(value);
             std::optional<configuration::JointEnvelopeMap> envelopes;
-            if(context.physics->articulated.joint_envelope_path) envelopes=configuration::load_joint_envelopes(*context.physics->articulated.joint_envelope_path);
+            if(context.physics->articulated.joint_envelope_path)
+                envelopes=with_pose_neutral_angles(
+                    configuration::load_joint_envelopes(*context.physics->articulated.joint_envelope_path),
+                    *context.articulated);
             build_articulated_rider(world,*context.articulated,split_paired_arm_masses(segment_masses(context.rider.mass_kg,context.rider.helmet_mass_kg)),
                 envelopes?&*envelopes:nullptr,context.physics->articulated.pedal_attachment=="spindle");
             add_rider_actuators(root);

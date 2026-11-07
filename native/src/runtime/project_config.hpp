@@ -42,7 +42,8 @@ void validate_native_supported(const bike::configuration::SimulationPhysicsConfi
 [[nodiscard]] RuntimeConfig project_runtime(
     const bike::configuration::SimulationPhysicsConfig&, const mjModel&);
 [[nodiscard]] bike::io::Value project_rider_controller(
-    const bike::configuration::SimulationPhysicsConfig&, const mjModel&);
+    const bike::configuration::SimulationPhysicsConfig&, const mjModel&,
+    const bike::model::ArticulatedPose&);
 [[nodiscard]] bike::io::Value project_articulated_pose(
     const bike::model::ArticulatedPose&);
 

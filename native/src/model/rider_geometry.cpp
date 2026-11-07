@@ -719,17 +719,20 @@ double pose_neutral_anatomical_rad(const SeatedPose &pose,
     return pose_neutral_anatomical_rad(articulated, joint_name);
 }
 
+configuration::JointEnvelopeMap
+with_pose_neutral_angles(configuration::JointEnvelopeMap envelopes,
+                         const ArticulatedPose &pose) {
+    for (auto &[name, env] : envelopes) {
+        env.neutral_anatomical_rad = pose_neutral_anatomical_rad(pose, name);
+        configuration::detail::post_init(env);
+        if (!(env.minimum_anatomical_rad <= env.neutral_anatomical_rad &&
+              env.neutral_anatomical_rad <= env.maximum_anatomical_rad))
+            throw std::invalid_argument(
+                name + ": neutral angle outside the declared range");
+    }
+    return envelopes;
+}
+
 NATIVE_DIAG_POP
 
 } // namespace bike::model
-
-namespace bike::configuration {
-
-double build_pose_neutral_anatomical_rad(std::string_view joint_name,
-                                         const RiderSpecs &rider) {
-    const model::ArticulatedPose pose =
-        model::geometry_pose(rider, geometry::BikeSpecs{});
-    return model::pose_neutral_anatomical_rad(pose, joint_name);
-}
-
-} // namespace bike::configuration

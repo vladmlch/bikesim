@@ -4,7 +4,12 @@
 #include "configuration/load.hpp"
 #include "engine_call.hpp"
 #include "model/builder.hpp"
+#include "model/mapping.hpp"
 #include "model/xml_writer.hpp"
+#include "rider/state_codec.hpp"
+#include "runtime/project_config.hpp"
+#include "terrain/profile.hpp"
+#include "terrain/trackfile.hpp"
 #include <mujoco/mujoco.h>
 #include <algorithm>
 #include <array>
@@ -545,8 +550,10 @@ void build_pose_neutral_angles() {
     const auto env_path = std::filesystem::path(*art.joint_envelope_path); // NOLINT(bugprone-unchecked-optional-access)
     const auto str_path = std::filesystem::path(*art.joint_strength_path); // NOLINT(bugprone-unchecked-optional-access)
 
-    const auto envelopes = cfg::load_joint_envelopes(env_path);
-    const auto coordinates = cfg::load_strength_coordinates(str_path, cfg::kRiderJoints);
+    const auto envelopes =
+        mdl::with_pose_neutral_angles(cfg::load_joint_envelopes(env_path), pose);
+    const auto coordinates = mdl::with_pose_neutral_angles(
+        cfg::load_strength_coordinates(str_path, cfg::kRiderJoints), pose);
     const auto rot_y = [](const mdl::Vec3& u, const mdl::Vec3& v) {
         return std::atan2(u[2] * v[0] - u[0] * v[2], u[0] * v[0] + u[2] * v[2]);
     };
@@ -612,6 +619,77 @@ void build_pose_neutral_angles() {
                 "rider_joint_envelope_anatomical.json does not contain hard-coded neutral_anatomical_rad");
     bt::require(!bt::text(str_path).contains("neutral_anatomical_rad"),
                 "rider_strength_reference.json does not contain hard-coded neutral_anatomical_rad");
+
+    // Non-default rider (height 1.70 m, valid inseam 0.78 m) and non-default bike:
+    // the runtime controller envelopes and strength_coordinates must match
+    // pose_neutral_anatomical_rad of the actual pose the MJCF was built from,
+    // to 1e-12, for every leg/arm/torso joint.
+    {
+        auto custom = physical("viewer_physics_welded.toml");
+        if (!custom->rider.has_value() || !custom->physics.has_value())
+            throw std::runtime_error("missing rider or physics section");
+        auto& custom_rider = *custom->rider;
+        auto& custom_physics = *custom->physics;
+        custom_rider.height_m = 1.70;
+        custom_rider.inseam_m = 0.78;
+        custom->bike.reach = 460.0;
+        custom_physics.articulated.pedal_attachment = "weld";
+        const auto track = bike::terrain::flat();
+        custom->field = bike::terrain::HeightFieldSpec::for_track(track);
+        auto custom_model = mdl::compile_mjcf(mdl::generate_mjcf(*custom));
+        const auto hfield_id = static_cast<std::size_t>(
+            mdl::required_id(*custom_model, mjOBJ_HFIELD, "road"));
+        const auto hfield_offset = std::views::counted(
+            custom_model->hfield_adr, custom_model->nhfield)[hfield_id];
+        const auto samples = bike::terrain::build_field_data(track, custom->field);
+        const auto target = std::views::counted(
+                                custom_model->hfield_data, custom_model->nhfielddata)
+                                .subspan(static_cast<std::size_t>(hfield_offset),
+                                         samples.size());
+        for (std::size_t i = 0; i < samples.size(); ++i)
+            target[i] = static_cast<float>(samples[i]);
+
+        const auto custom_pose = mdl::geometry_pose(custom_rider, custom->bike);
+        const auto controller_val = runtime::project_rider_controller(
+            custom_physics, *custom_model, custom_pose);
+        const auto spindle_cfg = std::make_unique<::rider::SpindleConfig>(
+            ::rider::decode_spindle_config(controller_val));
+        const auto custom_jnt_range = std::views::counted(
+            custom_model->jnt_range,
+            static_cast<std::ptrdiff_t>(custom_model->njnt * 2));
+
+        for (const auto name_sv : cfg::kRiderJoints) {
+            const std::string name(name_sv);
+            const double expected_rad =
+                mdl::pose_neutral_anatomical_rad(custom_pose, name);
+            bt::require(spindle_cfg->envelopes.contains(name),
+                        "controller envelope present for " + name);
+            bt::require(spindle_cfg->strength_coordinates.contains(name),
+                        "controller strength coordinate present for " + name);
+            const auto& env = spindle_cfg->envelopes.at(name);
+            const auto& coord = spindle_cfg->strength_coordinates.at(name);
+            bt::require(
+                std::abs(env.neutral_anatomical_rad - expected_rad) < 1e-12,
+                "non-default rider controller envelope neutral matches MJCF build pose for " +
+                    name + " (actual=" + std::to_string(env.neutral_anatomical_rad) +
+                    ", expected=" + std::to_string(expected_rad) + ")");
+            bt::require(
+                std::abs(coord.neutral_anatomical_rad - expected_rad) < 1e-12,
+                "non-default rider controller strength coordinate neutral matches MJCF build pose for " +
+                    name + " (actual=" + std::to_string(coord.neutral_anatomical_rad) +
+                    ", expected=" + std::to_string(expected_rad) + ")");
+            const int jid =
+                mj_name2id(custom_model.get(), mjOBJ_JOINT, name.c_str());
+            bt::require(jid >= 0, "compiled joint present for " + name);
+            const auto q_range = cfg::joint_q_range(env);
+            const auto base = static_cast<std::size_t>(jid) * 2;
+            bt::require(
+                std::abs(custom_jnt_range[base] - q_range[0]) < 1e-12 &&
+                    std::abs(custom_jnt_range[base + 1] - q_range[1]) < 1e-12,
+                "non-default rider compiled joint q range matches controller envelope for " +
+                    name);
+        }
+    }
 }
 
 // Saddle height = 0.8557 * inseam gives 37.5 deg knee flexion at bottom dead

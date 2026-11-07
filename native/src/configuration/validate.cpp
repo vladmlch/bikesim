@@ -874,9 +874,9 @@ void post_init(RiderPosture &posture) {
     }
 }
 
-void post_init(const JointEnvelope &envelope) {
-    if (!std::isfinite(envelope.neutral_anatomical_rad) ||
-        !std::isfinite(envelope.minimum_anatomical_rad) ||
+namespace {
+void validate_loaded_envelope(const JointEnvelope &envelope) {
+    if (!std::isfinite(envelope.minimum_anatomical_rad) ||
         !std::isfinite(envelope.maximum_anatomical_rad) ||
         (envelope.direction != -1 && envelope.direction != 1))
         fail("invalid joint coordinate convention");
@@ -884,6 +884,13 @@ void post_init(const JointEnvelope &envelope) {
         fail("empty joint range");
     if (!nonblank(envelope.provenance))
         fail("joint range provenance is required");
+}
+} // namespace
+
+void post_init(const JointEnvelope &envelope) {
+    if (!std::isfinite(envelope.neutral_anatomical_rad))
+        fail("invalid joint coordinate convention");
+    validate_loaded_envelope(envelope);
 }
 
 void post_init(TorqueCurve &curve) {
@@ -1576,8 +1583,7 @@ namespace {
 // Python terms — a bool (type(x) is not int) or a non-integral number.
 // `provenance` stays a raw str slot: a non-string member fails the
 // 'joint range provenance is required' check.
-JointEnvelope envelope_from_object(const bike::io::Value &entry,
-                                   std::string_view name) {
+JointEnvelope envelope_from_object(const bike::io::Value &entry) {
     using bike::io::Value;
     const auto *object = std::get_if<Value::Object>(&entry.data);
     static const std::set<std::string_view> kKeys{
@@ -1591,7 +1597,7 @@ JointEnvelope envelope_from_object(const bike::io::Value &entry,
             fail("invalid joint envelope fields");
     }
     JointEnvelope envelope{};
-    envelope.neutral_anatomical_rad = build_pose_neutral_anatomical_rad(name);
+    envelope.neutral_anatomical_rad = std::numeric_limits<double>::quiet_NaN();
     envelope.direction = 0;  // invalid sentinel — see the comment above
     for (const auto &[key, member] : *object) {
         if (key == "direction") {
@@ -1634,7 +1640,7 @@ JointEnvelope envelope_from_object(const bike::io::Value &entry,
                 : bike::io::detail::float_from_lexeme(number->lexeme, ok);
         }
     }
-    detail::post_init(envelope);
+    detail::validate_loaded_envelope(envelope);
     return envelope;
 }
 
@@ -1648,7 +1654,7 @@ JointEnvelopeMap envelope_map(const bike::io::Value &joints,
         if (!requested.contains(name)) continue;
         result.emplace_back(
             std::string(name),
-            envelope_from_object(*bike::io::find_member(*object, name), name));
+            envelope_from_object(*bike::io::find_member(*object, name)));
     }
     return result;
 }
@@ -1819,7 +1825,7 @@ JointEnvelope strength_coordinate(const bike::io::Value &entry,
         throw std::out_of_range("used_anatomical_range_rad");
     const auto [low, high] = detail::unpack2(*range_member);
     JointEnvelope envelope;
-    envelope.neutral_anatomical_rad = build_pose_neutral_anatomical_rad(name);
+    envelope.neutral_anatomical_rad = std::numeric_limits<double>::quiet_NaN();
     envelope.direction =
         detail::py_int(*bike::io::find_member(*coord_object, "direction"));
     envelope.minimum_anatomical_rad = detail::py_float(low);
@@ -1828,7 +1834,7 @@ JointEnvelope strength_coordinate(const bike::io::Value &entry,
         bike::io::find_member(*object, "population");
     if (population == nullptr) throw std::out_of_range("population");
     envelope.provenance = detail::py_str(*population);
-    detail::post_init(envelope);
+    detail::validate_loaded_envelope(envelope);
     return envelope;
 }
 
@@ -1887,7 +1893,7 @@ load_strength_profile(const std::filesystem::path &path,
                 fail(label +
                      ": unknown or missing strength entry fields");
         }
-        const JointEnvelope coordinate = strength_coordinate(entry, name);
+        (void)strength_coordinate(entry, name);
         // `low, high = (float(v) for v in entry['used_anatomical_range_rad'])`
         // — the generator iterates the raw member; float() runs on each
         // element as it is pulled, and the unpack pulls at most three, so
@@ -1911,11 +1917,6 @@ load_strength_profile(const std::filesystem::path &path,
         }
         if (!(std::isfinite(low) && std::isfinite(high) && low < high))
             fail(label + ": invalid used anatomical range");
-        if (!(coordinate.minimum_anatomical_rad <=
-                  coordinate.neutral_anatomical_rad &&
-              coordinate.neutral_anatomical_rad <=
-                  coordinate.maximum_anatomical_rad))
-            fail(label + ": neutral angle outside the used range");
         const Value &directions =
             *bike::io::find_member(entry_object, "directions");
         // `set(directions) != {'positive','negative'}` — set() iterates the

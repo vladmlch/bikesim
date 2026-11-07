@@ -307,11 +307,57 @@ Value curve(const cfg::TorqueCurve& c) {
 }
 Value envelopes(const cfg::JointEnvelopeMap& entries) {
     Object out;
-    for (const auto& [name, e] : entries) out.emplace_back(name, Value{Object{
-        {"neutral_anatomical_rad", real(e.neutral_anatomical_rad)},
-        {"direction", integer(e.direction)}, {"minimum_anatomical_rad", real(e.minimum_anatomical_rad)},
-        {"maximum_anatomical_rad", real(e.maximum_anatomical_rad)}, {"provenance", text(e.provenance)}}});
+    for (const auto& [name, e] : entries) {
+        spindle::validate_joint_envelope(e, name.c_str());
+        out.emplace_back(name, Value{Object{
+            {"neutral_anatomical_rad", real(e.neutral_anatomical_rad)},
+            {"direction", integer(e.direction)}, {"minimum_anatomical_rad", real(e.minimum_anatomical_rad)},
+            {"maximum_anatomical_rad", real(e.maximum_anatomical_rad)}, {"provenance", text(e.provenance)}}});
+    }
     return Value{std::move(out)};
+}
+
+bio::Value project_rider_controller_impl(const cfg::SimulationPhysicsConfig& config,
+                                         const mjModel& model,
+                                         const mdl::ArticulatedPose* pose) {
+    auto const document = cfg::detail::plain_document(cfg::to_value(config));
+    auto out = field(document, "articulated");
+    // weld_servo_gain/weld_servo_limit_nm cross this wire:
+    // SpindleController::compute consumes them for the weld-press servo
+    // (rider_control.py:758-934). native/setup.py rider_controller_config
+    // publishes the same keys.
+    const auto* members = std::get_if<Object>(&out.data);
+    if (members == nullptr)
+        throw std::invalid_argument(
+            "rider_controller: articulated field is not an object");
+    set(out, "strength", Value{});
+    set(out, "strength_coordinates", Value{Object{}});
+    set(out, "envelopes", Value{Object{}});
+    std::vector<std::string_view> joints;
+    for (auto const name : cfg::kRiderJoints) {
+        const std::string owned(name);
+        if (mj_name2id(&model, mjOBJ_JOINT, owned.c_str()) >= 0) joints.push_back(name);
+    }
+    if (joints.empty()) return out;
+    if (pose == nullptr)
+        throw std::invalid_argument(
+            "rider_controller: articulated pose is required when rider joints are present");
+    const auto& a = config.articulated;
+    if (a.joint_strength_path) {
+        const auto profile = cfg::load_strength_profile(*a.joint_strength_path,
+            joints, false);
+        Object strength;
+        for (const auto& [name, curves] : profile) strength.emplace_back(name,
+            Value{Object{{"positive", curve(curves.at(1))}, {"negative", curve(curves.at(-1))}}});
+        set(out, "strength", Value{std::move(strength)});
+        set(out, "strength_coordinates", envelopes(mdl::with_pose_neutral_angles(
+            cfg::load_strength_coordinates(*a.joint_strength_path, joints), *pose)));
+    }
+    if (a.joint_envelope_path)
+        set(out, "envelopes", envelopes(mdl::with_pose_neutral_angles(
+            cfg::load_joint_envelopes(*a.joint_envelope_path,
+                std::span<const std::string_view>(joints)), *pose)));
+    return out;
 }
 
 } // namespace
@@ -337,40 +383,9 @@ bio::Value project_articulated_pose(const mdl::ArticulatedPose& p) {
 }
 
 bio::Value project_rider_controller(const cfg::SimulationPhysicsConfig& config,
-                                    const mjModel& model) {
-    auto const document = cfg::detail::plain_document(cfg::to_value(config));
-    auto out = field(document, "articulated");
-    // weld_servo_gain/weld_servo_limit_nm cross this wire:
-    // SpindleController::compute consumes them for the weld-press servo
-    // (rider_control.py:758-934). native/setup.py rider_controller_config
-    // publishes the same keys.
-    const auto* members = std::get_if<Object>(&out.data);
-    if (members == nullptr)
-        throw std::invalid_argument(
-            "rider_controller: articulated field is not an object");
-    set(out, "strength", Value{});
-    set(out, "strength_coordinates", Value{Object{}});
-    set(out, "envelopes", Value{Object{}});
-    std::vector<std::string_view> joints;
-    for (auto const name : cfg::kRiderJoints) {
-        const std::string owned(name);
-        if (mj_name2id(&model, mjOBJ_JOINT, owned.c_str()) >= 0) joints.push_back(name);
-    }
-    if (joints.empty()) return out;
-    const auto& a = config.articulated;
-    if (a.joint_strength_path) {
-        const auto profile = cfg::load_strength_profile(*a.joint_strength_path,
-            joints, false);
-        Object strength;
-        for (const auto& [name, curves] : profile) strength.emplace_back(name,
-            Value{Object{{"positive", curve(curves.at(1))}, {"negative", curve(curves.at(-1))}}});
-        set(out, "strength", Value{std::move(strength)});
-        set(out, "strength_coordinates", envelopes(cfg::load_strength_coordinates(*a.joint_strength_path, joints)));
-    }
-    if (a.joint_envelope_path)
-        set(out, "envelopes", envelopes(cfg::load_joint_envelopes(*a.joint_envelope_path,
-            std::span<const std::string_view>(joints))));
-    return out;
+                                    const mjModel& model,
+                                    const mdl::ArticulatedPose& pose) {
+    return project_rider_controller_impl(config, model, &pose);
 }
 
 namespace {
@@ -470,8 +485,11 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             throw std::invalid_argument("brake wheel joint must be a hinge: " + joint);
         set(wheels, side, Value{Object{{"joint", text(joint)}, {"dof_index", integer(0)}}});
     }
-    const Value pose = articulated
-        ? project_articulated_pose(mdl::geometry_pose(resolved_rider, request.bike))
+    const std::optional<mdl::ArticulatedPose> articulated_pose = articulated
+        ? std::optional<mdl::ArticulatedPose>{mdl::geometry_pose(resolved_rider, request.bike)}
+        : std::nullopt;
+    const Value pose = articulated_pose
+        ? project_articulated_pose(*articulated_pose)
         : Value{};
     const int com = mj_name2id(&model, mjOBJ_SITE, "site_CG");
     const auto physics_document = cfg::detail::plain_document(cfg::to_value(config));
@@ -485,7 +503,8 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         {"record_retention", text(options.record_retention == RetentionMode::off ? "off" :
             options.record_retention == RetentionMode::full ? "full" : "legacy")},
         {"writer_config", project_writer_config(request, model, track, options)},
-        {"rider_controller", project_rider_controller(config, model)},
+        {"rider_controller", project_rider_controller_impl(
+            config, model, articulated_pose ? &*articulated_pose : nullptr)},
         {"rider_intent", field(physics_document, "seated_climb")},
         {"monitors", Value{Object{{"balance_floor_mps", real(config.articulated.balance_floor_kmh / 3.6)},
             {"balance_dwell_s", real(config.articulated.balance_dwell_s)},

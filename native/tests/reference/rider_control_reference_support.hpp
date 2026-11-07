@@ -155,7 +155,7 @@ pinned_model(std::string_view physics_toml =
         rcfg::project_articulated_pose(pose), "pose");
     auto controller_config = ::rider::decode_spindle_config(
         rcfg::project_rider_controller(*plant.request.physics,
-                                       *plant.model));
+                                       *plant.model, pose));
     if (config_patch)
         config_patch(controller_config);
     plant.controller = std::make_unique<rider::SpindleController>(

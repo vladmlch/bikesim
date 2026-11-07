@@ -10,8 +10,9 @@ using mechanics::bounds;
 namespace {
 std::array<double,3> cross(const std::array<double,3>& a,const std::array<double,3>& b){return {a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]};}
 [[gnu::noinline]] std::unique_ptr<::rider::SpindleController> controller(mechanics::BikeStand& bike) {
-    const auto pose=::rider::decode_spindle_pose(runtime::project_articulated_pose(model::geometry_pose(*bike.request.rider,bike.request.bike)),"validation.pose"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
-    return std::make_unique<::rider::SpindleController>(bike.model(),pose,::rider::decode_spindle_config(runtime::project_rider_controller(*bike.request.physics,*bike.model())),bike.request.bike.crank_length/1000.); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
+    const auto articulated=model::geometry_pose(*bike.request.rider,bike.request.bike); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
+    const auto pose=::rider::decode_spindle_pose(runtime::project_articulated_pose(articulated),"validation.pose");
+    return std::make_unique<::rider::SpindleController>(bike.model(),pose,::rider::decode_spindle_config(runtime::project_rider_controller(*bike.request.physics,*bike.model(),articulated)),bike.request.bike.crank_length/1000.); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
 // The frame limit keeps every multi-kilobyte fixture owner on the heap;
 // construction order below is unchanged from the stack-resident original.

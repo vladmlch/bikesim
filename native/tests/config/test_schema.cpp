@@ -1522,9 +1522,20 @@ void test_loaders() {
         bt::require(e.minimum_anatomical_rad < e.maximum_anatomical_rad &&
                         (e.direction == 1 || e.direction == -1) &&
                         !e.provenance.empty() &&
-                        e.neutral_anatomical_rad ==
-                            cfg::build_pose_neutral_anatomical_rad(name),
+                        std::isnan(e.neutral_anatomical_rad),
                     "envelope domain at " + name);
+    }
+    // An envelope whose build-pose neutral angle has not been populated
+    // cannot be used silently by post_init, joint_q_range, anatomical_angle,
+    // or reference_rom_check.
+    bt::invalid([&] { cfg::detail::post_init(envelopes.front().second); });
+    bt::invalid([&] { (void) cfg::joint_q_range(envelopes.front().second); });
+    bt::invalid([&] { (void) cfg::anatomical_angle(envelopes.front().second, 0.); });
+    {
+        std::vector<std::pair<std::string, double>> angles;
+        for (const auto& [name, unused] : envelopes)
+            angles.emplace_back(name, 0.);
+        bt::invalid([&] { (void) cfg::reference_rom_check(angles, envelopes); });
     }
     // present={} (an engaged empty set) requests no joints; present=None
     // requests the whole topology — the two must stay distinct.
@@ -1561,9 +1572,8 @@ void test_loaders() {
         cfg::kRiderJoints);
     bt::require(coordinates.size() == 11, "strength coordinate count");
     for (const auto& [name, c] : coordinates) {
-        bt::require(c.neutral_anatomical_rad ==
-                        cfg::build_pose_neutral_anatomical_rad(name),
-                    "strength coordinate neutral angle at " + name);
+        bt::require(std::isnan(c.neutral_anatomical_rad),
+                    "strength coordinate neutral angle left unset at " + name);
     }
     // Hard-coded neutral_anatomical_rad in coordinate is rejected.
     {

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -159,10 +160,10 @@ namespace spindle {
                                               int direction);
 
     struct JointEnvelope {
-        double neutral_anatomical_rad;
-        int direction;
-        double minimum_anatomical_rad;
-        double maximum_anatomical_rad;
+        double neutral_anatomical_rad = std::numeric_limits<double>::quiet_NaN();
+        int direction = 0;
+        double minimum_anatomical_rad = std::numeric_limits<double>::quiet_NaN();
+        double maximum_anatomical_rad = std::numeric_limits<double>::quiet_NaN();
         std::string provenance;
     };
     void validate_joint_envelope(const JointEnvelope &envelope,

@@ -86,12 +86,12 @@ Compiled compiled() {
     // The runtime's own projection produces the controller wire —
     // strength and envelope tables resolve from the config paths like
     // the oracle's in-__init__ loads.
+    const auto pose = mdl::geometry_pose(rider, request.bike);
     out.pose = rider::decode_spindle_pose(
-        runtime::project_articulated_pose(
-            mdl::geometry_pose(rider, request.bike)),
+        runtime::project_articulated_pose(pose),
         "pinned.pose");
     out.config = rider::decode_spindle_config(
-        runtime::project_rider_controller(physics, *out.model));
+        runtime::project_rider_controller(physics, *out.model, pose));
     return out;
 }
 

@@ -237,7 +237,11 @@ std::filesystem::path write_payload(const io::Value &payload,
 [[gnu::noinline]] void
 test_envelope_schema_two_requires_the_two_arm_topology() {
     // planar_arms/envelope_schema_two_requires_the_two_arm_topology
-    const auto envelopes = cfg::load_joint_envelopes(kEnvelopePath);
+    cfg::RiderSpecs rider;
+    rider.variant = "articulated_planar";
+    const auto pose = mdl::geometry_pose(rider, bike::geometry::BikeSpecs{});
+    const auto envelopes = mdl::with_pose_neutral_angles(
+        cfg::load_joint_envelopes(kEnvelopePath), pose);
     std::set<std::string> names;
     for (const auto &[name, envelope] : envelopes) names.insert(name);
     const std::set<std::string> registry(cfg::kRiderJoints.begin(),

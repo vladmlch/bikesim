@@ -1241,12 +1241,19 @@ PhysicalStep::apply_forces_body(
             const auto &road = rider_state_.has_value()
                                    ? rider_state_->road
                                    : std::vector<RoadSample>{};
+            const std::optional<double> min_lean_rad =
+                rider_control_.has_value() &&
+                        std::isfinite(config_.intent.min_elbow_flexion_deg)
+                    ? rider_control_->min_torso_lean_rad(
+                          d, config_.intent.min_elbow_flexion_deg *
+                                 (std::numbers::pi / 180.))
+                    : std::optional<double>{};
             control = rider_intent_.resolve(
                 control, intent_signals_, step_,
                 road_grade_for_posture(road), road_grade_preview(road),
                 rider_control_.has_value() ? rider_control_->lean_limit_rad()
                                            : std::optional<double>{},
-                active, advance);
+                active, advance, min_lean_rad);
         }
         if (advance)
             applied_control_ = control;

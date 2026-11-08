@@ -20,6 +20,7 @@
 #include "research/environment.hpp"
 #include "rider/intent.hpp"
 #include "rider/spindle_controller.hpp"
+#include "rider/spindle_math.hpp"
 #include "runtime/control.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
@@ -62,6 +63,12 @@ std::filesystem::path repo_file(std::string_view relative) {
 }
 
 constexpr double kPi = std::numbers::pi;
+// Provisional solver-noise tolerance pending plan Task 6 (gate tolerance
+// proposal to the user). One named constant is used for both the lower bound
+// (foot press >= -kSolverNoiseToleranceN everywhere) and the upper bound on
+// the rising leg after BDC (rising-leg press <= leg weight at the pedal +
+// kSolverNoiseToleranceN); the controller targets <= weight itself.
+constexpr double kSolverNoiseToleranceN = 11.;
 
 // test_ankle_program_is_periodic_and_scrape_is_only_an_intent
 void test_ankle_program_is_periodic_and_scrape_is_only_an_intent() {
@@ -149,6 +156,60 @@ void test_first_pedal_command_and_restart_respect_configured_effort_slew() {
     bt::require(0. <= resumed.effort_nm &&
                     resumed.effort_nm <= .15 + 1e-12,
                 "the restart slews up from zero again");
+}
+
+// User decision 2026-11-08 (simulation-decisions item 17, plan task 4):
+// both the drop and the return of rider effort around a shift cut go
+// through effort_slew_nm_s = 300 N.m/s (at most 300 N.m/s * dt per step).
+void test_shift_cut_drop_and_return_respect_configured_effort_slew() {
+    constexpr double kSlewNmS = 300.;
+    constexpr double kDt = .00125;
+    constexpr double kMaxStepDelta = kSlewNmS * kDt;
+    const drivetrain::PedalingConfig config{
+        .enabled = true,        .coast_above_rpm = 110.,
+        .resume_below_rpm = 90., .stop_time_s = .35,
+        .coast_cadence_tau_s = 0., .mash_cadence_rpm = 45.,
+        .mash_torque_nm = 60.,  .effort_slew_nm_s = kSlewNmS,
+        .rollback_brake = true, .rollback_engage_mps = .25,
+        .rollback_release_mps = 0., .rollback_demand = 1.};
+    for (const double factor : {.3, .8}) {
+        drivetrain::PedalingPolicy policy(config);
+        double prev = 0.;
+        for (int i = 0; i < 100; ++i)
+            prev = policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., 1.).effort_nm;
+        bt::require(std::abs(prev - 24.) < 1e-12,
+                    "effort reaches steady 24 N.m before the shift cut");
+        // Start of shift cut (0.2 s = 160 steps at 1.25 ms).
+        const double first_drop =
+            policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., factor).effort_nm;
+        bt::require(std::abs((prev - first_drop) - kMaxStepDelta) < 1e-12,
+                    "start of shift cut slews down by 300 N.m/s * dt on step 1");
+        prev = first_drop;
+        for (int i = 1; i < 160; ++i) {
+            const double cur =
+                policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., factor).effort_nm;
+            bt::require(std::abs(cur - prev) <= kMaxStepDelta + 1e-12,
+                        "shift-cut drop changes by at most 300 N.m/s * dt per step");
+            prev = cur;
+        }
+        bt::require(std::abs(prev - 24. * factor) < 1e-12,
+                    "effort reaches the reduced shift-cut plateau");
+        // End of shift cut: factor returns to 1.0.
+        const double first_return =
+            policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., 1.).effort_nm;
+        bt::require(std::abs((first_return - prev) - kMaxStepDelta) < 1e-12,
+                    "end of shift cut slews up by 300 N.m/s * dt on step 1");
+        prev = first_return;
+        for (int i = 1; i < 100; ++i) {
+            const double cur =
+                policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., 1.).effort_nm;
+            bt::require(std::abs(cur - prev) <= kMaxStepDelta + 1e-12,
+                        "shift-cut return changes by at most 300 N.m/s * dt per step");
+            prev = cur;
+        }
+        bt::require(std::abs(prev - 24.) < 1e-12,
+                    "effort returns to 24 N.m after the shift cut");
+    }
 }
 
 // ---- the welded flat plant ---------------------------------------------
@@ -303,10 +364,11 @@ void assert_physical_intervals(
         for (const char *ch :
              {"attachment_violations", "rider_strength_violations",
               "rider_joint_power_violations",
-              "rider_joint_speed_violations"})
+              "rider_joint_speed_violations"}) {
             bt::require(
                 wire_nonbaseline(channel(sample, ch), tolerated) == 0,
                 "no verdicts outside the documented drift classes");
+        }
         bt::require(sw::number(sw::required(
                         sample.channels, "rider_positive_power_w")) <=
                         power_budget_w + 1e-9,
@@ -693,19 +755,418 @@ void assert_strict_ride_without_saddle_pull(
     const auto &rows = intervals_of(*env.runtime);
     bt::require(!rows.empty(), "strict ride recorded intervals");
     double min_saddle_support_n = std::numeric_limits<double>::infinity();
+    double min_saddle_time_s = 0., min_saddle_rpm = 0., min_saddle_theta_deg = 0.;
     for (const auto &row : rows) {
         const auto &welds =
             sw::object(sw::required(row->channels, "rider_welds"));
-        min_saddle_support_n = std::min(
-            min_saddle_support_n,
-            sw::number(sw::required(welds, "saddle_support_n")));
+        const double s_n = sw::number(sw::required(welds, "saddle_support_n"));
+        if (s_n < min_saddle_support_n) {
+            min_saddle_support_n = s_n;
+            min_saddle_time_s = row->time_s;
+            min_saddle_rpm =
+                row->qvel[static_cast<std::size_t>(env.crank_dof)] * 60. /
+                (2. * kPi);
+            const double raw_deg =
+                row->qpos[static_cast<std::size_t>(env.crank_qpos)] * 180. /
+                kPi;
+            min_saddle_theta_deg =
+                std::fmod(std::fmod(raw_deg, 360.) + 360., 360.);
+        }
     }
     std::cerr << std::format(
-        "[strict {}] steps={}/{}, min_saddle_support_n={:+.2f} N\n",
-        label, snap.step, env.max_steps, min_saddle_support_n);
+        "[strict {}] steps={}/{}, min_saddle_support_n={:+.2f} N (t={:.5f}s, {:.1f} deg, {:.1f} rpm)\n",
+        label, rows.size(), env.max_steps, min_saddle_support_n,
+        min_saddle_time_s, min_saddle_theta_deg, min_saddle_rpm);
     bt::require(min_saddle_support_n >= 0.,
                 std::format("{}: saddle never pulls down (min_saddle_support_n={:+.2f} N >= 0 N)",
                             label, min_saddle_support_n)
+                    .c_str());
+}
+
+struct LegWeightProbe {
+    const mjModel *model = nullptr;
+    std::unique_ptr<mjData, void (*)(mjData *)> scratch{nullptr, mj_deleteData};
+    int frame_body = -1, crank_joint = -1;
+    std::array<int, 2> pedal_bodies{-1, -1};
+    std::array<int, 2> hip_joints{-1, -1};
+    std::array<std::size_t, 2> hip_dofs{0, 0}, knee_dofs{0, 0};
+    std::array<std::array<int, 3>, 2> leg_bodies{};
+    std::array<spindle::LegLoopGeometry, 2> geom{};
+
+    explicit LegWeightProbe(const mjModel *m)
+        : model(m), scratch(mj_makeData(m), mj_deleteData) {
+        frame_body = mj_name2id(m, mjOBJ_BODY, "frame");
+        crank_joint = mj_name2id(m, mjOBJ_JOINT, "crank_spin");
+        mj_resetData(m, scratch.get());
+        mj_kinematics(m, scratch.get());
+        const auto jnt_dofadr =
+            model_access::readonly_buffer(m->jnt_dofadr, m->njnt);
+        const auto xanchor =
+            model_access::readonly_buffer(scratch->xanchor, 3 * m->njnt);
+        const auto xpos =
+            model_access::readonly_buffer(scratch->xpos, 3 * m->nbody);
+        for (std::size_t s = 0; s < 2; ++s) {
+            const char *side = s == 0 ? "front" : "rear";
+            pedal_bodies[s] = mj_name2id(
+                m, mjOBJ_BODY, (std::string("pedal_") + side).c_str());
+            hip_joints[s] = mj_name2id(
+                m, mjOBJ_JOINT, (std::string("rider_hip_") + side).c_str());
+            const int knee_j = mj_name2id(
+                m, mjOBJ_JOINT, (std::string("rider_knee_") + side).c_str());
+            hip_dofs[s] = static_cast<std::size_t>(
+                jnt_dofadr[static_cast<std::size_t>(hip_joints[s])]);
+            knee_dofs[s] = static_cast<std::size_t>(
+                jnt_dofadr[static_cast<std::size_t>(knee_j)]);
+            leg_bodies[s] = {
+                mj_name2id(m, mjOBJ_BODY,
+                           (std::string("rider_thigh_") + side).c_str()),
+                mj_name2id(m, mjOBJ_BODY,
+                           (std::string("rider_shank_") + side).c_str()),
+                mj_name2id(m, mjOBJ_BODY,
+                           (std::string("rider_foot_") + side).c_str())};
+            const auto hj = static_cast<std::size_t>(3 * hip_joints[s]);
+            const auto kj = static_cast<std::size_t>(3 * knee_j);
+            const auto pb = static_cast<std::size_t>(3 * pedal_bodies[s]);
+            const double thigh_m =
+                std::hypot(xanchor[kj] - xanchor[hj],
+                           xanchor[kj + 2] - xanchor[hj + 2]);
+            const double link_m =
+                std::hypot(xpos[pb] - xanchor[kj],
+                           xpos[pb + 2] - xanchor[kj + 2]);
+            geom[s] = {.thigh_m = thigh_m,
+                       .link_m = link_m,
+                       .knee_sign = 1.,
+                       .thigh_angle0_rad = 0.,
+                       .link_angle0_rad = 0.,
+                       .side_sign = s == 0 ? 1. : -1.};
+        }
+    }
+
+    std::array<double, 2> weight_at_pedal_n(std::span<const double> qpos,
+                                            double &out_phase_rad) {
+        auto scratch_qpos =
+            model_access::mutable_buffer(scratch->qpos, model->nq);
+        std::ranges::copy(qpos, scratch_qpos.begin());
+        mj_kinematics(model, scratch.get());
+        mj_comPos(model, scratch.get());
+        const auto xmat =
+            model_access::readonly_buffer(scratch->xmat, 9 * model->nbody);
+        const auto xanchor =
+            model_access::readonly_buffer(scratch->xanchor, 3 * model->njnt);
+        const auto xpos =
+            model_access::readonly_buffer(scratch->xpos, 3 * model->nbody);
+        const auto fb = static_cast<std::size_t>(9 * frame_body);
+        const auto cj = static_cast<std::size_t>(3 * crank_joint);
+        const auto to_frame_xz =
+            [&](std::span<const double> buf, std::size_t base) -> spindle::Vec2 {
+            const double dx = buf[base] - xanchor[cj];
+            const double dy = buf[base + 1] - xanchor[cj + 1];
+            const double dz = buf[base + 2] - xanchor[cj + 2];
+            return {xmat[fb] * dx + xmat[fb + 3] * dy + xmat[fb + 6] * dz,
+                    xmat[fb + 2] * dx + xmat[fb + 5] * dy + xmat[fb + 8] * dz};
+        };
+        std::array<spindle::Vec2, 2> spindles{};
+        std::array<spindle::Vec2, 2> gammas{};
+        for (std::size_t s = 0; s < 2; ++s) {
+            spindles[s] =
+                to_frame_xz(xpos, static_cast<std::size_t>(3 * pedal_bodies[s]));
+            const auto hip = to_frame_xz(
+                xanchor, static_cast<std::size_t>(3 * hip_joints[s]));
+            gammas[s] = spindle::leg_vertical_gamma(geom[s], hip, spindles[s]);
+        }
+        out_phase_rad = std::atan2(-spindles[0][1], spindles[0][0]);
+        const auto width = static_cast<std::size_t>(model->nv);
+        const auto gravity =
+            model_access::readonly_buffer(std::data(model->opt.gravity), 3);
+        const auto body_mass =
+            model_access::readonly_buffer(model->body_mass, model->nbody);
+        std::vector<mjtNum> jac(3 * width);
+        std::array<double, 2> out{0., 0.};
+        for (std::size_t s = 0; s < 2; ++s) {
+            double g_hip = 0., g_knee = 0.;
+            for (const int b : leg_bodies[s]) {
+                mj_jacBodyCom(model, scratch.get(), jac.data(), nullptr, b);
+                const double m = body_mass[static_cast<std::size_t>(b)];
+                g_hip -= m * (gravity[0] * jac[hip_dofs[s]] +
+                              gravity[1] * jac[width + hip_dofs[s]] +
+                              gravity[2] * jac[2 * width + hip_dofs[s]]);
+                g_knee -= m * (gravity[0] * jac[knee_dofs[s]] +
+                               gravity[1] * jac[width + knee_dofs[s]] +
+                               gravity[2] * jac[2 * width + knee_dofs[s]]);
+            }
+            out[s] = gammas[s][0] * g_hip + gammas[s][1] * g_knee;
+        }
+        return out;
+    }
+};
+
+[[gnu::noinline]] void assert_leg_control_contracts(
+    CycleEnv &env, std::string_view label) {
+    const mjModel *model = nullptr;
+    const rider::SpindleController *controller = nullptr;
+    bike::validation::RuntimeRigAccess::inspect(
+        *env.runtime, [&](const Stepper &stepper,
+                          const runtime::PhysicalStep &physical) {
+            model = stepper.model();
+            controller = &physical.rider_control();
+        });
+    bt::require(model != nullptr && controller != nullptr,
+                "model and controller available for leg weight probe");
+    LegWeightProbe probe(model);
+    const auto &rows = intervals_of(*env.runtime);
+    bt::require(!rows.empty(), "episode recorded intervals");
+
+    double min_front_press = std::numeric_limits<double>::infinity();
+    double min_rear_press = std::numeric_limits<double>::infinity();
+    double min_front_time = 0., min_front_theta = 0., min_front_rpm = 0.;
+    double min_rear_time = 0., min_rear_theta = 0., min_rear_rpm = 0.;
+    double max_rising_excess_front = -std::numeric_limits<double>::infinity();
+    double max_rising_excess_rear = -std::numeric_limits<double>::infinity();
+    double max_rising_theta_front = 0., max_rising_press_front = 0.,
+           max_rising_weight_front = 0., max_rising_time_front = 0.,
+           max_rising_rpm_front = 0.;
+    double max_rising_theta_rear = 0., max_rising_press_rear = 0.,
+           max_rising_weight_rear = 0., max_rising_time_rear = 0.,
+           max_rising_rpm_rear = 0.;
+    double min_post_tdc_hip_req = std::numeric_limits<double>::infinity();
+    double min_post_tdc_hip_cmd = std::numeric_limits<double>::infinity();
+    double max_tdc_knee_req = -std::numeric_limits<double>::infinity();
+    double max_tdc_knee_cmd = -std::numeric_limits<double>::infinity();
+    double min_ik_elbow_flexion_deg = std::numeric_limits<double>::infinity();
+    double min_ik_elbow_time_s = 0.;
+    double max_delta_shoulder_nm = 0., max_delta_shoulder_time_s = 0.;
+    double max_delta_elbow_nm = 0., max_delta_elbow_time_s = 0.;
+    bool has_prev_step = false;
+    std::array<double, 2> prev_shoulder_nm{0., 0.}, prev_elbow_nm{0., 0.};
+    double prev_f_press = 0., prev_r_press = 0., prev_s_press = 0.;
+    double hp_f = 0., hp_r = 0., hp_s = 0.;
+    double sum_hp_f2 = 0., sum_hp_r2 = 0., sum_hp_s2 = 0.;
+    double sum_df2 = 0., sum_dr2 = 0., sum_ds2 = 0.;
+    std::size_t diff_count = 0;
+    constexpr double kDt = .00125;
+    constexpr double kTauRc50Hz = 1. / (2. * kPi * 50.);
+    constexpr double kAlphaHp50Hz = kTauRc50Hz / (kTauRc50Hz + kDt);
+
+    for (const auto &row : rows) {
+        const auto &welds =
+            sw::object(sw::required(row->channels, "rider_welds"));
+        const double f_press =
+            sw::number(sw::required(welds, "front_pedal_press_n"));
+        const double r_press =
+            sw::number(sw::required(welds, "rear_pedal_press_n"));
+        const double s_press =
+            sw::number(sw::required(welds, "saddle_support_n"));
+
+        double phase_rad = 0.;
+        const auto weights = probe.weight_at_pedal_n(row->qpos, phase_rad);
+        const auto &ctrl_obj =
+            sw::object(sw::required(row->channels, "control"));
+        const auto &posture_obj =
+            sw::object(sw::required(ctrl_obj, "posture"));
+        const double torso_lean_rad =
+            sw::number(sw::required(posture_obj, "torso_lean_rad"));
+        const double ik_flex_deg =
+            controller->ik_target_elbow_flexion_rad(probe.scratch.get(),
+                                                    torso_lean_rad) *
+            180. / kPi;
+        if (ik_flex_deg < min_ik_elbow_flexion_deg) {
+            min_ik_elbow_flexion_deg = ik_flex_deg;
+            min_ik_elbow_time_s = row->time_s;
+        }
+        const auto &rc =
+            sw::object(sw::required(row->channels, "rider_control"));
+        const auto &drive =
+            sw::object(sw::required(row->channels, "drive"));
+        const double human_cmd =
+            sw::number(sw::required(drive, "human_command_nm"));
+        const double cadence_rpm =
+            row->qvel[static_cast<std::size_t>(env.crank_dof)] * 60. /
+            (2. * kPi);
+
+        std::array<double, 2> cur_shoulder_nm{0., 0.}, cur_elbow_nm{0., 0.};
+        for (std::size_t arm = 0; arm < 2; ++arm) {
+            const char *sh_key =
+                arm == 0 ? "rider_shoulder_left" : "rider_shoulder_right";
+            const char *el_key =
+                arm == 0 ? "rider_elbow_left" : "rider_elbow_right";
+            const auto &sh_obj = sw::object(sw::required(rc, sh_key));
+            const auto &el_obj = sw::object(sw::required(rc, el_key));
+            cur_shoulder_nm[arm] =
+                sw::number(sw::required(sh_obj, "command_nm"));
+            cur_elbow_nm[arm] =
+                sw::number(sw::required(el_obj, "command_nm"));
+        }
+        if (has_prev_step) {
+            for (std::size_t arm = 0; arm < 2; ++arm) {
+                const double d_sh =
+                    std::abs(cur_shoulder_nm[arm] - prev_shoulder_nm[arm]);
+                const double d_el =
+                    std::abs(cur_elbow_nm[arm] - prev_elbow_nm[arm]);
+                if (d_sh > max_delta_shoulder_nm) {
+                    max_delta_shoulder_nm = d_sh;
+                    max_delta_shoulder_time_s = row->time_s;
+                }
+                if (d_el > max_delta_elbow_nm) {
+                    max_delta_elbow_nm = d_el;
+                    max_delta_elbow_time_s = row->time_s;
+                }
+            }
+            const double df = f_press - prev_f_press;
+            const double dr = r_press - prev_r_press;
+            const double ds = s_press - prev_s_press;
+            hp_f = kAlphaHp50Hz * (hp_f + df);
+            hp_r = kAlphaHp50Hz * (hp_r + dr);
+            hp_s = kAlphaHp50Hz * (hp_s + ds);
+            sum_hp_f2 += hp_f * hp_f;
+            sum_hp_r2 += hp_r * hp_r;
+            sum_hp_s2 += hp_s * hp_s;
+            sum_df2 += df * df;
+            sum_dr2 += dr * dr;
+            sum_ds2 += ds * ds;
+            ++diff_count;
+        }
+        prev_shoulder_nm = cur_shoulder_nm;
+        prev_elbow_nm = cur_elbow_nm;
+        prev_f_press = f_press;
+        prev_r_press = r_press;
+        prev_s_press = s_press;
+        has_prev_step = true;
+
+        for (std::size_t s = 0; s < 2; ++s) {
+            const double press = s == 0 ? f_press : r_press;
+            const double raw_deg =
+                (phase_rad + (s == 0 ? 0. : kPi)) * 180. / kPi;
+            const double theta_deg =
+                std::fmod(std::fmod(raw_deg, 360.) + 360., 360.);
+            if (s == 0 && press < min_front_press) {
+                min_front_press = press;
+                min_front_time = row->time_s;
+                min_front_theta = theta_deg;
+                min_front_rpm = cadence_rpm;
+            }
+            if (s == 1 && press < min_rear_press) {
+                min_rear_press = press;
+                min_rear_time = row->time_s;
+                min_rear_theta = theta_deg;
+                min_rear_rpm = cadence_rpm;
+            }
+            // Rising leg after BDC: check in steady pedaling (t > 2.0 s) across
+            // the post-BDC rising stroke [100 deg, 240 deg].
+            if (row->time_s > 2. && theta_deg >= 100. && theta_deg <= 240.) {
+                const double excess = press - weights[s];
+                if (s == 0) {
+                    if (excess > max_rising_excess_front) {
+                        max_rising_excess_front = excess;
+                        max_rising_theta_front = theta_deg;
+                        max_rising_press_front = press;
+                        max_rising_weight_front = weights[s];
+                        max_rising_time_front = row->time_s;
+                        max_rising_rpm_front = cadence_rpm;
+                    }
+                } else if (excess > max_rising_excess_rear) {
+                    max_rising_excess_rear = excess;
+                    max_rising_theta_rear = theta_deg;
+                    max_rising_press_rear = press;
+                    max_rising_weight_rear = weights[s];
+                    max_rising_time_rear = row->time_s;
+                    max_rising_rpm_rear = cadence_rpm;
+                }
+            }
+            const char *hip_key =
+                s == 0 ? "rider_hip_front" : "rider_hip_rear";
+            const char *knee_key =
+                s == 0 ? "rider_knee_front" : "rider_knee_rear";
+            const auto &hip_obj = sw::object(sw::required(rc, hip_key));
+            const auto &knee_obj = sw::object(sw::required(rc, knee_key));
+            const double hip_req =
+                sw::number(sw::required(hip_obj, "requested_nm"));
+            const double hip_cmd =
+                sw::number(sw::required(hip_obj, "command_nm"));
+            const double knee_req =
+                sw::number(sw::required(knee_obj, "requested_nm"));
+            const double knee_cmd =
+                sw::number(sw::required(knee_obj, "command_nm"));
+            if (row->time_s > 2. && human_cmd > 1. &&
+                theta_deg >= 270. && theta_deg <= 291.) {
+                min_post_tdc_hip_req = std::min(min_post_tdc_hip_req, hip_req);
+                min_post_tdc_hip_cmd = std::min(min_post_tdc_hip_cmd, hip_cmd);
+            }
+            if (row->time_s > 2. && human_cmd > 1. &&
+                theta_deg >= 250. && theta_deg <= 310.) {
+                max_tdc_knee_req = std::max(max_tdc_knee_req, knee_req);
+                max_tdc_knee_cmd = std::max(max_tdc_knee_cmd, knee_cmd);
+            }
+        }
+    }
+    const double inv_n =
+        diff_count > 0 ? 1. / static_cast<double>(diff_count) : 0.;
+    std::cerr << std::format(
+        "[{}] min press front={:+.2f} N (t={:.3f}s, {:.1f} deg, {:.1f} rpm), "
+        "rear={:+.2f} N (t={:.3f}s, {:.1f} deg, {:.1f} rpm); "
+        "max rising (press - weight) front={:+.2f} N (@ {:.1f} deg, t={:.3f}s, {:.1f} rpm: press={:.1f}, weight={:.1f}), "
+        "rear={:+.2f} N (@ {:.1f} deg, t={:.3f}s, {:.1f} rpm: press={:.1f}, weight={:.1f}); "
+        "post-TDC [270,291] min hip req={:+.2f}, cmd={:+.2f} N.m; "
+        "TDC [250,310] max knee req={:+.2f}, cmd={:+.2f} N.m; "
+        "min IK elbow flex={:.3f} deg (t={:.4f}s), "
+        "max |d tau| shoulder={:.3f} N.m (t={:.4f}s), elbow={:.3f} N.m (t={:.4f}s); "
+        "HF-RMS(>50Hz RC) front={:.2f} N, rear={:.2f} N, saddle={:.2f} N; "
+        "StepDiff RMS front={:.2f} N, rear={:.2f} N, saddle={:.2f} N\n",
+        label,
+        min_front_press, min_front_time, min_front_theta, min_front_rpm,
+        min_rear_press, min_rear_time, min_rear_theta, min_rear_rpm,
+        max_rising_excess_front, max_rising_theta_front,
+        max_rising_time_front, max_rising_rpm_front,
+        max_rising_press_front, max_rising_weight_front,
+        max_rising_excess_rear, max_rising_theta_rear,
+        max_rising_time_rear, max_rising_rpm_rear,
+        max_rising_press_rear, max_rising_weight_rear,
+        min_post_tdc_hip_req, min_post_tdc_hip_cmd,
+        max_tdc_knee_req, max_tdc_knee_cmd,
+        min_ik_elbow_flexion_deg, min_ik_elbow_time_s,
+        max_delta_shoulder_nm, max_delta_shoulder_time_s,
+        max_delta_elbow_nm, max_delta_elbow_time_s,
+        std::sqrt(sum_hp_f2 * inv_n), std::sqrt(sum_hp_r2 * inv_n),
+        std::sqrt(sum_hp_s2 * inv_n),
+        std::sqrt(sum_df2 * inv_n), std::sqrt(sum_dr2 * inv_n),
+        std::sqrt(sum_ds2 * inv_n));
+
+    bt::require(min_ik_elbow_flexion_deg >= 15. - 1e-6,
+                std::format("{}: IK-target elbow flexion {:.4f} deg >= 15.0 deg everywhere",
+                            label, min_ik_elbow_flexion_deg)
+                    .c_str());
+    const double max_arm_delta_bound_nm = label == "steady90" ? 1.5 : 7.;
+    bt::require(max_delta_shoulder_nm <= max_arm_delta_bound_nm &&
+                    max_delta_elbow_nm <= max_arm_delta_bound_nm,
+                std::format("{}: arm-torque change per physics step stays small (max |d tau| shoulder={:.3f} N.m, elbow={:.3f} N.m <= {:.1f} N.m)",
+                            label, max_delta_shoulder_nm, max_delta_elbow_nm,
+                            max_arm_delta_bound_nm)
+                    .c_str());
+
+    bt::require(min_front_press >= -kSolverNoiseToleranceN,
+                std::format("{}: front foot press {:.2f} N >= -{:.1f} N everywhere",
+                            label, min_front_press,
+                            kSolverNoiseToleranceN)
+                    .c_str());
+    bt::require(min_rear_press >= -kSolverNoiseToleranceN,
+                std::format("{}: rear foot press {:.2f} N >= -{:.1f} N everywhere",
+                            label, min_rear_press,
+                            kSolverNoiseToleranceN)
+                    .c_str());
+    bt::require(max_rising_excess_front <= kSolverNoiseToleranceN,
+                std::format("{}: rising front leg press after BDC <= weight + {:.1f} N (press - weight = {:+.2f} N)",
+                            label, kSolverNoiseToleranceN, max_rising_excess_front)
+                    .c_str());
+    bt::require(max_rising_excess_rear <= kSolverNoiseToleranceN,
+                std::format("{}: rising rear leg press after BDC <= weight + {:.1f} N (press - weight = {:+.2f} N)",
+                            label, kSolverNoiseToleranceN, max_rising_excess_rear)
+                    .c_str());
+    bt::require(min_post_tdc_hip_req >= -1e-6 && min_post_tdc_hip_cmd >= -1e-6,
+                std::format("{}: hip torque in [270, 291] deg is never negative/flexion (req={:+.2f}, cmd={:+.2f} N.m)",
+                            label, min_post_tdc_hip_req, min_post_tdc_hip_cmd)
+                    .c_str());
+    bt::require(max_tdc_knee_req <= 1e-6 && max_tdc_knee_cmd <= 1e-6,
+                std::format("{}: knee torque at TDC [250, 310] deg is never positive/flexion (req={:+.2f}, cmd={:+.2f} N.m)",
+                            label, max_tdc_knee_req, max_tdc_knee_cmd)
                     .c_str());
 }
 
@@ -721,31 +1182,81 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
                         rel, physics.control_period_s)
                 .c_str());
     }
+    std::string first_leg_contract_error;
+    const auto check_ride = [&](auto &&fn) {
+        try {
+            fn();
+        } catch (const std::exception &e) {
+            std::cerr << "ride contract error: " << e.what() << "\n";
+            if (first_leg_contract_error.empty())
+                first_leg_contract_error = e.what();
+        }
+    };
+    const auto welded_physics = cfg::load_physics(
+        repo_file("examples/research/viewer_physics_welded.toml"));
+    double rear_effective_radius_m = 0.;
     {
         auto flat = make_strict_ride_env("tests/fixtures/tracks/flat.toml",
                                          /*duration_s=*/6.,
                                          /*initial_speed_mps=*/0.);
-        assert_strict_ride_without_saddle_pull(flat, runtime::RideControl{},
-                                               "flat");
+        check_ride([&] {
+            assert_strict_ride_without_saddle_pull(flat, runtime::RideControl{},
+                                                   "flat");
+        });
+        const auto &tires0 = sw::object(sw::required(
+            intervals_of(*flat.runtime).front()->channels, "tires"));
+        const auto &rear0 = sw::object(sw::required(tires0, "rear"));
+        rear_effective_radius_m =
+            sw::number(sw::required(rear0, "effective_radius_m"));
+        bt::require(rear_effective_radius_m > 0.,
+                    "settled rear tire effective radius is positive");
+        check_ride([&] {
+            assert_leg_control_contracts(flat, "flat");
+        });
     }
     {
         auto climb = make_strict_ride_env(
             "tests/fixtures/tracks/climb_15pct.toml", /*duration_s=*/25.,
             /*initial_speed_mps=*/0.);
-        assert_strict_ride_without_saddle_pull(climb, runtime::RideControl{},
-                                               "climb_15pct");
+        check_ride([&] {
+            assert_strict_ride_without_saddle_pull(climb, runtime::RideControl{},
+                                                   "climb_15pct");
+        });
+        check_ride([&] {
+            assert_leg_control_contracts(climb, "climb_15pct");
+        });
     }
     {
-        auto steady90 = make_strict_ride_env("tests/fixtures/tracks/flat.toml",
-                                             /*duration_s=*/8.,
-                                             /*initial_speed_mps=*/4.);
+        const double start_gear_ratio =
+            static_cast<double>(welded_physics.drive.gearing.front_teeth) /
+            static_cast<double>(welded_physics.drive.gearing.rear_teeth);
+        const double target_crank_rate_rad_s = 90. * 2. * kPi / 60.;
+        const double steady90_initial_speed_mps =
+            target_crank_rate_rad_s * start_gear_ratio *
+            rear_effective_radius_m;
+        std::cerr << std::format(
+            "[steady90 init] gear={}/{}, rear_r_eff={:.6f} m, v0={:.6f} m/s\n",
+            welded_physics.drive.gearing.front_teeth,
+            welded_physics.drive.gearing.rear_teeth, rear_effective_radius_m,
+            steady90_initial_speed_mps);
+        auto steady90 = make_strict_ride_env(
+            "tests/fixtures/tracks/flat.toml",
+            /*duration_s=*/8.,
+            /*initial_speed_mps=*/steady90_initial_speed_mps);
         const runtime::RideControl control{.motor_torque_nm = std::nullopt,
                                            .motor_limit_nm = std::nullopt,
                                            .human_torque_nm = 24.,
                                            .crank_target_rate_rad_s = std::nullopt,
                                            .posture = std::nullopt};
-        assert_strict_ride_without_saddle_pull(steady90, control, "steady90");
+        check_ride([&] {
+            assert_strict_ride_without_saddle_pull(steady90, control, "steady90");
+        });
+        check_ride([&] {
+            assert_leg_control_contracts(steady90, "steady90");
+        });
     }
+    bt::require(first_leg_contract_error.empty(),
+                first_leg_contract_error.c_str());
 }
 
 } // namespace
@@ -757,6 +1268,7 @@ int main() {
         test_pedal_intent_carries_no_torque_or_force_field();
         test_cadence_control_validates_a_finite_nonnegative_wish();
         test_first_pedal_command_and_restart_respect_configured_effort_slew();
+        test_shift_cut_drop_and_return_respect_configured_effort_slew();
         test_strict_flat_cycle_delivers_and_stays_within_budgets();
         test_rigid_per_revolution_crank_torque_tracks_command();
         test_free_coast_is_an_intent_not_a_crank_lock();

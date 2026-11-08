@@ -14,6 +14,7 @@
 #include <array>
 #include <cstdint>
 #include <deque>
+#include <limits>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -26,7 +27,7 @@ namespace rider {
 // (parse_intent_config) exactly like the frozen dataclass's __post_init__.
 struct IntentConfig {
     bool enabled = false;
-    double period_s = .01;
+    double period_s = .00125;
     double reaction_delay_s = .15;
     double target_crank_power_w = 225.;
     double max_crank_torque_nm = 60.;
@@ -44,6 +45,7 @@ struct IntentConfig {
     double lean_trim_gain_rad_s = .3;
     double lean_trim_limit_rad = .15;
     double trim_dead_time_s = .2;
+    double min_elbow_flexion_deg = std::numeric_limits<double>::quiet_NaN();
 };
 
 // seated_climb.py SeatedClimbSignals — validated at wire decode like the
@@ -103,7 +105,8 @@ public:
     double update(double time_s, double road_grade, double dt_s,
                   std::optional<double> front_load_share = std::nullopt,
                   std::optional<double> lean_limit_rad = std::nullopt,
-                  std::optional<double> dead_time_s = std::nullopt);
+                  std::optional<double> dead_time_s = std::nullopt,
+                  std::optional<double> min_lean_rad = std::nullopt);
 
     [[nodiscard]] State state() const;
     void restore(const State &state);
@@ -142,7 +145,8 @@ public:
     [[nodiscard]] Intent update(
         const IntentSignals &signals, double dt_s, double road_grade,
         std::optional<double> preview_grade = std::nullopt,
-        std::optional<double> lean_limit_rad = std::nullopt);
+        std::optional<double> lean_limit_rad = std::nullopt,
+        std::optional<double> min_lean_rad = std::nullopt);
 
     [[nodiscard]] const IntentConfig &config() const { return config_; }
     [[nodiscard]] SeatedPostureProgram &program() { return program_; }
@@ -192,7 +196,8 @@ public:
             std::int64_t step, double road_grade,
             std::optional<double> preview_grade = std::nullopt,
             std::optional<double> lean_limit_rad = std::nullopt,
-            bool active = true, bool advance = true);
+            bool active = true, bool advance = true,
+            std::optional<double> min_lean_rad = std::nullopt);
 
     [[nodiscard]] State state() const;
     void restore(const State &state);

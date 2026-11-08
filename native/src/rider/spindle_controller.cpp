@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <limits>
 #include <numbers>
 #include <stdexcept>
@@ -477,10 +478,22 @@ void SpindleController::resolve_model_layout(
     frame_body_ = mj_name2id(model, mjOBJ_BODY, "frame");
     torso_body_ = mj_name2id(model, mjOBJ_BODY, "rider_torso");
     crank_body_ = mj_name2id(model, mjOBJ_BODY, "crank");
-    frame_pitch_dof_ = dof_adrs[static_cast<std::size_t>(
-        require_joint(model, "root_pitch"))];
-    rider_pitch_dof_ = dof_adrs[static_cast<std::size_t>(
-        require_joint(model, "rider_root_pitch"))];
+    frame_pitch_joint_ = require_joint(model, "root_pitch");
+    rider_pitch_joint_ = require_joint(model, "rider_root_pitch");
+    const int frame_x_jnt = mj_name2id(model, mjOBJ_JOINT, "root_x");
+    const int frame_z_jnt = mj_name2id(model, mjOBJ_JOINT, "root_z");
+    frame_root_x_dof_ =
+        frame_x_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(frame_x_jnt)];
+    frame_root_z_dof_ =
+        frame_z_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(frame_z_jnt)];
+    frame_pitch_dof_ = dof_adrs[static_cast<std::size_t>(frame_pitch_joint_)];
+    const int rider_x_jnt = mj_name2id(model, mjOBJ_JOINT, "rider_root_x");
+    const int rider_z_jnt = mj_name2id(model, mjOBJ_JOINT, "rider_root_z");
+    rider_root_x_dof_ =
+        rider_x_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(rider_x_jnt)];
+    rider_root_z_dof_ =
+        rider_z_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(rider_z_jnt)];
+    rider_pitch_dof_ = dof_adrs[static_cast<std::size_t>(rider_pitch_joint_)];
     crank_joint_ = require_joint(model, "crank_spin");
     crank_spin_dof_ =
         dof_adrs[static_cast<std::size_t>(crank_joint_)];
@@ -608,6 +621,9 @@ SpindleController::~SpindleController() = default;
 void SpindleController::reset_activation() {
     allocation_memory_ = {};
     coast_hold_nm_ = 0.;
+    prev_crank_rate_rad_s_.reset();
+    prev_frame_vel_ = {};
+    prev_pelvis_vel_ = {};
     effort_diagnostics_ = {};
     sole_goal_diagnostics_.clear();
     pedal_recovery_ = {{"front", PedalRecoveryState{}},
@@ -649,6 +665,81 @@ SpindleController::joint_index(const std::string &name) const {
     if (found == joints_.end())
         throw std::out_of_range(name);
     return static_cast<std::size_t>(found - joints_.begin());
+}
+
+double SpindleController::ik_target_elbow_flexion_rad(
+    const mjData *data, double torso_lean_rad) const {
+    const auto pelvis_r = body_mat(model_, data, pelvis_body_);
+    const auto frame_r = body_mat(model_, data, frame_body_);
+    const auto steer_r = body_mat(model_, data, steer_body_);
+    const Vec3 steer_pos = body_pos(model_, data, steer_body_);
+    std::array<Vec3, 2> grips{};
+    for (const auto side : kArmSides) {
+        const auto s = side_index(side);
+        if (config_.legacy && config_.legacy->grip_attachment == "spring") {
+            Vec3 local = pose_.grip;
+            local[1] += s == 0 ? -.10 : .10;
+            grips[s] = vec_add(body_pos(model_, data, frame_body_),
+                               mat_vec(frame_r, local));
+        } else {
+            grips[s] =
+                vec_add(steer_pos, mat_vec(steer_r, weld_grip_offset_[s]));
+        }
+    }
+    const double frame_pitch = std::atan2(frame_r[2], frame_r[0]);
+    const double pelvis_pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
+    const double torso_q =
+        neutral_torso_q_ + torso_lean_rad +
+        spindle::wrap_angle(frame_pitch - pelvis_pitch);
+    const auto torso_r_actual = body_mat(model_, data, torso_body_);
+    double delta = torso_q -
+        model_access::readonly_buffer(data->qpos, model_->nq,
+                                      "qpos")[static_cast<std::size_t>(
+            joints_[joint_index("rider_torso_hinge")].qpos_adr)];
+    delta = std::atan2(numeric::math_sin(delta), numeric::math_cos(delta));
+    if (config_.legacy && config_.legacy->grip_attachment == "spring")
+        delta = 0.;
+    const double cd = numeric::math_cos(delta), sd = numeric::math_sin(delta);
+    const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
+    const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
+    const auto torso_r = mat_mul(rot, torso_r_actual);
+    double min_flexion = std::numeric_limits<double>::infinity();
+    for (const auto side : kArmSides) {
+        const auto s = side_index(side);
+        const Vec3 shoulder = vec_add(
+            hinge,
+            mat_vec(rot,
+                    vec_sub(body_pos(model_, data, upper_arm_bodies_[s]),
+                            hinge)));
+        const Vec3 diff = vec_sub(grips[s], shoulder);
+        const Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
+        const auto ik = spindle::two_link_ik(
+            arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
+        min_flexion = std::min(min_flexion, std::abs(ik.angles[1]));
+    }
+    return min_flexion;
+}
+
+std::optional<double> SpindleController::min_torso_lean_rad(
+    const mjData *data, double min_elbow_flexion_rad) const {
+    if (!std::isfinite(min_elbow_flexion_rad) || min_elbow_flexion_rad <= 0.)
+        return std::nullopt;
+    if (config_.legacy && config_.legacy->grip_attachment == "spring")
+        return std::nullopt;
+    double lo = -.8;
+    double hi = lean_limit_rad_.value_or(.8);
+    if (ik_target_elbow_flexion_rad(data, lo) >= min_elbow_flexion_rad)
+        return lo;
+    if (ik_target_elbow_flexion_rad(data, hi) < min_elbow_flexion_rad)
+        return hi;
+    for (int iter = 0; iter < 54; ++iter) {
+        const double mid = .5 * (lo + hi);
+        if (ik_target_elbow_flexion_rad(data, mid) >= min_elbow_flexion_rad)
+            hi = mid;
+        else
+            lo = mid;
+    }
+    return hi;
 }
 
 std::vector<std::pair<std::string, double>>
@@ -767,6 +858,9 @@ void SpindleController::predict_target_state(const mjData *data,
 
 void SpindleController::initialize_velocity(mjData *data) {
     if (legacy_) { legacy_->initialize_velocity(*data); return; }
+    prev_crank_rate_rad_s_.reset();
+    prev_frame_vel_ = {};
+    prev_pelvis_vel_ = {};
     predict_target_state(data, target_data_.get(), false);
     predict_target_state(data, previous_target_data_.get(), true);
     for (const auto side : kSides) {
@@ -951,15 +1045,28 @@ double SpindleController::directional_limit(const std::string &name,
 }
 
 std::vector<double>
-SpindleController::limit_torques(std::span<const double> torques,
-                                 const mjData *data,
-                                 std::span<const char> filled) const {
+SpindleController::limit_torques(
+    std::span<const double> torques, const mjData *data,
+    std::span<const char> filled,
+    std::span<const double> priority_torques) const {
     const std::size_t n = joints_.size();
-    if (torques.size() != n || (!filled.empty() && filled.size() != n))
+    if (torques.size() != n || (!filled.empty() && filled.size() != n) ||
+        (!priority_torques.empty() && priority_torques.size() != n))
         throw std::invalid_argument("effort state shape mismatch");
     std::vector<double> limited(n), speeds(n);
     const auto qvel = model_access::readonly_buffer(
         data->qvel, model_->nv, "qvel");
+    const auto clip_one = [&](std::size_t i, double raw_torque,
+                              double speed) {
+        const auto &joint = joints_[i];
+        const double cap = directional_limit(joint.name, data,
+                                             raw_torque >= 0. ? 1. : -1.);
+        double value = std::min(std::max(raw_torque, -cap), cap);
+        if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
+            value * speed > 0.)
+            value = 0.;
+        return value;
+    };
     for (std::size_t i = 0; i < n; ++i) {
         const auto &joint = joints_[i];
         if (!filled.empty() && !filled[i])
@@ -969,21 +1076,74 @@ SpindleController::limit_torques(std::span<const double> torques,
         const double speed = validation::finite(
             qvel[static_cast<std::size_t>(joint.dof_adr)],
             (joint.name + " speed").c_str());
-        const double cap =
-            directional_limit(joint.name, data, torque >= 0. ? 1. : -1.);
-        double value = std::min(std::max(torque, -cap), cap);
-        if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
-            value * speed > 0.)
-            value = 0.;
-        limited[i] = value;
+        limited[i] = clip_one(i, torque, speed);
         speeds[i] = speed;
     }
     // No configured whole-body ceiling means only the per-joint ceiling.
     const double total = config_.active_positive_power_limit_w.value_or(
         config_.joint_power_limit_w * static_cast<double>(n));
-    return spindle::scale_to_power_budget(limited, speeds,
-                                          config_.joint_power_limit_w,
-                                          total);
+    if (priority_torques.empty()) {
+        return spindle::scale_to_power_budget(limited, speeds,
+                                              config_.joint_power_limit_w,
+                                              total);
+    }
+    // «Действует» 11 (2026-11-08): rising-leg unloading and TDC push-over
+    // get the positive power budget first (per joint and in total); only
+    // the drive (pushing) torque is scaled into the remaining budget.
+    std::vector<double> prio(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        prio[i] = clip_one(i, priority_torques[i], speeds[i]);
+        if (config_.joint_power_limit_w >= 0. &&
+            prio[i] * speeds[i] > config_.joint_power_limit_w) {
+            prio[i] = std::copysign(
+                config_.joint_power_limit_w / std::abs(speeds[i]), prio[i]);
+        }
+        if (config_.joint_power_limit_w >= 0. &&
+            limited[i] * speeds[i] > config_.joint_power_limit_w) {
+            limited[i] = std::copysign(
+                config_.joint_power_limit_w / std::abs(speeds[i]),
+                limited[i]);
+        }
+    }
+    const auto sum_pos_power = [&](std::span<const double> t) {
+        std::vector<double> terms(n);
+        for (std::size_t i = 0; i < n; ++i)
+            terms[i] = std::max(t[i] * speeds[i], 0.);
+        return numeric::numpy_sum(terms);
+    };
+    const double req_power = sum_pos_power(limited);
+    if (req_power <= total || total < 0.)
+        return limited;
+    const double prio_power = sum_pos_power(prio);
+    if (prio_power >= total) {
+        return spindle::scale_to_power_budget(prio, speeds,
+                                              config_.joint_power_limit_w,
+                                              total);
+    }
+    double lo = 0., hi = 1.;
+    std::vector<double> candidate(n);
+    for (int iter = 0; iter < 60; ++iter) {
+        const double mid = .5 * (lo + hi);
+        for (std::size_t i = 0; i < n; ++i) {
+            const double p_prio = std::max(prio[i] * speeds[i], 0.);
+            const double p_lim = std::max(limited[i] * speeds[i], 0.);
+            candidate[i] = p_lim > p_prio
+                               ? prio[i] + mid * (limited[i] - prio[i])
+                               : limited[i];
+        }
+        if (sum_pos_power(candidate) <= total)
+            lo = mid;
+        else
+            hi = mid;
+    }
+    for (std::size_t i = 0; i < n; ++i) {
+        const double p_prio = std::max(prio[i] * speeds[i], 0.);
+        const double p_lim = std::max(limited[i] * speeds[i], 0.);
+        limited[i] = p_lim > p_prio
+                         ? prio[i] + lo * (limited[i] - prio[i])
+                         : limited[i];
+    }
+    return limited;
 }
 
 std::vector<double>
@@ -1093,6 +1253,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
     // dict would actually carry so _limit_torques can re-raise the
     // missing-key KeyError instead of silently clipping an implicit 0.
     std::vector<double> requested(n, 0.);
+    std::vector<double> priority_requested(n, 0.);
     std::vector<char> requested_filled(n, command_enabled_ ? 0 : 1);
     double total = 0.;
     std::array<spindle::Vec2, 2> jacobians{};
@@ -1183,16 +1344,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             // weld-servo authority is leg inertia dragged through a
             // drivetrain transient, not a press to cancel. While the
             // reading carries no press information the offset is held.
-            if (weld_crank_torque_nm.has_value() && advance
-                && std::abs(*weld_crank_torque_nm) <=
-                       config_.weld_servo_limit_nm) {
-                const double held = coast_hold_nm_ - *weld_crank_torque_nm;
-                coast_hold_nm_ = held > config_.coasting_brake_limit_nm
-                                     ? config_.coasting_brake_limit_nm
-                                 : held < -config_.coasting_brake_limit_nm
-                                     ? -config_.coasting_brake_limit_nm
-                                     : held;
-            }
             // User ruling 2026-11-06 (rider-leg-control plan, task 1б):
             // a rider who has stopped pedalling can only hold the
             // pedals back — slow them or keep them still — and never
@@ -1207,7 +1358,28 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             // gate is discontinuous at rest for any nonzero hold, and
             // the chatter it injected through the leg targets
             // destabilised the braked relaxation.
+            // User ruling 2026-11-08 (task 4): the hold must not integrate
+            // while it is not applied, and must not enter as a step when it
+            // starts to apply.
             constexpr double kCoastStoppedRateRadS = .1;
+            if (advance && std::abs(rate) >= kCoastStoppedRateRadS &&
+                coast_hold_nm_ * rate > 0.)
+                coast_hold_nm_ = 0.;
+            if (weld_crank_torque_nm.has_value() && advance
+                && std::abs(*weld_crank_torque_nm) <=
+                       config_.weld_servo_limit_nm) {
+                const double held = coast_hold_nm_ - *weld_crank_torque_nm;
+                if (std::abs(rate) < kCoastStoppedRateRadS ||
+                    held * rate <= 0.) {
+                    coast_hold_nm_ = held > config_.coasting_brake_limit_nm
+                                         ? config_.coasting_brake_limit_nm
+                                     : held < -config_.coasting_brake_limit_nm
+                                         ? -config_.coasting_brake_limit_nm
+                                         : held;
+                } else {
+                    coast_hold_nm_ = 0.;
+                }
+            }
             const double damp =
                 config_.coasting_brake_d_nm_s_rad *
                 (command.crank_target_rate_rad_s - rate);
@@ -1227,12 +1399,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                         : raw;
         }
         const Vec2 crank{0., 0.};
-        // or not the rider is mashing: a clipped-in foot keeps the same
-        // light stance pressure through the return stroke, and without it
-        // the weld reads unloaded.
-        const Vec2 leg_targets_v = spindle::leg_crank_targets(
-            total, phase, spindles[0], spindles[1], crank,
-            config_.return_foot_preload_n);
         // _leg_feedforward (rider_control.py:758-813): inverse dynamics of
         // the weld-imposed leg motion. The feet are pinned to the pedals,
         // so the measured crank motion imposes the leg joints' trajectory
@@ -1245,7 +1411,10 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         // weld equalities' own ringing. The same Jacobian rows feed the
         // split below and the crank-task shortfall projection.
         constexpr double kJacobianDelta = 1e-3;
+        constexpr double kPedalPressMarginN = 25.;
         std::array<Vec2, 2> djacs{};
+        std::array<Vec2, 2> gammas{};
+        std::array<Vec2, 2> gammas_x{};
         for (const auto side : kSides) {
             const auto s = side_index(side);
             const Vec2 hip = mat_t_vec_xz(
@@ -1269,21 +1438,22 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                            pelvis_pitch);
             djacs[s] = {(plus[0] - minus[0]) / (2. * kJacobianDelta),
                         (plus[1] - minus[1]) / (2. * kJacobianDelta)};
+            gammas[s] = spindle::leg_vertical_gamma(
+                leg_geometry_[s], hip, spindles[s]);
+            gammas_x[s] = spindle::leg_horizontal_gamma(
+                leg_geometry_[s], hip, spindles[s]);
         }
         // crank_split.leg_shares' downstroke fractions, hoisted so the
         // descending-leg rule below and the stance diagnostics read the
         // same values.
         const Vec2 shares = spindle::leg_shares(phase);
-        // «Действует» 9 (2026-11-05): the descending leg's weight presses
-        // the pedal — its feedforward below stops carrying the leg's own
-        // gravity term while the rising leg keeps full compensation.
+        // «Действует» 9 (2026-11-07): each leg rests on the pedal with its own
+        // weight; on the rising stroke muscles unload everything above the
+        // leg's own weight at the pedal (including BDC reversal inertia), and
+        // around TDC muscles push the foot over so pedal press stays >= 25 N.
         // qfrc_bias mixes gravity with the velocity terms, so the gravity
         // share is recovered exactly as -Σ_b m_b·(g·J^com_b[:,dof]) over
-        // the rider bodies — a leg dof's Jacobian columns vanish outside
-        // that leg's subtree, so bodies outside it contribute nothing.
-        // This equals mj_rne(q, qdot=0, qddot=0) on these dofs without
-        // disturbing live mjData; the step-1 probe cross-checked the two
-        // digit-for-digit on all four leg dofs.
+        // the rider bodies.
         std::array<std::array<std::size_t, 2>, 2> leg_dofs{};
         std::array<std::array<double, 2>, 2> leg_gravity{};
         {
@@ -1312,70 +1482,141 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                     }
             }
         }
-        const double accel = 0.;
+        const double step_dt = dt_s.value_or(model_->opt.timestep);
+        const auto dof_vel = [&](int dof) {
+            return dof < 0 ? 0. : qvel[static_cast<std::size_t>(dof)];
+        };
+        const std::array<double, 3> frame_vel{
+            dof_vel(frame_root_x_dof_), dof_vel(frame_root_z_dof_),
+            dof_vel(frame_pitch_dof_)};
+        const std::array<double, 3> pelvis_vel{
+            dof_vel(rider_root_x_dof_), dof_vel(rider_root_z_dof_),
+            dof_vel(rider_pitch_dof_)};
+        const bool has_prev_step =
+            !steady_state && prev_crank_rate_rad_s_.has_value() &&
+            step_dt > 0.;
+        const double accel =
+            has_prev_step ? (rate - *prev_crank_rate_rad_s_) / step_dt : 0.;
+        std::array<double, 3> frame_acc{0., 0., 0.};
+        std::array<double, 3> pelvis_acc{0., 0., 0.};
+        if (has_prev_step) {
+            for (std::size_t k = 0; k < 3; ++k) {
+                frame_acc[k] = (frame_vel[k] - prev_frame_vel_[k]) / step_dt;
+                pelvis_acc[k] = (pelvis_vel[k] - prev_pelvis_vel_[k]) / step_dt;
+            }
+        }
+        if (advance) {
+            if (steady_state) {
+                prev_crank_rate_rad_s_.reset();
+                prev_frame_vel_ = {};
+                prev_pelvis_vel_ = {};
+            } else {
+                prev_crank_rate_rad_s_ = rate;
+                prev_frame_vel_ = frame_vel;
+                prev_pelvis_vel_ = pelvis_vel;
+            }
+        }
         std::vector<double> imposed(static_cast<std::size_t>(model_->nv), 0.);
+        if (rider_root_x_dof_ >= 0)
+            imposed[static_cast<std::size_t>(rider_root_x_dof_)] =
+                pelvis_acc[0];
+        if (rider_root_z_dof_ >= 0)
+            imposed[static_cast<std::size_t>(rider_root_z_dof_)] =
+                pelvis_acc[1];
+        if (rider_pitch_dof_ >= 0)
+            imposed[static_cast<std::size_t>(rider_pitch_dof_)] =
+                pelvis_acc[2];
+        const Vec3 frame_pitch_anchor =
+            joint_anchor(model_, data, frame_pitch_joint_);
+        const Vec3 rider_pitch_anchor =
+            joint_anchor(model_, data, rider_pitch_joint_);
+        const double a_crank_x =
+            frame_acc[0] +
+            (crank_world[2] - frame_pitch_anchor[2]) * frame_acc[2];
+        const double a_crank_z =
+            frame_acc[1] -
+            (crank_world[0] - frame_pitch_anchor[0]) * frame_acc[2];
+        const double pelvis_rel_pitch_acc = pelvis_acc[2] - frame_acc[2];
         for (const auto side : kSides) {
             const auto s = side_index(side);
-            for (std::size_t i = 0; i < 2; ++i) {
-                const auto dof = leg_dofs[s][i];
-                imposed[dof] = jacobians[s][i] * accel +
-                               djacs[s][i] * rate * rate;
-            }
+            const Vec3 hip_world = joint_anchor(model_, data, hip_joints_[s]);
+            const double a_hip_x =
+                pelvis_acc[0] +
+                (hip_world[2] - rider_pitch_anchor[2]) * pelvis_acc[2];
+            const double a_hip_z =
+                pelvis_acc[1] -
+                (hip_world[0] - rider_pitch_anchor[0]) * pelvis_acc[2];
+            const Vec3 delta_hip = vec_sub(hip_world, crank_world);
+            const Vec3 a_rel_world{
+                a_hip_x - a_crank_x - delta_hip[2] * frame_acc[2], 0.,
+                a_hip_z - a_crank_z + delta_hip[0] * frame_acc[2]};
+            const Vec2 hip_acc_xz = mat_t_vec_xz(frame_r, a_rel_world);
+            imposed[leg_dofs[s][0]] =
+                jacobians[s][0] * accel + djacs[s][0] * rate * rate -
+                gammas_x[s][0] * hip_acc_xz[0] -
+                gammas[s][0] * hip_acc_xz[1] - pelvis_rel_pitch_acc;
+            imposed[leg_dofs[s][1]] =
+                jacobians[s][1] * accel + djacs[s][1] * rate * rate -
+                gammas_x[s][1] * hip_acc_xz[0] -
+                gammas[s][1] * hip_acc_xz[1];
         }
         std::vector<double> inertia(static_cast<std::size_t>(model_->nv));
         engine::mul_m(model_, data, inertia.data(), imposed.data());
         for (const auto side : kSides) {
             const auto s = side_index(side);
-            const auto capacity = [&](int joint, double sign) {
-                return directional_limit(
-                    std::string("rider_") +
-                        (joint == 0 ? "hip_" : "knee_") +
-                        std::string(side),
-                    data, sign);
+            const std::array<std::size_t, 2> slots{
+                joint_index("rider_hip_" + std::string(side)),
+                joint_index("rider_knee_" + std::string(side))};
+            const auto usable_capacity = [&](int joint, double sign) {
+                const std::size_t idx = slots[static_cast<std::size_t>(joint)];
+                const double speed =
+                    qvel[static_cast<std::size_t>(joints_[idx].dof_adr)];
+                if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
+                    sign * speed > 0.)
+                    return 0.;
+                return directional_limit(joints_[idx].name, data, sign);
             };
-            // «Действует» 9 (2026-11-05): mean_crank_torque_nm is the
-            // rider's TOTAL crank torque including the descending leg's
-            // weight, whose press this leg's feedforward no longer
-            // cancels. The muscles' share is therefore the leg's
-            // commanded torque minus the crank torque that weight
-            // already delivers through this leg's own loop Jacobian —
-            // negative down to carrying the leg fully when the share
-            // asks for less than the weight presses. The accounting
-            // lives in the commanded-effort branch only: coasting
-            // carries no commanded torque to book.
-            const double weight_crank_nm =
-                -(jacobians[s][0] * leg_gravity[s][0] +
-                  jacobians[s][1] * leg_gravity[s][1]);
-            const double weight_share_nm = shares[s] * weight_crank_nm;
-            const double muscle_task_nm =
-                command.mean_crank_torque_nm > 0.
-                    ? std::max(leg_targets_v[s] - weight_share_nm,
-                               -weight_share_nm)
-                    : leg_targets_v[s];
-            const Vec2 torques =
+            const double leg_task_nm = shares[s] * total;
+            const Vec2 task_torques =
                 command.mean_crank_torque_nm > 0.
                     ? spindle::downstroke_joint_torques(
-                          muscle_task_nm, jacobians[s], capacity)
+                          leg_task_nm, jacobians[s], usable_capacity)
                     : spindle::split_joint_torques(
-                          muscle_task_nm, jacobians[s], capacity);
+                          leg_task_nm, jacobians[s], usable_capacity);
+            const auto dof0 = leg_dofs[s][0];
+            const auto dof1 = leg_dofs[s][1];
+            const double f_weight =
+                gammas[s][0] * leg_gravity[s][0] +
+                gammas[s][1] * leg_gravity[s][1];
+            const double f_passive =
+                gammas[s][0] * (bias[dof0] + inertia[dof0]) +
+                gammas[s][1] * (bias[dof1] + inertia[dof1]);
+            const double f_task_press =
+                -(gammas[s][0] * task_torques[0] +
+                  gammas[s][1] * task_torques[1]);
+            const double f_upper = std::max(kPedalPressMarginN, f_weight);
+            const double f_base = std::min(f_passive, f_upper);
+            const double delta_f_press =
+                steady_state
+                    ? 0.
+                    : std::max(kPedalPressMarginN - f_task_press, f_base) -
+                          f_passive;
+            Vec2 press_torques{0., 0.};
+            if (std::abs(delta_f_press) > 1e-9) {
+                const auto rem_capacity = [&](int joint, double sign) {
+                    const double lim = usable_capacity(joint, sign);
+                    const double used =
+                        sign * task_torques[static_cast<std::size_t>(joint)];
+                    return std::max(0., lim - used);
+                };
+                press_torques = spindle::split_joint_torques(
+                    delta_f_press, {-gammas[s][0], -gammas[s][1]},
+                    rem_capacity);
+            }
             for (std::size_t i = 0; i < 2; ++i) {
-                const std::size_t slot = joint_index(
-                    "rider_" + std::string(i == 0 ? "hip_" : "knee_") +
-                    std::string(side));
-                const auto dof =
-                    static_cast<std::size_t>(joints_[slot].dof_adr);
-                // Weld-imposed leg feedforward (rider_control.py:924-934):
-                // the actuators carry the bias and inertia of the motion
-                // the crank imposes. No velocity-damping term is added —
-                // the model has no joint damping in any form. «Действует»
-                // 9: the descending leg's own-weight term stays
-                // uncompensated so its weight reaches the pedal; the
-                // rising leg keeps the whole bias term.
-                const double feedforward =
-                    bias[dof] - shares[s] * leg_gravity[s][i] +
-                    inertia[dof];
-                requested[slot] = torques[i] + feedforward;
-                requested_filled[slot] = 1;
+                priority_requested[slots[i]] = press_torques[i];
+                requested[slots[i]] = task_torques[i] + press_torques[i];
+                requested_filled[slots[i]] = 1;
             }
         }
         const auto upper = upper_targets(data, &command.posture);
@@ -1401,6 +1642,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                               qvel[static_cast<std::size_t>(joint.dof_adr)];
             requested[index] =
                 torque + bias[static_cast<std::size_t>(joint.dof_adr)];
+            priority_requested[index] = requested[index];
             requested_filled[index] = 1;
         }
         support_diagnostics_ = {.present = true,
@@ -1408,7 +1650,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                 .stance_rear = shares[1] >= .5};
     }
     const std::vector<double> excitation =
-        limit_torques(requested, data, requested_filled);
+        limit_torques(requested, data, requested_filled, priority_requested);
     const std::vector<double> &final = excitation;
     last_terms_.clear();
     for (std::size_t i = 0; i < n; ++i) {
@@ -1625,6 +1867,9 @@ void SpindleController::commit_state(State &&state) noexcept {
     enabled_ = state.enabled;
     command_enabled_ = state.command_enabled;
     coast_hold_nm_ = state.coast_hold_nm.value_or(0.);
+    prev_crank_rate_rad_s_.reset();
+    prev_frame_vel_ = {};
+    prev_pelvis_vel_ = {};
     last_terms_ = std::move(state.last_terms);
     pd_split_ = std::move(state.pd_split);
     saturated_ik_ = std::move(state.saturated_ik);

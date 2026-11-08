@@ -354,6 +354,10 @@ public:
     [[nodiscard]] std::optional<double> lean_limit_rad() const {
         return lean_limit_rad_;
     }
+    [[nodiscard]] double ik_target_elbow_flexion_rad(
+        const mjData *data, double torso_lean_rad) const;
+    [[nodiscard]] std::optional<double> min_torso_lean_rad(
+        const mjData *data, double min_elbow_flexion_rad) const;
 
 private:
     friend class bike::rider::LegacyController;
@@ -382,7 +386,8 @@ private:
     // KeyError (rider_control.py:743), not an implicit zero.
     [[nodiscard]] std::vector<double>
     limit_torques(std::span<const double> torques, const mjData *data,
-                  std::span<const char> filled = {}) const;
+                  std::span<const char> filled = {},
+                  std::span<const double> priority_torques = {}) const;
     // finalize_effort — bounds re-check plus diagnostics.
     [[nodiscard]] std::vector<double>
     finalize_effort(mjData *data, std::span<const double> torques);
@@ -408,7 +413,13 @@ private:
     int crank_body_ = -1;
     int crank_joint_ = -1;
     int torso_joint_ = -1;
+    int frame_pitch_joint_ = -1;
+    int rider_pitch_joint_ = -1;
+    int frame_root_x_dof_ = -1;
+    int frame_root_z_dof_ = -1;
     int frame_pitch_dof_ = -1;
+    int rider_root_x_dof_ = -1;
+    int rider_root_z_dof_ = -1;
     int rider_pitch_dof_ = -1;
     int crank_spin_dof_ = -1;
     int crank_spin_qpos_ = -1;
@@ -451,6 +462,9 @@ private:
     // rider_control.py:628 _coast_hold_nm — the weld-press servo's
     // integrated hold torque; reset_activation() clears it.
     double coast_hold_nm_ = 0.;
+    std::optional<double> prev_crank_rate_rad_s_;
+    std::array<double, 3> prev_frame_vel_{};
+    std::array<double, 3> prev_pelvis_vel_{};
     EffortDiagnostics effort_diagnostics_;
     AllocationDiagnostics allocation_diagnostics_;
     SupportDiagnostics support_diagnostics_;

@@ -26,11 +26,16 @@ namespace drivetrain {
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror pedaling.py
     PedalingState PedalingPolicy::update(double phase, double rate, double required, double effort,
                                          double dt, bool enabled, bool braking,
-                                         std::optional<double> shaft_rad_s) {
+                                         std::optional<double> shaft_rad_s,
+                                         std::optional<double> ceiling_nm,
+                                         double torque_factor) {
         finite(phase, "crank phase");
         finite(rate, "crank rate");
         finite(required, "required cadence");
         finite_optional(shaft_rad_s, "shaft rate");
+        if (ceiling_nm)
+            nonnegative(*ceiling_nm, "automatic rider effort ceiling");
+        nonnegative(torque_factor, "shift torque factor");
         nonnegative(effort, "rider effort");
         positive(dt, "pedaling interval");
         required = std::max(required, 0.);
@@ -62,6 +67,9 @@ namespace drivetrain {
             double target = effort;
             if (config_.mash_torque_nm > target && cadence < config_.mash_cadence_rpm)
                 target = effort + (config_.mash_torque_nm - effort) * (1. - cadence / config_.mash_cadence_rpm);
+            if (ceiling_nm)
+                target = std::min(target, *ceiling_nm);
+            target = validation::derived(target * torque_factor, "PedalingPolicy.target_effort");
             const double slew = config_.effort_slew_nm_s;
             if (slew <= 0.) effort = target;
             else {

@@ -170,6 +170,57 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 "the crank torque ceiling is 60 Nm");
     bt::require(climb.surge_power_w == 400.,
                 "the surge power is 400 W");
+    bt::require(climb.min_elbow_flexion_deg == 15.,
+                "the torso backward-lean stop is at 15 deg elbow flexion");
+    for (const char *rel : {"examples/research/viewer_physics_pneumatic.toml",
+                            "examples/research/viewer_physics_distributed.toml"}) {
+        const auto other = cfg::load_physics(repo_file(rel));
+        bt::require(other.seated_climb.min_elbow_flexion_deg == 15.,
+                    "all three profiles set min_elbow_flexion_deg = 15 deg");
+    }
+    // min_elbow_flexion_deg is a required profile field with no code default:
+    // omitting it from [seated_climb] fails to load, and out-of-range values
+    // fail validation.
+    {
+        std::string missing_elbow = bt::text(repo_file(
+            "examples/research/viewer_physics_welded.toml"));
+        const std::string needle = "min_elbow_flexion_deg = 15.0";
+        const auto pos = missing_elbow.find(needle);
+        bt::require(pos != std::string::npos,
+                    "viewer_physics_welded.toml declares min_elbow_flexion_deg");
+        missing_elbow.erase(pos, needle.size());
+        const bt::TemporaryDirectory dir("welded-missing-min-elbow");
+        const auto path = dir.path() / "physics.toml";
+        { std::ofstream out(path); out << missing_elbow; }
+        bool threw = false;
+        try {
+            (void)cfg::load_physics(path);
+        } catch (const std::invalid_argument &failure) {
+            threw = true;
+            bt::require(
+                std::string_view(failure.what()).find(
+                    "min_elbow_flexion_deg") != std::string_view::npos,
+                "the load rejection names min_elbow_flexion_deg");
+        }
+        bt::require(threw,
+                    "omitting min_elbow_flexion_deg from [seated_climb] fails");
+    }
+    for (const double bad_deg : {0., -5., 95.}) {
+        auto mutated = profile();
+        mutated.seated_climb.min_elbow_flexion_deg = bad_deg;
+        bool threw = false;
+        try {
+            cfg::post_init(mutated);
+        } catch (const std::invalid_argument &failure) {
+            threw = true;
+            bt::require(
+                std::string_view(failure.what()).find(
+                    "min_elbow_flexion_deg") != std::string_view::npos,
+                "range rejection names min_elbow_flexion_deg");
+        }
+        bt::require(threw,
+                    "out-of-range min_elbow_flexion_deg is rejected");
+    }
     bt::require(profile().control_period_s == 0.00125,
                 "the leg controller runs every 1.25 ms physics step");
     const auto &articulated = profile().articulated;

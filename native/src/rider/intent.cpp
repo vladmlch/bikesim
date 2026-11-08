@@ -103,7 +103,8 @@ double SeatedPostureProgram::update(
     double time_s, double road_grade, double dt_s,
     std::optional<double> front_load_share,
     std::optional<double> lean_limit_rad,
-    std::optional<double> dead_time_s) {
+    std::optional<double> dead_time_s,
+    std::optional<double> min_lean_rad) {
     if (!(std::isfinite(time_s) && std::isfinite(road_grade)))
         throw std::invalid_argument("nonfinite posture program input");
     if (!(std::isfinite(dt_s) && dt_s > 0.))
@@ -122,34 +123,48 @@ double SeatedPostureProgram::update(
         !(std::isfinite(*lean_limit_rad) && *lean_limit_rad >= 0.))
         throw std::invalid_argument(
             "lean limit must be finite and nonnegative");
+    if (min_lean_rad.has_value() && !std::isfinite(*min_lean_rad))
+        throw std::invalid_argument("minimum lean limit must be finite");
     load_samples_.emplace_back(time_s, front_load_share);
     while (!load_samples_.empty() &&
            load_samples_.front().first <= time_s - delay + 1e-12) {
         delayed_load_share_ = load_samples_.front().second;
         load_samples_.pop_front();
     }
+    const double forward_limit =
+        lean_limit_rad.value_or(config_.max_forward_lean_rad);
+    const double backward_limit =
+        min_lean_rad.has_value()
+            ? std::min(forward_limit,
+                       std::max(-config_.max_backward_lean_rad, *min_lean_rad))
+            : -config_.max_backward_lean_rad;
+    double extra = 0.;
+    for (const auto &[start, duration, amplitude] : pulses_)
+        extra += body_pulse(time_s, start, duration, amplitude);
+    const double grade_and_pulse =
+        config_.lean_gain * std::atan(road_grade) + extra;
     if (delayed_load_share_.has_value()) {
         trim_rad_ += config_.lean_trim_gain_rad_s *
                      (config_.front_load_share_target -
                       *delayed_load_share_) *
                      dt_s;
-        trim_rad_ = std::max(-config_.lean_trim_limit_rad,
+        const double min_trim =
+            min_lean_rad.has_value()
+                ? std::max(-config_.lean_trim_limit_rad,
+                           backward_limit - grade_and_pulse)
+                : -config_.lean_trim_limit_rad;
+        trim_rad_ = std::max(min_trim,
                              std::min(config_.lean_trim_limit_rad,
                                       trim_rad_));
     }
-    const double forward_limit =
-        lean_limit_rad.value_or(config_.max_forward_lean_rad);
-    double extra = 0.;
-    for (const auto &[start, duration, amplitude] : pulses_)
-        extra += body_pulse(time_s, start, duration, amplitude);
     const double target = std::max(
-        -config_.max_backward_lean_rad,
-        std::min(forward_limit,
-                 config_.lean_gain * std::atan(road_grade) + trim_rad_ +
-                     extra));
+        backward_limit,
+        std::min(forward_limit, grade_and_pulse + trim_rad_));
     lean_rad_ += std::max(-config_.lean_rate_rad_s * dt_s,
                           std::min(config_.lean_rate_rad_s * dt_s,
                                    target - lean_rad_));
+    if (min_lean_rad.has_value() && lean_rad_ < backward_limit)
+        lean_rad_ = backward_limit;
     return lean_rad_;
 }
 
@@ -211,7 +226,8 @@ double SeatedClimbPolicy::power_target_w(double preview_grade, double dt_s) {
 Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
                                  double road_grade,
                                  std::optional<double> preview_grade,
-                                 std::optional<double> lean_limit_rad) {
+                                 std::optional<double> lean_limit_rad,
+                                 std::optional<double> min_lean_rad) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
     const double dt = validation::positive(dt_s, "rider intention interval");
     validation::finite(road_grade, "posture road grade");
@@ -254,7 +270,8 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
                                         target_effort - effort_nm_));
     }
     lean_rad_ = program_.update(time_s_, preview, dt,
-                                signals.front_load_share, lean_limit_rad);
+                                signals.front_load_share, lean_limit_rad,
+                                std::nullopt, min_lean_rad);
     time_s_ += dt;
     RiderPosture posture;
     posture.torso_lean_rad = lean_rad_;
@@ -318,7 +335,7 @@ RiderIntent::resolve(IntentControl control, const IntentSignals &signals,
                      std::int64_t step, double road_grade,
                      std::optional<double> preview_grade,
                      std::optional<double> lean_limit_rad, bool active,
-                     bool advance) {
+                     bool advance, std::optional<double> min_lean_rad) {
     // The wire decode already guaranteed a well-formed control dict — the
     // oracle's isinstance check maps to that boundary.
     if (!config_.enabled || !active)
@@ -332,7 +349,8 @@ RiderIntent::resolve(IntentControl control, const IntentSignals &signals,
     if (!advance) {
         RiderIntent probe(*this);
         return probe.resolve(control, signals, step, road_grade,
-                             preview_grade, lean_limit_rad, true, true);
+                             preview_grade, lean_limit_rad, true, true,
+                             min_lean_rad);
     }
     if (step % period_steps_ == 0 && step != last_tick_step_) {
         // Python's expected = last+period uses unbounded ints; the
@@ -344,7 +362,7 @@ RiderIntent::resolve(IntentControl control, const IntentSignals &signals,
             throw std::invalid_argument(
                 "rider intention clock skipped an acquisition");
         intent_ = policy_.update(signals, config_.period_s, road_grade,
-                                 preview_grade, lean_limit_rad);
+                                 preview_grade, lean_limit_rad, min_lean_rad);
         last_tick_step_ = step;
     }
     if (!control.rider_enabled)

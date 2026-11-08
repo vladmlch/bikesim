@@ -89,6 +89,11 @@ namespace spindle {
     [[nodiscard]] Vec2 leg_vertical_gamma(const LegLoopGeometry &geometry,
                                           Vec2 hip_xz, Vec2 spindle_pos_xz);
 
+    // Inverse foot-horizontal Jacobian d(hip_q,knee_q)/d(spindle_x) in the
+    // bike frame (+x forward, +z up).
+    [[nodiscard]] Vec2 leg_horizontal_gamma(const LegLoopGeometry &geometry,
+                                            Vec2 hip_xz, Vec2 spindle_pos_xz);
+
     // ---- crank_split.py ----------------------------------------------------
     // leg_shares: downstroke-owning fractions (front, rear).
     [[nodiscard]] Vec2 leg_shares(double phase_rad);

@@ -166,6 +166,9 @@ inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
     SC_REAL(lean_trim_gain_rad_s),
     SC_REAL(lean_trim_limit_rad),
     SC_REAL(trim_dead_time_s),
+    {.name="min_elbow_flexion_deg", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SeatedClimbConfig, min_elbow_flexion_deg), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
 #undef SC_REAL
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there

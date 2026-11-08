@@ -212,6 +212,42 @@ void test_shift_cut_drop_and_return_respect_configured_effort_slew() {
     }
 }
 
+// Review finding F1: the rider effort ceiling is a hard clamp after the
+// slew limiter, so effort never exceeds the ceiling even when the ceiling
+// drops in a single step (unlike shift-cut torque factor which slews).
+void test_rider_effort_never_exceeds_lowered_ceiling_when_ceiling_drops_in_one_step() {
+    constexpr double kSlewNmS = 300.;
+    constexpr double kDt = .00125;
+    const drivetrain::PedalingConfig config{
+        .enabled = true,        .coast_above_rpm = 110.,
+        .resume_below_rpm = 90., .stop_time_s = .35,
+        .coast_cadence_tau_s = 0., .mash_cadence_rpm = 45.,
+        .mash_torque_nm = 60.,  .effort_slew_nm_s = kSlewNmS,
+        .rollback_brake = true, .rollback_engage_mps = .25,
+        .rollback_release_mps = 0., .rollback_demand = 1.};
+    drivetrain::PedalingPolicy policy(config);
+    // Bring effort up to 60 N.m steady.
+    for (int i = 0; i < 200; ++i)
+        (void)policy.update(0., 8., 80., 60., kDt, true, false, 8., 60., 1.);
+    bt::require(std::abs(policy.state().effort - 60.) < 1e-12,
+                "effort reaches 60 N.m before ceiling drop");
+    // Drop ceiling in one step from 60 N.m to 20 N.m.
+    constexpr double kLoweredCeiling = 20.;
+    const auto step1 =
+        policy.update(0., 8., 80., 60., kDt, true, false, 8., kLoweredCeiling, 1.);
+    bt::require(step1.effort_nm <= kLoweredCeiling,
+                "effort never exceeds lowered ceiling on the first step after a single-step drop");
+    bt::require(std::abs(step1.effort_nm - kLoweredCeiling) < 1e-12,
+                "effort clamps immediately to lowered ceiling without waiting for slew");
+    // Subsequent steps stay clamped at or below ceiling.
+    for (int i = 1; i < 50; ++i) {
+        const auto step =
+            policy.update(0., 8., 80., 60., kDt, true, false, 8., kLoweredCeiling, 1.);
+        bt::require(step.effort_nm <= kLoweredCeiling,
+                    "effort remains clamped at lowered ceiling across subsequent steps");
+    }
+}
+
 // ---- the welded flat plant ---------------------------------------------
 // _environment(tmp_path): viewer_physics_welded.toml + a flat 200 m track
 // + duration 8 s + dt .00125 + record-decimation 1 + initial-speed 0.
@@ -1269,6 +1305,7 @@ int main() {
         test_cadence_control_validates_a_finite_nonnegative_wish();
         test_first_pedal_command_and_restart_respect_configured_effort_slew();
         test_shift_cut_drop_and_return_respect_configured_effort_slew();
+        test_rider_effort_never_exceeds_lowered_ceiling_when_ceiling_drops_in_one_step();
         test_strict_flat_cycle_delivers_and_stays_within_budgets();
         test_rigid_per_revolution_crank_torque_tracks_command();
         test_free_coast_is_an_intent_not_a_crank_lock();

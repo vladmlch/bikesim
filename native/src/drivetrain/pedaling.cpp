@@ -67,8 +67,6 @@ namespace drivetrain {
             double target = effort;
             if (config_.mash_torque_nm > target && cadence < config_.mash_cadence_rpm)
                 target = effort + (config_.mash_torque_nm - effort) * (1. - cadence / config_.mash_cadence_rpm);
-            if (ceiling_nm)
-                target = std::min(target, *ceiling_nm);
             target = validation::derived(target * torque_factor, "PedalingPolicy.target_effort");
             const double slew = config_.effort_slew_nm_s;
             if (slew <= 0.) effort = target;
@@ -76,6 +74,8 @@ namespace drivetrain {
                 const double delta = validation::derived(slew * dt, "PedalingPolicy.slew_delta");
                 effort = std::max(validation::derived(previous - delta, "PedalingPolicy.slew_lower"), std::min(validation::derived(previous + delta, "PedalingPolicy.slew_upper"), target));
             }
+            if (ceiling_nm)
+                effort = std::min(effort, *ceiling_nm);
             state_.effort = effort;
             // pedaling.py:110-120 — the limb-velocity wish is the lesser of
             // the wheel-implied cadence and the rider's own perceived

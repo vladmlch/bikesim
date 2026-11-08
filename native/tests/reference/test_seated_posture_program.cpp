@@ -67,6 +67,8 @@ bool approx(double actual, double expected, double rtol = 1e-9,
 rider::IntentConfig enabled(double lean_rate = 0.) {
     rider::IntentConfig config;
     config.enabled = true;
+    config.period_s = .0005;
+    config.min_elbow_flexion_deg = 15.;
     if (lean_rate != 0.) config.lean_rate_rad_s = lean_rate;
     return config;
 }

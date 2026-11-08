@@ -148,8 +148,9 @@
       "rollback_release_mps": 0.0,
       "stop_time_s": 0.35
     },
+    "rotor_inertia_kgm2": 0.0,
     "shifting": {
-      "cadence_smoothing_tau_s": 0.35,
+      "cadence_smoothing_tau_s": 0.05,
       "cassette": {
         "$tuple": [
           10,
@@ -167,11 +168,12 @@
         ]
       },
       "enabled": true,
-      "shift_cooldown_s": 0.4,
+      "shift_cooldown_s": 0.25,
       "shift_cut_duration_s": 0.2,
       "target_cadence_max_rpm": 110.0,
       "target_cadence_min_rpm": 75.0,
-      "torque_factor": 0.3,
+      "torque_factor_larger_cog": 0.8,
+      "torque_factor_smaller_cog": 0.3,
       "upshift_slip_limit_mps": 0.5,
       "upshift_slip_mode": "legacy_signed"
     },
@@ -226,8 +228,9 @@
     "max_backward_lean_rad": 0.1,
     "max_crank_torque_nm": 60.0,
     "max_forward_lean_rad": 0.35,
+    "min_elbow_flexion_deg": 15.0,
     "orientation_tau_s": 0.5,
-    "period_s": 0.01,
+    "period_s": 0.00125,
     "reaction_delay_s": 0.15,
     "surge_budget_s": 15.0,
     "surge_grade": 0.2,

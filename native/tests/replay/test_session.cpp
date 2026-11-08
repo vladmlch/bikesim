@@ -49,6 +49,7 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     physics.physics_mode="physical"; physics.drive_mode="crank_effort"; physics.timestep_s=.0005;
     physics.initial_speed_mps=.1; physics.equilibrium_cache_enabled=false;
     physics.tires.backend="compliant_2d"; physics.tires.surface_mode="track";
+    physics.seated_climb.min_elbow_flexion_deg = 15.0;
     bike::configuration::RiderSpecs rider; rider.variant="lumped";
     request.setup.model.physics=physics; request.setup.model.rider=rider; request.setup.model.include_rider=true;
     request.setup.model.mode="ride"; request.setup.model.crank_joint=true; request.setup.track=bike::terrain::flat(12.);

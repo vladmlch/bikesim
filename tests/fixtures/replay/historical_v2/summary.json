@@ -983,7 +983,8 @@
         "surge_recovery_rate": 0.3333333333333333,
         "target_crank_power_w": 250.0,
         "torque_slew_nm_s": 300.0,
-        "trim_dead_time_s": 0.2
+        "trim_dead_time_s": 0.2,
+        "min_elbow_flexion_deg": 15.0
       },
       "timestep_s": 0.00125,
       "tires": {

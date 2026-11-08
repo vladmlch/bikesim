@@ -270,6 +270,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.lean_trim_gain_rad_s = 0.3;
     climb.lean_trim_limit_rad = 0.15;
     climb.trim_dead_time_s = 0.2;
+    climb.min_elbow_flexion_deg = 15.0;
     cfg::post_init(c);
     return c;
 }
@@ -719,18 +720,17 @@ void test_schema() {
     bt::require(io::as_array(tires, "fields.tires.fields").size() == 9,
                 "tires field count");
     const Value& drive = member(fields[7], "fields", "fields.drive");
-    // 15 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive),
+    // 16 = 21 minus bearing_c_nms_rad (no mechanical loss in the drive) and
     // the four elastic-chain members chain_k_n_m, chain_c_ns_m,
-    // freehub_k_nm_rad, freehub_c_nms_rad, and rotor_inertia_kgm2 (the
-    // rotor freewheel was removed 2026-11-05).
-    bt::require(io::as_array(drive, "fields.drive.fields").size() == 15,
+    // freehub_k_nm_rad, freehub_c_nms_rad (rotor_inertia_kgm2 was restored).
+    bt::require(io::as_array(drive, "fields.drive.fields").size() == 16,
                 "drive field count");
     // 66 = 69 minus leg_track_damping_nms_rad (no joint damping in any
     // form), coupled_task_control (removed with its welded-rider mode),
     // and activation_tau_s (the 25 ms activation filter was removed 2026-11-07).
     bt::require(fields_named(fields[9], "articulated").size() == 66,
                 "articulated field count");
-    bt::require(fields_named(fields[10], "seated_climb").size() == 19,
+    bt::require(fields_named(fields[10], "seated_climb").size() == 20,
                 "seated_climb field count");
 
     // Optional leaves serialize explicit null defaults; required leaves
@@ -824,23 +824,6 @@ transmission_model = "elastic_chain"
     bt::require(cfg::PhysicalDriveConfig{}.transmission_model ==
                     "ideal_mid_drive",
                 "the declared default is the ideal drive");
-}
-
-// The rotor freewheel was removed (user, 2026-11-05): the drivetrain keeps
-// exactly two one-way clutches — the rear freehub and the motor clutch. An
-// old document still naming the reflected-inertia key is rejected at the
-// TOML construction gate like every other removed member.
-[[gnu::noinline]] void test_rotor_inertia_key_is_rejected() {
-    const Value document = cfg::detail::merge_values(
-        cfg::detail::plain_document(
-            cfg::to_value(cfg::default_physics())),
-        cfg::detail::parse_toml(R"([drive]
-rotor_inertia_kgm2 = 0.0
-)",
-                                "rotor_inertia_kgm2 rejection"));
-    expect_invalid(
-        "unknown PhysicalDriveConfig parameter(s): rotor_inertia_kgm2",
-        [&] { (void) cfg::detail::construct_config(document); });
 }
 
 void test_validation() {
@@ -1704,7 +1687,6 @@ int main(int argc, char* argv[]) {
         test_defaults();
         test_schema();
         test_elastic_chain_is_rejected();
-        test_rotor_inertia_key_is_rejected();
         test_validation();
         test_aliases_and_resolution();
         test_resolved_profiles();

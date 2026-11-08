@@ -108,6 +108,7 @@ inline void write_json(const std::filesystem::path& path, const io::Value& value
     physics.equilibrium_cache_enabled = false;
     physics.tires.backend = "compliant_2d";
     physics.tires.surface_mode = "track";
+    physics.seated_climb.min_elbow_flexion_deg = 15.0;
     bike::configuration::RiderSpecs rider;
     rider.variant = "lumped";
     request.setup.model.physics = physics;

@@ -1091,6 +1091,7 @@ void post_init(SimulationPhysicsConfig &config) {
 
 SimulationPhysicsConfig default_physics() {
     SimulationPhysicsConfig config{};
+    config.seated_climb.min_elbow_flexion_deg = 15.0;
     post_init(config);
     return config;
 }

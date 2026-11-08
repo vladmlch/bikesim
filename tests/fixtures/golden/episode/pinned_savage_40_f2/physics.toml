@@ -130,3 +130,4 @@ front_load_share_target = 0.30
 lean_trim_gain_rad_s = 0.3
 lean_trim_limit_rad = 0.15
 trim_dead_time_s = 0.2
+min_elbow_flexion_deg = 15.0

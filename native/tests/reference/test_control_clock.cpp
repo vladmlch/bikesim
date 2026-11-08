@@ -28,6 +28,7 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     bt::invalid([] { runtime::ControlClock const invalid(.0005, .0012); });
     bike::configuration::SimulationPhysicsConfig config;
     config.physics_mode = "physical"; config.timestep_s = .0005; config.control_period_s = .0012;
+    config.seated_climb.min_elbow_flexion_deg = 15.0;
     bt::invalid([&] { bike::configuration::validate(config); });
 }
 void test_held_command_is_returned_unchanged_between_ticks() {

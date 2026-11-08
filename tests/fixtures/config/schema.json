@@ -668,6 +668,12 @@
           "type": "<class 'bool'>"
         },
         {
+          "default": 0.0,
+          "default_factory": null,
+          "name": "rotor_inertia_kgm2",
+          "type": "<class 'float'>"
+        },
+        {
           "default": null,
           "default_factory": "AssistConfig",
           "fields": [
@@ -937,9 +943,15 @@
               "type": "<class 'float'>"
             },
             {
+              "default": 0.8,
+              "default_factory": null,
+              "name": "torque_factor_larger_cog",
+              "type": "<class 'float'>"
+            },
+            {
               "default": 0.3,
               "default_factory": null,
-              "name": "torque_factor",
+              "name": "torque_factor_smaller_cog",
               "type": "<class 'float'>"
             },
             {
@@ -1439,7 +1451,7 @@
           "type": "<class 'bool'>"
         },
         {
-          "default": 0.01,
+          "default": 0.00125,
           "default_factory": null,
           "name": "period_s",
           "type": "<class 'float'>"
@@ -1544,6 +1556,12 @@
           "default": 0.2,
           "default_factory": null,
           "name": "trim_dead_time_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "min_elbow_flexion_deg",
           "type": "<class 'float'>"
         }
       ],

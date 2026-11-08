@@ -114,9 +114,9 @@ void test_measurement_cli_keeps_profile_dt_until_explicit_override() {
     bt::require(!options.timestep_s, "profile dt is retained until an explicit override");
     const auto resolved = m::resolve_measurement_ride(options);
     bt::require(resolved->setup.model.physics.has_value() && resolved->setup.model.physics->timestep_s == .00125, "actual profile projection retains the shipped 1.25 ms dt");
-    const std::array<std::string_view, 4> override{"--out", "unused", "--dt", ".0005"};
+    const std::array<std::string_view, 4> override{"--out", "unused", "--dt", ".00025"};
     const auto explicit_options = m::parse_options(override);
-    bt::require(explicit_options.timestep_s == .0005 && m::resolve_measurement_ride(explicit_options)->setup.model.physics->timestep_s == .0005, "the explicit dt reaches actual profile resolution"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
+    bt::require(explicit_options.timestep_s == .00025 && m::resolve_measurement_ride(explicit_options)->setup.model.physics->timestep_s == .00025, "the explicit dt reaches actual profile resolution"); // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
 }
 // realtime_measurement/benchmark_mode_relaxes_only_the_monitor_and_marks_the_report
 void test_benchmark_mode_relaxes_only_the_monitor_and_marks_the_report() {

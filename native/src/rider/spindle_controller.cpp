@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdio>
 #include <limits>
 #include <numbers>
 #include <stdexcept>

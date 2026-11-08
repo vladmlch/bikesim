@@ -202,7 +202,7 @@ pinned_rig(const std::function<void(cfg::SimulationPhysicsConfig &)>
                                  true))};
     auto &model = rig->request->model;
     // _model's --physics-config: the live pinned document (F1-delivered
-    // budgets and activation_tau_s included), not the stale fixture copy.
+    // budgets included), not the stale fixture copy.
     model.physics = cfg::load_physics(
         repo_file("examples/research/viewer_physics_welded.toml"));
     auto &physics = model.physics.value();

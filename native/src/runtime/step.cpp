@@ -1242,8 +1242,7 @@ PhysicalStep::apply_forces_body(
                                    ? rider_state_->road
                                    : std::vector<RoadSample>{};
             const std::optional<double> min_lean_rad =
-                rider_control_.has_value() &&
-                        std::isfinite(config_.intent.min_elbow_flexion_deg)
+                rider_control_.has_value()
                     ? rider_control_->min_torso_lean_rad(
                           d, config_.intent.min_elbow_flexion_deg *
                                  (std::numbers::pi / 180.))

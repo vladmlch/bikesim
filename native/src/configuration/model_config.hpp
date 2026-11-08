@@ -141,7 +141,9 @@ inline const RecordSchema kEndStopConfigSchema{
 
 // seated_climb.py SeatedClimbConfig — FieldDecls over the shared
 // rider::IntentConfig record (the aliased type above).
-inline const SeatedClimbConfig kDeclaredSeatedClimbConfig{};
+inline const SeatedClimbConfig kDeclaredSeatedClimbConfig{
+    .min_elbow_flexion_deg = 15.0,
+};
 inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
 #define SC_REAL(f)                                                            \
     {#f, "<class 'float'>", FieldKind::Real, offsetof(SeatedClimbConfig, f), \

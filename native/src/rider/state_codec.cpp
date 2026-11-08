@@ -2144,8 +2144,8 @@ IntentConfig decode_intent_config(const bio::Value &value,
                        "surge_power_w", "surge_grade", "surge_budget_s",
                        "surge_recovery_rate", "front_load_share_target",
                        "lean_trim_gain_rad_s", "lean_trim_limit_rad",
-                       "trim_dead_time_s"),
-                  keys("min_elbow_flexion_deg"));
+                       "trim_dead_time_s", "min_elbow_flexion_deg"),
+                  keys());
     IntentConfig config;
     // SeatedClimbConfig.__post_init__ order: enabled, positive fields,
     // nonnegative fields, share bound, posture envelope bound.
@@ -2206,14 +2206,11 @@ IntentConfig decode_intent_config(const bio::Value &value,
     if (std::max(config.max_forward_lean_rad,
                  config.max_backward_lean_rad) > .8)
         invalid(path, "seated lean exceeds the posture envelope");
-    if (d.contains("min_elbow_flexion_deg") &&
-        !d["min_elbow_flexion_deg"].is_none()) {
-        const double parsed = d["min_elbow_flexion_deg"].finite_real(path);
-        if (parsed <= 0. || parsed > 90.)
-            invalid(std::string(path) + ".min_elbow_flexion_deg",
-                    "invalid value or out of range");
-        config.min_elbow_flexion_deg = parsed;
-    }
+    const double min_elbow_deg = d["min_elbow_flexion_deg"].finite_real(path);
+    if (min_elbow_deg <= 0. || min_elbow_deg > 90.)
+        invalid(std::string(path) + ".min_elbow_flexion_deg",
+                "invalid value or out of range");
+    config.min_elbow_flexion_deg = min_elbow_deg;
     return config;
 }
 

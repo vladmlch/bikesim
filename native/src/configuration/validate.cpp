@@ -828,12 +828,10 @@ void post_init(const SeatedClimbConfig &config) {
     if (std::max(config.max_forward_lean_rad,
                  config.max_backward_lean_rad) > .8)
         fail("seated lean exceeds the posture envelope");
-    if (config.enabled || !std::isnan(config.min_elbow_flexion_deg)) {
-        scalar(config.min_elbow_flexion_deg, "min_elbow_flexion_deg",
-               std::nullopt, true);
-        if (config.min_elbow_flexion_deg > 90.)
-            fail("min_elbow_flexion_deg must not exceed 90 degrees");
-    }
+    scalar(config.min_elbow_flexion_deg, "min_elbow_flexion_deg",
+           std::nullopt, true);
+    if (config.min_elbow_flexion_deg > 90.)
+        fail("min_elbow_flexion_deg must not exceed 90 degrees");
 }
 
 // ---- rider.py / rider_posture.py / rider_envelope.py / joint_strength.py ---

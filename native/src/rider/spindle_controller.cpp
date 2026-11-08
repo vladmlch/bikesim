@@ -732,7 +732,7 @@ std::optional<double> SpindleController::min_torso_lean_rad(
         return lo;
     if (ik_target_elbow_flexion_rad(data, hi) < min_elbow_flexion_rad)
         return hi;
-    for (int iter = 0; iter < 54; ++iter) {
+    for (int iter = 0; iter < 21; ++iter) {
         const double mid = .5 * (lo + hi);
         if (ik_target_elbow_flexion_rad(data, mid) >= min_elbow_flexion_rad)
             hi = mid;

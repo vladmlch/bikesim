@@ -98,13 +98,14 @@ void SeatedPostureProgram::schedule_pulse(double start_s, double duration_s,
     pulses_.push_back({start_s, duration_s, amplitude_rad});
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
+// NOLINTBEGIN(bugprone-easily-swappable-parameters) fixed positional Python signature
 double SeatedPostureProgram::update(
     double time_s, double road_grade, double dt_s,
     std::optional<double> front_load_share,
     std::optional<double> lean_limit_rad,
     std::optional<double> dead_time_s,
     std::optional<double> min_lean_rad) {
+// NOLINTEND(bugprone-easily-swappable-parameters)
     if (!(std::isfinite(time_s) && std::isfinite(road_grade)))
         throw std::invalid_argument("nonfinite posture program input");
     if (!(std::isfinite(dt_s) && dt_s > 0.))

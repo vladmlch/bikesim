@@ -1055,6 +1055,7 @@ SpindleController::limit_torques(
     std::vector<double> limited(n), speeds(n);
     const auto qvel = model_access::readonly_buffer(
         data->qvel, model_->nv, "qvel");
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const auto clip_one = [&](std::size_t i, double raw_torque,
                               double speed) {
         const auto &joint = joints_[i];

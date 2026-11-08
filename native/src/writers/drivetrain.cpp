@@ -735,7 +735,7 @@ namespace drivetrain {
                        60. / (2. * std::numbers::pi);
             torque_factor = shifting_scratch_.torque_factor();
         }
-        auto result = pedaling.update(q[static_cast<std::size_t>(crank.qpos)],
+        const auto result = pedaling.update(q[static_cast<std::size_t>(crank.qpos)],
                                       v[static_cast<std::size_t>(crank.dof)], required,
                                       effort, in.dt, enabled, in.braking,
                                       v[static_cast<std::size_t>(shaft_joint_.dof)],

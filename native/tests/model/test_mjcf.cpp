@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <numbers>
@@ -736,25 +737,30 @@ void saddle_height_gives_37_5_deg_bdc_knee_flexion() {
 }
 } // namespace
 int main(int argc, char* argv[]) {
+    try {
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
 #endif
-    const std::span<char*> args(argv, static_cast<std::size_t>(argc));
+        const std::span<char*> args(argv, static_cast<std::size_t>(argc));
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #endif
-    if (args.size() > 1 && std::string_view(args[1]) == "de_leva") {
-        return bt::run(de_leva_leg_segment_com_and_inertia);
+        if (args.size() > 1 && std::string_view(args[1]) == "de_leva") {
+            return bt::run([] { de_leva_leg_segment_com_and_inertia(); });
+        }
+        if (args.size() > 1 && std::string_view(args[1]) == "symmetric_ankles") {
+            return bt::run([] { symmetric_locked_ankles_equal_knee_to_spindle_distance(); });
+        }
+        if (args.size() > 1 && std::string_view(args[1]) == "build_pose_neutral") {
+            return bt::run([] { build_pose_neutral_angles(); });
+        }
+        if (args.size() > 1 && std::string_view(args[1]) == "saddle_bdc_flexion") {
+            return bt::run([] { saddle_height_gives_37_5_deg_bdc_knee_flexion(); });
+        }
+        return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();build_pose_neutral_angles();saddle_height_gives_37_5_deg_bdc_knee_flexion();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
+    } catch (const std::exception& e) {
+        std::cerr << "FAIL " << e.what() << '\n';
+        return 1;
     }
-    if (args.size() > 1 && std::string_view(args[1]) == "symmetric_ankles") {
-        return bt::run(symmetric_locked_ankles_equal_knee_to_spindle_distance);
-    }
-    if (args.size() > 1 && std::string_view(args[1]) == "build_pose_neutral") {
-        return bt::run(build_pose_neutral_angles);
-    }
-    if (args.size() > 1 && std::string_view(args[1]) == "saddle_bdc_flexion") {
-        return bt::run(saddle_height_gives_37_5_deg_bdc_knee_flexion);
-    }
-    return bt::run([]{de_leva_leg_segment_com_and_inertia();symmetric_locked_ankles_equal_knee_to_spindle_distance();build_pose_neutral_angles();saddle_height_gives_37_5_deg_bdc_knee_flexion();captured_welded();physical_profiles_and_topology();no_joint_damping_in_any_mode();seated_variant_is_gone();crank_zero_is_horizontal();drivetrain_has_two_one_way_clutches();rotor_body_welds_to_the_drive_axis();motor_clutch_engages_forward_only();errors_and_ownership();});
 }

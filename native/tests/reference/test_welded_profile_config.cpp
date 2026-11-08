@@ -112,10 +112,12 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 "the motor runs on for .3 s after the rider eases off");
 }
 
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 [[gnu::noinline]] void assert_injected_key_rejected(
     std::string_view dir_tag, std::string_view table,
     std::string_view injected_line, std::string_view expected_token,
     std::string_view message) {
+// NOLINTEND(bugprone-easily-swappable-parameters)
     const std::string source = bt::text(repo_file(
         "examples/research/viewer_physics_welded.toml"));
     const auto anchor = source.find(table);
@@ -123,7 +125,7 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 "the welded document keeps the target table");
     std::string injected(source);
     injected.insert(anchor + table.size(), injected_line);
-    const bt::TemporaryDirectory dir(std::string{dir_tag});
+    const bt::TemporaryDirectory dir(dir_tag);
     const auto path = dir.path() / "physics.toml";
     { std::ofstream out(path); out << injected; }
     bool threw = false;
@@ -136,7 +138,7 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 std::string_view::npos,
             "the load rejection names the removed key");
     }
-    bt::require(threw, std::string{message});
+    bt::require(threw, message);
 }
 
 // test_rider_numbers

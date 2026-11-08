@@ -23,12 +23,13 @@ namespace drivetrain {
         state_ = s;
     }
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror pedaling.py
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror pedaling.py
     PedalingState PedalingPolicy::update(double phase, double rate, double required, double effort,
                                          double dt, bool enabled, bool braking,
                                          std::optional<double> shaft_rad_s,
                                          std::optional<double> ceiling_nm,
                                          double torque_factor) {
+    // NOLINTEND(bugprone-easily-swappable-parameters)
         finite(phase, "crank phase");
         finite(rate, "crank rate");
         finite(required, "required cadence");

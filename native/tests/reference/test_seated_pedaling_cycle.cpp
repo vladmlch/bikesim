@@ -729,6 +729,7 @@ void test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue
                 "through verbatim");
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
 CycleEnv make_strict_ride_env(std::string_view track_rel, double duration_s,
                               double initial_speed_mps) {
     auto owner = std::make_unique<research::ResearchRequest>();
@@ -830,9 +831,9 @@ struct LegWeightProbe {
     std::array<spindle::LegLoopGeometry, 2> geom{};
 
     explicit LegWeightProbe(const mjModel *m)
-        : model(m), scratch(mj_makeData(m), mj_deleteData) {
-        frame_body = mj_name2id(m, mjOBJ_BODY, "frame");
-        crank_joint = mj_name2id(m, mjOBJ_JOINT, "crank_spin");
+        : model(m), scratch(mj_makeData(m), mj_deleteData),
+          frame_body(mj_name2id(m, mjOBJ_BODY, "frame")),
+          crank_joint(mj_name2id(m, mjOBJ_JOINT, "crank_spin")) {
         mj_resetData(m, scratch.get());
         mj_kinematics(m, scratch.get());
         const auto jnt_dofadr =
@@ -860,9 +861,9 @@ struct LegWeightProbe {
                            (std::string("rider_shank_") + side).c_str()),
                 mj_name2id(m, mjOBJ_BODY,
                            (std::string("rider_foot_") + side).c_str())};
-            const auto hj = static_cast<std::size_t>(3 * hip_joints[s]);
-            const auto kj = static_cast<std::size_t>(3 * knee_j);
-            const auto pb = static_cast<std::size_t>(3 * pedal_bodies[s]);
+            const auto hj = 3 * static_cast<std::size_t>(hip_joints[s]);
+            const auto kj = 3 * static_cast<std::size_t>(knee_j);
+            const auto pb = 3 * static_cast<std::size_t>(pedal_bodies[s]);
             const double thigh_m =
                 std::hypot(xanchor[kj] - xanchor[hj],
                            xanchor[kj + 2] - xanchor[hj + 2]);
@@ -880,7 +881,7 @@ struct LegWeightProbe {
 
     std::array<double, 2> weight_at_pedal_n(std::span<const double> qpos,
                                             double &out_phase_rad) {
-        auto scratch_qpos =
+        const auto scratch_qpos =
             model_access::mutable_buffer(scratch->qpos, model->nq);
         std::ranges::copy(qpos, scratch_qpos.begin());
         mj_kinematics(model, scratch.get());
@@ -891,8 +892,8 @@ struct LegWeightProbe {
             model_access::readonly_buffer(scratch->xanchor, 3 * model->njnt);
         const auto xpos =
             model_access::readonly_buffer(scratch->xpos, 3 * model->nbody);
-        const auto fb = static_cast<std::size_t>(9 * frame_body);
-        const auto cj = static_cast<std::size_t>(3 * crank_joint);
+        const auto fb = 9 * static_cast<std::size_t>(frame_body);
+        const auto cj = 3 * static_cast<std::size_t>(crank_joint);
         const auto to_frame_xz =
             [&](std::span<const double> buf, std::size_t base) -> spindle::Vec2 {
             const double dx = buf[base] - xanchor[cj];
@@ -905,9 +906,9 @@ struct LegWeightProbe {
         std::array<spindle::Vec2, 2> gammas{};
         for (std::size_t s = 0; s < 2; ++s) {
             spindles[s] =
-                to_frame_xz(xpos, static_cast<std::size_t>(3 * pedal_bodies[s]));
+                to_frame_xz(xpos, 3 * static_cast<std::size_t>(pedal_bodies[s]));
             const auto hip = to_frame_xz(
-                xanchor, static_cast<std::size_t>(3 * hip_joints[s]));
+                xanchor, 3 * static_cast<std::size_t>(hip_joints[s]));
             gammas[s] = spindle::leg_vertical_gamma(geom[s], hip, spindles[s]);
         }
         out_phase_rad = std::atan2(-spindles[0][1], spindles[0][0]);
@@ -1292,7 +1293,7 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
         });
     }
     bt::require(first_leg_contract_error.empty(),
-                first_leg_contract_error.c_str());
+                first_leg_contract_error);
 }
 
 } // namespace

@@ -1013,7 +1013,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
           "--sensor-period"
         ],
         "dest": "sensor_period",
-        "default": 0.005,
+        "default": null,
         "type": "float",
         "choices": null,
         "flag": false,
@@ -1249,7 +1249,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
           "--control-period"
         ],
         "dest": "control_period",
-        "default": 0.01,
+        "default": null,
         "type": "float",
         "choices": null,
         "flag": false,
@@ -1261,7 +1261,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
           "--actuator-delay"
         ],
         "dest": "actuator_delay",
-        "default": 0.005,
+        "default": null,
         "type": "float",
         "choices": null,
         "flag": false,
@@ -1273,7 +1273,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
           "--sensor-delay"
         ],
         "dest": "sensor_delay",
-        "default": 0.01,
+        "default": null,
         "type": "float",
         "choices": null,
         "flag": false,
@@ -1468,7 +1468,7 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
           "--record-decimation"
         ],
         "dest": "record_decimation",
-        "default": 80,
+        "default": null,
         "type": "int",
         "choices": null,
         "flag": false,

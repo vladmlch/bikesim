@@ -299,6 +299,12 @@ CycleEnv cycle_env(bool motor_clutch = false) {
     // close, and this gate tolerated that signature.)
     request.experiment.stop_on_model_violation = false;
     request.sensors = research::SensorConfig{};
+    // [research] is profile-owned now: copy the loaded physics
+    // section across instead of relying on struct defaults.
+    request.experiment.control_period_s = request.setup.model.physics->research.control_period_s;
+    request.experiment.actuator_delay_s = request.setup.model.physics->research.actuator_delay_s;
+    request.sensors.delivery.latency_s = request.setup.model.physics->research.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = request.setup.model.physics->research.sensor_maximum_age_s;
     request.sensors.sample_period_s = .005;
     // The budgets are read off the articulated config BEFORE the request
     // moves — `request` is a reference into *owner, so its fields are
@@ -747,6 +753,12 @@ CycleEnv make_strict_ride_env(std::string_view track_rel, double duration_s,
     request.experiment.record_decimation = 1;
     request.experiment.stop_on_model_violation = true;
     request.sensors = research::SensorConfig{};
+    // [research] is profile-owned now: copy the loaded physics
+    // section across instead of relying on struct defaults.
+    request.experiment.control_period_s = request.setup.model.physics->research.control_period_s;
+    request.experiment.actuator_delay_s = request.setup.model.physics->research.actuator_delay_s;
+    request.sensors.delivery.latency_s = request.setup.model.physics->research.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = request.setup.model.physics->research.sensor_maximum_age_s;
     request.sensors.sample_period_s = .005;
     const auto articulated = request.setup.model.physics->articulated;
     const auto prepared = research::prepare_environment(std::move(owner));

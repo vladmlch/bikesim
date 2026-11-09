@@ -242,6 +242,12 @@ void test_summary_and_metrics_keep_latched_event_position_summary() {
     // this leg measures.
     request.experiment.stop_on_model_violation = false;
     request.sensors = bike::research::SensorConfig{};
+    // [research] is profile-owned now: copy the loaded physics
+    // section across instead of relying on struct defaults.
+    request.experiment.control_period_s = request.setup.model.physics->research.control_period_s;
+    request.experiment.actuator_delay_s = request.setup.model.physics->research.actuator_delay_s;
+    request.sensors.delivery.latency_s = request.setup.model.physics->research.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = request.setup.model.physics->research.sensor_maximum_age_s;
     // The welded .00125 s grid: .005 is the 4-step sensor period the other
     // welded fixtures use.
     request.sensors.sample_period_s = .005;

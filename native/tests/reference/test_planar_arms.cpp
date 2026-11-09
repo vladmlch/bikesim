@@ -463,7 +463,7 @@ test_welded_hands_report_finite_per_hand_reactions() {
     // env.step(control, front=1., rear=1.) forty times — one advance per
     // physical control-clock tick inside each control window.
     const auto per = std::llround(
-        bike::research::ExperimentConfig{}.control_period_s /
+        bike::configuration::default_physics().research.control_period_s /
         physical.control_clock().timestep_s);
     rcfg::RawStep last;
     for (std::int64_t i = 0; i < 40 * per; ++i)

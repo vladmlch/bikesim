@@ -10,14 +10,9 @@ speed_kph = 0.0
 seed_decimal = "0"
 use_equilibrium_cache = false
 duration_s = 1.0
-control_period_s = 0.01
-actuator_delay_s = 0.005
-sensor_delay_s = 0.01
 check_policy = "diagnostic"
 capture_mode = "legacy"
 
 [overrides]
 timestep_s = 0.00125
 
-[experiment]
-record_decimation = 80

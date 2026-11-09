@@ -69,6 +69,12 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // configured value never changes the fingerprint (2026-11-03).
     {auto drive=field(config,"drive");auto pedaling=field(std::get<bio::Value::Object>(drive.data),"pedaling");static const std::initializer_list<std::string_view> knobs={"reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s","reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s","reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"};std::erase_if(std::get<bio::Value::Object>(pedaling.data),[](const auto& p){return std::ranges::find(knobs,p.first)!=knobs.end();});put(std::get<bio::Value::Object>(drive.data),"pedaling",std::move(pedaling));put(config,"drive",std::move(drive));}
     {auto seated_climb=field(config,"seated_climb");auto& sc=std::get<bio::Value::Object>(seated_climb.data);std::erase_if(sc,[](const auto& p){return p.first=="min_elbow_flexion_deg";});put(sc,"period_s",real(0.01));put(config,"seated_climb",std::move(seated_climb));}
+    // [research] timings and [monitors] holds steer the experiment and the
+    // sensor/actuator/contact plumbing, never the compiled model or the rest
+    // pose — same class as the pedaling knobs above: dropped so transfers
+    // recorded before the sections keep validating and a configured value
+    // never fingerprints.
+    std::erase_if(config,[](const auto& p){return p.first=="research"||p.first=="monitors";});
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
     auto const add=[&](std::string name,const double* pointer,mjtSize count,std::optional<std::size_t> columns=std::nullopt){const auto values=std::span<const double>{std::views::counted(pointer,count)};compiled.emplace_back(std::move(name),columns?matrix(values,*columns):numbers(values));};

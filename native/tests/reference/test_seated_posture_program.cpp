@@ -311,6 +311,12 @@ GradedEnv graded_env(bool diagnostic) {
     request.experiment.record_decimation = 80;
     request.experiment.stop_on_model_violation = !diagnostic;
     request.sensors = research::SensorConfig{};
+    // [research] is profile-owned now: copy the loaded physics
+    // section across instead of relying on struct defaults.
+    request.experiment.control_period_s = request.setup.model.physics->research.control_period_s;
+    request.experiment.actuator_delay_s = request.setup.model.physics->research.actuator_delay_s;
+    request.sensors.delivery.latency_s = request.setup.model.physics->research.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = request.setup.model.physics->research.sensor_maximum_age_s;
     request.sensors.sample_period_s = .005;
     // The budget is read off the articulated config BEFORE the request
     // moves — `request` is a reference into *owner, so its fields are

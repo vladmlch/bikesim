@@ -301,7 +301,10 @@ void test_equilibrium_state_field_validation() {
                                "equilibrium_state_file = ";
         document.append(spelling).append(
             "\n[monitors]\ngrounded_hold_s = 0.005\n"
-            "contact_dropout_s = 0.005\n");
+            "contact_dropout_s = 0.005\n"
+            "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
+            "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
+            "sample_period_s = 0.005\nrecord_decimation = 80\n");
         std::ofstream file(toml, std::ios::binary | std::ios::trunc);
         bt::require(file.is_open(), "field-validation TOML write opens");
         file << document;
@@ -331,7 +334,10 @@ void test_toml_state_file_resolves_relative_to_the_config() {
                 "reposition_cooldown_s = 1.0\nreposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0\nreposition_phase_tolerance_rad = 0.05\n"
                 "reposition_noop_rad = 0.12\n"
-                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
+                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
+                "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
+                "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
+                "sample_period_s = 0.005\nrecord_decimation = 80\n";
     }
     const auto resolved = cfg::load_physics(toml);
     bt::require(resolved.equilibrium_state_file ==
@@ -354,7 +360,10 @@ void test_toml_state_file_resolves_relative_to_the_config() {
              << "reposition_cooldown_s = 1.0\nreposition_back_rate_rad_s = 3.0\n"
              << "reposition_timeout_s = 3.0\nreposition_phase_tolerance_rad = 0.05\n"
              << "reposition_noop_rad = 0.12\n"
-             << "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
+             << "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
+             << "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
+             << "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
+             << "sample_period_s = 0.005\nrecord_decimation = 80\n";
     }
     bt::require(cfg::load_physics(toml).equilibrium_state_file ==
                     absolute.string(),

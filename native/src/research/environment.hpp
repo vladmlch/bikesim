@@ -12,9 +12,13 @@
 namespace bike::research {
 
 struct ExperimentConfig {
-    double control_period_s = .01, actuator_delay_s = .005, duration_s = 3.;
+    // control_period_s, actuator_delay_s and record_decimation carry a -1
+    // sentinel: the profile's [research] section is the single place they
+    // are declared — the request assembly copies it verbatim (validate()
+    // rejects the sentinel if any path forgets).
+    double control_period_s = -1., actuator_delay_s = -1., duration_s = 3.;
     std::string seed_decimal = "0";
-    int record_decimation = 20;
+    int record_decimation = -1;
     double wheelie_persistence_s = .02, maximum_energy_residual_ratio = .05;
     bool stop_on_model_violation = true, async_telemetry = false;
     void validate() const;
@@ -23,7 +27,9 @@ struct ExperimentConfig {
 struct SensorConfig {
     runtime::SensorConfig delivery;
     random::SensorNoiseConfig noise;
-    double sample_period_s = .001;
+    // sample_period_s is profile-owned ([research]); -1 is the unset
+    // sentinel validate() rejects.
+    double sample_period_s = -1.;
     void validate() const;
     [[nodiscard]] static SensorConfig ideal();
 };

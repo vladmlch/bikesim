@@ -881,7 +881,7 @@ rcfg::RideControl idle_control() {
 rcfg::RawStep advance_env_steps(rcfg::PhysicalStep &physical,
                                 std::int64_t count) {
     const auto per = std::llround(
-        bike::research::ExperimentConfig{}.control_period_s /
+        bike::configuration::default_physics().research.control_period_s /
         physical.control_clock().timestep_s);
     rcfg::RawStep last;
     for (std::int64_t i = 0; i < count * per; ++i)

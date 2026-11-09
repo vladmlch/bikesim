@@ -48,7 +48,23 @@ struct MonitorsConfig {
     double contact_dropout_s = -1.;
 };
 
-// model_config.py SimulationPhysicsConfig — 21 fields; drive_mode/pitch_assist
+// research-mode timing surface — the six research knobs declared by the
+// profile in seconds: the control tick, actuator delay and sensor sample
+// period count whole physics steps (the whole-step rule lives on the
+// owning record where the timestep is in scope); sensor latency and
+// maximum age are timestamp cutoffs in the delivery pipeline, not counted
+// ticks, so they carry bounds only. No code defaults — a profile must
+// declare [research].
+struct ResearchConfig {
+    double control_period_s = -1.;
+    double actuator_delay_s = -1.;
+    double sensor_latency_s = -1.;
+    double sensor_maximum_age_s = -1.;
+    double sample_period_s = -1.;
+    int record_decimation = -1;
+};
+
+// model_config.py SimulationPhysicsConfig — 22 fields; drive_mode/pitch_assist
 // declared defaults are None (nullopt), resolved by post_init.
 struct SimulationPhysicsConfig {
     std::string physics_mode = "physical";
@@ -63,6 +79,7 @@ struct SimulationPhysicsConfig {
     ArticulatedConfig articulated;
     SeatedClimbConfig seated_climb;
     MonitorsConfig monitors;
+    ResearchConfig research;
     double initial_speed_mps = 0.;
     double initial_front_brake = 0.;
     double initial_rear_brake = 0.;
@@ -123,6 +140,7 @@ namespace detail {
 void post_init(const EndStopConfig&);
 void post_init(const SeatedClimbConfig&);
 void post_init(const MonitorsConfig&);
+void post_init(const ResearchConfig&);
 } // namespace detail
 
 // ---- field tables ---------------------------------------------------------------
@@ -204,6 +222,33 @@ inline const RecordSchema kMonitorsConfigSchema{
     .path="bike_sim.physics.model_config.MonitorsConfig",
     .fields=kMonitorsConfigFields, .declared_default=nullptr};
 
+// Research-mode timings — all six are required wire keys; the record has no
+// code default, so a profile must declare [research].
+inline constexpr auto kResearchConfigFields = std::to_array<FieldDecl>({
+    {.name="control_period_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(ResearchConfig, control_period_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="actuator_delay_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(ResearchConfig, actuator_delay_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="sensor_latency_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(ResearchConfig, sensor_latency_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="sensor_maximum_age_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(ResearchConfig, sensor_maximum_age_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="sample_period_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(ResearchConfig, sample_period_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="record_decimation", .type="<class 'int'>", .kind=FieldKind::Integer,
+     .offset=offsetof(ResearchConfig, record_decimation), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
+inline const RecordSchema kResearchConfigSchema{
+    .path="bike_sim.physics.model_config.ResearchConfig",
+    .fields=kResearchConfigFields, .declared_default=nullptr};
+
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const SimulationPhysicsConfig kDeclaredSimulationPhysicsConfig{};
 inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>({
@@ -249,6 +294,10 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .type="<class 'bike_sim.physics.model_config.MonitorsConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, monitors),
      .required=true, .factory="", .nested=&kMonitorsConfigSchema, .nested2=nullptr},
+    {.name="research",
+     .type="<class 'bike_sim.physics.model_config.ResearchConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, research),
+     .required=true, .factory="", .nested=&kResearchConfigSchema, .nested2=nullptr},
     {.name="initial_speed_mps", .type="<class 'float'>", .kind=FieldKind::Real,
      .offset=offsetof(SimulationPhysicsConfig, initial_speed_mps), .required=false, .factory="",
      .nested=nullptr, .nested2=nullptr},

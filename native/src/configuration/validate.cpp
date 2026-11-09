@@ -854,6 +854,24 @@ void post_init(const MonitorsConfig &config) {
     scalar(config.contact_dropout_s, "contact_dropout_s", 0.);
 }
 
+void post_init(const ResearchConfig &config) {
+    // Research-mode timings — durations, not counts: the whole-step rule
+    // for the three tick-counted knobs lives on the owning
+    // SimulationPhysicsConfig where the timestep is in scope. Sensor
+    // latency and maximum age bound delivery by timestamp cutoff (the
+    // pipeline compares now - latency_s and now - source_time_s), never
+    // by a counted tick — bounds only here.
+    scalar(config.control_period_s, "research.control_period_s",
+           std::nullopt, true);
+    scalar(config.actuator_delay_s, "research.actuator_delay_s", 0.);
+    scalar(config.sensor_latency_s, "research.sensor_latency_s", 0.);
+    scalar(config.sensor_maximum_age_s, "research.sensor_maximum_age_s", 0.);
+    scalar(config.sample_period_s, "research.sample_period_s",
+           std::nullopt, true);
+    integer(config.record_decimation, "research.record_decimation",
+            std::nullopt, true);
+}
+
 // ---- rider.py / rider_posture.py / rider_envelope.py / joint_strength.py ---
 void post_init(RiderSpecs &specs) {
     if (!in_set(specs.variant,
@@ -1034,6 +1052,7 @@ void post_init(SimulationPhysicsConfig &config) {
     detail::post_init(config.articulated);
     detail::post_init(config.seated_climb);
     detail::post_init(config.monitors);
+    detail::post_init(config.research);
     if (!std::isfinite(config.timestep_s) || config.timestep_s <= 0.)
         fail("timestep_s must be finite and positive");
     scalar(config.control_period_s, "control period", std::nullopt, true);
@@ -1084,6 +1103,30 @@ void post_init(SimulationPhysicsConfig &config) {
             std::abs(ticks * config.timestep_s - value) > 1e-9)
             fail(std::string(name) +
                  " must be an integer multiple of timestep_s");
+    }
+    // The research environment counts its control period and sensor sample
+    // period on the physics clock (prepare_environment's integer_steps):
+    // each is declared in whole physics steps, never a rounded one. The
+    // actuator delay counts steps too but may legitimately be zero.
+    for (const auto &[name, value] : {
+             std::pair{"research.control_period_s",
+                       config.research.control_period_s},
+             {"research.sample_period_s",
+              config.research.sample_period_s}}) {
+        const double ticks = std::rint(value / config.timestep_s);
+        if (ticks < 1. ||
+            std::abs(ticks * config.timestep_s - value) > 1e-9)
+            fail(std::string(name) +
+                 " must be an integer multiple of timestep_s");
+    }
+    {
+        const double ticks =
+            std::rint(config.research.actuator_delay_s / config.timestep_s);
+        if (ticks < 0. ||
+            std::abs(ticks * config.timestep_s -
+                     config.research.actuator_delay_s) > 1e-9)
+            fail("research.actuator_delay_s must be an integer multiple of "
+                 "timestep_s");
     }
 
     scalar(config.equilibrium_refine_after_s,
@@ -1155,8 +1198,11 @@ SimulationPhysicsConfig default_physics() {
     // values explicitly: 0.5 ms physics step, 5 ms control period, 5 ms
     // grounded hold, a 10-step contact dropout at that tick, the
     // seated-climb intent's 1.25 ms period, 150 ms reaction delay,
-    // 0.5 rad/s lean rate and 0.5 s orientation smoothing, and the
-    // crank-reposition manoeuvre's former code defaults.
+    // 0.5 rad/s lean rate and 0.5 s orientation smoothing, the
+    // crank-reposition manoeuvre's former code defaults, and the
+    // research-mode timings the CLI and request paths carried (10 ms
+    // control tick, 5 ms actuator delay, 10 ms sensor latency, 100 ms
+    // maximum age, 5 ms sample period, record decimation 80).
     SimulationPhysicsConfig config{};
     config.timestep_s = 0.0005;
     config.control_period_s = 0.005;
@@ -1176,6 +1222,12 @@ SimulationPhysicsConfig default_physics() {
     config.drive.pedaling.reposition_timeout_s = 3.;
     config.drive.pedaling.reposition_phase_tolerance_rad = .05;
     config.drive.pedaling.reposition_noop_rad = .12;
+    config.research.control_period_s = .01;
+    config.research.actuator_delay_s = .005;
+    config.research.sensor_latency_s = .01;
+    config.research.sensor_maximum_age_s = .1;
+    config.research.sample_period_s = .005;
+    config.research.record_decimation = 80;
     post_init(config);
     return config;
 }

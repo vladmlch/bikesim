@@ -961,7 +961,15 @@
       },
       "physics_mode": "physical",
       "pitch_assist": false,
-      "resistance": {
+            "research": {
+        "actuator_delay_s": 0.005,
+        "control_period_s": 0.01,
+        "record_decimation": 80,
+        "sample_period_s": 0.005,
+        "sensor_latency_s": 0.01,
+        "sensor_maximum_age_s": 0.1
+      },
+"resistance": {
         "cda_m2": 0.5,
         "crr": 0.015,
         "point_body_m": [

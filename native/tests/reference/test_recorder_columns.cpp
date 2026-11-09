@@ -230,9 +230,15 @@ void test_runtime_publishes_owned_channels() {
         "grade_profile = { knots = [[0.0, 0.0], [200.0, 0.0]] }\n"));
     request.experiment.duration_s = .02;
     request.experiment.control_period_s = .005;
+    request.experiment.actuator_delay_s =
+        request.setup.model.physics->research.actuator_delay_s;
     request.experiment.record_decimation = 1;
     request.experiment.stop_on_model_violation = false;
     request.sensors = research::SensorConfig::ideal();
+    request.sensors.delivery.latency_s =
+        request.setup.model.physics->research.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = .1;
+    request.sensors.sample_period_s = .001;
     const auto prepared = research::prepare_environment(std::move(owner));
     const auto control_steps = prepared->bootstrap.config.control_steps;
     bt::require(prepared->bootstrap.config.timestep_s == .00025,

@@ -287,6 +287,12 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.min_elbow_flexion_deg = 15.0;
     c.monitors.grounded_hold_s = 0.005;
     c.monitors.contact_dropout_s = 0.0125;
+    c.research.control_period_s = 0.01;
+    c.research.actuator_delay_s = 0.005;
+    c.research.sensor_latency_s = 0.01;
+    c.research.sensor_maximum_age_s = 0.1;
+    c.research.sample_period_s = 0.005;
+    c.research.record_decimation = 80;
     cfg::post_init(c);
     return c;
 }
@@ -688,7 +694,7 @@ void test_schema() {
                 "schema config_class");
     const Value::Array& fields = io::as_array(
         member(document, "fields", "schema"), "schema.fields");
-    static constexpr std::array<std::string_view, 21> kTopOrder{
+    static constexpr std::array<std::string_view, 22> kTopOrder{
         "physics_mode",
         "drive_mode",
         "timestep_s",
@@ -701,6 +707,7 @@ void test_schema() {
         "articulated",
         "seated_climb",
         "monitors",
+        "research",
         "initial_speed_mps",
         "initial_front_brake",
         "initial_rear_brake",
@@ -711,7 +718,7 @@ void test_schema() {
         "equilibrium_state_file",
         "equilibrium_relaxation",
     };
-    bt::require(fields.size() == 21, "top-level field count");
+    bt::require(fields.size() == 22, "top-level field count");
     for (std::size_t i = 0; i < fields.size(); ++i)
         bt::require(
             string_of(member(fields[i], "name", "fields"), "name") ==
@@ -750,10 +757,12 @@ void test_schema() {
     // and activation_tau_s (the 25 ms activation filter was removed 2026-11-07).
     bt::require(fields_named(fields[9], "articulated").size() == 66,
                 "articulated field count");
-    bt::require(fields_named(fields[10], "seated_climb").size() == 20,
+    bt::require(fields_named(fields[10], "seated_climb").size() == 19,
                 "seated_climb field count");
     bt::require(fields_named(fields[11], "monitors").size() == 2,
                 "monitors field count");
+    bt::require(fields_named(fields[12], "research").size() == 6,
+                "research field count");
 
     // Optional leaves serialize explicit null defaults; required leaves
     // (TyreSpecs) also carry null defaults but no factory.

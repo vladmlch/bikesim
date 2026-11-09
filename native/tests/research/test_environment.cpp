@@ -30,9 +30,17 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([] { (void)integer_steps(-1., .00125, "duration"); });
     bt::invalid([] { (void)integer_steps(1., 0., "period"); });
     ExperimentConfig asynchronous; asynchronous.async_telemetry = true;
+    asynchronous.control_period_s = .01; asynchronous.actuator_delay_s = .005;
+    asynchronous.record_decimation = 80;
     // Async publication is wired (T42): validate() accepts the bool flag.
     asynchronous.validate();
     ResearchRequest unavailable; unavailable.experiment.async_telemetry = true;
+    // Valid profile-sourced timings so the rejection still comes from the
+    // missing model, not the now-sentinel experiment/sensor members.
+    unavailable.experiment.control_period_s = .01; unavailable.experiment.actuator_delay_s = .005;
+    unavailable.experiment.record_decimation = 80;
+    unavailable.sensors.delivery.latency_s = .01; unavailable.sensors.delivery.maximum_age_s = .1;
+    unavailable.sensors.sample_period_s = .005;
     // There is deliberately no physics/model/track to construct. The request
     // must still reject for missing configuration before touching a setup
     // owner or cache — not for the now-supported async flag.
@@ -80,6 +88,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([] { (void)validate_seed("-1"); });
     bt::invalid([] { (void)validate_seed("1.0"); });
     SensorConfig config;
+    config.delivery.latency_s = .01; config.delivery.maximum_age_s = .1;
+    config.sample_period_s = .001;
     const auto first = make_sensor_tape(config, seed, 8), repeat = make_sensor_tape(config, seed, 8);
     const auto other = make_sensor_tape(config, seed + "1", 8);
     for (std::size_t i = 0; i < first.noise.size(); ++i) same(first.noise[i], repeat.noise[i], "same seed has identical noise bits");
@@ -89,6 +99,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const auto disabled = make_sensor_tape(config, seed, 8);
     bt::require(first.noise == disabled.noise, "disabled IMU still consumes its prescribed random draws");
     auto ideal = SensorConfig::ideal();
+    ideal.sample_period_s = .001; ideal.delivery.maximum_age_s = .1;
     auto const tape = make_sensor_tape(ideal, seed, 4);
     runtime::SensorObservation raw;
     raw.values = {1., 2., 3., 4., 5., 6., 7., 8., 9.};
@@ -123,7 +134,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] void native_construction() {
     auto request = read_research_request(bt::fixture("requests/research_delay.toml"));
     bt::require(request.sensors.sample_period_s == .005 && request.experiment.record_decimation == 80,
-        "request assembly preserves source CLI defaults distinct from dataclass defaults");
+        "request assembly copies the profile's [research] timings across");
     auto invalid = request; invalid.sensors.sample_period_s = .001;
     bt::invalid([&] { (void)prepare_environment(invalid); });
     invalid = request; invalid.setup.model.physics.value().drive_mode = "coast"; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly

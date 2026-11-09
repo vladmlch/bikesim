@@ -9,11 +9,14 @@
 
 namespace runtime {
 struct SensorConfig {
-    double latency_s = .01;
+    // latency_s and maximum_age_s carry the -1 sentinel: the profile's
+    // [research] section is the single place they are declared (validate()
+    // rejects the sentinel if any path forgets to copy it across).
+    double latency_s = -1.;
     std::array<double, 3> acceleration_bias{};
     double gyro_bias = 0.;
     double dropout_probability = 0.;
-    double maximum_age_s = .1;
+    double maximum_age_s = -1.;
     bool imu_enabled = true;
     void validate() const;
 };

@@ -241,7 +241,10 @@ namespace cfg = bike::configuration;
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
                 "[seated_climb]\nperiod_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
-                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
+                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
+                "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
+                "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
+                "sample_period_s = 0.005\nrecord_decimation = 80\n";
         bt::require(static_cast<bool>(file), "write temporary physics config");
     }
     const auto spelling = path.string();

@@ -156,3 +156,11 @@ min_elbow_flexion_deg = 15.0
 [monitors]
 grounded_hold_s = 0.005
 contact_dropout_s = 0.0125
+
+[research]
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_latency_s = 0.01
+sensor_maximum_age_s = 0.1
+sample_period_s = 0.005
+record_decimation = 80

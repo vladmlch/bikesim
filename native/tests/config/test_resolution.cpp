@@ -105,6 +105,14 @@ std::string canonical(const Value& value) { return io::canonical_json(value); }
 // Drops a [[nodiscard]] result inside rejection probes.
 template <typename T> void discard(T&&) {}
 
+// The required [research] profile section. The values are the research-mode
+// timings in effect today; staged documents carry them so each probe keeps
+// the failure mode it asserts rather than tripping the missing-key check.
+constexpr std::string_view kResearchSection =
+    "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
+    "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
+    "sample_period_s = 0.005\nrecord_decimation = 80\n";
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage
 Value fixture_json(std::string_view manifest_name [[maybe_unused]],
                     std::string_view relative) {
@@ -382,7 +390,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_required.toml",
-                "[tires.front.material]\nradial_k_n_m = 130000\n")));
+                "[tires.front.material]\nradial_k_n_m = 130000\n" + std::string(kResearchSection))));
         });
 
     // Timing/delay fields are required profile members — a document that
@@ -395,7 +403,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "missing_timestep.toml",
                 "control_period_s = 0.005\n"
                 "[monitors]\ngrounded_hold_s = 0.005\n"
-                "contact_dropout_s = 0.0125\n")));
+                "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
@@ -405,7 +413,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "missing_control_period.toml",
                 "timestep_s = 0.00125\n"
                 "[monitors]\ngrounded_hold_s = 0.005\n"
-                "contact_dropout_s = 0.0125\n")));
+                "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
@@ -413,7 +421,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_monitors.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n")));
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid MonitorsConfig: MonitorsConfig.__init__() missing 1 "
@@ -422,7 +430,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_grounded_hold.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ncontact_dropout_s = 0.0125\n")));
+                "[monitors]\ncontact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid MonitorsConfig: MonitorsConfig.__init__() missing 1 "
@@ -431,7 +439,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_contact_dropout.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ngrounded_hold_s = 0.005\n")));
+                "[monitors]\ngrounded_hold_s = 0.005\n" + std::string(kResearchSection))));
         });
 
     // The monitor holds count whole physics steps — a non-multiple value is
@@ -451,7 +459,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "monitors.contact_dropout_s must be an integer multiple of "
@@ -469,7 +477,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
 
     // Nonfinite scalars arrive as TOML literals and are rejected by the
@@ -484,7 +492,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
             "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
     });
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
@@ -496,7 +504,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
             "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
     });
 
     // Integer fields reject floating spellings and booleans.
@@ -515,7 +523,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "scalar_array.toml",
             "timestep_s = [0.001]\ncontrol_period_s = 0.005\n"
             "[monitors]\ngrounded_hold_s = 0.005\n"
-            "contact_dropout_s = 0.0125\n")));
+            "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
     });
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
@@ -531,7 +539,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "physics_mode = \"legacy\"\ntimestep_s = 0.00125\n"
             "control_period_s = 0.005\n"
             "[monitors]\ngrounded_hold_s = 0.005\n"
-            "contact_dropout_s = 0.0125\n")));
+            "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
     });
 
     // A missing file reports the OS failure with the staged path — a stable
@@ -600,7 +608,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "orientation_tau_s must span at least two period_s ticks", [&] {
@@ -614,7 +622,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "seated_climb.period_s must be an integer multiple of timestep_s",
@@ -629,7 +637,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
     // A disabled intent never ticks: its delay/smoothing carry no
     // whole-tick constraint — only presence and scalar bounds apply.
@@ -647,7 +655,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
             "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"));
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection)));
         bt::require(!disabled.seated_climb.enabled &&
                         disabled.seated_climb.reaction_delay_s == 0.151,
                     "a disabled intent tolerates non-multiple timings");
@@ -745,7 +753,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             [&] {
                 discard(cfg::load_physics(stage(
                     "nonmultiple_repo_" + std::string(name) + ".toml",
-                    timings + std::string(engaged_tail))));
+                    timings + std::string(engaged_tail) +
+                        std::string(kResearchSection))));
             });
     }
 
@@ -766,7 +775,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0005\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
-                "reposition_noop_rad = 0.12\n")));
+                "reposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
 
     // The back rate is a positive rate limit, never a counted tick — a
@@ -782,7 +791,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_back_rate_rad_s = -3.0\n"
             "reposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\n"
-            "reposition_noop_rad = 0.12\n")));
+            "reposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
     });
     invalid_with(
         "reposition no-op band must be below a quarter crank turn", [&] {
@@ -796,7 +805,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
-                "reposition_noop_rad = 1.6\n")));
+                "reposition_noop_rad = 1.6\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "reposition stall progress must be below half a crank turn", [&] {
@@ -810,7 +819,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
-                "reposition_noop_rad = 0.12\n")));
+                "reposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
         });
 
     // Valid engaged control: spindle rider, every knob present, all counted
@@ -821,10 +830,117 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             std::string(engaged_head) +
             "reposition_stall_window_s = 1.0\n"
             "reposition_cooldown_s = 1.0\n"
-            "reposition_timeout_s = 3.0\n" + std::string(engaged_tail)));
+            "reposition_timeout_s = 3.0\n" + std::string(engaged_tail) + std::string(kResearchSection)));
         bt::require(engaged.drive.pedaling.reposition_on_stall &&
                         engaged.drive.pedaling.reposition_stall_window_s == 1.0,
                     "engaged manoeuvre resolves");
+    }
+}
+
+// ---- research-mode timings ----------------------------------------------------
+
+// The research environment counts its control period, actuator delay and
+// sensor sample period on the physics clock (environment.cpp's integer_steps
+// calls): all three are required [research] members with the same whole-step
+// rule the physics control period carries, never a silently rounded value.
+// Sensor latency and maximum age bound delivery by timestamp cutoff, not by
+// a counted tick — presence and scalar bounds only.
+[[gnu::noinline]] void checks_research_timings() {
+    const TempDir temp("bike-t13-research");
+    const auto stage = [&](std::string_view name, std::string_view toml) {
+        const auto path = temp.path / std::string(name);
+        write_text_file(path, toml);
+        return path;
+    };
+    const std::string_view research_head =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "closure_time_constant_s = 0.0025\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[seated_climb]\nperiod_s = 0.00125\n"
+        "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "[drive.pedaling]\nreposition_on_stall = false\n"
+        "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+        "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+        "[research]\n";
+    const std::string_view research_body =
+        "control_period_s = 0.01\nactuator_delay_s = 0.005\n"
+        "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
+        "sample_period_s = 0.005\nrecord_decimation = 80\n";
+
+    invalid_with(
+        "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
+        "missing 1 required positional argument: 'research'",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "missing_research.toml",
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "contact_dropout_s = 0.0125\n")));
+        });
+    for (const auto missing : {"control_period_s", "actuator_delay_s",
+                              "sensor_latency_s", "sensor_maximum_age_s",
+                              "sample_period_s", "record_decimation"}) {
+        std::string body(research_body);
+        const std::string needle = std::string(missing) + " =";
+        const auto at = body.find(needle);
+        bt::require(at != std::string::npos, "staged key present");
+        body.erase(at, body.find('\n', at) - at + 1);
+        invalid_with(
+            "invalid ResearchConfig: ResearchConfig.__init__() missing 1 "
+            "required positional argument: '" + std::string(missing) + "'",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "missing_research_" + std::string(missing) + ".toml",
+                    std::string(research_head) + body)));
+            });
+    }
+
+    // The three tick-counted timings reject a non-multiple of timestep_s.
+    for (const auto& [name, value] : {
+             std::pair{"control_period_s", "0.0101"},
+             {"actuator_delay_s", "0.0051"},
+             {"sample_period_s", "0.0051"}}) {
+        std::string body(research_body);
+        const std::string needle = std::string(name) + " = ";
+        const auto at = body.find(needle);
+        bt::require(at != std::string::npos, "staged key present");
+        const auto end = body.find('\n', at);
+        body.replace(at, end - at, needle + std::string(value));
+        invalid_with(
+            "research." + std::string(name) +
+                " must be an integer multiple of timestep_s",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "nonmultiple_research_" + std::string(name) + ".toml",
+                    std::string(research_head) + body)));
+            });
+    }
+
+    // Latency and maximum age are timestamp cutoffs, not counted ticks —
+    // non-multiple values resolve and survive to the emitted document.
+    {
+        std::string body(research_body);
+        for (const auto& [name, value] : {
+                 std::pair{"sensor_latency_s", "0.0115"},
+                 {"sensor_maximum_age_s", "0.093"}}) {
+            const std::string needle = std::string(name) + " = ";
+            const auto at = body.find(needle);
+            bt::require(at != std::string::npos, "staged key present");
+            const auto end = body.find('\n', at);
+            body.replace(at, end - at, needle + std::string(value));
+        }
+        const auto loaded = cfg::load_physics(
+            stage("research_cutoffs.toml",
+                  std::string(research_head) + body));
+        const std::string flat = canonical(cfg::to_value(loaded));
+        bt::require(flat.find("\"sensor_latency_s\":0.0115") !=
+                        std::string::npos &&
+                    flat.find("\"sensor_maximum_age_s\":0.093") !=
+                        std::string::npos,
+                    "timestamp cutoffs carry no whole-tick constraint");
     }
 }
 
@@ -964,6 +1080,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.seated_climb.lean_rate_rad_s = .5;
         unresolved_base.seated_climb.orientation_tau_s = .5;
         unresolved_base.seated_climb.min_elbow_flexion_deg = 15.0;
+        unresolved_base.research.control_period_s = .01;
+        unresolved_base.research.actuator_delay_s = .005;
+        unresolved_base.research.sensor_latency_s = .01;
+        unresolved_base.research.sensor_maximum_age_s = .1;
+        unresolved_base.research.sample_period_s = .005;
+        unresolved_base.research.record_decimation = 80;
         const auto unresolved = cfg::resolve_physics(
             make_object({{"physics_mode", make_text("physical")}}),
             unresolved_base);
@@ -1189,6 +1311,7 @@ int main() {
         });
         checks_seated_climb_timings();
         checks_reposition_timings();
+        checks_research_timings();
         checks_shipped();
         checks_variants();
         checks_rejection();

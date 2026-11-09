@@ -60,12 +60,15 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     physics.drive.pedaling.reposition_cooldown_s=1.; physics.drive.pedaling.reposition_back_rate_rad_s=3.;
     physics.drive.pedaling.reposition_timeout_s=3.; physics.drive.pedaling.reposition_phase_tolerance_rad=.05;
     physics.drive.pedaling.reposition_noop_rad=.12;
+    physics.research.control_period_s = .01; physics.research.actuator_delay_s = .005;
+    physics.research.sensor_latency_s = .01; physics.research.sensor_maximum_age_s = .1;
+    physics.research.sample_period_s = .005; physics.research.record_decimation = 80;
     bike::configuration::RiderSpecs rider; rider.variant="lumped";
     request.setup.model.physics=physics; request.setup.model.rider=rider; request.setup.model.include_rider=true;
     request.setup.model.mode="ride"; request.setup.model.crank_joint=true; request.setup.track=bike::terrain::flat(12.);
     request.experiment.duration_s=.006; request.experiment.control_period_s=.002; request.experiment.actuator_delay_s=.001;
     request.experiment.record_decimation=1; request.experiment.stop_on_model_violation=false;
-    request.sensors=research::SensorConfig::ideal(); request.sensors.sample_period_s=.001;
+    request.sensors=research::SensorConfig::ideal(); request.sensors.sample_period_s=.001; request.sensors.delivery.maximum_age_s=.1;
     request.road_resolution_m=.05; request.capture_mode=runtime::ResearchCaptureMode::full;
     return owner;
 }

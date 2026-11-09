@@ -189,9 +189,12 @@ int ride_command(const Arguments& input) {
     if(input.flag("preview")){const auto path=std::filesystem::path(input.text("out"))/(resolved->setup.track.name+"_profile.png");std::filesystem::create_directories(path.parent_path());viz::write_artifact(viz::track_profile(resolved->setup.track),path);std::cout<<path<<'\n';return 0;}
     if(input.flag("research")) {
         auto request=std::make_unique<research::ResearchRequest>();request->setup=resolved->setup;
+        // The six research timings come from the profile's [research]
+        // section; an explicitly passed flag still overrides it.
+        const auto&research=resolved->setup.model.physics.value().research; // NOLINT(bugprone-unchecked-optional-access) resolve_ride always resolves a physics profile; .value() is the loud contract
         request->experiment.duration_s=input.real("duration",90.);request->experiment.seed_decimal=resolved->setup.seed_decimal;
-        request->experiment.control_period_s=input.real("control_period",.01);request->experiment.actuator_delay_s=input.real("actuator_delay",.005);request->experiment.record_decimation=resolved->setup.runtime.measurement_decimation;request->experiment.stop_on_model_violation=resolved->setup.runtime.strict;request->experiment.async_telemetry=input.flag("async_telemetry");
-        request->sensors.sample_period_s=input.real("sensor_period",.005);request->sensors.delivery.latency_s=input.real("sensor_delay",.01);
+        request->experiment.control_period_s=input.present("control_period")?input.real("control_period"):research.control_period_s;request->experiment.actuator_delay_s=input.present("actuator_delay")?input.real("actuator_delay"):research.actuator_delay_s;request->experiment.record_decimation=resolved->setup.runtime.measurement_decimation;request->experiment.stop_on_model_violation=resolved->setup.runtime.strict;request->experiment.async_telemetry=input.flag("async_telemetry");
+        request->sensors.sample_period_s=input.present("sensor_period")?input.real("sensor_period"):research.sample_period_s;request->sensors.delivery.latency_s=input.present("sensor_delay")?input.real("sensor_delay"):research.sensor_latency_s;request->sensors.delivery.maximum_age_s=research.sensor_maximum_age_s;
         request->road_resolution_m=input.real("road_resolution",.005);
         request->programs=research::load_programs(input.has("rider_program")?std::optional<std::filesystem::path>(input.text("rider_program")):std::nullopt,{});
         if(input.has("demand"))request->programs.demand_frames=research::constant_demand(input.real("demand")).demand_frames;

@@ -120,8 +120,10 @@ struct ClimbingSession{std::unique_ptr<Simulation> sim;std::unique_ptr<research:
     const auto setup=profile_request(physics,track);const double dt=setup->model.physics->timestep_s; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
     if(mode!="research"){ClimbingSession active;active.dt=dt;active.sim=std::make_unique<Simulation>(std::move(*setup));merge(result,active.sim->metadata);set(result,"equilibrium",get(active.sim->metadata,"equilibrium"));return active;}
     (void)steps(duration,.01,1e-9);auto request=std::make_unique<research::ResearchRequest>();request->setup=std::move(*setup);
-    request->experiment.duration_s=duration;request->experiment.control_period_s=.01;request->experiment.actuator_delay_s=.005;request->experiment.record_decimation=80;
-    request->sensors.sample_period_s=.005;request->capture_mode=runtime::ResearchCaptureMode::full;
+    const auto&timings=request->setup.model.physics->research; // NOLINT(bugprone-unchecked-optional-access) profile_request always resolves physics
+    request->experiment.duration_s=duration;request->experiment.control_period_s=timings.control_period_s;request->experiment.actuator_delay_s=timings.actuator_delay_s;request->experiment.record_decimation=timings.record_decimation;
+    request->sensors.delivery.latency_s=timings.sensor_latency_s;request->sensors.delivery.maximum_age_s=timings.sensor_maximum_age_s;
+    request->sensors.sample_period_s=timings.sample_period_s;request->capture_mode=runtime::ResearchCaptureMode::full;
     auto prepared=research::prepare_environment(std::move(request));merge(result,prepared->metadata);
     auto writer=recording::make_research_publication(recording::make_run_metadata("native","validation_climbing_benchmark",prepared->metadata),
         cli::model_catalog(prepared->bootstrap.ride.model),out/std::format("episode-{:04}",repetition));

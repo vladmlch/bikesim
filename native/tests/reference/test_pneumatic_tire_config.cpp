@@ -73,6 +73,21 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                     {"reposition_timeout_s", io::Value{io::Number{timeout}}},
                     {"reposition_phase_tolerance_rad", io::Value{io::Number{"0.05"}}},
                     {"reposition_noop_rad", io::Value{io::Number{"0.12"}}}}}}}});
+        // The required [research] timings likewise express their former
+        // defaults at the document's own tick; latency and maximum age are
+        // timestamp cutoffs, so they keep their literal values.
+        const auto delay =
+            cfg::detail::repr_double(std::rint(0.005 / dt) * dt);
+        const auto period =
+            cfg::detail::repr_double(std::rint(0.01 / dt) * dt);
+        if (!io::find_member(*obj, "research"))
+            obj->emplace_back("research", io::Value{io::Value::Object{
+                {"control_period_s", io::Value{io::Number{period}}},
+                {"actuator_delay_s", io::Value{io::Number{delay}}},
+                {"sensor_latency_s", io::Value{io::Number{"0.01"}}},
+                {"sensor_maximum_age_s", io::Value{io::Number{"0.1"}}},
+                {"sample_period_s", io::Value{io::Number{delay}}},
+                {"record_decimation", io::Value{io::Number{"80"}}}}});
     }
     return cfg::detail::construct_config(value);
 }
@@ -183,6 +198,13 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
         if (named) input->setup.model.physics->tires.pneumatic.surface = "asphalt";
         input->setup.track.name = "gate-control"; input->setup.track.length_m = 10.;
         input->setup.model.rider = cfg::RiderSpecs{}; input->setup.model.rider->variant = "articulated_planar";
+        const auto &timings = input->setup.model.physics->research;
+        input->experiment.control_period_s = .01;
+        input->experiment.actuator_delay_s = timings.actuator_delay_s;
+        input->experiment.record_decimation = timings.record_decimation;
+        input->sensors.delivery.latency_s = timings.sensor_latency_s;
+        input->sensors.delivery.maximum_age_s = timings.sensor_maximum_age_s;
+        input->sensors.sample_period_s = timings.sample_period_s;
         return input;
     };
     rejects([&] { (void)bike::research::prepare_environment(request(true)); }, "track-material");

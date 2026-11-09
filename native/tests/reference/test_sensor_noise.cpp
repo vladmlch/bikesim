@@ -186,6 +186,7 @@ void test_invalid_count() {
 void test_reads_and_invalid_push_do_not_consume_rng() {
     runtime::SensorConfig config{};
     config.latency_s = 0.;
+    config.maximum_age_s = .1;
     auto a = pipeline(config, 23, 64);
     auto b = pipeline(config, 23, 64);
     a.reset(raw_sensor());

@@ -116,7 +116,8 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     request.model.crank_joint = true;
     request.runtime.speed_kph = args.real("speed", 25.);
     request.runtime.strict = args.text("resolved_check_policy") == "strict";
-    request.runtime.measurement_decimation = bounded_integer(args, "decimate", experiment ? 80 : 1);
+    request.runtime.measurement_decimation = bounded_integer(args, "decimate",
+        experiment ? physics.research.record_decimation : 1);
     request.runtime.record_retention = args.flag("record") ? runtime::RetentionMode::full : runtime::RetentionMode::off;
     request.runtime.async_telemetry = args.flag("async_telemetry");
     return owner;
@@ -127,9 +128,11 @@ std::unique_ptr<ResolvedRide> resolve_ride(Arguments args, bool settling) {
     const bool experiment = args.flag("research");
     for (const auto name : {"policy", "demand", "rider_program", "control_period", "sensor_period", "sensor_delay", "actuator_delay", "road_resolution"})
         if (!experiment && args.present(name)) throw ArgumentError("policy, sensor and experiment options require --research");
-    if (!args.has("decimate")) args.set("decimate", experiment ? "80" : "1");
     if (experiment && !args.has("seed")) args.set("seed", "0");
     const auto physics = ride_physics(args);
+    // The research decimate fallback is profile-owned ([research]); a plain
+    // physical run records every step.
+    if (!args.has("decimate")) args.set("decimate", experiment ? std::to_string(physics->research.record_decimation) : "1");
     if (args.has("time_scale") && (args.flag("headless") || args.flag("preview")))
         throw ArgumentError("--time-scale requires an interactive physical or research run");
     if (args.flag("close_on_finish")) {
@@ -167,8 +170,12 @@ void validate_research_arguments(const Arguments& args) {
     if (args.text("posture") != "neutral" && args.text("rider") != "articulated_planar") throw ArgumentError("dynamic posture requires --rider articulated_planar");
     (void)research::validate_seed(args.text("seed", "0"));
     if (args.has("rider_seed")) (void)research::validate_seed(args.text("rider_seed"));
-    for (const auto key : {"duration", "control_period", "sensor_period", "road_resolution", "energy_tolerance"}) positive(args.real(key), key);
-    (void)bounded_integer(args, "record_decimation", 80);
+    for (const auto key : {"duration", "road_resolution", "energy_tolerance"}) positive(args.real(key), key);
+    // Timing overrides validate only when explicitly passed; the profile's
+    // [research] values were already validated at load.
+    for (const auto key : {"control_period", "sensor_period"})
+        if (args.present(key)) positive(args.real(key), key);
+    if (args.present("record_decimation")) (void)bounded_integer(args, "record_decimation", 1);
     runtime::RideControl control;
     if (!args.flag("assist")) control.motor_torque_nm = args.real("motor_torque", 80.);
     control.motor_limit_nm = args.optional_real("motor_limit"); control.human_torque_nm = args.real("human_torque");
@@ -215,15 +222,20 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     if (!io::as_object(gearing, "gearing").empty()) set(drive, "gearing", std::move(gearing));
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", std::move(drive));
     request.setup.model.physics = research::resolve_research_physics(*defaults, file(args, "physics_config"), overrides);
-    request.experiment.control_period_s = args.real("control_period"); request.experiment.actuator_delay_s = args.real("actuator_delay");
+    // The six research timings are profile-owned: copy [research] verbatim
+    // and let an explicitly passed flag override the value it names.
+    const auto& research_timings = request.setup.model.physics->research;
+    request.experiment.control_period_s = args.present("control_period") ? args.real("control_period") : research_timings.control_period_s;
+    request.experiment.actuator_delay_s = args.present("actuator_delay") ? args.real("actuator_delay") : research_timings.actuator_delay_s;
     request.experiment.duration_s = args.real("duration"); request.experiment.seed_decimal = research::validate_seed(args.text("seed"));
-    request.experiment.record_decimation = bounded_integer(args, "record_decimation", 80);
+    request.experiment.record_decimation = args.present("record_decimation") ? bounded_integer(args, "record_decimation", 1) : research_timings.record_decimation;
     request.experiment.maximum_energy_residual_ratio = args.real("energy_tolerance");
     request.experiment.stop_on_model_violation = args.text("check_policy", args.flag("diagnostic_model_limits") ? "diagnostic" : "strict") == "strict";
     request.experiment.async_telemetry = args.flag("fast_telemetry");
     request.sensors = args.flag("ideal_sensors") ? research::SensorConfig::ideal() : research::SensorConfig{};
-    if (!args.flag("ideal_sensors")) request.sensors.delivery.latency_s = args.real("sensor_delay");
-    request.sensors.sample_period_s = args.real("sensor_period");
+    if (!args.flag("ideal_sensors")) request.sensors.delivery.latency_s = args.present("sensor_delay") ? args.real("sensor_delay") : research_timings.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = research_timings.sensor_maximum_age_s;
+    request.sensors.sample_period_s = args.present("sensor_period") ? args.real("sensor_period") : research_timings.sample_period_s;
     request.programs = research::load_programs(file(args, "rider_program"), file(args, "demand_file"));
     if (args.has("demand")) request.programs.demand_frames = research::constant_demand(args.real("demand")).demand_frames;
     if (args.flag("rider_random")) { request.rider_random = random::RiderRandomSpec{}; request.rider_seed_decimal = args.text("rider_seed", request.experiment.seed_decimal); }

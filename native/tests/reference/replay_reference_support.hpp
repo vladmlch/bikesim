@@ -125,6 +125,9 @@ inline void write_json(const std::filesystem::path& path, const io::Value& value
     physics.drive.pedaling.reposition_timeout_s = 3.;
     physics.drive.pedaling.reposition_phase_tolerance_rad = .05;
     physics.drive.pedaling.reposition_noop_rad = .12;
+    physics.research.control_period_s = .01; physics.research.actuator_delay_s = .005;
+    physics.research.sensor_latency_s = .01; physics.research.sensor_maximum_age_s = .1;
+    physics.research.sample_period_s = .005; physics.research.record_decimation = 80;
     bike::configuration::RiderSpecs rider;
     rider.variant = "lumped";
     request.setup.model.physics = physics;
@@ -139,6 +142,7 @@ inline void write_json(const std::filesystem::path& path, const io::Value& value
     request.experiment.record_decimation = 1;
     request.experiment.stop_on_model_violation = false;
     request.sensors = research::SensorConfig::ideal();
+    request.sensors.delivery.maximum_age_s = .1;
     request.sensors.sample_period_s = .001;
     request.road_resolution_m = .05;
     request.capture_mode = runtime::ResearchCaptureMode::full;

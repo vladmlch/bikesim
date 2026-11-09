@@ -103,6 +103,9 @@ struct Knobs {
     physics.drive.pedaling.reposition_timeout_s = 3.;
     physics.drive.pedaling.reposition_phase_tolerance_rad = .05;
     physics.drive.pedaling.reposition_noop_rad = .12;
+    physics.research.control_period_s = .01; physics.research.actuator_delay_s = .005;
+    physics.research.sensor_latency_s = .01; physics.research.sensor_maximum_age_s = .1;
+    physics.research.sample_period_s = .005; physics.research.record_decimation = 80;
     bike::configuration::RiderSpecs rider;
     rider.variant = "lumped";
     r.setup.model.physics = physics;
@@ -119,6 +122,7 @@ struct Knobs {
     r.experiment.stop_on_model_violation = k.strict;
     r.experiment.maximum_energy_residual_ratio = k.energy_tolerance;
     r.sensors = research::SensorConfig::ideal();
+    r.sensors.delivery.maximum_age_s = .1;
     r.sensors.sample_period_s = k.sensor_period_s;
     r.road_resolution_m = .05;
     r.capture_mode = k.capture;

@@ -45,10 +45,10 @@ std::filesystem::path path(const Value& value, std::string_view key, const std::
     return std::filesystem::weakly_canonical(base / std::filesystem::path(name));
 }
 ExperimentConfig experiment_from(const Value& value, ExperimentConfig out) {
-    keys(value, {"control_period_s", "actuator_delay_s", "duration_s", "seed", "seed_decimal", "record_decimation",
+    // The timing surface (control period, actuator delay, decimation) is
+    // profile-owned: [experiment] keeps only run-shape and policy keys.
+    keys(value, {"duration_s", "seed", "seed_decimal",
         "wheelie_persistence_s", "maximum_energy_residual_ratio", "stop_on_model_violation", "async_telemetry"}, "experiment");
-    out.control_period_s = number(value, "control_period_s", out.control_period_s);
-    out.actuator_delay_s = number(value, "actuator_delay_s", out.actuator_delay_s);
     out.duration_s = number(value, "duration_s", out.duration_s);
     out.wheelie_persistence_s = number(value, "wheelie_persistence_s", out.wheelie_persistence_s);
     out.maximum_energy_residual_ratio = number(value, "maximum_energy_residual_ratio", out.maximum_energy_residual_ratio);
@@ -65,20 +65,13 @@ ExperimentConfig experiment_from(const Value& value, ExperimentConfig out) {
             throw std::invalid_argument("experiment seed and seed_decimal disagree");
         out.seed_decimal = chosen;
     }
-    if (const auto* decimation = find(value, "record_decimation")) {
-        const auto count = io::as_int64(*decimation, "experiment.record_decimation");
-        if (count < 1 || count > std::numeric_limits<int>::max())
-            throw std::invalid_argument("record_decimation must be a representable positive integer");
-        out.record_decimation = static_cast<int>(count);
-    }
-    out.validate();
     return out;
 }
 SensorConfig sensors_from(const Value& value, SensorConfig out) {
-    keys(value, {"latency_s", "acceleration_std_mps2", "gyro_std_rad_s", "encoder_std_rad_s", "torque_std_nm",
-        "imu_enabled", "sample_period_s", "acceleration_bias_mps2", "gyro_bias_rad_s", "dropout_probability", "maximum_age_s"}, "sensors");
-    out.delivery.latency_s = number(value, "latency_s", out.delivery.latency_s);
-    out.delivery.maximum_age_s = number(value, "maximum_age_s", out.delivery.maximum_age_s);
+    // latency_s, maximum_age_s and sample_period_s are profile-owned
+    // ([research]): [sensors] keeps noise and bias shaping only.
+    keys(value, {"acceleration_std_mps2", "gyro_std_rad_s", "encoder_std_rad_s", "torque_std_nm",
+        "imu_enabled", "acceleration_bias_mps2", "gyro_bias_rad_s", "dropout_probability"}, "sensors");
     out.delivery.dropout_probability = number(value, "dropout_probability", 0.);
     out.delivery.gyro_bias = number(value, "gyro_bias_rad_s", 0.);
     out.delivery.imu_enabled = boolean(value, "imu_enabled", true);
@@ -86,14 +79,12 @@ SensorConfig sensors_from(const Value& value, SensorConfig out) {
     out.noise.gyro_std_rad_s = number(value, "gyro_std_rad_s", out.noise.gyro_std_rad_s);
     out.noise.encoder_std_rad_s = number(value, "encoder_std_rad_s", out.noise.encoder_std_rad_s);
     out.noise.torque_std_nm = number(value, "torque_std_nm", out.noise.torque_std_nm);
-    out.sample_period_s = number(value, "sample_period_s", out.sample_period_s);
     if (const auto* bias = find(value, "acceleration_bias_mps2")) {
         const auto& values = io::as_array(*bias, "sensors.acceleration_bias_mps2");
         if (values.size() != 3) throw std::invalid_argument("acceleration bias must have width 3");
         for (std::size_t i = 0; i < 3; ++i)
             out.delivery.acceleration_bias[i] = io::as_double(values[i], "sensors.acceleration_bias_mps2");
     }
-    out.validate();
     return out;
 }
 random::RiderRandomSpec random_from(const Value& value) {
@@ -218,16 +209,12 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
         const auto document = configuration::detail::parse_toml_file(file);
         keys(document, {"request_schema", "physics_file", "track_file", "scenario", "generator_spec_file", "model_mode", "rider_variant", "speed_kph",
             "seed_decimal", "use_equilibrium_cache", "initial_state_file", "overrides", "experiment", "sensors",
-            "control_period_s", "actuator_delay_s", "sensor_delay_s", "duration_s", "road_resolution_m",
+            "duration_s", "road_resolution_m",
             "capture_mode", "demand_file", "demand_nm", "rider_program_file", "demand_program", "rider_program", "rider_random",
             "rider_seed_decimal", "check_policy"}, "research request");
         if (io::as_int64(field(document, "request_schema"), "request_schema") != 1)
             throw std::invalid_argument("unsupported request_schema");
         ResearchRequest out;
-        // File-driven research requests mirror the CLI defaults. The typed
-        // ExperimentConfig/SensorConfig retain their dataclass defaults.
-        out.experiment.record_decimation = 80;
-        out.sensors.sample_period_s = .005;
         const auto base = std::filesystem::absolute(file).parent_path();
         out.setup.origin = std::filesystem::absolute(file).string();
         out.setup.asset_root = base;
@@ -240,10 +227,7 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
                     throw std::invalid_argument("setup and experiment seeds disagree");
             out.experiment.seed_decimal = value;
         }
-        out.experiment.control_period_s = number(document, "control_period_s", out.experiment.control_period_s);
-        out.experiment.actuator_delay_s = number(document, "actuator_delay_s", out.experiment.actuator_delay_s);
         out.experiment.duration_s = number(document, "duration_s", out.experiment.duration_s);
-        out.sensors.delivery.latency_s = number(document, "sensor_delay_s", out.sensors.delivery.latency_s);
         out.setup.seed_decimal = out.experiment.seed_decimal;
         const auto track_file = find(document, "track_file") ? std::optional(path(document, "track_file", base)) : std::nullopt;
         const auto generator_file = find(document, "generator_spec_file") ? std::optional(path(document, "generator_spec_file", base)) : std::nullopt;
@@ -291,6 +275,15 @@ ResearchRequest read_research_request(const std::filesystem::path& file) {
             } else physics.equilibrium_state_file = state_file.string();
         }
         configuration::post_init(physics);
+        // The six research timings are profile-owned: the request copies the
+        // resolved [research] section verbatim — [overrides.research] inside
+        // the physics document is the only file-side adjustment channel.
+        out.experiment.control_period_s = physics.research.control_period_s;
+        out.experiment.actuator_delay_s = physics.research.actuator_delay_s;
+        out.experiment.record_decimation = physics.research.record_decimation;
+        out.sensors.delivery.latency_s = physics.research.sensor_latency_s;
+        out.sensors.delivery.maximum_age_s = physics.research.sensor_maximum_age_s;
+        out.sensors.sample_period_s = physics.research.sample_period_s;
         out.setup.model.physics = std::move(physics);
         if (const auto* mode = find(document, "capture_mode")) {
             const auto& value = io::as_string(*mode, "capture_mode");

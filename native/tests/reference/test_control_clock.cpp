@@ -43,6 +43,9 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.drive.pedaling.reposition_timeout_s = 3.;
     config.drive.pedaling.reposition_phase_tolerance_rad = .05;
     config.drive.pedaling.reposition_noop_rad = .12;
+    config.research.control_period_s = .01; config.research.actuator_delay_s = .005;
+    config.research.sensor_latency_s = .01; config.research.sensor_maximum_age_s = .1;
+    config.research.sample_period_s = .005; config.research.record_decimation = 80;
     bt::invalid([&] { bike::configuration::validate(config); });
 }
 void test_held_command_is_returned_unchanged_between_ticks() {

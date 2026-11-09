@@ -14,13 +14,13 @@
       "type": "str | None"
     },
     {
-      "default": 0.0005,
+      "default": null,
       "default_factory": null,
       "name": "timestep_s",
       "type": "<class 'float'>"
     },
     {
-      "default": 0.005,
+      "default": null,
       "default_factory": null,
       "name": "control_period_s",
       "type": "<class 'float'>"
@@ -1451,13 +1451,13 @@
           "type": "<class 'bool'>"
         },
         {
-          "default": 0.00125,
+          "default": null,
           "default_factory": null,
           "name": "period_s",
           "type": "<class 'float'>"
         },
         {
-          "default": 0.15,
+          "default": null,
           "default_factory": null,
           "name": "reaction_delay_s",
           "type": "<class 'float'>"
@@ -1472,12 +1472,6 @@
           "default": 60.0,
           "default_factory": null,
           "name": "max_crank_torque_nm",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 300.0,
-          "default_factory": null,
-          "name": "torque_slew_nm_s",
           "type": "<class 'float'>"
         },
         {
@@ -1499,13 +1493,13 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.5,
+          "default": null,
           "default_factory": null,
           "name": "lean_rate_rad_s",
           "type": "<class 'float'>"
         },
         {
-          "default": 0.5,
+          "default": null,
           "default_factory": null,
           "name": "orientation_tau_s",
           "type": "<class 'float'>"
@@ -1567,6 +1561,70 @@
       ],
       "name": "seated_climb",
       "type": "<class 'bike_sim.physics.seated_climb.SeatedClimbConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "fields": [
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "grounded_hold_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "contact_dropout_s",
+          "type": "<class 'float'>"
+        }
+      ],
+      "name": "monitors",
+      "type": "<class 'bike_sim.physics.model_config.MonitorsConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "fields": [
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "control_period_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "actuator_delay_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "sensor_latency_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "sensor_maximum_age_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "sample_period_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "record_decimation",
+          "type": "<class 'int'>"
+        }
+      ],
+      "name": "research",
+      "type": "<class 'bike_sim.physics.model_config.ResearchConfig'>"
     },
     {
       "default": 0.0,

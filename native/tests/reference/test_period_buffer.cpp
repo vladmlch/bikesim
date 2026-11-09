@@ -448,6 +448,12 @@ RideRig make_ride(double control_period_s, int record_decimation, // NOLINT(bugp
     // noise) at --sensor-period .005 s: seated_climb feeds measured channels
     // into the rider intent, so the sensor path is physics-visible here.
     request.sensors = research::SensorConfig{};
+    // [research] is profile-owned now: copy the loaded physics
+    // section across instead of relying on struct defaults.
+    const auto &timings = request.setup.model.physics->research;
+    request.experiment.actuator_delay_s = timings.actuator_delay_s;
+    request.sensors.delivery.latency_s = timings.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s = timings.sensor_maximum_age_s;
     request.sensors.sample_period_s = .005;
     const auto prepared = research::prepare_environment(std::move(owner));
     RideRig rig;

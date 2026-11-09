@@ -43,6 +43,7 @@
 #include "runtime/control.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
+#include "runtime/status.hpp"
 #include "stepper.hpp"
 #include "support/golden.hpp"
 #include "support/fixture_test.hpp"
@@ -56,10 +57,6 @@ namespace sw = runtime::sample_wire;
 namespace terrain = bike::terrain;
 
 constexpr double KMH = 1. / 3.6;
-
-// Decision 34 (user, 2026-11-09): a ride fails when on any single physics step
-// the press of either foot or the saddle support in rider_support is below -6 N.
-constexpr double kSupportPullToleranceN = 6.0;
 
 // The live example document — bt::oracle::root() is
 // <repo>/tests/fixtures/golden; the welded TOML sits beside the tests
@@ -206,6 +203,9 @@ struct RideResult {
     // 'duration' at max_steps, the terminal outcome otherwise.
     std::string reason;
     SupportMinima support_min;
+    // accounting_state()["history"]["rider_support"] verbatim — what
+    // runtime::rider_support_ok judges.
+    runtime::WireObject rider_support;
 };
 
 // _violations_after(rows, after_s=.5): every (interval_id, time_s, ...)
@@ -304,6 +304,7 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
     const auto accounting = env.runtime->accounting_state();
     const auto &history = sw::object(sw::required(accounting, "history"));
     const auto &support = sw::object(sw::required(history, "rider_support"));
+    result.rider_support = support;
     for (const auto &[key, member] : {
              std::pair{"front_pedal", &SupportMinima::front_pedal_min_n},
              std::pair{"rear_pedal", &SupportMinima::rear_pedal_min_n},
@@ -321,53 +322,22 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
                                 [](const WindowRow &row) { return row.balance_lost; });
 }
 
-[[nodiscard]] bool no_support_pull(
-    const RideResult &result,
-    double tolerance_n = kSupportPullToleranceN) {
-    return result.support_min.front_pedal_min_n >= -tolerance_n &&
-           result.support_min.rear_pedal_min_n >= -tolerance_n &&
-           result.support_min.saddle_min_n >= -tolerance_n;
-}
-
 [[maybe_unused]] bool no_late_violations(const RideResult &result) {
     return violations_after(result.rows).empty();
 }
 
-void test_ride_with_support_pull_below_tolerance_fails() {
-    // A ride with no pull below -6 N passes.
-    RideResult clean;
-    clean.support_min.front_pedal_min_n = 12.0;
-    clean.support_min.rear_pedal_min_n = 12.0;
-    clean.support_min.saddle_min_n = 40.0;
-    bt::require(no_support_pull(clean), "clean support passes");
-
-    // Exactly at -6 N boundary passes.
-    RideResult at_boundary;
-    at_boundary.support_min.front_pedal_min_n = -6.0;
-    at_boundary.support_min.rear_pedal_min_n = -6.0;
-    at_boundary.support_min.saddle_min_n = -6.0;
-    bt::require(no_support_pull(at_boundary), "exactly -6 N passes (within tolerance)");
-
-    // Foot front pulling below -6 N fails the ride.
-    RideResult bad_front;
-    bad_front.support_min.front_pedal_min_n = -6.05;
-    bad_front.support_min.rear_pedal_min_n = 5.0;
-    bad_front.support_min.saddle_min_n = 20.0;
-    bt::require(!no_support_pull(bad_front), "front foot pull below -6 N fails the ride");
-
-    // Foot rear pulling below -6 N fails the ride.
-    RideResult bad_rear;
-    bad_rear.support_min.front_pedal_min_n = 5.0;
-    bad_rear.support_min.rear_pedal_min_n = -6.01;
-    bad_rear.support_min.saddle_min_n = 20.0;
-    bt::require(!no_support_pull(bad_rear), "rear foot pull below -6 N fails the ride");
-
-    // Saddle pulling below -6 N fails the ride.
-    RideResult bad_saddle;
-    bad_saddle.support_min.front_pedal_min_n = 5.0;
-    bad_saddle.support_min.rear_pedal_min_n = 5.0;
-    bad_saddle.support_min.saddle_min_n = -6.1;
-    bt::require(!no_support_pull(bad_saddle), "saddle pull below -6 N fails the ride");
+// The ride-level support assertion shared by the active scenarios: the
+// decided -6 N pull rule («Действует» 34) judged by
+// runtime::rider_support_ok on the recorded rider_support history.
+void require_support_within_pull_tolerance(const RideResult &result) {
+    bt::require(runtime::rider_support_ok(result.rider_support),
+                std::format("rider support stays within -{:.1f} N tolerance "
+                            "(front={:+.2f} N, rear={:+.2f} N, saddle={:+.2f} N)",
+                            runtime::kSupportPullToleranceN,
+                            result.support_min.front_pedal_min_n,
+                            result.support_min.rear_pedal_min_n,
+                            result.support_min.saddle_min_n)
+                    .c_str());
 }
 
 void test_flat_reaches_25_kmh_within_10_s() {
@@ -423,14 +393,7 @@ void test_flat_reaches_25_kmh_within_10_s() {
                 "no attachment violations after the settle window");
 #endif
     bt::require(no_balance_loss(result), "the rider never loses balance");
-    bt::require(no_support_pull(result),
-                std::format("rider support stays within -{:.1f} N tolerance "
-                            "(front={:+.2f} N, rear={:+.2f} N, saddle={:+.2f} N)",
-                            kSupportPullToleranceN,
-                            result.support_min.front_pedal_min_n,
-                            result.support_min.rear_pedal_min_n,
-                            result.support_min.saddle_min_n)
-                    .c_str());
+    require_support_within_pull_tolerance(result);
 }
 
 void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
@@ -547,14 +510,7 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
         violations_after(result.rows).size(), result.reason);
     bt::require(checked >= 1, "at least one shift window is measurable");
     bt::require(no_balance_loss(result), "the rider never loses balance");
-    bt::require(no_support_pull(result),
-                std::format("rider support stays within -{:.1f} N tolerance "
-                            "(front={:+.2f} N, rear={:+.2f} N, saddle={:+.2f} N)",
-                            kSupportPullToleranceN,
-                            result.support_min.front_pedal_min_n,
-                            result.support_min.rear_pedal_min_n,
-                            result.support_min.saddle_min_n)
-                    .c_str());
+    require_support_within_pull_tolerance(result);
 #if 0 // ORACLE PARITY GAP — same rider_strength.* family as flat:
     // the oracle's flat ride emits zero late violations; the native ride
     // emits 538 from interval ~406.
@@ -581,14 +537,7 @@ void test_fifteen_percent_climb_holds_12_kmh() {
     bt::require(minimum >= 12. * KMH,
                 "the climb holds 12 km/h in the steady window");
     bt::require(no_balance_loss(result), "the rider never loses balance");
-    bt::require(no_support_pull(result),
-                std::format("rider support stays within -{:.1f} N tolerance "
-                            "(front={:+.2f} N, rear={:+.2f} N, saddle={:+.2f} N)",
-                            kSupportPullToleranceN,
-                            result.support_min.front_pedal_min_n,
-                            result.support_min.rear_pedal_min_n,
-                            result.support_min.saddle_min_n)
-                    .c_str());
+    require_support_within_pull_tolerance(result);
 #if 0 // ORACLE PARITY GAP — Task 3.09 physics stop rule (undecided).
     // The oracle emits chronic post-0.5 s physical-gate violations from
     // interval 401 (saddle.friction, foot_*.friction/normal, grip_*.pull,
@@ -599,10 +548,11 @@ void test_fifteen_percent_climb_holds_12_kmh() {
 #endif
 }
 
-// Disabled: scenario pedelec_savage pulls -107...-396 N in rider_support channels,
-// which violates the -6 N attachment pull limit («Действует» 34).
-// Rough track attachment failures predate the leg plan and are tracked as an
-// explicit follow-up task: see simulation-decisions.md «Решено — не сделано» 14.
+// test_savage_is_ridden_to_the_end — parked (see main): pedelec_savage
+// pulls -107...-396 N in rider_support channels, which violates the -6 N
+// attachment pull limit («Действует» 34). Rough track attachment
+// failures predate the leg plan and are tracked as an explicit follow-up
+// task: see simulation-decisions.md «Решено — не сделано» 14.
 [[maybe_unused]] void test_savage_is_ridden_to_the_end() {
     auto env = environment(
         terrain::load_track(repo_file("examples/research/rough_uphill_savage.toml")),
@@ -652,29 +602,22 @@ void test_fifteen_percent_climb_holds_12_kmh() {
     // physical interval once and terminates with a published outcome.
     bt::require(ride_error.empty(), "the savage episode ends without an exception");
     bt::require(!result.rows.empty(), "the savage ride produced windows");
-    bt::require(no_support_pull(result),
-                std::format("rider support stays within -{:.1f} N tolerance "
-                            "(front={:+.2f} N, rear={:+.2f} N, saddle={:+.2f} N)",
-                            kSupportPullToleranceN,
-                            result.support_min.front_pedal_min_n,
-                            result.support_min.rear_pedal_min_n,
-                            result.support_min.saddle_min_n)
-                    .c_str());
+    require_support_within_pull_tolerance(result);
 }
 
 } // namespace
 
 int main() {
     return bt::run([] {
-        test_ride_with_support_pull_below_tolerance_fails();
         test_flat_reaches_25_kmh_within_10_s();
         test_motor_follows_the_rider_through_a_shift_without_an_extra_cut();
         test_fifteen_percent_climb_holds_12_kmh();
-#if 0 // Disabled: scenario pedelec_savage pulls -107...-396 N in rider_support channels,
-      // which violates the -6 N attachment pull limit («Действует» 34).
-      // Rough track attachment failures predate the leg plan and are tracked as an
-      // explicit follow-up task: see simulation-decisions.md «Решено — не сделано» 14.
-        test_savage_is_ridden_to_the_end();
-#endif
+        // test_savage_is_ridden_to_the_end — parked: pedelec_savage pulls
+        // -107...-396 N in rider_support channels, which violates the -6 N
+        // attachment pull limit («Действует» 34). Rough track attachment
+        // failures predate the leg plan and are tracked as an explicit
+        // follow-up task: see simulation-decisions.md
+        // «Решено — не сделано» 14.
+        // test_savage_is_ridden_to_the_end();
     });
 }

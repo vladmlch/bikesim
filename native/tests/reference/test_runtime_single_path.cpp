@@ -94,7 +94,7 @@ void test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush() {
         repo("examples/research/viewer_physics_welded.toml");
     options.track = repo("examples/research/rough_uphill_savage.toml").string();
     options.duration_s = .0015;
-    options.timestep_s = .0005;
+    options.timestep_s = .00025;
     options.record_decimation = 80;
     options.warmups = 0;
     options.runs = 1;
@@ -103,7 +103,7 @@ void test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush() {
     options.benchmark = true;
     auto driver = msr::make_native_driver(options);
     const auto &settings = driver->settings();
-    bt::require(settings.timestep_s == .0005,
+    bt::require(settings.timestep_s == .00025,
                 "the driver runs the configured v2 timestep");
     bt::require(settings.record_decimation == 80,
                 "the driver runs the configured decimation");

@@ -222,7 +222,7 @@ void test_runtime_publishes_owned_channels() {
     request.setup.model.physics = bike::configuration::load_physics(
         bt::fixture("config/viewer_physics_welded.toml"));
     request.setup.model.mode = "ride";
-    request.setup.model.physics->timestep_s = .0005;
+    request.setup.model.physics->timestep_s = .00025;
     request.setup.model.rider = bike::configuration::RiderSpecs{};
     request.setup.model.rider->variant = "articulated_planar";
     request.setup.track = bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
@@ -234,8 +234,8 @@ void test_runtime_publishes_owned_channels() {
     request.experiment.stop_on_model_violation = false;
     request.sensors = research::SensorConfig::ideal();
     const auto prepared = research::prepare_environment(std::move(owner));
-    bt::require(prepared->bootstrap.config.timestep_s == .0005,
-                "environment metadata keeps timestep_s 0.0005");
+    bt::require(prepared->bootstrap.config.timestep_s == .00025,
+                "environment metadata keeps timestep_s 0.00025");
     bt::require(static_cast<double>(prepared->bootstrap.config.control_steps) *
                 prepared->bootstrap.config.timestep_s == .005,
                 "environment metadata keeps controller_interval_s 0.005");

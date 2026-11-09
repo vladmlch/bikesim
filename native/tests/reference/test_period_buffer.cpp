@@ -424,7 +424,7 @@ RideRig make_ride(double control_period_s, int record_decimation, // NOLINT(bugp
     request.setup.model.physics = bike::configuration::load_physics(
         bt::fixture("config/viewer_physics_welded.toml"));
     request.setup.model.mode = "ride";
-    request.setup.model.physics->timestep_s = .0005;
+    request.setup.model.physics->timestep_s = .00025;
     // The oracle froze the Python equilibrium; the ported solver converges
     // through a different allocator warm-start iterate, so the test restores
     // the captured PhysicalInitialState document (initial_state_file path)

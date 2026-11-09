@@ -63,12 +63,14 @@ std::filesystem::path repo_file(std::string_view relative) {
 }
 
 constexpr double kPi = std::numbers::pi;
-// Provisional solver-noise tolerance pending plan Task 6 (gate tolerance
-// proposal to the user). One named constant is used for both the lower bound
-// (foot press >= -kSolverNoiseToleranceN everywhere) and the upper bound on
-// the rising leg after BDC (rising-leg press <= leg weight at the pedal +
-// kSolverNoiseToleranceN); the controller targets <= weight itself.
-constexpr double kSolverNoiseToleranceN = 11.;
+// Decision 34 (user, 2026-11-09): 6 N solver noise tolerance for foot press
+// lower bound (foot press >= -kFootPressLowerBoundToleranceN everywhere).
+constexpr double kFootPressLowerBoundToleranceN = 6.;
+
+// Provisional tolerance for rising-leg press upper bound after BDC (not decided):
+// rising-leg press <= leg weight at the pedal + kProvisionalRisingLegToleranceN;
+// the controller targets <= weight itself.
+constexpr double kProvisionalRisingLegToleranceN = 11.;
 
 // test_ankle_program_is_periodic_and_scrape_is_only_an_intent
 void test_ankle_program_is_periodic_and_scrape_is_only_an_intent() {
@@ -1179,23 +1181,23 @@ struct LegWeightProbe {
                             max_arm_delta_bound_nm)
                     .c_str());
 
-    bt::require(min_front_press >= -kSolverNoiseToleranceN,
+    bt::require(min_front_press >= -kFootPressLowerBoundToleranceN,
                 std::format("{}: front foot press {:.2f} N >= -{:.1f} N everywhere",
                             label, min_front_press,
-                            kSolverNoiseToleranceN)
+                            kFootPressLowerBoundToleranceN)
                     .c_str());
-    bt::require(min_rear_press >= -kSolverNoiseToleranceN,
+    bt::require(min_rear_press >= -kFootPressLowerBoundToleranceN,
                 std::format("{}: rear foot press {:.2f} N >= -{:.1f} N everywhere",
                             label, min_rear_press,
-                            kSolverNoiseToleranceN)
+                            kFootPressLowerBoundToleranceN)
                     .c_str());
-    bt::require(max_rising_excess_front <= kSolverNoiseToleranceN,
+    bt::require(max_rising_excess_front <= kProvisionalRisingLegToleranceN,
                 std::format("{}: rising front leg press after BDC <= weight + {:.1f} N (press - weight = {:+.2f} N)",
-                            label, kSolverNoiseToleranceN, max_rising_excess_front)
+                            label, kProvisionalRisingLegToleranceN, max_rising_excess_front)
                     .c_str());
-    bt::require(max_rising_excess_rear <= kSolverNoiseToleranceN,
+    bt::require(max_rising_excess_rear <= kProvisionalRisingLegToleranceN,
                 std::format("{}: rising rear leg press after BDC <= weight + {:.1f} N (press - weight = {:+.2f} N)",
-                            label, kSolverNoiseToleranceN, max_rising_excess_rear)
+                            label, kProvisionalRisingLegToleranceN, max_rising_excess_rear)
                     .c_str());
     bt::require(min_post_tdc_hip_req >= -1e-6 && min_post_tdc_hip_cmd >= -1e-6,
                 std::format("{}: hip torque in [270, 291] deg is never negative/flexion (req={:+.2f}, cmd={:+.2f} N.m)",

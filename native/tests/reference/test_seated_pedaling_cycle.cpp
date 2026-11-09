@@ -1301,7 +1301,7 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
 // foot-press limit, the leg demand and coast_hold_nm_ are capped by that
 // limit, coast_hold_nm_ does not wind up at the limit, saddle_support_n
 // stays >= 0 everywhere, and crank torque stays below the demand.
-void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_torque_and_hold() {
+[[gnu::noinline]] void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_torque_and_hold() {
     auto env = cycle_env();
     constexpr double kDemandTorqueNm = 60.;
     const runtime::RideControl control{.motor_torque_nm = 0.,
@@ -1314,6 +1314,8 @@ void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_tor
     double prev_hold_nm = 0.;
     double max_hold_nm = 0.;
     double max_windup_at_limit_nm = 0.;
+    double max_probe_ctrl_diff_nm = 0.;
+    std::vector<double> advancing_ctrl_at_264;
     std::size_t steps_at_press_limit = 0;
     std::size_t windup_steps_at_limit = 0;
     double sum_late_cmd_nm = 0., sum_late_task_nm = 0., sum_late_sens_nm = 0.;
@@ -1321,6 +1323,7 @@ void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_tor
 
     while (!env.runtime->snapshot().outcome.has_value() &&
            env.runtime->snapshot().step < env.max_steps) {
+        const auto step_before = env.runtime->snapshot().step;
         double phase = 0.;
         double ripple = 0.;
         bike::validation::RuntimeRigAccess::inspect(
@@ -1359,8 +1362,20 @@ void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_tor
                 phase = std::atan2(-sz, sx);
             });
         const auto result = env.runtime->advance(
-            env.runtime->snapshot().step + 1, control, 0., 0.,
+            step_before + 1, control, 0., 0.,
             std::nullopt);
+        if (step_before == 264) {
+            bike::validation::RuntimeRigAccess::inspect(
+                *env.runtime, [&](const Stepper &stepper,
+                                  const runtime::PhysicalStep &) {
+                    const auto *m = stepper.model();
+                    const auto *d = stepper.data();
+                    const auto ctrl_buf =
+                        model_access::readonly_buffer(d->ctrl, m->nu);
+                    advancing_ctrl_at_264.assign(ctrl_buf.begin(),
+                                                 ctrl_buf.end());
+                });
+        }
         const auto &rows = intervals_of(*env.runtime);
         bt::require(!rows.empty(), "interval committed");
         const auto &row = *rows.back();
@@ -1412,6 +1427,18 @@ void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_tor
         }
         if (result.reason == "outcome") break;
     }
+    bt::require(!advancing_ctrl_at_264.empty(),
+                "captured advancing ctrl at step 264");
+    env.runtime->reset();
+    (void)env.runtime->advance(264, control, 0., 0., std::nullopt);
+    const auto probe_264 = env.runtime->probe_step_inputs(control, 0., 0.);
+    bt::require(probe_264.ctrl.size() == advancing_ctrl_at_264.size(),
+                "probe ctrl matches advancing ctrl width");
+    for (std::size_t i = 0; i < probe_264.ctrl.size(); ++i) {
+        max_probe_ctrl_diff_nm = std::max(
+            max_probe_ctrl_diff_nm,
+            std::abs(probe_264.ctrl[i] - advancing_ctrl_at_264[i]));
+    }
     bt::require(late_count > 0, "late window recorded samples");
     const double mean_cmd_nm =
         sum_late_cmd_nm / static_cast<double>(late_count);
@@ -1423,10 +1450,12 @@ void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_tor
         "[task5 60nm] min_saddle_support_n={:+.2f} N (t={:.4f}s), "
         "mean_cmd={:.2f} N.m, mean_task={:.2f} N.m, mean_sens={:.2f} N.m (demand={:.1f} N.m), "
         "steps_at_press_limit={}, windup_steps_at_limit={}, "
-        "max_windup_at_limit={:+.4f} N.m, max_hold={:+.2f} N.m\n",
+        "max_windup_at_limit={:+.4f} N.m, max_hold={:+.2f} N.m, "
+        "max_probe_ctrl_diff={:.4e} N.m\n",
         min_saddle_support_n, min_saddle_time_s, mean_cmd_nm, mean_task_nm,
         mean_sens_nm, kDemandTorqueNm, steps_at_press_limit,
-        windup_steps_at_limit, max_windup_at_limit_nm, max_hold_nm);
+        windup_steps_at_limit, max_windup_at_limit_nm, max_hold_nm,
+        max_probe_ctrl_diff_nm);
     bt::require(min_saddle_support_n >= 0.,
                 std::format("with demand above the vertical-equilibrium limit, "
                             "saddle support stays >= 0 (min={:+.2f} N)",
@@ -1440,6 +1469,12 @@ void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_tor
                     mean_sens_nm < mean_cmd_nm &&
                     mean_sens_nm < kDemandTorqueNm,
                 "capped crank task and delivered crank torque stay below the demand");
+    bt::require(max_probe_ctrl_diff_nm <= 1e-12,
+                std::format("current-step acceleration solve is independent of "
+                            "finite-difference dt_s between probe_step_inputs "
+                            "and advance (max diff={:.4e} N.m)",
+                            max_probe_ctrl_diff_nm)
+                    .c_str());
 }
 
 } // namespace

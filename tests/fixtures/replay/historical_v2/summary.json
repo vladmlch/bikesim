@@ -946,6 +946,10 @@
       "initial_front_brake": 1.0,
       "initial_rear_brake": 1.0,
       "initial_speed_mps": 0.0,
+      "monitors": {
+        "contact_dropout_s": 0.0125,
+        "grounded_hold_s": 0.005
+      },
       "physics_mode": "physical",
       "pitch_assist": false,
       "resistance": {

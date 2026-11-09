@@ -834,6 +834,14 @@ void post_init(const SeatedClimbConfig &config) {
         fail("min_elbow_flexion_deg must not exceed 90 degrees");
 }
 
+void post_init(const MonitorsConfig &config) {
+    // model_config.py MonitorsConfig.__post_init__ — holds are durations,
+    // not counts; the whole-step rule lives on the owning
+    // SimulationPhysicsConfig where the timestep is in scope.
+    scalar(config.grounded_hold_s, "grounded_hold_s", 0.);
+    scalar(config.contact_dropout_s, "contact_dropout_s", 0.);
+}
+
 // ---- rider.py / rider_posture.py / rider_envelope.py / joint_strength.py ---
 void post_init(RiderSpecs &specs) {
     if (!in_set(specs.variant,
@@ -1006,13 +1014,14 @@ void post_init(SimulationPhysicsConfig &config) {
              "'; legacy mode was removed, use physical");
 
     // Member construction precedes __post_init__ in the Python dataclass —
-    // the six nested records validate first, in declaration order.
+    // the seven nested records validate first, in declaration order.
     detail::post_init(config.end_stops);
     detail::post_init(config.tires);
     detail::post_init(config.drive);
     detail::post_init(config.resistance);
     detail::post_init(config.articulated);
     detail::post_init(config.seated_climb);
+    detail::post_init(config.monitors);
     if (!std::isfinite(config.timestep_s) || config.timestep_s <= 0.)
         fail("timestep_s must be finite and positive");
     scalar(config.control_period_s, "control period", std::nullopt, true);
@@ -1022,6 +1031,19 @@ void post_init(SimulationPhysicsConfig &config) {
     if (steps < 1. ||
         std::abs(steps * config.timestep_s - config.control_period_s) > 1e-9)
         fail("control_period_s must be an integer multiple of timestep_s");
+    // The monitor holds count whole physics steps — a value that lands
+    // between ticks is rejected, never silently rounded.
+    for (const auto &[name, value] : {
+             std::pair{"monitors.grounded_hold_s",
+                       config.monitors.grounded_hold_s},
+             {"monitors.contact_dropout_s",
+              config.monitors.contact_dropout_s}}) {
+        const double hold_steps = std::rint(value / config.timestep_s);
+        if (hold_steps < 0. ||
+            std::abs(hold_steps * config.timestep_s - value) > 1e-9)
+            fail(std::string(name) +
+                 " must be an integer multiple of timestep_s");
+    }
 
     scalar(config.equilibrium_refine_after_s,
            "equilibrium_refine_after_s", std::nullopt, true);
@@ -1088,7 +1110,14 @@ void post_init(SimulationPhysicsConfig &config) {
 }
 
 SimulationPhysicsConfig default_physics() {
+    // The programmatic construction path declares the former implicit
+    // values explicitly: 0.5 ms physics step, 5 ms control period, 5 ms
+    // grounded hold and a 10-step contact dropout at that tick.
     SimulationPhysicsConfig config{};
+    config.timestep_s = 0.0005;
+    config.control_period_s = 0.005;
+    config.monitors.grounded_hold_s = 0.005;
+    config.monitors.contact_dropout_s = 10. * config.timestep_s;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
     post_init(config);
     return config;

@@ -297,8 +297,11 @@ void test_equilibrium_state_field_validation() {
     for (const std::string_view spelling : {"3.5", "[\"x\"]"}) {
         const auto toml = dir.path() / "physics.toml";
         std::string document = "physics_mode = \"physical\"\n"
+                               "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
                                "equilibrium_state_file = ";
-        document.append(spelling).append("\n");
+        document.append(spelling).append(
+            "\n[monitors]\ngrounded_hold_s = 0.005\n"
+            "contact_dropout_s = 0.005\n");
         std::ofstream file(toml, std::ios::binary | std::ios::trunc);
         bt::require(file.is_open(), "field-validation TOML write opens");
         file << document;
@@ -318,9 +321,11 @@ void test_toml_state_file_resolves_relative_to_the_config() {
         std::ofstream file(toml, std::ios::binary | std::ios::trunc);
         bt::require(file.is_open(), "relative-path TOML write opens");
         file << "physics_mode = \"physical\"\n"
+                "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
                 "equilibrium_state_file = \"poses/flat.npz\"\n"
                 "[seated_climb]\n"
-                "min_elbow_flexion_deg = 15.0\n";
+                "min_elbow_flexion_deg = 15.0\n"
+                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
     }
     const auto resolved = cfg::load_physics(toml);
     bt::require(resolved.equilibrium_state_file ==
@@ -333,9 +338,11 @@ void test_toml_state_file_resolves_relative_to_the_config() {
         std::ofstream file(toml, std::ios::binary | std::ios::trunc);
         bt::require(file.is_open(), "absolute-path TOML write opens");
         file << "physics_mode = \"physical\"\n"
+             << "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
              << "equilibrium_state_file = \"" << absolute.string() << "\"\n"
              << "[seated_climb]\n"
-             << "min_elbow_flexion_deg = 15.0\n";
+             << "min_elbow_flexion_deg = 15.0\n"
+             << "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
     }
     bt::require(cfg::load_physics(toml).equilibrium_state_file ==
                     absolute.string(),

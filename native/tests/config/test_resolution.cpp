@@ -385,13 +385,94 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[tires.front.material]\nradial_k_n_m = 130000\n")));
         });
 
+    // Timing/delay fields are required profile members — a document that
+    // omits one fails the missing-argument check in declaration order.
+    invalid_with(
+        "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
+        "missing 1 required positional argument: 'timestep_s'",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "missing_timestep.toml",
+                "control_period_s = 0.005\n"
+                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "contact_dropout_s = 0.0125\n")));
+        });
+    invalid_with(
+        "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
+        "missing 1 required positional argument: 'control_period_s'",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "missing_control_period.toml",
+                "timestep_s = 0.00125\n"
+                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "contact_dropout_s = 0.0125\n")));
+        });
+    invalid_with(
+        "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
+        "missing 1 required positional argument: 'monitors'",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "missing_monitors.toml",
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n")));
+        });
+    invalid_with(
+        "invalid MonitorsConfig: MonitorsConfig.__init__() missing 1 "
+        "required positional argument: 'grounded_hold_s'",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "missing_grounded_hold.toml",
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "[monitors]\ncontact_dropout_s = 0.0125\n")));
+        });
+    invalid_with(
+        "invalid MonitorsConfig: MonitorsConfig.__init__() missing 1 "
+        "required positional argument: 'contact_dropout_s'",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "missing_contact_dropout.toml",
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "[monitors]\ngrounded_hold_s = 0.005\n")));
+        });
+
+    // The monitor holds count whole physics steps — a non-multiple value is
+    // a rejected document, not a silently rounded one.
+    invalid_with(
+        "monitors.grounded_hold_s must be an integer multiple of timestep_s",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "nonmultiple_grounded.toml",
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "[monitors]\ngrounded_hold_s = 0.006\n"
+                "contact_dropout_s = 0.0125\n"
+                "[seated_climb]\nmin_elbow_flexion_deg = 15\n")));
+        });
+    invalid_with(
+        "monitors.contact_dropout_s must be an integer multiple of "
+        "timestep_s",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "nonmultiple_dropout.toml",
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "contact_dropout_s = 0.006\n"
+                "[seated_climb]\nmin_elbow_flexion_deg = 15\n")));
+        });
+
     // Nonfinite scalars arrive as TOML literals and are rejected by the
     // domain validation the typed decode feeds.
     bt::invalid([&] {
-        discard(cfg::load_physics(stage("nonfinite.toml", "timestep_s = inf\n")));
+        discard(cfg::load_physics(stage(
+            "nonfinite.toml",
+            "timestep_s = inf\ncontrol_period_s = 0.005\n"
+            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "contact_dropout_s = 0.0125\n")));
     });
     bt::invalid([&] {
-        discard(cfg::load_physics(stage("nonfinite2.toml", "timestep_s = nan\n")));
+        discard(cfg::load_physics(stage(
+            "nonfinite2.toml",
+            "timestep_s = nan\ncontrol_period_s = 0.005\n"
+            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "contact_dropout_s = 0.0125\n")));
     });
 
     // Integer fields reject floating spellings and booleans.
@@ -406,7 +487,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
     // Wrong scalar/array shapes for leaf members.
     bt::invalid([&] {
-        discard(cfg::load_physics(stage("scalar_array.toml", "timestep_s = [0.001]\n")));
+        discard(cfg::load_physics(stage(
+            "scalar_array.toml",
+            "timestep_s = [0.001]\ncontrol_period_s = 0.005\n"
+            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "contact_dropout_s = 0.0125\n")));
     });
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
@@ -417,8 +502,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // the only accepted physics_mode.
     invalid_with("unknown physics_mode 'legacy'; legacy mode was removed, "
                  "use physical", [&] {
-        discard(cfg::load_physics(stage("legacy.toml",
-                                        "physics_mode = \"legacy\"\n")));
+        discard(cfg::load_physics(stage(
+            "legacy.toml",
+            "physics_mode = \"legacy\"\ntimestep_s = 0.00125\n"
+            "control_period_s = 0.005\n"
+            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "contact_dropout_s = 0.0125\n")));
     });
 
     // A missing file reports the OS failure with the staged path — a stable
@@ -450,10 +539,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     }
 
     // Explicit --dt beats the file value; untouched fields keep file values.
+    // The override tick keeps every counted period an integer multiple
+    // (control 10x, grounded 10x, dropout 25x at 0.5 ms).
     {
         const auto over = cfg::resolve_physics(
-            make_object({{"timestep_s", make_number("0.001")}}), base);
-        bt::require(over.timestep_s == 0.001, "explicit --dt wins");
+            make_object({{"timestep_s", make_number("0.0005")}}), base);
+        bt::require(over.timestep_s == 0.0005, "explicit --dt wins");
         bt::require(over.control_period_s == base.control_period_s,
                     "unmentioned fields keep file values");
         bt::require(over.articulated.joint_envelope_path ==
@@ -526,9 +617,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // the identical merge path (the 'JSON loading' half of the task brief).
     {
         const Value json_overrides = io::parse_json(
-            R"({"timestep_s": 0.001, "drive": {"pedaling": {"mash_torque_nm": 61.5}}})");
+            R"({"timestep_s": 0.0005, "drive": {"pedaling": {"mash_torque_nm": 61.5}}})");
         const auto over = cfg::resolve_physics(json_overrides, base);
-        bt::require(over.timestep_s == 0.001, "JSON timestep override");
+        bt::require(over.timestep_s == 0.0005, "JSON timestep override");
         bt::require(over.drive.pedaling.mash_torque_nm == 61.5,
                     "JSON nested override");
         bt::require(over.drive.gearing.front_teeth ==
@@ -560,6 +651,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         });
     {
         auto unresolved_base = cfg::SimulationPhysicsConfig{};
+        unresolved_base.timestep_s = 0.0005;
+        unresolved_base.control_period_s = 0.005;
+        unresolved_base.monitors.grounded_hold_s = 0.005;
+        unresolved_base.monitors.contact_dropout_s = 0.005;
         unresolved_base.seated_climb.min_elbow_flexion_deg = 15.0;
         const auto unresolved = cfg::resolve_physics(
             make_object({{"physics_mode", make_text("physical")}}),

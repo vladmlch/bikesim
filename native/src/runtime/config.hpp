@@ -33,6 +33,7 @@ struct MonitorConfig {
     double balance_dwell_s = 0.;
     double balance_grace_s = 0.;
     double grounded_hold_s = 0.;
+    double contact_dropout_s = 0.;
 };
 
 struct JointReference {

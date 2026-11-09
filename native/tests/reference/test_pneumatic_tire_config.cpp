@@ -28,6 +28,24 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
             obj->emplace_back("seated_climb", io::Value{io::Value::Object{
                 {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}}}});
         }
+        // These documents exercise the tire section only — fill the
+        // required timing keys the oracle's defaults used to supply, with
+        // the 10-step dropout expressed at the document's own tick.
+        const auto *timestep = io::find_member(*obj, "timestep_s");
+        const double dt = timestep != nullptr
+                              ? io::as_double(*timestep, "timestep_s")
+                              : 0.0005;
+        if (timestep == nullptr)
+            obj->emplace_back("timestep_s", io::Value{io::Number{"0.0005"}});
+        if (!io::find_member(*obj, "control_period_s"))
+            obj->emplace_back("control_period_s",
+                              io::Value{io::Number{"0.005"}});
+        if (!io::find_member(*obj, "monitors")) {
+            const auto hold = cfg::detail::repr_double(10. * dt);
+            obj->emplace_back("monitors", io::Value{io::Value::Object{
+                {"grounded_hold_s", io::Value{io::Number{hold}}},
+                {"contact_dropout_s", io::Value{io::Number{hold}}}}});
+        }
     }
     return cfg::detail::construct_config(value);
 }

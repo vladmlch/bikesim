@@ -185,6 +185,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     c.physics_mode = "physical";
     c.drive_mode = "articulated_effort";
     c.timestep_s = 0.00125;
+    c.control_period_s = 0.005;
     c.closure_time_constant_s = 0.0025;
     c.initial_speed_mps = 0.0;
     c.initial_front_brake = 1.0;
@@ -271,6 +272,8 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.lean_trim_limit_rad = 0.15;
     climb.trim_dead_time_s = 0.2;
     climb.min_elbow_flexion_deg = 15.0;
+    c.monitors.grounded_hold_s = 0.005;
+    c.monitors.contact_dropout_s = 0.0125;
     cfg::post_init(c);
     return c;
 }
@@ -608,6 +611,9 @@ void test_defaults() {
                 "physical pitch_assist resolution");
     bt::require(c.timestep_s == 0.0005, "default timestep_s");
     bt::require(c.control_period_s == 0.005, "default control_period_s");
+    bt::require(c.monitors.grounded_hold_s == 0.005 &&
+                    c.monitors.contact_dropout_s == 0.005,
+                "default monitor holds");
     bt::require(c.closure_time_constant_s == 0.001, "default closure tau");
     bt::require(c.equilibrium_refine_after_s == 1.0, "refine_after default");
     bt::require(c.equilibrium_refine_period_s == 3.0, "refine_period default");
@@ -669,7 +675,7 @@ void test_schema() {
                 "schema config_class");
     const Value::Array& fields = io::as_array(
         member(document, "fields", "schema"), "schema.fields");
-    static constexpr std::array<std::string_view, 20> kTopOrder{
+    static constexpr std::array<std::string_view, 21> kTopOrder{
         "physics_mode",
         "drive_mode",
         "timestep_s",
@@ -681,6 +687,7 @@ void test_schema() {
         "resistance",
         "articulated",
         "seated_climb",
+        "monitors",
         "initial_speed_mps",
         "initial_front_brake",
         "initial_rear_brake",
@@ -691,7 +698,7 @@ void test_schema() {
         "equilibrium_state_file",
         "equilibrium_relaxation",
     };
-    bt::require(fields.size() == 20, "top-level field count");
+    bt::require(fields.size() == 21, "top-level field count");
     for (std::size_t i = 0; i < fields.size(); ++i)
         bt::require(
             string_of(member(fields[i], "name", "fields"), "name") ==
@@ -732,6 +739,8 @@ void test_schema() {
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 20,
                 "seated_climb field count");
+    bt::require(fields_named(fields[11], "monitors").size() == 2,
+                "monitors field count");
 
     // Optional leaves serialize explicit null defaults; required leaves
     // (TyreSpecs) also carry null defaults but no factory.

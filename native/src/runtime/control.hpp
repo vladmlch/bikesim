@@ -153,7 +153,6 @@ struct GroundedFilter {
 };
 
 // ---- contacts.py ------------------------------------------------------
-constexpr int kContactDropoutSteps = 10;
 constexpr double kContactLoadThresholdN = 1.0;
 
 // _BridgedLoad — one wheel's contact load held across a dropout run.
@@ -218,10 +217,11 @@ struct NativeContactResult {
 // solved engine rows; applied tire backends use handlebar_load only.
 class RuntimeContactQuery {
 public:
-    // __init__ resolves the terrain/contact geoms once; dropout_steps
-    // validation matches the oracle.
-    explicit RuntimeContactQuery(const mjModel *model,
-                                 int dropout_steps = kContactDropoutSteps);
+    // __init__ resolves the terrain/contact geoms once. The monitor holds
+    // arrive as profile-declared seconds and are converted to step counts
+    // against the physics timestep — both must be whole multiples.
+    RuntimeContactQuery(const mjModel *model, double grounded_hold_s,
+                        double contact_dropout_s, double timestep_s);
 
     // handlebar_load (contacts.py:279-300) — stateless normal-magnitude
     // sum over handlebar-terrain rows; no bridge/filter advances. The same
@@ -244,7 +244,7 @@ public:
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
     // state_dict() round-trip — contacts.py:267-277.
     BridgedLoad front_load{0}, rear_load{0};
-    GroundedFilter front_controller{0.005}, rear_controller{0.005};
+    GroundedFilter front_controller{0.}, rear_controller{0.};
     // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
     struct State {

@@ -302,12 +302,26 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     const vread::Dict monitors = vread::section(root, "monitors");
     vread::exact(monitors,
                  vread::keys("balance_floor_mps", "balance_dwell_s",
-                             "balance_grace_s", "grounded_hold_s"));
+                             "balance_grace_s", "grounded_hold_s",
+                             "contact_dropout_s"));
     out.monitors = MonitorConfig{
         .balance_floor_mps = positive_field(monitors, "balance_floor_mps"),
         .balance_dwell_s = positive_field(monitors, "balance_dwell_s"),
         .balance_grace_s = nonnegative_field(monitors, "balance_grace_s"),
-        .grounded_hold_s = nonnegative_field(monitors, "grounded_hold_s")};
+        .grounded_hold_s = nonnegative_field(monitors, "grounded_hold_s"),
+        .contact_dropout_s =
+            nonnegative_field(monitors, "contact_dropout_s")};
+    // Both holds count whole physics steps — the same rule the profile
+    // loader enforces, rechecked at the envelope boundary.
+    for (const auto &[name, value] : {
+             std::pair{"grounded_hold_s", out.monitors.grounded_hold_s},
+             {"contact_dropout_s", out.monitors.contact_dropout_s}}) {
+        const double hold_steps = std::rint(value / out.timestep_s);
+        if (hold_steps < 0. ||
+            std::abs(hold_steps * out.timestep_s - value) > 1e-9)
+            vread::invalid(monitors.child(name),
+                           "must be an integer multiple of timestep_s");
+    }
 
     const vread::Dict geometry = vread::section(root, "geometry");
     vread::exact(geometry,

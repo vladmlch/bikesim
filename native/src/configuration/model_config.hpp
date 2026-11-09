@@ -40,13 +40,21 @@ struct EndStopConfig {
 // reuse keeps one declaration for the input and the intent boundary.
 using SeatedClimbConfig = ::rider::IntentConfig;
 
-// model_config.py SimulationPhysicsConfig — 20 fields; drive_mode/pitch_assist
+// model_config.py MonitorsConfig — contact-monitor holds declared by the
+// profile in seconds; both count whole physics steps, so post_init requires
+// each to be an integer multiple of timestep_s.
+struct MonitorsConfig {
+    double grounded_hold_s = -1.;
+    double contact_dropout_s = -1.;
+};
+
+// model_config.py SimulationPhysicsConfig — 21 fields; drive_mode/pitch_assist
 // declared defaults are None (nullopt), resolved by post_init.
 struct SimulationPhysicsConfig {
     std::string physics_mode = "physical";
     std::optional<std::string> drive_mode;
-    double timestep_s = 0.0005;
-    double control_period_s = 0.005;
+    double timestep_s = 0.;
+    double control_period_s = 0.;
     std::optional<bool> pitch_assist;
     EndStopConfig end_stops;
     TireBackendConfig tires;
@@ -54,6 +62,7 @@ struct SimulationPhysicsConfig {
     ResistanceConfig resistance;
     ArticulatedConfig articulated;
     SeatedClimbConfig seated_climb;
+    MonitorsConfig monitors;
     double initial_speed_mps = 0.;
     double initial_front_brake = 0.;
     double initial_rear_brake = 0.;
@@ -113,6 +122,7 @@ void validate_rider_contacts(
 namespace detail {
 void post_init(const EndStopConfig&);
 void post_init(const SeatedClimbConfig&);
+void post_init(const MonitorsConfig&);
 } // namespace detail
 
 // ---- field tables ---------------------------------------------------------------
@@ -176,6 +186,21 @@ inline const RecordSchema kSeatedClimbConfigSchema{
     .path="bike_sim.physics.seated_climb.SeatedClimbConfig",
     .fields=kSeatedClimbConfigFields, .declared_default=&kDeclaredSeatedClimbConfig};
 
+// model_config.py MonitorsConfig — both holds are required wire keys; the
+// record itself has no code default, so a profile must declare [monitors].
+inline constexpr auto kMonitorsConfigFields = std::to_array<FieldDecl>({
+    {.name="grounded_hold_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(MonitorsConfig, grounded_hold_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="contact_dropout_s", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(MonitorsConfig, contact_dropout_s), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
+inline const RecordSchema kMonitorsConfigSchema{
+    .path="bike_sim.physics.model_config.MonitorsConfig",
+    .fields=kMonitorsConfigFields, .declared_default=nullptr};
+
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const SimulationPhysicsConfig kDeclaredSimulationPhysicsConfig{};
 inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>({
@@ -186,10 +211,10 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .offset=offsetof(SimulationPhysicsConfig, drive_mode), .required=false, .factory="", .nested=nullptr,
      .nested2=nullptr},
     {.name="timestep_s", .type="<class 'float'>", .kind=FieldKind::Real,
-     .offset=offsetof(SimulationPhysicsConfig, timestep_s), .required=false, .factory="", .nested=nullptr,
+     .offset=offsetof(SimulationPhysicsConfig, timestep_s), .required=true, .factory="", .nested=nullptr,
      .nested2=nullptr},
     {.name="control_period_s", .type="<class 'float'>", .kind=FieldKind::Real,
-     .offset=offsetof(SimulationPhysicsConfig, control_period_s), .required=false, .factory="", .nested=nullptr,
+     .offset=offsetof(SimulationPhysicsConfig, control_period_s), .required=true, .factory="", .nested=nullptr,
      .nested2=nullptr},
     {.name="pitch_assist", .type="bool | None", .kind=FieldKind::OptionalBoolean,
      .offset=offsetof(SimulationPhysicsConfig, pitch_assist), .required=false, .factory="", .nested=nullptr,
@@ -217,6 +242,10 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .type="<class 'bike_sim.physics.seated_climb.SeatedClimbConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, seated_climb),
      .required=false, .factory="SeatedClimbConfig", .nested=&kSeatedClimbConfigSchema, .nested2=nullptr},
+    {.name="monitors",
+     .type="<class 'bike_sim.physics.model_config.MonitorsConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, monitors),
+     .required=true, .factory="", .nested=&kMonitorsConfigSchema, .nested2=nullptr},
     {.name="initial_speed_mps", .type="<class 'float'>", .kind=FieldKind::Real,
      .offset=offsetof(SimulationPhysicsConfig, initial_speed_mps), .required=false, .factory="",
      .nested=nullptr, .nested2=nullptr},

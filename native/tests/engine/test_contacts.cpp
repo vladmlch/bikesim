@@ -35,7 +35,7 @@ void native_rows_and_bridge() {
     auto model = bike::model::compile_mjcf(xml);
     drivetrain::OwnedData data(engine::make_data(model.get()));
     engine::forward(model.get(), data.get());
-    runtime::RuntimeContactQuery query(model.get());
+    runtime::RuntimeContactQuery query(model.get(), .005, .0125, .00125);
     std::vector<double> incoming(static_cast<std::size_t>(model->nv), 0.);
     incoming.front() = 2.;
     const auto first = query.query(model.get(), data.get(), 0., incoming);

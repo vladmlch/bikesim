@@ -606,6 +606,7 @@ construct_record(const RecordSchema& schema, const Value::Object& obj,
     BIKE_T13_RECORD(ResistanceConfig, kResistanceConfigSchema)
     BIKE_T13_RECORD(ArticulatedConfig, kArticulatedConfigSchema)
     BIKE_T13_RECORD(SeatedClimbConfig, kSeatedClimbConfigSchema)
+    BIKE_T13_RECORD(MonitorsConfig, kMonitorsConfigSchema)
 #undef BIKE_T13_RECORD
     construct_error("unsupported configuration schema " +
                     std::string(schema.path));

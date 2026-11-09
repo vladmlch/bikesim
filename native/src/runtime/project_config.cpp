@@ -508,7 +508,9 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         {"rider_intent", field(physics_document, "seated_climb")},
         {"monitors", Value{Object{{"balance_floor_mps", real(config.articulated.balance_floor_kmh / 3.6)},
             {"balance_dwell_s", real(config.articulated.balance_dwell_s)},
-            {"balance_grace_s", real(config.articulated.balance_grace_s)}, {"grounded_hold_s", real(.005)}}}},
+            {"balance_grace_s", real(config.articulated.balance_grace_s)},
+            {"grounded_hold_s", real(config.monitors.grounded_hold_s)},
+            {"contact_dropout_s", real(config.monitors.contact_dropout_s)}}}},
         {"geometry", Value{Object{{"crank_length_m", real(request.bike.crank_length / 1000.)},
             {"brake_dofs", std::move(wheels)}, {"wheel_bodies", Value{Object{
                 {"front", text("front_wheel")}, {"rear", text("rear_wheel")}}}},

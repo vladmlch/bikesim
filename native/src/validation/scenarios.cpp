@@ -99,7 +99,7 @@ Value model_status(Simulation& sim){return research::wire_value(runtime::Wire{si
 double position(Simulation& sim){return sim.runtime->render_frame().presentation.position_m;}
 void merge(Value& out,const Value& in){for(const auto& [key,x]:io::as_object(in,"object"))value::set(std::get<Object>(out.data),key,x);}
 [[gnu::noinline]] configuration::SimulationPhysicsConfig simple_config(double dt,std::string_view drive,double human,double mu,bool brakes,std::string_view backend,double speed){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
-    configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode=drive;c.timestep_s=dt;c.tires.backend=backend;c.tires.front.mu=mu;c.tires.rear.mu=mu;
+    configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode=drive;c.timestep_s=dt;c.control_period_s=.005;c.monitors.grounded_hold_s=.005;c.monitors.contact_dropout_s=10.*dt;c.tires.backend=backend;c.tires.front.mu=mu;c.tires.rear.mu=mu;
     // The oracle's make_sim leaves TireBackendConfig.surface_mode at its
     // 'configured' default — its RideSimulation reads tire.mu directly.
     // The native runtime gate (setup.py validate_supported) requires the
@@ -165,7 +165,7 @@ RigResult ride_flat_static(std::string_view name,double dt){
     return {.metrics=RuntimeRigAccess::static_metrics(*sim->runtime,sim->metadata,expected_mass(*sim)),.bounds=bounds({{"mass_error_kg",0.,1e-8},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005},{"residual_qacc",0.,.05}})};
 }
 [[gnu::noinline]] configuration::SimulationPhysicsConfig sag_config(double dt){
-    configuration::SimulationPhysicsConfig physics;physics.physics_mode="physical";physics.timestep_s=dt;physics.tires.backend="compliant_2d";physics.tires.surface_mode="track";physics.seated_climb.min_elbow_flexion_deg=15.;return physics;
+    configuration::SimulationPhysicsConfig physics;physics.physics_mode="physical";physics.timestep_s=dt;physics.control_period_s=.005;physics.monitors.grounded_hold_s=.005;physics.monitors.contact_dropout_s=10.*dt;physics.tires.backend="compliant_2d";physics.tires.surface_mode="track";physics.seated_climb.min_elbow_flexion_deg=15.;return physics;
 }
 [[gnu::noinline]] model::BuildRequest sag_model(double dt){
     auto out=mechanics::request(sag_config(dt));out.rider->variant="lumped";return out; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.

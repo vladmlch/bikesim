@@ -4,6 +4,7 @@
 physics_mode = "physical"
 drive_mode = "articulated_effort"
 timestep_s = 0.00125
+control_period_s = 0.005
 closure_time_constant_s = 0.0025
 initial_speed_mps = 0.0
 initial_front_brake = 1.0
@@ -131,3 +132,7 @@ lean_trim_gain_rad_s = 0.3
 lean_trim_limit_rad = 0.15
 trim_dead_time_s = 0.2
 min_elbow_flexion_deg = 15.0
+
+[monitors]
+grounded_hold_s = 0.005
+contact_dropout_s = 0.0125

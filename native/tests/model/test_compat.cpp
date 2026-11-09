@@ -131,7 +131,8 @@ void independent_projection() {
     bt::require(same_bits(actual.monitors.balance_floor_mps, expected.monitors.balance_floor_mps) &&
                 same_bits(actual.monitors.balance_dwell_s, expected.monitors.balance_dwell_s) &&
                 same_bits(actual.monitors.balance_grace_s, expected.monitors.balance_grace_s) &&
-                same_bits(actual.monitors.grounded_hold_s, expected.monitors.grounded_hold_s), "captured monitor configuration");
+                same_bits(actual.monitors.grounded_hold_s, expected.monitors.grounded_hold_s) &&
+                same_bits(actual.monitors.contact_dropout_s, expected.monitors.contact_dropout_s), "captured monitor configuration");
     bt::require(actual.geometry.front_brake.joint == expected.geometry.front_brake.joint &&
                 actual.geometry.rear_brake.joint == expected.geometry.rear_brake.joint &&
                 actual.geometry.front_brake.dof_index == expected.geometry.front_brake.dof_index &&

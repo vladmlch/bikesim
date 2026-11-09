@@ -136,13 +136,33 @@ void BridgedLoad::reset() noexcept {
 
 // ---- RuntimeContactQuery -----------------------------------------------
 RuntimeContactQuery::RuntimeContactQuery(const mjModel *model,
-                                         int dropout_steps)
-    : front_load(dropout_steps), rear_load(dropout_steps), model_(model) {
+                                         double grounded_hold_s,
+                                         double contact_dropout_s,
+                                         double timestep_s)
+    : front_controller(grounded_hold_s), rear_controller(grounded_hold_s),
+      model_(model) {
     if (model == nullptr)
         throw std::invalid_argument("contact query requires a model");
-    if (dropout_steps < 0)
-        throw std::invalid_argument("dropout_steps must be non-negative, got " +
-                                    std::to_string(dropout_steps));
+    if (grounded_hold_s < 0.)
+        throw std::invalid_argument(
+            "grounded_hold_s must be non-negative, got " +
+            std::to_string(grounded_hold_s));
+    if (!(timestep_s > 0.))
+        throw std::invalid_argument("timestep_s must be positive, got " +
+                                    std::to_string(timestep_s));
+    // contacts.py takes the dropout as a step count; the profile declares
+    // it in seconds — convert against the physics tick, rejecting a value
+    // that lands between ticks.
+    const auto dropout_steps =
+        static_cast<int>(std::lrint(contact_dropout_s / timestep_s));
+    if (dropout_steps < 0 ||
+        std::abs(dropout_steps * timestep_s - contact_dropout_s) > 1e-9)
+        throw std::invalid_argument(
+            "contact_dropout_s must be a non-negative integer multiple of "
+            "timestep_s, got " +
+            std::to_string(contact_dropout_s));
+    front_load = BridgedLoad{dropout_steps};
+    rear_load = BridgedLoad{dropout_steps};
     for (const char *name : {"terrain", "catch_plane"})
         terrain_ids.push_back(
             model_access::resolve_id(model, mjOBJ_GEOM, name));

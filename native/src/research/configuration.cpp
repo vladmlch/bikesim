@@ -202,13 +202,8 @@ configuration::SimulationPhysicsConfig resolve_research_physics(
             set(base, "tires", std::move(base_tires));
         }
     overrides = configuration::detail::merge_values(overrides, explicit_overrides);
-    std::string transmission = defaults.drive.transmission_model;
-    if (const auto* drive = find(overrides, "drive"))
-        if (const auto* model = find(*drive, "transmission_model"))
-            transmission = io::as_string(*model, "drive.transmission_model");
-    if (!find(overrides, "timestep_s") && transmission != defaults.drive.transmission_model) {
-        if (transmission == "ideal_mid_drive" || transmission == "geometric_ideal_mid_drive") set(overrides, "timestep_s", real(.0005));
-    }
+    // The physics step comes from the profile/defaults document alone — a
+    // transmission choice no longer rewrites it behind the caller's back.
     if (!find(overrides, "closure_time_constant_s"))
         if (const auto* dt = find(overrides, "timestep_s"))
             if (io::as_double(*dt, "timestep_s") * 2. > defaults.closure_time_constant_s)

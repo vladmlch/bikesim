@@ -834,6 +834,9 @@ void post_init(const SeatedClimbConfig &config) {
     // The delay counts whole intent ticks and the orientation smoothing
     // spans at least two — meaningful only while the intent ticks, so the
     // whole-tick rules engage with `enabled` like the runtime gate does.
+    // The trim dead time selects samples off the same per-tick deque and
+    // the surge budget is consumed in whole period_s units, so both carry
+    // the same multiple rule.
     if (config.enabled) {
         const double delay_ticks =
             std::rint(config.reaction_delay_s / config.period_s);
@@ -843,6 +846,18 @@ void post_init(const SeatedClimbConfig &config) {
             fail("reaction_delay_s must be an integer multiple of period_s");
         if (!(config.orientation_tau_s >= 2. * config.period_s))
             fail("orientation_tau_s must span at least two period_s ticks");
+        const double dead_ticks =
+            std::rint(config.trim_dead_time_s / config.period_s);
+        if (dead_ticks < 0. ||
+            std::abs(dead_ticks * config.period_s -
+                     config.trim_dead_time_s) > 1e-9)
+            fail("trim_dead_time_s must be an integer multiple of period_s");
+        const double budget_ticks =
+            std::rint(config.surge_budget_s / config.period_s);
+        if (budget_ticks < 0. ||
+            std::abs(budget_ticks * config.period_s -
+                     config.surge_budget_s) > 1e-9)
+            fail("surge_budget_s must be an integer multiple of period_s");
     }
 }
 
@@ -1127,6 +1142,65 @@ void post_init(SimulationPhysicsConfig &config) {
                      config.research.actuator_delay_s) > 1e-9)
             fail("research.actuator_delay_s must be an integer multiple of "
                  "timestep_s");
+    }
+    // The drivetrain holds and the balance monitor's dwell/grace windows
+    // count on the physics clock: the motor run-on and the shift
+    // cooldown/cut countdown by dt inside the per-step policy updates, the
+    // coast stop decays its target rate by dt per step, and the balance
+    // monitor's elapsed-time thresholds are quantised to step boundaries —
+    // each is declared in whole physics steps, never a rounded one.
+    for (const auto &[name, value] : {
+             std::pair{"drive.assist.release_hold_s",
+                       config.drive.assist.release_hold_s},
+             {"drive.shifting.shift_cooldown_s",
+              config.drive.shifting.shift_cooldown_s},
+             {"drive.shifting.shift_cut_duration_s",
+              config.drive.shifting.shift_cut_duration_s},
+             {"drive.pedaling.stop_time_s",
+              config.drive.pedaling.stop_time_s},
+             {"articulated.balance_dwell_s",
+              config.articulated.balance_dwell_s},
+             {"articulated.balance_grace_s",
+              config.articulated.balance_grace_s}}) {
+        const double ticks = std::rint(value / config.timestep_s);
+        if (ticks < 0. ||
+            std::abs(ticks * config.timestep_s - value) > 1e-9)
+            fail(std::string(name) +
+                 " must be an integer multiple of timestep_s");
+    }
+    // The drive and tyre smoothing filters advance on the physics step:
+    // a time constant must span at least two steps to be representable. A
+    // zero tau disables its filter outright and carries no constraint; the
+    // assist lag is the profile-resolved torque tau, not the declared one.
+    const double two_steps = 2. * config.timestep_s;
+    const MotorProfile *assist_profile =
+        config.drive.assist.profile
+            ? find_motor_profile(*config.drive.assist.profile)
+            : nullptr;
+    const double assist_tau =
+        assist_profile ? assist_profile->torque_tau_s
+                       : config.drive.assist.tau;
+    if (!(assist_tau >= two_steps))
+        fail("drive.assist.tau must span at least two timestep_s ticks");
+    for (const auto &[name, value] : {
+             std::pair{"drive.pedaling.coast_cadence_tau_s",
+                       config.drive.pedaling.coast_cadence_tau_s},
+             {"drive.shifting.cadence_smoothing_tau_s",
+              config.drive.shifting.cadence_smoothing_tau_s}}) {
+        if (value > 0. && !(value >= two_steps))
+            fail(std::string(name) +
+                 " must span at least two timestep_s ticks");
+    }
+    if (config.tires.backend == "pneumatic") {
+        for (const auto &[name, value] : {
+                 std::pair{"tires.pneumatic.front.rate_relaxation_s",
+                           config.tires.pneumatic.front.rate_relaxation_s},
+                 {"tires.pneumatic.rear.rate_relaxation_s",
+                  config.tires.pneumatic.rear.rate_relaxation_s}}) {
+            if (!(value >= two_steps))
+                fail(std::string(name) +
+                     " must span at least two timestep_s ticks");
+        }
     }
 
     scalar(config.equilibrium_refine_after_s,

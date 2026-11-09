@@ -61,8 +61,19 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
             cfg::detail::repr_double(std::rint(1. / dt) * dt);
         const auto timeout =
             cfg::detail::repr_double(std::rint(3. / dt) * dt);
+        // The drive holds and balance windows follow the same rule: every
+        // declared duration must land on a whole number of the document's
+        // ticks, so each default is rounded the same way. The smoothing
+        // defaults (.05 s assist lag, .35 s cadence EMA, .2 s rate
+        // relaxation, disabled coast filter) clear two ticks at every
+        // timestep these documents use.
+        const auto tick = [&](double nominal) {
+            return cfg::detail::repr_double(std::rint(nominal / dt) * dt);
+        };
         if (!io::find_member(*obj, "drive"))
             obj->emplace_back("drive", io::Value{io::Value::Object{
+                {"assist", io::Value{io::Value::Object{
+                    {"release_hold_s", io::Value{io::Number{tick(.3)}}}}}},
                 {"pedaling", io::Value{io::Value::Object{
                     {"reposition_on_stall", io::Value{false}},
                     {"reposition_min_effort_nm", io::Value{io::Number{"20.0"}}},
@@ -72,7 +83,15 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                     {"reposition_back_rate_rad_s", io::Value{io::Number{"3.0"}}},
                     {"reposition_timeout_s", io::Value{io::Number{timeout}}},
                     {"reposition_phase_tolerance_rad", io::Value{io::Number{"0.05"}}},
-                    {"reposition_noop_rad", io::Value{io::Number{"0.12"}}}}}}}});
+                    {"reposition_noop_rad", io::Value{io::Number{"0.12"}}},
+                    {"stop_time_s", io::Value{io::Number{tick(.35)}}}}}},
+                {"shifting", io::Value{io::Value::Object{
+                    {"shift_cooldown_s", io::Value{io::Number{tick(.4)}}},
+                    {"shift_cut_duration_s", io::Value{io::Number{tick(.2)}}}}}}}});
+        if (!io::find_member(*obj, "articulated"))
+            obj->emplace_back("articulated", io::Value{io::Value::Object{
+                {"balance_dwell_s", io::Value{io::Number{tick(.5)}}},
+                {"balance_grace_s", io::Value{io::Number{tick(3.)}}}}});
         // The required [research] timings likewise express their former
         // defaults at the document's own tick; latency and maximum age are
         // timestamp cutoffs, so they keep their literal values.

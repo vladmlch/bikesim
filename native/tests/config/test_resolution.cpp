@@ -944,6 +944,224 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     }
 }
 
+// ---- drive holds, balance windows and smoothing ------------------------------
+
+// The remaining profile delays and holds count discrete loop ticks: the
+// motor run-on, shift cooldown/cut, coast stop and the balance dwell/grace
+// windows count physics steps (timestep_s); the seated-climb trim dead time
+// and surge budget count intent ticks (seated_climb.period_s, engaged only
+// while the intent runs). Every smoothing — the assist lag, the two cadence
+// EMAs and the pneumatic rate relaxation — advances on the physics step and
+// must span at least two ticks. Rate limits (N·m/s, rad/s) carry no rule.
+[[gnu::noinline]] void checks_drive_timings() {
+    const TempDir temp("bike-t13-drive");
+    const auto stage = [&](std::string_view name, std::string_view toml) {
+        const auto path = temp.path / std::string(name);
+        write_text_file(path, toml);
+        return path;
+    };
+    const std::string_view head =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "closure_time_constant_s = 0.0025\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+        "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "[drive.pedaling]\nreposition_on_stall = false\n"
+        "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+        "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n";
+    // `middle` lands inside the still-open [drive.pedaling] table until the
+    // first [table] header; kResearchSection closes the document.
+    const auto doc = [&](std::string_view middle) {
+        return std::string(head) + std::string(middle) +
+               std::string(kResearchSection);
+    };
+
+    // Physics-step-counted holds reject a non-multiple of timestep_s.
+    for (const auto& [snippet, field] : {
+             std::pair{"[drive.assist]\nrelease_hold_s = 0.3005\n",
+                       "drive.assist.release_hold_s"},
+             std::pair{"[drive.shifting]\nshift_cooldown_s = 0.2505\n",
+                       "drive.shifting.shift_cooldown_s"},
+             std::pair{"[drive.shifting]\nshift_cut_duration_s = 0.2005\n",
+                       "drive.shifting.shift_cut_duration_s"},
+             std::pair{"stop_time_s = 0.3505\n",
+                       "drive.pedaling.stop_time_s"},
+             std::pair{"[articulated]\nbalance_dwell_s = 0.5005\n",
+                       "articulated.balance_dwell_s"},
+             std::pair{"[articulated]\nbalance_grace_s = 3.0005\n",
+                       "articulated.balance_grace_s"}}) {
+        invalid_with(
+            std::string(field) +
+                " must be an integer multiple of timestep_s",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "nonmultiple_" + std::string(field) + ".toml",
+                    doc(snippet))));
+            });
+    }
+
+    // Physics-step smoothings reject a tau shorter than two ticks; a zero
+    // tau disables the filter outright and carries no constraint.
+    for (const auto& [snippet, field] : {
+             std::pair{"[drive.assist]\ntau = 0.002\n", "drive.assist.tau"},
+             std::pair{"coast_cadence_tau_s = 0.002\n",
+                       "drive.pedaling.coast_cadence_tau_s"},
+             std::pair{"[drive.shifting]\ncadence_smoothing_tau_s = 0.002\n",
+                       "drive.shifting.cadence_smoothing_tau_s"},
+             std::pair{"[tires]\nbackend = \"pneumatic\"\n"
+                       "surface_mode = \"track\"\n"
+                       "[tires.pneumatic.front]\nrate_relaxation_s = 0.002\n",
+                       "tires.pneumatic.front.rate_relaxation_s"},
+             std::pair{"[tires]\nbackend = \"pneumatic\"\n"
+                       "surface_mode = \"track\"\n"
+                       "[tires.pneumatic.rear]\nrate_relaxation_s = 0.002\n",
+                       "tires.pneumatic.rear.rate_relaxation_s"}}) {
+        invalid_with(
+            std::string(field) +
+                " must span at least two timestep_s ticks",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "short_" + std::string(field) + ".toml",
+                    doc(snippet))));
+            });
+    }
+
+    // The assist lag is the RESOLVED torque tau: a named motor profile
+    // supplies it, so a declared tau that would fail is ignored while the
+    // profile value is what the two-tick rule measures.
+    {
+        const auto ignored = cfg::load_physics(stage(
+            "assist_profile_tau.toml",
+            doc("[drive.assist]\nprofile = \"bosch_cx_gen4\"\ntau = 0.001\n")));
+        bt::require(ignored.drive.assist.tau == 0.001,
+                    "declared assist tau survives beside a profile");
+    }
+    // At dt = 0.03 s the Bosch tau of .04 s spans 1.33 ticks while a
+    // declared .08 s would span 2.67 — only the resolved value is checked.
+    invalid_with(
+        "drive.assist.tau must span at least two timestep_s ticks", [&] {
+            discard(cfg::load_physics(stage(
+                "assist_resolved_tau.toml",
+                "timestep_s = 0.03\ncontrol_period_s = 0.03\n"
+                "closure_time_constant_s = 0.06\n"
+                "[monitors]\ngrounded_hold_s = 0.03\n"
+                "contact_dropout_s = 0.03\n"
+                "[seated_climb]\nenabled = false\nperiod_s = 0.03\n"
+                "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+                "[drive.assist]\nprofile = \"bosch_cx_gen4\"\ntau = 0.08\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\n"
+                "reposition_stall_window_s = 0.99\n"
+                "reposition_stall_progress_rad = 0.5\n"
+                "reposition_cooldown_s = 0.99\n"
+                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\n"
+                "reposition_noop_rad = 0.12\n"
+                "stop_time_s = 0.36\ncoast_cadence_tau_s = 0.0\n"
+                "[drive.shifting]\nshift_cooldown_s = 0.42\n"
+                "shift_cut_duration_s = 0.21\n"
+                "cadence_smoothing_tau_s = 0.35\n"
+                "[articulated]\nbalance_dwell_s = 0.6\n"
+                "balance_grace_s = 3.0\n"
+                "[research]\ncontrol_period_s = 0.03\n"
+                "actuator_delay_s = 0.0\nsensor_latency_s = 0.01\n"
+                "sensor_maximum_age_s = 0.1\nsample_period_s = 0.03\n"
+                "record_decimation = 80\n")));
+        });
+
+    // The seated-climb trim dead time and surge budget count intent ticks:
+    // engaged, each rejects a non-multiple of period_s; disengaged, the
+    // dormant values carry no whole-tick constraint.
+    const std::string_view climb_head =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "closure_time_constant_s = 0.0025\n"
+        "drive_mode = \"articulated_effort\"\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[drive.pedaling]\nreposition_on_stall = false\n"
+        "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+        "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+        "[seated_climb]\nenabled = true\nperiod_s = 0.00125\n"
+        "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n";
+    for (const auto& [key, value] : {
+             std::pair{"trim_dead_time_s", "0.201"},
+             std::pair{"surge_budget_s", "15.001"}}) {
+        invalid_with(
+            std::string(key) +
+                " must be an integer multiple of period_s",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "nonmultiple_" + std::string(key) + ".toml",
+                    std::string(climb_head) +
+                        std::string(key) + " = " + value + "\n" +
+                        std::string(kResearchSection))));
+            });
+    }
+    {
+        const auto climb = cfg::load_physics(stage(
+            "climb_timings.toml",
+            std::string(climb_head) +
+            "trim_dead_time_s = 0.4\nsurge_budget_s = 30.0\n" +
+            std::string(kResearchSection)));
+        bt::require(climb.seated_climb.trim_dead_time_s == 0.4 &&
+                        climb.seated_climb.surge_budget_s == 30.0,
+                    "whole-tick intent timings resolve");
+        const auto disabled = cfg::load_physics(stage(
+            "disabled_climb_timings.toml",
+            "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+            "closure_time_constant_s = 0.0025\n"
+            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "contact_dropout_s = 0.0125\n"
+            "[drive.pedaling]\nreposition_on_stall = false\n"
+            "reposition_min_effort_nm = 20.0\n"
+            "reposition_stall_window_s = 1.0\n"
+            "reposition_stall_progress_rad = 0.5\n"
+            "reposition_cooldown_s = 1.0\n"
+            "reposition_back_rate_rad_s = 3.0\n"
+            "reposition_timeout_s = 3.0\n"
+            "reposition_phase_tolerance_rad = 0.05\n"
+            "reposition_noop_rad = 0.12\n"
+            "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+            "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+            "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+            "trim_dead_time_s = 0.201\nsurge_budget_s = 15.001\n" +
+            std::string(kResearchSection)));
+        bt::require(disabled.seated_climb.trim_dead_time_s == 0.201,
+                    "a disabled intent tolerates non-multiple timings");
+    }
+
+    // Valid control: every counted timing at a whole tick and every
+    // smoothing at exactly two ticks or more resolves through the loader.
+    {
+        const auto valid = cfg::load_physics(stage(
+            "drive_timings.toml",
+            doc("stop_time_s = 0.35\ncoast_cadence_tau_s = 0.0025\n"
+                "[drive.assist]\nrelease_hold_s = 0.3\ntau = 0.0025\n"
+                "[drive.shifting]\nshift_cooldown_s = 0.25\n"
+                "shift_cut_duration_s = 0.2\n"
+                "cadence_smoothing_tau_s = 0.0025\n"
+                "[articulated]\nbalance_dwell_s = 0.5\n"
+                "balance_grace_s = 3.0\n"
+                "[tires]\nbackend = \"pneumatic\"\n"
+                "surface_mode = \"track\"\n"
+                "[tires.pneumatic.front]\nrate_relaxation_s = 0.2\n"
+                "[tires.pneumatic.rear]\nrate_relaxation_s = 0.2\n")));
+        bt::require(valid.drive.assist.release_hold_s == 0.3 &&
+                        valid.drive.shifting.shift_cooldown_s == 0.25 &&
+                        valid.drive.pedaling.stop_time_s == 0.35 &&
+                        valid.articulated.balance_dwell_s == 0.5 &&
+                        valid.tires.pneumatic.front.rate_relaxation_s == 0.2,
+                    "whole-tick timings and two-tick smoothings resolve");
+    }
+}
+
 // ---- merge precedence --------------------------------------------------------
 
 [[gnu::noinline]] void checks_precedence() {
@@ -1312,6 +1530,7 @@ int main() {
         checks_seated_climb_timings();
         checks_reposition_timings();
         checks_research_timings();
+        checks_drive_timings();
         checks_shipped();
         checks_variants();
         checks_rejection();

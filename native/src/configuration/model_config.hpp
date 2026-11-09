@@ -156,18 +156,21 @@ inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
 #define SC_REAL(f)                                                            \
     {#f, "<class 'float'>", FieldKind::Real, offsetof(SeatedClimbConfig, f), \
      false, "", nullptr, nullptr}
+#define SC_REAL_REQ(f)                                                        \
+    {#f, "<class 'float'>", FieldKind::Real, offsetof(SeatedClimbConfig, f), \
+     true, "", nullptr, nullptr}
     {.name="enabled", .type="<class 'bool'>", .kind=FieldKind::Boolean,
      .offset=offsetof(SeatedClimbConfig, enabled), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
-    SC_REAL(period_s),
-    SC_REAL(reaction_delay_s),
+    SC_REAL_REQ(period_s),
+    SC_REAL_REQ(reaction_delay_s),
     SC_REAL(target_crank_power_w),
     SC_REAL(max_crank_torque_nm),
     SC_REAL(torque_slew_nm_s),
     SC_REAL(lean_gain),
     SC_REAL(max_forward_lean_rad),
     SC_REAL(max_backward_lean_rad),
-    SC_REAL(lean_rate_rad_s),
-    SC_REAL(orientation_tau_s),
+    SC_REAL_REQ(lean_rate_rad_s),
+    SC_REAL_REQ(orientation_tau_s),
     SC_REAL(surge_power_w),
     SC_REAL(surge_grade),
     SC_REAL(surge_budget_s),
@@ -180,6 +183,7 @@ inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
      .offset=offsetof(SeatedClimbConfig, min_elbow_flexion_deg), .required=true, .factory="", .nested=nullptr,
      .nested2=nullptr},
 #undef SC_REAL
+#undef SC_REAL_REQ
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kSeatedClimbConfigSchema{

@@ -27,16 +27,16 @@ namespace rider {
 // (parse_intent_config) exactly like the frozen dataclass's __post_init__.
 struct IntentConfig {
     bool enabled = false;
-    double period_s = .00125;
-    double reaction_delay_s = .15;
+    double period_s = -1.;
+    double reaction_delay_s = -1.;
     double target_crank_power_w = 225.;
     double max_crank_torque_nm = 60.;
     double torque_slew_nm_s = 300.;
     double lean_gain = 1.;
     double max_forward_lean_rad = .35;
     double max_backward_lean_rad = .10;
-    double lean_rate_rad_s = .5;
-    double orientation_tau_s = .5;
+    double lean_rate_rad_s = -1.;
+    double orientation_tau_s = -1.;
     double surge_power_w = 400.;
     double surge_grade = .20;
     double surge_budget_s = 15.;

@@ -159,6 +159,10 @@ return_foot_preload_n = 40.0
 
 [seated_climb]
 enabled = true
+period_s = 0.00125
+reaction_delay_s = 0.15
+lean_rate_rad_s = 0.5
+orientation_tau_s = 0.5
 # Rider holds ~250 W at the crank, torque-capped at 60 N*m (grinds below ~40 rpm).
 target_crank_power_w = 250.0
 max_crank_torque_nm = 60.0

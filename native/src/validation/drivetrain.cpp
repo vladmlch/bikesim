@@ -23,7 +23,7 @@ constexpr std::array strokes{.005,.015,.030};
 [[gnu::noinline]] configuration::SimulationPhysicsConfig fixture_config(double dt,std::string_view mode,double stroke){
     positive(dt,"fixture step");if(std::ranges::find(modes,mode)==modes.end()||!std::isfinite(stroke)||stroke<0.||stroke>.04)throw std::invalid_argument("unknown transmission or suspension fixture position");
     configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode="crank_effort";c.timestep_s=dt;c.control_period_s=.005;c.monitors.grounded_hold_s=.005;c.monitors.contact_dropout_s=10.*dt;c.closure_time_constant_s=.0025;
-    c.drive.transmission_model=mode;c.drive.human_torque_nm=0.;c.drive.gearing={.front_teeth=34,.rear_teeth=51};c.seated_climb.min_elbow_flexion_deg=15.;return c;
+    c.drive.transmission_model=mode;c.drive.human_torque_nm=0.;c.drive.gearing={.front_teeth=34,.rear_teeth=51};c.seated_climb.period_s=.00125;c.seated_climb.reaction_delay_s=.15;c.seated_climb.lean_rate_rad_s=.5;c.seated_climb.orientation_tau_s=.5;c.seated_climb.min_elbow_flexion_deg=15.;return c;
 }
 [[gnu::noinline]] model::BuildRequest fixture_model(double dt,std::string_view mode,double stroke){
     return mechanics::request(fixture_config(dt,mode,stroke));

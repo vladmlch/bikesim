@@ -795,7 +795,8 @@ void post_init(const SeatedClimbConfig &config) {
                   &SeatedClimbConfig::target_crank_power_w},
         std::pair{"max_crank_torque_nm",
                   &SeatedClimbConfig::max_crank_torque_nm},
-        std::pair{"torque_slew_nm_s", &SeatedClimbConfig::torque_slew_nm_s},
+        std::pair{"torque_slew_nm_s",
+                  &SeatedClimbConfig::torque_slew_nm_s},
         std::pair{"lean_rate_rad_s", &SeatedClimbConfig::lean_rate_rad_s},
         std::pair{"orientation_tau_s", &SeatedClimbConfig::orientation_tau_s},
         std::pair{"surge_power_w", &SeatedClimbConfig::surge_power_w},
@@ -832,6 +833,19 @@ void post_init(const SeatedClimbConfig &config) {
            std::nullopt, true);
     if (config.min_elbow_flexion_deg > 90.)
         fail("min_elbow_flexion_deg must not exceed 90 degrees");
+    // The delay counts whole intent ticks and the orientation smoothing
+    // spans at least two — meaningful only while the intent ticks, so the
+    // whole-tick rules engage with `enabled` like the runtime gate does.
+    if (config.enabled) {
+        const double delay_ticks =
+            std::rint(config.reaction_delay_s / config.period_s);
+        if (delay_ticks < 0. ||
+            std::abs(delay_ticks * config.period_s -
+                     config.reaction_delay_s) > 1e-9)
+            fail("reaction_delay_s must be an integer multiple of period_s");
+        if (!(config.orientation_tau_s >= 2. * config.period_s))
+            fail("orientation_tau_s must span at least two period_s ticks");
+    }
 }
 
 void post_init(const MonitorsConfig &config) {
@@ -1044,6 +1058,17 @@ void post_init(SimulationPhysicsConfig &config) {
             fail(std::string(name) +
                  " must be an integer multiple of timestep_s");
     }
+    // The seated-climb intent ticks on the same physics clock — while it is
+    // enabled its period counts whole physics steps, never a rounded one.
+    if (config.seated_climb.enabled) {
+        const double intent_steps =
+            std::rint(config.seated_climb.period_s / config.timestep_s);
+        if (intent_steps < 1. ||
+            std::abs(intent_steps * config.timestep_s -
+                     config.seated_climb.period_s) > 1e-9)
+            fail("seated_climb.period_s must be an integer multiple of "
+                 "timestep_s");
+    }
 
     scalar(config.equilibrium_refine_after_s,
            "equilibrium_refine_after_s", std::nullopt, true);
@@ -1112,12 +1137,18 @@ void post_init(SimulationPhysicsConfig &config) {
 SimulationPhysicsConfig default_physics() {
     // The programmatic construction path declares the former implicit
     // values explicitly: 0.5 ms physics step, 5 ms control period, 5 ms
-    // grounded hold and a 10-step contact dropout at that tick.
+    // grounded hold, a 10-step contact dropout at that tick, and the
+    // seated-climb intent's 1.25 ms period, 150 ms reaction delay,
+    // 0.5 rad/s lean rate and 0.5 s orientation smoothing.
     SimulationPhysicsConfig config{};
     config.timestep_s = 0.0005;
     config.control_period_s = 0.005;
     config.monitors.grounded_hold_s = 0.005;
     config.monitors.contact_dropout_s = 10. * config.timestep_s;
+    config.seated_climb.period_s = .00125;
+    config.seated_climb.reaction_delay_s = .15;
+    config.seated_climb.lean_rate_rad_s = .5;
+    config.seated_climb.orientation_tau_s = .5;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
     post_init(config);
     return config;

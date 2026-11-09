@@ -324,7 +324,7 @@ void test_toml_state_file_resolves_relative_to_the_config() {
                 "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
                 "equilibrium_state_file = \"poses/flat.npz\"\n"
                 "[seated_climb]\n"
-                "min_elbow_flexion_deg = 15.0\n"
+                "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
                 "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
     }
     const auto resolved = cfg::load_physics(toml);
@@ -341,7 +341,7 @@ void test_toml_state_file_resolves_relative_to_the_config() {
              << "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
              << "equilibrium_state_file = \"" << absolute.string() << "\"\n"
              << "[seated_climb]\n"
-             << "min_elbow_flexion_deg = 15.0\n"
+             << "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
              << "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
     }
     bt::require(cfg::load_physics(toml).equilibrium_state_file ==

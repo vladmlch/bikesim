@@ -271,6 +271,10 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.lean_trim_gain_rad_s = 0.3;
     climb.lean_trim_limit_rad = 0.15;
     climb.trim_dead_time_s = 0.2;
+    climb.period_s = .00125;
+    climb.reaction_delay_s = .15;
+    climb.lean_rate_rad_s = .5;
+    climb.orientation_tau_s = .5;
     climb.min_elbow_flexion_deg = 15.0;
     c.monitors.grounded_hold_s = 0.005;
     c.monitors.contact_dropout_s = 0.0125;

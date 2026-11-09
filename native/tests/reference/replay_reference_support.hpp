@@ -111,6 +111,10 @@ inline void write_json(const std::filesystem::path& path, const io::Value& value
     physics.equilibrium_cache_enabled = false;
     physics.tires.backend = "compliant_2d";
     physics.tires.surface_mode = "track";
+    physics.seated_climb.period_s = .00125;
+    physics.seated_climb.reaction_delay_s = .15;
+    physics.seated_climb.lean_rate_rad_s = .5;
+    physics.seated_climb.orientation_tau_s = .5;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
     bike::configuration::RiderSpecs rider;
     rider.variant = "lumped";

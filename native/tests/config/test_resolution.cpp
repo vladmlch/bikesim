@@ -444,7 +444,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
                 "[monitors]\ngrounded_hold_s = 0.006\n"
                 "contact_dropout_s = 0.0125\n"
-                "[seated_climb]\nmin_elbow_flexion_deg = 15\n")));
+                "[seated_climb]\nperiod_s = 0.00125\n"
+                "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n")));
         });
     invalid_with(
         "monitors.contact_dropout_s must be an integer multiple of "
@@ -455,7 +457,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
                 "[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.006\n"
-                "[seated_climb]\nmin_elbow_flexion_deg = 15\n")));
+                "[seated_climb]\nperiod_s = 0.00125\n"
+                "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n")));
         });
 
     // Nonfinite scalars arrive as TOML literals and are rejected by the
@@ -521,6 +525,92 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                         std::string_view::npos,
                     "missing-file diagnostic names the path: " +
                         std::string(error.what()));
+    }
+}
+
+// ---- seated-climb intent timings --------------------------------------------
+
+// The seated-climb intent ticks on the physics clock: its period, reaction
+// delay, lean rate and orientation smoothing are required profile members —
+// a document that omits one fails the missing-argument check in declaration
+// order, and a non-multiple delay or sub-two-tick smoothing is a rejected
+// document, never a silently rounded one.
+[[gnu::noinline]] void checks_seated_climb_timings() {
+    const TempDir temp("bike-t13-seated");
+    const auto stage = [&](std::string_view name, std::string_view toml) {
+        const auto path = temp.path / std::string(name);
+        write_text_file(path, toml);
+        return path;
+    };
+    const std::string_view seated_head =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[seated_climb]\nenabled = true\n";
+    const std::string_view seated_tail =
+        "period_s = 0.00125\nreaction_delay_s = 0.15\n"
+        "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
+        "min_elbow_flexion_deg = 15\n";
+    for (const auto missing : {"period_s", "reaction_delay_s",
+                              "lean_rate_rad_s", "orientation_tau_s"}) {
+        std::string tail(seated_tail);
+        const std::string needle = std::string(missing) + " =";
+        const auto at = tail.find(needle);
+        bt::require(at != std::string::npos, "staged key present");
+        tail.erase(at, tail.find('\n', at) - at + 1);
+        invalid_with(
+            "invalid SeatedClimbConfig: SeatedClimbConfig.__init__() "
+            "missing 1 required positional argument: '" +
+                std::string(missing) + "'",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "missing_seated_" + std::string(missing) + ".toml",
+                    std::string(seated_head) + tail)));
+            });
+    }
+
+    invalid_with(
+        "reaction_delay_s must be an integer multiple of period_s", [&] {
+            discard(cfg::load_physics(stage(
+                "nonmultiple_reaction.toml",
+                std::string(seated_head) +
+                "period_s = 0.00125\nreaction_delay_s = 0.151\n"
+                "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
+                "min_elbow_flexion_deg = 15\n")));
+        });
+    invalid_with(
+        "orientation_tau_s must span at least two period_s ticks", [&] {
+            discard(cfg::load_physics(stage(
+                "short_tau.toml",
+                std::string(seated_head) +
+                "period_s = 0.00125\nreaction_delay_s = 0.15\n"
+                "lean_rate_rad_s = 0.5\norientation_tau_s = 0.002\n"
+                "min_elbow_flexion_deg = 15\n")));
+        });
+    invalid_with(
+        "seated_climb.period_s must be an integer multiple of timestep_s",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "nonmultiple_seated_period.toml",
+                std::string(seated_head) +
+                "period_s = 0.002\nreaction_delay_s = 0.15\n"
+                "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
+                "min_elbow_flexion_deg = 15\n")));
+        });
+    // A disabled intent never ticks: its delay/smoothing carry no
+    // whole-tick constraint — only presence and scalar bounds apply.
+    {
+        const auto disabled = cfg::load_physics(stage(
+            "disabled_seated.toml",
+            "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+            "closure_time_constant_s = 0.0025\n"
+            "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+            "[seated_climb]\nenabled = false\n"
+            "period_s = 0.002\nreaction_delay_s = 0.151\n"
+            "lean_rate_rad_s = 0.5\norientation_tau_s = 0.001\n"
+            "min_elbow_flexion_deg = 15\n"));
+        bt::require(!disabled.seated_climb.enabled &&
+                        disabled.seated_climb.reaction_delay_s == 0.151,
+                    "a disabled intent tolerates non-multiple timings");
     }
 }
 
@@ -655,6 +745,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.control_period_s = 0.005;
         unresolved_base.monitors.grounded_hold_s = 0.005;
         unresolved_base.monitors.contact_dropout_s = 0.005;
+        unresolved_base.seated_climb.period_s = .00125;
+        unresolved_base.seated_climb.reaction_delay_s = .15;
+        unresolved_base.seated_climb.lean_rate_rad_s = .5;
+        unresolved_base.seated_climb.orientation_tau_s = .5;
         unresolved_base.seated_climb.min_elbow_flexion_deg = 15.0;
         const auto unresolved = cfg::resolve_physics(
             make_object({{"physics_mode", make_text("physical")}}),
@@ -879,6 +973,7 @@ int main() {
             discard(bike::configuration::load_physics(
                 bt::fixture("config/unknown_key.toml")));
         });
+        checks_seated_climb_timings();
         checks_shipped();
         checks_variants();
         checks_rejection();

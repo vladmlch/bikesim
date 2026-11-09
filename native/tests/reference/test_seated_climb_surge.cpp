@@ -51,6 +51,10 @@ void test_surge_budget_depletes_and_recovers() {
     rider::IntentConfig config;
     config.enabled = true;
     config.target_crank_power_w = 250.;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.lean_rate_rad_s = .5;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     rider::SeatedClimbPolicy policy(config);
     for (int i = 0; i < 150; ++i)
@@ -73,6 +77,10 @@ void test_below_threshold_uses_sustained_power() {
     rider::IntentConfig config;
     config.enabled = true;
     config.target_crank_power_w = 250.;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.lean_rate_rad_s = .5;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     rider::SeatedClimbPolicy policy(config);
     bt::require(policy.power_target_w(.15, .1) == 250.,
@@ -153,6 +161,10 @@ void test_front_share_is_posture_only_and_unavailable_when_unloaded() {
 void test_surge_reset_restores_budget_and_rejects_nonfinite_inputs() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.lean_rate_rad_s = .5;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     rider::SeatedClimbPolicy policy(config);
     bt::require(policy.power_target_w(.25, 15.) == config.surge_power_w,

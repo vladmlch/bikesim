@@ -50,6 +50,10 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     physics.control_period_s=.005; physics.monitors.grounded_hold_s=.005; physics.monitors.contact_dropout_s=10.*physics.timestep_s;
     physics.initial_speed_mps=.1; physics.equilibrium_cache_enabled=false;
     physics.tires.backend="compliant_2d"; physics.tires.surface_mode="track";
+    physics.seated_climb.period_s = .00125;
+    physics.seated_climb.reaction_delay_s = .15;
+    physics.seated_climb.lean_rate_rad_s = .5;
+    physics.seated_climb.orientation_tau_s = .5;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
     bike::configuration::RiderSpecs rider; rider.variant="lumped";
     request.setup.model.physics=physics; request.setup.model.rider=rider; request.setup.model.include_rider=true;

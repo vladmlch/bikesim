@@ -69,7 +69,7 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
                "grounded_hold_s = 0.005\n"
                "contact_dropout_s = 0.005\n"
                "[seated_climb]\n"
-               "min_elbow_flexion_deg = 15.0\n"
+               "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
                "[tires]\n"
                "backend = \"pneumatic\"\n"
                "surface_mode = \"track\"\n"

@@ -29,6 +29,10 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     bike::configuration::SimulationPhysicsConfig config;
     config.physics_mode = "physical"; config.timestep_s = .0005; config.control_period_s = .0012;
     config.monitors.grounded_hold_s = .005; config.monitors.contact_dropout_s = .005;
+    config.seated_climb.period_s = .00125;
+    config.seated_climb.reaction_delay_s = .15;
+    config.seated_climb.lean_rate_rad_s = .5;
+    config.seated_climb.orientation_tau_s = .5;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
     bt::invalid([&] { bike::configuration::validate(config); });
 }

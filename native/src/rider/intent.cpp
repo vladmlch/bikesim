@@ -327,12 +327,26 @@ RiderIntent::RiderIntent(IntentConfig config, double dt_s)
         throw std::invalid_argument(
             "min_elbow_flexion_deg must be finite and lie in (0, 90]");
     }
-    if (config_.enabled &&
-        (period_steps_ < 1 ||
-         std::abs(static_cast<double>(period_steps_) * dt_s_ -
-                  config_.period_s) > 1e-9))
-        throw std::invalid_argument(
-            "rider intention period must be an integer multiple of timestep");
+    if (config_.enabled) {
+        if (period_steps_ < 1 ||
+            std::abs(static_cast<double>(period_steps_) * dt_s_ -
+                     config_.period_s) > 1e-9)
+            throw std::invalid_argument(
+                "rider intention period must be an integer multiple of "
+                "timestep");
+        const double delay_ticks =
+            std::rint(config_.reaction_delay_s / config_.period_s);
+        if (delay_ticks < 0. ||
+            std::abs(delay_ticks * config_.period_s -
+                     config_.reaction_delay_s) > 1e-9)
+            throw std::invalid_argument(
+                "rider intention reaction delay must be an integer multiple "
+                "of the intention period");
+        if (!(config_.orientation_tau_s >= 2. * config_.period_s))
+            throw std::invalid_argument(
+                "rider intention orientation smoothing must span at least "
+                "two intention periods");
+    }
     reset();
 }
 

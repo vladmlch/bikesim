@@ -68,8 +68,10 @@ rider::IntentConfig enabled(double lean_rate = 0.) {
     rider::IntentConfig config;
     config.enabled = true;
     config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
-    if (lean_rate != 0.) config.lean_rate_rad_s = lean_rate;
+    config.lean_rate_rad_s = lean_rate != 0. ? lean_rate : .5;
     return config;
 }
 
@@ -220,6 +222,9 @@ void test_body_pulse_is_continuous_around_its_edges() {
 void test_posture_program_rate_limits_and_bounds_the_pulse() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     config.lean_gain = 0.;
     config.max_forward_lean_rad = .35;
@@ -490,6 +495,9 @@ void test_pulse_redistributes_load_through_inertia_only() {
 void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.trim_dead_time_s = .2;
@@ -513,6 +521,9 @@ void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
 void test_geometric_limit_caps_lean() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .8;
@@ -547,6 +558,9 @@ void test_preview_is_last_sample_and_preserves_exact_endpoint() {
 void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .1;

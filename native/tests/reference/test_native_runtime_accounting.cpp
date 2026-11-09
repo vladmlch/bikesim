@@ -16,7 +16,6 @@
 #include "runtime_reference_support.hpp"
 
 #include "diag.hpp"
-#include "rider_control_reference_support.hpp"
 
 #include "rider/spindle_controller.hpp"
 #include "rider/state_codec.hpp"
@@ -44,7 +43,6 @@
 namespace {
 
 namespace bio = bike::io;
-namespace rcr = rider_control_reference;
 namespace sw = runtime::sample_wire;
 using runtime_reference::compose_runtime;
 using runtime_reference::expect_invalid;
@@ -295,25 +293,47 @@ void test_history_rejects_duplicate_interval_after_valid_evidence() {
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
-    rcr::PinnedPlant plant = rcr::pinned_model();
-    mjModel *model = plant.model.get();
-    mjData const *data = plant.data.get();
+    // The oracle probes the welded ride's own model —
+    // driver._bootstrap.model_path — and reads sim.data.qpos on it; this
+    // port loads the same model.mjb from the recorded capture. The
+    // generated pinned model stood in for it only while both topologies
+    // shared nq: the decided overrunning motor clutch (AGENTS.md «Мотор»;
+    // enabled in the research profile by 156f50b7, rotor inertia restored
+    // by 49d36f8c) added drive_shaft + motor_rotor to the generated model,
+    // so its mjSTATE_INTEGRATION width no longer matches the captured
+    // lanes.
+    const runtime_reference::ResolvedDocs docs = resolved_docs(welded_dir());
+    const runtime::RuntimeConfig runtime_config =
+        runtime::decode_runtime_config(docs.config);
+    const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model_owner(
+        engine::load_model_image(
+            runtime_reference::model_image(welded_dir()).mjb),
+        &mj_deleteModel);
+    mjModel *model = model_owner.get();
+    const std::unique_ptr<mjData, decltype(&mj_deleteData)> data_owner(
+        engine::make_data(model), &mj_deleteData);
+    mjData *mutable_data = data_owner.get();
+    mjData const *data = mutable_data;
+    engine::forward(model, mutable_data);
     const auto nq = static_cast<std::size_t>(model->nq);
     const auto nv = static_cast<std::size_t>(model->nv);
     const auto nu = static_cast<std::size_t>(model->nu);
     const double dt = model->opt.timestep;
     // state.rider_controller is the captured controller's state_dict —
     // the document probe.spindle_restore(controller.state_dict()) feeds.
-    const runtime_reference::ResolvedDocs docs = resolved_docs(welded_dir());
     const rider::SpindleController::State held = rider::decode_spindle_state(
         member(docs.state, "rider_controller"), "state.rider_controller");
     // Both controllers carry the capture's rider_controller config — the
     // runtime-side document (delivered_joint_power_budget_w resolves null
     // there while the source TOML declares 375 W, so the plant config
     // would disagree with the held state on the joint-power budget).
-    const double crank_m = plant.request.bike.crank_length / 1000.;
+    // Pose and crank length come from the same capture's config.geometry,
+    // decoded the way runtime.cpp's physical-step assembly decodes them.
+    const rider::SpindlePose pose = rider::decode_spindle_pose(
+        runtime_config.geometry.pose, "config.geometry.pose");
+    const double crank_m = runtime_config.geometry.crank_length_m;
     auto probe = std::make_unique<rider::SpindleController>(
-        model, plant.pose,
+        model, pose,
         rider::decode_spindle_config(member(docs.config, "rider_controller")),
         crank_m);
     probe->restore(held);
@@ -323,7 +343,7 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
         bio::canonical_json(rider::encode_spindle_state(probe->state()));
     // The oracle-side controller mirrors sim.physical.rider_control.
     auto oracle = std::make_unique<rider::SpindleController>(
-        model, plant.pose,
+        model, pose,
         rider::decode_spindle_config(member(docs.config, "rider_controller")),
         crank_m);
     oracle->restore(held);
@@ -341,10 +361,10 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
     for (std::size_t i = 0; i < nq; ++i)
         qpos.push_back(bio::as_double(lanes[1 + i], "integration_state.qpos"));
     // The tested joint — first name containing 'hip' in controller.joints.
-    const auto &joints = plant.controller->joints();
+    const auto &joints = probe->joints();
     const auto hip = std::ranges::find_if(
         joints, [](const auto &joint) { return joint.name.find("hip") != std::string::npos; });
-    bt::require(hip != joints.end(), "the pinned rider has a hip joint");
+    bt::require(hip != joints.end(), "the welded rider has a hip joint");
 
     constexpr std::array<std::pair<double, double>, 4> cases{
         {{25., -1.}, {26., 10.}, {-2., 21.}, {1e6, 1.}}};

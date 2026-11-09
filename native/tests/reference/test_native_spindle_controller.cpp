@@ -507,15 +507,22 @@ void test_spindle_coasting_command_matches_python() {
     node.done();
 }
 
-// physics-2026-11-05 plan task 3 («Действует» 9): with nothing asked of
-// the muscles (mean_crank_torque_nm = 0 — the coasting branch, no weld
-// sensor so the hold servo cannot learn to lift the leg) and a free
-// crank — the pinned plant's crank carries nothing downstream, which is
-// exactly an open one-way clutch — the descending leg's own weight must
-// press the pedal and accelerate the crank forward. While the leg
-// feedforward cancelled the leg's weight the crank rate instead decayed
-// toward the coasting brake's zero.
-void test_free_crank_spins_up_under_descending_leg_weight() {
+// physics-2026-11-05 plan task 3 («Действует» 9) read with the ruling's
+// 2026-11-07/08 refinement: with nothing asked of the muscles
+// (mean_crank_torque_nm = 0 — the coasting branch, no weld sensor so the
+// hold servo cannot learn to lift the leg) and a free crank — the pinned
+// plant's crank carries nothing downstream, which is exactly an open
+// one-way clutch — each leg rests its own weight on its pedal. The
+// muscles lift only what exceeds the rising leg's weight («Действует» 9:
+// its press stays inside [0, leg weight]; implemented by 8e8b0b0d), so
+// at this staged pose — front pedal at 3 o'clock, rear at 9 — the two
+// weight presses oppose and no unopposed weight torque remains. The
+// 2026-11-06 ruling lets the coasting servo only brake or hold, never
+// push, so the crank must not accumulate forward rotation. (Before
+// 8e8b0b0d the rising leg's weight was feedforward-cancelled and the
+// descending leg's weight spun the crank ~1.8 rad forward — the spin-up
+// this test first asserted; that is not the decided coasting physics.)
+void test_free_crank_stays_held_under_balanced_leg_weights() {
     Plant plant = make_plant();
     // The staged pose has the front pedal at 3 o'clock — crank_split's
     // leg_shares hands the downstroke to the front leg (cos(phase) > 0).
@@ -529,8 +536,8 @@ void test_free_crank_spins_up_under_descending_leg_weight() {
     // The pinned crank is the open-clutch ideal — nothing downstream
     // drives or holds it — but an inertia-free shaft escapes under a few
     // N.m of press and the weld springs tear. The bench loads it with a
-    // weak viscous term (a dynamometer drag) so the leg-weight press
-    // reads as a bounded forward rate instead of a runaway.
+    // weak viscous term (a dynamometer drag) so any residual imbalance
+    // reads as a bounded rate instead of a runaway.
     constexpr double kLoadNms = 1.;
     std::vector<double> rates;
     double max_excursion = 0.;
@@ -550,9 +557,13 @@ void test_free_crank_spins_up_under_descending_leg_weight() {
     std::cerr << std::format(
         "free-crank peak rate {:.4f} rad/s, forward excursion {:.3f} rad\n",
         peak, max_excursion);
-    bt::require(peak > 1.5 && max_excursion > .5,
-                "the descending leg's weight accelerates the free crank "
-                "forward instead of settling at the coasting brake's ~0");
+    // The .5 rad band is the pre-8e8b0b0d drive threshold: unopposed
+    // leg-weight drive had to exceed it. Under the decided physics the
+    // crank must stay inside it — its ringing rate (peak, above) is
+    // undamped weld/pendulum physics, not forward drive.
+    bt::require(max_excursion <= .5,
+                "balanced leg weights and the hold-only coasting servo "
+                "keep the free crank from accumulating forward rotation");
 }
 
 // User ruling 2026-11-06 (rider-leg-control plan, task 1б): a rider who
@@ -1032,7 +1043,7 @@ int main() {
         test_effort_ceiling_matches_python();
         test_spindle_waveform_rejects_bad_inputs();
         test_effort_ceiling_rejects_bad_inputs();
-        test_free_crank_spins_up_under_descending_leg_weight();
+        test_free_crank_stays_held_under_balanced_leg_weights();
         test_spindle_coasting_servo_never_pushes_the_crank();
         test_spindle_compute_matches_python();
         test_spindle_rear_chain_effort_matches_python();

@@ -55,6 +55,11 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     physics.seated_climb.lean_rate_rad_s = .5;
     physics.seated_climb.orientation_tau_s = .5;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
+    physics.drive.pedaling.reposition_on_stall=false; physics.drive.pedaling.reposition_min_effort_nm=20.;
+    physics.drive.pedaling.reposition_stall_window_s=1.; physics.drive.pedaling.reposition_stall_progress_rad=.5;
+    physics.drive.pedaling.reposition_cooldown_s=1.; physics.drive.pedaling.reposition_back_rate_rad_s=3.;
+    physics.drive.pedaling.reposition_timeout_s=3.; physics.drive.pedaling.reposition_phase_tolerance_rad=.05;
+    physics.drive.pedaling.reposition_noop_rad=.12;
     bike::configuration::RiderSpecs rider; rider.variant="lumped";
     request.setup.model.physics=physics; request.setup.model.rider=rider; request.setup.model.include_rider=true;
     request.setup.model.mode="ride"; request.setup.model.crank_joint=true; request.setup.track=bike::terrain::flat(12.);

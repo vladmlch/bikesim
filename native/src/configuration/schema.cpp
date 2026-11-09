@@ -608,12 +608,13 @@ bool schema_entry(std::string_view name, std::string_view &required,
          {.required = "enabled coast_above_rpm resume_below_rpm stop_time_s "
           "coast_cadence_tau_s mash_cadence_rpm mash_torque_nm "
           "effort_slew_nm_s rollback_brake rollback_engage_mps "
-          "rollback_release_mps rollback_demand",
-          .optional = "reposition_on_stall reposition_min_effort_nm "
+          "rollback_release_mps rollback_demand "
+          "reposition_on_stall reposition_min_effort_nm "
           "reposition_stall_window_s reposition_stall_progress_rad "
           "reposition_cooldown_s reposition_back_rate_rad_s "
           "reposition_timeout_s reposition_phase_tolerance_rad "
-          "reposition_noop_rad"}},
+          "reposition_noop_rad",
+          .optional = ""}},
         {.name = "drive.shifting", .entry =
          {.required = "enabled cassette target_cadence_min_rpm target_cadence_max_rpm "
           "shift_cooldown_s shift_cut_duration_s torque_factor_larger_cog "

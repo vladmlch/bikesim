@@ -34,6 +34,15 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.seated_climb.lean_rate_rad_s = .5;
     config.seated_climb.orientation_tau_s = .5;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    config.drive.pedaling.reposition_on_stall = false;
+    config.drive.pedaling.reposition_min_effort_nm = 20.;
+    config.drive.pedaling.reposition_stall_window_s = 1.;
+    config.drive.pedaling.reposition_stall_progress_rad = .5;
+    config.drive.pedaling.reposition_cooldown_s = 1.;
+    config.drive.pedaling.reposition_back_rate_rad_s = 3.;
+    config.drive.pedaling.reposition_timeout_s = 3.;
+    config.drive.pedaling.reposition_phase_tolerance_rad = .05;
+    config.drive.pedaling.reposition_noop_rad = .12;
     bt::invalid([&] { bike::configuration::validate(config); });
 }
 void test_held_command_is_returned_unchanged_between_ticks() {

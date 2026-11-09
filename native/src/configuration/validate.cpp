@@ -1067,6 +1067,24 @@ void post_init(SimulationPhysicsConfig &config) {
             fail("seated_climb.period_s must be an integer multiple of "
                  "timestep_s");
     }
+    // The crank-reposition manoeuvre counts its stall window, cooldown and
+    // timeout inside PedalingPolicy::update on the physics clock — each is
+    // declared in whole physics steps, never a rounded one, whether or not
+    // the manoeuvre is engaged. The back rate is a rate limit, not a
+    // counted tick.
+    for (const auto &[name, value] : {
+             std::pair{"drive.pedaling.reposition_stall_window_s",
+                       config.drive.pedaling.reposition_stall_window_s},
+             {"drive.pedaling.reposition_cooldown_s",
+              config.drive.pedaling.reposition_cooldown_s},
+             {"drive.pedaling.reposition_timeout_s",
+              config.drive.pedaling.reposition_timeout_s}}) {
+        const double ticks = std::rint(value / config.timestep_s);
+        if (ticks < 0. ||
+            std::abs(ticks * config.timestep_s - value) > 1e-9)
+            fail(std::string(name) +
+                 " must be an integer multiple of timestep_s");
+    }
 
     scalar(config.equilibrium_refine_after_s,
            "equilibrium_refine_after_s", std::nullopt, true);
@@ -1135,9 +1153,10 @@ void post_init(SimulationPhysicsConfig &config) {
 SimulationPhysicsConfig default_physics() {
     // The programmatic construction path declares the former implicit
     // values explicitly: 0.5 ms physics step, 5 ms control period, 5 ms
-    // grounded hold, a 10-step contact dropout at that tick, and the
+    // grounded hold, a 10-step contact dropout at that tick, the
     // seated-climb intent's 1.25 ms period, 150 ms reaction delay,
-    // 0.5 rad/s lean rate and 0.5 s orientation smoothing.
+    // 0.5 rad/s lean rate and 0.5 s orientation smoothing, and the
+    // crank-reposition manoeuvre's former code defaults.
     SimulationPhysicsConfig config{};
     config.timestep_s = 0.0005;
     config.control_period_s = 0.005;
@@ -1148,6 +1167,15 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.lean_rate_rad_s = .5;
     config.seated_climb.orientation_tau_s = .5;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    config.drive.pedaling.reposition_on_stall = false;
+    config.drive.pedaling.reposition_min_effort_nm = 20.;
+    config.drive.pedaling.reposition_stall_window_s = 1.;
+    config.drive.pedaling.reposition_stall_progress_rad = .5;
+    config.drive.pedaling.reposition_cooldown_s = 1.;
+    config.drive.pedaling.reposition_back_rate_rad_s = 3.;
+    config.drive.pedaling.reposition_timeout_s = 3.;
+    config.drive.pedaling.reposition_phase_tolerance_rad = .05;
+    config.drive.pedaling.reposition_noop_rad = .12;
     post_init(config);
     return config;
 }

@@ -325,6 +325,12 @@ void test_toml_state_file_resolves_relative_to_the_config() {
                 "equilibrium_state_file = \"poses/flat.npz\"\n"
                 "[seated_climb]\n"
                 "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
+                "[drive.pedaling]\n"
+                "reposition_on_stall = false\nreposition_min_effort_nm = 20.0\n"
+                "reposition_stall_window_s = 1.0\nreposition_stall_progress_rad = 0.5\n"
+                "reposition_cooldown_s = 1.0\nreposition_back_rate_rad_s = 3.0\n"
+                "reposition_timeout_s = 3.0\nreposition_phase_tolerance_rad = 0.05\n"
+                "reposition_noop_rad = 0.12\n"
                 "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
     }
     const auto resolved = cfg::load_physics(toml);
@@ -342,6 +348,12 @@ void test_toml_state_file_resolves_relative_to_the_config() {
              << "equilibrium_state_file = \"" << absolute.string() << "\"\n"
              << "[seated_climb]\n"
              << "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
+             << "[drive.pedaling]\n"
+             << "reposition_on_stall = false\nreposition_min_effort_nm = 20.0\n"
+             << "reposition_stall_window_s = 1.0\nreposition_stall_progress_rad = 0.5\n"
+             << "reposition_cooldown_s = 1.0\nreposition_back_rate_rad_s = 3.0\n"
+             << "reposition_timeout_s = 3.0\nreposition_phase_tolerance_rad = 0.05\n"
+             << "reposition_noop_rad = 0.12\n"
              << "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
     }
     bt::require(cfg::load_physics(toml).equilibrium_state_file ==

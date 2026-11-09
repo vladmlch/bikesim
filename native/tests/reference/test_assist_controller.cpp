@@ -235,6 +235,11 @@ namespace cfg = bike::configuration;
         file << "physics_mode = \"physical\"\ndrive_mode = \"crank_effort\"\n"
                 "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
                 "[drive.assist]\nprofile = \"bosch_cx_gen4\"\nmode = \"turbo\"\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
                 "[seated_climb]\nperiod_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
                 "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n";
         bt::require(static_cast<bool>(file), "write temporary physics config");

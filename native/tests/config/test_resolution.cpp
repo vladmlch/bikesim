@@ -446,7 +446,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "contact_dropout_s = 0.0125\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n")));
+                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
         });
     invalid_with(
         "monitors.contact_dropout_s must be an integer multiple of "
@@ -459,7 +464,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "contact_dropout_s = 0.006\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n")));
+                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
         });
 
     // Nonfinite scalars arrive as TOML literals and are rejected by the
@@ -469,14 +479,24 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "nonfinite.toml",
             "timestep_s = inf\ncontrol_period_s = 0.005\n"
             "[monitors]\ngrounded_hold_s = 0.005\n"
-            "contact_dropout_s = 0.0125\n")));
+            "contact_dropout_s = 0.0125\n"
+            "[drive.pedaling]\nreposition_on_stall = false\n"
+            "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+            "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
     });
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
             "nonfinite2.toml",
             "timestep_s = nan\ncontrol_period_s = 0.005\n"
             "[monitors]\ngrounded_hold_s = 0.005\n"
-            "contact_dropout_s = 0.0125\n")));
+            "contact_dropout_s = 0.0125\n"
+            "[drive.pedaling]\nreposition_on_stall = false\n"
+            "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+            "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
     });
 
     // Integer fields reject floating spellings and booleans.
@@ -575,7 +595,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 std::string(seated_head) +
                 "period_s = 0.00125\nreaction_delay_s = 0.151\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
-                "min_elbow_flexion_deg = 15\n")));
+                "min_elbow_flexion_deg = 15\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
         });
     invalid_with(
         "orientation_tau_s must span at least two period_s ticks", [&] {
@@ -584,7 +609,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 std::string(seated_head) +
                 "period_s = 0.00125\nreaction_delay_s = 0.15\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.002\n"
-                "min_elbow_flexion_deg = 15\n")));
+                "min_elbow_flexion_deg = 15\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
         });
     invalid_with(
         "seated_climb.period_s must be an integer multiple of timestep_s",
@@ -594,7 +624,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 std::string(seated_head) +
                 "period_s = 0.002\nreaction_delay_s = 0.15\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
-                "min_elbow_flexion_deg = 15\n")));
+                "min_elbow_flexion_deg = 15\n"
+                "[drive.pedaling]\nreposition_on_stall = false\n"
+                "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n")));
         });
     // A disabled intent never ticks: its delay/smoothing carry no
     // whole-tick constraint — only presence and scalar bounds apply.
@@ -607,10 +642,189 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[seated_climb]\nenabled = false\n"
             "period_s = 0.002\nreaction_delay_s = 0.151\n"
             "lean_rate_rad_s = 0.5\norientation_tau_s = 0.001\n"
-            "min_elbow_flexion_deg = 15\n"));
+            "min_elbow_flexion_deg = 15\n"
+            "[drive.pedaling]\nreposition_on_stall = false\n"
+            "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+            "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"));
         bt::require(!disabled.seated_climb.enabled &&
                         disabled.seated_climb.reaction_delay_s == 0.151,
                     "a disabled intent tolerates non-multiple timings");
+    }
+}
+
+// ---- crank-reposition timings -----------------------------------------------
+
+// The reposition manoeuvre counts its stall window, cooldown and timeout
+// inside PedalingPolicy::update on the physics clock (step.cpp's
+// apply_forces passes timestep_s as the tick dt): every knob is a required
+// [drive.pedaling] member, and while the mechanism is engaged a timing that
+// lands between ticks is a rejected document, never a silently rounded one.
+[[gnu::noinline]] void checks_reposition_timings() {
+    const TempDir temp("bike-t13-reposition");
+    const auto stage = [&](std::string_view name, std::string_view toml) {
+        const auto path = temp.path / std::string(name);
+        write_text_file(path, toml);
+        return path;
+    };
+    const std::string_view repo_head =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "closure_time_constant_s = 0.0025\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+        "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "[drive.pedaling]\n";
+    const std::string_view repo_tail =
+        "reposition_min_effort_nm = 20.0\n"
+        "reposition_stall_window_s = 1.0\n"
+        "reposition_stall_progress_rad = 0.5\n"
+        "reposition_cooldown_s = 1.0\n"
+        "reposition_back_rate_rad_s = 3.0\n"
+        "reposition_timeout_s = 3.0\n"
+        "reposition_phase_tolerance_rad = 0.05\n"
+        "reposition_noop_rad = 0.12\n";
+    for (const auto missing : {"reposition_on_stall", "reposition_min_effort_nm",
+                              "reposition_stall_window_s",
+                              "reposition_stall_progress_rad",
+                              "reposition_cooldown_s",
+                              "reposition_back_rate_rad_s",
+                              "reposition_timeout_s",
+                              "reposition_phase_tolerance_rad",
+                              "reposition_noop_rad"}) {
+        std::string body = "reposition_on_stall = false\n" + std::string(repo_tail);
+        const std::string needle = std::string(missing) + " =";
+        const auto at = body.find(needle);
+        bt::require(at != std::string::npos, "staged key present");
+        body.erase(at, body.find('\n', at) - at + 1);
+        invalid_with(
+            "invalid PedalingConfig: PedalingConfig.__init__() missing 1 "
+            "required positional argument: '" + std::string(missing) + "'",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "missing_repo_" + std::string(missing) + ".toml",
+                    std::string(repo_head) + body)));
+            });
+    }
+
+    // Engaged manoeuvre (spindle-weld rider): each physics-tick-counted
+    // timing rejects a non-multiple of timestep_s.
+    const std::string_view engaged_head =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "closure_time_constant_s = 0.0025\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+        "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "[drive.pedaling]\nreposition_on_stall = true\n"
+        "reposition_min_effort_nm = 20.0\n"
+        "reposition_stall_progress_rad = 0.5\n"
+        "reposition_back_rate_rad_s = 3.0\n"
+        "reposition_phase_tolerance_rad = 0.05\n"
+        "reposition_noop_rad = 0.12\n";
+    const std::string_view engaged_tail =
+        "[articulated]\npedal_attachment = \"spindle\"\n";
+    for (const auto& [name, value] : {
+             std::pair{"reposition_stall_window_s", "1.0005"},
+             {"reposition_cooldown_s", "1.0005"},
+             {"reposition_timeout_s", "3.0005"}}) {
+        std::string timings{engaged_head};
+        for (const auto& [key, valid] : {
+                 std::pair{"reposition_stall_window_s", "1.0"},
+                 {"reposition_cooldown_s", "1.0"},
+                 {"reposition_timeout_s", "3.0"}})
+            timings += std::string(key) + " = " +
+                (std::string_view(key) == std::string_view(name)
+                     ? std::string(value)
+                     : std::string(valid)) +
+                "\n";
+        invalid_with(
+            "drive.pedaling." + std::string(name) +
+                " must be an integer multiple of timestep_s",
+            [&] {
+                discard(cfg::load_physics(stage(
+                    "nonmultiple_repo_" + std::string(name) + ".toml",
+                    timings + std::string(engaged_tail))));
+            });
+    }
+
+    // The tick-multiple rule is unconditional: a disengaged manoeuvre
+    // still rejects non-multiple timings — the profile declares physics
+    // ticks, not intent.
+    invalid_with(
+        "drive.pedaling.reposition_stall_window_s must be an integer "
+        "multiple of timestep_s",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "off_reposition.toml",
+                std::string(repo_head) + "reposition_on_stall = false\n" +
+                "reposition_min_effort_nm = 20.0\n"
+                "reposition_stall_window_s = 1.0005\n"
+                "reposition_stall_progress_rad = 0.5\n"
+                "reposition_cooldown_s = 1.0005\n"
+                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_timeout_s = 3.0005\n"
+                "reposition_phase_tolerance_rad = 0.05\n"
+                "reposition_noop_rad = 0.12\n")));
+        });
+
+    // The back rate is a positive rate limit, never a counted tick — a
+    // non-multiple value is fine, a nonpositive one is not.
+    invalid_with("invalid reposition back rate", [&] {
+        discard(cfg::load_physics(stage(
+            "nonpositive_back_rate.toml",
+            std::string(repo_head) + "reposition_on_stall = false\n" +
+            "reposition_min_effort_nm = 20.0\n"
+            "reposition_stall_window_s = 1.0\n"
+            "reposition_stall_progress_rad = 0.5\n"
+            "reposition_cooldown_s = 1.0\n"
+            "reposition_back_rate_rad_s = -3.0\n"
+            "reposition_timeout_s = 3.0\n"
+            "reposition_phase_tolerance_rad = 0.05\n"
+            "reposition_noop_rad = 0.12\n")));
+    });
+    invalid_with(
+        "reposition no-op band must be below a quarter crank turn", [&] {
+            discard(cfg::load_physics(stage(
+                "wide_noop.toml",
+                std::string(repo_head) + "reposition_on_stall = false\n" +
+                "reposition_min_effort_nm = 20.0\n"
+                "reposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 0.5\n"
+                "reposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\n"
+                "reposition_noop_rad = 1.6\n")));
+        });
+    invalid_with(
+        "reposition stall progress must be below half a crank turn", [&] {
+            discard(cfg::load_physics(stage(
+                "wide_stall_progress.toml",
+                std::string(repo_head) + "reposition_on_stall = false\n" +
+                "reposition_min_effort_nm = 20.0\n"
+                "reposition_stall_window_s = 1.0\n"
+                "reposition_stall_progress_rad = 3.2\n"
+                "reposition_cooldown_s = 1.0\n"
+                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_timeout_s = 3.0\n"
+                "reposition_phase_tolerance_rad = 0.05\n"
+                "reposition_noop_rad = 0.12\n")));
+        });
+
+    // Valid engaged control: spindle rider, every knob present, all counted
+    // timings whole ticks — the document resolves.
+    {
+        const auto engaged = cfg::load_physics(stage(
+            "engaged_reposition.toml",
+            std::string(engaged_head) +
+            "reposition_stall_window_s = 1.0\n"
+            "reposition_cooldown_s = 1.0\n"
+            "reposition_timeout_s = 3.0\n" + std::string(engaged_tail)));
+        bt::require(engaged.drive.pedaling.reposition_on_stall &&
+                        engaged.drive.pedaling.reposition_stall_window_s == 1.0,
+                    "engaged manoeuvre resolves");
     }
 }
 
@@ -974,6 +1188,7 @@ int main() {
                 bt::fixture("config/unknown_key.toml")));
         });
         checks_seated_climb_timings();
+        checks_reposition_timings();
         checks_shipped();
         checks_variants();
         checks_rejection();

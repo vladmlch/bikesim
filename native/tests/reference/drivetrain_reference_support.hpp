@@ -51,6 +51,16 @@ inline cfg::PhysicalDriveConfig source(std::string_view kind = "ideal_mid_drive"
                                        std::string_view topology = "plain") {
     cfg::PhysicalDriveConfig result; result.transmission_model = kind; result.human_torque_nm = 20.;
     result.motor_clutch = topology == "clutch";
+    // Required profile members — the former code defaults assigned explicitly.
+    result.pedaling.reposition_on_stall = false;
+    result.pedaling.reposition_min_effort_nm = 20.;
+    result.pedaling.reposition_stall_window_s = 1.;
+    result.pedaling.reposition_stall_progress_rad = .5;
+    result.pedaling.reposition_cooldown_s = 1.;
+    result.pedaling.reposition_back_rate_rad_s = 3.;
+    result.pedaling.reposition_timeout_s = 3.;
+    result.pedaling.reposition_phase_tolerance_rad = .05;
+    result.pedaling.reposition_noop_rad = .12;
     return result;
 }
 inline Value writer_config(const cfg::PhysicalDriveConfig& source, std::string_view mode = "crank_effort") {

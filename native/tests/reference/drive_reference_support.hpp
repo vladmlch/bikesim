@@ -47,6 +47,17 @@ inline bike::io::Value projected_writer(const cfg::AssistConfig& assist) {
     cfg::PhysicalDriveConfig drive;
     drive.transmission_model = "ideal_mid_drive";
     drive.assist = assist;
+    // Required profile members — the bare source declares the former code
+    // defaults so the projected wire decodes.
+    drive.pedaling.reposition_on_stall = false;
+    drive.pedaling.reposition_min_effort_nm = 20.;
+    drive.pedaling.reposition_stall_window_s = 1.;
+    drive.pedaling.reposition_stall_progress_rad = .5;
+    drive.pedaling.reposition_cooldown_s = 1.;
+    drive.pedaling.reposition_back_rate_rad_s = 3.;
+    drive.pedaling.reposition_timeout_s = 3.;
+    drive.pedaling.reposition_phase_tolerance_rad = .05;
+    drive.pedaling.reposition_noop_rad = .12;
     return projected_writer(drive);
 }
 

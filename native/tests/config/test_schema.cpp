@@ -212,6 +212,15 @@ cfg::SimulationPhysicsConfig welded_profile() {
     pedaling.rollback_engage_mps = 0.25;
     pedaling.rollback_release_mps = 0.0;
     pedaling.rollback_demand = 1.0;
+    pedaling.reposition_on_stall = false;
+    pedaling.reposition_min_effort_nm = 20.0;
+    pedaling.reposition_stall_window_s = 1.0;
+    pedaling.reposition_stall_progress_rad = 0.5;
+    pedaling.reposition_cooldown_s = 1.0;
+    pedaling.reposition_back_rate_rad_s = 3.0;
+    pedaling.reposition_timeout_s = 3.0;
+    pedaling.reposition_phase_tolerance_rad = 0.05;
+    pedaling.reposition_noop_rad = 0.12;
     auto& assist = c.drive.assist;
     assist.profile = "bosch_cx_gen4";
     assist.mode = "turbo";

@@ -26,6 +26,17 @@ using drivetrain::PolicySet;
 inline bike::configuration::PhysicalDriveConfig source(bool fixture = true) {
     bike::configuration::PhysicalDriveConfig result;
     result.transmission_model = "ideal_mid_drive";
+    // The reposition knobs are required profile members — the programmatic
+    // source declares the former code defaults explicitly.
+    result.pedaling.reposition_on_stall = false;
+    result.pedaling.reposition_min_effort_nm = 20.;
+    result.pedaling.reposition_stall_window_s = 1.;
+    result.pedaling.reposition_stall_progress_rad = .5;
+    result.pedaling.reposition_cooldown_s = 1.;
+    result.pedaling.reposition_back_rate_rad_s = 3.;
+    result.pedaling.reposition_timeout_s = 3.;
+    result.pedaling.reposition_phase_tolerance_rad = .05;
+    result.pedaling.reposition_noop_rad = .12;
     if (fixture) {
         result.pedaling.enabled = true; result.pedaling.coast_cadence_tau_s = .03;
         result.shifting.enabled = true; result.shifting.cadence_smoothing_tau_s = 0.;

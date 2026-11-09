@@ -245,15 +245,19 @@ struct PedalingConfig {
     // Crank reposition (stall reflex + operator request): backpedal to the
     // nearest lower horizontal crank pose so the leading leg gets its lever.
     // Spindle-weld rider only. Python original: c809f12a^ pedaling.py.
+    // Every knob is a required profile member — the -1 initializers are
+    // never-read sentinels: the profile loader rejects a document missing
+    // any of them, and a programmatically constructed record fails its
+    // post_init bounds loudly instead of silently defaulting.
     bool reposition_on_stall = false;
-    double reposition_min_effort_nm = 20.;
-    double reposition_stall_window_s = 1.;
-    double reposition_stall_progress_rad = .5;
-    double reposition_cooldown_s = 1.;
-    double reposition_back_rate_rad_s = 3.;
-    double reposition_timeout_s = 3.;
-    double reposition_phase_tolerance_rad = .05;
-    double reposition_noop_rad = .12;
+    double reposition_min_effort_nm = -1.;
+    double reposition_stall_window_s = -1.;
+    double reposition_stall_progress_rad = -1.;
+    double reposition_cooldown_s = -1.;
+    double reposition_back_rate_rad_s = -1.;
+    double reposition_timeout_s = -1.;
+    double reposition_phase_tolerance_rad = -1.;
+    double reposition_noop_rad = -1.;
 };
 
 // drivetrain.py CASSETTE_12S_TEETH.
@@ -485,6 +489,7 @@ namespace detail {
 #define INT(T, f)     BIKE_FIELD(T, f, "<class 'int'>", Integer, false, "", nullptr, nullptr)
 #define REQ_INT(T, f) BIKE_FIELD(T, f, "<class 'int'>", Integer, true, "", nullptr, nullptr)
 #define BOOL(T, f)    BIKE_FIELD(T, f, "<class 'bool'>", Boolean, false, "", nullptr, nullptr)
+#define REQ_BOOL(T, f) BIKE_FIELD(T, f, "<class 'bool'>", Boolean, true, "", nullptr, nullptr)
 #define STR(T, f)     BIKE_FIELD(T, f, "<class 'str'>", Text, false, "", nullptr, nullptr)
 #define REQ_STR(T, f) BIKE_FIELD(T, f, "<class 'str'>", Text, true, "", nullptr, nullptr)
 
@@ -731,15 +736,15 @@ inline constexpr auto kPedalingConfigFields = std::to_array<FieldDecl>({
     REAL(PedalingConfig, rollback_engage_mps),
     REAL(PedalingConfig, rollback_release_mps),
     REAL(PedalingConfig, rollback_demand),
-    BOOL(PedalingConfig, reposition_on_stall),
-    REAL(PedalingConfig, reposition_min_effort_nm),
-    REAL(PedalingConfig, reposition_stall_window_s),
-    REAL(PedalingConfig, reposition_stall_progress_rad),
-    REAL(PedalingConfig, reposition_cooldown_s),
-    REAL(PedalingConfig, reposition_back_rate_rad_s),
-    REAL(PedalingConfig, reposition_timeout_s),
-    REAL(PedalingConfig, reposition_phase_tolerance_rad),
-    REAL(PedalingConfig, reposition_noop_rad),
+    REQ_BOOL(PedalingConfig, reposition_on_stall),
+    REQ_REAL(PedalingConfig, reposition_min_effort_nm),
+    REQ_REAL(PedalingConfig, reposition_stall_window_s),
+    REQ_REAL(PedalingConfig, reposition_stall_progress_rad),
+    REQ_REAL(PedalingConfig, reposition_cooldown_s),
+    REQ_REAL(PedalingConfig, reposition_back_rate_rad_s),
+    REQ_REAL(PedalingConfig, reposition_timeout_s),
+    REQ_REAL(PedalingConfig, reposition_phase_tolerance_rad),
+    REQ_REAL(PedalingConfig, reposition_noop_rad),
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kPedalingConfigSchema{
@@ -925,6 +930,7 @@ inline const RecordSchema kArticulatedConfigSchema{
 #undef INT
 #undef REQ_INT
 #undef BOOL
+#undef REQ_BOOL
 #undef STR
 #undef REQ_STR
 #undef BIKE_FIELD

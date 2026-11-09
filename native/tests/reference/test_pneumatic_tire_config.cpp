@@ -8,6 +8,7 @@
 #include "io/json.hpp"
 #include "research/environment.hpp"
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -50,6 +51,28 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"grounded_hold_s", io::Value{io::Number{hold}}},
                 {"contact_dropout_s", io::Value{io::Number{hold}}}}});
         }
+        // The required crank-reposition knobs ride inside [drive.pedaling] —
+        // these tire documents never carry a drive section, so the former
+        // code defaults are injected explicitly (reposition stays off). The
+        // 1 s window/cooldown and 3 s timeout must be whole multiples of the
+        // document's own tick, so each is rounded to the nearest one (at
+        // the 0.3 ms tick of one document, 1 s becomes 3333 steps).
+        const auto window =
+            cfg::detail::repr_double(std::rint(1. / dt) * dt);
+        const auto timeout =
+            cfg::detail::repr_double(std::rint(3. / dt) * dt);
+        if (!io::find_member(*obj, "drive"))
+            obj->emplace_back("drive", io::Value{io::Value::Object{
+                {"pedaling", io::Value{io::Value::Object{
+                    {"reposition_on_stall", io::Value{false}},
+                    {"reposition_min_effort_nm", io::Value{io::Number{"20.0"}}},
+                    {"reposition_stall_window_s", io::Value{io::Number{window}}},
+                    {"reposition_stall_progress_rad", io::Value{io::Number{"0.5"}}},
+                    {"reposition_cooldown_s", io::Value{io::Number{window}}},
+                    {"reposition_back_rate_rad_s", io::Value{io::Number{"3.0"}}},
+                    {"reposition_timeout_s", io::Value{io::Number{timeout}}},
+                    {"reposition_phase_tolerance_rad", io::Value{io::Number{"0.05"}}},
+                    {"reposition_noop_rad", io::Value{io::Number{"0.12"}}}}}}}});
     }
     return cfg::detail::construct_config(value);
 }

@@ -623,6 +623,7 @@ void SpindleController::reset_activation() {
     prev_crank_rate_rad_s_.reset();
     prev_frame_vel_ = {};
     prev_pelvis_vel_ = {};
+    prev_upper_vel_ = {};
     effort_diagnostics_ = {};
     sole_goal_diagnostics_.clear();
     pedal_recovery_ = {{"front", PedalRecoveryState{}},
@@ -860,6 +861,7 @@ void SpindleController::initialize_velocity(mjData *data) {
     prev_crank_rate_rad_s_.reset();
     prev_frame_vel_ = {};
     prev_pelvis_vel_ = {};
+    prev_upper_vel_ = {};
     predict_target_state(data, target_data_.get(), false);
     predict_target_state(data, previous_target_data_.get(), true);
     for (const auto side : kSides) {
@@ -1285,119 +1287,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         }
         const double phase = std::atan2(-spindles[0][1], spindles[0][0]);
         const double rate = qvel[static_cast<std::size_t>(crank_spin_dof_)];
-        if (command.mean_crank_torque_nm > 0.) {
-            const double task = spindle::spindle_torque_waveform(
-                command.mean_crank_torque_nm, phase,
-                config_.pedal_torque_ripple);
-            // rider_control.py:873-878 — the press servo that zeroes pedal
-            // load while coasting keeps regulating once effort is
-            // requested: it integrates the residual between the requested
-            // waveform and the weld-measured press so a systematic
-            // tracking deficit is requested rather than lost. The weld
-            // reading is one tick stale and the bound is wide enough to
-            // cover the deficit without touching the clamp in normal
-            // pedaling.
-            // rider_control.py:873-893 — the residual is a delivery
-            // measurement only while the drivetrain can accept torque and
-            // the reading stays inside the servo's own authority. Below the
-            // wheel-implied required crank rate the freehub freewheels (the
-            // weld press is unforced), and a reading above
-            // task+weld_servo_limit_nm is a transient, not over-delivery.
-            // Integrating either residual is classic windup, so while the
-            // reading carries no tracking information the offset is held.
-            if (weld_crank_torque_nm.has_value() && advance
-                && rate >= command.crank_target_rate_rad_s
-                && *weld_crank_torque_nm <=
-                       task + config_.weld_servo_limit_nm) {
-                const double held =
-                    coast_hold_nm_ + config_.weld_servo_gain *
-                                         (task - *weld_crank_torque_nm);
-                coast_hold_nm_ = held > config_.weld_servo_limit_nm
-                                     ? config_.weld_servo_limit_nm
-                                 : held < -config_.weld_servo_limit_nm
-                                     ? -config_.weld_servo_limit_nm
-                                     : held;
-            }
-            // rider_control.py:898-908 — the hold is a learned delivery
-            // correction, so its applied magnitude can never exceed the
-            // demand it tracks: during a commanded unload the task
-            // collapses while a settled hold would still request the old
-            // press. Only the applied value is clipped; the hold state
-            // keeps integrating and is re-applied when the demand returns.
-            const double applied_hold = coast_hold_nm_ > task ? task
-                : coast_hold_nm_ < -task                    ? -task
-                                                            : coast_hold_nm_;
-            total = task + applied_hold;
-        } else {
-            // rider_control.py:892-899 — freewheeling: damp toward the
-            // coasting crank rate and servo the weld-measured pedal press
-            // to zero. A coasting rider rests their feet on the pedals
-            // without loading the drivetrain — the welded feet are the
-            // only path by which static leg load reaches the crank, so
-            // the weld torque about crank_spin is the physical
-            // pedal-press sensor. The per-tick secant step converges
-            // because a requested crank torque maps nearly 1:1 into the
-            // measured weld moment.
-            // rider_control.py:909-918 — the secant step is valid only when
-            // the reading is a press the servo can own: a resting foot
-            // carries a few N.m at most, so a reading outside the
-            // weld-servo authority is leg inertia dragged through a
-            // drivetrain transient, not a press to cancel. While the
-            // reading carries no press information the offset is held.
-            // User ruling 2026-11-06 (rider-leg-control plan, task 1б):
-            // a rider who has stopped pedalling can only hold the
-            // pedals back — slow them or keep them still — and never
-            // pushes them forward. Each servo term therefore applies
-            // only while it opposes the crank's own motion, so the
-            // request never puts positive power into a moving crank:
-            // the rate damper brakes a moving crank toward its stop
-            // trajectory (a crank at rest has nothing to slow and must
-            // not be started), and the pedal-press hold answers on the
-            // same side. Below kCoastStoppedRateRadS the crank counts
-            // as stopped and the hold applies in full — the strict
-            // gate is discontinuous at rest for any nonzero hold, and
-            // the chatter it injected through the leg targets
-            // destabilised the braked relaxation.
-            // User ruling 2026-11-08 (task 4): the hold must not integrate
-            // while it is not applied, and must not enter as a step when it
-            // starts to apply.
-            constexpr double kCoastStoppedRateRadS = .1;
-            if (advance && std::abs(rate) >= kCoastStoppedRateRadS &&
-                coast_hold_nm_ * rate > 0.)
-                coast_hold_nm_ = 0.;
-            if (weld_crank_torque_nm.has_value() && advance
-                && std::abs(*weld_crank_torque_nm) <=
-                       config_.weld_servo_limit_nm) {
-                const double held = coast_hold_nm_ - *weld_crank_torque_nm;
-                if (std::abs(rate) < kCoastStoppedRateRadS ||
-                    held * rate <= 0.) {
-                    coast_hold_nm_ = held > config_.coasting_brake_limit_nm
-                                         ? config_.coasting_brake_limit_nm
-                                     : held < -config_.coasting_brake_limit_nm
-                                         ? -config_.coasting_brake_limit_nm
-                                         : held;
-                } else {
-                    coast_hold_nm_ = 0.;
-                }
-            }
-            const double damp =
-                config_.coasting_brake_d_nm_s_rad *
-                (command.crank_target_rate_rad_s - rate);
-            const double braking_damp = damp * rate >= 0. ? 0. : damp;
-            const double braking_hold =
-                std::abs(rate) < kCoastStoppedRateRadS
-                    ? coast_hold_nm_
-                : coast_hold_nm_ * rate > 0. ? 0.
-                                             : coast_hold_nm_;
-            // NaN must propagate like np.clip does (both branches' NaN
-            // comparisons are false, so raw survives untouched).
-            const double raw = braking_damp + braking_hold;
-            total = raw > config_.coasting_brake_limit_nm
-                        ? config_.coasting_brake_limit_nm
-                    : raw < -config_.coasting_brake_limit_nm
-                        ? -config_.coasting_brake_limit_nm
-                        : raw;
-        }
         const Vec2 crank{0., 0.};
         // _leg_feedforward (rider_control.py:758-813): inverse dynamics of
         // the weld-imposed leg motion. The feet are pinned to the pedals,
@@ -1482,6 +1371,12 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                     }
             }
         }
+        const std::array<std::size_t, 5> upper_slots{
+            joint_index("rider_torso_hinge"),
+            joint_index("rider_shoulder_left"),
+            joint_index("rider_elbow_left"),
+            joint_index("rider_shoulder_right"),
+            joint_index("rider_elbow_right")};
         const double step_dt = dt_s.value_or(model_->opt.timestep);
         const auto dof_vel = [&](int dof) {
             return dof < 0 ? 0. : qvel[static_cast<std::size_t>(dof)];
@@ -1492,6 +1387,9 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         const std::array<double, 3> pelvis_vel{
             dof_vel(rider_root_x_dof_), dof_vel(rider_root_z_dof_),
             dof_vel(rider_pitch_dof_)};
+        std::array<double, 5> upper_vel{};
+        for (std::size_t k = 0; k < 5; ++k)
+            upper_vel[k] = dof_vel(joints_[upper_slots[k]].dof_adr);
         const bool has_prev_step =
             !steady_state && prev_crank_rate_rad_s_.has_value() &&
             step_dt > 0.;
@@ -1499,21 +1397,26 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             has_prev_step ? (rate - *prev_crank_rate_rad_s_) / step_dt : 0.;
         std::array<double, 3> frame_acc{0., 0., 0.};
         std::array<double, 3> pelvis_acc{0., 0., 0.};
+        std::array<double, 5> upper_acc{0., 0., 0., 0., 0.};
         if (has_prev_step) {
             for (std::size_t k = 0; k < 3; ++k) {
                 frame_acc[k] = (frame_vel[k] - prev_frame_vel_[k]) / step_dt;
                 pelvis_acc[k] = (pelvis_vel[k] - prev_pelvis_vel_[k]) / step_dt;
             }
+            for (std::size_t k = 0; k < 5; ++k)
+                upper_acc[k] = (upper_vel[k] - prev_upper_vel_[k]) / step_dt;
         }
         if (advance) {
             if (steady_state) {
                 prev_crank_rate_rad_s_.reset();
                 prev_frame_vel_ = {};
                 prev_pelvis_vel_ = {};
+                prev_upper_vel_ = {};
             } else {
                 prev_crank_rate_rad_s_ = rate;
                 prev_frame_vel_ = frame_vel;
                 prev_pelvis_vel_ = pelvis_vel;
+                prev_upper_vel_ = upper_vel;
             }
         }
         std::vector<double> imposed(static_cast<std::size_t>(model_->nv), 0.);
@@ -1526,6 +1429,9 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         if (rider_pitch_dof_ >= 0)
             imposed[static_cast<std::size_t>(rider_pitch_dof_)] =
                 pelvis_acc[2];
+        for (std::size_t k = 0; k < 5; ++k)
+            imposed[static_cast<std::size_t>(
+                joints_[upper_slots[k]].dof_adr)] = upper_acc[k];
         const Vec3 frame_pitch_anchor =
             joint_anchor(model_, data, frame_pitch_joint_);
         const Vec3 rider_pitch_anchor =
@@ -1562,63 +1468,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         }
         std::vector<double> inertia(static_cast<std::size_t>(model_->nv));
         engine::mul_m(model_, data, inertia.data(), imposed.data());
-        for (const auto side : kSides) {
-            const auto s = side_index(side);
-            const std::array<std::size_t, 2> slots{
-                joint_index("rider_hip_" + std::string(side)),
-                joint_index("rider_knee_" + std::string(side))};
-            const auto usable_capacity = [&](int joint, double sign) {
-                const std::size_t idx = slots[static_cast<std::size_t>(joint)];
-                const double speed =
-                    qvel[static_cast<std::size_t>(joints_[idx].dof_adr)];
-                if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
-                    sign * speed > 0.)
-                    return 0.;
-                return directional_limit(joints_[idx].name, data, sign);
-            };
-            const double leg_task_nm = shares[s] * total;
-            const Vec2 task_torques =
-                command.mean_crank_torque_nm > 0.
-                    ? spindle::downstroke_joint_torques(
-                          leg_task_nm, jacobians[s], usable_capacity)
-                    : spindle::split_joint_torques(
-                          leg_task_nm, jacobians[s], usable_capacity);
-            const auto dof0 = leg_dofs[s][0];
-            const auto dof1 = leg_dofs[s][1];
-            const double f_weight =
-                gammas[s][0] * leg_gravity[s][0] +
-                gammas[s][1] * leg_gravity[s][1];
-            const double f_passive =
-                gammas[s][0] * (bias[dof0] + inertia[dof0]) +
-                gammas[s][1] * (bias[dof1] + inertia[dof1]);
-            const double f_task_press =
-                -(gammas[s][0] * task_torques[0] +
-                  gammas[s][1] * task_torques[1]);
-            const double f_upper = std::max(kPedalPressMarginN, f_weight);
-            const double f_base = std::min(f_passive, f_upper);
-            const double delta_f_press =
-                steady_state
-                    ? 0.
-                    : std::max(kPedalPressMarginN - f_task_press, f_base) -
-                          f_passive;
-            Vec2 press_torques{0., 0.};
-            if (std::abs(delta_f_press) > 1e-9) {
-                const auto rem_capacity = [&](int joint, double sign) {
-                    const double lim = usable_capacity(joint, sign);
-                    const double used =
-                        sign * task_torques[static_cast<std::size_t>(joint)];
-                    return std::max(0., lim - used);
-                };
-                press_torques = spindle::split_joint_torques(
-                    delta_f_press, {-gammas[s][0], -gammas[s][1]},
-                    rem_capacity);
-            }
-            for (std::size_t i = 0; i < 2; ++i) {
-                priority_requested[slots[i]] = press_torques[i];
-                requested[slots[i]] = task_torques[i] + press_torques[i];
-                requested_filled[slots[i]] = 1;
-            }
-        }
         const auto upper = upper_targets(data, &command.posture);
         for (const auto &[name, target] : upper) {
             const auto index = joint_index(name);
@@ -1644,6 +1493,286 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 torque + bias[static_cast<std::size_t>(joint.dof_adr)];
             priority_requested[index] = requested[index];
             requested_filled[index] = 1;
+        }
+        const auto usable_slot_capacity = [&](std::size_t idx, double sign) {
+            const double speed =
+                qvel[static_cast<std::size_t>(joints_[idx].dof_adr)];
+            if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
+                sign * speed > 0.)
+                return 0.;
+            return directional_limit(joints_[idx].name, data, sign);
+        };
+        double f_grips_up = 0.;
+        for (const auto side : kArmSides) {
+            const auto s = side_index(side);
+            const Vec2 sh_xz = mat_t_vec_xz(
+                frame_r,
+                vec_sub(body_pos(model_, data, upper_arm_bodies_[s]),
+                        crank_world));
+            const Vec2 el_xz = mat_t_vec_xz(
+                frame_r,
+                vec_sub(body_pos(model_, data, forearm_bodies_[s]),
+                        crank_world));
+            const Vec2 gr_xz = mat_t_vec_xz(
+                frame_r,
+                vec_sub(site_pos(model_, data, grip_sites_[s]),
+                        crank_world));
+            const double det =
+                -(gr_xz[1] - sh_xz[1]) * (gr_xz[0] - el_xz[0]) +
+                (gr_xz[1] - el_xz[1]) * (gr_xz[0] - sh_xz[0]);
+            if (std::abs(det) <= 1e-12)
+                continue;
+            const double gamma_sh = -(gr_xz[1] - el_xz[1]) / det;
+            const double gamma_el = (gr_xz[1] - sh_xz[1]) / det;
+            const std::size_t sh_idx = upper_slots[1U + 2U * s];
+            const std::size_t el_idx = upper_slots[2U + 2U * s];
+            const auto sh_dof =
+                static_cast<std::size_t>(joints_[sh_idx].dof_adr);
+            const auto el_dof =
+                static_cast<std::size_t>(joints_[el_idx].dof_adr);
+            const double sh_cap = usable_slot_capacity(
+                sh_idx, requested[sh_idx] >= 0. ? 1. : -1.);
+            const double el_cap = usable_slot_capacity(
+                el_idx, requested[el_idx] >= 0. ? 1. : -1.);
+            const double tau_sh =
+                std::min(std::max(requested[sh_idx], -sh_cap), sh_cap);
+            const double tau_el =
+                std::min(std::max(requested[el_idx], -el_cap), el_cap);
+            f_grips_up +=
+                gamma_sh * (bias[sh_dof] + inertia[sh_dof] - tau_sh) +
+                gamma_el * (bias[el_dof] + inertia[el_dof] - tau_el);
+        }
+        const double root_rx =
+            rider_root_x_dof_ < 0
+                ? 0.
+                : bias[static_cast<std::size_t>(rider_root_x_dof_)] +
+                      inertia[static_cast<std::size_t>(rider_root_x_dof_)];
+        const double root_rz =
+            rider_root_z_dof_ < 0
+                ? 0.
+                : bias[static_cast<std::size_t>(rider_root_z_dof_)] +
+                      inertia[static_cast<std::size_t>(rider_root_z_dof_)];
+        const double max_total_press_n =
+            frame_r[2] * root_rx + frame_r[8] * root_rz - f_grips_up;
+        std::array<std::array<std::size_t, 2>, 2> leg_slots{};
+        std::array<double, 2> f_passive{};
+        std::array<double, 2> f_base{};
+        std::array<double, 2> f_floor{};
+        std::array<double, 2> f_min{};
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
+            leg_slots[s] = {joint_index("rider_hip_" + std::string(side)),
+                            joint_index("rider_knee_" + std::string(side))};
+            const auto dof0 = leg_dofs[s][0];
+            const auto dof1 = leg_dofs[s][1];
+            const double f_weight =
+                gammas[s][0] * leg_gravity[s][0] +
+                gammas[s][1] * leg_gravity[s][1];
+            f_passive[s] =
+                gammas[s][0] * (bias[dof0] + inertia[dof0]) +
+                gammas[s][1] * (bias[dof1] + inertia[dof1]);
+            const double f_upper = std::max(kPedalPressMarginN, f_weight);
+            f_base[s] = std::min(f_passive[s], f_upper);
+            f_floor[s] = steady_state ? f_passive[s] : f_base[s];
+            f_min[s] =
+                steady_state ? f_passive[s]
+                             : std::max(kPedalPressMarginN, f_base[s]);
+        }
+        std::array<double, 2> f_task_press_max{};
+        double crank_press_ceiling_nm =
+            std::numeric_limits<double>::infinity();
+        for (const std::size_t s : {0U, 1U}) {
+            f_task_press_max[s] = std::max(
+                0., max_total_press_n - f_min[1U - s] - f_floor[s]);
+            if (shares[s] <= 0.)
+                continue;
+            const double cap_hip =
+                usable_slot_capacity(leg_slots[s][0], 1.);
+            const double cap_knee =
+                usable_slot_capacity(leg_slots[s][1], -1.);
+            const double w_hip = cap_hip * cap_hip * jacobians[s][0];
+            const double w_knee = cap_knee * cap_knee * jacobians[s][1];
+            const double denom =
+                jacobians[s][0] * w_hip + jacobians[s][1] * w_knee;
+            if (denom < 1e-9)
+                continue;
+            const double u_hip =
+                jacobians[s][0] > 0. ? w_hip / denom : 0.;
+            const double u_knee =
+                jacobians[s][1] < 0. ? w_knee / denom : 0.;
+            const double press_per_nm =
+                -(gammas[s][0] * u_hip + gammas[s][1] * u_knee);
+            if (press_per_nm > 1e-12) {
+                crank_press_ceiling_nm = std::min(
+                    crank_press_ceiling_nm,
+                    f_task_press_max[s] / (press_per_nm * shares[s]));
+            }
+        }
+        if (command.mean_crank_torque_nm > 0.) {
+            const double raw_task = spindle::spindle_torque_waveform(
+                command.mean_crank_torque_nm, phase,
+                config_.pedal_torque_ripple);
+            const double task = std::min(raw_task, crank_press_ceiling_nm);
+            const bool at_press_limit =
+                raw_task + std::max(0., coast_hold_nm_) >=
+                crank_press_ceiling_nm;
+            // rider_control.py:873-878 — the press servo that zeroes pedal
+            // load while coasting keeps regulating once effort is
+            // requested: it integrates the residual between the requested
+            // waveform and the weld-measured press so a systematic
+            // tracking deficit is requested rather than lost. The weld
+            // reading is one tick stale and the bound is wide enough to
+            // cover the deficit without touching the clamp in normal
+            // pedaling.
+            // rider_control.py:873-893 — the residual is a delivery
+            // measurement only while the drivetrain can accept torque and
+            // the reading stays inside the servo's own authority. Below the
+            // wheel-implied required crank rate the freehub freewheels (the
+            // weld press is unforced), and a reading above
+            // task+weld_servo_limit_nm is a transient, not over-delivery.
+            // Integrating either residual is classic windup, so while the
+            // reading carries no tracking information the offset is held.
+            if (weld_crank_torque_nm.has_value() && advance
+                && rate >= command.crank_target_rate_rad_s
+                && *weld_crank_torque_nm <=
+                       raw_task + config_.weld_servo_limit_nm
+                && (!at_press_limit || *weld_crank_torque_nm > task)) {
+                const double held =
+                    coast_hold_nm_ + config_.weld_servo_gain *
+                                         (task - *weld_crank_torque_nm);
+                coast_hold_nm_ = held > config_.weld_servo_limit_nm
+                                     ? config_.weld_servo_limit_nm
+                                 : held < -config_.weld_servo_limit_nm
+                                     ? -config_.weld_servo_limit_nm
+                                     : held;
+            }
+            // rider_control.py:898-908 — the hold is a learned delivery
+            // correction, so its applied magnitude can never exceed the
+            // demand it tracks: during a commanded unload the task
+            // collapses while a settled hold would still request the old
+            // press. Only the applied value is clipped; the hold state
+            // keeps integrating and is re-applied when the demand returns.
+            const double max_hold =
+                std::min(task, crank_press_ceiling_nm - task);
+            const double applied_hold = coast_hold_nm_ > max_hold ? max_hold
+                : coast_hold_nm_ < -task                          ? -task
+                                                                  : coast_hold_nm_;
+            total = task + applied_hold;
+        } else {
+            // rider_control.py:892-899 — freewheeling: damp toward the
+            // coasting crank rate and servo the weld-measured pedal press
+            // to zero. A coasting rider rests their feet on the pedals
+            // without loading the drivetrain — the welded feet are the
+            // only path by which static leg load reaches the crank, so
+            // the weld torque about crank_spin is the physical
+            // pedal-press sensor. The per-tick secant step converges
+            // because a requested crank torque maps nearly 1:1 into the
+            // measured weld moment.
+            // rider_control.py:909-918 — the secant step is valid only when
+            // the reading is a press the servo can own: a resting foot
+            // carries a few N.m at most, so a reading outside the
+            // weld-servo authority is leg inertia dragged through a
+            // drivetrain transient, not a press to cancel. While the
+            // reading carries no press information the offset is held.
+            // User ruling 2026-11-06 (rider-leg-control plan, task 1б):
+            // a rider who has stopped pedalling can only hold the
+            // pedals back — slow them or keep them still — and never
+            // pushes them forward. Each servo term therefore applies
+            // only while it opposes the crank's own motion, so the
+            // request never puts positive power into a moving crank:
+            // the rate damper brakes a moving crank toward its stop
+            // trajectory (a crank at rest has nothing to slow and must
+            // not be started), and the pedal-press hold answers on the
+            // same side. Below kCoastStoppedRateRadS the crank counts
+            // as stopped and the hold applies in full — the strict
+            // gate is discontinuous at rest for any nonzero hold, and
+            // the chatter it injected through the leg targets
+            // destabilised the braked relaxation.
+            // User ruling 2026-11-08 (task 4): the hold must not integrate
+            // while it is not applied, and must not enter as a step when it
+            // starts to apply.
+            constexpr double kCoastStoppedRateRadS = .1;
+            if (advance && std::abs(rate) >= kCoastStoppedRateRadS &&
+                coast_hold_nm_ * rate > 0.)
+                coast_hold_nm_ = 0.;
+            if (weld_crank_torque_nm.has_value() && advance
+                && std::abs(*weld_crank_torque_nm) <=
+                       config_.weld_servo_limit_nm) {
+                const double held = coast_hold_nm_ - *weld_crank_torque_nm;
+                if (std::abs(rate) < kCoastStoppedRateRadS ||
+                    held * rate <= 0.) {
+                    coast_hold_nm_ = held > config_.coasting_brake_limit_nm
+                                         ? config_.coasting_brake_limit_nm
+                                     : held < -config_.coasting_brake_limit_nm
+                                         ? -config_.coasting_brake_limit_nm
+                                         : held;
+                } else {
+                    coast_hold_nm_ = 0.;
+                }
+            }
+            const double damp =
+                config_.coasting_brake_d_nm_s_rad *
+                (command.crank_target_rate_rad_s - rate);
+            const double braking_damp = damp * rate >= 0. ? 0. : damp;
+            const double braking_hold =
+                std::abs(rate) < kCoastStoppedRateRadS
+                    ? coast_hold_nm_
+                : coast_hold_nm_ * rate > 0. ? 0.
+                                             : coast_hold_nm_;
+            // NaN must propagate like np.clip does (both branches' NaN
+            // comparisons are false, so raw survives untouched).
+            const double raw = braking_damp + braking_hold;
+            total = raw > config_.coasting_brake_limit_nm
+                        ? config_.coasting_brake_limit_nm
+                    : raw < -config_.coasting_brake_limit_nm
+                        ? -config_.coasting_brake_limit_nm
+                        : raw;
+        }
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
+            const auto &slots = leg_slots[s];
+            const auto usable_capacity = [&](int joint, double sign) {
+                return usable_slot_capacity(
+                    slots[static_cast<std::size_t>(joint)], sign);
+            };
+            const double leg_task_nm = shares[s] * total;
+            Vec2 task_torques =
+                command.mean_crank_torque_nm > 0.
+                    ? spindle::downstroke_joint_torques(
+                          leg_task_nm, jacobians[s], usable_capacity)
+                    : spindle::split_joint_torques(
+                          leg_task_nm, jacobians[s], usable_capacity);
+            double f_task_press =
+                -(gammas[s][0] * task_torques[0] +
+                  gammas[s][1] * task_torques[1]);
+            if (f_task_press > f_task_press_max[s] && f_task_press > 1e-12) {
+                const double scale = f_task_press_max[s] / f_task_press;
+                task_torques[0] *= scale;
+                task_torques[1] *= scale;
+                f_task_press = f_task_press_max[s];
+            }
+            const double delta_f_press =
+                steady_state
+                    ? 0.
+                    : std::max(kPedalPressMarginN - f_task_press, f_base[s]) -
+                          f_passive[s];
+            Vec2 press_torques{0., 0.};
+            if (std::abs(delta_f_press) > 1e-9) {
+                const auto rem_capacity = [&](int joint, double sign) {
+                    const double lim = usable_capacity(joint, sign);
+                    const double used =
+                        sign * task_torques[static_cast<std::size_t>(joint)];
+                    return std::max(0., lim - used);
+                };
+                press_torques = spindle::split_joint_torques(
+                    delta_f_press, {-gammas[s][0], -gammas[s][1]},
+                    rem_capacity);
+            }
+            for (std::size_t i = 0; i < 2; ++i) {
+                priority_requested[slots[i]] = press_torques[i];
+                requested[slots[i]] = task_torques[i] + press_torques[i];
+                requested_filled[slots[i]] = 1;
+            }
         }
         support_diagnostics_ = {.present = true,
                                 .stance_front = shares[0] >= .5,

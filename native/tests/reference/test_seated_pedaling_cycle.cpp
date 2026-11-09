@@ -1296,6 +1296,152 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
                 first_leg_contract_error);
 }
 
+// physics-2026-11-05 plan task 5 («Действует» 9 & 34, rule 4):
+// when the seated rider's torque demand exceeds the vertical-equilibrium
+// foot-press limit, the leg demand and coast_hold_nm_ are capped by that
+// limit, coast_hold_nm_ does not wind up at the limit, saddle_support_n
+// stays >= 0 everywhere, and crank torque stays below the demand.
+void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_torque_and_hold() {
+    auto env = cycle_env();
+    constexpr double kDemandTorqueNm = 60.;
+    const runtime::RideControl control{.motor_torque_nm = 0.,
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = kDemandTorqueNm,
+                                       .crank_target_rate_rad_s = std::nullopt,
+                                       .posture = std::nullopt};
+    double min_saddle_support_n = std::numeric_limits<double>::infinity();
+    double min_saddle_time_s = 0.;
+    double prev_hold_nm = 0.;
+    double max_hold_nm = 0.;
+    double max_windup_at_limit_nm = 0.;
+    std::size_t steps_at_press_limit = 0;
+    std::size_t windup_steps_at_limit = 0;
+    double sum_late_cmd_nm = 0., sum_late_task_nm = 0., sum_late_sens_nm = 0.;
+    std::size_t late_count = 0;
+
+    while (!env.runtime->snapshot().outcome.has_value() &&
+           env.runtime->snapshot().step < env.max_steps) {
+        double phase = 0.;
+        double ripple = 0.;
+        bike::validation::RuntimeRigAccess::inspect(
+            *env.runtime, [&](const Stepper &stepper,
+                              const runtime::PhysicalStep &physical) {
+                const auto &ctrl = physical.rider_control();
+                prev_hold_nm = ctrl.state().coast_hold_nm.value_or(0.);
+                ripple = ctrl.config().pedal_torque_ripple;
+                const auto *m = stepper.model();
+                const auto *d = stepper.data();
+                const int fb = mj_name2id(m, mjOBJ_BODY, "frame");
+                const int cj = mj_name2id(m, mjOBJ_JOINT, "crank_spin");
+                const int pb = mj_name2id(m, mjOBJ_BODY, "pedal_front");
+                const auto xmat =
+                    model_access::readonly_buffer(d->xmat, 9 * m->nbody);
+                const auto xpos =
+                    model_access::readonly_buffer(d->xpos, 3 * m->nbody);
+                const auto xanchor =
+                    model_access::readonly_buffer(d->xanchor, 3 * m->njnt);
+                const double dx =
+                    xpos[3 * static_cast<std::size_t>(pb)] -
+                    xanchor[3 * static_cast<std::size_t>(cj)];
+                const double dy =
+                    xpos[3 * static_cast<std::size_t>(pb) + 1] -
+                    xanchor[3 * static_cast<std::size_t>(cj) + 1];
+                const double dz =
+                    xpos[3 * static_cast<std::size_t>(pb) + 2] -
+                    xanchor[3 * static_cast<std::size_t>(cj) + 2];
+                const auto fbase = 9 * static_cast<std::size_t>(fb);
+                const double sx = xmat[fbase + 0] * dx +
+                                  xmat[fbase + 3] * dy +
+                                  xmat[fbase + 6] * dz;
+                const double sz = xmat[fbase + 2] * dx +
+                                  xmat[fbase + 5] * dy +
+                                  xmat[fbase + 8] * dz;
+                phase = std::atan2(-sz, sx);
+            });
+        const auto result = env.runtime->advance(
+            env.runtime->snapshot().step + 1, control, 0., 0.,
+            std::nullopt);
+        const auto &rows = intervals_of(*env.runtime);
+        bt::require(!rows.empty(), "interval committed");
+        const auto &row = *rows.back();
+        const auto &welds =
+            sw::object(sw::required(row.channels, "rider_welds"));
+        const double s_n = sw::number(sw::required(welds, "saddle_support_n"));
+        if (s_n < min_saddle_support_n) {
+            min_saddle_support_n = s_n;
+            min_saddle_time_s = row.time_s;
+        }
+        const auto &drive =
+            sw::object(sw::required(row.channels, "drive"));
+        const double cmd_nm =
+            sw::number(sw::required(drive, "human_command_nm"));
+        const double sens_nm =
+            sw::number(sw::required(drive, "human_sensor_nm"));
+        double hold_nm = 0.;
+        double crank_task_nm = 0.;
+        bike::validation::RuntimeRigAccess::inspect(
+            *env.runtime, [&](const Stepper &,
+                              const runtime::PhysicalStep &physical) {
+                const auto &ctrl = physical.rider_control();
+                const auto st = ctrl.state();
+                hold_nm = st.coast_hold_nm.value_or(0.);
+                crank_task_nm = st.allocation_diagnostics.crank_task_nm;
+            });
+        if (row.time_s > 1.) {
+            sum_late_cmd_nm += cmd_nm;
+            sum_late_task_nm += crank_task_nm;
+            sum_late_sens_nm += sens_nm;
+            ++late_count;
+        }
+        max_hold_nm = std::max(max_hold_nm, hold_nm);
+        if (cmd_nm > 0.) {
+            const double raw_task_nm =
+                spindle::spindle_torque_waveform(cmd_nm, phase, ripple);
+            const double uncapped_total_nm =
+                raw_task_nm +
+                std::clamp(prev_hold_nm, -raw_task_nm, raw_task_nm);
+            if (crank_task_nm < uncapped_total_nm - 1e-6) {
+                ++steps_at_press_limit;
+                const double d_hold = hold_nm - prev_hold_nm;
+                if (d_hold > 1e-12) {
+                    ++windup_steps_at_limit;
+                    max_windup_at_limit_nm =
+                        std::max(max_windup_at_limit_nm, d_hold);
+                }
+            }
+        }
+        if (result.reason == "outcome") break;
+    }
+    bt::require(late_count > 0, "late window recorded samples");
+    const double mean_cmd_nm =
+        sum_late_cmd_nm / static_cast<double>(late_count);
+    const double mean_task_nm =
+        sum_late_task_nm / static_cast<double>(late_count);
+    const double mean_sens_nm =
+        sum_late_sens_nm / static_cast<double>(late_count);
+    std::cerr << std::format(
+        "[task5 60nm] min_saddle_support_n={:+.2f} N (t={:.4f}s), "
+        "mean_cmd={:.2f} N.m, mean_task={:.2f} N.m, mean_sens={:.2f} N.m (demand={:.1f} N.m), "
+        "steps_at_press_limit={}, windup_steps_at_limit={}, "
+        "max_windup_at_limit={:+.4f} N.m, max_hold={:+.2f} N.m\n",
+        min_saddle_support_n, min_saddle_time_s, mean_cmd_nm, mean_task_nm,
+        mean_sens_nm, kDemandTorqueNm, steps_at_press_limit,
+        windup_steps_at_limit, max_windup_at_limit_nm, max_hold_nm);
+    bt::require(min_saddle_support_n >= 0.,
+                std::format("with demand above the vertical-equilibrium limit, "
+                            "saddle support stays >= 0 (min={:+.2f} N)",
+                            min_saddle_support_n)
+                    .c_str());
+    bt::require(steps_at_press_limit > 0,
+                "60 N.m demand hits the seated vertical-equilibrium press ceiling");
+    bt::require(windup_steps_at_limit == 0,
+                "coast_hold_nm_ does not integrate upward while at the vertical-equilibrium press limit");
+    bt::require(mean_task_nm < kDemandTorqueNm &&
+                    mean_sens_nm < mean_cmd_nm &&
+                    mean_sens_nm < kDemandTorqueNm,
+                "capped crank task and delivered crank torque stay below the demand");
+}
+
 } // namespace
 
 int main() {
@@ -1313,5 +1459,6 @@ int main() {
         test_clutch_engagement_is_not_a_loss();
         test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue();
         test_every_step_control_profiles_complete_strict_without_saddle_pull();
+        test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_torque_and_hold();
     });
 }

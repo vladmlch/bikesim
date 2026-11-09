@@ -465,6 +465,7 @@ private:
     std::optional<double> prev_crank_rate_rad_s_;
     std::array<double, 3> prev_frame_vel_{};
     std::array<double, 3> prev_pelvis_vel_{};
+    std::array<double, 5> prev_upper_vel_{};
     EffortDiagnostics effort_diagnostics_;
     AllocationDiagnostics allocation_diagnostics_;
     SupportDiagnostics support_diagnostics_;

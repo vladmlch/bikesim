@@ -123,11 +123,36 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "a rear-pedal pull below -6 N fails the ride");
     bt::require(!runtime::rider_support_ok(support(5., 5., -6.1)),
         "a saddle pull below -6 N fails the ride");
-    bt::require(runtime::rider_support_ok(runtime::WireObject{
-            {"front_pedal", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}},
-            {"rear_pedal", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}},
-            {"saddle", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}}}),
-        "a channel never observed carries no pull evidence");
+    const auto missing_evidence_throws = [](const runtime::WireObject &history, std::string_view channel) {
+        try { (void)runtime::rider_support_ok(history); }
+        catch (const std::invalid_argument &error) {
+            return std::string(error.what()).find(channel) != std::string::npos;
+        }
+        return false;
+    };
+    bt::require(missing_evidence_throws(
+            runtime::WireObject{{"front_pedal", runtime::WireObject{{"min_n", 5.}}},
+                                {"saddle", runtime::WireObject{{"min_n", 20.}}}},
+            "rear_pedal"),
+        "a missing channel entry throws naming the channel");
+    bt::require(missing_evidence_throws(
+            runtime::WireObject{{"front_pedal", runtime::Wire(nullptr)},
+                                {"rear_pedal", runtime::WireObject{{"min_n", 5.}}},
+                                {"saddle", runtime::WireObject{{"min_n", 20.}}}},
+            "front_pedal"),
+        "a null channel entry throws naming the channel");
+    bt::require(missing_evidence_throws(
+            runtime::WireObject{{"front_pedal", runtime::WireObject{}},
+                                {"rear_pedal", runtime::WireObject{{"min_n", 5.}}},
+                                {"saddle", runtime::WireObject{{"min_n", 20.}}}},
+            "front_pedal"),
+        "a channel without min_n throws naming the channel");
+    bt::require(missing_evidence_throws(
+            runtime::WireObject{{"front_pedal", runtime::WireObject{{"min_n", 5.}}},
+                                {"rear_pedal", runtime::WireObject{{"min_n", 5.}}},
+                                {"saddle", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}}},
+            "saddle"),
+        "a channel never observed (null min_n) throws naming the channel");
 }
 [[gnu::noinline]] void rider_sensor_boundary() {
     const auto sample = std::make_shared<runtime::PhysicalSampleData>();

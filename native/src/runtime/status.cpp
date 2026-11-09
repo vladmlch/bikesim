@@ -171,9 +171,13 @@ bool energy_quality_ok(const WireObject &energy) {
 bool rider_support_ok(const WireObject &rider_support) {
     for (const char *key : {"front_pedal", "rear_pedal", "saddle"}) {
         const Wire *entry = find(rider_support, key);
-        if (entry == nullptr || is_none(*entry)) continue;
+        if (entry == nullptr || is_none(*entry))
+            throw std::invalid_argument(std::string("rider_support.") + key +
+                                        " is missing");
         const Wire *min_n = find(object(*entry), "min_n");
-        if (min_n == nullptr || is_none(*min_n)) continue;
+        if (min_n == nullptr || is_none(*min_n))
+            throw std::invalid_argument(std::string("rider_support.") + key +
+                                        ".min_n is missing");
         if (number(*min_n) < -kSupportPullToleranceN) return false;
     }
     return true;

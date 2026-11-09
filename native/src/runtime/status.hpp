@@ -74,8 +74,10 @@ channel_violations(const WireObject &channels, double maximum_compression_fracti
 inline constexpr double kSupportPullToleranceN = 6.;
 // Judges the rider_support object of accounting_state()["history"] —
 // front_pedal, rear_pedal and saddle min_n — against
-// kSupportPullToleranceN. A channel never observed (null min_n)
-// carries no pull evidence.
+// kSupportPullToleranceN. An acceptance ride always records all three
+// channels, so a missing/null entry or a missing/null min_n is broken
+// evidence: throws std::invalid_argument naming the channel, the same
+// way energy_quality_ok rejects a bad input.
 [[nodiscard]] bool rider_support_ok(const WireObject &rider_support);
 
 } // namespace runtime

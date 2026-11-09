@@ -20,7 +20,7 @@ std::array<double,3> cross(const std::array<double,3>& a,const std::array<double
 // noinline keeps the same split under optimization.
 [[gnu::noinline]] configuration::SimulationPhysicsConfig momentum_config(double dt,std::string_view transmission){
     configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode="articulated_effort";c.timestep_s=dt;c.closure_time_constant_s=.0025;
-    c.drive.transmission_model=transmission;c.drive.human_torque_nm=0.;c.drive.gearing={.front_teeth=34,.rear_teeth=51};c.drive.assist.gain=2.;c.drive.assist.tau=.03;return c;
+    c.drive.transmission_model=transmission;c.drive.human_torque_nm=0.;c.drive.gearing={.front_teeth=34,.rear_teeth=51};c.drive.assist.gain=2.;c.drive.assist.tau=.03;c.seated_climb.min_elbow_flexion_deg=15.;return c;
 }
 [[gnu::noinline]] model::BuildRequest momentum_model(double dt,std::string_view transmission){
     return mechanics::request(momentum_config(dt,transmission),true);
@@ -32,7 +32,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 }
 NATIVE_DIAG_POP
 [[gnu::noinline]] configuration::SimulationPhysicsConfig airborne_config(double dt){
-    configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode="articulated_effort";c.timestep_s=dt;return c;
+    configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode="articulated_effort";c.timestep_s=dt;c.seated_climb.min_elbow_flexion_deg=15.;return c;
 }
 [[gnu::noinline]] model::BuildRequest airborne_model(double dt){
     return mechanics::request(airborne_config(dt),true);

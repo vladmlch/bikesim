@@ -110,7 +110,7 @@ void merge(Value& out,const Value& in){for(const auto& [key,x]:io::as_object(in,
     // does. native_reference has no writer, so its field stays
     // unconsumed at 'configured'.
     if(backend=="compliant_2d"||backend=="distributed_2d_reference"||backend=="pneumatic")c.tires.surface_mode="track";
-    c.initial_speed_mps=speed;c.initial_front_brake=brakes?1.:0.;c.initial_rear_brake=brakes?1.:0.;c.drive.human_torque_nm=human;c.drive.assist.gain=0.;c.resistance.crr=0.;c.resistance.cda_m2=0.;return c;
+    c.initial_speed_mps=speed;c.initial_front_brake=brakes?1.:0.;c.initial_rear_brake=brakes?1.:0.;c.drive.human_torque_nm=human;c.drive.assist.gain=0.;c.resistance.crr=0.;c.resistance.cda_m2=0.;c.seated_climb.min_elbow_flexion_deg=15.;return c;
 }
 [[gnu::noinline]] model::BuildRequest simple_model(double dt,std::string_view rider,double speed,std::string_view drive,double human,double mu,bool brakes,std::string_view backend){
     return mechanics::request(simple_config(dt,drive,human,mu,brakes,backend,speed),rider=="articulated_planar");
@@ -165,7 +165,7 @@ RigResult ride_flat_static(std::string_view name,double dt){
     return {.metrics=RuntimeRigAccess::static_metrics(*sim->runtime,sim->metadata,expected_mass(*sim)),.bounds=bounds({{"mass_error_kg",0.,1e-8},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005},{"residual_qacc",0.,.05}})};
 }
 [[gnu::noinline]] configuration::SimulationPhysicsConfig sag_config(double dt){
-    configuration::SimulationPhysicsConfig physics;physics.physics_mode="physical";physics.timestep_s=dt;physics.tires.backend="compliant_2d";physics.tires.surface_mode="track";return physics;
+    configuration::SimulationPhysicsConfig physics;physics.physics_mode="physical";physics.timestep_s=dt;physics.tires.backend="compliant_2d";physics.tires.surface_mode="track";physics.seated_climb.min_elbow_flexion_deg=15.;return physics;
 }
 [[gnu::noinline]] model::BuildRequest sag_model(double dt){
     auto out=mechanics::request(sag_config(dt));out.rider->variant="lumped";return out; // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.

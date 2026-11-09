@@ -75,7 +75,14 @@ double body_pulse(double time_s, double start_s, double duration_s,
 // ---- SeatedPostureProgram (rider_program.py) ------------------------------
 
 SeatedPostureProgram::SeatedPostureProgram(const IntentConfig &config)
-    : config_(config) {}
+    : config_(config) {
+    if (!std::isfinite(config_.min_elbow_flexion_deg) ||
+        config_.min_elbow_flexion_deg <= 0. ||
+        config_.min_elbow_flexion_deg > 90.) {
+        throw std::invalid_argument(
+            "min_elbow_flexion_deg must be finite and lie in (0, 90]");
+    }
+}
 
 void SeatedPostureProgram::reset() {
     lean_rad_ = 0.;
@@ -189,6 +196,12 @@ void SeatedPostureProgram::restore(const State &state) {
 
 SeatedClimbPolicy::SeatedClimbPolicy(const IntentConfig &config)
     : config_(config), program_(config) {
+    if (!std::isfinite(config_.min_elbow_flexion_deg) ||
+        config_.min_elbow_flexion_deg <= 0. ||
+        config_.min_elbow_flexion_deg > 90.) {
+        throw std::invalid_argument(
+            "min_elbow_flexion_deg must be finite and lie in (0, 90]");
+    }
     reset();
 }
 
@@ -308,6 +321,12 @@ RiderIntent::RiderIntent(IntentConfig config, double dt_s)
       dt_s_(validation::positive(dt_s, "rider physics timestep")),
       period_steps_(python_round_steps(config_.period_s / dt_s_)),
       policy_(config_) {
+    if (!std::isfinite(config_.min_elbow_flexion_deg) ||
+        config_.min_elbow_flexion_deg <= 0. ||
+        config_.min_elbow_flexion_deg > 90.) {
+        throw std::invalid_argument(
+            "min_elbow_flexion_deg must be finite and lie in (0, 90]");
+    }
     if (config_.enabled &&
         (period_steps_ < 1 ||
          std::abs(static_cast<double>(period_steps_) * dt_s_ -

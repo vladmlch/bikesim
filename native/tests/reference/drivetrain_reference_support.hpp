@@ -54,7 +54,7 @@ inline cfg::PhysicalDriveConfig source(std::string_view kind = "ideal_mid_drive"
     return result;
 }
 inline Value writer_config(const cfg::PhysicalDriveConfig& source, std::string_view mode = "crank_effort") {
-    auto physics = std::make_unique<cfg::SimulationPhysicsConfig>();
+    auto physics = std::make_unique<cfg::SimulationPhysicsConfig>(cfg::default_physics());
     physics->physics_mode = "physical"; physics->drive_mode = mode; physics->drive = source;
     auto drive = runtime::project_drive_config(*physics);
     return Value{Value::Object{{"schema", integer(2)}, {"drive", std::move(drive)}}};

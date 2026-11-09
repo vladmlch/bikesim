@@ -50,8 +50,8 @@ using namespace bt::pneumatic;
     // pneumatic_tire_forces/qfrc_sanity_on_a_physical_model
     auto request = std::make_unique<bike::model::BuildRequest>();
     request->mode = "ride"; request->include_rider = false;
-    request->physics = bike::configuration::detail::construct_config(bike::io::parse_json(
-        R"({"physics_mode":"physical","drive_mode":"coast","tires":{"backend":"pneumatic","pneumatic":{"tier":"fast","surface":"asphalt"}}})"));
+    request->physics = bike::configuration::resolve_physics(bike::io::parse_json(
+        R"({"physics_mode":"physical","drive_mode":"coast","tires":{"backend":"pneumatic","pneumatic":{"tier":"fast","surface":"asphalt"}}})"), bike::configuration::default_physics());
     bt::ModelFixture model(bike::model::generate_mjcf(*request));
     std::array<int, 2> bodies{};
     for (std::size_t side = 0; side < sides.size(); ++side) {

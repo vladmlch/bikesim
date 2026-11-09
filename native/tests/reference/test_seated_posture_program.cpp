@@ -67,7 +67,7 @@ bool approx(double actual, double expected, double rtol = 1e-9,
 rider::IntentConfig enabled(double lean_rate = 0.) {
     rider::IntentConfig config;
     config.enabled = true;
-    config.period_s = .0005;
+    config.period_s = .01;
     config.min_elbow_flexion_deg = 15.;
     if (lean_rate != 0.) config.lean_rate_rad_s = lean_rate;
     return config;
@@ -220,6 +220,7 @@ void test_body_pulse_is_continuous_around_its_edges() {
 void test_posture_program_rate_limits_and_bounds_the_pulse() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.min_elbow_flexion_deg = 15.;
     config.lean_gain = 0.;
     config.max_forward_lean_rad = .35;
     config.max_backward_lean_rad = .1;
@@ -291,7 +292,6 @@ GradedEnv graded_env(bool diagnostic) {
         repo_file("examples/research/viewer_physics_welded.toml"));
     request.setup.model.mode = "ride";
     request.setup.model.crank_joint = true;
-    request.setup.model.physics->timestep_s = .0005;
     request.setup.model.physics->initial_speed_mps = 0.;
     // equilibrium_cache_enabled stays true — the TOML's own value and
     // the oracle's settle path.
@@ -490,6 +490,7 @@ void test_pulse_redistributes_load_through_inertia_only() {
 void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.trim_dead_time_s = .2;
     rider::SeatedPostureProgram program(config);
@@ -512,6 +513,7 @@ void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
 void test_geometric_limit_caps_lean() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .8;
     rider::SeatedPostureProgram program(config);
@@ -545,6 +547,7 @@ void test_preview_is_last_sample_and_preserves_exact_endpoint() {
 void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .1;
     rider::SeatedPostureProgram program(config);

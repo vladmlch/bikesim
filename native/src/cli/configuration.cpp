@@ -187,7 +187,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     request.setup.model.mode = "ride"; request.setup.model.crank_joint = true;
     request.setup.model.rider = model::rider_from_args(args.text("rider"), args.real("rider_mass"), args.real("rider_height"));
     request.setup.model.include_rider = true;
-    const auto defaults = std::make_unique<configuration::SimulationPhysicsConfig>();
+    const auto defaults = std::make_unique<configuration::SimulationPhysicsConfig>(configuration::default_physics());
     defaults->physics_mode = "physical"; defaults->drive_mode = args.text("rider") == "articulated_planar" ? "articulated_effort" : "crank_effort";
     defaults->timestep_s = .0005; defaults->initial_speed_mps = 2.;
     defaults->initial_front_brake = 1.; defaults->initial_rear_brake = 1.;

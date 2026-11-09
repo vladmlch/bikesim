@@ -51,6 +51,7 @@ void test_surge_budget_depletes_and_recovers() {
     rider::IntentConfig config;
     config.enabled = true;
     config.target_crank_power_w = 250.;
+    config.min_elbow_flexion_deg = 15.;
     rider::SeatedClimbPolicy policy(config);
     for (int i = 0; i < 150; ++i)
         bt::require(policy.power_target_w(.25, .1) == 400.,
@@ -72,6 +73,7 @@ void test_below_threshold_uses_sustained_power() {
     rider::IntentConfig config;
     config.enabled = true;
     config.target_crank_power_w = 250.;
+    config.min_elbow_flexion_deg = 15.;
     rider::SeatedClimbPolicy policy(config);
     bt::require(policy.power_target_w(.15, .1) == 250.,
                 "grade .15 is below the .20 surge threshold");
@@ -151,6 +153,7 @@ void test_front_share_is_posture_only_and_unavailable_when_unloaded() {
 void test_surge_reset_restores_budget_and_rejects_nonfinite_inputs() {
     rider::IntentConfig config;
     config.enabled = true;
+    config.min_elbow_flexion_deg = 15.;
     rider::SeatedClimbPolicy policy(config);
     bt::require(policy.power_target_w(.25, 15.) == config.surge_power_w,
                 "one 15 s call drains the whole surge budget");

@@ -45,7 +45,7 @@ struct IntentConfig {
     double lean_trim_gain_rad_s = .3;
     double lean_trim_limit_rad = .15;
     double trim_dead_time_s = .2;
-    double min_elbow_flexion_deg = 15.;
+    double min_elbow_flexion_deg = 0.;
 };
 
 // seated_climb.py SeatedClimbSignals — validated at wire decode like the

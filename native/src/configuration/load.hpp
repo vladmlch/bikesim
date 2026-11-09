@@ -109,5 +109,9 @@ void resolve_config_paths(bike::io::Value& values,
 [[nodiscard]] SimulationPhysicsConfig
 construct_config(const bike::io::Value& values);
 
+// Direct construction of ArticulatedConfig without fabricating a full physics document.
+[[nodiscard]] ArticulatedConfig
+construct_articulated(const bike::io::Value& values);
+
 } // namespace detail
 } // namespace bike::configuration

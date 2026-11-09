@@ -1001,6 +1001,10 @@ double DrivetrainSpecs::rear_radius_m() const {
 // model_config.py SimulationPhysicsConfig
 // ===========================================================================
 void post_init(SimulationPhysicsConfig &config) {
+    if (config.physics_mode != "physical")
+        fail("unknown physics_mode '" + config.physics_mode +
+             "'; legacy mode was removed, use physical");
+
     // Member construction precedes __post_init__ in the Python dataclass —
     // the six nested records validate first, in declaration order.
     detail::post_init(config.end_stops);
@@ -1009,10 +1013,6 @@ void post_init(SimulationPhysicsConfig &config) {
     detail::post_init(config.resistance);
     detail::post_init(config.articulated);
     detail::post_init(config.seated_climb);
-
-    if (config.physics_mode != "physical")
-        fail("unknown physics_mode '" + config.physics_mode +
-             "'; legacy mode was removed, use physical");
     if (!std::isfinite(config.timestep_s) || config.timestep_s <= 0.)
         fail("timestep_s must be finite and positive");
     scalar(config.control_period_s, "control period", std::nullopt, true);

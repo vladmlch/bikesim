@@ -679,6 +679,15 @@ SimulationPhysicsConfig construct_config(const bike::io::Value& values) {
     return construct_simulation(values);
 }
 
+ArticulatedConfig construct_articulated(const bike::io::Value& values) {
+    const auto* obj = std::get_if<Value::Object>(&values.data);
+    if (obj == nullptr)
+        construct_error("ArticulatedConfig requires a TOML table");
+    ArticulatedConfig config{};
+    construct_record(detail::kArticulatedConfigSchema, *obj, &config, "");
+    return config;
+}
+
 } // namespace detail
 
 SimulationPhysicsConfig

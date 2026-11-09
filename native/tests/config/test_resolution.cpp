@@ -559,9 +559,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 cfg::default_physics()));
         });
     {
+        auto unresolved_base = cfg::SimulationPhysicsConfig{};
+        unresolved_base.seated_climb.min_elbow_flexion_deg = 15.0;
         const auto unresolved = cfg::resolve_physics(
             make_object({{"physics_mode", make_text("physical")}}),
-            cfg::SimulationPhysicsConfig{});
+            unresolved_base);
         bt::require(unresolved.drive_mode.has_value() &&
                         *unresolved.drive_mode == "coast",
                     "unresolved base resolves drive_mode");

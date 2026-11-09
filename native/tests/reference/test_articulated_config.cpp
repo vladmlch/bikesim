@@ -213,6 +213,7 @@ void test_invalid_balance_thresholds_are_rejected() {
 void test_surge_and_trim_are_validated_in_climb_config() {
     {
         SeatedClimbConfig config;
+        config.min_elbow_flexion_deg = 15.;
         cfg::detail::post_init(config);
         bt::require(config.surge_power_w == 400. &&
                         config.surge_grade == .2 &&
@@ -224,6 +225,7 @@ void test_surge_and_trim_are_validated_in_climb_config() {
                              &SeatedClimbConfig::surge_budget_s})
         bt::invalid([&] {
             SeatedClimbConfig config;
+            config.min_elbow_flexion_deg = 15.;
             config.*field = 0.;
             cfg::detail::post_init(config);
         });
@@ -235,6 +237,7 @@ void test_surge_and_trim_are_validated_in_climb_config() {
           &SeatedClimbConfig::lean_trim_limit_rad})
         bt::invalid([&] {
             SeatedClimbConfig config;
+            config.min_elbow_flexion_deg = 15.;
             config.*field = -1.;
             cfg::detail::post_init(config);
         });

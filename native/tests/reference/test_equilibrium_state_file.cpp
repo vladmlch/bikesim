@@ -318,7 +318,9 @@ void test_toml_state_file_resolves_relative_to_the_config() {
         std::ofstream file(toml, std::ios::binary | std::ios::trunc);
         bt::require(file.is_open(), "relative-path TOML write opens");
         file << "physics_mode = \"physical\"\n"
-                "equilibrium_state_file = \"poses/flat.npz\"\n";
+                "equilibrium_state_file = \"poses/flat.npz\"\n"
+                "[seated_climb]\n"
+                "min_elbow_flexion_deg = 15.0\n";
     }
     const auto resolved = cfg::load_physics(toml);
     bt::require(resolved.equilibrium_state_file ==
@@ -331,7 +333,9 @@ void test_toml_state_file_resolves_relative_to_the_config() {
         std::ofstream file(toml, std::ios::binary | std::ios::trunc);
         bt::require(file.is_open(), "absolute-path TOML write opens");
         file << "physics_mode = \"physical\"\n"
-             << "equilibrium_state_file = \"" << absolute.string() << "\"\n";
+             << "equilibrium_state_file = \"" << absolute.string() << "\"\n"
+             << "[seated_climb]\n"
+             << "min_elbow_flexion_deg = 15.0\n";
     }
     bt::require(cfg::load_physics(toml).equilibrium_state_file ==
                     absolute.string(),

@@ -36,7 +36,7 @@ inline constexpr double rpm_to_rad_s = 2. * std::numbers::pi / 60.;
 // decoder. Keeping that transformation out of the test avoids giving the
 // profile-override tests their own implementation of the feature under test.
 inline bike::io::Value projected_writer(const cfg::PhysicalDriveConfig& drive) {
-    auto physics = std::make_unique<cfg::SimulationPhysicsConfig>();
+    auto physics = std::make_unique<cfg::SimulationPhysicsConfig>(cfg::default_physics());
     physics->physics_mode = "physical"; physics->drive_mode = "crank_effort"; physics->drive = drive;
     return bike::io::Value{bike::io::Value::Object{
         {"schema", bike::io::Value{bike::io::Number{"2"}}},

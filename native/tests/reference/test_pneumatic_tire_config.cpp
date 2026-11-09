@@ -22,7 +22,14 @@ namespace io = bike::io;
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 cfg::SimulationPhysicsConfig resolve(std::string_view document) {
-    return cfg::detail::construct_config(io::parse_json(document));
+    auto value = io::parse_json(document);
+    if (auto *obj = std::get_if<io::Value::Object>(&value.data)) {
+        if (!io::find_member(*obj, "seated_climb")) {
+            obj->emplace_back("seated_climb", io::Value{io::Value::Object{
+                {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}}}});
+        }
+    }
+    return cfg::detail::construct_config(value);
 }
 template<class F> void rejects(F &&operation, std::string_view message) {
     bool rejected = false;

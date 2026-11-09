@@ -1020,7 +1020,7 @@ void check_grip_weld_alias() {
 void check_validate_nonmutating() {
     // Missing drive_mode/pitch_assist resolve per mode; validate() is
     // non-mutating — the copy resolves, the caller's optionals stay empty.
-    cfg::SimulationPhysicsConfig config;
+    cfg::SimulationPhysicsConfig config = cfg::default_physics();
     config.physics_mode = "physical";
     config.drive_mode = std::nullopt;
     config.pitch_assist = std::nullopt;

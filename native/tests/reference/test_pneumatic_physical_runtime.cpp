@@ -63,6 +63,8 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
         std::ofstream out(physics);
         out << "physics_mode = \"physical\"\n"
                "drive_mode = \"coast\"\n"
+               "[seated_climb]\n"
+               "min_elbow_flexion_deg = 15.0\n"
                "[tires]\n"
                "backend = \"pneumatic\"\n"
                "surface_mode = \"track\"\n"

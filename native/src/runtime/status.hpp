@@ -68,4 +68,14 @@ channel_violations(const WireObject &channels, double maximum_compression_fracti
                    double maximum_linkage_error_m);
 [[nodiscard]] bool energy_quality_ok(const WireObject &energy);
 
+// Simulation decisions «Действует» 34 (user, 2026-11-09): a ride fails
+// when on any single physics step the press of either foot or the
+// saddle support in the rider_support history is below -6 N.
+inline constexpr double kSupportPullToleranceN = 6.;
+// Judges the rider_support object of accounting_state()["history"] —
+// front_pedal, rear_pedal and saddle min_n — against
+// kSupportPullToleranceN. A channel never observed (null min_n)
+// carries no pull evidence.
+[[nodiscard]] bool rider_support_ok(const WireObject &rider_support);
+
 } // namespace runtime

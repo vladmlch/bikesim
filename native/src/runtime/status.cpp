@@ -168,6 +168,17 @@ bool energy_quality_ok(const WireObject &energy) {
     return ratio <= .05;
 }
 
+bool rider_support_ok(const WireObject &rider_support) {
+    for (const char *key : {"front_pedal", "rear_pedal", "saddle"}) {
+        const Wire *entry = find(rider_support, key);
+        if (entry == nullptr || is_none(*entry)) continue;
+        const Wire *min_n = find(object(*entry), "min_n");
+        if (min_n == nullptr || is_none(*min_n)) continue;
+        if (number(*min_n) < -kSupportPullToleranceN) return false;
+    }
+    return true;
+}
+
 void ModelStatus::observe(std::int64_t interval_id, double time_s,
                           const WireObject &channels, bool include_energy) {
     if (interval_id <= last_interval || !std::isfinite(time_s))

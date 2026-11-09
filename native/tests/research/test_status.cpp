@@ -7,6 +7,7 @@
 #include "io/hash.hpp"
 #include "io/json.hpp"
 #include "runtime/setup_values.hpp"
+#include "runtime/status.hpp"
 #include <algorithm>
 #include <bit>
 #include <limits>
@@ -105,6 +106,29 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             }
         }
 }
+[[gnu::noinline]] void support_pull_contract() {
+    const auto support = [](double front, double rear, double saddle) {
+        return runtime::WireObject{
+            {"front_pedal", runtime::WireObject{{"min_n", front}}},
+            {"rear_pedal", runtime::WireObject{{"min_n", rear}}},
+            {"saddle", runtime::WireObject{{"min_n", saddle}}}};
+    };
+    bt::require(runtime::rider_support_ok(support(12., 12., 40.)),
+        "feet and saddle pressing down on every channel passes");
+    bt::require(runtime::rider_support_ok(support(-6., -6., -6.)),
+        "exactly -6 N on every channel passes at the tolerance edge");
+    bt::require(!runtime::rider_support_ok(support(-6.05, 5., 20.)),
+        "a front-pedal pull below -6 N fails the ride");
+    bt::require(!runtime::rider_support_ok(support(5., -6.01, 20.)),
+        "a rear-pedal pull below -6 N fails the ride");
+    bt::require(!runtime::rider_support_ok(support(5., 5., -6.1)),
+        "a saddle pull below -6 N fails the ride");
+    bt::require(runtime::rider_support_ok(runtime::WireObject{
+            {"front_pedal", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}},
+            {"rear_pedal", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}},
+            {"saddle", runtime::WireObject{{"min_n", runtime::Wire(nullptr)}}}}),
+        "a channel never observed carries no pull evidence");
+}
 [[gnu::noinline]] void rider_sensor_boundary() {
     const auto sample = std::make_shared<runtime::PhysicalSampleData>();
     sample->channels = {{"sensors", runtime::WireObject{
@@ -184,5 +208,5 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([&] { (void)summarize(*invalid); });
 }
 } // namespace
-int main() { return bt::run([] { energy_contract(); status_contract(); rider_sensor_boundary(); owned_evidence(); }); }
+int main() { return bt::run([] { energy_contract(); status_contract(); support_pull_contract(); rider_sensor_boundary(); owned_evidence(); }); }
 NATIVE_DIAG_POP

@@ -212,9 +212,9 @@ void test_column_csv_and_jsonl_preserve_the_interval_row() {
 }
 
 // test_runtime_publishes_owned_channels_and_preserves_previous_samples — slow.
-// 30 native steps: every published channels tree is independently owned, the
-// first ten snapshots survive the following twenty steps, and the published
-// rider_control mapping is not the live controller's.
+// Three control periods of committed intervals: every published channels tree
+// is independently owned, the first period's snapshots survive the following
+// two, and the published rider_control mapping is not the live controller's.
 void test_runtime_publishes_owned_channels() {
     namespace research = bike::research;
     auto owner = std::make_unique<research::ResearchRequest>();
@@ -234,9 +234,10 @@ void test_runtime_publishes_owned_channels() {
     request.experiment.stop_on_model_violation = false;
     request.sensors = research::SensorConfig::ideal();
     const auto prepared = research::prepare_environment(std::move(owner));
+    const auto control_steps = prepared->bootstrap.config.control_steps;
     bt::require(prepared->bootstrap.config.timestep_s == .00025,
                 "environment metadata keeps timestep_s 0.00025");
-    bt::require(static_cast<double>(prepared->bootstrap.config.control_steps) *
+    bt::require(static_cast<double>(control_steps) *
                 prepared->bootstrap.config.timestep_s == .005,
                 "environment metadata keeps controller_interval_s 0.005");
     runtime::NativeRideRuntime runtime(std::move(prepared->bootstrap.ride));
@@ -252,19 +253,21 @@ void test_runtime_publishes_owned_channels() {
         for (const auto &sample : batch.samples) published.push_back(sample);
         runtime.acknowledge_samples(batch);
     };
-    collect(10);
+    collect(control_steps);
     std::vector<std::string> snapshots;
     snapshots.reserve(published.size());
-for (const auto &sample : published)
+    for (const auto &sample : published)
         snapshots.push_back(bike::io::canonical_json(bike::research::wire_value(
             runtime::Wire{sample->as_wire()})));
-    collect(20);
-    bt::require(published.size() == 30, "thirty committed intervals published");
+    collect(2 * control_steps);
+    bt::require(static_cast<std::int64_t>(published.size()) ==
+                    3 * control_steps,
+                "three control periods of committed intervals published");
     std::set<const runtime::WireObject *> owners;
     for (const auto &sample : published) owners.insert(&sample->channels);
-    bt::require(owners.size() == 30,
+    bt::require(static_cast<std::int64_t>(owners.size()) == 3 * control_steps,
                 "each interval owns a distinct channels object");
-    for (std::size_t i = 0; i < 10; ++i)
+    for (std::size_t i = 0; i < snapshots.size(); ++i)
         bt::require(bike::io::canonical_json(bike::research::wire_value(
                         runtime::Wire{published[i]->as_wire()})) == snapshots[i],
                     "earlier published samples are immutable across later steps");

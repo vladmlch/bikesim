@@ -16,6 +16,7 @@
 #include "runtime/status.hpp"
 #include "runtime/runtime.hpp"
 #include "viewer/hud.hpp"
+#include <cmath>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -112,7 +113,13 @@ void test_measurement_uses_v2_dt_configures_diagnostics_and_counts_flush() {
     driver->close();
     const auto run = msr::measure_run(
         [&] { return msr::make_native_driver(options); }, std::nullopt);
-    bt::require(integer(member(run, "physics_steps")) == 3,
+    const double configured_steps =
+        options.duration_s / options.timestep_s.value();
+    const auto expected_steps = std::llround(configured_steps);
+    bt::require(std::abs(static_cast<double>(expected_steps) -
+                         configured_steps) < 1e-9,
+                "the configured duration divides exactly into timesteps");
+    bt::require(integer(member(run, "physics_steps")) == expected_steps,
                 "the measurement commits duration/dt steps");
     bt::require(number(member(run, "simulated_time_s")) > 0.,
                 "the measurement reports simulated time");

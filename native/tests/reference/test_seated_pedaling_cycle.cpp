@@ -1301,9 +1301,11 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
 // foot-press limit, the leg demand and coast_hold_nm_ are capped by that
 // limit, coast_hold_nm_ does not wind up at the limit, saddle_support_n
 // stays >= 0 everywhere, and crank torque stays below the demand.
-[[gnu::noinline]] void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_torque_and_hold() {
+void test_seated_press_limit_keeps_saddle_support_nonnegative_and_caps_crank_torque_and_hold() {
     auto env = cycle_env();
     constexpr double kDemandTorqueNm = 60.;
+    // Step 264 (t = 0.330 s) is a step during the initial 60 N.m launch mash where the seated press limit is active.
+    constexpr int kPressLimitProbeStep = 264;
     const runtime::RideControl control{.motor_torque_nm = 0.,
                                        .motor_limit_nm = std::nullopt,
                                        .human_torque_nm = kDemandTorqueNm,
@@ -1315,7 +1317,7 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
     double max_hold_nm = 0.;
     double max_windup_at_limit_nm = 0.;
     double max_probe_ctrl_diff_nm = 0.;
-    std::vector<double> advancing_ctrl_at_264;
+    std::vector<double> advancing_ctrl_at_probe_step;
     std::size_t steps_at_press_limit = 0;
     std::size_t windup_steps_at_limit = 0;
     double sum_late_cmd_nm = 0., sum_late_task_nm = 0., sum_late_sens_nm = 0.;
@@ -1364,7 +1366,7 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
         const auto result = env.runtime->advance(
             step_before + 1, control, 0., 0.,
             std::nullopt);
-        if (step_before == 264) {
+        if (step_before == kPressLimitProbeStep) {
             bike::validation::RuntimeRigAccess::inspect(
                 *env.runtime, [&](const Stepper &stepper,
                                   const runtime::PhysicalStep &) {
@@ -1372,8 +1374,8 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
                     const auto *d = stepper.data();
                     const auto ctrl_buf =
                         model_access::readonly_buffer(d->ctrl, m->nu);
-                    advancing_ctrl_at_264.assign(ctrl_buf.begin(),
-                                                 ctrl_buf.end());
+                    advancing_ctrl_at_probe_step.assign(ctrl_buf.begin(),
+                                                        ctrl_buf.end());
                 });
         }
         const auto &rows = intervals_of(*env.runtime);
@@ -1427,17 +1429,18 @@ void test_every_step_control_profiles_complete_strict_without_saddle_pull() {
         }
         if (result.reason == "outcome") break;
     }
-    bt::require(!advancing_ctrl_at_264.empty(),
-                "captured advancing ctrl at step 264");
+    bt::require(!advancing_ctrl_at_probe_step.empty(),
+                "captured advancing ctrl at press-limit probe step");
     env.runtime->reset();
-    (void)env.runtime->advance(264, control, 0., 0., std::nullopt);
-    const auto probe_264 = env.runtime->probe_step_inputs(control, 0., 0.);
-    bt::require(probe_264.ctrl.size() == advancing_ctrl_at_264.size(),
+    (void)env.runtime->advance(kPressLimitProbeStep, control, 0., 0.,
+                               std::nullopt);
+    const auto probe_step = env.runtime->probe_step_inputs(control, 0., 0.);
+    bt::require(probe_step.ctrl.size() == advancing_ctrl_at_probe_step.size(),
                 "probe ctrl matches advancing ctrl width");
-    for (std::size_t i = 0; i < probe_264.ctrl.size(); ++i) {
+    for (std::size_t i = 0; i < probe_step.ctrl.size(); ++i) {
         max_probe_ctrl_diff_nm = std::max(
             max_probe_ctrl_diff_nm,
-            std::abs(probe_264.ctrl[i] - advancing_ctrl_at_264[i]));
+            std::abs(probe_step.ctrl[i] - advancing_ctrl_at_probe_step[i]));
     }
     bt::require(late_count > 0, "late window recorded samples");
     const double mean_cmd_nm =

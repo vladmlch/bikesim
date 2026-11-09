@@ -2137,7 +2137,7 @@ IntentConfig decode_intent_config(const bio::Value &value,
     ncd::exact(d,
                   keys("enabled", "period_s", "reaction_delay_s",
                        "target_crank_power_w", "max_crank_torque_nm",
-                       "torque_slew_nm_s", "lean_gain",
+                       "lean_gain",
                        "max_forward_lean_rad", "max_backward_lean_rad",
                        "lean_rate_rad_s", "orientation_tau_s",
                        "surge_power_w", "surge_grade", "surge_budget_s",
@@ -2154,15 +2154,13 @@ IntentConfig decode_intent_config(const bio::Value &value,
         double IntentConfig::*field;
         bool positive;
     };
-    const std::array<Bound, 18> bounds{{
+    const std::array<Bound, 17> bounds{{
         {.key = "period_s", .field = &IntentConfig::period_s,
          .positive = true},
         {.key = "target_crank_power_w",
          .field = &IntentConfig::target_crank_power_w, .positive = true},
         {.key = "max_crank_torque_nm",
          .field = &IntentConfig::max_crank_torque_nm, .positive = true},
-        {.key = "torque_slew_nm_s", .field = &IntentConfig::torque_slew_nm_s,
-         .positive = true},
         {.key = "lean_rate_rad_s", .field = &IntentConfig::lean_rate_rad_s,
          .positive = true},
         {.key = "orientation_tau_s", .field = &IntentConfig::orientation_tau_s,

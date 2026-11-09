@@ -165,7 +165,6 @@ inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
     SC_REAL_REQ(reaction_delay_s),
     SC_REAL(target_crank_power_w),
     SC_REAL(max_crank_torque_nm),
-    SC_REAL(torque_slew_nm_s),
     SC_REAL(lean_gain),
     SC_REAL(max_forward_lean_rad),
     SC_REAL(max_backward_lean_rad),

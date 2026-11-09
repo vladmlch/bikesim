@@ -799,7 +799,6 @@
    "reaction_delay_s": 0.15,
    "target_crank_power_w": 250.0,
    "max_crank_torque_nm": 60.0,
-   "torque_slew_nm_s": 300.0,
    "lean_gain": 1.0,
    "max_forward_lean_rad": 0.35,
    "max_backward_lean_rad": 0.1,

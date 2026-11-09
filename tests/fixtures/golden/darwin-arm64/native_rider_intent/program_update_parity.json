@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3912,
+  "nbytes": 3712,
   "node": "native_rider_intent/program_update_parity",
   "offset": 0,
   "rtol": null,
   "shape": [
-   489
+   464
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.program.0",
   "nbytes": 856,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 3912,
+  "offset": 3712,
   "rtol": null,
   "shape": [
    107
@@ -35,7 +35,7 @@
   "label": "output.program.0",
   "nbytes": 8,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 4768,
+  "offset": 4568,
   "rtol": null,
   "shape": []
  },
@@ -47,7 +47,7 @@
   "label": "input.program.1",
   "nbytes": 888,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 4776,
+  "offset": 4576,
   "rtol": null,
   "shape": [
    111
@@ -61,7 +61,7 @@
   "label": "output.program.1",
   "nbytes": 8,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 5664,
+  "offset": 5464,
   "rtol": null,
   "shape": []
  },
@@ -73,7 +73,7 @@
   "label": "input.program.2",
   "nbytes": 864,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 5672,
+  "offset": 5472,
   "rtol": null,
   "shape": [
    108
@@ -87,7 +87,7 @@
   "label": "output.program.2",
   "nbytes": 8,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 6536,
+  "offset": 6336,
   "rtol": null,
   "shape": []
  },
@@ -99,7 +99,7 @@
   "label": "input.program.3",
   "nbytes": 864,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 6544,
+  "offset": 6344,
   "rtol": null,
   "shape": [
    108
@@ -113,7 +113,7 @@
   "label": "output.program.3",
   "nbytes": 8,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 7408,
+  "offset": 7208,
   "rtol": null,
   "shape": []
  },
@@ -125,7 +125,7 @@
   "label": "input.program.4",
   "nbytes": 864,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 7416,
+  "offset": 7216,
   "rtol": null,
   "shape": [
    108
@@ -139,7 +139,7 @@
   "label": "output.program.4",
   "nbytes": 8,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 8280,
+  "offset": 8080,
   "rtol": null,
   "shape": []
  },
@@ -151,7 +151,7 @@
   "label": "output.state.0",
   "nbytes": 430,
   "node": "native_rider_intent/program_update_parity",
-  "offset": 8288,
+  "offset": 8088,
   "rtol": null,
   "shape": [
    430

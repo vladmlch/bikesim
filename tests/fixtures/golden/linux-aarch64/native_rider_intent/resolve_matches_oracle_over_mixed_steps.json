@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3912,
+  "nbytes": 3712,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
   "offset": 0,
   "rtol": null,
   "shape": [
-   489
+   464
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 3912,
+  "offset": 3712,
   "rtol": null,
   "shape": [
    402
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 7128,
+  "offset": 6928,
   "rtol": null,
   "shape": [
    219
@@ -49,7 +49,7 @@
   "label": "output.state.0",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 7347,
+  "offset": 7147,
   "rtol": null,
   "shape": [
    550
@@ -63,7 +63,7 @@
   "label": "output.state.1",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 7897,
+  "offset": 7697,
   "rtol": null,
   "shape": [
    550
@@ -77,7 +77,7 @@
   "label": "input.resolve.1",
   "nbytes": 3240,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 8447,
+  "offset": 8247,
   "rtol": null,
   "shape": [
    405
@@ -91,7 +91,7 @@
   "label": "output.control.1",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 11687,
+  "offset": 11487,
   "rtol": null,
   "shape": [
    219
@@ -105,7 +105,7 @@
   "label": "output.state.2",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 11906,
+  "offset": 11706,
   "rtol": null,
   "shape": [
    550
@@ -119,7 +119,7 @@
   "label": "output.state.3",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 12456,
+  "offset": 12256,
   "rtol": null,
   "shape": [
    550
@@ -133,7 +133,7 @@
   "label": "input.resolve.2",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 13006,
+  "offset": 12806,
   "rtol": null,
   "shape": [
    419
@@ -147,7 +147,7 @@
   "label": "output.control.2",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 16358,
+  "offset": 16158,
   "rtol": null,
   "shape": [
    219
@@ -161,7 +161,7 @@
   "label": "output.state.4",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 16577,
+  "offset": 16377,
   "rtol": null,
   "shape": [
    550
@@ -175,7 +175,7 @@
   "label": "output.state.5",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 17127,
+  "offset": 16927,
   "rtol": null,
   "shape": [
    550
@@ -189,7 +189,7 @@
   "label": "input.resolve.3",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 17677,
+  "offset": 17477,
   "rtol": null,
   "shape": [
    419
@@ -203,7 +203,7 @@
   "label": "output.control.3",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 21029,
+  "offset": 20829,
   "rtol": null,
   "shape": [
    219
@@ -217,7 +217,7 @@
   "label": "output.state.6",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 21248,
+  "offset": 21048,
   "rtol": null,
   "shape": [
    550
@@ -231,7 +231,7 @@
   "label": "output.state.7",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 21798,
+  "offset": 21598,
   "rtol": null,
   "shape": [
    550
@@ -245,7 +245,7 @@
   "label": "input.resolve.4",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 22348,
+  "offset": 22148,
   "rtol": null,
   "shape": [
    419
@@ -259,7 +259,7 @@
   "label": "output.control.4",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 25700,
+  "offset": 25500,
   "rtol": null,
   "shape": [
    219
@@ -273,7 +273,7 @@
   "label": "output.state.8",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 25919,
+  "offset": 25719,
   "rtol": null,
   "shape": [
    550
@@ -287,7 +287,7 @@
   "label": "output.state.9",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 26469,
+  "offset": 26269,
   "rtol": null,
   "shape": [
    550
@@ -301,7 +301,7 @@
   "label": "input.resolve.5",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 27019,
+  "offset": 26819,
   "rtol": null,
   "shape": [
    419
@@ -315,7 +315,7 @@
   "label": "output.control.5",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 30371,
+  "offset": 30171,
   "rtol": null,
   "shape": [
    219
@@ -329,7 +329,7 @@
   "label": "output.state.10",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 30590,
+  "offset": 30390,
   "rtol": null,
   "shape": [
    550
@@ -343,7 +343,7 @@
   "label": "output.state.11",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 31140,
+  "offset": 30940,
   "rtol": null,
   "shape": [
    550
@@ -357,7 +357,7 @@
   "label": "input.resolve.6",
   "nbytes": 3472,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 31690,
+  "offset": 31490,
   "rtol": null,
   "shape": [
    434
@@ -371,7 +371,7 @@
   "label": "output.control.6",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 35162,
+  "offset": 34962,
   "rtol": null,
   "shape": [
    219
@@ -385,7 +385,7 @@
   "label": "output.state.12",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 35381,
+  "offset": 35181,
   "rtol": null,
   "shape": [
    550
@@ -399,7 +399,7 @@
   "label": "output.state.13",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 35931,
+  "offset": 35731,
   "rtol": null,
   "shape": [
    550
@@ -413,7 +413,7 @@
   "label": "input.resolve.7",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 36481,
+  "offset": 36281,
   "rtol": null,
   "shape": [
    419
@@ -427,7 +427,7 @@
   "label": "output.control.7",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 39833,
+  "offset": 39633,
   "rtol": null,
   "shape": [
    219
@@ -441,7 +441,7 @@
   "label": "output.state.14",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 40052,
+  "offset": 39852,
   "rtol": null,
   "shape": [
    550
@@ -455,7 +455,7 @@
   "label": "output.state.15",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 40602,
+  "offset": 40402,
   "rtol": null,
   "shape": [
    550
@@ -469,7 +469,7 @@
   "label": "input.resolve.8",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 41152,
+  "offset": 40952,
   "rtol": null,
   "shape": [
    419
@@ -483,7 +483,7 @@
   "label": "output.control.8",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 44504,
+  "offset": 44304,
   "rtol": null,
   "shape": [
    219
@@ -497,7 +497,7 @@
   "label": "output.state.16",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 44723,
+  "offset": 44523,
   "rtol": null,
   "shape": [
    550
@@ -511,7 +511,7 @@
   "label": "output.state.17",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 45273,
+  "offset": 45073,
   "rtol": null,
   "shape": [
    550
@@ -525,7 +525,7 @@
   "label": "input.resolve.9",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 45823,
+  "offset": 45623,
   "rtol": null,
   "shape": [
    419
@@ -539,7 +539,7 @@
   "label": "output.control.9",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 49175,
+  "offset": 48975,
   "rtol": null,
   "shape": [
    219
@@ -553,7 +553,7 @@
   "label": "output.state.18",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 49394,
+  "offset": 49194,
   "rtol": null,
   "shape": [
    550
@@ -567,7 +567,7 @@
   "label": "output.state.19",
   "nbytes": 550,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 49944,
+  "offset": 49744,
   "rtol": null,
   "shape": [
    550
@@ -581,7 +581,7 @@
   "label": "input.resolve.10",
   "nbytes": 3344,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 50494,
+  "offset": 50294,
   "rtol": null,
   "shape": [
    418
@@ -595,7 +595,7 @@
   "label": "output.control.10",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 53838,
+  "offset": 53638,
   "rtol": null,
   "shape": [
    218
@@ -609,7 +609,7 @@
   "label": "output.state.20",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 54056,
+  "offset": 53856,
   "rtol": null,
   "shape": [
    743
@@ -623,7 +623,7 @@
   "label": "output.state.21",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 54799,
+  "offset": 54599,
   "rtol": null,
   "shape": [
    743
@@ -637,7 +637,7 @@
   "label": "input.resolve.11",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 55542,
+  "offset": 55342,
   "rtol": null,
   "shape": [
    420
@@ -651,7 +651,7 @@
   "label": "output.control.11",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 58902,
+  "offset": 58702,
   "rtol": null,
   "shape": [
    218
@@ -665,7 +665,7 @@
   "label": "output.state.22",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 59120,
+  "offset": 58920,
   "rtol": null,
   "shape": [
    743
@@ -679,7 +679,7 @@
   "label": "output.state.23",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 59863,
+  "offset": 59663,
   "rtol": null,
   "shape": [
    743
@@ -693,7 +693,7 @@
   "label": "input.resolve.12",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 60606,
+  "offset": 60406,
   "rtol": null,
   "shape": [
    420
@@ -707,7 +707,7 @@
   "label": "output.control.12",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 63966,
+  "offset": 63766,
   "rtol": null,
   "shape": [
    218
@@ -721,7 +721,7 @@
   "label": "output.state.24",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 64184,
+  "offset": 63984,
   "rtol": null,
   "shape": [
    743
@@ -735,7 +735,7 @@
   "label": "output.state.25",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 64927,
+  "offset": 64727,
   "rtol": null,
   "shape": [
    743
@@ -749,7 +749,7 @@
   "label": "input.resolve.13",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 65670,
+  "offset": 65470,
   "rtol": null,
   "shape": [
    420
@@ -763,7 +763,7 @@
   "label": "output.control.13",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 69030,
+  "offset": 68830,
   "rtol": null,
   "shape": [
    218
@@ -777,7 +777,7 @@
   "label": "output.state.26",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 69248,
+  "offset": 69048,
   "rtol": null,
   "shape": [
    743
@@ -791,7 +791,7 @@
   "label": "output.state.27",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 69991,
+  "offset": 69791,
   "rtol": null,
   "shape": [
    743
@@ -805,7 +805,7 @@
   "label": "input.resolve.14",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 70734,
+  "offset": 70534,
   "rtol": null,
   "shape": [
    420
@@ -819,7 +819,7 @@
   "label": "output.control.14",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 74094,
+  "offset": 73894,
   "rtol": null,
   "shape": [
    218
@@ -833,7 +833,7 @@
   "label": "output.state.28",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 74312,
+  "offset": 74112,
   "rtol": null,
   "shape": [
    743
@@ -847,7 +847,7 @@
   "label": "output.state.29",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 75055,
+  "offset": 74855,
   "rtol": null,
   "shape": [
    743
@@ -861,7 +861,7 @@
   "label": "input.resolve.15",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 75798,
+  "offset": 75598,
   "rtol": null,
   "shape": [
    420
@@ -875,7 +875,7 @@
   "label": "output.control.15",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 79158,
+  "offset": 78958,
   "rtol": null,
   "shape": [
    218
@@ -889,7 +889,7 @@
   "label": "output.state.30",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 79376,
+  "offset": 79176,
   "rtol": null,
   "shape": [
    743
@@ -903,7 +903,7 @@
   "label": "output.state.31",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 80119,
+  "offset": 79919,
   "rtol": null,
   "shape": [
    743
@@ -917,7 +917,7 @@
   "label": "input.resolve.16",
   "nbytes": 3480,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 80862,
+  "offset": 80662,
   "rtol": null,
   "shape": [
    435
@@ -931,7 +931,7 @@
   "label": "output.control.16",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 84342,
+  "offset": 84142,
   "rtol": null,
   "shape": [
    218
@@ -945,7 +945,7 @@
   "label": "output.state.32",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 84560,
+  "offset": 84360,
   "rtol": null,
   "shape": [
    743
@@ -959,7 +959,7 @@
   "label": "output.state.33",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 85303,
+  "offset": 85103,
   "rtol": null,
   "shape": [
    743
@@ -973,7 +973,7 @@
   "label": "input.resolve.17",
   "nbytes": 3480,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 86046,
+  "offset": 85846,
   "rtol": null,
   "shape": [
    435
@@ -987,7 +987,7 @@
   "label": "output.control.17",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 89526,
+  "offset": 89326,
   "rtol": null,
   "shape": [
    218
@@ -1001,7 +1001,7 @@
   "label": "output.state.34",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 89744,
+  "offset": 89544,
   "rtol": null,
   "shape": [
    743
@@ -1015,7 +1015,7 @@
   "label": "output.state.35",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 90487,
+  "offset": 90287,
   "rtol": null,
   "shape": [
    743
@@ -1029,7 +1029,7 @@
   "label": "input.resolve.18",
   "nbytes": 3480,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 91230,
+  "offset": 91030,
   "rtol": null,
   "shape": [
    435
@@ -1043,7 +1043,7 @@
   "label": "output.control.18",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 94710,
+  "offset": 94510,
   "rtol": null,
   "shape": [
    218
@@ -1057,7 +1057,7 @@
   "label": "output.state.36",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 94928,
+  "offset": 94728,
   "rtol": null,
   "shape": [
    743
@@ -1071,7 +1071,7 @@
   "label": "output.state.37",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 95671,
+  "offset": 95471,
   "rtol": null,
   "shape": [
    743
@@ -1085,7 +1085,7 @@
   "label": "input.resolve.19",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 96414,
+  "offset": 96214,
   "rtol": null,
   "shape": [
    420
@@ -1099,7 +1099,7 @@
   "label": "output.control.19",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 99774,
+  "offset": 99574,
   "rtol": null,
   "shape": [
    218
@@ -1113,7 +1113,7 @@
   "label": "output.state.38",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 99992,
+  "offset": 99792,
   "rtol": null,
   "shape": [
    743
@@ -1127,7 +1127,7 @@
   "label": "output.state.39",
   "nbytes": 743,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 100735,
+  "offset": 100535,
   "rtol": null,
   "shape": [
    743
@@ -1141,7 +1141,7 @@
   "label": "input.resolve.20",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 101478,
+  "offset": 101278,
   "rtol": null,
   "shape": [
    419
@@ -1155,7 +1155,7 @@
   "label": "output.control.20",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 104830,
+  "offset": 104630,
   "rtol": null,
   "shape": [
    219
@@ -1169,7 +1169,7 @@
   "label": "output.state.40",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 105049,
+  "offset": 104849,
   "rtol": null,
   "shape": [
    942
@@ -1183,7 +1183,7 @@
   "label": "output.state.41",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 105991,
+  "offset": 105791,
   "rtol": null,
   "shape": [
    942
@@ -1197,7 +1197,7 @@
   "label": "input.resolve.21",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 106933,
+  "offset": 106733,
   "rtol": null,
   "shape": [
    421
@@ -1211,7 +1211,7 @@
   "label": "output.control.21",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 110301,
+  "offset": 110101,
   "rtol": null,
   "shape": [
    219
@@ -1225,7 +1225,7 @@
   "label": "output.state.42",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 110520,
+  "offset": 110320,
   "rtol": null,
   "shape": [
    942
@@ -1239,7 +1239,7 @@
   "label": "output.state.43",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 111462,
+  "offset": 111262,
   "rtol": null,
   "shape": [
    942
@@ -1253,7 +1253,7 @@
   "label": "input.resolve.22",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 112404,
+  "offset": 112204,
   "rtol": null,
   "shape": [
    436
@@ -1267,7 +1267,7 @@
   "label": "output.control.22",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 115892,
+  "offset": 115692,
   "rtol": null,
   "shape": [
    219
@@ -1281,7 +1281,7 @@
   "label": "output.state.44",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 116111,
+  "offset": 115911,
   "rtol": null,
   "shape": [
    942
@@ -1295,7 +1295,7 @@
   "label": "output.state.45",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 117053,
+  "offset": 116853,
   "rtol": null,
   "shape": [
    942
@@ -1309,7 +1309,7 @@
   "label": "input.resolve.23",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 117995,
+  "offset": 117795,
   "rtol": null,
   "shape": [
    421
@@ -1323,7 +1323,7 @@
   "label": "output.control.23",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 121363,
+  "offset": 121163,
   "rtol": null,
   "shape": [
    219
@@ -1337,7 +1337,7 @@
   "label": "output.state.46",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 121582,
+  "offset": 121382,
   "rtol": null,
   "shape": [
    942
@@ -1351,7 +1351,7 @@
   "label": "output.state.47",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 122524,
+  "offset": 122324,
   "rtol": null,
   "shape": [
    942
@@ -1365,7 +1365,7 @@
   "label": "input.resolve.24",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 123466,
+  "offset": 123266,
   "rtol": null,
   "shape": [
    421
@@ -1379,7 +1379,7 @@
   "label": "output.control.24",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 126834,
+  "offset": 126634,
   "rtol": null,
   "shape": [
    219
@@ -1393,7 +1393,7 @@
   "label": "output.state.48",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 127053,
+  "offset": 126853,
   "rtol": null,
   "shape": [
    942
@@ -1407,7 +1407,7 @@
   "label": "output.state.49",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 127995,
+  "offset": 127795,
   "rtol": null,
   "shape": [
    942
@@ -1421,7 +1421,7 @@
   "label": "input.resolve.25",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 128937,
+  "offset": 128737,
   "rtol": null,
   "shape": [
    421
@@ -1435,7 +1435,7 @@
   "label": "output.control.25",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 132305,
+  "offset": 132105,
   "rtol": null,
   "shape": [
    219
@@ -1449,7 +1449,7 @@
   "label": "output.state.50",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 132524,
+  "offset": 132324,
   "rtol": null,
   "shape": [
    942
@@ -1463,7 +1463,7 @@
   "label": "output.state.51",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 133466,
+  "offset": 133266,
   "rtol": null,
   "shape": [
    942
@@ -1477,7 +1477,7 @@
   "label": "input.resolve.26",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 134408,
+  "offset": 134208,
   "rtol": null,
   "shape": [
    421
@@ -1491,7 +1491,7 @@
   "label": "output.control.26",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 137776,
+  "offset": 137576,
   "rtol": null,
   "shape": [
    219
@@ -1505,7 +1505,7 @@
   "label": "output.state.52",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 137995,
+  "offset": 137795,
   "rtol": null,
   "shape": [
    942
@@ -1519,7 +1519,7 @@
   "label": "output.state.53",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 138937,
+  "offset": 138737,
   "rtol": null,
   "shape": [
    942
@@ -1533,7 +1533,7 @@
   "label": "input.resolve.27",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 139879,
+  "offset": 139679,
   "rtol": null,
   "shape": [
    421
@@ -1547,7 +1547,7 @@
   "label": "output.control.27",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 143247,
+  "offset": 143047,
   "rtol": null,
   "shape": [
    219
@@ -1561,7 +1561,7 @@
   "label": "output.state.54",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 143466,
+  "offset": 143266,
   "rtol": null,
   "shape": [
    942
@@ -1575,7 +1575,7 @@
   "label": "output.state.55",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 144408,
+  "offset": 144208,
   "rtol": null,
   "shape": [
    942
@@ -1589,7 +1589,7 @@
   "label": "input.resolve.28",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 145350,
+  "offset": 145150,
   "rtol": null,
   "shape": [
    421
@@ -1603,7 +1603,7 @@
   "label": "output.control.28",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 148718,
+  "offset": 148518,
   "rtol": null,
   "shape": [
    219
@@ -1617,7 +1617,7 @@
   "label": "output.state.56",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 148937,
+  "offset": 148737,
   "rtol": null,
   "shape": [
    942
@@ -1631,7 +1631,7 @@
   "label": "output.state.57",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 149879,
+  "offset": 149679,
   "rtol": null,
   "shape": [
    942
@@ -1645,7 +1645,7 @@
   "label": "input.resolve.29",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 150821,
+  "offset": 150621,
   "rtol": null,
   "shape": [
    421
@@ -1659,7 +1659,7 @@
   "label": "output.control.29",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 154189,
+  "offset": 153989,
   "rtol": null,
   "shape": [
    219
@@ -1673,7 +1673,7 @@
   "label": "output.state.58",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 154408,
+  "offset": 154208,
   "rtol": null,
   "shape": [
    942
@@ -1687,7 +1687,7 @@
   "label": "output.state.59",
   "nbytes": 942,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 155350,
+  "offset": 155150,
   "rtol": null,
   "shape": [
    942
@@ -1701,7 +1701,7 @@
   "label": "input.resolve.30",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 156292,
+  "offset": 156092,
   "rtol": null,
   "shape": [
    419
@@ -1715,7 +1715,7 @@
   "label": "output.control.30",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 159644,
+  "offset": 159444,
   "rtol": null,
   "shape": [
    218
@@ -1729,7 +1729,7 @@
   "label": "output.state.60",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 159862,
+  "offset": 159662,
   "rtol": null,
   "shape": [
    1135
@@ -1743,7 +1743,7 @@
   "label": "output.state.61",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 160997,
+  "offset": 160797,
   "rtol": null,
   "shape": [
    1135
@@ -1757,7 +1757,7 @@
   "label": "input.resolve.31",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 162132,
+  "offset": 161932,
   "rtol": null,
   "shape": [
    436
@@ -1771,7 +1771,7 @@
   "label": "output.control.31",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 165620,
+  "offset": 165420,
   "rtol": null,
   "shape": [
    218
@@ -1785,7 +1785,7 @@
   "label": "output.state.62",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 165838,
+  "offset": 165638,
   "rtol": null,
   "shape": [
    1135
@@ -1799,7 +1799,7 @@
   "label": "output.state.63",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 166973,
+  "offset": 166773,
   "rtol": null,
   "shape": [
    1135
@@ -1813,7 +1813,7 @@
   "label": "input.resolve.32",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 168108,
+  "offset": 167908,
   "rtol": null,
   "shape": [
    436
@@ -1827,7 +1827,7 @@
   "label": "output.control.32",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 171596,
+  "offset": 171396,
   "rtol": null,
   "shape": [
    218
@@ -1841,7 +1841,7 @@
   "label": "output.state.64",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 171814,
+  "offset": 171614,
   "rtol": null,
   "shape": [
    1135
@@ -1855,7 +1855,7 @@
   "label": "output.state.65",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 172949,
+  "offset": 172749,
   "rtol": null,
   "shape": [
    1135
@@ -1869,7 +1869,7 @@
   "label": "input.resolve.33",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 174084,
+  "offset": 173884,
   "rtol": null,
   "shape": [
    436
@@ -1883,7 +1883,7 @@
   "label": "output.control.33",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 177572,
+  "offset": 177372,
   "rtol": null,
   "shape": [
    218
@@ -1897,7 +1897,7 @@
   "label": "output.state.66",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 177790,
+  "offset": 177590,
   "rtol": null,
   "shape": [
    1135
@@ -1911,7 +1911,7 @@
   "label": "output.state.67",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 178925,
+  "offset": 178725,
   "rtol": null,
   "shape": [
    1135
@@ -1925,7 +1925,7 @@
   "label": "input.resolve.34",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 180060,
+  "offset": 179860,
   "rtol": null,
   "shape": [
    436
@@ -1939,7 +1939,7 @@
   "label": "output.control.34",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 183548,
+  "offset": 183348,
   "rtol": null,
   "shape": [
    218
@@ -1953,7 +1953,7 @@
   "label": "output.state.68",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 183766,
+  "offset": 183566,
   "rtol": null,
   "shape": [
    1135
@@ -1967,7 +1967,7 @@
   "label": "output.state.69",
   "nbytes": 1135,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 184901,
+  "offset": 184701,
   "rtol": null,
   "shape": [
    1135

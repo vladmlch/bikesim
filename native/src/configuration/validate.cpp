@@ -795,8 +795,6 @@ void post_init(const SeatedClimbConfig &config) {
                   &SeatedClimbConfig::target_crank_power_w},
         std::pair{"max_crank_torque_nm",
                   &SeatedClimbConfig::max_crank_torque_nm},
-        std::pair{"torque_slew_nm_s",
-                  &SeatedClimbConfig::torque_slew_nm_s},
         std::pair{"lean_rate_rad_s", &SeatedClimbConfig::lean_rate_rad_s},
         std::pair{"orientation_tau_s", &SeatedClimbConfig::orientation_tau_s},
         std::pair{"surge_power_w", &SeatedClimbConfig::surge_power_w},

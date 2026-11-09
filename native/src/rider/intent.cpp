@@ -279,9 +279,7 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
         const double target_effort = spindle::crank_effort_ceiling(
             power_target, config_.max_crank_torque_nm,
             delayed.crank_rate_rad_s);
-        effort_nm_ += std::max(-config_.torque_slew_nm_s * dt,
-                               std::min(config_.torque_slew_nm_s * dt,
-                                        target_effort - effort_nm_));
+        effort_nm_ = target_effort;
     }
     lean_rad_ = program_.update(time_s_, preview, dt,
                                 signals.front_load_share, lean_limit_rad,

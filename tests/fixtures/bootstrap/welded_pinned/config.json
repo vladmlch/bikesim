@@ -622,6 +622,7 @@
     "max_backward_lean_rad": 0.1,
     "max_crank_torque_nm": 60.0,
     "max_forward_lean_rad": 0.35,
+    "min_elbow_flexion_deg": 15.0,
     "orientation_tau_s": 0.5,
     "period_s": 0.01,
     "reaction_delay_s": 0.15,
@@ -714,7 +715,6 @@
         "rollback_release_mps": 0.0,
         "stop_time_s": 0.35
       },
-      "rotor_inertia_kgm2": 0.0,
       "shifting": {
         "cadence_smoothing_tau_s": 0.35,
         "cassette": [

@@ -531,16 +531,23 @@ void test_strict_flat_cycle_delivers_and_stays_within_budgets() {
     }
 }
 
-// physics-2026-11-05 plan task 3 («Действует» 9): on the rigid layout
-// (motor_clutch=false) the weld-measured crank torque per completed
-// revolution still tracks the commanded mean — mean_crank_torque_nm is
-// the rider's TOTAL crank torque, so the descending leg's uncompensated
-// weight is part of the commanded total, not added on top of it. The
-// weld accounting's baseline overshoot must not grow by the ~+1.4 N·m
-// the step-1 probe measured when the muscle task was not reduced by the
-// weight's crank contribution.
-void test_rigid_per_revolution_crank_torque_tracks_command() {
-    auto env = cycle_env(/*motor_clutch=*/false); // rigid arm of the weld-vs-clutch A/B
+// The weld-vs-clutch A/B pair shares one probe: the flat 8 s episode on
+// the requested crank topology under the 24 N·m / 8 rad·s⁻¹ ride control
+// below, then the per-revolution delivered-vs-commanded measurement.
+struct PerRevolutionTorque {
+    double delivered_mean_nm = 0.;
+    double commanded_mean_nm = 0.;
+    double gap_nm = 0.;
+    std::size_t revolutions = 0;
+};
+
+// Both arms assert the same band on delivered-minus-commanded.
+constexpr double kPerRevolutionGapFloorNm = -.5;
+constexpr double kPerRevolutionGapCeilNm = 2.2;
+
+PerRevolutionTorque per_revolution_crank_torque_probe(bool motor_clutch,
+                                                    std::string_view arm) {
+    auto env = cycle_env(motor_clutch);
     // The ~24 N.m demand lands inside the deliverable band — the flat
     // launch's sustained ceiling is ~26 N.m — so the weld reading tracks
     // the commanded effort rather than the capability cap. The cadence
@@ -593,13 +600,46 @@ void test_rigid_per_revolution_crank_torque_tracks_command() {
     commanded_mean /= static_cast<double>(sensor.size());
     const double gap = delivered_mean - commanded_mean;
     std::cerr << std::format(
-        "rigid per-rev delivered {:.3f} vs commanded {:.3f} N.m "
+        "{} per-rev delivered {:.3f} vs commanded {:.3f} N.m "
         "(gap {:+.3f} over {} revs)\n",
-        delivered_mean, commanded_mean, gap, sensor.size());
-    bt::require(gap >= -.5 && gap <= 2.2,
+        arm, delivered_mean, commanded_mean, gap, sensor.size());
+    return {.delivered_mean_nm = delivered_mean,
+            .commanded_mean_nm = commanded_mean,
+            .gap_nm = gap,
+            .revolutions = sensor.size()};
+}
+
+// physics-2026-11-05 plan task 3 («Действует» 9): on the rigid layout
+// (motor_clutch=false) the weld-measured crank torque per completed
+// revolution still tracks the commanded mean — mean_crank_torque_nm is
+// the rider's TOTAL crank torque, so the descending leg's uncompensated
+// weight is part of the commanded total, not added on top of it. The
+// weld accounting's baseline overshoot must not grow by the ~+1.4 N·m
+// the step-1 probe measured when the muscle task was not reduced by the
+// weight's crank contribution.
+void test_rigid_per_revolution_crank_torque_tracks_command() {
+    const auto probe = per_revolution_crank_torque_probe(
+        /*motor_clutch=*/false,
+        "rigid"); // rigid arm of the weld-vs-clutch A/B
+    bt::require(probe.gap_nm >= kPerRevolutionGapFloorNm &&
+                    probe.gap_nm <= kPerRevolutionGapCeilNm,
                 "the delivered per-rev mean tracks the commanded mean — "
                 "the leg weight is inside the commanded total, not on "
                 "top of it");
+}
+
+// Clutch arm of the same weld-vs-clutch A/B (motor_clutch=true, the
+// pedaling topology since cfbf847e): the identical ride, control and
+// per-revolution measurement must hold the same band, so engaging the
+// one-way motor clutch while pedalling adds no bookkeeping overshoot —
+// the delivered mean still tracks the commanded total.
+void test_clutch_per_revolution_crank_torque_tracks_command() {
+    const auto probe = per_revolution_crank_torque_probe(
+        /*motor_clutch=*/true, "clutch");
+    bt::require(probe.gap_nm >= kPerRevolutionGapFloorNm &&
+                    probe.gap_nm <= kPerRevolutionGapCeilNm,
+                "the delivered per-rev mean tracks the commanded mean on "
+                "the clutch layout too — engagement adds no overshoot");
 }
 
 // test_free_coast_is_an_intent_not_a_crank_lock
@@ -1530,6 +1570,7 @@ int main() {
         test_falling_effort_ceiling_goes_through_the_configured_slew();
         test_strict_flat_cycle_delivers_and_stays_within_budgets();
         test_rigid_per_revolution_crank_torque_tracks_command();
+        test_clutch_per_revolution_crank_torque_tracks_command();
         test_free_coast_is_an_intent_not_a_crank_lock();
         test_clutch_engagement_is_not_a_loss();
         test_cadence_wish_is_forwarded_with_immediate_rider_fields_past_motor_queue();

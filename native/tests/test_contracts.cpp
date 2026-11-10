@@ -2518,7 +2518,8 @@ namespace {
     nativecfg::TireParams warm_tire_params() {
         return {.material = nativecfg::TireMaterial{
                     .radial_k_n_m = 150000.,
-                    .radial_c_ns_m = 800.,
+                    .loss_factor = .07,
+                    .hysteresis_rate_eps_mps = .01,
                     .pressure_pa_gauge = 250000.,
                     .provenance = "contract-test",
                     .valid_load_range_n = {0., 3000.},

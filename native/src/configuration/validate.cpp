@@ -160,11 +160,18 @@ namespace detail {
 void post_init(TireSpec &spec) {
     // tire.py TireSpec.__post_init__ — bare field names are the labels.
     scalar(spec.radial_k_n_m, "radial_k_n_m");
-    scalar(spec.radial_c_ns_m, "radial_c_ns_m");
+    scalar(spec.loss_factor, "loss_factor");
+    scalar(spec.hysteresis_rate_eps_mps, "hysteresis_rate_eps_mps");
     scalar(spec.pressure_pa_gauge, "pressure_pa_gauge");
     if (spec.radial_k_n_m <= 0.) fail("radial_k_n_m must be positive");
-    if (spec.radial_c_ns_m < 0. || spec.pressure_pa_gauge < 0.)
-        fail("radial damping and gauge pressure must be nonnegative");
+    // Decisions 22/39 (2026-11-10): rate-independent hysteresis replaces
+    // viscous damping — the bounds mirror TyreSpecs.__post_init__.
+    if (spec.loss_factor < 0. || spec.loss_factor >= 1.)
+        fail("loss_factor must satisfy 0 <= loss_factor < 1");
+    if (spec.hysteresis_rate_eps_mps <= 0.)
+        fail("hysteresis_rate_eps_mps must be positive");
+    if (spec.pressure_pa_gauge < 0.)
+        fail("gauge pressure must be nonnegative");
     if (!nonblank(spec.provenance))
         fail("provenance must be a nonempty description, e.g. synthetic");
     // `lower, upper = valid_load_range_n` — the two-element shape is part of
@@ -184,7 +191,11 @@ namespace {
 void validate_tire_material(const TireSpec &spec) {
     scalar(spec.radial_k_n_m, "TireSpec.radial_k_n_m",
            std::nullopt, true);
-    scalar(spec.radial_c_ns_m, "TireSpec.radial_c_ns_m", 0.);
+    scalar(spec.loss_factor, "TireSpec.loss_factor", 0.);
+    if (spec.loss_factor >= 1.)
+        fail("TireSpec.loss_factor: must be below 1");
+    scalar(spec.hysteresis_rate_eps_mps,
+           "TireSpec.hysteresis_rate_eps_mps", std::nullopt, true);
     scalar(spec.pressure_pa_gauge, "TireSpec.pressure_pa_gauge", 0.);
     if (!nonblank(spec.provenance))
         fail("TireSpec.provenance: nonblank description required");
@@ -217,12 +228,18 @@ void post_init(TabulatedTireSpec &spec) {
         fail("elastic tire force must be nondecreasing and positive at the "
              "end");
     for (const auto& [member, value] :
-         {std::pair{"radial_c_ns_m", spec.radial_c_ns_m},
+         {std::pair{"loss_factor", spec.loss_factor},
           {"pressure_pa_gauge", spec.pressure_pa_gauge}}) {
         scalar(value, member);
         if (value < 0.)
             fail(std::string(member) + " must be nonnegative");
     }
+    // Decisions 22/39 (2026-11-10): the tabulated material's radial loss
+    // is the same rate-independent hysteresis as the linear material.
+    if (spec.loss_factor >= 1.) fail("loss_factor must be below 1");
+    scalar(spec.hysteresis_rate_eps_mps, "hysteresis_rate_eps_mps");
+    if (spec.hysteresis_rate_eps_mps <= 0.)
+        fail("hysteresis_rate_eps_mps must be positive");
     if (!nonblank(spec.provenance))
         fail("tire curve requires explicit provenance");
     // tire_curve.py wraps both _scalar calls: any TypeError/ValueError
@@ -1321,6 +1338,14 @@ SimulationPhysicsConfig default_physics() {
     config.research.sensor_maximum_age_s = .1;
     config.research.sample_period_s = .005;
     config.research.record_decimation = 80;
+    // Decisions 22/39 (2026-11-10): the compliant_2d material's radial
+    // loss is the rate-independent hysteresis F = kδ + η·kδ·tanh(δ̇/ε);
+    // the built-in default declares the same fitted values the welded
+    // research profile does — η from the pneumatic kFrontTyre/kRearTyre
+    // loss_factor and ε from their shared hysteresis_rate_eps_mps
+    // (physical_config.hpp).
+    config.tires.front.material = synthetic_tire_material(.0662);
+    config.tires.rear.material = synthetic_tire_material(.069);
     post_init(config);
     return config;
 }

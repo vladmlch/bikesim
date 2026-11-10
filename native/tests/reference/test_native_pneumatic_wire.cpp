@@ -334,7 +334,9 @@ void test_pneumatic_wire_rejection_cases(std::string_view parameters,
             [](io::Value &c) {
                 io::Value::Object material;
                 material.emplace_back("radial_k_n_m", num("1.0"));
-                material.emplace_back("radial_c_ns_m", num("1.0"));
+                material.emplace_back("loss_factor", num("0.1"));
+                material.emplace_back("hysteresis_rate_eps_mps",
+                                      num("0.01"));
                 material.emplace_back("pressure_pa_gauge", num("1.0"));
                 material.emplace_back("provenance",
                                       io::Value{std::string("x")});
@@ -495,7 +497,9 @@ void test_selected_native_parser_rejects_malformed_pneumatic_wires(
             [](io::Value &c) {
                 io::Value::Object material;
                 material.emplace_back("radial_k_n_m", num("1.0"));
-                material.emplace_back("radial_c_ns_m", num("1.0"));
+                material.emplace_back("loss_factor", num("0.1"));
+                material.emplace_back("hysteresis_rate_eps_mps",
+                                      num("0.01"));
                 material.emplace_back("pressure_pa_gauge", num("1.0"));
                 material.emplace_back("provenance",
                                       io::Value{std::string("x")});

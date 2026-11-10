@@ -1,6 +1,7 @@
 #include "tabulated_radial.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 #include "../config_validation.hpp"
@@ -36,12 +37,18 @@ std::pair<double, double> TabulatedRadial::elastic_response(double penetration_m
 }
 std::pair<double, double> TabulatedRadial::normal_contact(
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    double penetration_m, double rate_mps, double damping_ns_m) const {
+    double penetration_m, double rate_mps, double loss_factor,
+    double hysteresis_rate_eps_mps) const {
     validation::finite(rate_mps, "deflection rate");
-    validation::nonnegative(damping_ns_m, "radial damping");
+    validation::nonnegative(loss_factor, "radial loss factor");
+    validation::positive(hysteresis_rate_eps_mps,
+                         "hysteresis rate scale");
     const auto [spring, energy] = elastic_response(penetration_m);
     if (penetration_m <= 0.) return {0., 0.};
-    const double total = validation::derived(spring + damping_ns_m * rate_mps, "tabulated normal force");
+    const double total = validation::derived(
+        spring + loss_factor * spring *
+                std::tanh(rate_mps / hysteresis_rate_eps_mps),
+        "tabulated normal force");
     return {std::max(0., total), energy};
 }
 } // namespace contactlaw

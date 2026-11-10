@@ -27,8 +27,31 @@ surface_mode = "track"
 [tires.front]
 mu = 1.1
 
+# Compliant material: the radial loss is the rate-independent hysteresis
+# F = kδ + η·kδ·tanh(δ̇/ε) — simulation decisions 22/39 (2026-11-10);
+# viscous radial damping is forbidden. loss_factor is the pneumatic
+# model's fitted front value (kFrontTyre, physical_config.hpp),
+# hysteresis_rate_eps_mps its shared rate scale.
+[tires.front.material]
+radial_k_n_m = 130000.0
+loss_factor = 0.0662
+hysteresis_rate_eps_mps = 0.01
+pressure_pa_gauge = 200000.0
+provenance = "synthetic"
+valid_load_range_n = [0.0, 2000.0]
+
 [tires.rear]
 mu = 1.1
+
+# Same law as the front material; loss_factor is the pneumatic model's
+# fitted rear value (kRearTyre, physical_config.hpp).
+[tires.rear.material]
+radial_k_n_m = 130000.0
+loss_factor = 0.0690
+hysteresis_rate_eps_mps = 0.01
+pressure_pa_gauge = 200000.0
+provenance = "synthetic"
+valid_load_range_n = [0.0, 2000.0]
 
 [drive]
 # Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling

@@ -11,6 +11,7 @@
 #include "runtime/value_readers.hpp"
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <set>
@@ -96,13 +97,19 @@ void migration_fixture_verdicts(){
 void material_curve_contract(){
     auto record=json(R"({"dataset_id":"synthetic-radial","source_kind":"synthetic","tyre_label":"bench",
         "radius_m":0.37,"inflated_width_m":0.06,"rim_internal_width_m":0.03,"pressure_pa_gauge":150000,
-        "radial_c_ns_m":100,"deflection_m":[0,0.01,0.02],"force_n":[0,1000,1000],
+        "loss_factor":0.99,"hysteresis_rate_eps_mps":0.01,"deflection_m":[0,0.01,0.02],"force_n":[0,1000,1000],
         "valid_load_range_n":[0,1000],"provenance":"synthetic monotone test curve"})");
     const auto calibration=calibration_from_record(record);const auto curve=calibration.curve();
     const auto [force,energy]=curve.elastic_response(.005);
     bt::require(force==500.&&energy==1.25,"linear segment integrates force into elastic joules");
-    const auto [normal,stored]=curve.normal_contact(.005,-10.,100.);
-    bt::require(normal==0.&&stored==energy,"unilateral damping never creates a tensile normal force or erases stored energy");
+    // Decision 22/39 (2026-11-10): the loss is the rate-independent
+    // hysteresis η·F·tanh(δ̇/ε) — |η·F| < F keeps the unilateral force
+    // positive even at a release rate saturating the tanh; viscous
+    // damping could pull it negative, this law cannot.
+    const auto [normal,stored]=curve.normal_contact(.005,-10.,.99,.01);
+    bt::require(std::abs(normal-5.)<1e-9&&stored==energy,"hysteresis subtracts at most η·F: the unilateral force stays positive and stored energy is untouched");
+    const auto [still,stored2]=curve.normal_contact(.005,0.,.99,.01);
+    bt::require(still==500.&&stored2==energy,"zero deflection rate returns the pure elastic force and energy");
     bt::require(calibration.is_load_in_valid_range(1000.)&&!calibration.is_load_in_valid_range(1000.01),"declared calibration load range is inclusive");
     bt::invalid([&]{(void)curve.elastic_response(.0201);});
     set(record,"source_kind",value::text("validated"));bt::invalid([&]{(void)calibration_from_record(record);});

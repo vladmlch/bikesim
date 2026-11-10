@@ -1025,7 +1025,8 @@ void test_validation() {
         cfg::TabulatedTireSpec tab{
             .deflection_m = {0., .01, .02},
             .force_n = {0., 800., 1600.},
-            .radial_c_ns_m = 40.,
+            .loss_factor = .07,
+            .hysteresis_rate_eps_mps = .01,
             .pressure_pa_gauge = 70000.,
             .provenance = "test fixture",
             .valid_load_range_n = {0., 1600.}};

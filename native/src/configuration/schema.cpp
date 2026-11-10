@@ -556,8 +556,8 @@ bool schema_entry(std::string_view name, std::string_view &required,
         {.name = "tire.side", .entry = {.required = "tangent_k_n_m mu relaxation_length_m",
           .optional = "material"}},
         {.name = "tire.side.material", .entry =
-         {.required = "radial_k_n_m radial_c_ns_m pressure_pa_gauge provenance "
-          "valid_load_range_n",
+         {.required = "radial_k_n_m loss_factor hysteresis_rate_eps_mps "
+          "pressure_pa_gauge provenance valid_load_range_n",
           .optional = ""}},
         {.name = "tire.distributed", .entry = {.required = "station_count density front rear",
           .optional = ""}},
@@ -914,7 +914,7 @@ void validate_mapping(const Value &value, const std::string &name,
     if (schema_name(name) == "tire.side.material" &&
         (bike::io::find_member(object, "deflection_m") != nullptr ||
          bike::io::find_member(object, "force_n") != nullptr)) {
-        required = "deflection_m force_n radial_c_ns_m pressure_pa_gauge provenance valid_load_range_n";
+        required = "deflection_m force_n loss_factor hysteresis_rate_eps_mps pressure_pa_gauge provenance valid_load_range_n";
         optional = "";
     }
     exact_keys(object, required, optional, path);

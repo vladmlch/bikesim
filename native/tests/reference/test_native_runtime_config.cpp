@@ -298,13 +298,15 @@ void test_native_capability_rejects_tabulated_tire_material() {
     cfg::SimulationPhysicsConfig config = welded();
     const auto& analytic =
         std::get<cfg::TireSpec>(config.tires.front.material);
-    cfg::TabulatedTireSpec const table{.deflection_m = {0., .01},
-                                       .force_n = {0., 1000.},
-                                       .radial_c_ns_m = analytic.radial_c_ns_m,
-                                       .pressure_pa_gauge =
-                                           analytic.pressure_pa_gauge,
-                                       .provenance = "test",
-                                       .valid_load_range_n = {100., 500.}};
+    cfg::TabulatedTireSpec const table{
+        .deflection_m = {0., .01},
+        .force_n = {0., 1000.},
+        .loss_factor = analytic.loss_factor,
+        .hysteresis_rate_eps_mps = analytic.hysteresis_rate_eps_mps,
+        .pressure_pa_gauge =
+            analytic.pressure_pa_gauge,
+        .provenance = "test",
+        .valid_load_range_n = {100., 500.}};
     config.tires.front.material = table;
     require_supported(config, articulated_rider(),
                       "a tabulated material is inside the native matrix");

@@ -47,7 +47,7 @@
 namespace {
     using Vec3 = std::array<double, model_access::kXYZ>;
 
-    using contactlaw::normal_contact;
+    using contactlaw::normal_contact_hysteresis;
 
     // physical_mapping.py:6-11 — resolve_id. Site contract: the wheel
     // contact geoms take the plain name check (id >= 0) — the shared
@@ -213,15 +213,24 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
                 "compliant_2d tire params carry no material");
         const nativecfg::TireMaterial &mat = *p->material;
         if (!std::isfinite(mat.radial_k_n_m) ||
-            !std::isfinite(mat.radial_c_ns_m) ||
+            !std::isfinite(mat.loss_factor) ||
+            !std::isfinite(mat.hysteresis_rate_eps_mps) ||
             !std::isfinite(mat.pressure_pa_gauge))
             throw std::invalid_argument(
                 "tire material scalars must be finite");
         if (!mat.table && mat.radial_k_n_m <= 0.0)
             throw std::invalid_argument("radial_k_n_m must be positive");
-        if (mat.radial_c_ns_m < 0.0 || mat.pressure_pa_gauge < 0.0)
+        // Decisions 22/39 (2026-11-10): the radial loss is the
+        // rate-independent hysteresis η·kδ·tanh(δ̇/ε); a viscous
+        // radial_c_ns_m term no longer exists.
+        if (mat.loss_factor < 0.0 || mat.loss_factor >= 1.0 ||
+            mat.pressure_pa_gauge < 0.0)
             throw std::invalid_argument(
-                "radial damping and gauge pressure must be nonnegative");
+                "loss factor must lie in [0, 1) and gauge pressure must "
+                "be nonnegative");
+        if (mat.hysteresis_rate_eps_mps <= 0.0)
+            throw std::invalid_argument(
+                "hysteresis_rate_eps_mps must be positive");
         if (mat.provenance.find_first_not_of(" \t\n\v\f\r") ==
             std::string::npos)
             throw std::invalid_argument(
@@ -702,11 +711,16 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         // TireSpec material branch (tire_forces.py:147-150).
         const nativecfg::TireMaterial &mat = s == 0 ? front_mat : rear_mat;
         const double rk = mat.radial_k_n_m;
-        const double rc = mat.radial_c_ns_m;
+        const double eta = mat.loss_factor;
+        const double eps = mat.hysteresis_rate_eps_mps;
         const auto& radial_table = radial_tables_[s];
+        // Decisions 22/39: rate-independent hysteresis in both branches —
+        // linear kδ or the tabulated elastic — never a viscous c·δ̇.
         const auto [normal, radial_energy] = radial_table
-            ? radial_table->normal_contact(contact.delta, delta_dot, rc)
-            : normal_contact(contact.delta, delta_dot, rk, rc);
+            ? radial_table->normal_contact(contact.delta, delta_dot,
+                                           eta, eps)
+            : normal_contact_hysteresis(contact.delta, delta_dot, rk,
+                                        eta, eps);
         const double elastic_force = radial_table
             ? radial_table->elastic_response(contact.delta).first
             : rk * std::max(contact.delta, 0.0);

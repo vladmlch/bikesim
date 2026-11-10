@@ -100,12 +100,13 @@ bool TireCalibration::is_load_in_valid_range(double load_n) const {
 }
 TireCalibration calibration_from_record(const Value& record) {
     require_keys(record,{"dataset_id","source_kind","tyre_label","radius_m","inflated_width_m","rim_internal_width_m",
-        "pressure_pa_gauge","radial_c_ns_m","deflection_m","force_n","valid_load_range_n","provenance"},
+        "pressure_pa_gauge","loss_factor","hysteresis_rate_eps_mps","deflection_m","force_n","valid_load_range_n","provenance"},
         "calibration fields must match the version-1 schema exactly");
     TireCalibration r;
     r.material.table=nativecfg::TireTable{.deflection_m=numbers(get(record,"deflection_m"),"deflection"),.force_n=numbers(get(record,"force_n"),"elastic force")};
     (void)r.curve();
-    r.material.radial_c_ns_m=nonnegative(real(record,"radial_c_ns_m"),"radial_c_ns_m");
+    r.material.loss_factor=nonnegative(real(record,"loss_factor"),"loss_factor");
+    r.material.hysteresis_rate_eps_mps=positive(real(record,"hysteresis_rate_eps_mps"),"hysteresis_rate_eps_mps");
     r.material.pressure_pa_gauge=nonnegative(real(record,"pressure_pa_gauge"),"pressure_pa_gauge");
     r.material.provenance=identifier(get(record,"provenance"),"tire curve provenance");
     const auto limits=numbers(get(record,"valid_load_range_n"),"valid load");

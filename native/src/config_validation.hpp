@@ -248,7 +248,13 @@ namespace nativecfg {
     inline void validate(const TireMaterial &s, std::string_view path = "config.tire.material") {
         if (s.table) validate(*s.table, path);
         else validation::positive(s.radial_k_n_m, std::string(path) + ".radial_k_n_m");
-        validation::nonnegative(s.radial_c_ns_m, std::string(path) + ".radial_c_ns_m");
+        // Decisions 22/39 (2026-11-10): the radial loss is the
+        // rate-independent hysteresis η·F·tanh(δ̇/ε); viscous
+        // radial_c_ns_m is removed.
+        validation::nonnegative(s.loss_factor, std::string(path) + ".loss_factor");
+        if (!(s.loss_factor < 1.))
+            throw std::invalid_argument(std::string(path) + ".loss_factor: must be below 1");
+        validation::positive(s.hysteresis_rate_eps_mps, std::string(path) + ".hysteresis_rate_eps_mps");
         validation::nonnegative(s.pressure_pa_gauge, std::string(path) + ".pressure_pa_gauge");
         validation::nonnegative(s.valid_load_range_n[0], std::string(path) + ".valid_load_range_n");
         validation::positive(s.valid_load_range_n[1], std::string(path) + ".valid_load_range_n");

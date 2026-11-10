@@ -400,13 +400,29 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // Required members of the material record are all mandatory — the
     // CPython missing-arguments text is preserved verbatim.
     invalid_with(
-        "invalid TireSpec: TireSpec.__init__() missing 4 required positional "
-        "arguments: 'radial_c_ns_m', 'pressure_pa_gauge', 'provenance', and "
-        "'valid_load_range_n'",
+        "invalid TireSpec: TireSpec.__init__() missing 5 required positional "
+        "arguments: 'loss_factor', 'hysteresis_rate_eps_mps', "
+        "'pressure_pa_gauge', 'provenance', and 'valid_load_range_n'",
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_required.toml",
                 "[tires.front.material]\nradial_k_n_m = 130000\n" + std::string(kResearchSection))));
+        });
+
+    // Decision 39 (2026-11-10): the compliant_2d material's viscous radial
+    // damping was removed — a profile still carrying the dropped
+    // radial_c_ns_m key fails to load and names it.
+    invalid_with(
+        "unknown TireSpec parameter(s): radial_c_ns_m",
+        [&] {
+            discard(cfg::load_physics(stage(
+                "legacy_radial_c.toml",
+                "[tires.front.material]\nradial_k_n_m = 130000\n"
+                "radial_c_ns_m = 800\nloss_factor = 0.0662\n"
+                "hysteresis_rate_eps_mps = 0.01\npressure_pa_gauge = 200000\n"
+                "provenance = \"legacy\"\n"
+                "valid_load_range_n = [0.0, 2000.0]\n" +
+                std::string(kResearchSection))));
         });
 
     // Timing/delay fields are required profile members — a document that

@@ -22,8 +22,12 @@ class TabulatedRadial {
 public:
     explicit TabulatedRadial(const nativecfg::TireTable &table);
     [[nodiscard]] std::pair<double, double> elastic_response(double penetration_m) const;
+    // Decisions 22/39 (2026-11-10): the radial loss is the same
+    // rate-independent hysteresis as the linear material — η·F_elastic·
+    // tanh(δ̇/ε), not a viscous c·δ̇.
     [[nodiscard]] std::pair<double, double> normal_contact(
-        double penetration_m, double rate_mps, double damping_ns_m) const;
+        double penetration_m, double rate_mps, double loss_factor,
+        double hysteresis_rate_eps_mps) const;
 private:
     std::vector<double> deflection_m_, force_n_, slopes_, integral_;
 };

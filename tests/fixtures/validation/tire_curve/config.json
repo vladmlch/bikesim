@@ -11,7 +11,8 @@
     2500.0,
     4300.0
   ],
-  "radial_c_ns_m": 100.0,
+  "hysteresis_rate_eps_mps": 0.01,
+  "loss_factor": 0.07,
   "samples": [
     {
       "penetration_m": 0.005,

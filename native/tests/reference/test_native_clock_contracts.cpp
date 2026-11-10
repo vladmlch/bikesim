@@ -240,7 +240,8 @@ void test_native_matches_python_at_each_serialized_timestep() {
 }
 [[nodiscard]] nativecfg::WriterConfig tire_cfg() {
     const std::string material =
-            R"({"radial_k_n_m":130000.0,"radial_c_ns_m":800.0,)"
+            R"({"radial_k_n_m":130000.0,"loss_factor":0.07,)"
+            R"("hysteresis_rate_eps_mps":0.01,)"
             R"("pressure_pa_gauge":200000.0,"provenance":"synthetic",)"
             R"("valid_load_range_n":[0.0,2000.0]})";
     const std::string side =

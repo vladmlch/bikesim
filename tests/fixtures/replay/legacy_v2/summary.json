@@ -840,7 +840,8 @@
           "material": {
             "pressure_pa_gauge": 200000.0,
             "provenance": "synthetic",
-            "radial_c_ns_m": 800.0,
+            "hysteresis_rate_eps_mps": 0.01,
+            "loss_factor": 0.0662,
             "radial_k_n_m": 130000.0,
             "valid_load_range_n": [
               0.0,
@@ -899,7 +900,8 @@
           "material": {
             "pressure_pa_gauge": 200000.0,
             "provenance": "synthetic",
-            "radial_c_ns_m": 800.0,
+            "hysteresis_rate_eps_mps": 0.01,
+            "loss_factor": 0.069,
             "radial_k_n_m": 130000.0,
             "valid_load_range_n": [
               0.0,

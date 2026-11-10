@@ -291,7 +291,7 @@ void test_air_specs_mutated_token_limit_rejected() {
 // test_invalid_tire_material_rejected[key-value]
 void test_invalid_tire_material_rejected() {
     std::println(stderr, ">> test_invalid_tire_material_rejected");
-    const nativecfg::TireMaterial base{.radial_k_n_m = 1e5, .radial_c_ns_m = 100.,
+    const nativecfg::TireMaterial base{.radial_k_n_m = 1e5, .loss_factor = .1, .hysteresis_rate_eps_mps = .01,
         .pressure_pa_gauge = 1e5, .provenance = "synthetic",
         .valid_load_range_n = {0., 2000.}, .table = std::nullopt};
     for (const auto key : {"pressure_pa_gauge", "provenance",
@@ -513,7 +513,7 @@ void test_nested_numeric_errors_name_full_field_path() {
     std::println(stderr, ">> test_nested_numeric_errors_name_full_field_path");
     struct Case { std::vector<std::string_view> path; double bad; std::string_view expected; };
     const std::array cases{
-        Case{.path={"tire", "front", "material", "radial_c_ns_m"}, .bad=-1., .expected="config.tire.front.material.radial_c_ns_m"},
+        Case{.path={"tire", "front", "material", "loss_factor"}, .bad=-1., .expected="config.tire.front.material.loss_factor"},
         Case{.path={"tire", "rear", "relaxation_length_m"}, .bad=0., .expected="config.tire.rear.relaxation_length_m"},
         Case{.path={"drive", "assist", "profile", "mode_gains", "eco"}, .bad=-1., .expected="config.drive.assist.profile.mode_gains.eco"}};
     for (const auto& item : cases) {
@@ -558,6 +558,8 @@ const std::initializer_list<FieldCase> kPositiveFields = { // NOLINT(bugprone-th
     {{"tire", "rear", "tangent_k_n_m"}}, {{"tire", "rear", "relaxation_length_m"}},
     {{"tire", "front", "material", "radial_k_n_m"}},
     {{"tire", "rear", "material", "radial_k_n_m"}},
+    {{"tire", "front", "material", "hysteresis_rate_eps_mps"}},
+    {{"tire", "rear", "material", "hysteresis_rate_eps_mps"}},
     {{"tire", "surface_map", "surface", "mu_peak"}},
     {{"tire", "surface_map", "surface", "mu_slide"}},
     {{"tire", "surface_map", "surface", "slip_stiffness_per_load"}},
@@ -582,9 +584,9 @@ const std::initializer_list<FieldCase> kNonnegativeFields = { // NOLINT(bugprone
     {{"brake", "torque_ceiling_nm"}},
     {{"resistance", "crr"}}, {{"resistance", "rho_kg_m3"}}, {{"resistance", "cda_m2"}},
     {{"tire", "front", "mu"}}, {{"tire", "rear", "mu"}},
-    {{"tire", "front", "material", "radial_c_ns_m"}},
+    {{"tire", "front", "material", "loss_factor"}},
     {{"tire", "front", "material", "pressure_pa_gauge"}},
-    {{"tire", "rear", "material", "radial_c_ns_m"}},
+    {{"tire", "rear", "material", "loss_factor"}},
     {{"tire", "rear", "material", "pressure_pa_gauge"}},
     {{"tire", "significant_delta_m"}},
     {{"tire", "significance_fraction"}},

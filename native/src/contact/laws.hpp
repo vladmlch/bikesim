@@ -37,6 +37,30 @@ namespace contactlaw {
         return {std::max(0.0, total_force), energy};
     }
 
+    // Decision 22 + ban 39 (2026-11-10): the compliant_2d linear
+    // material's radial loss is rate-independent hysteresis — the T2
+    // experiment law. The loss force is proportional to the elastic force
+    // with the sign of the deflection rate, smoothed by tanh over eps only
+    // as much as the solver needs; η is the material's loss_factor and ε
+    // its hysteresis_rate_eps_mps (both required profile fields).
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror normal_contact
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
+    [[nodiscard]] inline std::pair<double, double>
+    normal_contact_hysteresis(double delta, double delta_dot, double k,
+                              double eta, double eps) {
+        // NOLINTEND(bugprone-easily-swappable-parameters)
+        if (delta <= 0.0)
+            return {0.0, 0.0};
+        const double spring_force = k * delta;
+        const double hysteresis_force =
+                eta * spring_force * std::tanh(delta_dot / eps);
+        const double energy = 0.5 * spring_force * delta;
+        const double total_force = spring_force + hysteresis_force;
+        finite_result(
+                {spring_force, hysteresis_force, total_force, energy});
+        return {std::max(0.0, total_force), energy};
+    }
+
     // tire.py:157-190 — _brush_step (inputs pre-validated upstream).
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py brush step
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API

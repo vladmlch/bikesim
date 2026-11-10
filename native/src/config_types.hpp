@@ -221,7 +221,8 @@ namespace nativecfg {
         std::vector<double> deflection_m, force_n;
     };
     struct TireMaterial {
-        double radial_k_n_m{}, radial_c_ns_m{}, pressure_pa_gauge{};
+        double radial_k_n_m{}, loss_factor{}, hysteresis_rate_eps_mps{},
+                pressure_pa_gauge{};
         std::string provenance;
         std::array<double, 2> valid_load_range_n{};
         std::optional<TireTable> table;

@@ -26,25 +26,33 @@
 namespace bike::configuration {
 
 // ---- tire.py TireSpec ------------------------------------------------------
-// All five members are required in Python; brace-initialize at construction.
+// All six members are required in Python; brace-initialize at construction.
+// Decisions 22/39 (2026-11-10): radial loss is the rate-independent
+// hysteresis F = kδ + η·kδ·tanh(δ̇/ε) — loss_factor is η,
+// hysteresis_rate_eps_mps is ε. The viscous radial_c_ns_m is removed.
 struct TireSpec {
     double radial_k_n_m;
-    double radial_c_ns_m;
+    double loss_factor;
+    double hysteresis_rate_eps_mps;
     double pressure_pa_gauge;
     std::string provenance;
     std::array<double, 2> valid_load_range_n;
 };
 
 // tire.py _material(): the synthetic default behind TireParameters.material.
-inline TireSpec synthetic_tire_material() {
-    return TireSpec{.radial_k_n_m=130000., .radial_c_ns_m=800., .pressure_pa_gauge=200000., .provenance="synthetic", .valid_load_range_n={0., 2000.}};
+// The shared default carries the pneumatic TyreSpecs generic loss factor
+// (.07) and hysteresis rate scale (.01); the welded profile and the
+// built-in default declare the fitted per-wheel values explicitly.
+inline TireSpec synthetic_tire_material(double loss_factor = .07) {
+    return TireSpec{.radial_k_n_m=130000., .loss_factor=loss_factor, .hysteresis_rate_eps_mps=.01, .pressure_pa_gauge=200000., .provenance="synthetic", .valid_load_range_n={0., 2000.}};
 }
 
 // ---- tire_curve.py TabulatedTireSpec ----------------------------------------
 struct TabulatedTireSpec {
     std::vector<double> deflection_m;
     std::vector<double> force_n;
-    double radial_c_ns_m;
+    double loss_factor;
+    double hysteresis_rate_eps_mps;
     double pressure_pa_gauge;
     std::string provenance;
     std::array<double, 2> valid_load_range_n;
@@ -498,7 +506,8 @@ namespace detail {
 // the material union), so no declared-default instance is needed.
 inline constexpr auto kTireSpecFields = std::to_array<FieldDecl>({
     REQ_REAL(TireSpec, radial_k_n_m),
-    REQ_REAL(TireSpec, radial_c_ns_m),
+    REQ_REAL(TireSpec, loss_factor),
+    REQ_REAL(TireSpec, hysteresis_rate_eps_mps),
     REQ_REAL(TireSpec, pressure_pa_gauge),
     REQ_STR(TireSpec, provenance),
     {.name="valid_load_range_n", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,
@@ -513,7 +522,8 @@ inline constexpr auto kTabulatedTireSpecFields = std::to_array<FieldDecl>({
      .offset=offsetof(TabulatedTireSpec, deflection_m), .required=true, .factory="", .nested=nullptr, .nested2=nullptr},
     {.name="force_n", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
      .offset=offsetof(TabulatedTireSpec, force_n), .required=true, .factory="", .nested=nullptr, .nested2=nullptr},
-    REQ_REAL(TabulatedTireSpec, radial_c_ns_m),
+    REQ_REAL(TabulatedTireSpec, loss_factor),
+    REQ_REAL(TabulatedTireSpec, hysteresis_rate_eps_mps),
     REQ_REAL(TabulatedTireSpec, pressure_pa_gauge),
     REQ_STR(TabulatedTireSpec, provenance),
     {.name="valid_load_range_n", .type="tuple[float, float]", .kind=FieldKind::Real2Tuple,

@@ -84,8 +84,6 @@
     "balance_floor_kmh": 4.0,
     "balance_grace_s": 3.0,
     "bar_support_fraction": 0.12,
-    "coasting_brake_d_nm_s_rad": 2.0,
-    "coasting_brake_limit_nm": 60.0,
     "delivered_joint_power_budget_w": 375.0,
     "delivered_positive_power_budget_w": 750.0,
     "envelopes": {

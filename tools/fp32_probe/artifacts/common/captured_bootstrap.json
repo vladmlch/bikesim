@@ -301,8 +301,6 @@
    "bar_support_fraction": 0.12,
    "posture_sole_depth_m": 0.003,
    "swing_clearance_m": 0.003,
-   "coasting_brake_d_nm_s_rad": 2.0,
-   "coasting_brake_limit_nm": 60.0,
    "stance_blend_load_n": 50.0,
    "posture_pitch_k_nm_rad": 600.0,
    "posture_pitch_d_nms_rad": 60.0,

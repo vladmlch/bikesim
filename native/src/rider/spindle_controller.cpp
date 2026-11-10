@@ -1214,6 +1214,57 @@ SpindleController::finalize_effort(mjData *data,
     return result;
 }
 
+std::array<double, 2>
+SpindleController::leg_weights_at_pedal(mjData *data) const {
+    // «Действует» 9 (2026-11-07): each leg rests on the pedal with its own
+    // weight — the pedal-normal share of the leg's own gravity. qfrc_bias
+    // mixes gravity with the velocity terms, so the gravity share is
+    // recovered exactly as -Σ_b m_b·(g·J^com_b[:,dof]) over the rider
+    // bodies; γ maps the hip/knee gravity torques onto the pedal normal.
+    const Mat3 frame_r = body_mat(model_, data, frame_body_);
+    const Vec3 crank_world = joint_anchor(model_, data, crank_joint_);
+    const auto gravity = model_access::readonly_buffer(
+        std::data(model_->opt.gravity), 3, "opt.gravity");
+    const auto mass = model_access::readonly_buffer(
+        model_->body_mass, model_->nbody, "body_mass");
+    const auto width = static_cast<std::size_t>(model_->nv);
+    std::array<Vec2, 2> gammas{};
+    std::array<std::array<std::size_t, 2>, 2> leg_dofs{};
+    for (const std::size_t s : {0U, 1U}) {
+        const Vec2 hip = mat_t_vec_xz(
+            frame_r,
+            vec_sub(joint_anchor(model_, data, hip_joints_[s]),
+                    crank_world));
+        const Vec2 pedal = mat_t_vec_xz(
+            frame_r,
+            vec_sub(body_pos(model_, data, pedal_bodies_[s]),
+                    crank_world));
+        gammas[s] =
+            spindle::leg_vertical_gamma(leg_geometry_[s], hip, pedal);
+        for (std::size_t i = 0; i < 2; ++i)
+            leg_dofs[s][i] = static_cast<std::size_t>(
+                joints_[leg_joint_index_[s][i]].dof_adr);
+    }
+    std::array<std::array<double, 2>, 2> leg_gravity{};
+    std::vector<mjtNum> jac(3 * width);
+    for (const int body : rider_bodies_) {
+        mj_jacBodyCom(model_, data, jac.data(), nullptr, body);
+        const double m = mass[static_cast<std::size_t>(body)];
+        for (const std::size_t s : {0U, 1U})
+            for (std::size_t i = 0; i < 2; ++i) {
+                const auto dof = leg_dofs[s][i];
+                leg_gravity[s][i] -=
+                    m * (gravity[0] * jac[dof] +
+                         gravity[1] * jac[width + dof] +
+                         gravity[2] * jac[2 * width + dof]);
+            }
+    }
+    return {gammas[0][0] * leg_gravity[0][0] +
+                gammas[0][1] * leg_gravity[0][1],
+            gammas[1][0] * leg_gravity[1][0] +
+                gammas[1][1] * leg_gravity[1][1]};
+}
+
 NamedEntries<double>
 SpindleController::compute(mjData *data, const RiderCommand &command,
                            bool advance, std::optional<double> dt_s,
@@ -1332,36 +1383,12 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         // weight; on the rising stroke muscles unload everything above the
         // leg's own weight at the pedal (including BDC reversal inertia), and
         // around TDC muscles push the foot over so pedal press stays >= 25 N.
-        // qfrc_bias mixes gravity with the velocity terms, so the gravity
-        // share is recovered exactly as -Σ_b m_b·(g·J^com_b[:,dof]) over
-        // the rider bodies.
         std::array<std::array<std::size_t, 2>, 2> leg_dofs{};
-        std::array<std::array<double, 2>, 2> leg_gravity{};
-        {
-            const auto gravity = model_access::readonly_buffer(
-                std::data(model_->opt.gravity), 3, "opt.gravity");
-            const auto mass = model_access::readonly_buffer(
-                model_->body_mass, model_->nbody, "body_mass");
-            const auto width = static_cast<std::size_t>(model_->nv);
-            for (const auto side : kSides) {
-                const auto s = side_index(side);
-                for (std::size_t i = 0; i < 2; ++i)
-                    leg_dofs[s][i] = static_cast<std::size_t>(
-                        joints_[leg_joint_index_[s][i]].dof_adr);
-            }
-            std::vector<mjtNum> jac(3 * width);
-            for (const int body : rider_bodies_) {
-                mj_jacBodyCom(model_, data, jac.data(), nullptr, body);
-                const double m = mass[static_cast<std::size_t>(body)];
-                for (const std::size_t s : {0U, 1U})
-                    for (std::size_t i = 0; i < 2; ++i) {
-                        const auto dof = leg_dofs[s][i];
-                        leg_gravity[s][i] -=
-                            m * (gravity[0] * jac[dof] +
-                                 gravity[1] * jac[width + dof] +
-                                 gravity[2] * jac[2 * width + dof]);
-                    }
-            }
+        for (const auto side : kSides) {
+            const auto s = side_index(side);
+            for (std::size_t i = 0; i < 2; ++i)
+                leg_dofs[s][i] = static_cast<std::size_t>(
+                    joints_[leg_joint_index_[s][i]].dof_adr);
         }
         const std::array<std::size_t, 5> upper_slots{
             joint_index("rider_torso_hinge"),
@@ -1448,7 +1475,7 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         std::array<std::array<std::size_t, 2>, 2> leg_slots{};
         std::array<std::array<double, 2>, 2> leg_cap_pos{};
         std::array<std::array<double, 2>, 2> leg_cap_neg{};
-        std::array<double, 2> f_weight{};
+        const std::array<double, 2> f_weight = leg_weights_at_pedal(data);
         std::array<double, 2> press_per_nm{};
         std::array<Vec3, 2> hip_world{};
         std::array<Vec3, 2> delta_hip{};
@@ -1460,9 +1487,6 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 leg_cap_pos[s][j] = usable_slot_capacity(leg_slots[s][j], 1.);
                 leg_cap_neg[s][j] = usable_slot_capacity(leg_slots[s][j], -1.);
             }
-            f_weight[s] =
-                gammas[s][0] * leg_gravity[s][0] +
-                gammas[s][1] * leg_gravity[s][1];
             hip_world[s] = joint_anchor(model_, data, hip_joints_[s]);
             delta_hip[s] = vec_sub(hip_world[s], crank_world);
             if (shares[s] > 0.) {
@@ -1629,40 +1653,13 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                                                : hold_nm;
                 total = task + applied_hold;
             } else {
-                constexpr double kCoastStoppedRateRadS = .1;
-                if (advance && std::abs(rate) >= kCoastStoppedRateRadS &&
-                    hold_nm * rate > 0.)
-                    hold_nm = 0.;
-                if (weld_crank_torque_nm.has_value() && advance
-                    && std::abs(*weld_crank_torque_nm) <=
-                           config_.weld_servo_limit_nm) {
-                    const double held = hold_nm - *weld_crank_torque_nm;
-                    if (std::abs(rate) < kCoastStoppedRateRadS ||
-                        held * rate <= 0.) {
-                        hold_nm = held > config_.coasting_brake_limit_nm
-                                      ? config_.coasting_brake_limit_nm
-                                  : held < -config_.coasting_brake_limit_nm
-                                      ? -config_.coasting_brake_limit_nm
-                                      : held;
-                    } else {
-                        hold_nm = 0.;
-                    }
-                }
-                const double damp =
-                    config_.coasting_brake_d_nm_s_rad *
-                    (command.crank_target_rate_rad_s - rate);
-                const double braking_damp = damp * rate >= 0. ? 0. : damp;
-                const double braking_hold =
-                    std::abs(rate) < kCoastStoppedRateRadS
-                        ? hold_nm
-                    : hold_nm * rate > 0. ? 0.
-                                          : hold_nm;
-                const double raw = braking_damp + braking_hold;
-                total = raw > config_.coasting_brake_limit_nm
-                            ? config_.coasting_brake_limit_nm
-                        : raw < -config_.coasting_brake_limit_nm
-                            ? -config_.coasting_brake_limit_nm
-                            : raw;
+                // Coasting is a rider who stops pushing (user ruling
+                // 2026-11-10): the coast branch applies no crank torque —
+                // no rate damper, no brake, no press-cancel hold. The
+                // shared hold is zeroed so nothing carries into the
+                // resume; the pedaling weld servo starts clean.
+                hold_nm = 0.;
+                total = 0.;
             }
             if (commit_hold)
                 coast_hold_nm_ = hold_nm;
@@ -1692,6 +1689,14 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 const double delta_f_press =
                     steady_state
                         ? 0.
+                    : command.mean_crank_torque_nm <= 0.
+                        // Coasting legs rest on the pedals with their
+                        // own weight (user ruling 2026-11-10): the
+                        // press target is exactly f_weight — the same
+                        // «Действует»-9 quantity the rising-leg rule
+                        // bounds. The equal presses on the two
+                        // opposite pedals cancel at the crank.
+                        ? f_weight[s] - ps.f_passive[s]
                         : std::max(kPedalPressMarginN - f_task_press,
                                    f_base[s]) -
                               ps.f_passive[s];

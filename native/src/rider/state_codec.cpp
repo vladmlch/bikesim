@@ -728,7 +728,6 @@ namespace {
         "active_positive_power_limit_w",
         "arm_reach_fraction", "balance_dwell_s", "balance_floor_kmh",
         "balance_grace_s", "bar_support_fraction",
-        "coasting_brake_d_nm_s_rad", "coasting_brake_limit_nm",
         "delivered_joint_power_budget_w", "delivered_positive_power_budget_w",
         "foot_mu", "grip_attachment",
         "grip_c_ns_m", "grip_capture_distance_m", "grip_capture_speed_mps",
@@ -836,10 +835,6 @@ namespace {
             d["pedal_torque_ripple"].finite_real(path);
         config.return_foot_preload_n =
             d["return_foot_preload_n"].finite_real(path);
-        config.coasting_brake_d_nm_s_rad =
-            d["coasting_brake_d_nm_s_rad"].finite_real(path);
-        config.coasting_brake_limit_nm =
-            d["coasting_brake_limit_nm"].finite_real(path);
         config.weld_servo_gain = d["weld_servo_gain"].finite_real(path);
         config.weld_servo_limit_nm =
             d["weld_servo_limit_nm"].finite_real(path);

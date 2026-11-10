@@ -80,8 +80,6 @@ struct SpindleConfig {
     std::optional<double> delivered_joint_power_budget_w;
     double pedal_torque_ripple = 0.;
     double return_foot_preload_n = 0.;
-    double coasting_brake_d_nm_s_rad = 0.;
-    double coasting_brake_limit_nm = 0.;
     // Weld-press servo and weld-imposed leg-motion feedforward knobs
     // (rider_control.py _coast_hold_nm/_leg_feedforward_nm): declared in
     // ArticulatedConfig, carried on this wire since the native port below
@@ -369,6 +367,14 @@ private:
     // sole/IK diagnostic mirrors.
     [[nodiscard]] spindle::Vec2 leg_targets(const mjData *data,
                                             const char *side);
+    // «Действует» 9's leg weight at the pedal: the pedal-normal share
+    // of each leg's own gravity, γ·g_leg where g_leg is the gravity
+    // share -Σ_b m_b·(g·J^com_b[:,dof]) over the rider bodies at the
+    // hip/knee dofs. One definition of "the leg rests with its own
+    // weight" for the spindle press law and the legacy foot-force
+    // request.
+    [[nodiscard]] std::array<double, 2>
+    leg_weights_at_pedal(mjData *data) const;
     // _predict_target_state — detached kinematics on a scratch mjData.
     void predict_target_state(const mjData *data, mjData *scratch,
                               bool reverse) const;

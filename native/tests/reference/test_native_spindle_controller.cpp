@@ -19,6 +19,7 @@
 #include "diag.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
+#include "rider/equality_reactions.hpp"
 #include "rider/spindle_controller.hpp"
 #include "rider/spindle_math.hpp"
 #include "rider/state_codec.hpp"
@@ -29,6 +30,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdlib>
 #include <format>
 #include <iostream>
 #include <memory>
@@ -113,7 +115,7 @@ void set_string(bio::Value &value, std::string_view key, // NOLINT(bugprone-easi
                              std::string(key));
 }
 
-Plant make_plant() {
+Plant make_plant(std::string_view pedal_attachment = {}) {
     Plant plant;
     const auto mjb = bt::fixture("spindle/pinned/model.mjb");
     plant.model = mj_loadModel(mjb.c_str(), nullptr);
@@ -122,7 +124,9 @@ Plant make_plant() {
     bt::require(plant.data != nullptr, "mj_makeData");
     bio::Value const doc =
         bio::parse_json(bt::text(bt::fixture("spindle/pinned/config.json")));
-    bio::Value const rider_doc = member(doc, "rider_controller");
+    bio::Value rider_doc = member(doc, "rider_controller");
+    if (!pedal_attachment.empty())
+        set_string(rider_doc, "pedal_attachment", pedal_attachment);
     plant.controller = std::make_unique<rider::SpindleController>(
         plant.model,
         rider::decode_spindle_pose(member(doc, "pose"), "config.pose"),
@@ -514,14 +518,17 @@ void test_spindle_coasting_command_matches_python() {
 // plant's crank carries nothing downstream, which is exactly an open
 // one-way clutch — each leg rests its own weight on its pedal. The
 // muscles lift only what exceeds the rising leg's weight («Действует» 9:
-// its press stays inside [0, leg weight]; implemented by 8e8b0b0d), so
-// at this staged pose — front pedal at 3 o'clock, rear at 9 — the two
-// weight presses oppose and no unopposed weight torque remains. The
-// 2026-11-06 ruling lets the coasting servo only brake or hold, never
-// push, so the crank must not accumulate forward rotation. (Before
-// 8e8b0b0d the rising leg's weight was feedforward-cancelled and the
-// descending leg's weight spun the crank ~1.8 rad forward — the spin-up
-// this test first asserted; that is not the decided coasting physics.)
+// its press stays inside [0, leg weight]). Under the 2026-11-10 ruling a
+// coasting rider's legs rest on the pedals with exactly that weight —
+// but the two legs do not weigh the same, so on this drivetrain-less
+// pinned crank the residual weight torque rotates the shaft until the
+// two projections balance (an unbalanced wheel settling heavy-side-down)
+// and then stops. The physical claim the test keeps: resting legs never
+// *drive* the crank — the motion is bounded equilibrium-seek that
+// decays to rest, not an accumulating spin-up. (The pre-8e8b0b0d
+// feedforward version spun ~1.8 rad forward and kept going; the
+// 2026-11-06 hold-only version stayed inside .5 rad only because the
+// presses it requested were symmetric by accident.)
 void test_free_crank_stays_held_under_balanced_leg_weights() {
     Plant plant = make_plant();
     // The staged pose has the front pedal at 3 o'clock — crank_split's
@@ -541,7 +548,7 @@ void test_free_crank_stays_held_under_balanced_leg_weights() {
     constexpr double kLoadNms = 1.;
     std::vector<double> rates;
     double max_excursion = 0.;
-    for (int i = 0; i < 800; ++i) { // 1 s of free cranking
+    for (int i = 0; i < 3200; ++i) { // 4 s of free cranking
         const auto torques = plant.controller->compute(
             plant.data, command, true, dt, false);
         plant.controller->write(plant.data, torques);
@@ -549,33 +556,61 @@ void test_free_crank_stays_held_under_balanced_leg_weights() {
             -kLoadNms * buf(plant.data->qvel, nv(plant.model))[dof];
         mj_step(plant.model, plant.data);
         rates.push_back(buf(plant.data->qvel, nv(plant.model))[dof]);
-        max_excursion = std::max(
-            max_excursion,
-            buf(plant.data->qpos, nq(plant.model))[qpos]);
+        max_excursion =
+            std::max(max_excursion,
+                     std::abs(buf(plant.data->qpos, nq(plant.model))[qpos]));
     }
     const double peak = *std::ranges::max_element(rates);
+    double settled = 0.;
+    for (const double rate : std::span(rates).last(400))
+        settled = std::max(settled, std::abs(rate));
     std::cerr << std::format(
-        "free-crank peak rate {:.4f} rad/s, forward excursion {:.3f} rad\n",
-        peak, max_excursion);
-    // The .5 rad band is the pre-8e8b0b0d drive threshold: unopposed
-    // leg-weight drive had to exceed it. Under the decided physics the
-    // crank must stay inside it — its ringing rate (peak, above) is
-    // undamped weld/pendulum physics, not forward drive.
-    bt::require(max_excursion <= .5,
-                "balanced leg weights and the hold-only coasting servo "
-                "keep the free crank from accumulating forward rotation");
+        "free-crank peak rate {:.4f} rad/s, settled |rate| {:.4f} rad/s, "
+        "|excursion| {:.3f} rad\n",
+        peak, settled, max_excursion);
+    // A driven crank accumulates unboundedly; a resting one seeks the
+    // pose where the two unequal weight projections cancel and stops.
+    // The excursion stays far inside half a turn and the last half
+    // second of the run is at rest — the residual peak is weld-spring
+    // ringing during the swing, not drive.
+    bt::require(max_excursion <= std::numbers::pi,
+                "resting leg weights seek a bounded crank equilibrium — "
+                "the free crank never completes half a turn");
+    bt::require(settled <= .05,
+                "resting leg weights leave the free crank at rest — "
+                "no persistent drive");
 }
 
-// User ruling 2026-11-06 (rider-leg-control plan, task 1б): a rider who
-// has stopped pedalling (PedalMode::coasting — mean_crank_torque_nm = 0)
-// can only hold the pedals back — slow them or keep them still — and
-// never pushes them forward. The servo's requested crank torque reads
-// back through allocation diagnostics' crank_task_nm; it must oppose the
-// crank's own motion, never put positive power into it.
-void test_spindle_coasting_servo_never_pushes_the_crank() {
-    // Crank slower than the decaying stop trajectory: the rate damper
-    // wants +D·(target-rate) forward — the request must stay on the
-    // braking side instead of pulling the crank up to speed.
+// User ruling 2026-11-10 (supersedes the 2026-11-06 hold-only ruling):
+// coasting is a rider who stops pushing — the coast branch of
+// populate_leg_torques applies no crank torque at all: no rate damper,
+// no press-cancel hold, no learned coast_hold_nm_. The diagnostics'
+// crank_task_nm must read exactly 0, and the shared hold must be zero
+// on every coasting tick so nothing carries into the resume.
+void test_spindle_coasting_applies_no_crank_torque() {
+    // Trailing crank (below the decaying stop trajectory), overrunning
+    // crank (above it), stopped crank and the creeping band the old
+    // damper gated on: every coasting answer is no crank task.
+    for (const double rate : {4., 8., 0., .05, .2}) {
+        Plant plant = make_plant();
+        stage(plant, .35, rate);
+        rider::RiderCommand command;
+        command.mean_crank_torque_nm = 0.;
+        command.crank_target_phase_rad = 1.2;
+        command.crank_target_rate_rad_s = 6.;
+        (void)plant.controller->compute(plant.data, command, true,
+                                        .00125, false);
+        const double task = plant.controller->state()
+                                .allocation_diagnostics.crank_task_nm;
+        bt::require(task == 0.,
+                    std::format("coasting crank at {:.2f} rad/s: servo "
+                                "task {:.6f} N.m — a coasting rider "
+                                "applies no crank torque", rate, task));
+        bt::require(plant.controller->state().coast_hold_nm == 0.,
+                    std::format("coasting crank at {:.2f} rad/s: "
+                                "coast_hold_nm_ stays zero", rate));
+    }
+    // A weld-measured pull-back press does not wake the branch either.
     {
         Plant plant = make_plant();
         stage(plant, .35, 4.);
@@ -584,101 +619,230 @@ void test_spindle_coasting_servo_never_pushes_the_crank() {
         command.crank_target_phase_rad = 1.2;
         command.crank_target_rate_rad_s = 6.;
         (void)plant.controller->compute(plant.data, command, true,
-                                        .00125, false);
-        const double task = plant.controller->state()
-                                .allocation_diagnostics.crank_task_nm;
-        bt::require(task <= 0.,
-                    std::format("trailing crank: servo task {:.6f} N.m "
-                                "drives the crank forward at 4 rad/s",
-                                task));
-        // The weld-press hold obeys the same rule: a pull-back reading
-        // it would need positive torque to cancel is left standing
-        // rather than pushed through the crank.
-        Plant pulled = make_plant();
-        stage(pulled, .35, 4.);
-        (void)pulled.controller->compute(pulled.data, command, true,
-                                         .00125, false, std::nullopt,
-                                         false, -5.);
-        const double task_pull = pulled.controller->state()
-                                     .allocation_diagnostics
-                                     .crank_task_nm;
-        bt::require(task_pull <= 0.,
-                    std::format("trailing crank, pull-back press: servo "
-                                "task {:.6f} N.m still drives forward",
-                                task_pull));
-    }
-    // Crank faster than the stop trajectory: the damper brakes exactly
-    // as before — D·(target-rate) = 2·(6-8) = -4 N·m.
-    {
-        Plant plant = make_plant();
-        stage(plant, .35, 8.);
-        rider::RiderCommand command;
-        command.mean_crank_torque_nm = 0.;
-        command.crank_target_phase_rad = 1.2;
-        command.crank_target_rate_rad_s = 6.;
-        (void)plant.controller->compute(plant.data, command, true,
-                                        .00125, false);
-        const double task = plant.controller->state()
-                                .allocation_diagnostics.crank_task_nm;
-        bt::require(task == -4.,
-                    std::format("overrunning crank: servo task {:.6f} "
-                                "N.m no longer brakes to the stop "
-                                "trajectory", task));
-    }
-    // Crank at rest under a still-positive trajectory: the damper may
-    // not push it back up to speed, while the weld-press hold still
-    // holds — a +5 N·m resting press is cancelled by -5.
-    {
-        Plant plant = make_plant();
-        stage(plant, .35, 0.);
-        rider::RiderCommand command;
-        command.mean_crank_torque_nm = 0.;
-        command.crank_target_phase_rad = 1.2;
-        command.crank_target_rate_rad_s = 6.;
-        (void)plant.controller->compute(plant.data, command, true,
                                         .00125, false, std::nullopt,
-                                        false, 5.);
+                                        false, -5.);
         const double task = plant.controller->state()
                                 .allocation_diagnostics.crank_task_nm;
-        bt::require(task == -5.,
-                    std::format("stopped crank: servo task {:.6f} N.m "
-                                "instead of the -5 N.m press-cancel "
-                                "hold", task));
+        bt::require(task == 0.,
+                    std::format("pull-back weld press: servo task "
+                                "{:.6f} N.m — no crank torque", task));
     }
-    // "Stopped" has finite width — 0.1 rad/s, far below any real
-    // coasting rate — so a held crank sees no gate chatter. Below the
-    // band the press-cancel applies in full even while the crank
-    // creeps; above it the gate bites again and a pull-back cancel is
-    // refused.
+    // A hold carried over from pedaling clears on the first coast tick
+    // and stays cleared — nothing is handed to the resume.
     {
-        Plant creeping = make_plant();
-        stage(creeping, .35, .05);
+        Plant plant = make_plant();
+        stage(plant, .35, 4.);
+        auto snapshot = plant.controller->state();
+        snapshot.coast_hold_nm = 7.;
+        plant.controller->commit_state(std::move(snapshot));
         rider::RiderCommand command;
         command.mean_crank_torque_nm = 0.;
         command.crank_target_phase_rad = 1.2;
         command.crank_target_rate_rad_s = 6.;
-        (void)creeping.controller->compute(creeping.data, command, true,
-                                           .00125, false, std::nullopt,
-                                           false, -5.);
-        const double task_creep = creeping.controller->state()
-                                      .allocation_diagnostics
-                                      .crank_task_nm;
-        bt::require(task_creep == 5.,
-                    std::format("creeping crank: servo task {:.6f} N.m "
-                                "instead of the +5 N.m press-cancel "
-                                "hold", task_creep));
-        Plant moving = make_plant();
-        stage(moving, .35, .2);
-        (void)moving.controller->compute(moving.data, command, true,
-                                         .00125, false, std::nullopt,
-                                         false, -5.);
-        const double task_moving = moving.controller->state()
-                                       .allocation_diagnostics
-                                       .crank_task_nm;
-        bt::require(task_moving <= 0.,
-                    std::format("moving crank past the stopped band: "
-                                "servo task {:.6f} N.m drives forward",
-                                task_moving));
+        for (int i = 0; i < 3; ++i)
+            (void)plant.controller->compute(plant.data, command, true,
+                                            .00125, false);
+        const auto state = plant.controller->state();
+        bt::require(state.coast_hold_nm == 0. &&
+                        state.allocation_diagnostics.crank_task_nm == 0.,
+                    "a carried-in hold clears on the first coast tick");
+    }
+}
+
+// «Действует» 9's leg weight at the pedal — the same γ·leg-gravity
+// quantity the seated ride's LegWeightProbe measures
+// (test_seated_pedaling_cycle.cpp): the pedal-normal share of each
+// leg's own gravity at the current pose. User ruling 2026-11-10: a
+// coasting rider's legs rest on the pedals with exactly this weight —
+// relaxed, not held weightless. Both controller paths must request it.
+struct LegWeightProbe {
+    std::array<spindle::LegLoopGeometry, 2> geom{};
+    std::array<int, 2> hip_joints{-1, -1};
+    std::array<int, 2> knee_joints{-1, -1};
+    std::array<int, 2> pedal_bodies{-1, -1};
+    std::array<std::array<int, 3>, 2> leg_bodies{};
+    int frame_body = -1;
+    int crank_joint = -1;
+};
+
+LegWeightProbe leg_weight_probe(const mjModel *m, const bio::Value &doc) {
+    LegWeightProbe probe;
+    const auto pose =
+        rider::decode_spindle_pose(member(doc, "pose"), "config.pose");
+    const auto xz = [](const std::array<double, 3> &v) {
+        return spindle::Vec2{v[0], v[2]};
+    };
+    probe.frame_body = mj_name2id(m, mjOBJ_BODY, "frame");
+    probe.crank_joint = mj_name2id(m, mjOBJ_JOINT, "crank_spin");
+    for (std::size_t s = 0; s < 2; ++s) {
+        const char *side = s == 0 ? "front" : "rear";
+        const auto named = [&](const char *part) {
+            return std::string(part) + side;
+        };
+        probe.geom[s] = spindle::leg_loop_geometry(
+            xz(pose.hip), xz(s == 0 ? pose.knee_front : pose.knee_rear),
+            xz(s == 0 ? pose.pedal_front : pose.pedal_rear), s == 0);
+        probe.hip_joints[s] =
+            mj_name2id(m, mjOBJ_JOINT, named("rider_hip_").c_str());
+        probe.knee_joints[s] =
+            mj_name2id(m, mjOBJ_JOINT, named("rider_knee_").c_str());
+        probe.pedal_bodies[s] =
+            mj_name2id(m, mjOBJ_BODY, named("pedal_").c_str());
+        probe.leg_bodies[s] = {
+            mj_name2id(m, mjOBJ_BODY, named("rider_thigh_").c_str()),
+            mj_name2id(m, mjOBJ_BODY, named("rider_shank_").c_str()),
+            mj_name2id(m, mjOBJ_BODY, named("rider_foot_").c_str())};
+    }
+    return probe;
+}
+
+std::array<double, 2> leg_weights_at_pedals(const LegWeightProbe &probe,
+                                            const mjModel *m,
+                                            const mjData *d) {
+    const auto xmat = buf(d->xmat, static_cast<std::size_t>(9 * m->nbody));
+    const auto xanchor =
+        buf(d->xanchor, static_cast<std::size_t>(3 * m->njnt));
+    const auto xpos = buf(d->xpos, static_cast<std::size_t>(3 * m->nbody));
+    const auto fb = 9 * static_cast<std::size_t>(probe.frame_body);
+    const auto cj = 3 * static_cast<std::size_t>(probe.crank_joint);
+    const auto to_frame_xz = [&](std::span<const double> p,
+                                 std::size_t base) -> spindle::Vec2 {
+        const double dx = p[base] - xanchor[cj];
+        const double dy = p[base + 1] - xanchor[cj + 1];
+        const double dz = p[base + 2] - xanchor[cj + 2];
+        return {xmat[fb] * dx + xmat[fb + 3] * dy + xmat[fb + 6] * dz,
+                xmat[fb + 2] * dx + xmat[fb + 5] * dy + xmat[fb + 8] * dz};
+    };
+    const auto width = static_cast<std::size_t>(m->nv);
+    const auto gravity = buf(std::data(m->opt.gravity), 3);
+    const auto body_mass =
+        buf(m->body_mass, static_cast<std::size_t>(m->nbody));
+    const auto dofadr =
+        ibuf(m->jnt_dofadr, static_cast<std::size_t>(m->njnt));
+    std::vector<mjtNum> jac(3 * width);
+    std::array<double, 2> out{};
+    for (std::size_t s = 0; s < 2; ++s) {
+        const auto pedal = to_frame_xz(
+            xpos, 3 * static_cast<std::size_t>(probe.pedal_bodies[s]));
+        const auto hip = to_frame_xz(
+            xanchor, 3 * static_cast<std::size_t>(probe.hip_joints[s]));
+        const auto gamma =
+            spindle::leg_vertical_gamma(probe.geom[s], hip, pedal);
+        const std::array<std::size_t, 2> dofs{
+            static_cast<std::size_t>(dofadr[static_cast<std::size_t>(
+                probe.hip_joints[s])]),
+            static_cast<std::size_t>(dofadr[static_cast<std::size_t>(
+                probe.knee_joints[s])])};
+        std::array<double, 2> leg_gravity{0., 0.};
+        for (const int b : probe.leg_bodies[s]) {
+            mj_jacBodyCom(m, d, jac.data(), nullptr, b);
+            const double mass = body_mass[static_cast<std::size_t>(b)];
+            for (std::size_t i = 0; i < 2; ++i) {
+                const auto dof = dofs[i];
+                leg_gravity[i] -=
+                    mass * (gravity[0] * jac[dof] +
+                            gravity[1] * jac[width + dof] +
+                            gravity[2] * jac[2 * width + dof]);
+            }
+        }
+        out[s] = gamma[0] * leg_gravity[0] + gamma[1] * leg_gravity[1];
+    }
+    return out;
+}
+
+// The spindle branch: a coasting rider's legs rest on the pedals with
+// their own weight. The connect_foot_* equalities are the sole↔pedal
+// attachments — after the press servos settle, the force each applies
+// to the foot must equal the leg's own weight at the pedal.
+void test_spindle_coasting_leg_rests_with_own_weight() {
+    Plant plant = make_plant();
+    bio::Value const doc =
+        bio::parse_json(bt::text(bt::fixture("spindle/pinned/config.json")));
+    const auto probe = leg_weight_probe(plant.model, doc);
+    stage(plant, 0., 0.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 0.;
+    command.crank_target_phase_rad = 0.;
+    command.crank_target_rate_rad_s = 0.;
+    const double dt = plant.model->opt.timestep;
+    for (int i = 0; i < 400; ++i) {
+        const auto torques = plant.controller->compute(
+            plant.data, command, true, dt, false);
+        plant.controller->write(plant.data, torques);
+        mj_step(plant.model, plant.data);
+    }
+    mj_forward(plant.model, plant.data);
+    const auto expected =
+        leg_weights_at_pedals(probe, plant.model, plant.data);
+    const auto crank_rate = buf(
+        plant.data->qvel, nv(plant.model))[joint_dofadr(plant.model,
+                                                        "crank_spin")];
+    const rider::EqualityReactions reactions(plant.model);
+    for (const auto s : {0U, 1U}) {
+        const int eq = mj_name2id(
+            plant.model, mjOBJ_EQUALITY,
+            s == 0U ? "connect_foot_front" : "connect_foot_rear");
+        bt::require(eq >= 0, "connect_foot equality resolves");
+        const auto force = reactions.force_on_rider(plant.data, eq);
+        bt::require(force.size() == 3,
+                    "connect equality carries three rows");
+        const double press = force[2];
+        std::cerr << std::format(
+            "coasting rest press[{}]={:.3f} N vs leg weight {:.3f} N "
+            "(crank rate {:.4f} rad/s)\n",
+            s, press, expected[s], crank_rate);
+        bt::require(std::abs(press - expected[s]) <= .05 * expected[s],
+                    std::format(
+                        "side {}: coasting leg rests with its own "
+                        "weight — pedal holds {:.3f} N, leg weighs "
+                        "{:.3f} N",
+                        s, press, expected[s]));
+    }
+    // What the two unequal presses do to this drivetrain-less crank —
+    // bounded equilibrium-seek, not drive — is the free-crank test's
+    // claim; this test only pins the requested weights.
+}
+
+// The legacy branch (pedal_attachment "weld" on the same plant): the
+// coast foot-force request of each leg is that leg's own weight, read
+// off support_diagnostics.legacy->pedal_forces.
+void test_legacy_coasting_leg_rests_with_own_weight() {
+    Plant plant = make_plant("weld");
+    bio::Value const doc =
+        bio::parse_json(bt::text(bt::fixture("spindle/pinned/config.json")));
+    const auto probe = leg_weight_probe(plant.model, doc);
+    stage(plant, 0., 0.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 0.;
+    command.crank_target_phase_rad = 0.;
+    command.crank_target_rate_rad_s = 0.;
+    const double dt = plant.model->opt.timestep;
+    for (int i = 0; i < 4; ++i)
+        (void)plant.controller->compute(plant.data, command, true, dt,
+                                        false);
+    const auto &diagnostics =
+        plant.controller->state().support_diagnostics;
+    bt::require(diagnostics.present && diagnostics.legacy.has_value(),
+                "legacy support diagnostics present");
+    const auto expected =
+        leg_weights_at_pedals(probe, plant.model, plant.data);
+    for (const auto s : {0U, 1U}) {
+        const auto &force =
+            diagnostics.legacy.value().pedal_forces[s]; // NOLINT(bugprone-unchecked-optional-access) engagement is asserted by the require above; .value() reports violations loudly
+        const double press = -force[2];
+        std::cerr << std::format(
+            "legacy coasting rest press[{}]={:.3f} N vs leg weight "
+            "{:.3f} N (request {{{:.3f}, {:.3f}, {:.3f}}})\n",
+            s, press, expected[s], force[0], force[1], force[2]);
+        bt::require(
+            std::abs(press - expected[s]) <= .05 * expected[s] &&
+                std::abs(force[0]) <= .05 * expected[s] &&
+                std::abs(force[1]) <= .05 * expected[s],
+            std::format(
+                "side {}: coasting leg requests its own weight on the "
+                "pedal — {{0, 0, -{:.3f}}}, got {{{:.3f}, {:.3f}, "
+                "{:.3f}}}",
+                s, expected[s], force[0], force[1], force[2]));
     }
 }
 
@@ -1044,7 +1208,9 @@ int main() {
         test_spindle_waveform_rejects_bad_inputs();
         test_effort_ceiling_rejects_bad_inputs();
         test_free_crank_stays_held_under_balanced_leg_weights();
-        test_spindle_coasting_servo_never_pushes_the_crank();
+        test_spindle_coasting_applies_no_crank_torque();
+        test_spindle_coasting_leg_rests_with_own_weight();
+        test_legacy_coasting_leg_rests_with_own_weight();
         test_spindle_compute_matches_python();
         test_spindle_rear_chain_effort_matches_python();
         test_spindle_disabled_command_matches_python();

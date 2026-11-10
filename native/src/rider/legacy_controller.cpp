@@ -286,6 +286,7 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 ::rider::NamedEntries<double> LegacyController::compute(mjData& data,const ::rider::RiderCommand& command,
     bool advance,double dt,bool steady,const std::array<bool,4>& available,bool recovery) {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) LegacyController is only constructed with an engaged legacy config
     const auto& m=*c_.model_;const auto& cfg=*c_.config_.legacy;const auto nt=c_.joints_.size();
     const auto qpos=model_access::readonly_buffer(data.qpos,m.nq,"qpos");
     const auto qvel=model_access::readonly_buffer(data.qvel,m.nv,"qvel");
@@ -312,22 +313,26 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const double pitch_error=::spindle::wrap_angle(std::atan2(-frame[6],frame[0])-std::atan2(-pelvis[6],pelvis[0])+command.posture.pelvis_pitch_rad);
     const double pitch=std::clamp(cfg.posture_pitch_k_nm_rad*pitch_error+cfg.posture_pitch_d_nms_rad*(qvel[static_cast<std::size_t>(c_.frame_pitch_dof_)]-qvel[static_cast<std::size_t>(c_.rider_pitch_dof_)]),-cfg.posture_pitch_limit_nm,cfg.posture_pitch_limit_nm);
     const auto crank_rotation=rot(data.xmat,m.nbody,c_.crank_body_);const double phase=std::atan2(-crank_rotation[6],crank_rotation[0]);
-    double coast=0.;if(command.crank_target_phase_rad&&!steady){coast=std::clamp(cfg.coasting_brake_d_nm_s_rad*(command.crank_target_rate_rad_s-qvel[static_cast<std::size_t>(c_.crank_spin_dof_)]),-cfg.coasting_brake_limit_nm,cfg.coasting_brake_limit_nm);}
+    // Coasting legs rest on the pedals with their own weight (user
+    // ruling 2026-11-10): no brake, no hold — the coast foot-force
+    // request of each leg is exactly its own weight at the pedal, the
+    // same «Действует»-9 quantity the spindle press law uses.
     std::array<Vec,2> normals{};std::array<double,2> loads{};std::array<bool,2> recovered{};
     for(std::size_t s=0;s<2;++s){const auto g=c_.pedal_geoms_[s];normals[s]=::rider::upper_box_face(vec(data.geom_xpos,m.ngeom,g),rot(data.geom_xmat,m.ngeom,g),vec(m.geom_size,m.ngeom,g)).normal;loads[s]=c_.welded()?weight:std::max(estimates[s][0],0.);recovered[s]=get(c_.pedal_recovery_,s?"rear":"front").stage=="none";}
+    const std::array<double,2> rests=command.mean_crank_torque_nm==0.?c_.leg_weights_at_pedal(&data):std::array<double,2>{};
     PedalingRequests requests;if(command.mean_crank_torque_nm>0.)requests=pedal_requests(phase,command.mean_crank_torque_nm,c_.crank_length_m_,normals,loads,cfg.support_mu,cfg.pedal_torque_ripple,cfg.return_foot_preload_n,recovered);
     std::array<double,2> blends{};
     for(std::size_t s=0;s<2;++s) {
         const double fraction=std::min(loads[s]/cfg.stance_blend_load_n,1.);blends[s]=fraction*fraction*(3.-2.*fraction);
         if(!recovered[s]){blends[s]=0.;requests.force[s]={};}
-        else if(command.mean_crank_torque_nm==0.){const double bp=phase+(s?pi:0.)+(coast<0.?pi:0.),f=std::clamp(numeric::math_cos(bp)/pressure_blend_cosine,0.,1.);requests.force[s]=feasible_pedal_force({0.,0.,-std::abs(coast)/c_.crank_length_m_*f*f*(3.-2.*f)},normals[s],cfg.support_mu,loads[s]);}
+        else if(command.mean_crank_torque_nm==0.){requests.force[s]=feasible_pedal_force({0.,0.,-rests[s]},normals[s],cfg.support_mu,loads[s]);}
         else if(requests.weights[s]<.5){const Vec t{normals[s][2],0.,-normals[s][0]};const double cap=cfg.pedal_scrape_fraction*cfg.foot_mu*loads[s],part=d::dot(requests.force[s],t);requests.force[s]=add(requests.force[s],mul(t,std::clamp(part,-cap,cap)-part));}
     }
     const auto offset=command.posture.pelvis_offset_m.value_or(std::array<double,2>{});const Vec wanted=add(vec(data.xpos,m.nbody,c_.frame_body_),mv(frame,add(c_.pose_.hip,{offset[0],0.,offset[1]}))),actual=vec(data.xpos,m.nbody,c_.pelvis_body_);
     Vec balance=add(mul(sub(wanted,actual),cfg.posture_translation_k_n_m),mul(sub(velocity(m,data,c_.frame_body_,wanted),velocity(m,data,c_.pelvis_body_,actual)),cfg.posture_translation_d_ns_m));balance[1]=0.;const double balance_norm=d::norm(balance);if(balance_norm>cfg.posture_translation_limit_n)balance=mul(balance,cfg.posture_translation_limit_n/balance_norm);
     const auto support=pedaling_support_targets(weight,com,points,vec(data.xpos,m.nbody,c_.crank_body_)[0],cfg.pedal_support_fraction,cfg.bar_support_fraction,enabled,requests.force,pitch,balance);
     c_.support_diagnostics_={.present=true,.stance_front=recovered[0]&&(command.mean_crank_torque_nm==0.||requests.weights[0]>1e-6),.stance_rear=recovered[1]&&(command.mean_crank_torque_nm==0.||requests.weights[1]>1e-6)};
-    LegacySupportDiagnostics support_diagnostics;support_diagnostics.target=support.diagnostics;support_diagnostics.stance={c_.support_diagnostics_.stance_front,c_.support_diagnostics_.stance_rear};support_diagnostics.pedal_forces=requests.force;support_diagnostics.posture=command.posture;support_diagnostics.coasting=command.crank_target_phase_rad.has_value();support_diagnostics.coasting_requested_crank_torque_nm=coast;support_diagnostics.actual_phase_rad=qpos[static_cast<std::size_t>(c_.crank_spin_qpos_)];support_diagnostics.target_phase_rad=command.crank_target_phase_rad;support_diagnostics.actual_rate_rad_s=qvel[static_cast<std::size_t>(c_.crank_spin_dof_)];support_diagnostics.target_rate_rad_s=command.crank_target_rate_rad_s;if(command.crank_target_phase_rad)support_diagnostics.phase_error_rad=::spindle::wrap_angle(*command.crank_target_phase_rad-support_diagnostics.actual_phase_rad);
+    LegacySupportDiagnostics support_diagnostics;support_diagnostics.target=support.diagnostics;support_diagnostics.stance={c_.support_diagnostics_.stance_front,c_.support_diagnostics_.stance_rear};support_diagnostics.pedal_forces=requests.force;support_diagnostics.posture=command.posture;support_diagnostics.coasting=command.crank_target_phase_rad.has_value();support_diagnostics.coasting_requested_crank_torque_nm=0.;support_diagnostics.actual_phase_rad=qpos[static_cast<std::size_t>(c_.crank_spin_qpos_)];support_diagnostics.target_phase_rad=command.crank_target_phase_rad;support_diagnostics.actual_rate_rad_s=qvel[static_cast<std::size_t>(c_.crank_spin_dof_)];support_diagnostics.target_rate_rad_s=command.crank_target_rate_rad_s;if(command.crank_target_phase_rad)support_diagnostics.phase_error_rad=::spindle::wrap_angle(*command.crank_target_phase_rad-support_diagnostics.actual_phase_rad);
     auto upper=upper_targets(data,&command.posture,&support.forces_on_bike[3]);const mjData* target=&data;
     if(command.crank_target_phase_rad || (command.mean_crank_torque_nm>0.&&command.crank_target_rate_rad_s>0.)) {
         auto* scratch=c_.coasting_target_data_.get();

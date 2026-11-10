@@ -360,8 +360,6 @@ struct ArticulatedConfig {
     double bar_support_fraction = .12;
     double posture_sole_depth_m = .003;
     double swing_clearance_m = .003;  // unstrapped return foot is not a brake
-    double coasting_brake_d_nm_s_rad = 2.;
-    double coasting_brake_limit_nm = 60.;
     double stance_blend_load_n = 50.;
     double posture_pitch_k_nm_rad = 600.;
     double posture_pitch_d_nms_rad = 60.;
@@ -830,8 +828,6 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, bar_support_fraction),
     REAL(ArticulatedConfig, posture_sole_depth_m),
     REAL(ArticulatedConfig, swing_clearance_m),
-    REAL(ArticulatedConfig, coasting_brake_d_nm_s_rad),
-    REAL(ArticulatedConfig, coasting_brake_limit_nm),
     REAL(ArticulatedConfig, stance_blend_load_n),
     REAL(ArticulatedConfig, posture_pitch_k_nm_rad),
     REAL(ArticulatedConfig, posture_pitch_d_nms_rad),

@@ -1065,18 +1065,6 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 2.0,
-          "default_factory": null,
-          "name": "coasting_brake_d_nm_s_rad",
-          "type": "<class 'float'>"
-        },
-        {
-          "default": 60.0,
-          "default_factory": null,
-          "name": "coasting_brake_limit_nm",
-          "type": "<class 'float'>"
-        },
-        {
           "default": 50.0,
           "default_factory": null,
           "name": "stance_blend_load_n",

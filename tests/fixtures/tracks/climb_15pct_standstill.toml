@@ -1,0 +1,8 @@
+# Constant 15% grade from x=0 — the standstill start on the grade that
+# looped out at 1.109 s before the 2026-11-10 uphill-launch experiment
+# (user decision: the rider ramps the effort ceiling instead of mashing).
+name = "climb15_standstill"
+length_m = 150.0
+description = "Constant 15% grade from x=0 for the uphill standstill launch regression"
+surface = "asphalt"
+grade_profile = { knots = [[0.0, 0.15], [150.0, 0.15]] }

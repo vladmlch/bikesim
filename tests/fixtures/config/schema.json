@@ -1545,6 +1545,24 @@
           "default_factory": null,
           "name": "min_elbow_flexion_deg",
           "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "launch_effort_ramp_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "launch_min_grade",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "launch_standstill_crank_rate_rad_s",
+          "type": "<class 'float'>"
         }
       ],
       "name": "seated_climb",

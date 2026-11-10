@@ -36,7 +36,7 @@ struct EndStopConfig {
 };
 
 // seated_climb.py SeatedClimbConfig — the identical record is already the
-// native rider/intent.hpp IntentConfig (same 19 fields, same defaults);
+// native rider/intent.hpp IntentConfig (same 22 fields, same defaults);
 // reuse keeps one declaration for the input and the intent boundary.
 using SeatedClimbConfig = ::rider::IntentConfig;
 
@@ -199,6 +199,9 @@ inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
     {.name="min_elbow_flexion_deg", .type="<class 'float'>", .kind=FieldKind::Real,
      .offset=offsetof(SeatedClimbConfig, min_elbow_flexion_deg), .required=true, .factory="", .nested=nullptr,
      .nested2=nullptr},
+    SC_REAL_REQ(launch_effort_ramp_s),
+    SC_REAL_REQ(launch_min_grade),
+    SC_REAL_REQ(launch_standstill_crank_rate_rad_s),
 #undef SC_REAL
 #undef SC_REAL_REQ
 });

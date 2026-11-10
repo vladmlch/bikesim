@@ -234,6 +234,9 @@ void test_surge_and_trim_are_validated_in_climb_config() {
         config.lean_rate_rad_s = .5;
         config.orientation_tau_s = .5;
         config.min_elbow_flexion_deg = 15.;
+        config.launch_effort_ramp_s = 1.5;
+        config.launch_min_grade = .03;
+        config.launch_standstill_crank_rate_rad_s = 1.;
         cfg::detail::post_init(config);
         bt::require(config.surge_power_w == 400. &&
                         config.surge_grade == .2 &&
@@ -251,6 +254,9 @@ void test_surge_and_trim_are_validated_in_climb_config() {
             config.lean_rate_rad_s = .5;
             config.orientation_tau_s = .5;
             config.min_elbow_flexion_deg = 15.;
+            config.launch_effort_ramp_s = 1.5;
+            config.launch_min_grade = .03;
+            config.launch_standstill_crank_rate_rad_s = 1.;
             config.*field = 0.;
             cfg::detail::post_init(config);
         });
@@ -268,6 +274,9 @@ void test_surge_and_trim_are_validated_in_climb_config() {
             config.lean_rate_rad_s = .5;
             config.orientation_tau_s = .5;
             config.min_elbow_flexion_deg = 15.;
+            config.launch_effort_ramp_s = 1.5;
+            config.launch_min_grade = .03;
+            config.launch_standstill_crank_rate_rad_s = 1.;
             config.*field = -1.;
             cfg::detail::post_init(config);
         });

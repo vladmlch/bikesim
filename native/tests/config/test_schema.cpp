@@ -286,6 +286,9 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.lean_rate_rad_s = .5;
     climb.orientation_tau_s = .5;
     climb.min_elbow_flexion_deg = 15.0;
+    climb.launch_effort_ramp_s = 1.5;
+    climb.launch_min_grade = 0.03;
+    climb.launch_standstill_crank_rate_rad_s = 1.0;
     c.monitors.grounded_hold_s = 0.005;
     c.monitors.contact_dropout_s = 0.0125;
     c.research.control_period_s = 0.01;
@@ -761,7 +764,7 @@ void test_schema() {
     // and activation_tau_s (the 25 ms activation filter was removed 2026-11-07).
     bt::require(fields_named(fields[9], "articulated").size() == 66,
                 "articulated field count");
-    bt::require(fields_named(fields[10], "seated_climb").size() == 19,
+    bt::require(fields_named(fields[10], "seated_climb").size() == 22,
                 "seated_climb field count");
     bt::require(fields_named(fields[11], "monitors").size() == 2,
                 "monitors field count");

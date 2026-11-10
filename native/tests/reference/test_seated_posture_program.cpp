@@ -71,6 +71,9 @@ rider::IntentConfig enabled(double lean_rate = 0.) {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.launch_effort_ramp_s = 1.5;
+    config.launch_min_grade = .03;
+    config.launch_standstill_crank_rate_rad_s = 1.;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     config.lean_rate_rad_s = lean_rate != 0. ? lean_rate : .5;
@@ -228,6 +231,9 @@ void test_posture_program_rate_limits_and_bounds_the_pulse() {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.launch_effort_ramp_s = 1.5;
+    config.launch_min_grade = .03;
+    config.launch_standstill_crank_rate_rad_s = 1.;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     config.lean_gain = 0.;
@@ -509,6 +515,9 @@ void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.launch_effort_ramp_s = 1.5;
+    config.launch_min_grade = .03;
+    config.launch_standstill_crank_rate_rad_s = 1.;
     config.lean_rate_rad_s = 10.;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
@@ -536,6 +545,9 @@ void test_geometric_limit_caps_lean() {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.launch_effort_ramp_s = 1.5;
+    config.launch_min_grade = .03;
+    config.launch_standstill_crank_rate_rad_s = 1.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .8;
     config.surge_budget_s = 15.;
@@ -575,6 +587,9 @@ void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.launch_effort_ramp_s = 1.5;
+    config.launch_min_grade = .03;
+    config.launch_standstill_crank_rate_rad_s = 1.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .1;
     config.surge_budget_s = 15.;

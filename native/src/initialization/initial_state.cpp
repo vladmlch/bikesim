@@ -68,7 +68,7 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // contract, so transfers recorded before the knobs keep validating and a
     // configured value never changes the fingerprint (2026-11-03).
     {auto drive=field(config,"drive");auto pedaling=field(std::get<bio::Value::Object>(drive.data),"pedaling");static const std::initializer_list<std::string_view> knobs={"reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s","reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s","reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"};std::erase_if(std::get<bio::Value::Object>(pedaling.data),[](const auto& p){return std::ranges::find(knobs,p.first)!=knobs.end();});put(std::get<bio::Value::Object>(drive.data),"pedaling",std::move(pedaling));put(config,"drive",std::move(drive));}
-    {auto seated_climb=field(config,"seated_climb");auto& sc=std::get<bio::Value::Object>(seated_climb.data);std::erase_if(sc,[](const auto& p){return p.first=="min_elbow_flexion_deg";});put(sc,"period_s",real(0.01));put(config,"seated_climb",std::move(seated_climb));}
+    {auto seated_climb=field(config,"seated_climb");auto& sc=std::get<bio::Value::Object>(seated_climb.data);std::erase_if(sc,[](const auto& p){return p.first=="min_elbow_flexion_deg"||p.first=="launch_effort_ramp_s"||p.first=="launch_min_grade"||p.first=="launch_standstill_crank_rate_rad_s";});put(sc,"period_s",real(0.01));put(config,"seated_climb",std::move(seated_climb));}
     // [research] timings and [monitors] holds steer the experiment and the
     // sensor/actuator/contact plumbing, never the compiled model or the rest
     // pose — same class as the pedaling knobs above: dropped so transfers

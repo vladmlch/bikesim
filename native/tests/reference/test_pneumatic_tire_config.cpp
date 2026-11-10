@@ -33,7 +33,11 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"orientation_tau_s", io::Value{io::Number{"0.5"}}},
                 {"surge_budget_s", io::Value{io::Number{"15"}}},
                 {"trim_dead_time_s", io::Value{io::Number{"0.2"}}},
-                {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}}}});
+                {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}},
+                {"launch_effort_ramp_s", io::Value{io::Number{"1.5"}}},
+                {"launch_min_grade", io::Value{io::Number{"0.03"}}},
+                {"launch_standstill_crank_rate_rad_s",
+                 io::Value{io::Number{"1.0"}}}}});
         }
         // These documents exercise the tire section only — fill the
         // required timing keys the oracle's defaults used to supply, with

@@ -554,6 +554,28 @@ void test_fifteen_percent_climb_holds_12_kmh() {
 #endif
 }
 
+// test_fifteen_percent_standstill_launch_rides_without_loop_out — the
+// 2026-11-10 uphill-launch regression (user decision, simulation-decisions
+// «Действует»): from standstill on a constant 15 % grade the rider's effort
+// ceiling ramps over 1.5 s instead of mashing at once, so the same start
+// that looped out at 1.109 s now completes the 12 s horizon without a
+// crash outcome. The track is the experiment's constant-grade fixture —
+// climb_15pct.toml's flat run-in does not reproduce the standstill start.
+void test_fifteen_percent_standstill_launch_rides_without_loop_out() {
+    auto env = environment(
+        terrain::load_track(
+            repo_file("tests/fixtures/tracks/climb_15pct_standstill.toml")),
+        12.);
+    const RideResult result = ride(env);
+    std::println(stderr,
+                 "pedelec.climb15_standstill: reason={} windows={} x_last={:.3f}",
+                 result.reason, result.rows.size(),
+                 result.rows.empty() ? 0. : result.rows.back().x);
+    bt::require(result.reason == "duration",
+                "the 15 % standstill launch completes the 12 s horizon "
+                "without crash:loop_out");
+}
+
 // test_savage_is_ridden_to_the_end — parked (see main): pedelec_savage
 // pulls -107...-396 N in rider_support channels, which violates the -6 N
 // attachment pull limit («Действует» 34). Rough track attachment
@@ -618,6 +640,7 @@ int main() {
         test_flat_reaches_25_kmh_within_10_s();
         test_motor_follows_the_rider_through_a_shift_without_an_extra_cut();
         test_fifteen_percent_climb_holds_12_kmh();
+        test_fifteen_percent_standstill_launch_rides_without_loop_out();
         // test_savage_is_ridden_to_the_end — parked: pedelec_savage pulls
         // -107...-396 N in rider_support channels, which violates the -6 N
         // attachment pull limit («Действует» 34). Rough track attachment

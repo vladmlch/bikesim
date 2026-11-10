@@ -816,6 +816,8 @@ void post_init(const SeatedClimbConfig &config) {
         std::pair{"orientation_tau_s", &SeatedClimbConfig::orientation_tau_s},
         std::pair{"surge_power_w", &SeatedClimbConfig::surge_power_w},
         std::pair{"surge_budget_s", &SeatedClimbConfig::surge_budget_s},
+        std::pair{"launch_effort_ramp_s",
+                  &SeatedClimbConfig::launch_effort_ramp_s},
     };
     for (const auto &[name, member] : kPositive)
         scalar(config.*member, name, std::nullopt, true);
@@ -836,6 +838,9 @@ void post_init(const SeatedClimbConfig &config) {
         std::pair{"lean_trim_limit_rad",
                   &SeatedClimbConfig::lean_trim_limit_rad},
         std::pair{"trim_dead_time_s", &SeatedClimbConfig::trim_dead_time_s},
+        std::pair{"launch_min_grade", &SeatedClimbConfig::launch_min_grade},
+        std::pair{"launch_standstill_crank_rate_rad_s",
+                  &SeatedClimbConfig::launch_standstill_crank_rate_rad_s},
     };
     for (const auto &[name, member] : kMinimum)
         scalar(config.*member, name, 0.);
@@ -1316,6 +1321,10 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.surge_budget_s = 15.;
     config.seated_climb.trim_dead_time_s = .2;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    // Uphill standstill launch (2026-11-10 experiment, user decision).
+    config.seated_climb.launch_effort_ramp_s = 1.5;
+    config.seated_climb.launch_min_grade = .03;
+    config.seated_climb.launch_standstill_crank_rate_rad_s = 1.;
     config.drive.motor_clutch = false;
     config.drive.assist.release_hold_s = .3;
     config.drive.pedaling.stop_time_s = .35;

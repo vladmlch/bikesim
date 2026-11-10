@@ -785,6 +785,9 @@
       "seated_climb": {
         "enabled": true,
         "front_load_share_target": 0.3,
+        "launch_effort_ramp_s": 1.5,
+        "launch_min_grade": 0.03,
+        "launch_standstill_crank_rate_rad_s": 1.0,
         "lean_gain": 1.0,
         "lean_rate_rad_s": 0.5,
         "lean_trim_gain_rad_s": 0.3,

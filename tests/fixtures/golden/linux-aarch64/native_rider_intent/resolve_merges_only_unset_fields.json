@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3712,
+  "nbytes": 4448,
   "node": "native_rider_intent/resolve_merges_only_unset_fields",
   "offset": 0,
   "rtol": null,
   "shape": [
-   464
+   556
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3952,
   "node": "native_rider_intent/resolve_merges_only_unset_fields",
-  "offset": 3712,
+  "offset": 4448,
   "rtol": null,
   "shape": [
    494
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 228,
   "node": "native_rider_intent/resolve_merges_only_unset_fields",
-  "offset": 7664,
+  "offset": 8400,
   "rtol": null,
   "shape": [
    228
@@ -49,7 +49,7 @@
   "label": "output.state.0",
   "nbytes": 548,
   "node": "native_rider_intent/resolve_merges_only_unset_fields",
-  "offset": 7892,
+  "offset": 8628,
   "rtol": null,
   "shape": [
    548

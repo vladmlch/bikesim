@@ -1022,15 +1022,11 @@ namespace {
     [[nodiscard]] SeatedClimbPolicy::State decode_intent_policy(
         const VNode &v, const std::string &policy_path) {
         const Dict policy = mapping(v, policy_path);
-        // The launch members are optional on the wire: recorded states
-        // predate the 2026-11-10 uphill-launch mechanism and restore as
-        // "not yet decided", which the next delayed tick re-decides.
-        ncd::exact_at(policy,
-                      keys("time_s", "inclination_rad", "lean_rad",
-                           "effort_nm", "samples", "delayed",
-                           "surge_budget_s_left"),
-                      keys("launch_ramp_s", "launch_decided"),
-                      policy_path);
+        ncd::exact(policy,
+                   keys("time_s", "inclination_rad", "lean_rad",
+                        "effort_nm", "samples", "delayed",
+                        "surge_budget_s_left", "launch_ramp_s",
+                        "launch_decided"));
         SeatedClimbPolicy::State out;
         out.time_s = policy["time_s"].finite_real(policy_path);
         out.inclination_rad =
@@ -1048,12 +1044,10 @@ namespace {
                 decode_signals(delayed, policy_path + ".delayed");
         out.surge_budget_s_left =
             policy["surge_budget_s_left"].finite_real(policy_path);
-        if (policy.contains("launch_ramp_s"))
-            out.launch_ramp_s =
-                policy["launch_ramp_s"].finite_real(policy_path);
-        if (policy.contains("launch_decided"))
-            out.launch_decided =
-                policy["launch_decided"].boolean(policy_path);
+        out.launch_ramp_s =
+            policy["launch_ramp_s"].finite_real(policy_path);
+        out.launch_decided =
+            policy["launch_decided"].boolean(policy_path);
         return out;
     }
 

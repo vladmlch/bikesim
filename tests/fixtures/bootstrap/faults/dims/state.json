@@ -1182,6 +1182,8 @@
       "delayed": null,
       "effort_nm": 0.0,
       "inclination_rad": 0.0,
+      "launch_decided": false,
+      "launch_ramp_s": -1.0,
       "lean_rad": 0.0,
       "samples": [],
       "surge_budget_s_left": 15.0,

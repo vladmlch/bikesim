@@ -354,7 +354,7 @@ The reason §3.1 exists:
 | Quantity | `sphere` | Measured, 29×2.3–2.4 MTB tyres |
 |---|---|---|
 | Vertical stiffness | 130 N/mm, linear, pressure-independent | ≈ 62 N/mm static at 1.72 bar / 418 N; 74–86 N/mm dynamic [T1][T2] |
-| Vertical damping | 800 N·s/m, viscous | ≈ 100–190 N·s/m, ζ ≈ 2–5.5 % [T2] |
+| Vertical loss | η·kδ·tanh(δ̇/ε) hysteresis, η = 0.0662 front / 0.0690 rear, ε = 0.01 m/s (2026-11-10; before: 800 N·s/m viscous) | ζ ≈ 2–5.5 %, loss factor 0.05–0.09 [T2] |
 | Static deflection at this bike's loads | 3–5 mm | ≈ 7–10 mm [derived from T1] |
 | Rolling resistance | Crr 0.015 | 0.0103 (Hans Dampf, Addix Soft) / ≈ 0.011 (Magic Mary, Soft) at 1.5 bar [T4] |
 | Friction | μ 1.2 on every surface | asphalt peak ≈ 1.0–1.1, hardpack ≈ 0.7–0.85 [est, T5][T6] |

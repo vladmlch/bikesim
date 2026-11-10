@@ -21,6 +21,7 @@
 #include <atomic>
 #include <memory>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -160,13 +161,20 @@ using runtime::RawStep;
 // successful acknowledged prefix, a later failure preserves the consumed but
 // unapplied periods for synchronous replay.
 [[gnu::noinline]] void worker_loss_preserves_consumed_but_unapplied_prefix() {
+    // The worker waits until all three periods are submitted: a worker that
+    // already failed rejects further submits (AsyncWorkerLost), so without
+    // the gate a loaded machine could fail job 1 before period(20) is queued.
+    std::atomic<bool> submitted{false};
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
-        [](std::uint64_t sequence) {
+        [&submitted](std::uint64_t sequence) {
+            while (!submitted.load(std::memory_order_acquire))
+                std::this_thread::yield();
             if (sequence == 1) throw std::runtime_error("worker died mid-period");
         });
     runner.submit(period(0));
     runner.submit(period(10));
     runner.submit(period(20));
+    submitted.store(true, std::memory_order_release);
     const auto first = runner.peek(true);
     bt::require(first && first->sequence == 0, "the first period publishes before failure");
     runner.acknowledge(0);
@@ -185,10 +193,17 @@ using runtime::RawStep;
 // test_bad_reply_preserves_all_unapplied_periods — a failure on the very
 // first job preserves every unapplied period, not just the tail.
 [[gnu::noinline]] void bad_reply_preserves_all_unapplied_periods() {
+    // Same gate as above: both periods are queued before the first job fails.
+    std::atomic<bool> submitted{false};
     AsyncCloseRunner runner(synthetic_config(), synthetic_state(), 1, std::nullopt,
-        always_fail);
+        [&submitted](std::uint64_t sequence) {
+            while (!submitted.load(std::memory_order_acquire))
+                std::this_thread::yield();
+            always_fail(sequence);
+        });
     runner.submit(period(0));
     runner.submit(period(10));
+    submitted.store(true, std::memory_order_release);
     bool failed = false;
     try { (void)runner.peek(true); }
     catch (const AsyncPublicationError&) { failed = true; }

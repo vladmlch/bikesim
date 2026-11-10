@@ -1269,10 +1269,12 @@ void post_init(SimulationPhysicsConfig &config) {
 
 SimulationPhysicsConfig default_physics() {
     // The programmatic construction path declares the former implicit
-    // values explicitly: 0.5 ms physics step, 5 ms control period, 5 ms
-    // grounded hold, a 10-step contact dropout at that tick, the
-    // seated-climb intent's 1.25 ms period, 150 ms reaction delay,
-    // 0.5 rad/s lean rate, 0.5 s orientation smoothing, 15 s surge
+    // values explicitly: the decided 1.25 ms physics step with the
+    // control tick equal to the step (the leg control runs every
+    // physics step), the 2-step closure constant 0.0025 s, 5 ms
+    // grounded hold (four steps), a 10-step contact dropout at that
+    // tick, the seated-climb intent's 1.25 ms period, 150 ms reaction
+    // delay, 0.5 rad/s lean rate, 0.5 s orientation smoothing, 15 s surge
     // budget and 0.2 s trim dead time, the motor run-on 0.3 s, coast
     // stop 0.35 s, shift cooldown 0.4 s and cut 0.2 s, the balance
     // dwell 0.5 s and grace 3 s, the crank-reposition manoeuvre's former
@@ -1283,8 +1285,11 @@ SimulationPhysicsConfig default_physics() {
     // default resolves to coast/ideal_speed_control, where the clutch is
     // forbidden, so it stays false here.
     SimulationPhysicsConfig config{};
-    config.timestep_s = 0.0005;
-    config.control_period_s = 0.005;
+    config.timestep_s = 0.00125;
+    config.control_period_s = 0.00125;
+    // 2*timestep_s floor: below it MuJoCo would silently stiffen the
+    // weld closures; the shipped 1.25 ms profiles declare the same.
+    config.closure_time_constant_s = 0.0025;
     config.monitors.grounded_hold_s = 0.005;
     config.monitors.contact_dropout_s = 10. * config.timestep_s;
     config.seated_climb.period_s = .00125;

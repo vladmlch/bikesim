@@ -196,7 +196,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     request.setup.model.include_rider = true;
     const auto defaults = std::make_unique<configuration::SimulationPhysicsConfig>(configuration::default_physics());
     defaults->physics_mode = "physical"; defaults->drive_mode = args.text("rider") == "articulated_planar" ? "articulated_effort" : "crank_effort";
-    defaults->timestep_s = .0005; defaults->control_period_s = .005;
+    defaults->timestep_s = .00125; defaults->control_period_s = .00125;
     defaults->monitors.grounded_hold_s = .005;
     defaults->monitors.contact_dropout_s = 10. * defaults->timestep_s;
     defaults->initial_speed_mps = 2.;

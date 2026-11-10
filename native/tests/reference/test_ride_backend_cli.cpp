@@ -157,6 +157,22 @@ void test_default_backend_and_profile_timestep() {
     bt::invalid([] { (void)parse("bike-ride", {"--backend", "python"}); });
 }
 
+// ride_backend_cli/research_defaults_use_the_decided_step
+// The bike-research programmatic defaults are a profile of the decided
+// bike: the 2026-11-10 decision puts it on the same 1.25 ms physics step
+// with the leg control evaluated every step that the three shipped
+// examples/research profiles already declare.
+void test_research_defaults_use_the_decided_step() {
+    const auto resolved =
+        cli::resolve_research(parse("bike-research", {}));
+    const auto& physics =
+        resolved->setup.model.physics.value(); // NOLINT(bugprone-unchecked-optional-access) resolve_research always engages physics; .value() is the loud contract
+    bt::require(physics.timestep_s == .00125,
+                "research default timestep_s is the decided 1.25 ms step");
+    bt::require(physics.control_period_s == .00125,
+                "the research control tick equals the physics step");
+}
+
 // ride_backend_cli/native_visual_scale_keeps_all_physics_settings
 void test_native_visual_scale_keeps_all_physics_settings() {
     const auto normal = resolve({"--physics-config", PROFILE});
@@ -381,6 +397,7 @@ void test_cli_dispatches_every_live_and_headless_route() {
 int main() {
     return bt::run([] {
         test_default_backend_and_profile_timestep();
+        test_research_defaults_use_the_decided_step();
         test_native_visual_scale_keeps_all_physics_settings();
         for (const std::string_view scale : {"1", "2", "4", "8"})
             test_explicit_scale_is_invalid_headless_even_one(scale);

@@ -629,12 +629,15 @@ void test_defaults() {
                 "physical drive_mode resolution");
     bt::require(c.pitch_assist && !*c.pitch_assist,
                 "physical pitch_assist resolution");
-    bt::require(c.timestep_s == 0.0005, "default timestep_s");
-    bt::require(c.control_period_s == 0.005, "default control_period_s");
+    // Decision 2026-11-10: the decided bike runs the 1.25 ms physics step
+    // with the leg control evaluated every step; contact_dropout_s stays
+    // declared as ten steps.
+    bt::require(c.timestep_s == 0.00125, "default timestep_s");
+    bt::require(c.control_period_s == 0.00125, "default control_period_s");
     bt::require(c.monitors.grounded_hold_s == 0.005 &&
-                    c.monitors.contact_dropout_s == 0.005,
+                    c.monitors.contact_dropout_s == 0.0125,
                 "default monitor holds");
-    bt::require(c.closure_time_constant_s == 0.001, "default closure tau");
+    bt::require(c.closure_time_constant_s == 0.0025, "default closure tau");
     bt::require(c.equilibrium_refine_after_s == 1.0, "refine_after default");
     bt::require(c.equilibrium_refine_period_s == 3.0, "refine_period default");
     bt::require(!c.equilibrium_cache_enabled, "cache default");
@@ -882,7 +885,7 @@ void test_validation() {
     case_from_default(
         "control_period_s must be an integer multiple of timestep_s",
         [](cfg::SimulationPhysicsConfig& c) {
-            c.control_period_s = 0.0077;  // not a multiple of 0.0005
+            c.control_period_s = 0.0077;  // not a multiple of 0.00125
         });
     case_from_default("invalid equilibrium_refine_after_s",
                       [](cfg::SimulationPhysicsConfig& c) {
@@ -901,7 +904,7 @@ void test_validation() {
     // Closure domain: 2*timestep_s floor.
     case_from_default(
         "closure_time_constant_s=0.0006 must be at least "
-        "2*timestep_s=0.001; otherwise MuJoCo silently changes closure "
+        "2*timestep_s=0.0025; otherwise MuJoCo silently changes closure "
         "stiffness",
         [](cfg::SimulationPhysicsConfig& c) {
             c.closure_time_constant_s = 0.0006;

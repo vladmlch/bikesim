@@ -45,6 +45,7 @@
 #include "runtime/config.hpp"
 #include "runtime/control.hpp"
 #include "runtime/period_buffer.hpp"
+#include "runtime/status.hpp"
 #include "runtime/step.hpp"
 #include "stepper.hpp"
 #include "terrain/profile.hpp"
@@ -56,6 +57,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -732,8 +734,9 @@ Matrix matrix(std::size_t rows, std::size_t cols, Vector values) {
 }
 
 // ---- adapter: whole-rider balance on the compiled plant ------------------
-// The review_rig setup seam from test_t23.cpp, with the batch's all-welded
-// attachment mutation (the oracle's _welded_config replacement).
+// The review_rig setup seam from test_t23.cpp; the welded variant carries
+// the batch's all-welded attachment mutation (the oracle's _welded_config
+// replacement), the spindle variant the pedaling profiles' attachments.
 
 struct WeldedRig {
     std::unique_ptr<init::SetupRequest> request;
@@ -742,22 +745,37 @@ struct WeldedRig {
     std::unique_ptr<rcfg::PhysicalStep> physical;
 };
 
+// The attachment set the rig compiles. Welded is the batch's all-welded
+// mutation the legacy allocator records below need; Spindle is the
+// pedaling profiles' pedal_attachment="spindle" / saddle_attachment="pin" /
+// grip_attachment="connect" — the configuration actually ridden.
+enum class RigAttachments : std::uint8_t { Welded, Spindle };
+
 // NOLINTBEGIN(modernize-make-unique) same inlined-forwarding frame budget as review_rig.
-std::unique_ptr<WeldedRig> welded_rig() {
+std::unique_ptr<WeldedRig> welded_rig(
+    RigAttachments attachments = RigAttachments::Welded) {
     auto rig = std::make_unique<WeldedRig>();
     // skip_initial_state=true: the shipped welded_flat.json was captured
     // against the fixture's own spindle/pin/connect physics, so its
     // contract cannot accept the weld/weld/weld override — the rig runs
     // the owner's settle_context refinement like the oracle's
-    // make_environment does for the rewritten config.
+    // make_environment does for the rewritten config. The spindle set IS
+    // the captured physics, but the bounded settle below stays the rig's
+    // single start path so both attachment sets begin identically.
     rig->request = std::unique_ptr<init::SetupRequest>{new init::SetupRequest(
         init::read_setup_request(bt::fixture("requests/welded_flat.toml"),
                                  true))};
     auto &model = rig->request->model;
     auto &physics = model.physics.value(); // NOLINT(bugprone-unchecked-optional-access) the request schema engages physics
-    physics.articulated.pedal_attachment = "weld";
-    physics.articulated.saddle_attachment = "weld";
-    physics.articulated.grip_attachment = "weld";
+    if (attachments == RigAttachments::Welded) {
+        physics.articulated.pedal_attachment = "weld";
+        physics.articulated.saddle_attachment = "weld";
+        physics.articulated.grip_attachment = "weld";
+    } else {
+        physics.articulated.pedal_attachment = "spindle";
+        physics.articulated.saddle_attachment = "pin";
+        physics.articulated.grip_attachment = "connect";
+    }
     cfg::post_init(physics);
     // setup_owner.cpp make_setup: the resolved rider document is what the
     // captured initial-state contract was hashed against, and crank_joint
@@ -942,18 +960,112 @@ Vector channel_array(const runtime::WireObject &object,
     return out;
 }
 
-[[gnu::noinline]] void test_healthy_step_allocates_a_feasible_command() {
-    // rider_allocation/healthy_step_allocates_a_feasible_command
-    auto rig = welded_rig();
-    const rcfg::RawStep last = advance_env_steps(*rig->physical, 40);
+[[gnu::noinline]] void test_idle_spindle_crank_settles_and_feet_only_press() {
+    // The ported healthy-step idle scenario moved off the weld/weld/weld
+    // bench onto the ridden attachments (pedal_attachment="spindle",
+    // saddle_attachment="pin", grip_attachment="connect" — the pedaling
+    // profiles' set). On welded feet a foot can pull its pedal — the
+    // investigation measured weld tension up to +237 N — and the crank
+    // ran away backward past −9 rad/s at 0.45 s where the actuator guard
+    // threw; the oracle's 0.4 s window never reached the divergence. A
+    // platform pedal can only be pressed, so the idle claim is checked on
+    // the configuration that is actually ridden.
+    //
+    // The bench idles 1.5 s — past the measured ~1 s ringing decay and
+    // more than three times the welded bench's 0.45 s divergence point —
+    // and requires every interval valid (!invalid_controller), both feet
+    // at ≥ −6 N press for the whole window (the «Действует» 34 pull
+    // tolerance; on spindle a foot cannot pull at all — measured minimum
+    // press is 0.00 N), the saddle held to the same tolerance after a
+    // 0.3 s warmup, and the crank settled over the last 0.5 s: |ω| ≤
+    // 0.5 rad/s and |Δq| ≤ 0.01 rad from the settle-time angle. Measured
+    // on this bench: ω rings down to a ≈0.19 rad/s contact-solver noise
+    // floor while the crank angle drifts 0.0002 rad — the bounds sit
+    // ~2.5× above the noise floor and far below any real rotation (the
+    // welded runaway crossed 1 rad/s by ~0.3 s). The first 0.3 s is
+    // exempt from the saddle check only: the bounded-settle start is not
+    // an equilibrium pose and the pin saddle draws the rider down to
+    // −255 N while it rings in — a start transient the
+    // captured-equilibrium rides never see; the feet never pull even
+    // there. The oracle's feasible/violation channel keys are
+    // legacy-allocator fields the spindle diagnostics do not publish;
+    // validity is asserted on invalid_controller and the finite spindle
+    // allocation terms instead.
+    auto rig = welded_rig(RigAttachments::Spindle);
+    auto const *model = rig->stepper->model();
+    auto const *data = rig->stepper->data();
+    const auto &controller = rig->physical->rider_control();
+    const int crank_qpos = controller.crank_spin_qpos();
+    const int crank_dof = controller.crank_spin_dof();
+    bt::require(crank_qpos >= 0 && crank_dof >= 0,
+                "the spindle rig exposes the crank coordinates");
+    const auto qpos = model_access::readonly_buffer(
+        data->qpos, model->nq, "qpos");
+    const auto qvel = model_access::readonly_buffer(
+        data->qvel, model->nv, "qvel");
+    const double dt = rig->physical->control_clock().timestep_s;
+    const std::int64_t intervals = std::llround(1.5 / dt);
+    const double window_s = static_cast<double>(intervals) * dt;
+    const double pull_bound = -runtime::kSupportPullToleranceN;
+    const double saddle_gate_s = .3;
+    const double settle_time_s = 1.;
+    const double settle_rate_bound = .5;
+    const double settle_angle_bound = .01;
+    double max_settled_rate = 0., max_settled_q_dev = 0.;
+    double settled_q = 0.;
+    bool q_marked = false;
+    rcfg::RawStep last;
+    for (std::int64_t i = 0; i < intervals; ++i) {
+        last = rig->physical->advance_physics(1., 1., std::nullopt,
+                                              idle_control());
+        const double t = last.end_time_s;
+        bt::require(!last.invalid_controller,
+                    "the spindle idle step never flags an invalid "
+                    "controller");
+        const auto &welds = channel(last, "rider_welds");
+        for (const char *key :
+             {"front_pedal_press_n", "rear_pedal_press_n"}) {
+            bt::require(channel_real(welds, key) >= pull_bound,
+                        "foot never pulls its pedal at t=" +
+                            std::to_string(t) + ": " + key);
+        }
+        if (t >= saddle_gate_s) {
+            bt::require(channel_real(welds, "saddle_support_n") >=
+                            pull_bound,
+                        "the saddle never pulls at t=" +
+                            std::to_string(t));
+        }
+        if (t >= settle_time_s) {
+            const double crank_q =
+                qpos[static_cast<std::size_t>(crank_qpos)];
+            if (!q_marked) {
+                settled_q = crank_q;
+                q_marked = true;
+            }
+            max_settled_rate = std::max(
+                max_settled_rate,
+                std::abs(qvel[static_cast<std::size_t>(crank_dof)]));
+            max_settled_q_dev =
+                std::max(max_settled_q_dev,
+                         std::abs(crank_q - settled_q));
+        }
+    }
+    bt::require(q_marked && max_settled_rate <= settle_rate_bound,
+                "the crank settles at idle: max |ω| over the last " +
+                    std::to_string(window_s - settle_time_s) +
+                    " s is " + std::to_string(max_settled_rate) +
+                    " rad/s");
+    bt::require(max_settled_q_dev <= settle_angle_bound,
+                "the crank stays put at idle: max |Δq| over the last " +
+                    std::to_string(window_s - settle_time_s) +
+                    " s is " + std::to_string(max_settled_q_dev) +
+                    " rad");
     const auto &allocation = channel(last, "rider_allocation");
-    bt::require(channel_bool(allocation, "feasible"),
-                "a healthy step allocates a feasible command");
-    bt::require(!last.invalid_controller,
-                "'rider_controller.infeasible' never reaches the step "
-                "violations");
-    bt::require(std::isfinite(channel_real(allocation, "violation")),
-                "the reported violation is finite");
+    bt::require(std::isfinite(channel_real(allocation, "crank_task_nm")) &&
+                    std::isfinite(
+                        channel_real(allocation, "crank_task_shortfall_nm")),
+                "the settled spindle step reports finite allocation "
+                "terms");
 }
 
 // The five attachment resolutions the welded LegacyController builds from
@@ -1343,7 +1455,7 @@ int main() {
         test_vector_nonlinear_bounds_and_extra_equalities_keep_their_semantics();
         test_nonlinear_constraint_is_evaluated_at_the_bounded_start();
         test_real_grip_problem_changes_from_remembered_pull_to_press();
-        test_healthy_step_allocates_a_feasible_command();
+        test_idle_spindle_crank_settles_and_feet_only_press();
         test_allocated_wrenches_close_the_rider_dynamics();
         test_command_does_not_read_solved_reactions();
         test_infeasible_intent_keeps_the_physical_bounds();

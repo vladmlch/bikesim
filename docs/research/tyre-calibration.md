@@ -230,8 +230,9 @@ top of the step, before the other writers run, so every writer sees one snapshot
 `√(63 000 / 2.6) · 0.0005 ≈ 0.08`. At 2 bar, the fitted high-frequency carcass stiffness is
 at most 87.5 N/mm. Together with the 50 mm rim patch (1 400 N/mm), this gives
 `ω·dt = 0.394` for the compiled 2.40 kg front wheel and `0.365` for the 2.80 kg rear wheel.
-The `detailed` tier halves those values with its 0.25 ms step. A test asserts the bound from
-the compiled wheel masses.
+The `detailed` tier halves those values with its 0.25 ms step. No test asserts this bound
+(checked 2026-11-10); the ride profiles now run at 1.25 ms, where the same numbers give
+about 0.99 — an open question in `docs/agents/simulation-decisions.md`.
 
 **Tiers.** The carcass and surface laws are shared. `detailed` also gives each bristle a
 0.5 ms dashpot (`BRISTLE_DAMPING_S = 0.0005`); this regularizes a self-excited wheel-slip

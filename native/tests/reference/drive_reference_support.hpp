@@ -46,6 +46,7 @@ inline bike::io::Value projected_writer(const cfg::PhysicalDriveConfig& drive) {
 inline bike::io::Value projected_writer(const cfg::AssistConfig& assist) {
     cfg::PhysicalDriveConfig drive;
     drive.transmission_model = "ideal_mid_drive";
+    drive.motor_clutch = true;
     drive.assist = assist;
     // Required profile members — the bare source declares the former code
     // defaults so the projected wire decodes.

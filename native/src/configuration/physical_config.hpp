@@ -293,8 +293,10 @@ struct PhysicalDriveConfig {
     double brake_hold_damping_nms_rad = 10.;
     double brake_hold_engage_radps = .5;
     double brake_hold_release_radps = 1.;
-    // Legacy regression topology: crank -[one-way]-> drive_shaft with motor.
-    bool motor_clutch = false;
+    // Required profile member (no code default): crank -[one-way]->
+    // drive_shaft with motor — the bike's pedaling topology (user decision
+    // 2026-11-10); false only for rigid-crank A/B and non-pedaling modes.
+    bool motor_clutch;
     // Rotor inertia reflected to the crank coordinate, kg.m^2 — a real
     // motor_rotor body welded to the drive axis (the shaft under the
     // crank clutch, else the crank), not an armature. Zero keeps the
@@ -786,7 +788,7 @@ inline constexpr auto kPhysicalDriveConfigFields = std::to_array<FieldDecl>({
     REAL(PhysicalDriveConfig, brake_hold_damping_nms_rad),
     REAL(PhysicalDriveConfig, brake_hold_engage_radps),
     REAL(PhysicalDriveConfig, brake_hold_release_radps),
-    BOOL(PhysicalDriveConfig, motor_clutch),
+    REQ_BOOL(PhysicalDriveConfig, motor_clutch),
     REAL(PhysicalDriveConfig, rotor_inertia_kgm2),
     {.name="assist", .type="<class 'bike_sim.physics.physical_config.AssistConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(PhysicalDriveConfig, assist), .required=false,

@@ -292,7 +292,7 @@ struct CycleEnv {
     int crank_qpos = -1, crank_dof = -1;
 };
 
-CycleEnv cycle_env(bool motor_clutch = false) {
+CycleEnv cycle_env(bool motor_clutch = true) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     // _environment: viewer_physics_welded + a 200 m flat probe track +
@@ -540,7 +540,7 @@ void test_strict_flat_cycle_delivers_and_stays_within_budgets() {
 // the step-1 probe measured when the muscle task was not reduced by the
 // weight's crank contribution.
 void test_rigid_per_revolution_crank_torque_tracks_command() {
-    auto env = cycle_env(); // rigid: motor_clutch=false
+    auto env = cycle_env(/*motor_clutch=*/false); // rigid arm of the weld-vs-clutch A/B
     // The ~24 N.m demand lands inside the deliverable band — the flat
     // launch's sustained ceiling is ~26 N.m — so the weld reading tracks
     // the commanded effort rather than the capability cap. The cadence

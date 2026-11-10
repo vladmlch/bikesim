@@ -371,6 +371,9 @@ void native_reference_resistance_and_cruise() {
         // writer — the no-writer route must declare 'configured'.
         p.tires.surface_mode="configured";
         p.drive_mode="ideal_speed_control";
+        // ideal_speed_control forbids the clutch — the welded base's
+        // effort topology is declared off explicitly.
+        p.drive.motor_clutch=false;
         p.seated_climb.enabled=false;
         // capabilities.cpp:32-34 — a non-articulated topology must carry
         // the declared default attachments; the welded fixture's

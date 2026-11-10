@@ -168,7 +168,7 @@ namespace cfg = bike::configuration;
     source = drive_reference::turbo_source(); source.mode = "sport";
     bt::invalid([&] { cfg::detail::post_init(source); });
     for (auto knob : {"stall_timeout_s", "spin_rpm", "boost_s", "stop_delay"}) {
-        const auto value = bike::io::parse_json(R"({"drive":{"assist":{")" + std::string(knob) + "\":1}}}");
+        const auto value = bike::io::parse_json(R"({"drive":{"motor_clutch":true,"assist":{")" + std::string(knob) + "\":1}}}");
         bt::invalid([&] { (void)cfg::detail::construct_config(value); });
     }
 }
@@ -177,7 +177,7 @@ namespace cfg = bike::configuration;
     cfg::detail::post_init(source);
     bt::require(source.mode == "emtb", "public config accepts eMTB");
     source.mode = "off"; bt::invalid([&] { cfg::detail::post_init(source); });
-    const auto removed = bike::io::parse_json(R"({"drive":{"assist":{"stall_timeout_s":1}}})");
+    const auto removed = bike::io::parse_json(R"({"drive":{"motor_clutch":true,"assist":{"stall_timeout_s":1}}})");
     bt::invalid([&] { (void)cfg::detail::construct_config(removed); });
 }
 [[gnu::noinline]] void test_slow_forward_pedalling_is_assisted_without_a_stall_timer(const drivetrain::AssistConfig& config) {
@@ -205,7 +205,7 @@ namespace cfg = bike::configuration;
     input = config; input.taper_width_mps = std::numeric_limits<double>::quiet_NaN();
     bt::invalid([&] { (void)AssistController(input); });
     // The C++ field is a string; the dynamic config boundary owns the [] case.
-    const auto array_mode = bike::io::parse_json(R"({"drive":{"assist":{"mode":[]}}})");
+    const auto array_mode = bike::io::parse_json(R"({"drive":{"motor_clutch":true,"assist":{"mode":[]}}})");
     bt::invalid([&] { (void)cfg::detail::construct_config(array_mode); });
 }
 [[gnu::noinline]] void test_assist_config_exposes_profile_torque_limit() {
@@ -234,6 +234,7 @@ namespace cfg = bike::configuration;
         std::ofstream file(path);
         file << "physics_mode = \"physical\"\ndrive_mode = \"crank_effort\"\n"
                 "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
+                "[drive]\nmotor_clutch = true\n"
                 "[drive.assist]\nprofile = \"bosch_cx_gen4\"\nmode = \"turbo\"\nrelease_hold_s = 0.3\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"

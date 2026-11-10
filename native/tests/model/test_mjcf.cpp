@@ -46,9 +46,9 @@ std::filesystem::path repo_file(std::string_view relative) {
            std::filesystem::path(relative);
 }
 // Same build as physical(), but from the working profile under
-// examples/research/: the fixture copies keep motor_clutch=false on
-// purpose, so the clutch the rider actually gets is proven from the
-// documents bike-ride loads.
+// examples/research/: the fixture copies now carry motor_clutch=true like
+// the research originals, so the clutch the rider actually gets is proven
+// from the documents bike-ride loads.
 std::unique_ptr<mdl::BuildRequest> research(std::string_view profile) {
     auto request=std::make_unique<mdl::BuildRequest>();
     request->mode="ride";

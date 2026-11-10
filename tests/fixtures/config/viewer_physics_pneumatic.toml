@@ -37,14 +37,14 @@ tier = "fast"
 # pressure_bar = 1.7
 
 [drive]
-# Real mid-drive topology: the chainring sits on the crank spindle (rigid
-# crank/chainring through the torque sensor) and the motor drives the crank
-# directly; the cassette freehub is the only one-way element. The separate
-# rotor freewheel was removed 2026-11-05. RU: шатун жёстко со звездой, мотор
-# на шатун напрямую. motor_clutch=true — топология с муфтой шатун→вал
-# только для регрессионного A/B.
+# Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling
+# forward engages it and drives the chainring; backward, or slower than the
+# motor shaft, it is free — the pedals turn back freely and the motor may
+# keep turning the chainring while they stand. The rear freehub is the only
+# other one-way element; the drive is lossless (AGENTS.md «Передача»).
+# RU: педаль вперёд — зацепление, назад — свободно; муфт две: в моторе и втулка.
 transmission_model = "ideal_mid_drive"
-motor_clutch = false
+motor_clutch = true
 
 [drive.pedaling]
 enabled = true

@@ -47,6 +47,7 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.drive.pedaling.reposition_timeout_s = 3.;
     config.drive.pedaling.reposition_phase_tolerance_rad = .05;
     config.drive.pedaling.reposition_noop_rad = .12;
+    config.drive.motor_clutch = false;
     config.drive.shifting.shift_cooldown_s = .4; config.drive.shifting.shift_cut_duration_s = .2;
     config.articulated.balance_dwell_s = .5; config.articulated.balance_grace_s = 3.;
     config.research.control_period_s = .01; config.research.actuator_delay_s = .005;

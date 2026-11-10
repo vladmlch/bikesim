@@ -26,6 +26,7 @@ using drivetrain::PolicySet;
 inline bike::configuration::PhysicalDriveConfig source(bool fixture = true) {
     bike::configuration::PhysicalDriveConfig result;
     result.transmission_model = "ideal_mid_drive";
+    result.motor_clutch = true;
     // The reposition knobs are required profile members — the programmatic
     // source declares the former code defaults explicitly.
     result.pedaling.reposition_on_stall = false;

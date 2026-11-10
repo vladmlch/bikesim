@@ -63,6 +63,14 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
             cfg::detail::repr_double(std::rint(1. / dt) * dt);
         const auto timeout =
             cfg::detail::repr_double(std::rint(3. / dt) * dt);
+        // motor_clutch is a required [drive] member: the clutch is the bike
+        // wherever the rider pedals, so the injected section engages it for
+        // effort modes and stays rigid elsewhere (where it must be false).
+        const auto *mode = io::find_member(*obj, "drive_mode");
+        const bool effort =
+            mode != nullptr &&
+            (io::as_string(*mode, "drive_mode") == "crank_effort" ||
+             io::as_string(*mode, "drive_mode") == "articulated_effort");
         // The drive holds and balance windows follow the same rule: every
         // declared duration must land on a whole number of the document's
         // ticks, so each default is rounded the same way. The smoothing
@@ -74,6 +82,7 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
         };
         if (!io::find_member(*obj, "drive"))
             obj->emplace_back("drive", io::Value{io::Value::Object{
+                {"motor_clutch", io::Value{effort}},
                 {"assist", io::Value{io::Value::Object{
                     {"release_hold_s", io::Value{io::Number{tick(.3)}}}}}},
                 {"pedaling", io::Value{io::Value::Object{

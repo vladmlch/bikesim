@@ -122,7 +122,7 @@
       "rear_teeth": 51
     },
     "human_torque_nm": 0.0,
-    "motor_clutch": false,
+    "motor_clutch": true,
     "pedaling": {
       "coast_above_rpm": 120.0,
       "coast_cadence_tau_s": 0.35,

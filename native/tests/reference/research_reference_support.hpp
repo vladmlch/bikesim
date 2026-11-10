@@ -81,6 +81,7 @@ struct Knobs {
     bike::configuration::SimulationPhysicsConfig physics;
     physics.physics_mode = "physical";
     physics.drive_mode = "crank_effort";
+    physics.drive.motor_clutch = true;
     physics.timestep_s = .0005;
     physics.control_period_s = .005;
     physics.monitors.grounded_hold_s = .005;

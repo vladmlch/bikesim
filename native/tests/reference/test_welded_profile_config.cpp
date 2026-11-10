@@ -49,6 +49,37 @@ void test_motor_clutch_topology_is_the_default() {
                 "effort comes from seated_climb, not a crank torque");
 }
 
+// test_fixture_copies_carry_the_research_clutch
+// The test copies under tests/fixtures/config must ride the same clutch
+// topology as the research profiles they mirror — the motor clutch is the
+// bike everywhere the rider pedals (user, 2026-11-10), not a research-only
+// A/B arm.
+[[gnu::noinline]] void test_fixture_copies_carry_the_research_clutch() {
+    for (const char *name :
+         {"viewer_physics_welded.toml", "viewer_physics_pneumatic.toml",
+          "viewer_physics_distributed.toml"}) {
+        const auto fixture = cfg::load_physics(
+            bt::fixture(std::string("config/") + name));
+        const auto research = cfg::load_physics(repo_file(
+            std::string("examples/research/") + name));
+        bt::require(research.drive.motor_clutch,
+                    std::string(name) + " research profile uses the clutch");
+        bt::require(fixture.drive.motor_clutch ==
+                        research.drive.motor_clutch,
+                    std::string(name) +
+                        " fixture copy matches the research clutch");
+    }
+    // The variant copies mirror the welded document's clutch too.
+    for (const char *name :
+         {"variant_alt_support.toml", "variant_grip_weld_coercion.toml"}) {
+        const auto fixture = cfg::load_physics(
+            bt::fixture(std::string("config/") + name));
+        bt::require(fixture.drive.motor_clutch == profile().drive.motor_clutch,
+                    std::string(name) +
+                        " variant copy matches the welded clutch");
+    }
+}
+
 // test_rotor_inertia_is_the_audit_value
 // The 0.2 kg·m² reflected rotor inertia (drive audit 2026-10-07,
 // unverified) rides [drive] rotor_inertia_kgm2 through the usual schema →
@@ -258,6 +289,7 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
 int main() {
     return bt::run([] {
         test_motor_clutch_topology_is_the_default();
+        test_fixture_copies_carry_the_research_clutch();
         test_rotor_inertia_is_the_audit_value();
         test_relaxation_is_kinetic_for_the_rotor_drive();
         test_assist_is_bosch_turbo_with_the_declared_envelope();

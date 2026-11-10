@@ -662,7 +662,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": false,
+          "default": null,
           "default_factory": null,
           "name": "motor_clutch",
           "type": "<class 'bool'>"

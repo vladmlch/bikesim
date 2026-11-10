@@ -70,6 +70,7 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
                "contact_dropout_s = 0.005\n"
                "[seated_climb]\n"
                "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15.0\n"
+               "[drive]\nmotor_clutch = false\n"
                "[drive.assist]\nrelease_hold_s = 0.3\n"
                "[drive.pedaling]\n"
                "reposition_on_stall = false\nreposition_min_effort_nm = 20.0\n"

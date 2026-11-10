@@ -22,7 +22,7 @@ constexpr std::array strokes{.005,.015,.030};
 // Validation order and config values are unchanged.
 [[gnu::noinline]] configuration::SimulationPhysicsConfig fixture_config(double dt,std::string_view mode,double stroke){
     positive(dt,"fixture step");if(std::ranges::find(modes,mode)==modes.end()||!std::isfinite(stroke)||stroke<0.||stroke>.04)throw std::invalid_argument("unknown transmission or suspension fixture position");
-    configuration::SimulationPhysicsConfig c;c.physics_mode="physical";c.drive_mode="crank_effort";c.timestep_s=dt;c.control_period_s=.005;c.monitors.grounded_hold_s=.005;c.monitors.contact_dropout_s=10.*dt;c.closure_time_constant_s=.0025;
+    configuration::SimulationPhysicsConfig c{};c.physics_mode="physical";c.drive_mode="crank_effort";c.drive.motor_clutch=true;c.timestep_s=dt;c.control_period_s=.005;c.monitors.grounded_hold_s=.005;c.monitors.contact_dropout_s=10.*dt;c.closure_time_constant_s=.0025;
     c.drive.transmission_model=mode;c.drive.human_torque_nm=0.;c.drive.gearing={.front_teeth=34,.rear_teeth=51};c.seated_climb.period_s=.00125;c.seated_climb.reaction_delay_s=.15;c.seated_climb.lean_rate_rad_s=.5;c.seated_climb.orientation_tau_s=.5;c.seated_climb.surge_budget_s=15.;c.seated_climb.trim_dead_time_s=.2;c.seated_climb.min_elbow_flexion_deg=15.;c.drive.assist.release_hold_s=.3;c.drive.pedaling.stop_time_s=.35;c.drive.pedaling.reposition_on_stall=false;c.drive.pedaling.reposition_min_effort_nm=20.;c.drive.pedaling.reposition_stall_window_s=1.;c.drive.pedaling.reposition_stall_progress_rad=.5;c.drive.pedaling.reposition_cooldown_s=1.;c.drive.pedaling.reposition_back_rate_rad_s=3.;c.drive.pedaling.reposition_timeout_s=3.;c.drive.pedaling.reposition_phase_tolerance_rad=.05;c.drive.pedaling.reposition_noop_rad=.12;c.drive.shifting.shift_cooldown_s=.4;c.drive.shifting.shift_cut_duration_s=.2;c.articulated.balance_dwell_s=.5;c.articulated.balance_grace_s=3.;c.research.control_period_s=.01;c.research.actuator_delay_s=.005;c.research.sensor_latency_s=.01;c.research.sensor_maximum_age_s=.1;c.research.sample_period_s=.005;c.research.record_decimation=80;return c;
 }
 [[gnu::noinline]] model::BuildRequest fixture_model(double dt,std::string_view mode,double stroke){
@@ -81,7 +81,7 @@ RigResult drive_suspension_rig(double dt,std::string_view mode,double torque,dou
             const double normal=std::max(0.,preload[s]-130000.*(p[2]-initial_bottoms[s])-800.*velocity[2]),tangent=std::clamp(-2000.*velocity[0],-.8*normal,.8*normal);
             mechanics::add_transpose(force,jac,{tangent,0.,normal});loads[s]=normal;}
         mj_jac(m,d,jac.data(),rot.data(),xipos.subspan(3*static_cast<std::size_t>(frame),3).data(),frame);mechanics::add_transpose(force,jac,{0.,0.,-frame_load});std::ranges::copy(force,qfrc_applied.begin());
-        const double omega=qvel[static_cast<std::size_t>(mechanics::dof(m,"crank_spin"))],travel=rear_z()-initial_rear;
+        const double omega=qvel[static_cast<std::size_t>(mechanics::dof(m,"drive_shaft_spin"))],travel=rear_z()-initial_rear;
         // The oracle reads suspension.shock_total_n — the scalar the
         // writer computed and retained inside the components() call
         // above. Reconstructing it from the per-dof component vectors

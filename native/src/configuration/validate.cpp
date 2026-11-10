@@ -1279,7 +1279,9 @@ SimulationPhysicsConfig default_physics() {
     // code defaults, and the research-mode timings the CLI and request
     // paths carried (10 ms control tick, 5 ms actuator delay, 10 ms
     // sensor latency, 100 ms maximum age, 5 ms sample period, record
-    // decimation 80).
+    // decimation 80). The motor clutch is declared explicitly too: the
+    // default resolves to coast/ideal_speed_control, where the clutch is
+    // forbidden, so it stays false here.
     SimulationPhysicsConfig config{};
     config.timestep_s = 0.0005;
     config.control_period_s = 0.005;
@@ -1292,6 +1294,7 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.surge_budget_s = 15.;
     config.seated_climb.trim_dead_time_s = .2;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    config.drive.motor_clutch = false;
     config.drive.assist.release_hold_s = .3;
     config.drive.pedaling.stop_time_s = .35;
     config.drive.shifting.shift_cooldown_s = .4;

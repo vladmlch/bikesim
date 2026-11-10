@@ -46,7 +46,7 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     auto owner=std::make_unique<research::ResearchRequest>();
     auto& request=*owner;
     bike::configuration::SimulationPhysicsConfig physics;
-    physics.physics_mode="physical"; physics.drive_mode="crank_effort"; physics.timestep_s=.0005;
+    physics.physics_mode="physical"; physics.drive_mode="crank_effort"; physics.drive.motor_clutch=true; physics.timestep_s=.0005;
     physics.control_period_s=.005; physics.monitors.grounded_hold_s=.005; physics.monitors.contact_dropout_s=10.*physics.timestep_s;
     physics.initial_speed_mps=.1; physics.equilibrium_cache_enabled=false;
     physics.tires.backend="compliant_2d"; physics.tires.surface_mode="track";

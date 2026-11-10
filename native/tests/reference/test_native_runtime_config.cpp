@@ -198,22 +198,28 @@ void test_native_capability_rejects_other_drive_modes() {
         // source exercised past construction.
         config.seated_climb.enabled = false;
         config.drive_mode = value;
+        // The welded profile ships the motor clutch; it is valid only under
+        // an effort drive, so the probe's mode owns the flag.
+        config.drive.motor_clutch =
+            std::string_view(value) == "crank_effort";
         require_supported(config, rider,
                           "drive_mode is inside the native dispatch set");
     }
     // The boundary still rejects what is not a drive mode at all — with
-    // the seated_climb coupling disabled so the verdict reached is the
-    // dispatch check itself.
+    // the seated_climb coupling disabled and the clutch off so the verdict
+    // reached is the dispatch check itself.
     {
         cfg::SimulationPhysicsConfig config = welded();
         config.seated_climb.enabled = false;
         config.drive_mode = "unimplemented_drive";
+        config.drive.motor_clutch = false;
         require_rejected(config, rider, "drive_mode");
     }
     {
         cfg::SimulationPhysicsConfig config = welded();
         config.seated_climb.enabled = false;
         config.drive_mode = std::nullopt;
+        config.drive.motor_clutch = false;
         require_rejected(config, rider, "drive_mode");
     }
 }

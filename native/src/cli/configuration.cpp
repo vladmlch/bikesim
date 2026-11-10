@@ -204,6 +204,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     defaults->tires.backend = "compliant_2d"; defaults->tires.surface_mode = "track";
     defaults->tires.front.mu = 1.1; defaults->tires.rear.mu = 1.1;
     defaults->drive.transmission_model = "ideal_mid_drive";
+    defaults->drive.motor_clutch = true;
     defaults->drive.human_torque_nm = 0.; defaults->drive.gearing.front_teeth = 34; defaults->drive.gearing.rear_teeth = 51;
     defaults->drive.assist.max_torque = 80.; defaults->drive.assist.max_power = 500.;
     defaults->equilibrium_refine_after_s = args.text("rider") == "articulated_planar" ? 3. : .1;

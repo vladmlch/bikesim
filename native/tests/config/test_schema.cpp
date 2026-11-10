@@ -198,7 +198,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     c.tires.front.mu = 1.1;
     c.tires.rear.mu = 1.1;
     c.drive.transmission_model = "ideal_mid_drive";
-    c.drive.motor_clutch = false;
+    c.drive.motor_clutch = true;
     auto& pedaling = c.drive.pedaling;
     pedaling.enabled = true;
     pedaling.coast_above_rpm = 120.0;

@@ -58,6 +58,9 @@ inline bike::io::Value projected_writer(const cfg::AssistConfig& assist) {
     drive.pedaling.reposition_timeout_s = 3.;
     drive.pedaling.reposition_phase_tolerance_rad = .05;
     drive.pedaling.reposition_noop_rad = .12;
+    drive.pedaling.stop_time_s = .35;
+    drive.shifting.shift_cooldown_s = .4;
+    drive.shifting.shift_cut_duration_s = .2;
     return projected_writer(drive);
 }
 
@@ -71,6 +74,7 @@ inline cfg::AssistConfig turbo_source() {
     cfg::AssistConfig result;
     result.profile = "bosch_cx_gen4";
     result.mode = "turbo";
+    result.release_hold_s = .3;
     return result;
 }
 

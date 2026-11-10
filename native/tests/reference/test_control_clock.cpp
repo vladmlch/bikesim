@@ -33,7 +33,11 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.seated_climb.reaction_delay_s = .15;
     config.seated_climb.lean_rate_rad_s = .5;
     config.seated_climb.orientation_tau_s = .5;
+    config.seated_climb.surge_budget_s = 15.;
+    config.seated_climb.trim_dead_time_s = .2;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    config.drive.assist.release_hold_s = .3;
+    config.drive.pedaling.stop_time_s = .35;
     config.drive.pedaling.reposition_on_stall = false;
     config.drive.pedaling.reposition_min_effort_nm = 20.;
     config.drive.pedaling.reposition_stall_window_s = 1.;
@@ -43,6 +47,8 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.drive.pedaling.reposition_timeout_s = 3.;
     config.drive.pedaling.reposition_phase_tolerance_rad = .05;
     config.drive.pedaling.reposition_noop_rad = .12;
+    config.drive.shifting.shift_cooldown_s = .4; config.drive.shifting.shift_cut_duration_s = .2;
+    config.articulated.balance_dwell_s = .5; config.articulated.balance_grace_s = 3.;
     config.research.control_period_s = .01; config.research.actuator_delay_s = .005;
     config.research.sensor_latency_s = .01; config.research.sensor_maximum_age_s = .1;
     config.research.sample_period_s = .005; config.research.record_decimation = 80;

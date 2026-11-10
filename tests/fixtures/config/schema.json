@@ -726,7 +726,7 @@
               "type": "<class 'float'>"
             },
             {
-              "default": 0.3,
+              "default": null,
               "default_factory": null,
               "name": "release_hold_s",
               "type": "<class 'float'>"
@@ -776,7 +776,7 @@
               "type": "<class 'float'>"
             },
             {
-              "default": 0.35,
+              "default": null,
               "default_factory": null,
               "name": "stop_time_s",
               "type": "<class 'float'>"
@@ -931,13 +931,13 @@
               "type": "<class 'float'>"
             },
             {
-              "default": 0.4,
+              "default": null,
               "default_factory": null,
               "name": "shift_cooldown_s",
               "type": "<class 'float'>"
             },
             {
-              "default": 0.2,
+              "default": null,
               "default_factory": null,
               "name": "shift_cut_duration_s",
               "type": "<class 'float'>"
@@ -1425,13 +1425,13 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.5,
+          "default": null,
           "default_factory": null,
           "name": "balance_dwell_s",
           "type": "<class 'float'>"
         },
         {
-          "default": 3.0,
+          "default": null,
           "default_factory": null,
           "name": "balance_grace_s",
           "type": "<class 'float'>"
@@ -1517,7 +1517,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 15.0,
+          "default": null,
           "default_factory": null,
           "name": "surge_budget_s",
           "type": "<class 'float'>"
@@ -1547,7 +1547,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.2,
+          "default": null,
           "default_factory": null,
           "name": "trim_dead_time_s",
           "type": "<class 'float'>"

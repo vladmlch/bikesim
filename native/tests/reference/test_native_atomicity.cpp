@@ -41,6 +41,7 @@ cfg::ShiftingConfig invalid_cassette() {
     result.enabled = true; result.cassette = {24, 1000};
     result.cadence_smoothing_tau_s = 0.;
     result.target_cadence_min_rpm = 100.; result.target_cadence_max_rpm = 1000.;
+    result.shift_cooldown_s = .4; result.shift_cut_duration_s = .2;
     return result;
 }
 cfg::ShiftingConfig valid_cassette() {
@@ -48,6 +49,7 @@ cfg::ShiftingConfig valid_cassette() {
     result.enabled = true; result.cassette = {24, 28};
     result.cadence_smoothing_tau_s = 0.;
     result.target_cadence_min_rpm = 100.; result.target_cadence_max_rpm = 1000.;
+    result.shift_cooldown_s = .4; result.shift_cut_duration_s = .2;
     return result;
 }
 std::unique_ptr<Stepper> shifted_pair(std::string_view kind, const cfg::ShiftingConfig& shifting,

@@ -113,6 +113,22 @@ constexpr std::string_view kResearchSection =
     "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
     "sample_period_s = 0.005\nrecord_decimation = 80\n";
 
+// The remaining required profile timings staged documents carry so each
+// probe keeps the failure mode it asserts rather than tripping a
+// missing-member check: the assist run-on, the shift cooldown/cut and the
+// balance dwell/grace windows at the shipped values — whole physics ticks
+// at the staged 1.25 ms step.
+constexpr std::string_view kAssistSection =
+    "[drive.assist]\nrelease_hold_s = 0.3\n";
+constexpr std::string_view kShiftingSection =
+    "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n";
+constexpr std::string_view kArticulatedSection =
+    "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n";
+constexpr std::string_view kAuxTimings =
+    "[drive.assist]\nrelease_hold_s = 0.3\n"
+    "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"
+    "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n";
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage
 Value fixture_json(std::string_view manifest_name [[maybe_unused]],
                     std::string_view relative) {
@@ -454,12 +470,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "contact_dropout_s = 0.0125\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+                "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+                "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+                "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     invalid_with(
         "monitors.contact_dropout_s must be an integer multiple of "
@@ -472,12 +490,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "contact_dropout_s = 0.006\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+                "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+                "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+                "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
 
     // Nonfinite scalars arrive as TOML literals and are rejected by the
@@ -488,11 +508,16 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "timestep_s = inf\ncontrol_period_s = 0.005\n"
             "[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
+            "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+            "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+            "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+            "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
             "[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
             "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+            "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
     });
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
@@ -500,11 +525,16 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "timestep_s = nan\ncontrol_period_s = 0.005\n"
             "[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
+            "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+            "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+            "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+            "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
             "[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
             "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+            "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
     });
 
     // Integer fields reject floating spellings and booleans.
@@ -577,9 +607,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view seated_tail =
         "period_s = 0.00125\nreaction_delay_s = 0.15\n"
         "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
+        "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
         "min_elbow_flexion_deg = 15\n";
     for (const auto missing : {"period_s", "reaction_delay_s",
-                              "lean_rate_rad_s", "orientation_tau_s"}) {
+                              "lean_rate_rad_s", "orientation_tau_s",
+                              "surge_budget_s", "trim_dead_time_s"}) {
         std::string tail(seated_tail);
         const std::string needle = std::string(missing) + " =";
         const auto at = tail.find(needle);
@@ -603,12 +635,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 std::string(seated_head) +
                 "period_s = 0.00125\nreaction_delay_s = 0.151\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
+                "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
                 "min_elbow_flexion_deg = 15\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     invalid_with(
         "orientation_tau_s must span at least two period_s ticks", [&] {
@@ -617,12 +650,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 std::string(seated_head) +
                 "period_s = 0.00125\nreaction_delay_s = 0.15\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.002\n"
+                "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
                 "min_elbow_flexion_deg = 15\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     invalid_with(
         "seated_climb.period_s must be an integer multiple of timestep_s",
@@ -632,12 +666,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 std::string(seated_head) +
                 "period_s = 0.002\nreaction_delay_s = 0.15\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
+                "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
                 "min_elbow_flexion_deg = 15\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     // A disabled intent never ticks: its delay/smoothing carry no
     // whole-tick constraint — only presence and scalar bounds apply.
@@ -650,12 +685,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[seated_climb]\nenabled = false\n"
             "period_s = 0.002\nreaction_delay_s = 0.151\n"
             "lean_rate_rad_s = 0.5\norientation_tau_s = 0.001\n"
+            "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
             "min_elbow_flexion_deg = 15\n"
             "[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
             "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
-            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n" + std::string(kResearchSection)));
+            "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection)));
         bt::require(!disabled.seated_climb.enabled &&
                         disabled.seated_climb.reaction_delay_s == 0.151,
                     "a disabled intent tolerates non-multiple timings");
@@ -682,7 +718,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
         "[drive.pedaling]\n";
     const std::string_view repo_tail =
         "reposition_min_effort_nm = 20.0\n"
@@ -692,7 +729,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "reposition_back_rate_rad_s = 3.0\n"
         "reposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\n"
-        "reposition_noop_rad = 0.12\n";
+        "reposition_noop_rad = 0.12\n"
+        "stop_time_s = 0.35\n";
     for (const auto missing : {"reposition_on_stall", "reposition_min_effort_nm",
                               "reposition_stall_window_s",
                               "reposition_stall_progress_rad",
@@ -700,7 +738,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                               "reposition_back_rate_rad_s",
                               "reposition_timeout_s",
                               "reposition_phase_tolerance_rad",
-                              "reposition_noop_rad"}) {
+                              "reposition_noop_rad", "stop_time_s"}) {
         std::string body = "reposition_on_stall = false\n" + std::string(repo_tail);
         const std::string needle = std::string(missing) + " =";
         const auto at = body.find(needle);
@@ -724,15 +762,18 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
         "[drive.pedaling]\nreposition_on_stall = true\n"
         "reposition_min_effort_nm = 20.0\n"
         "reposition_stall_progress_rad = 0.5\n"
         "reposition_back_rate_rad_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\n"
-        "reposition_noop_rad = 0.12\n";
+        "reposition_noop_rad = 0.12\n"
+        "stop_time_s = 0.35\n";
     const std::string_view engaged_tail =
-        "[articulated]\npedal_attachment = \"spindle\"\n";
+        "[articulated]\npedal_attachment = \"spindle\"\n"
+        "balance_dwell_s = 0.5\nbalance_grace_s = 3.0\n";
     for (const auto& [name, value] : {
              std::pair{"reposition_stall_window_s", "1.0005"},
              {"reposition_cooldown_s", "1.0005"},
@@ -753,8 +794,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             [&] {
                 discard(cfg::load_physics(stage(
                     "nonmultiple_repo_" + std::string(name) + ".toml",
-                    timings + std::string(engaged_tail) +
-                        std::string(kResearchSection))));
+                    timings + std::string(engaged_tail) + std::string(kAssistSection) +
+                        std::string(kShiftingSection) + std::string(kResearchSection))));
             });
     }
 
@@ -775,7 +816,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0005\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
-                "reposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
 
     // The back rate is a positive rate limit, never a counted tick — a
@@ -791,7 +832,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_back_rate_rad_s = -3.0\n"
             "reposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\n"
-            "reposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+            "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
     });
     invalid_with(
         "reposition no-op band must be below a quarter crank turn", [&] {
@@ -805,7 +846,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
-                "reposition_noop_rad = 1.6\n" + std::string(kResearchSection))));
+                "reposition_noop_rad = 1.6\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     invalid_with(
         "reposition stall progress must be below half a crank turn", [&] {
@@ -819,7 +860,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_back_rate_rad_s = 3.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
-                "reposition_noop_rad = 0.12\n" + std::string(kResearchSection))));
+                "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
 
     // Valid engaged control: spindle rider, every knob present, all counted
@@ -830,7 +871,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             std::string(engaged_head) +
             "reposition_stall_window_s = 1.0\n"
             "reposition_cooldown_s = 1.0\n"
-            "reposition_timeout_s = 3.0\n" + std::string(engaged_tail) + std::string(kResearchSection)));
+            "reposition_timeout_s = 3.0\n" + std::string(engaged_tail) + std::string(kAssistSection) + std::string(kShiftingSection) + std::string(kResearchSection)));
         bt::require(engaged.drive.pedaling.reposition_on_stall &&
                         engaged.drive.pedaling.reposition_stall_window_s == 1.0,
                     "engaged manoeuvre resolves");
@@ -858,12 +899,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
         "[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
         "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+        "stop_time_s = 0.35\n"
         "[research]\n";
     const std::string_view research_body =
         "control_period_s = 0.01\nactuator_delay_s = 0.005\n"
@@ -894,7 +937,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             [&] {
                 discard(cfg::load_physics(stage(
                     "missing_research_" + std::string(missing) + ".toml",
-                    std::string(research_head) + body)));
+                    std::string(research_head) + body + std::string(kAuxTimings))));
             });
     }
 
@@ -915,7 +958,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             [&] {
                 discard(cfg::load_physics(stage(
                     "nonmultiple_research_" + std::string(name) + ".toml",
-                    std::string(research_head) + body)));
+                    std::string(research_head) + body + std::string(kAuxTimings))));
             });
     }
 
@@ -934,7 +977,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         }
         const auto loaded = cfg::load_physics(
             stage("research_cutoffs.toml",
-                  std::string(research_head) + body));
+                  std::string(research_head) + body + std::string(kAuxTimings)));
         const std::string flat = canonical(cfg::to_value(loaded));
         bt::require(flat.find("\"sensor_latency_s\":0.0115") !=
                         std::string::npos &&
@@ -966,7 +1009,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+        "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
         "[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -979,19 +1023,35 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                std::string(kResearchSection);
     };
 
-    // Physics-step-counted holds reject a non-multiple of timestep_s.
+    // Physics-step-counted holds reject a non-multiple of timestep_s. Each
+    // staged document carries every other required timing so the probe
+    // isolates the one field under test.
     for (const auto& [snippet, field] : {
-             std::pair{"[drive.assist]\nrelease_hold_s = 0.3005\n",
+             std::pair{std::string("stop_time_s = 0.35\n") +
+                           "[drive.assist]\nrelease_hold_s = 0.3005\n" +
+                           std::string(kShiftingSection) + std::string(kArticulatedSection),
                        "drive.assist.release_hold_s"},
-             std::pair{"[drive.shifting]\nshift_cooldown_s = 0.2505\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAssistSection) +
+                           "[drive.shifting]\nshift_cooldown_s = 0.2505\n"
+                           "shift_cut_duration_s = 0.2\n" +
+                           std::string(kArticulatedSection),
                        "drive.shifting.shift_cooldown_s"},
-             std::pair{"[drive.shifting]\nshift_cut_duration_s = 0.2005\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAssistSection) +
+                           "[drive.shifting]\nshift_cooldown_s = 0.4\n"
+                           "shift_cut_duration_s = 0.2005\n" +
+                           std::string(kArticulatedSection),
                        "drive.shifting.shift_cut_duration_s"},
-             std::pair{"stop_time_s = 0.3505\n",
+             std::pair{std::string("stop_time_s = 0.3505\n") + std::string(kAuxTimings),
                        "drive.pedaling.stop_time_s"},
-             std::pair{"[articulated]\nbalance_dwell_s = 0.5005\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAssistSection) +
+                           std::string(kShiftingSection) +
+                           "[articulated]\nbalance_dwell_s = 0.5005\n"
+                           "balance_grace_s = 3.0\n",
                        "articulated.balance_dwell_s"},
-             std::pair{"[articulated]\nbalance_grace_s = 3.0005\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAssistSection) +
+                           std::string(kShiftingSection) +
+                           "[articulated]\nbalance_dwell_s = 0.5\n"
+                           "balance_grace_s = 3.0005\n",
                        "articulated.balance_grace_s"}}) {
         invalid_with(
             std::string(field) +
@@ -1006,18 +1066,28 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // Physics-step smoothings reject a tau shorter than two ticks; a zero
     // tau disables the filter outright and carries no constraint.
     for (const auto& [snippet, field] : {
-             std::pair{"[drive.assist]\ntau = 0.002\n", "drive.assist.tau"},
-             std::pair{"coast_cadence_tau_s = 0.002\n",
+             std::pair{std::string("stop_time_s = 0.35\n") +
+                           "[drive.assist]\ntau = 0.002\nrelease_hold_s = 0.3\n" +
+                           std::string(kShiftingSection) + std::string(kArticulatedSection),
+                       "drive.assist.tau"},
+             std::pair{std::string("stop_time_s = 0.35\n"
+                                   "coast_cadence_tau_s = 0.002\n") +
+                           std::string(kAuxTimings),
                        "drive.pedaling.coast_cadence_tau_s"},
-             std::pair{"[drive.shifting]\ncadence_smoothing_tau_s = 0.002\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAssistSection) +
+                           "[drive.shifting]\ncadence_smoothing_tau_s = 0.002\n"
+                           "shift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n" +
+                           std::string(kArticulatedSection),
                        "drive.shifting.cadence_smoothing_tau_s"},
-             std::pair{"[tires]\nbackend = \"pneumatic\"\n"
-                       "surface_mode = \"track\"\n"
-                       "[tires.pneumatic.front]\nrate_relaxation_s = 0.002\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAuxTimings) +
+                           "[tires]\nbackend = \"pneumatic\"\n"
+                           "surface_mode = \"track\"\n"
+                           "[tires.pneumatic.front]\nrate_relaxation_s = 0.002\n",
                        "tires.pneumatic.front.rate_relaxation_s"},
-             std::pair{"[tires]\nbackend = \"pneumatic\"\n"
-                       "surface_mode = \"track\"\n"
-                       "[tires.pneumatic.rear]\nrate_relaxation_s = 0.002\n",
+             std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAuxTimings) +
+                           "[tires]\nbackend = \"pneumatic\"\n"
+                           "surface_mode = \"track\"\n"
+                           "[tires.pneumatic.rear]\nrate_relaxation_s = 0.002\n",
                        "tires.pneumatic.rear.rate_relaxation_s"}}) {
         invalid_with(
             std::string(field) +
@@ -1035,7 +1105,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     {
         const auto ignored = cfg::load_physics(stage(
             "assist_profile_tau.toml",
-            doc("[drive.assist]\nprofile = \"bosch_cx_gen4\"\ntau = 0.001\n")));
+            doc(std::string("stop_time_s = 0.35\n[drive.assist]\n"
+                            "profile = \"bosch_cx_gen4\"\ntau = 0.001\n"
+                            "release_hold_s = 0.3\n") +
+                std::string(kShiftingSection) + std::string(kArticulatedSection))));
         bt::require(ignored.drive.assist.tau == 0.001,
                     "declared assist tau survives beside a profile");
     }
@@ -1051,8 +1124,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "contact_dropout_s = 0.03\n"
                 "[seated_climb]\nenabled = false\nperiod_s = 0.03\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-                "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
+                "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+                "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
                 "[drive.assist]\nprofile = \"bosch_cx_gen4\"\ntau = 0.08\n"
+                "release_hold_s = 0.3\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\n"
                 "reposition_stall_window_s = 0.99\n"
@@ -1087,12 +1162,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
         "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+        "stop_time_s = 0.35\n"
         "[seated_climb]\nenabled = true\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n";
-    for (const auto& [key, value] : {
-             std::pair{"trim_dead_time_s", "0.201"},
-             std::pair{"surge_budget_s", "15.001"}}) {
+    for (const auto& [key, value, peer] : {
+             std::tuple{"trim_dead_time_s", "0.201", "surge_budget_s = 15.0\n"},
+             {"surge_budget_s", "15.001", "trim_dead_time_s = 0.2\n"}}) {
         invalid_with(
             std::string(key) +
                 " must be an integer multiple of period_s",
@@ -1101,6 +1177,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                     "nonmultiple_" + std::string(key) + ".toml",
                     std::string(climb_head) +
                         std::string(key) + " = " + value + "\n" +
+                        std::string(peer) + std::string(kAuxTimings) +
                         std::string(kResearchSection))));
             });
     }
@@ -1109,7 +1186,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "climb_timings.toml",
             std::string(climb_head) +
             "trim_dead_time_s = 0.4\nsurge_budget_s = 30.0\n" +
-            std::string(kResearchSection)));
+            std::string(kAuxTimings) + std::string(kResearchSection)));
         bt::require(climb.seated_climb.trim_dead_time_s == 0.4 &&
                         climb.seated_climb.surge_budget_s == 30.0,
                     "whole-tick intent timings resolve");
@@ -1128,11 +1205,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\n"
             "reposition_noop_rad = 0.12\n"
+            "stop_time_s = 0.35\n"
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
             "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
             "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\n"
             "trim_dead_time_s = 0.201\nsurge_budget_s = 15.001\n" +
-            std::string(kResearchSection)));
+            std::string(kAuxTimings) + std::string(kResearchSection)));
         bt::require(disabled.seated_climb.trim_dead_time_s == 0.201,
                     "a disabled intent tolerates non-multiple timings");
     }
@@ -1159,6 +1237,56 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                         valid.articulated.balance_dwell_s == 0.5 &&
                         valid.tires.pneumatic.front.rate_relaxation_s == 0.2,
                     "whole-tick timings and two-tick smoothings resolve");
+    }
+}
+
+// ---- required hold members ---------------------------------------------------
+
+// Every migrated hold/delay is a required profile member: a document that
+// omits one fails the missing-argument check in declaration order — the
+// same contract the seated-climb, pedaling and research timings carry.
+// (The seated-climb pair and pedaling stop_time_s probes live in their own
+// sections' missing-key loops.)
+[[gnu::noinline]] void checks_hold_members() {
+    const TempDir temp("bike-t13-holdmembers");
+    const auto stage = [&](std::string_view name, std::string_view toml) {
+        const auto path = temp.path / std::string(name);
+        write_text_file(path, toml);
+        return path;
+    };
+    const std::string full =
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
+        "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
+        "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
+        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\n"
+        "[drive.pedaling]\nreposition_on_stall = false\n"
+        "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
+        "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
+        "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection);
+    for (const auto& [record, missing] : {
+             std::pair{"AssistConfig", "release_hold_s"},
+             {"ShiftingConfig", "shift_cooldown_s"},
+             {"ShiftingConfig", "shift_cut_duration_s"},
+             {"ArticulatedConfig", "balance_dwell_s"},
+             {"ArticulatedConfig", "balance_grace_s"}}) {
+        std::string body(full);
+        const std::string needle = std::string(missing) + " =";
+        const auto at = body.find(needle);
+        bt::require(at != std::string::npos, "staged key present");
+        body.erase(at, body.find('\n', at) - at + 1);
+        invalid_with(
+            "invalid " + std::string(record) + ": " + std::string(record) +
+                ".__init__() missing 1 required positional argument: '" +
+                std::string(missing) + "'",
+            [&] {
+                discard(cfg::load_physics(
+                    stage("missing_" + std::string(missing) + ".toml",
+                          body)));
+            });
     }
 }
 
@@ -1298,6 +1426,22 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.seated_climb.lean_rate_rad_s = .5;
         unresolved_base.seated_climb.orientation_tau_s = .5;
         unresolved_base.seated_climb.min_elbow_flexion_deg = 15.0;
+        unresolved_base.seated_climb.surge_budget_s = 15.;
+        unresolved_base.seated_climb.trim_dead_time_s = .2;
+        unresolved_base.drive.assist.release_hold_s = .3;
+        unresolved_base.drive.pedaling.stop_time_s = .35;
+        unresolved_base.drive.pedaling.reposition_min_effort_nm = 20.;
+        unresolved_base.drive.pedaling.reposition_stall_window_s = 1.;
+        unresolved_base.drive.pedaling.reposition_stall_progress_rad = .5;
+        unresolved_base.drive.pedaling.reposition_cooldown_s = 1.;
+        unresolved_base.drive.pedaling.reposition_back_rate_rad_s = 3.;
+        unresolved_base.drive.pedaling.reposition_timeout_s = 3.;
+        unresolved_base.drive.pedaling.reposition_phase_tolerance_rad = .05;
+        unresolved_base.drive.pedaling.reposition_noop_rad = .12;
+        unresolved_base.drive.shifting.shift_cooldown_s = .4;
+        unresolved_base.drive.shifting.shift_cut_duration_s = .2;
+        unresolved_base.articulated.balance_dwell_s = .5;
+        unresolved_base.articulated.balance_grace_s = 3.;
         unresolved_base.research.control_period_s = .01;
         unresolved_base.research.actuator_delay_s = .005;
         unresolved_base.research.sensor_latency_s = .01;
@@ -1531,6 +1675,7 @@ int main() {
         checks_reposition_timings();
         checks_research_timings();
         checks_drive_timings();
+        checks_hold_members();
         checks_shipped();
         checks_variants();
         checks_rejection();

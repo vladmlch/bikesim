@@ -156,7 +156,7 @@ namespace cfg = bike::configuration;
     near(run_assist(c, 40., 60., 3., .5), 85., "the lag settles at the envelope-limited target", 1e-2);
 }
 [[gnu::noinline]] void test_without_profile_the_plain_gain_is_used() {
-    cfg::AssistConfig source; source.gain = 4.; source.tau = .3; source.max_torque = 85.; source.max_power = 600.;
+    cfg::AssistConfig source; source.gain = 4.; source.tau = .3; source.max_torque = 85.; source.max_power = 600.; source.release_hold_s = .3;
     const auto config = drive_reference::projected_policies(source).assist;
     bt::require(!config.profile, "synthetic motor has no profile");
     AssistController c(config);
@@ -210,7 +210,7 @@ namespace cfg = bike::configuration;
 }
 [[gnu::noinline]] void test_assist_config_exposes_profile_torque_limit() {
     auto profile = drive_reference::turbo_source(); profile.max_torque = 1.;
-    cfg::AssistConfig plain; plain.max_torque = 27.;
+    cfg::AssistConfig plain; plain.max_torque = 27.; plain.release_hold_s = .3;
     bt::require(profile.effective_max_torque() == 85., "profile effective maximum");
     bt::require(plain.effective_max_torque() == 27., "synthetic effective maximum");
 }
@@ -234,13 +234,16 @@ namespace cfg = bike::configuration;
         std::ofstream file(path);
         file << "physics_mode = \"physical\"\ndrive_mode = \"crank_effort\"\n"
                 "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
-                "[drive.assist]\nprofile = \"bosch_cx_gen4\"\nmode = \"turbo\"\n"
+                "[drive.assist]\nprofile = \"bosch_cx_gen4\"\nmode = \"turbo\"\nrelease_hold_s = 0.3\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
                 "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
-                "[seated_climb]\nperiod_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15.0\n"
+                "stop_time_s = 0.35\n"
+                "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"
+                "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
+                "[seated_climb]\nperiod_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15.0\n"
                 "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
                 "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
                 "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"

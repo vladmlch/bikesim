@@ -227,6 +227,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     assist.torque_curve = std::vector<std::array<double, 2>>{
         {0.0, 85.0}, {120.0, 85.0}, {120.1, 47.7}, {180.0, 0.0}};
     assist.engage_torque_nm = 4.0;
+    assist.release_hold_s = 0.3;
     c.drive.gearing.front_teeth = 22;
     c.drive.gearing.rear_teeth = 51;
     auto& shifting = c.drive.shifting;

@@ -93,7 +93,11 @@ struct Knobs {
     physics.seated_climb.reaction_delay_s = .15;
     physics.seated_climb.lean_rate_rad_s = .5;
     physics.seated_climb.orientation_tau_s = .5;
+    physics.seated_climb.surge_budget_s = 15.;
+    physics.seated_climb.trim_dead_time_s = .2;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
+    physics.drive.assist.release_hold_s = .3;
+    physics.drive.pedaling.stop_time_s = .35;
     physics.drive.pedaling.reposition_on_stall = false;
     physics.drive.pedaling.reposition_min_effort_nm = 20.;
     physics.drive.pedaling.reposition_stall_window_s = 1.;
@@ -103,6 +107,10 @@ struct Knobs {
     physics.drive.pedaling.reposition_timeout_s = 3.;
     physics.drive.pedaling.reposition_phase_tolerance_rad = .05;
     physics.drive.pedaling.reposition_noop_rad = .12;
+    physics.drive.shifting.shift_cooldown_s = .4;
+    physics.drive.shifting.shift_cut_duration_s = .2;
+    physics.articulated.balance_dwell_s = .5;
+    physics.articulated.balance_grace_s = 3.;
     physics.research.control_period_s = .01; physics.research.actuator_delay_s = .005;
     physics.research.sensor_latency_s = .01; physics.research.sensor_maximum_age_s = .1;
     physics.research.sample_period_s = .005; physics.research.record_decimation = 80;

@@ -31,6 +31,8 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"reaction_delay_s", io::Value{io::Number{"0.15"}}},
                 {"lean_rate_rad_s", io::Value{io::Number{"0.5"}}},
                 {"orientation_tau_s", io::Value{io::Number{"0.5"}}},
+                {"surge_budget_s", io::Value{io::Number{"15"}}},
+                {"trim_dead_time_s", io::Value{io::Number{"0.2"}}},
                 {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}}}});
         }
         // These documents exercise the tire section only — fill the

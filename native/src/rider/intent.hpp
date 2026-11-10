@@ -38,12 +38,12 @@ struct IntentConfig {
     double orientation_tau_s = -1.;
     double surge_power_w = 400.;
     double surge_grade = .20;
-    double surge_budget_s = 15.;
+    double surge_budget_s = -1.;
     double surge_recovery_rate = 1. / 3.;
     double front_load_share_target = .30;
     double lean_trim_gain_rad_s = .3;
     double lean_trim_limit_rad = .15;
-    double trim_dead_time_s = .2;
+    double trim_dead_time_s = -1.;
     double min_elbow_flexion_deg = 0.;
 };
 

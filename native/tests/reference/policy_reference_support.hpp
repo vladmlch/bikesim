@@ -37,6 +37,12 @@ inline bike::configuration::PhysicalDriveConfig source(bool fixture = true) {
     result.pedaling.reposition_timeout_s = 3.;
     result.pedaling.reposition_phase_tolerance_rad = .05;
     result.pedaling.reposition_noop_rad = .12;
+    // The run-on, stop and shift holds are required profile members too —
+    // the programmatic source declares the former code defaults explicitly.
+    result.assist.release_hold_s = .3;
+    result.pedaling.stop_time_s = .35;
+    result.shifting.shift_cooldown_s = .4;
+    result.shifting.shift_cut_duration_s = .2;
     if (fixture) {
         result.pedaling.enabled = true; result.pedaling.coast_cadence_tau_s = .03;
         result.shifting.enabled = true; result.shifting.cadence_smoothing_tau_s = 0.;

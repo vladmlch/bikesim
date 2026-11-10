@@ -75,7 +75,7 @@ void test_zero_tau_keeps_the_raw_hysteresis() {
 void test_coast_tau_must_be_nonnegative() {
     auto config = pedaling_config(); config.coast_cadence_tau_s = -.1;
     bt::invalid([&] { (void)PedalingPolicy(config); });
-    cfg::PedalingConfig source; source.enabled = true; source.coast_cadence_tau_s = -.1;
+    cfg::PedalingConfig source; source.enabled = true; source.coast_cadence_tau_s = -.1; source.stop_time_s = .35;
     bt::invalid([&] { cfg::detail::post_init(source); });
 }
 void test_wheel_implied_cadence_does_not_stop_legs_below_their_limit() {

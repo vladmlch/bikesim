@@ -71,6 +71,8 @@ rider::IntentConfig enabled(double lean_rate = 0.) {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.surge_budget_s = 15.;
+    config.trim_dead_time_s = .2;
     config.lean_rate_rad_s = lean_rate != 0. ? lean_rate : .5;
     return config;
 }
@@ -226,6 +228,8 @@ void test_posture_program_rate_limits_and_bounds_the_pulse() {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.surge_budget_s = 15.;
+    config.trim_dead_time_s = .2;
     config.lean_gain = 0.;
     config.max_forward_lean_rad = .35;
     config.max_backward_lean_rad = .1;
@@ -506,6 +510,7 @@ void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
+    config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedPostureProgram program(config);
     const double base = std::atan(.15);
@@ -533,6 +538,8 @@ void test_geometric_limit_caps_lean() {
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .8;
+    config.surge_budget_s = 15.;
+    config.trim_dead_time_s = .2;
     rider::SeatedPostureProgram program(config);
     double lean = 0.;
     for (int i = 0; i < 200; ++i)
@@ -570,6 +577,8 @@ void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
     config.max_forward_lean_rad = .1;
+    config.surge_budget_s = 15.;
+    config.trim_dead_time_s = .2;
     rider::SeatedPostureProgram program(config);
     bt::require(approx(program.update(0., .5, .1, std::nullopt, .4), .4),
                 "an explicit geometric limit replaces the config "

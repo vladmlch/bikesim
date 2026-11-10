@@ -34,6 +34,7 @@ void post_init(ArticulatedConfig &config) {
 // test_spindle_and_connect_are_valid_attachments
 void test_spindle_and_connect_are_valid_attachments() {
     ArticulatedConfig config;
+    config.balance_dwell_s = .5; config.balance_grace_s = 3.;
     config.pedal_attachment = "spindle";
     config.saddle_attachment = "pin";
     config.grip_attachment = "connect";
@@ -47,6 +48,7 @@ void test_spindle_and_connect_are_valid_attachments() {
 // test_grip_weld_alias_normalises_to_connect
 void test_grip_weld_alias_normalises_to_connect() {
     ArticulatedConfig config;
+    config.balance_dwell_s = .5; config.balance_grace_s = 3.;
     config.grip_attachment = "weld";
     post_init(config);
     bt::require(config.grip_attachment == "connect",
@@ -56,6 +58,7 @@ void test_grip_weld_alias_normalises_to_connect() {
 // test_budget_comes_from_config_fields
 void test_budget_comes_from_config_fields() {
     ArticulatedConfig config;
+    config.balance_dwell_s = .5; config.balance_grace_s = 3.;
     config.pedal_min_normal_n = 25.;
     config.foot_mu = .8;
     config.saddle_mu = .5;
@@ -82,6 +85,7 @@ void test_delivered_power_budgets_fall_back_to_capability_caps() {
     // Unset: the monitor verdict reads the capability bound bitwise.
     {
         ArticulatedConfig config;
+        config.balance_dwell_s = .5; config.balance_grace_s = 3.;
         config.active_positive_power_limit_w = 450.;
         post_init(config);
         bt::require(config.delivered_positive_budget_w().has_value() &&
@@ -95,6 +99,7 @@ void test_delivered_power_budgets_fall_back_to_capability_caps() {
     }
     {
         ArticulatedConfig config;
+        config.balance_dwell_s = .5; config.balance_grace_s = 3.;
         post_init(config);
         bt::require(!config.delivered_positive_budget_w().has_value(),
                     "no capability cap leaves the monitor budget unset");
@@ -103,6 +108,7 @@ void test_delivered_power_budgets_fall_back_to_capability_caps() {
     // cap — plant physics — is untouched.
     {
         ArticulatedConfig config;
+        config.balance_dwell_s = .5; config.balance_grace_s = 3.;
         config.active_positive_power_limit_w = 450.;
         config.delivered_positive_power_budget_w = 750.;
         config.delivered_joint_power_budget_w = 375.;
@@ -123,11 +129,13 @@ void test_delivered_power_budgets_validate_like_other_budgets() {
     for (const double value : {-1., kNan, kInf}) {
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.delivered_positive_power_budget_w = value;
             post_init(config);
         });
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.delivered_joint_power_budget_w = value;
             post_init(config);
         });
@@ -145,6 +153,7 @@ void test_weld_normal_bounds_must_be_finite_when_set() {
         for (const double value : {kNan, kInf, -kInf})
             bt::invalid([&] {
                 ArticulatedConfig config;
+                config.balance_dwell_s = .5; config.balance_grace_s = 3.;
                 config.*field = value;
                 post_init(config);
             });
@@ -159,6 +168,7 @@ void test_weld_normal_bounds_accept_tension_retention() {
                &ArticulatedConfig::weld_saddle_max_normal_n};
     for (const auto field : fields) {
         ArticulatedConfig config;
+        config.balance_dwell_s = .5; config.balance_grace_s = 3.;
         config.*field = -1050.;
         post_init(config);
         bt::require(config.*field == -1050.,
@@ -172,11 +182,13 @@ void test_weld_shear_capacity_is_nonnegative() {
     for (const double value : {-1., kNan}) {
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.weld_foot_shear_n = value;
             post_init(config);
         });
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.weld_saddle_shear_n = value;
             post_init(config);
         });
@@ -186,6 +198,7 @@ void test_weld_shear_capacity_is_nonnegative() {
 // test_balance_defaults
 void test_balance_defaults() {
     ArticulatedConfig config;
+    config.balance_dwell_s = .5; config.balance_grace_s = 3.;
     post_init(config);
     bt::require(config.balance_floor_kmh == 4. &&
                     config.balance_dwell_s == .5 &&
@@ -198,11 +211,13 @@ void test_invalid_balance_thresholds_are_rejected() {
     for (const double value : {-1., 0., kNan}) {
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.balance_floor_kmh = value;
             post_init(config);
         });
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.balance_dwell_s = value;
             post_init(config);
         });
@@ -213,6 +228,7 @@ void test_invalid_balance_thresholds_are_rejected() {
 void test_surge_and_trim_are_validated_in_climb_config() {
     {
         SeatedClimbConfig config;
+        config.surge_budget_s = 15.; config.trim_dead_time_s = .2;
         config.period_s = .00125;
         config.reaction_delay_s = .15;
         config.lean_rate_rad_s = .5;
@@ -229,6 +245,7 @@ void test_surge_and_trim_are_validated_in_climb_config() {
                              &SeatedClimbConfig::surge_budget_s})
         bt::invalid([&] {
             SeatedClimbConfig config;
+            config.surge_budget_s = 15.; config.trim_dead_time_s = .2;
             config.period_s = .00125;
             config.reaction_delay_s = .15;
             config.lean_rate_rad_s = .5;
@@ -245,6 +262,7 @@ void test_surge_and_trim_are_validated_in_climb_config() {
           &SeatedClimbConfig::lean_trim_limit_rad})
         bt::invalid([&] {
             SeatedClimbConfig config;
+            config.surge_budget_s = 15.; config.trim_dead_time_s = .2;
             config.period_s = .00125;
             config.reaction_delay_s = .15;
             config.lean_rate_rad_s = .5;
@@ -260,6 +278,7 @@ void test_balance_grace_must_be_finite_and_nonnegative() {
     for (const double value : {-1., kNan, kInf})
         bt::invalid([&] {
             ArticulatedConfig config;
+            config.balance_dwell_s = .5; config.balance_grace_s = 3.;
             config.balance_grace_s = value;
             post_init(config);
         });

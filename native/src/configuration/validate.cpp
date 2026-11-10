@@ -1272,11 +1272,14 @@ SimulationPhysicsConfig default_physics() {
     // values explicitly: 0.5 ms physics step, 5 ms control period, 5 ms
     // grounded hold, a 10-step contact dropout at that tick, the
     // seated-climb intent's 1.25 ms period, 150 ms reaction delay,
-    // 0.5 rad/s lean rate and 0.5 s orientation smoothing, the
-    // crank-reposition manoeuvre's former code defaults, and the
-    // research-mode timings the CLI and request paths carried (10 ms
-    // control tick, 5 ms actuator delay, 10 ms sensor latency, 100 ms
-    // maximum age, 5 ms sample period, record decimation 80).
+    // 0.5 rad/s lean rate, 0.5 s orientation smoothing, 15 s surge
+    // budget and 0.2 s trim dead time, the motor run-on 0.3 s, coast
+    // stop 0.35 s, shift cooldown 0.4 s and cut 0.2 s, the balance
+    // dwell 0.5 s and grace 3 s, the crank-reposition manoeuvre's former
+    // code defaults, and the research-mode timings the CLI and request
+    // paths carried (10 ms control tick, 5 ms actuator delay, 10 ms
+    // sensor latency, 100 ms maximum age, 5 ms sample period, record
+    // decimation 80).
     SimulationPhysicsConfig config{};
     config.timestep_s = 0.0005;
     config.control_period_s = 0.005;
@@ -1286,7 +1289,15 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.reaction_delay_s = .15;
     config.seated_climb.lean_rate_rad_s = .5;
     config.seated_climb.orientation_tau_s = .5;
+    config.seated_climb.surge_budget_s = 15.;
+    config.seated_climb.trim_dead_time_s = .2;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    config.drive.assist.release_hold_s = .3;
+    config.drive.pedaling.stop_time_s = .35;
+    config.drive.shifting.shift_cooldown_s = .4;
+    config.drive.shifting.shift_cut_duration_s = .2;
+    config.articulated.balance_dwell_s = .5;
+    config.articulated.balance_grace_s = 3.;
     config.drive.pedaling.reposition_on_stall = false;
     config.drive.pedaling.reposition_min_effort_nm = 20.;
     config.drive.pedaling.reposition_stall_window_s = 1.;

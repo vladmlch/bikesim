@@ -447,7 +447,7 @@ void test_rotor_inertia_wire_contract() {
     bt::invalid([&] { (void)nativecfg::decode(negative); });
     input.rotor_inertia_kgm2 = -.1;
     bt::invalid([&] { cfg::detail::post_init(input); });
-    cfg::SimulationPhysicsConfig passive;
+    cfg::SimulationPhysicsConfig passive = cfg::default_physics();
     passive.drive_mode = "coast";
     passive.drive.rotor_inertia_kgm2 = .2;
     bt::invalid([&] { cfg::post_init(passive); });

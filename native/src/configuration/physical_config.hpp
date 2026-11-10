@@ -217,7 +217,7 @@ struct AssistConfig {
     double tau = .05;
     double slew = 400.;
     double engage_torque_nm = 4.;
-    double release_hold_s = .3;  // motor run-on after the rider eases off; unverified
+    double release_hold_s = -1.;  // motor run-on after the rider eases off; unverified
     double cutoff_mps = 25. / 3.6;
     double taper_width_mps = 2. / 3.6;
     std::optional<std::vector<std::array<double, 2>>> torque_curve;
@@ -230,7 +230,7 @@ struct PedalingConfig {
     bool enabled = false;
     double coast_above_rpm = 110.;
     double resume_below_rpm = 90.;
-    double stop_time_s = .35;
+    double stop_time_s = -1.;
     // Coast on a sustained cadence rise, filtering the two strokes per turn.
     double coast_cadence_tau_s = 0.;
     // Low-cadence effort ramp ceiling inputs.
@@ -270,8 +270,8 @@ struct ShiftingConfig {
                               std::end(kCassette12sTeeth)};
     double target_cadence_min_rpm = 65.;
     double target_cadence_max_rpm = 85.;
-    double shift_cooldown_s = .4;
-    double shift_cut_duration_s = .2;
+    double shift_cooldown_s = -1.;
+    double shift_cut_duration_s = -1.;
     double torque_factor_larger_cog = .8;
     double torque_factor_smaller_cog = .3;
     double cadence_smoothing_tau_s = .35;
@@ -441,8 +441,8 @@ struct ArticulatedConfig {
     // 'weld' is a legacy alias normalized to 'connect' by post_init.
     std::string grip_attachment = "spring";
     double balance_floor_kmh = 4.;
-    double balance_dwell_s = .5;
-    double balance_grace_s = 3.;
+    double balance_dwell_s = -1.;
+    double balance_grace_s = -1.;
 
     [[nodiscard]] AttachmentBudget attachment_budget() const {
         // The weld load envelope applies only where the interface is a real
@@ -710,7 +710,7 @@ inline constexpr auto kAssistConfigFields = std::to_array<FieldDecl>({
     REAL(AssistConfig, tau),
     REAL(AssistConfig, slew),
     REAL(AssistConfig, engage_torque_nm),
-    REAL(AssistConfig, release_hold_s),
+    REQ_REAL(AssistConfig, release_hold_s),
     REAL(AssistConfig, cutoff_mps),
     REAL(AssistConfig, taper_width_mps),
     {.name="torque_curve", .type="tuple[tuple[float, float], ...] | None",
@@ -727,7 +727,7 @@ inline constexpr auto kPedalingConfigFields = std::to_array<FieldDecl>({
     BOOL(PedalingConfig, enabled),
     REAL(PedalingConfig, coast_above_rpm),
     REAL(PedalingConfig, resume_below_rpm),
-    REAL(PedalingConfig, stop_time_s),
+    REQ_REAL(PedalingConfig, stop_time_s),
     REAL(PedalingConfig, coast_cadence_tau_s),
     REAL(PedalingConfig, mash_cadence_rpm),
     REAL(PedalingConfig, mash_torque_nm),
@@ -759,8 +759,8 @@ inline constexpr auto kShiftingConfigFields = std::to_array<FieldDecl>({
      .offset=offsetof(ShiftingConfig, cassette), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
     REAL(ShiftingConfig, target_cadence_min_rpm),
     REAL(ShiftingConfig, target_cadence_max_rpm),
-    REAL(ShiftingConfig, shift_cooldown_s),
-    REAL(ShiftingConfig, shift_cut_duration_s),
+    REQ_REAL(ShiftingConfig, shift_cooldown_s),
+    REQ_REAL(ShiftingConfig, shift_cut_duration_s),
     REAL(ShiftingConfig, torque_factor_larger_cog),
     REAL(ShiftingConfig, torque_factor_smaller_cog),
     REAL(ShiftingConfig, cadence_smoothing_tau_s),
@@ -917,8 +917,8 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     STR(ArticulatedConfig, saddle_attachment),
     STR(ArticulatedConfig, grip_attachment),
     REAL(ArticulatedConfig, balance_floor_kmh),
-    REAL(ArticulatedConfig, balance_dwell_s),
-    REAL(ArticulatedConfig, balance_grace_s),
+    REQ_REAL(ArticulatedConfig, balance_dwell_s),
+    REQ_REAL(ArticulatedConfig, balance_grace_s),
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const RecordSchema kArticulatedConfigSchema{

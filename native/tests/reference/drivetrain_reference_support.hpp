@@ -61,6 +61,12 @@ inline cfg::PhysicalDriveConfig source(std::string_view kind = "ideal_mid_drive"
     result.pedaling.reposition_timeout_s = 3.;
     result.pedaling.reposition_phase_tolerance_rad = .05;
     result.pedaling.reposition_noop_rad = .12;
+    // The run-on, stop and shift holds are required profile members too —
+    // the programmatic source declares the former code defaults explicitly.
+    result.assist.release_hold_s = .3;
+    result.pedaling.stop_time_s = .35;
+    result.shifting.shift_cooldown_s = .4;
+    result.shifting.shift_cut_duration_s = .2;
     return result;
 }
 inline Value writer_config(const cfg::PhysicalDriveConfig& source, std::string_view mode = "crank_effort") {

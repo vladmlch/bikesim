@@ -212,39 +212,64 @@ void test_shift_cut_drop_and_return_respect_configured_effort_slew() {
     }
 }
 
-// Review finding F1: the rider effort ceiling is a hard clamp after the
-// slew limiter, so effort never exceeds the ceiling even when the ceiling
-// drops in a single step (unlike shift-cut torque factor which slews).
-void test_rider_effort_never_exceeds_lowered_ceiling_when_ceiling_drops_in_one_step() {
+// User decision 2026-11-09 (one slew from the profile, decisions item 12):
+// the effort ceiling caps the slew target, so a falling ceiling goes
+// through effort_slew_nm_s like every other effort fall — at most
+// slew*dt per step (the post-slew hard clamp let the seated-climb ceiling
+// cut applied effort in one physics step, the rough_uphill_savage
+// loop_out bisected to 814ed5df). With effort_slew_nm_s = 0 the ceiling
+// still applies at once. A constant ceiling still bounds the effort: the
+// capped target cannot rise past it.
+void test_falling_effort_ceiling_goes_through_the_configured_slew() {
     constexpr double kSlewNmS = 300.;
     constexpr double kDt = .00125;
-    const drivetrain::PedalingConfig config{
-        .enabled = true,        .coast_above_rpm = 110.,
-        .resume_below_rpm = 90., .stop_time_s = .35,
-        .coast_cadence_tau_s = 0., .mash_cadence_rpm = 45.,
-        .mash_torque_nm = 60.,  .effort_slew_nm_s = kSlewNmS,
-        .rollback_brake = true, .rollback_engage_mps = .25,
-        .rollback_release_mps = 0., .rollback_demand = 1.};
-    drivetrain::PedalingPolicy policy(config);
-    // Bring effort up to 60 N.m steady.
-    for (int i = 0; i < 200; ++i)
-        (void)policy.update(0., 8., 80., 60., kDt, true, false, 8., 60., 1.);
-    bt::require(std::abs(policy.state().effort - 60.) < 1e-12,
-                "effort reaches 60 N.m before ceiling drop");
-    // Drop ceiling in one step from 60 N.m to 20 N.m.
-    constexpr double kLoweredCeiling = 20.;
-    const auto step1 =
-        policy.update(0., 8., 80., 60., kDt, true, false, 8., kLoweredCeiling, 1.);
-    bt::require(step1.effort_nm <= kLoweredCeiling,
-                "effort never exceeds lowered ceiling on the first step after a single-step drop");
-    bt::require(std::abs(step1.effort_nm - kLoweredCeiling) < 1e-12,
-                "effort clamps immediately to lowered ceiling without waiting for slew");
-    // Subsequent steps stay clamped at or below ceiling.
-    for (int i = 1; i < 50; ++i) {
-        const auto step =
-            policy.update(0., 8., 80., 60., kDt, true, false, 8., kLoweredCeiling, 1.);
-        bt::require(step.effort_nm <= kLoweredCeiling,
-                    "effort remains clamped at lowered ceiling across subsequent steps");
+    constexpr double kMaxStepDelta = kSlewNmS * kDt;
+    const auto make_config = [](double slew) {
+        return drivetrain::PedalingConfig{
+            .enabled = true,        .coast_above_rpm = 110.,
+            .resume_below_rpm = 90., .stop_time_s = .35,
+            .coast_cadence_tau_s = 0., .mash_cadence_rpm = 45.,
+            .mash_torque_nm = 60.,  .effort_slew_nm_s = slew,
+            .rollback_brake = true, .rollback_engage_mps = .25,
+            .rollback_release_mps = 0., .rollback_demand = 1.};
+    };
+    { // effort_slew_nm_s = 300: a 60 -> 0 ceiling step ramps down.
+        drivetrain::PedalingPolicy policy(make_config(kSlewNmS));
+        double prev = 0.;
+        for (int i = 0; i < 200; ++i)
+            prev = policy.update(0., 8., 80., 60., kDt, true, false, 8., 60., 1.).effort_nm;
+        bt::require(std::abs(prev - 60.) < 1e-12,
+                    "effort reaches steady 60 N.m at the ceiling");
+        const double first =
+            policy.update(0., 8., 80., 60., kDt, true, false, 8., 0., 1.).effort_nm;
+        bt::require(std::abs((prev - first) - kMaxStepDelta) < 1e-12,
+                    "a dropped ceiling slews down by 300 N.m/s * dt on step 1");
+        prev = first;
+        for (int i = 1; i < 200; ++i) {
+            const double cur =
+                policy.update(0., 8., 80., 60., kDt, true, false, 8., 0., 1.).effort_nm;
+            bt::require(prev - cur <= kMaxStepDelta + 1e-12 && cur <= prev + 1e-12,
+                        "falling ceiling drops effort by at most 300 N.m/s * dt per step");
+            prev = cur;
+        }
+        bt::require(prev == 0., "effort slews all the way down to the dropped ceiling");
+        // A constant ceiling still bounds the effort: the target is
+        // capped, so the rise stops at the ceiling and never exceeds it.
+        drivetrain::PedalingPolicy capped(make_config(kSlewNmS));
+        double rose = 0.;
+        for (int i = 0; i < 200; ++i)
+            rose = capped.update(0., 8., 80., 60., kDt, true, false, 8., 20., 1.).effort_nm;
+        bt::require(rose <= 20. && std::abs(rose - 20.) < 1e-12,
+                    "a constant ceiling still bounds the slewed effort");
+    }
+    { // effort_slew_nm_s = 0: no slew configured — the drop applies at once.
+        drivetrain::PedalingPolicy policy(make_config(0.));
+        for (int i = 0; i < 5; ++i)
+            (void)policy.update(0., 8., 80., 60., kDt, true, false, 8., 60., 1.);
+        const auto dropped =
+            policy.update(0., 8., 80., 60., kDt, true, false, 8., 0., 1.);
+        bt::require(dropped.effort_nm == 0.,
+                    "with effort_slew_nm_s = 0 a dropped ceiling applies at once");
     }
 }
 
@@ -1502,7 +1527,7 @@ int main() {
         test_cadence_control_validates_a_finite_nonnegative_wish();
         test_first_pedal_command_and_restart_respect_configured_effort_slew();
         test_shift_cut_drop_and_return_respect_configured_effort_slew();
-        test_rider_effort_never_exceeds_lowered_ceiling_when_ceiling_drops_in_one_step();
+        test_falling_effort_ceiling_goes_through_the_configured_slew();
         test_strict_flat_cycle_delivers_and_stays_within_budgets();
         test_rigid_per_revolution_crank_torque_tracks_command();
         test_free_coast_is_an_intent_not_a_crank_lock();

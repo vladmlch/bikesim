@@ -558,9 +558,14 @@ if (rider_owns) {
 
 ### Задача 5. Защёлка тормоза в состоянии шага
 
+Решение пользователя 2026-11-11 (вопрос 1, вариант «а»): сохранение и восстановление проверяется по частям —
+состояние каждого нового узла и защёлка тормоза по кругу «записал → прочитал → продолжил». Полного продолжения
+поездки посреди эпизода (MuJoCo со всеми писателями) в этой работе нет; оно — отдельная задача, если
+понадобится.
+
 **Файлы:**
 - Изменить: `native/src/runtime/static_brake.hpp:64-92`, `native/src/runtime/static_brake.cpp`, `native/src/runtime/step.hpp:176` (`StepState`), `native/src/runtime/step.cpp:2720-2775`, кодек `StepState` (захват начального состояния `native/src/initialization/capture.cpp:208-213`)
-- Тест: `native/tests/reference/test_rider_launch_rides.cpp` (создаётся здесь, пополняется в задаче 13)
+- Тест: `native/tests/reference/test_rider_launch_rides.cpp` (создаётся здесь, пополняется в задаче 13; регистрация в `Phase3Ports.cmake`, метка `slow` добавляется в задаче 13)
 
 **Интерфейсы:**
 
@@ -571,41 +576,49 @@ struct State { std::optional<double> latch_front, latch_rear; };
 void restore(const State &state);
 // step.hpp — StepState gains:
 StaticBrake::State brake_latch;
-// step.hpp — PhysicalStep gains:
-void restore_continuation(const StepState &state);  // keeps the latch; restore() still resets it
 ```
 
-`restore()` для нового эпизода не меняется: защёлка сбрасывается. `restore_continuation()` вызывает `restore()`,
-а затем `brake_.restore(state.brake_latch)`.
+`PhysicalStep::state()` пишет `brake_latch = brake_.state()`. `PhysicalStep::restore()` для нового эпизода не
+меняется: защёлка по-прежнему сбрасывается (`step.cpp:2756-2758`). Записанное значение служит для записи и
+проверки и для будущего полного продолжения.
 
-- [ ] **Шаг 1. Тест (падает).** Тест кладётся в `test_rider_launch_rides.cpp`, регистрация с меткой `slow`, если
-  он дольше 10 с:
+- [ ] **Шаг 1. Тест (падает)** в `test_rider_launch_rides.cpp`:
 
 ```cpp
-// A continuation restore during a held brake keeps the bite: the held
-// wheel force after restore equals the original run's force bitwise.
-void test_continuation_restore_keeps_the_brake_bite() {
-    auto a = standstill_env("tests/fixtures/tracks/climb_15pct_standstill.toml");
-    hold_brakes(a, 200);                       // 0.25 s, rider brakes 1.0
+// The static brake latch is part of the step state: while the rider holds
+// the brakes on 15 % the rear latch is captured, and the StepState codec
+// round-trips it exactly (spec «Сохранение и восстановление», user ruling
+// 2026-11-11: component-level round trips).
+void test_brake_latch_is_captured_and_round_trips() {
+    auto env = standstill_env("tests/fixtures/tracks/climb_15pct_standstill.toml");
+    runtime::RideControl hold{};
+    hold.human_torque_nm = 0.;
+    hold.motor_limit_nm = 0.;
+    hold.rider_front_brake = 1.;
+    hold.rider_rear_brake = 1.;
+    for (int k = 0; k < 200; ++k)  // 0.25 s
+        (void)env.runtime->advance(env.runtime->snapshot().step + 1, hold, 0., 0., std::nullopt);
     runtime::StepState saved;
-    bike::validation::RuntimeRigAccess::inspect(*a.runtime, [&](const Stepper&, const runtime::PhysicalStep& p) { saved = p.state(); });
-    bt::require(saved.brake_latch.latch_rear.has_value(), "the bite is latched while holding");
-    // ... restore_continuation into the same step and compare the next interval's
-    // front/rear static-brake components (ConstraintSnapshot) with the unrestored run.
+    bike::validation::RuntimeRigAccess::inspect(
+        *env.runtime, [&](const Stepper &, const runtime::PhysicalStep &p) { saved = p.state(); });
+    bt::require(saved.brake_latch.latch_rear.has_value(), "the rear bite is latched while holding");
+    const auto wire = runtime::encode_step_state(saved);
+    const auto back = runtime::decode_step_state(wire);
+    bt::require(back.brake_latch.latch_front == saved.brake_latch.latch_front &&
+                    back.brake_latch.latch_rear == saved.brake_latch.latch_rear,
+                "the latch round-trips through the state codec bitwise");
 }
 ```
 
-  Чтобы восстановить состояние, нужен доступ из тестов: в `native/src/validation/runtime_access.hpp` добавить
-  `static void restore_continuation(runtime::NativeRideRuntime&, const runtime::StepState&)`. Полное
-  продолжение поездки из сохранения — это MuJoCo и все писатели — в коде сейчас нет: есть только сброс к
-  начальному состоянию (`native/src/runtime/runtime.cpp:521`). Насколько полным его делать, решает
-  пользователь, см. вопрос 1 в конце плана. **Задача 5 заблокирована вопросом 1.** Если пользователь выберет
-  «только состояние узлов», задача сужается до `brake_latch` в `StepState` и проверки кодека по кругу.
-- [ ] **Шаг 2.** `mise run test 'rider_launch_rides'` — падает.
-- [ ] **Шаг 3. Код** по интерфейсу выше; кодек `StepState` пишет и читает `brake_latch` как обязательное поле;
-  тестовые файлы начального состояния получают `"brake_latch": {"front": null, "rear": null}`.
-- [ ] **Шаг 4. Запуск.** `mise run test 'rider_launch_rides|io_state_codecs|native_runtime'`.
-- [ ] **Шаг 5. Проверка этапа и коммит.** `feat(runtime): continuation restore keeps the static brake bite`.
+  `standstill_env` — помощник из задачи 3; перенести его в общий заголовок
+  `native/tests/reference/launch_ride_support.hpp`, чтобы его видели оба файла. Имена `encode_step_state`
+  и `decode_step_state` сверить с кодеком `StepState`, которым пользуется захват начального состояния
+  (`capture.cpp:208-213`), и взять настоящие.
+- [ ] **Шаг 2.** `mise run test 'rider_launch_rides'` — падает: нет `brake_latch`.
+- [ ] **Шаг 3. Код** по интерфейсу. Кодек `StepState` пишет и читает `brake_latch` как обязательное поле;
+  тестовые файлы начального состояния получают `"brake_latch": {"front": null, "rear": null}` вставкой текста.
+- [ ] **Шаг 4.** `mise run test 'rider_launch_rides|io_state_codecs|native_runtime'`.
+- [ ] **Шаг 5. Проверка этапа и коммит.** `feat(runtime): the static brake latch is part of the step state`.
 
 ---
 
@@ -1156,19 +1169,11 @@ void test_normal_rider_twenty_percent_lift_is_short() {
 
 ---
 
-## Вопросы пользователю
+## Решения пользователя по вопросам плана (2026-11-11)
 
-1. **Продолжение поездки из сохранения.** Спецификация требует, чтобы восстановление посреди старта давало ту же
-   поездку бит в бит. Сейчас полного продолжения в коде нет: состояние MuJoCo вместе со всеми писателями
-   умеет только сброс к начальному (`native/src/runtime/runtime.cpp:521`). Варианты:
-   - (а) состояние новых узлов и защёлка тормоза сохраняются и проверяются по кругу, без продолжения поездки;
-   - (б) сделать полное продолжение поездки — отдельная большая задача.
-
-   От ответа зависит задача 5.
-2. **Поправка наклона по точной доле нагрузки переднего колеса** (`intent.cpp:136-158`). Обычная езда читает
-   знание, которого у человека нет. Перевести на ощущение «разгрузка рук» сейчас, в этой работе, или позже?
-   Это изменит обычную езду.
-3. **Поля мягкого старта.** Спецификация переносит их в таблицу на этапе 3. В плане они уходят на этапе 4
-   (задача 10): на этапе 3 плана ещё нет, и признак «уклон от 3 %» деть некуда, не меняя поведения. Подходит?
-4. **Выключатель «короткое торможение задним».** Он есть в таблице, но включить его нельзя, пока он не сделан:
-   профиль с `true` не загрузится. Подходит, или поля пока не должно быть вовсе?
+1. **Сохранение и восстановление** — по частям: состояние новых узлов и защёлка тормоза по кругу. Полное
+   продолжение поездки посреди эпизода — отдельная задача, если понадобится (задача 5).
+2. **Поправка наклона по точной доле нагрузки переднего колеса** (`intent.cpp:136-158`) — позже, отдельной
+   задачей. В этой работе обычная езда её сохраняет.
+3. **Поля мягкого старта** уходят на этапе 4 (задача 10), вместе с появлением плана старта.
+4. **Выключатель «короткое торможение задним»** остаётся в таблице; `true` отклоняется, пока действие не сделано.

@@ -17,6 +17,7 @@
 #include <limits>
 #include <numbers>
 #include <optional>
+#include <print>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -196,7 +197,7 @@ void test_malformed_state_is_rejected_atomically() {
     for (int k = 0; k < 5; ++k) (void)p.update(sample(k));
     const std::string before = state_json(p.state());
     auto bad = p.state();
-    bad.samples.emplace_back(bad.time_s + 1., sample(99));
+    bad.samples.emplace_back(bad.tick + 1000, sample(99));
     bt::invalid([&] { p.restore(bad); });
     bt::require(state_json(p.state()) == before, "rejected atomically");
 }
@@ -222,12 +223,12 @@ void test_unreachable_queue_is_rejected_atomically() {
     // would have delivered it.
     {
         auto bad = p.state();
-        bad.samples.front().first = bad.time_s - .15 - .01;
+        bad.samples.front().first = bad.tick - 16;
         bt::invalid([&] { p.restore(bad); });
     }
     {
         auto bad = p.state();
-        bad.samples.back().first = bad.time_s;
+        bad.samples.back().first = bad.tick;
         bt::invalid([&] { p.restore(bad); });
     }
     // A dropped or inserted sample breaks the contiguous tail.
@@ -288,7 +289,7 @@ void test_invalid_sample_contents_are_rejected() {
     }
     {
         auto bad = p.state();
-        bad.time_s = -0.005;
+        bad.tick = -1;
         bt::invalid([&] { p.restore(bad); });
     }
     bt::require(state_json(p.state()) == before,
@@ -389,19 +390,27 @@ void test_perception_state_codec_is_exact_and_bitwise() {
             (void)rider::decode_perception_state(bad_cog, "perception");
         });
     }
+    // `tick` is a strict nonnegative int64: a real lexeme, a negative
+    // and an out-of-range integer all reject.
+    for (const char *const lexeme : {"3.5", "-1", "9223372036854775808"}) {
+        auto bad_tick = encoded;
+        mut_member(as_object(bad_tick), "tick") =
+            bio::Value{bio::Number{lexeme}};
+        bt::invalid([&] {
+            (void)rider::decode_perception_state(bad_tick, "perception");
+        });
+    }
 }
 
-// Follow-up 1 (review of b7168982): the adapter clock is an IEEE
-// accumulation, not the closed-form n * period — over a long ride it
-// drifts off the ideal grid and the delivery epsilon can slip a due
-// sample a tick late. Every state update() reaches must still restore.
-// Two realistic cadences: the welded profile's [seated_climb] block
-// (period_s / reaction_delay_s, parsed from the fixture TOML the other
-// tests load) and the .01/.15 intent cadence the sibling seated-climb
-// tests run on the welded plant. A side-by-side replay of the intent
-// policy's own queue arithmetic (intent.cpp:276-282,322 — push at the
-// pre-increment clock, pop every stamp <= clock - delay + 1e-12, then
-// advance) must deliver on the same ticks.
+// Follow-up 2 (review of b79ea64b): with the integer tick, every state
+// update() emits restores — 200000 updates at both realistic cadences,
+// a twin restored every 10000 continuing bitwise for the next 50.
+// Within 300 s of simulated time Perception must deliver on exactly the
+// tick the intent policy's float queue would (intent.cpp:276-282,322 —
+// push at the pre-increment clock, pop every stamp <= clock - delay +
+// 1e-12, advance); beyond 300 s the first divergence tick is recorded
+// as information only — the float queue may slip while the integer one
+// stays exact, and that is the intended difference, not a failure.
 void test_long_run_states_stay_restorable() {
     const auto welded = bike::configuration::load_physics(
         bt::fixture("config/viewer_physics_welded.toml"));
@@ -410,11 +419,14 @@ void test_long_run_states_stay_restorable() {
          welded.seated_climb.reaction_delay_s},
         {.01, .15}}};
     for (const auto &[period, delay] : cadences) {
+        // Ticks inside the 300 s parity window: update k happens at
+        // interval start k*period.
+        const int parity_ticks = static_cast<int>(300. / period);
         rider::Perception a(delay, period);
-        // The intent policy's own queue arithmetic.
         double intent_clock = 0.;
         std::deque<std::pair<double, int>> intent_queue;
-        const auto intent_update = [&](int k) {
+        int first_divergence = -1;
+        const auto tick_check = [&](int k, const auto &percept) {
             intent_queue.emplace_back(intent_clock, k);
             int delivered = -1;
             while (!intent_queue.empty() &&
@@ -424,28 +436,26 @@ void test_long_run_states_stay_restorable() {
                 intent_queue.pop_front();
             }
             intent_clock += period;
-            return delivered;
-        };
-        const auto check_tick = [&](int k, const auto &percept) {
-            const int delivered = intent_update(k);
-            bt::require(percept.has_value() == (delivered >= 0),
-                        "perception delivers on the intent queue's "
-                        "tick");
-            if (delivered >= 0)
-                bt::require(
-                    percept.has_value() &&
-                        percept->human_crank_torque_nm == delivered,
-                    "the same sample arrives on that tick");
+            const bool same =
+                percept.has_value() == (delivered >= 0) &&
+                (!percept.has_value() ||
+                 percept->human_crank_torque_nm == delivered);
+            if (k <= parity_ticks)
+                bt::require(same,
+                            "perception delivers on the intent queue's "
+                            "tick");
+            else if (!same && first_divergence < 0)
+                first_divergence = k;
         };
         for (int k = 0; k < 200000; ++k) {
-            check_tick(k, a.update(ride_sample(k)));
+            tick_check(k, a.update(ride_sample(k)));
             if ((k + 1) % 10000 != 0) continue;
             rider::Perception twin(delay, period);
             twin.restore(a.state());   // a state update() produced
             for (int j = k + 1; j <= k + 50; ++j) {
                 const auto x = a.update(ride_sample(j));
                 const auto y = twin.update(ride_sample(j));
-                check_tick(j, x);
+                tick_check(j, x);
                 bt::require(x.has_value() == y.has_value(),
                             "restored twin keeps the same tick");
                 if (x.has_value() && y.has_value())
@@ -456,7 +466,35 @@ void test_long_run_states_stay_restorable() {
                             state_json(twin.state()),
                         "restored twin state matches bitwise");
         }
+        if (first_divergence >= 0)
+            std::println(
+                "perception/intent divergence beyond 300 s: first at "
+                "update {} (period {})",
+                first_divergence, period);
+        else
+            std::println("no perception/intent divergence observed "
+                         "(period {})",
+                         period);
     }
+}
+
+// A huge tick with an inconsistent queue rejects by the O(queue) size
+// check — no clock replay can hang the reader (follow-up 2).
+void test_huge_tick_rejects_promptly() {
+    rider::Perception p(.15, .01);
+    rider::Perception::State bad;
+    bad.tick = 1000000000000000LL;   // 1e15 updates, empty queue
+    bt::invalid([&] { p.restore(bad); });
+    // A consistent-but-enormous state is still structurally reachable.
+    rider::Perception::State huge;
+    huge.tick = 1000000000000000LL;
+    huge.delayed = sample(0);
+    for (std::int64_t t = huge.tick - 15; t < huge.tick; ++t)
+        huge.samples.emplace_back(t, sample(0));
+    rider::Perception q(.15, .01);
+    q.restore(huge);
+    bt::require(q.state().tick == huge.tick,
+                "a huge but reachable state restores");
 }
 
 } // namespace
@@ -476,5 +514,6 @@ int main() {
         test_reset_returns_to_constructed_state();
         test_perception_state_codec_is_exact_and_bitwise();
         test_long_run_states_stay_restorable();
+        test_huge_tick_rejects_promptly();
     });
 }

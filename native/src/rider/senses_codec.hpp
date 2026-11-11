@@ -25,10 +25,11 @@ encode_surface_labels(const SurfaceLabels &s);
 decode_surface_labels(const bike::io::Value &v, std::string_view path);
 
 // The perception adapter's restorable document (launch part 1, task 3):
-// {"time_s", "samples": [[t, {"signals", "senses"}]], "delayed":
-// {"signals", "senses"} | null, "pitch_rad"} — exact keys, the nested
-// readers' domains. The reachable-state invariants (grid, ordering,
-// the not-yet-due tail) belong to Perception::restore, not the wire.
+// {"tick", "samples": [[t, {"signals", "senses"}]], "delayed":
+// {"signals", "senses"} | null, "pitch_rad"} — exact keys; `tick` and
+// the row stamps are nonnegative int64 integers (follow-up 2: the
+// integer clock replaced the accumulated double). The reachable-state
+// invariants belong to Perception::restore, not the wire.
 [[nodiscard]] bike::io::Value
 encode_perception_state(const Perception::State &state);
 [[nodiscard]] Perception::State

@@ -14,12 +14,19 @@
 // RiderSenses field at the interval-start state (step.cpp's fold
 // comment), and update() is called once per intention period at an
 // interval start. The adapter stamps each sample with its
-// interval-start clock, so the Percepts returned at interval start T
-// carry the acquisition of interval start T - reaction_delay_s.
+// interval-start tick, so the Percepts returned at interval start n
+// carry the acquisition of interval start n - delay_ticks.
+//
+// The clock is an integer tick count (follow-up 2): a double clock
+// accumulated by += drifts off the period grid and makes restore-time
+// validation depend on accumulated error; integer ticks are exact.
+// Where a wall time is ever needed it is derived as tick * period_s —
+// closed form, never accumulated.
 //
 // Part 1 carries the record only — no rider decision consumes Percepts.
 #pragma once
 
+#include <cstdint>
 #include <deque>
 #include <optional>
 #include <utility>
@@ -47,29 +54,30 @@ struct Percepts {
 class Perception {
 public:
     struct State {
-        double time_s = 0.;
-        std::deque<std::pair<double, SenseSample>> samples;
+        std::int64_t tick = 0;   // updates since reset
+        std::deque<std::pair<std::int64_t, SenseSample>> samples;
         std::optional<SenseSample> delayed;
         double pitch_rad = 0.;
     };
     // reaction_delay_s must be a nonnegative multiple of period_s (the
-    // intent.cpp:382-389 rule).
+    // intent.cpp:382-389 rule); the integer delay tick count follows.
     Perception(double reaction_delay_s, double period_s);
     void reset();
     // Called once per intention period at the interval start. Returns
-    // nullopt until the first sample is reaction_delay_s old. A sample
+    // nullopt until the first sample is delay_ticks old. A sample
     // outside the accepted domain mutates nothing.
     [[nodiscard]] std::optional<Percepts> update(const SenseSample &sample);
     [[nodiscard]] State state() const;
-    // Validates the whole state first — the clock and every queued
-    // timestamp on the period grid, the queue exactly the contiguous
-    // not-yet-due tail, the delayed slot consistent with the clock, all
+    // Validates the whole state in O(queue) — nonnegative tick, the
+    // queue exactly the contiguous not-yet-due tail
+    // tick-size..tick-1, the delayed slot consistent with the tick, all
     // sample contents inside the readers' domains — then commits
     // atomically (P10).
     void restore(const State &state);
 
 private:
-    double delay_s_, period_s_;
+    std::int64_t delay_ticks_ = 0;
+    double period_s_ = 0.;
     State s_;
 };
 

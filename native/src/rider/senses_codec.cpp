@@ -359,19 +359,24 @@ namespace {
 Perception::State decode_perception_state(const bio::Value &value,
                                           std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, keys("time_s", "samples", "delayed", "pitch_rad"));
+    ncd::exact(d, keys("tick", "samples", "delayed", "pitch_rad"));
     Perception::State state;
-    state.time_s = d["time_s"].finite_real(path);
+    state.tick = d["tick"].integer(path);
+    if (state.tick < 0)
+        invalid(path, "negative perception tick");
     const auto rows = d["samples"].sequence(path);
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto row = rows.at(i).sequence(path);
         if (row.size() != 2)
             invalid(std::string(path) + ".samples",
                     "incorrect sequence width");
+        const std::int64_t stamp = row.at(0).integer(path);
+        if (stamp < 0)
+            invalid(std::string(path) + ".samples",
+                    "negative sample tick");
         state.samples.emplace_back(
-            row.at(0).finite_real(path),
-            decode_sense_sample(row.at(1),
-                                std::string(path) + ".samples"));
+            stamp, decode_sense_sample(row.at(1),
+                                       std::string(path) + ".samples"));
     }
     const VNode delayed = d["delayed"];
     if (!delayed.is_none())
@@ -383,12 +388,12 @@ Perception::State decode_perception_state(const bio::Value &value,
 
 bio::Value encode_perception_state(const Perception::State &state) {
     bio::Value::Object out;
-    out.emplace_back("time_s", real_value(state.time_s));
+    out.emplace_back("tick", integer_value(state.tick));
     bio::Value::Array samples;
     samples.reserve(state.samples.size());
     for (const auto &[t, sample] : state.samples) {
         bio::Value::Array row;
-        row.push_back(real_value(t));
+        row.push_back(integer_value(t));
         row.push_back(encode_sense_sample(sample));
         samples.push_back(bio::Value{std::move(row)});
     }

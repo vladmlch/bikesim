@@ -293,6 +293,13 @@ bike_add_reference_test(rider_senses ENGINE
 bike_add_reference_test(rider_perception ENGINE
   SOURCES test_rider_perception.cpp LIBRARIES bike_app
   LABELS launch rider)
+# Launch part 1, task 4 — the rider-owned brake channel: RiderCommands
+# merged through one BrakeResolution, motor braking through
+# AssistController::step, the rider_commands recording channel and the
+# research/replay command journal.
+bike_add_reference_test(rider_brake_channel ENGINE
+  SOURCES test_rider_brake_channel.cpp LIBRARIES bike_app bike_validation
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

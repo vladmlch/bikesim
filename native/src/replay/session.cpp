@@ -81,6 +81,7 @@ struct ReplaySession::Impl {
     runtime::RenderFrame frame, verified;
     std::size_t command = 0;
     std::int64_t applied = 0;
+    std::int64_t rider_commands = 0;
     int generation = 0;
     double max_error = 0.;
     bool completed = false, closed = false;
@@ -118,10 +119,30 @@ struct ReplaySession::Impl {
             require_evidence(rows[i], input.applied.at(static_cast<std::size_t>(applied) + i), "applied commands[" + std::to_string(applied + static_cast<std::int64_t>(i)) + ']', max_error);
         environment->acknowledge_applied(cursor); applied = cursor;
     }
+    // Launch part 1, task 4 — the rider commands are recomputed inside the
+    // step during replay, never injected from the recording; the deduplicated
+    // journal rows compare against the recording's folded channel rows.
+    void rider_commands_prefix() {
+        if (!input.has_rider_commands) return;
+        const auto prefix = research::wire_value(runtime::Wire{environment->prepare_rider_commands_since(rider_commands)});
+        const auto cursor = count(field(prefix, "next_cursor")); const auto& rows = io::as_array(field(prefix, "rows"), "rider command rows");
+        if (cursor < rider_commands || std::cmp_not_equal(cursor - rider_commands, rows.size()) || std::cmp_greater(cursor, input.rider_commands.size()))
+            throw recording::RecordingError("rider commands: replay produced extra events or an invalid cursor");
+        for (std::size_t i = 0; i < rows.size(); ++i) {
+            const auto index = rider_commands + static_cast<std::int64_t>(i);
+            const auto& expected = input.rider_commands.at(static_cast<std::size_t>(index));
+            require_evidence(field(rows[i], "step"), field(expected, "step"), "rider commands[" + std::to_string(index) + "].step", max_error);
+            require_evidence(field(rows[i], "commands"), field(expected, "commands"), "rider commands[" + std::to_string(index) + "]", max_error);
+        }
+        environment->acknowledge_rider_commands(cursor); rider_commands = cursor;
+    }
     void capture_verified() { frame = environment->render_frame(); frame.state.generation = generation; verified = frame; }
     void finish() {
         applied_prefix();
+        rider_commands_prefix();
         if (std::cmp_not_equal(applied, input.applied.size())) throw recording::RecordingError("applied commands: replay omitted recorded events");
+        if (input.has_rider_commands && std::cmp_not_equal(rider_commands, input.rider_commands.size()))
+            throw recording::RecordingError("rider commands: replay omitted recorded events");
         auto expected_reason = field(field(input.summary, "outcome"), "reason");
         if (const auto* reason = std::get_if<std::string>(&expected_reason.data); reason && *reason == "not_finished") expected_reason = Value{};
         auto current = status(*environment);
@@ -213,6 +234,7 @@ bool ReplaySession::advance(std::optional<double> wall_budget, std::optional<std
         require_evidence(research::wire_value(runtime::Wire{transition->as_wire()}), p.input.transitions[p.command], "transition " + std::to_string(p.command), p.max_error);
         require_evidence(field(status(*p.environment), "observation"), p.input.observations[p.command + 1], "observation " + std::to_string(p.command + 1), p.max_error);
         p.applied_prefix();
+        p.rider_commands_prefix();
         p.environment->acknowledge_control(); ++p.command;
         if (p.command == p.input.requested.size()) p.finish(); else p.capture_verified();
         return p.completed;

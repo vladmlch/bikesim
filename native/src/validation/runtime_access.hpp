@@ -7,6 +7,7 @@
 #include "../stepper.hpp"
 #include <functional>
 
+namespace runtime { class NativeResearchRuntime; }
 namespace bike::validation {
 // Used only by cold validation rigs. It does not expose a writable engine
 // handle through the application API. Initial-condition changes require t=0;
@@ -31,6 +32,17 @@ public:
     // caller-supplied sensor/tire channel dict; returns the latched
     // intent signals like the oracle's return value.
     static ::rider::IntentSignals fold_intent_signals(runtime::NativeRideRuntime&,const runtime::WireObject& sensors_and_tires);
+    // Launch part 1, task 4 — installs the test-only rider command set on
+    // the physical step; std::nullopt releases it so the intent's own
+    // (empty) commands resolve again. Applies to the next physical step —
+    // rider commands are born inside the step, never queued through the
+    // caller's control path.
+    static void set_rider_commands(runtime::NativeRideRuntime&,std::optional<::rider::RiderCommands>);
+    // Same override on a research runtime's owned physical runtime — the
+    // commands bypass the motor-command delay queue by design (they are
+    // step-internal), so the journal and the channel observe them at the
+    // next committed interval.
+    static void set_rider_commands(runtime::NativeResearchRuntime&,std::optional<::rider::RiderCommands>);
 private:
     // -O0 frame budget: the rebase_airborne mutation stays under
     // -Wframe-larger-than by routing the multi-kilobyte rider-contact

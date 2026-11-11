@@ -110,7 +110,8 @@ void test_catalog_tables_are_finite_and_fully_described() {
     const std::set<std::string> expected{"physics", "forces", "channel_mass",
         "channel_energy", "channel_sensors", "channel_drive", "channel_tires",
         "channel_suspension", "channel_control", "channel_rider",
-        "channel_rider_senses", "channel_model_status"};
+        "channel_rider_senses", "channel_rider_commands",
+        "channel_model_status"};
     std::set<std::string> actual;
     for (const auto &spec : catalog.table_order()) {
         actual.insert(spec.name);

@@ -212,6 +212,40 @@ struct MassObservations {
     double mass_kg = 0.;
 };
 
+// Launch part 1, task 4 — the per-step inputs resolve_brakes merges:
+// the caller's raw demands and caller-demand predicate, the rollback
+// reflex's own demand and the rider's enabled flag (the rider demands
+// themselves come from the latched rider_commands override).
+struct BrakeRequest {
+    double caller_front = 0., caller_rear = 0.;
+    double rollback_demand = 0.;
+    bool caller_braking = false, rider_enabled = false;
+};
+
+// The per-step braking resolution every consumer shares (the plan's one
+// BrakeResolution feeding all four predicates). The caller's demands,
+// the hill-hold reflex's own demand and the rider-owned demands merge
+// once into the final per-wheel demands the brake model and the
+// telemetry emit; the four predicates stay separate so each subsystem
+// sees exactly the braking it owns:
+//  - legs_coast keeps the caller-only semantics — a rider-commanded
+//    brake never switches the rider's own legs to coasting;
+//  - motor_braking merges caller and rider demands — it is the flag
+//    AssistController::step sees (the real motor-braking path that
+//    resets the controller state), and it is deliberately blind to the
+//    rollback reflex, which holds the bike without declaring braking;
+//  - shift_blocked admits no shift while any braking is in force;
+//  - riding is the balance monitor's predicate — it reads the final
+//    merged demands so a rider brake counts as holding, not riding.
+struct BrakeResolution {
+    double caller_front = 0., caller_rear = 0.;
+    double rollback = 0.;
+    double rider_front = 0., rider_rear = 0.;
+    double final_front = 0., final_rear = 0.;
+    bool legs_coast = false, motor_braking = false,
+         shift_blocked = false, riding = false;
+};
+
 class PhysicalStep {
     friend class bike::validation::RuntimeRigAccess;
     friend class bike::initialization::PhysicalInitialState;
@@ -250,7 +284,8 @@ public:
     apply_forces(bool active, bool advance, double front, double rear,
                  const std::optional<std::vector<double>> &external,
                  const RideControl &control,
-                 std::optional<bool> braking = std::nullopt);
+                 std::optional<bool> braking = std::nullopt,
+                 const BrakeResolution *resolved = nullptr);
 
     // _advance_physics — one committed interval. Validates every public
     // input before any mutation; engine failures poison the Stepper
@@ -344,6 +379,19 @@ public:
         const noexcept {
         return rider_senses_;
     }
+    // Launch part 1, task 4 — the rider-owned command set in force for
+    // this step: the test override when RuntimeRigAccess engaged one,
+    // else the intent's own resolved set (production part 1 always
+    // yields the empty commands — the channel and records exist, the
+    // intent fills them in a later part).
+    [[nodiscard]] const rider::RiderCommands &rider_commands()
+        const noexcept {
+        return rider_commands_override_ ? *rider_commands_override_
+                                        : rider_intent_.commands();
+    }
+    [[nodiscard]] bool rider_commands_overridden() const noexcept {
+        return rider_commands_override_.has_value();
+    }
 
 private:
     // Freshness predicate for the mjSTAGE_VEL-skip fast path: drains the
@@ -395,6 +443,16 @@ private:
     [[nodiscard]] double
     rollback_brake_demand(double speed_mps, const RideControl *control);
 
+    // Launch part 1, task 4 — resolves the caller's demands, the
+    // rollback reflex's demand and the rider-owned commands into the
+    // single per-step BrakeResolution every consumer reads (final
+    // demands plus the four predicates). `caller_braking` is the
+    // caller-demand predicate the caller computed on its own raw
+    // inputs (advance_body computes it before the rollback merge so
+    // the reflex never coasts the legs or cuts the motor).
+    [[nodiscard]] BrakeResolution
+    resolve_brakes(const BrakeRequest &request) const noexcept;
+
     // `drive_last` is the interval's single materialized
     // DriveTelemetry::to_map() — the caller owns the hoisted copy; every
     // consumer below sees the same lanes, matching the oracle's repeated
@@ -419,8 +477,7 @@ private:
                        std::string, std::vector<double>>> &components,
                    std::span<const double> velocity, double dt) const;
     [[nodiscard]] WireObject
-    balance_channel(double front, double rear, bool braking,
-                    bool rider_enabled);
+    balance_channel(const BrakeResolution &brakes);
     // sim._update_compiled_com_marker — model.site_pos write + the data
     // mirror; a no-op when the marker site is absent.
     void update_compiled_com_marker();
@@ -460,7 +517,8 @@ private:
     apply_forces_body(bool active, bool advance, double front, double rear,
                       const std::optional<std::vector<double>> &external,
                       const RideControl &caller_control,
-                      std::optional<bool> braking_opt);
+                      std::optional<bool> braking_opt,
+                      const BrakeResolution *resolved);
 
     // The mutate()'d body of advance_physics — separate frame keeps the
     // per-function stack budget sweep green on unoptimized builds.
@@ -479,7 +537,7 @@ private:
         double t = 0.;
         std::vector<double> q, v;
         double front = 0., rear = 0.;
-        bool braking = false;
+        BrakeResolution brakes{};
         double hold = 0.;
         const RideControl *control = nullptr;
         std::optional<writers::RiderPreparedAttachments> prepared;
@@ -554,6 +612,10 @@ private:
     RideControl applied_control_{};
     std::optional<rider::NamedEntries<rider::JointTerms>>
         held_rider_terms_;
+    // Launch part 1, task 4 — the test-only rider-command override.
+    // RuntimeRigAccess::set_rider_commands owns it; production never
+    // engages it, so part-1 rides resolve the intent's empty set.
+    std::optional<rider::RiderCommands> rider_commands_override_;
     bool rollback_hold_ = false;
     bool research_accounting_valid_ = true;
     bool initializing_ = false;

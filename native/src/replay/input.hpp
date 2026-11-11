@@ -11,6 +11,12 @@ struct ReplayInput {
     io::Value summary, manifest, metrics;
     std::map<std::string, std::vector<std::byte>> assets;
     std::vector<io::Value> requested, applied, observations, transitions;
+    // Launch part 1, task 4 — the deduplicated rider_commands evidence
+    // (rows shaped {step, commands}) beside the applied commands. The
+    // flag records whether the recording owns the channel table at all:
+    // older containers predate it and skip the compare entirely.
+    std::vector<io::Value> rider_commands;
+    bool has_rider_commands = false;
     std::vector<double> initial_state, final_state, terrain_vertices;
     std::int64_t episode_id = 0;
     std::optional<int> container_schema_version;

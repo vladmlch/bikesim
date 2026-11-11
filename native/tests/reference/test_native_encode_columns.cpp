@@ -230,6 +230,9 @@ WireObject drive_channels(double speed = 0., const WireObject &drive_over = {},
     drive.emplace_back("front_brake_demand", Wire{0.0});
     drive.emplace_back("rear_brake_demand", Wire{0.0});
     drive.emplace_back("rollback_brake_demand", Wire{0.0});
+    drive.emplace_back("rider_front_brake_demand", Wire{0.0});
+    drive.emplace_back("rider_rear_brake_demand", Wire{0.0});
+    drive.emplace_back("motor_braking", Wire{false});
     drive.emplace_back("front_brake_power_w", Wire{-0.0});
     drive.emplace_back("rear_brake_power_w", Wire{0.0});
     drive.emplace_back("front_brake_torque_nm", Wire{0.0});

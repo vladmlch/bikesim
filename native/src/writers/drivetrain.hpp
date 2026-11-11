@@ -121,12 +121,23 @@ namespace drivetrain {
         double dt{};
         bool braking = false, active = true, advance = true, contact = true;
         std::optional<double> slip, ceiling;
+        // Launch part 1, task 4 — the shift-admission gate. Disengaged
+        // keeps the historical `braking` wiring; engaged carries the
+        // step's merged shift_blocked predicate (rider brakes block
+        // admission without coasting the rider's legs).
+        std::optional<bool> shift_blocked;
     };
 
     struct TickInputs {
         RideControl control;
         double dt{}, speed{}, sensed{};
         bool braking = false, active = true, advance = true, contact = true;
+        // Launch part 1, task 4 — disengaged keeps `braking` wired to
+        // every consumer as before; engaged splits the predicates the
+        // way the step's BrakeResolution resolves them: motor_braking
+        // is the flag AssistController::step and the delivery gate see,
+        // shift_blocked the flag admission sees.
+        std::optional<bool> motor_braking, shift_blocked;
         std::optional<PedalingState> pedaling;
         std::optional<double> slip;
     };
@@ -285,7 +296,8 @@ namespace drivetrain {
         [[nodiscard]] PedalingState
         prepare(const RideControl &control, double dt, bool braking,
                 bool active, bool advance, bool contact,
-                std::optional<double> slip, std::optional<double> ceiling);
+                std::optional<double> slip, std::optional<double> ceiling,
+                std::optional<bool> shift_blocked = std::nullopt);
 
         [[nodiscard]] const ForceComponents &
         components(const RideControl &control, double dt,

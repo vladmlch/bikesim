@@ -40,6 +40,28 @@ Wire opt(std::optional<double> v) { return v ? Wire(*v) : Wire(nullptr); }
 Wire opt(const std::optional<std::string> &v) { return v ? Wire(*v) : Wire(nullptr); }
 const WireObject &section(const WireObject &v, std::string_view key) { return object(required(v, key)); }
 double field(const WireObject &v, std::string_view key) { return number(required(v, key)); }
+// Launch part 1, task 4 — field-order-sensitive equality for the flat
+// rider_commands record. The record carries only scalar leaves (double,
+// bool, string); nested objects/arrays compare unequal so a future
+// structured field can never silently deduplicate away.
+bool flat_record_equal(const WireObject &a, const WireObject &b) {
+    if (a.size() != b.size()) return false;
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        if (a[i].first != b[i].first) return false;
+        const bool equal = std::visit(
+            [](const auto &x, const auto &y) -> bool {
+                using X = std::decay_t<decltype(x)>;
+                using Y = std::decay_t<decltype(y)>;
+                if constexpr (!std::is_same_v<X, Y> ||
+                              std::is_same_v<X, WireObject> ||
+                              std::is_same_v<X, WireArray>) return false;
+                else return x == y;
+            },
+            a[i].second.value, b[i].second.value);
+        if (!equal) return false;
+    }
+    return true;
+}
 void validate_brake(double value) {
     if (!std::isfinite(value) || value < 0. || value > 1.)
         throw std::invalid_argument("brake demand must lie in [0, 1]");
@@ -203,6 +225,20 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     const auto applied = is_none(requested) ? std::nullopt : std::optional(number(requested));
     if (applied) e.torque_requested_nms += *applied * s.dt_s();
     e.torque_delivered_nms += delivered * s.dt_s();
+    // Launch part 1, task 4 — journal every committed interval whose
+    // rider_commands record changed. The commands are step-internal, so
+    // they bypass the motor-command delay queue; the replay evidence
+    // loop drains this journal with the same cursor discipline as the
+    // applied commands.
+    if (config_.capture_mode != ResearchCaptureMode::off) {
+        const auto &commands = section(s.channels, "rider_commands");
+        if (!e.rider_commands_last ||
+            !flat_record_equal(*e.rider_commands_last, commands)) {
+            e.rider_commands_journal.push_back(ResearchEpisode::RiderCommandRow{
+                .time_s = s.time_s, .step = s.interval_id, .commands = commands});
+            e.rider_commands_last = commands;
+        }
+    }
     e.tracker.update(*e.truth, s.dt_s(), delivered, applied);
     if (config_.capture_mode == ResearchCaptureMode::legacy) e.recorder.append(sample);
     const auto quality = research_quality(section(s.channels, "energy"), config_.maximum_energy_residual_ratio);
@@ -507,6 +543,32 @@ void NativeResearchRuntime::acknowledge_applied(std::int64_t cursor) {
         const auto count = cursor - e.applied_base;
         e.applied_records.erase(e.applied_records.begin(), e.applied_records.begin() + count);
         e.applied_base = cursor;
+    }
+}
+WireObject NativeResearchRuntime::prepare_rider_commands_since(std::int64_t cursor) const {
+    const ResearchGuard guard(busy_); require_open();
+    const auto &e = *episode_;
+    const auto end = e.rider_commands_base +
+        static_cast<std::int64_t>(e.rider_commands_journal.size());
+    if (cursor < e.rider_commands_base || cursor > end)
+        throw std::invalid_argument("rider commands cursor is stale or beyond the committed prefix");
+    WireArray rows;
+    rows.reserve(static_cast<std::size_t>(end - cursor));
+    for (auto index = cursor; index < end; ++index)
+        rows.emplace_back(e.rider_commands_journal[static_cast<std::size_t>(index - e.rider_commands_base)].as_wire());
+    return {{"rows", std::move(rows)}, {"next_cursor", end}};
+}
+void NativeResearchRuntime::acknowledge_rider_commands(std::int64_t cursor) {
+    const ResearchGuard guard(busy_); require_open();
+    auto &e = *episode_;
+    const auto end = e.rider_commands_base +
+        static_cast<std::int64_t>(e.rider_commands_journal.size());
+    if (cursor < e.rider_commands_base || cursor > end)
+        throw std::invalid_argument("rider commands acknowledgement is stale or beyond the committed prefix");
+    if (config_.capture_mode == ResearchCaptureMode::verify) {
+        const auto count = cursor - e.rider_commands_base;
+        e.rider_commands_journal.erase(e.rider_commands_journal.begin(), e.rider_commands_journal.begin() + count);
+        e.rider_commands_base = cursor;
     }
 }
 WireArray NativeResearchRuntime::commands_requested() const {

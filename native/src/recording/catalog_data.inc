@@ -1,7 +1,7 @@
 // Statically transcribed from the source catalog; no runtime schema generation.
 // Split into <64 KiB raw literals: a single concatenated literal exceeds the
 // ISO C++ minimum maximum (65536) that -Woverlength-strings enforces.
-static constexpr std::array<std::string_view, 6> kCatalogDocumentParts{
+static constexpr std::array<std::string_view, 7> kCatalogDocumentParts{
 R"CATALOG({
   "schema": 1,
   "tables": [
@@ -2416,6 +2416,66 @@ R"CATALOG(          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::Drive
           "measurement": "declared",
           "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._rollback_brake_demand",
           "description": "hill-hold reflex contribution inside the effective demands"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "drive",
+            "rider_front_brake_demand"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rider_front_brake_demand",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/step.cpp::PhysicalStep::resolve_brakes",
+          "description": "rider-owned front brake demand inside the effective demands"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "drive",
+            "rider_rear_brake_demand"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rider_rear_brake_demand",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/step.cpp::PhysicalStep::resolve_brakes",
+          "description": "rider-owned rear brake demand inside the effective demands"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "drive",
+            "motor_braking"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "motor_braking",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/step.cpp::PhysicalStep::resolve_brakes",
+          "description": "merged caller-or-rider braking predicate the assist controller saw this interval"
         },
         {
           "frame": "n/a",
@@ -8144,6 +8204,239 @@ R"CATALOG(                      "axes": null,
       "description": "rider-sensed channel: human-perception record beside the model telemetry (launch part 1)",
       "source": "native/src/runtime/step.cpp::PhysicalStep::update_rider_senses"
     },
+)CATALOG",
+R"CATALOG(    {
+      "claims": [
+        "rider_commands"
+      ],
+      "exempt_keys": [],
+      "name": "channel_rider_commands",
+      "kind": "channels",
+      "keys": [
+        {
+          "frame": "n/a",
+          "path": [
+            "episode_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "episode_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "n/a",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+          "description": "episode identity within the owning run"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "interval_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "interval_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+          "description": "accounted physics interval identifier, consecutive per episode"
+        }
+      ],
+      "fields": [
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "front_brake"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "front_brake",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "rider-commanded front brake demand in force this interval"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "rear_brake"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rear_brake",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "rider-commanded rear brake demand in force this interval"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "shift_request"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "shift_request",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "rider shift request in force this interval: none|up|down"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "owns_shifting"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "owns_shifting",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "the rider owns shifting decisions this interval"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "source"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "source",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "command source this interval: intent|test_override"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "legs_coast"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "legs_coast",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "resolved caller-braking predicate the legs coasted on"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "motor_braking"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "motor_braking",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "resolved merged braking predicate the assist controller saw"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "shift_blocked"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "shift_blocked",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "resolved shift-admission block this interval"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_commands",
+            "riding"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "riding",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider commands",
+          "description": "resolved balance-monitor riding predicate this interval"
+        }
+      ],
+      "description": "rider-owned command channel: requested commands plus the resolved braking predicates beside the model telemetry (launch part 1, task 4)",
+      "source": "native/src/runtime/step.cpp::PhysicalStep::publish_raw"
+    },
     {
       "claims": [
         "attachment_violations",
@@ -9099,6 +9392,63 @@ R"CATALOG(                      "axes": null,
           "measurement": "measured",
           "source": "sim/research/environment.py; native/src/runtime/research.cpp",
           "description": "rollback brake demand"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_front_brake_demand"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rider_front_brake_demand",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "control_period",
+          "optional": true,
+          "measurement": "measured",
+          "source": "sim/research/environment.py; native/src/runtime/research.cpp",
+          "description": "rider-owned front brake demand"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_rear_brake_demand"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rider_rear_brake_demand",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "control_period",
+          "optional": true,
+          "measurement": "measured",
+          "source": "sim/research/environment.py; native/src/runtime/research.cpp",
+          "description": "rider-owned rear brake demand"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "motor_braking"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "motor_braking",
+          "dtype": "boolean",
+          "unit": "1",
+          "phase": "control_period",
+          "optional": true,
+          "measurement": "measured",
+          "source": "sim/research/environment.py; native/src/runtime/research.cpp",
+          "description": "merged braking predicate the assist controller saw"
         }
       ],
       "description": "commands applied",

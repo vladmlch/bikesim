@@ -59,7 +59,15 @@ void catalog_contract() {
     // leaf fields (channel_rider_senses.{episode_id, interval_id,
     // hand_press_n, speed_mps, rear_teeth, surface_front, surface_ahead,
     // grade_ahead} — launch part 1 task 2, senses are transport only).
-    bt::require(count == 488, "full reviewed catalog retains all 488 repeated/nested descriptor occurrences");
+    // 505 = 488 plus launch part 1 task 4's reviewed additions:
+    // channel_drive.{rider_front_brake_demand, rider_rear_brake_demand,
+    // motor_braking}, the channel_rider_commands identity keys and nine
+    // leaf fields ({episode_id, interval_id, front_brake, rear_brake,
+    // shift_request, owns_shifting, source, legs_coast, motor_braking,
+    // shift_blocked, riding}), and commands_applied's three new demand
+    // columns ({rider_front_brake_demand, rider_rear_brake_demand,
+    // motor_braking}).
+    bt::require(count == 505, "full reviewed catalog retains all 505 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

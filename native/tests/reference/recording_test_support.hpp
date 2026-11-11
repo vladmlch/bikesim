@@ -181,6 +181,9 @@ inline WireObject drive_channels(double brake) {
         {"front_brake_demand", Wire{brake}},
         {"rear_brake_demand", Wire{brake}},
         {"rollback_brake_demand", Wire{0.}},
+        {"rider_front_brake_demand", Wire{0.}},
+        {"rider_rear_brake_demand", Wire{0.}},
+        {"motor_braking", Wire{false}},
         {"front_brake_power_w", Wire{0.}}, {"rear_brake_power_w", Wire{0.}},
         {"front_brake_torque_nm", Wire{0.}}, {"rear_brake_torque_nm", Wire{0.}}};
 }

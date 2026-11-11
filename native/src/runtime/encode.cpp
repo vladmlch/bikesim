@@ -1424,12 +1424,17 @@ std::int64_t emit_channels(std::span<const SamplePtr> rows,
 // (Python keeps absent keys out of the dict entirely).
 struct AppliedTuple {
     const Wire *control = nullptr;
-    std::array<const Wire *, 3> demands{};
+    std::array<const Wire *, 6> demands{};
     bool engaged = false;  // mirrors `previous_applied is not None`
 };
 
-constexpr std::array<std::string_view, 3> kBrakeDemands{
-    "front_brake_demand", "rear_brake_demand", "rollback_brake_demand"};
+// Launch part 1, task 4 — the applied-commands export carries the new
+// drive columns in full: the rider-owned demands and the merged
+// motor-braking predicate join the caller/rollback demands, so an
+// applied tuple changes whenever the resolved braking changes.
+constexpr std::array<std::string_view, 6> kBrakeDemands{
+    "front_brake_demand", "rear_brake_demand", "rollback_brake_demand",
+    "rider_front_brake_demand", "rider_rear_brake_demand", "motor_braking"};
 
 // Mirrors `{key: drive[key] for key in kBrakeDemands if key in drive}` over
 // `channels.get('drive') or {}`: an absent/falsy/non-dict drive yields an
@@ -1437,8 +1442,8 @@ constexpr std::array<std::string_view, 3> kBrakeDemands{
 // still runs — str does a substring check, a list an element check; a hit
 // would then reject inside `drive[key]`, so reaching one raises. Numbers
 // and bools reject at `key in drive` outright.
-std::array<const Wire *, 3> applied_demands(const Wire &drive) {
-    std::array<const Wire *, 3> demands{};
+std::array<const Wire *, 6> applied_demands(const Wire &drive) {
+    std::array<const Wire *, 6> demands{};
     if (const auto *object = std::get_if<WireObject>(&drive.value)) {
         for (std::size_t k = 0; k < kBrakeDemands.size(); ++k)
             demands[k] = sample_wire::find(*object, kBrakeDemands[k]);
@@ -1746,6 +1751,12 @@ std::vector<AppliedCommandRow> applied_command_rows_native(
                 row.rear_brake_demand = *actual.demands[1];
             if (actual.demands[2] != nullptr)
                 row.rollback_brake_demand = *actual.demands[2];
+            if (actual.demands[3] != nullptr)
+                row.rider_front_brake_demand = *actual.demands[3];
+            if (actual.demands[4] != nullptr)
+                row.rider_rear_brake_demand = *actual.demands[4];
+            if (actual.demands[5] != nullptr)
+                row.motor_braking = *actual.demands[5];
             out.push_back(std::move(row));
         }
         previous = actual;

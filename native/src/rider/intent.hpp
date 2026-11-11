@@ -83,6 +83,25 @@ struct IntentControl {
     bool rider_enabled = true;
 };
 
+// Launch part 1, task 4 — the rider-owned command set. Part 1's intent
+// always resolves to the empty commands below (no brakes, no shift
+// request, shifting owned by the caller's cadence shifter); the channel
+// exists so runtime, recording and tests carry the real shape before a
+// later part teaches the intent to fill it. ShiftRequest up moves one
+// cog smaller (a harder gear), down one cog larger — the same convention
+// the cadence shifter's direction labels already use.
+enum class ShiftRequest : std::uint8_t { up, down };
+struct RiderCommands {
+    double front_brake = 0.;
+    double rear_brake = 0.;
+    std::optional<ShiftRequest> shift_request;
+    bool owns_shifting = false;
+};
+// Brake demands are fractions in [0, 1] — validate rejects nonfinite or
+// out-of-range values with std::invalid_argument, the same error every
+// other input-boundary check raises.
+void validate(const RiderCommands &commands);
+
 // rider_program.py body_pulse — a smooth finite torso-thrust wish. Runs
 // its input validation on every call exactly like the oracle.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
@@ -217,6 +236,12 @@ public:
     [[nodiscard]] State state() const;
     void restore(const State &state);
     [[nodiscard]] const Intent &intent() const { return intent_; }
+    // Launch part 1, task 4: the rider-owned commands the resolver
+    // currently resolves to — always the empty set in part 1; part 5's
+    // produced commands will update this on the resolve() cadence.
+    [[nodiscard]] const RiderCommands &commands() const noexcept {
+        return commands_;
+    }
     [[nodiscard]] const IntentConfig &config() const { return config_; }
     [[nodiscard]] const SeatedClimbPolicy &policy() const { return policy_; }
     [[nodiscard]] SeatedClimbPolicy &policy() { return policy_; }
@@ -229,6 +254,7 @@ private:
     SeatedClimbPolicy policy_;
     std::int64_t last_tick_step_ = -1;
     Intent intent_{};
+    RiderCommands commands_{};
 };
 
 } // namespace rider

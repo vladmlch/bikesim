@@ -57,6 +57,20 @@ void validate_posture(const RiderPosture &posture) {
     }
 }
 
+// Launch part 1, task 4 — the rider command set's input contract. Brake
+// demands are fractions of full travel, so the [0, 1] envelope is checked
+// here exactly like the posture bounds above.
+void validate(const RiderCommands &commands) {
+    if (!std::isfinite(commands.front_brake) ||
+        commands.front_brake < 0. || commands.front_brake > 1.)
+        throw std::invalid_argument(
+            "rider front_brake demand must lie in [0, 1]");
+    if (!std::isfinite(commands.rear_brake) ||
+        commands.rear_brake < 0. || commands.rear_brake > 1.)
+        throw std::invalid_argument(
+            "rider rear_brake demand must lie in [0, 1]");
+}
+
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
 double body_pulse(double time_s, double start_s, double duration_s,
                   double amplitude_rad) {

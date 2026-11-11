@@ -80,6 +80,22 @@ struct ResearchEpisode {
     std::optional<ResearchCommand> last_requested;
     std::int64_t requested_count = 0, completed_count = 0, applied_base = 0;
     std::vector<ResearchCommand> requested, applied_records;
+    // Launch part 1, task 4 — the deduplicated rider_commands journal
+    // (one row per channel-record change, cursor-drained like
+    // applied_records; `last` is the previous interval's record for the
+    // change comparison).
+    struct RiderCommandRow {
+        double time_s = 0.;
+        std::int64_t step = 0;
+        WireObject commands;
+        [[nodiscard]] WireObject as_wire() const {
+            return {{"time_s", time_s}, {"step", step},
+                    {"commands", commands}};
+        }
+    };
+    std::vector<RiderCommandRow> rider_commands_journal;
+    std::optional<WireObject> rider_commands_last;
+    std::int64_t rider_commands_base = 0;
     std::vector<SensorObservation> observations;
     std::vector<ResearchTransition> transitions;
     SensorObservation observation;
@@ -133,6 +149,14 @@ public:
     [[nodiscard]] OwnedResearchEpisode legacy_snapshot() const;
     [[nodiscard]] WireObject prepare_applied_since(std::int64_t cursor) const;
     void acknowledge_applied(std::int64_t cursor);
+    // Launch part 1, task 4 — the rider_commands journal: one row per
+    // committed interval whose rider_commands channel record differs
+    // from the previous interval's. Cursor-scanned exactly like the
+    // applied-commands journal so the replay evidence loop compares the
+    // recorded channel against the recomputed one; a ride without an
+    // installed rider command produces exactly the initial row.
+    [[nodiscard]] WireObject prepare_rider_commands_since(std::int64_t cursor) const;
+    void acknowledge_rider_commands(std::int64_t cursor);
     [[nodiscard]] Wire last_requested() const;
     [[nodiscard]] WireArray commands_requested() const;
     [[nodiscard]] WireArray commands_applied() const;
@@ -157,6 +181,7 @@ public:
     [[nodiscard]] std::optional<std::string> take_pending_warning();
 private:
     friend class bike::golden::RuntimeAccess;
+    friend class bike::validation::RuntimeRigAccess;
     void require_open() const;
     void consume_samples(bool stop_at_outcome = true);
     void consume_sample(const SamplePtr &sample, bool stop_at_outcome);

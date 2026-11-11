@@ -15,6 +15,7 @@
     "channel_control",
     "channel_rider",
     "channel_rider_senses",
+    "channel_rider_commands",
     "channel_model_status",
     "commands_requested",
     "commands_applied",

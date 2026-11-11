@@ -185,6 +185,11 @@ struct AppliedCommandRow {
     std::optional<Wire> front_brake_demand;
     std::optional<Wire> rear_brake_demand;
     std::optional<Wire> rollback_brake_demand;
+    // Launch part 1, task 4 — the rider-owned demands and the merged
+    // motor-braking predicate, exported in full like the caller lanes.
+    std::optional<Wire> rider_front_brake_demand;
+    std::optional<Wire> rider_rear_brake_demand;
+    std::optional<Wire> motor_braking;
 };
 
 // One derived_transition event row — the channel diff inside

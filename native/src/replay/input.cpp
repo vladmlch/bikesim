@@ -55,6 +55,55 @@ std::vector<Value> stream(const recording::Recording& reader, const recording::T
     }
     return out;
 }
+// Launch part 1, task 4 — the channel_rider_commands table read as the
+// journal-shaped evidence stream {step, commands}: consecutive identical
+// records fold to their first interval, exactly how the runtime journal
+// rows land. Rows carry no time_s (the channel table has none); the
+// replay check compares step and commands.
+std::vector<Value> rider_command_stream(const recording::Recording& reader,
+                                        const recording::TableSpec& spec,
+                                        std::int64_t episode) {
+    const auto& identity = spec.keys.at(1).key; const std::array params{integer(episode)};
+    auto cursor = reader.stream("SELECT * FROM " + quote(spec.name) + " WHERE episode_id=? ORDER BY " + quote(identity), params);
+    std::vector<Value> out;
+    std::optional<Object> previous;
+    for (;;) {
+        const auto batch = cursor.next_batch(); if (batch.empty()) break;
+        std::vector<Object> rows;
+        for (const auto& row : batch) {
+            Object decoded_row, channel;
+            auto const take = [&](const recording::FieldSpec& item, Object& dst) {
+                const auto* value = find(row, item.key); if (!value) throw recording::RecordingError("missing recorded stream field: " + item.key);
+                if (item.optional && !io::as_bool(field(row, item.key + "_present"), "recorded presence")) return;
+                dst.emplace_back(item.key, decoded(*value, item));
+            };
+            for (const auto& item : spec.keys) take(item, decoded_row);
+            for (const auto& item : spec.fields) take(item, channel);
+            // Channel rows re-encode under their claimed root: the project
+            // step only accepts the root key at top level.
+            for (const auto& root : spec.claims)
+                decoded_row.emplace_back(root, Value{channel});
+            rows.push_back(std::move(decoded_row));
+        }
+        // Re-encoding is the source's semantic presence/shape validation.
+        (void)recording::encode_rows(spec, rows, episode);
+        for (auto& row : rows) {
+            const auto step = count(field(row, identity));
+            (void)pop(row, "episode_id"); (void)pop(row, identity);
+            for (auto& [root, channel] : row) {
+                if (!previous || !equal(channel, Value{*previous})) {
+                    previous = std::get<Object>(channel.data);
+                    out.push_back(Value{Object{{"step", integer(step)}, {"commands", Value{std::move(channel)}}}});
+                }
+            }
+        }
+    }
+    return out;
+}
+bool table_exists(const recording::Recording& reader, std::string_view name) {
+    const std::array params{text(name)};
+    return !reader.rows("SELECT table_name FROM information_schema.tables WHERE table_name=?", params).empty();
+}
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 ReplayInput database_input(const std::filesystem::path& path, std::optional<std::int64_t> episode) {
@@ -109,6 +158,12 @@ ReplayInput database_input(const std::filesystem::path& path, std::optional<std:
     out.applied = stream(reader, recording::table_spec("commands_applied"), out.episode_id);
     out.observations = stream(reader, recording::table_spec("observations"), out.episode_id);
     out.transitions = stream(reader, recording::table_spec("transitions"), out.episode_id);
+    // Launch part 1, task 4 — the rider_commands channel rides the same
+    // evidence contract; containers written before the channel existed
+    // skip the compare rather than failing to open.
+    out.has_rider_commands = table_exists(reader, "channel_rider_commands");
+    if (out.has_rider_commands)
+        out.rider_commands = rider_command_stream(reader, recording::table_spec("channel_rider_commands"), out.episode_id);
     for (std::size_t i = 0; i < out.transitions.size(); ++i) {
         auto& row = std::get<Object>(out.transitions[i].data);
         if (count(pop(row, "request_id")) != static_cast<std::int64_t>(i) || count(pop(row, "previous_observation_id")) != static_cast<std::int64_t>(i) ||

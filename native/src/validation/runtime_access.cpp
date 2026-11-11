@@ -3,6 +3,7 @@
 #include "../model_access.hpp"
 #include "../initialization/context.hpp"
 #include "../research/evidence.hpp"
+#include "../runtime/research.hpp"
 #include <atomic>
 
 namespace bike::validation {
@@ -23,6 +24,12 @@ void RuntimeRigAccess::schedule_rider_pulse(runtime::NativeRideRuntime& ride,dou
 }
 ::rider::IntentSignals RuntimeRigAccess::fold_intent_signals(runtime::NativeRideRuntime& ride,const runtime::WireObject& sensors_and_tires) {
     const Guard guard(ride.advancing_);ride.require_open();ride.physical_->update_intent_signals(sensors_and_tires);return ride.physical_->intent_signals();
+}
+void RuntimeRigAccess::set_rider_commands(runtime::NativeRideRuntime& ride,std::optional<::rider::RiderCommands> commands) {
+    const Guard guard(ride.advancing_);ride.require_open();if(commands)::rider::validate(*commands);ride.physical_->rider_commands_override_=commands;
+}
+void RuntimeRigAccess::set_rider_commands(runtime::NativeResearchRuntime& research,std::optional<::rider::RiderCommands> commands) {
+    const Guard guard(research.busy_);research.require_open();set_rider_commands(*research.runtime_,commands);
 }
 void RuntimeRigAccess::release_rider(Stepper& stepper,runtime::PhysicalStep& physical){
     if(stepper.has_rider_contacts())stepper.rider_contacts_release_all();

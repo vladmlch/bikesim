@@ -50,6 +50,9 @@ public:
                     if (command.front_brake_demand) row.emplace_back("front_brake_demand", research::wire_value(*command.front_brake_demand));
                     if (command.rear_brake_demand) row.emplace_back("rear_brake_demand", research::wire_value(*command.rear_brake_demand));
                     if (command.rollback_brake_demand) row.emplace_back("rollback_brake_demand", research::wire_value(*command.rollback_brake_demand));
+                    if (command.rider_front_brake_demand) row.emplace_back("rider_front_brake_demand", research::wire_value(*command.rider_front_brake_demand));
+                    if (command.rider_rear_brake_demand) row.emplace_back("rider_rear_brake_demand", research::wire_value(*command.rider_rear_brake_demand));
+                    if (command.motor_braking) row.emplace_back("motor_braking", research::wire_value(*command.motor_braking));
                     rows.push_back(std::move(row));
                 }
                 if (!rows.empty()) sink("commands_applied", encode_rows(table_spec("commands_applied"), rows, episode_->generation));

@@ -873,6 +873,7 @@
     "rider_active_request_nm",
     "rider_allocation",
     "rider_balance",
+    "rider_commands",
     "rider_control",
     "rider_effort_budget_exceeded",
     "rider_effort_observation",
@@ -1329,6 +1330,7 @@
     "channel_control",
     "channel_rider",
     "channel_rider_senses",
+    "channel_rider_commands",
     "channel_model_status"
   ]
 }

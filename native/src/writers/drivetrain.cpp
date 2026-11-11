@@ -467,11 +467,13 @@ namespace drivetrain {
     PedalingState DrivetrainWriter::prepare(const RideControl &control, double dt,
                                             bool braking, bool active, bool advance,
                                             bool contact, std::optional<double> slip,
-                                            std::optional<double> ceiling) {
+                                            std::optional<double> ceiling,
+                                            std::optional<bool> shift_blocked) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         const auto tick = stage_prepare(
             {.control = control, .dt = dt, .braking = braking, .active = active,
-             .advance = advance, .contact = contact, .slip = slip, .ceiling = ceiling});
+             .advance = advance, .contact = contact, .slip = slip, .ceiling = ceiling,
+             .shift_blocked = shift_blocked});
         const auto result = tick.result;
         commit(tick);
         return result;
@@ -484,8 +486,9 @@ namespace drivetrain {
                                  std::optional<double> slip) {
         const auto tick = stage_components(
             {.control = c, .dt = dt, .speed = speed, .sensed = sensed, .braking = braking,
-             .active = active, .advance = advance, .contact = contact, .pedaling = pedaling,
-             .slip = slip});
+             .active = active, .advance = advance, .contact = contact,
+             .motor_braking = std::nullopt, .shift_blocked = std::nullopt,
+             .pedaling = pedaling, .slip = slip});
         commit(tick);
         return components_;
     }
@@ -680,7 +683,8 @@ namespace drivetrain {
             // upshifts; only the shaft sees that "too easy".
             const bool shifted = shifting_scratch_.update(
                 v[static_cast<std::size_t>(shaft_joint_.dof)] * 60. / (2. * std::numbers::pi),
-                required, in.dt, enabled && effort > 0., in.braking, in.contact, in.slip);
+                required, in.dt, enabled && effort > 0.,
+                in.shift_blocked.value_or(in.braking), in.contact, in.slip);
             const auto stage_ratio = [this, &bank](double ratio) {
                 // Compose onto the candidate already staged this tick or
                 // seed the bank slot from the live transmission.
@@ -808,7 +812,8 @@ namespace drivetrain {
                                 {.control = in.control, .dt = in.dt, .braking = in.braking,
                                  .active = in.active, .advance = in.advance,
                                  .contact = in.contact, .slip = in.slip,
-                                 .ceiling = std::nullopt},
+                                 .ceiling = std::nullopt,
+                                 .shift_blocked = in.shift_blocked},
                                 pedaling_scratch_);
             bank.pedaling = pedaling_scratch_.state();
             ps = bank.result;
@@ -834,9 +839,16 @@ namespace drivetrain {
                     : 0.;
         m.sensor = config_.drive_mode == "crank_effort" ? m.human : in.sensed;
         m.assist_sensor = ps.mode == PedalMode::pedaling ? m.sensor : 0.;
+        // Launch part 1, task 4 — the motor-braking flag the assist
+        // controller resets on. Disengaged keeps the historical braking
+        // wiring; engaged carries the step's merged caller|rider demand
+        // so a rider-commanded brake resets the controller through the
+        // real braking path (never motor_limit_nm, which would leave
+        // the run-on and gain state armed).
+        const bool motor_braking = in.motor_braking.value_or(in.braking);
         if (in.active && effort_) {
             assist_scratch_ = assist_;
-            m.request = assist_scratch_.step(m.assist_sensor, m.cadence, in.speed, in.braking,
+            m.request = assist_scratch_.step(m.assist_sensor, m.cadence, in.speed, motor_braking,
                                     in.dt, in.control.motor_torque_nm, rpm);
             bank.assist = assist_scratch_.state();
         }
@@ -844,7 +856,7 @@ namespace drivetrain {
                        ? std::min(m.request, *in.control.motor_limit_nm)
                        : m.request;
         m.delivered = m.safety;
-        m.enabled = in.active && m.delivered > 0. && !in.braking;
+        m.enabled = in.active && m.delivered > 0. && !motor_braking;
         if (!m.enabled)
             m.delivered = 0.;
         return m;
@@ -892,7 +904,7 @@ namespace drivetrain {
         last.set_optional(TelemetryField::human_setpoint_nm,
                           in.control.human_torque_nm);
         last.set(TelemetryField::assist_demand_gated,
-                 in.braking ||
+                 in.motor_braking.value_or(in.braking) ||
                  (m.assist_sensor <= config_.policies.assist.engage_torque_nm &&
                   bank.assist.release_hold_left_s <= 0.));
         last.set(TelemetryField::assist_sensor_nm, m.assist_sensor);

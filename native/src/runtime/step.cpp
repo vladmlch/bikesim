@@ -1214,12 +1214,13 @@ PhysicalStep::apply_forces(bool active, bool advance, double front,
                            double rear,
                            const std::optional<std::vector<double>> &external,
                            const RideControl &caller_control,
-                           std::optional<bool> braking_opt) {
+                           std::optional<bool> braking_opt,
+                           const BrakeResolution *resolved) {
     // The staged body sits in its own frame so the mutate lambda stays a
     // thin call; the debug/asan frame-budget sweep bounds each function.
     return stepper_->mutate([&]() -> RuntimeContacts {
         return apply_forces_body(active, advance, front, rear, external,
-                                 caller_control, braking_opt);
+                                 caller_control, braking_opt, resolved);
     });
 }
 
@@ -1227,7 +1228,8 @@ RuntimeContacts
 PhysicalStep::apply_forces_body(
     bool active, bool advance, double front, double rear,
     const std::optional<std::vector<double>> &external,
-    const RideControl &caller_control, std::optional<bool> braking_opt) {
+    const RideControl &caller_control, std::optional<bool> braking_opt,
+    const BrakeResolution *resolved) {
     {
         mjModel *m = stepper_->model();
         mjData *d = stepper_->data();
@@ -1268,15 +1270,29 @@ PhysicalStep::apply_forces_body(
         }
         if (advance)
             applied_control_ = control;
+        // Launch part 1, task 4: one BrakeResolution per physical step.
+        // advance_body resolves before calling (rollback included); the
+        // probe/apply callers resolve here on the incoming demands —
+        // caller braking stays the caller-demand predicate in both
+        // routes.
         const bool braking =
             braking_opt.value_or(front > 0. || rear > 0.);
+        const BrakeResolution brakes =
+            resolved != nullptr
+                ? *resolved
+                : resolve_brakes({.caller_front = front,
+                                  .caller_rear = rear,
+                                  .rollback_demand = 0.,
+                                  .caller_braking = braking,
+                                  .rider_enabled =
+                                      control.rider_enabled});
 
         std::ranges::fill(wbuf(d->qfrc_applied, m->nv), 0.);
         std::ranges::fill(wbuf(d->xfrc_applied, m->nbody * 6), 0.);
         std::ranges::fill(wbuf(d->ctrl, m->nu), 0.);
         // dof_frictionloss is a position-stage model input — a bound that
         // actually changed invalidates the cached makeConstraint rows.
-        if (brake_.apply(m, front, rear))
+        if (brake_.apply(m, brakes.final_front, brakes.final_rear))
             stepper_->note_posvel_stale();
         // The latched elastic bite at standstill; an advancing pass may
         // latch or release, a probe reads the committed latch
@@ -1288,7 +1304,8 @@ PhysicalStep::apply_forces_body(
         // floor the equilibrium probe never decays below (the savage
         // settle defect).
         std::vector<double> brake_hold =
-            brake_.hold_qfrc(m, d, front, rear, advance, !active);
+            brake_.hold_qfrc(m, d, brakes.final_front, brakes.final_rear,
+                             advance, !active);
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{
@@ -1297,11 +1314,12 @@ PhysicalStep::apply_forces_body(
             .human_torque_nm = control.human_torque_nm,
             .rider_enabled = control.rider_enabled};
         const drivetrain::PedalingState pedaling = stepper_->drive().prepare(
-            drive_control, dt, braking, active, advance,
+            drive_control, dt, brakes.legs_coast, active, advance,
             contacts_.rear_controller_grounded.value_or(false),
             contacts_.rear_slip_mps,
             automatic_effort ? control.human_torque_nm
-                             : std::optional<double>{});
+                             : std::optional<double>{},
+            brakes.shift_blocked);
         // Oracle: the apply_forces entry forward runs only while
         // `initializing` — init callers mutate qpos/qvel or
         // constraint-defining model constants between apply_forces calls
@@ -1384,10 +1402,16 @@ PhysicalStep::apply_forces_body(
             .speed = buf(d->qvel, m->nv)[static_cast<std::size_t>(
                 root_x_dofadr_)],
             .sensed = sensed,
-            .braking = braking,
+            // Task 4: .braking stays the caller-only predicate the
+            // legs-pedaling fallback reads; .motor_braking is the
+            // merged demand the assist controller resets on, and
+            // .shift_blocked gates admission the same way.
+            .braking = brakes.legs_coast,
             .active = active,
             .advance = advance,
             .contact = true,
+            .motor_braking = brakes.motor_braking,
+            .shift_blocked = brakes.shift_blocked,
             .pedaling = pedaling,
             .slip = std::nullopt};
         const auto tick = stepper_->drive().stage_components(tick_inputs);
@@ -1613,10 +1637,17 @@ RawStep PhysicalStep::advance_body(
         const double hold = rollback_brake_demand(
             buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
             &control);
-        if (hold > 0.) {
-            front = std::max(front, hold);
-            rear = std::max(rear, hold);
-        }
+        // Launch part 1, task 4: one resolution per physical step —
+        // caller braking is read BEFORE the rollback merge (the reflex
+        // alone never coasts the legs or declares motor braking), then
+        // caller, rollback and rider demands merge into the final
+        // per-wheel demands once.
+        const BrakeResolution brakes = resolve_brakes(
+            {.caller_front = front, .caller_rear = rear,
+             .rollback_demand = hold, .caller_braking = braking,
+             .rider_enabled = control.rider_enabled});
+        front = brakes.final_front;
+        rear = brakes.final_rear;
         if (golden != nullptr) {
             golden->qpos = buffer_copy(d->qpos, m->nq);
             golden->qvel = buffer_copy(d->qvel, m->nv);
@@ -1628,7 +1659,8 @@ RawStep PhysicalStep::advance_body(
                 golden->tire_state = stepper_->tire_state();
             }
         }
-        (void)apply_forces(true, true, front, rear, ext, control, braking);
+        (void)apply_forces(true, true, front, rear, ext, control, braking,
+                           &brakes);
         if (golden != nullptr) {
             if (golden->test_exit_mutation_ != nullptr)
                 golden->test_exit_mutation_(golden->test_exit_context_, wbuf(d->qfrc_applied, m->nv));
@@ -1685,7 +1717,7 @@ RawStep PhysicalStep::advance_body(
                            .v = std::move(v),
                            .front = front,
                            .rear = rear,
-                           .braking = braking,
+                           .brakes = brakes,
                            .hold = hold,
                            .control = &control,
                            .prepared = std::move(prepared),
@@ -1828,6 +1860,15 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         wire_set(in.drive, "front_brake_demand", Wire(front));
         wire_set(in.drive, "rear_brake_demand", Wire(rear));
         wire_set(in.drive, "rollback_brake_demand", Wire(hold));
+        // Launch part 1, task 4 — the rider-owned demands beside the
+        // caller/rollback lanes and the merged predicate the assist
+        // controller actually saw this interval.
+        wire_set(in.drive, "rider_front_brake_demand",
+                 Wire(in.brakes.rider_front));
+        wire_set(in.drive, "rider_rear_brake_demand",
+                 Wire(in.brakes.rider_rear));
+        wire_set(in.drive, "motor_braking",
+                 Wire(in.brakes.motor_braking));
         const auto connect_rows = connect_equality_rows(m, d);
         const auto efc_pos = buf(d->efc_pos, d->nefc);
         for (const int row: connect_rows)
@@ -1871,9 +1912,6 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         const double t = in.t;
         const std::vector<double> &q = in.q;
         const std::vector<double> &v = in.v;
-        const double front = in.front, rear = in.rear;
-        const bool braking = in.braking;
-        const RideControl &control = *in.control;
         const WireObject &mass0 = in.mass0;
         ForceMap components = std::move(in.components);
         const writers::RiderSettleOutcome &settle = in.settle;
@@ -1998,6 +2036,39 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             channels.emplace_back("rider_senses",
                                   Wire(std::move(senses)));
         }
+        {
+            // Launch part 1, task 4 — the rider-owned command set and
+            // this step's resolved braking predicates, every interval.
+            const auto &commands = rider_commands();
+            WireObject record;
+            record.emplace_back("front_brake",
+                                Wire(commands.front_brake));
+            record.emplace_back("rear_brake",
+                                Wire(commands.rear_brake));
+            record.emplace_back(
+                "shift_request",
+                Wire(commands.shift_request.has_value()
+                         ? (*commands.shift_request ==
+                                    rider::ShiftRequest::up
+                                ? "up"
+                                : "down")
+                         : "none"));
+            record.emplace_back("owns_shifting",
+                                Wire(commands.owns_shifting));
+            record.emplace_back(
+                "source",
+                Wire(rider_commands_overridden() ? "test_override"
+                                                 : "intent"));
+            record.emplace_back("legs_coast",
+                                Wire(in.brakes.legs_coast));
+            record.emplace_back("motor_braking",
+                                Wire(in.brakes.motor_braking));
+            record.emplace_back("shift_blocked",
+                                Wire(in.brakes.shift_blocked));
+            record.emplace_back("riding", Wire(in.brakes.riding));
+            channels.emplace_back("rider_commands",
+                                  Wire(std::move(record)));
+        }
         channels.emplace_back("mass", Wire(mass0));
         if (contact_crash.has_value())
             channels.emplace_back("contact_crash_cause",
@@ -2007,8 +2078,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         channels.emplace_back("control", Wire(wire_control(applied_control_)));
         channels.emplace_back(
             "rider_balance",
-            Wire(balance_channel(front, rear, braking,
-                                 control.rider_enabled)));
+            Wire(balance_channel(in.brakes)));
         // state() deep-copies every named mirror — one snapshot feeds
         // the four rider reads below.
         const auto rider_state =
@@ -2228,6 +2298,40 @@ double PhysicalStep::rollback_brake_demand(double speed_mps,
     else
         rollback_hold_ = speed_mps < -cfg.rollback_engage_mps;
     return rollback_hold_ ? cfg.rollback_demand : 0.;
+}
+
+// ---- resolve_brakes (launch part 1, task 4) ---------------------------
+// The single per-step braking resolution — every consumer reads this one
+// result. The caller demand stays the caller-demand predicate
+// (legs_coast); the rollback reflex only merges into the final demands,
+// never raises a predicate by itself; the rider demand merges into the
+// final demands AND the shared braking predicates, but not into
+// legs_coast — the rider's own legs keep pressing under a rider-commanded
+// brake.
+
+BrakeResolution
+PhysicalStep::resolve_brakes(const BrakeRequest &request) const noexcept {
+    const auto &commands = rider_commands();
+    BrakeResolution out;
+    out.caller_front = request.caller_front;
+    out.caller_rear = request.caller_rear;
+    out.rollback = request.rollback_demand;
+    out.rider_front = commands.front_brake;
+    out.rider_rear = commands.rear_brake;
+    out.final_front = std::max({request.caller_front,
+                                request.rollback_demand,
+                                commands.front_brake});
+    out.final_rear = std::max({request.caller_rear,
+                               request.rollback_demand,
+                               commands.rear_brake});
+    const bool rider_braking =
+        commands.front_brake > 0. || commands.rear_brake > 0.;
+    out.legs_coast = request.caller_braking;
+    out.motor_braking = request.caller_braking || rider_braking;
+    out.shift_blocked = out.motor_braking;
+    out.riding = rider_control_.has_value() && request.rider_enabled &&
+        out.final_front < .5 && out.final_rear < .5 && !out.motor_braking;
+    return out;
 }
 
 // ---- sensor_channels (physical_observations.py:170-186) ---------------
@@ -2602,19 +2706,18 @@ double PhysicalStep::loss_increment(
 
 // ---- _balance_channel (physical_runtime.py:547-551) -------------------
 // The monitor update rides inside the channel emission exactly like the
-// oracle; `riding` reads the post-hold demands and resolved control.
+// oracle; `riding` arrives precomputed from this step's BrakeResolution —
+// the merged final demands plus the motor-braking flag (task 4).
 
-WireObject PhysicalStep::balance_channel(double front, double rear,
-                                       bool braking,
-                                       bool rider_enabled) {
+WireObject
+PhysicalStep::balance_channel(const BrakeResolution &brakes) {
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
     balance_monitor_.update(
         d->time,
         buf(d->qpos, m->nq)[static_cast<std::size_t>(root_x_qposadr_)],
         buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
-        rider_control_.has_value() && rider_enabled && front < .5 &&
-            rear < .5 && !braking);
+        brakes.riding);
     return balance_monitor_.observation();
 }
 

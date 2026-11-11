@@ -1900,7 +1900,7 @@ namespace {
         const auto tick = fixture.writer.stage_prepare(
             {.control = {}, .dt = .002, .braking = false, .active = true,
              .advance = true, .contact = true, .slip = std::nullopt,
-             .ceiling = std::nullopt});
+             .ceiling = std::nullopt, .shift_blocked = std::nullopt});
         digest.numbers = {tick.result.effort_nm,
                           tick.result.required_cadence_rpm,
                           tick.result.target_phase_rad ? 1. : 0.,
@@ -1919,7 +1919,9 @@ namespace {
         const auto tick = fixture.writer.stage_components(
             {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
              .braking = false, .active = true, .advance = advance,
-             .contact = true, .pedaling = std::nullopt, .slip = std::nullopt});
+             .contact = true, .motor_braking = std::nullopt,
+             .shift_blocked = std::nullopt, .pedaling = std::nullopt,
+             .slip = std::nullopt});
         for (std::size_t i = 0; i < tick.components.size(); ++i) {
             digest.strings.emplace_back(tick.component_names[i]);
             const auto row = tick.components[i].values;
@@ -2425,7 +2427,8 @@ namespace {
             const auto tick = fixture->writer.stage_components(
                 {.control = {}, .dt = .002, .speed = 2., .sensed = 20.,
                  .braking = false, .active = true, .advance = true,
-                 .contact = true, .pedaling = std::nullopt,
+                 .contact = true, .motor_braking = std::nullopt,
+                 .shift_blocked = std::nullopt, .pedaling = std::nullopt,
                  .slip = std::nullopt});
             require(tick.components.size() == 3 &&
                         tick.component_names[force_component_index(
@@ -2770,7 +2773,8 @@ namespace {
                                             bool active = true) {
         return {.control = {}, .dt = dt, .speed = 2., .sensed = 20.,
                 .braking = false, .active = active, .advance = advance,
-                .contact = true, .pedaling = std::nullopt,
+                .contact = true, .motor_braking = std::nullopt,
+                .shift_blocked = std::nullopt, .pedaling = std::nullopt,
                 .slip = std::nullopt};
     }
 

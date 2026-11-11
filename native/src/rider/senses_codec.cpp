@@ -6,6 +6,8 @@
 // "path: reason" diagnostics stay identical.
 #include "senses_codec.hpp"
 
+#include "state_codec.hpp"
+
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -320,6 +322,82 @@ bio::Value encode_surface_labels(const SurfaceLabels &labels) {
         sections.push_back(bio::Value{std::move(item)});
     }
     out.emplace_back("sections", bio::Value{std::move(sections)});
+    return bio::Value{std::move(out)};
+}
+
+// ---- perception adapter state (launch part 1, task 3) -------------------
+// The restorable document: the interval-start clock, the queue of
+// pending acquisitions as [t, {"signals", "senses"}] rows, the currently
+// perceived sample (or null before the first delivery) and the
+// integrated pitch. The readers below check the document domain — shape,
+// exact keys, finite reals and the nested signals/senses contracts;
+// Perception::restore owns the reachable-state invariants (P10).
+namespace {
+
+    [[nodiscard]] SenseSample decode_sense_sample(const VNode &v,
+                                                  const std::string &path) {
+        const Dict d = mapping(v, path);
+        ncd::exact(d, keys("signals", "senses"));
+        SenseSample sample;
+        sample.signals = decode_intent_signals(*d["signals"].value,
+                                               path + ".signals");
+        sample.senses = decode_rider_senses(*d["senses"].value,
+                                            path + ".senses");
+        return sample;
+    }
+
+    [[nodiscard]] bio::Value encode_sense_sample(
+        const SenseSample &sample) {
+        bio::Value::Object out;
+        out.emplace_back("signals", encode_intent_signals(sample.signals));
+        out.emplace_back("senses", encode_rider_senses(sample.senses));
+        return bio::Value{std::move(out)};
+    }
+
+} // namespace
+
+Perception::State decode_perception_state(const bio::Value &value,
+                                          std::string_view path) {
+    const Dict d = mapping(VNode{&value}, path);
+    ncd::exact(d, keys("time_s", "samples", "delayed", "pitch_rad"));
+    Perception::State state;
+    state.time_s = d["time_s"].finite_real(path);
+    const auto rows = d["samples"].sequence(path);
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        const auto row = rows.at(i).sequence(path);
+        if (row.size() != 2)
+            invalid(std::string(path) + ".samples",
+                    "incorrect sequence width");
+        state.samples.emplace_back(
+            row.at(0).finite_real(path),
+            decode_sense_sample(row.at(1),
+                                std::string(path) + ".samples"));
+    }
+    const VNode delayed = d["delayed"];
+    if (!delayed.is_none())
+        state.delayed = decode_sense_sample(
+            delayed, std::string(path) + ".delayed");
+    state.pitch_rad = d["pitch_rad"].finite_real(path);
+    return state;
+}
+
+bio::Value encode_perception_state(const Perception::State &state) {
+    bio::Value::Object out;
+    out.emplace_back("time_s", real_value(state.time_s));
+    bio::Value::Array samples;
+    samples.reserve(state.samples.size());
+    for (const auto &[t, sample] : state.samples) {
+        bio::Value::Array row;
+        row.push_back(real_value(t));
+        row.push_back(encode_sense_sample(sample));
+        samples.push_back(bio::Value{std::move(row)});
+    }
+    out.emplace_back("samples", bio::Value{std::move(samples)});
+    out.emplace_back("delayed",
+                     state.delayed.has_value()
+                         ? encode_sense_sample(*state.delayed)
+                         : bio::Value{});
+    out.emplace_back("pitch_rad", real_value(state.pitch_rad));
     return bio::Value{std::move(out)};
 }
 

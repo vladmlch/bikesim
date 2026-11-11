@@ -2,9 +2,11 @@
 // channel (launch part 1, task 2). The documents ride inside the
 // bootstrap state (`state.senses`, beside `signals`) and the runtime
 // config envelope (`config.surface_labels`, beside `rider_intent`).
+// Task 3 adds the delayed senses adapter's restorable state document.
 #pragma once
 
 #include "../io/value.hpp"
+#include "perception.hpp"
 #include "senses.hpp"
 
 namespace rider {
@@ -21,5 +23,15 @@ namespace rider {
 encode_surface_labels(const SurfaceLabels &s);
 [[nodiscard]] SurfaceLabels
 decode_surface_labels(const bike::io::Value &v, std::string_view path);
+
+// The perception adapter's restorable document (launch part 1, task 3):
+// {"time_s", "samples": [[t, {"signals", "senses"}]], "delayed":
+// {"signals", "senses"} | null, "pitch_rad"} — exact keys, the nested
+// readers' domains. The reachable-state invariants (grid, ordering,
+// the not-yet-due tail) belong to Perception::restore, not the wire.
+[[nodiscard]] bike::io::Value
+encode_perception_state(const Perception::State &state);
+[[nodiscard]] Perception::State
+decode_perception_state(const bike::io::Value &v, std::string_view path);
 
 } // namespace rider

@@ -4,8 +4,8 @@
 > `superpowers:executing-plans`. Шаги отмечаются флажками (`- [ ]`). Исполнитель — Devin (`devin-orchestration`);
 > финальное ревью ветки делает оркестратор.
 
-Редакция 3 — после двух ревью codex: `/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-plan3a-review/review.md` и
-`review-2.md` (ответы в конце).
+Редакция 4 — после трёх ревью codex: `/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-plan3a-review/review.md`,
+`review-2.md`, `review-3.md` (ответы в конце).
 
 **Цель.** Подготовить всё, на что опирается план старта (часть 3b), кроме самого плана. Поведение поездок не
 меняется:
@@ -19,14 +19,10 @@
 **Архитектура.**
 - `RiderIntent::resolve_full` получает ощущения шага (`RiderSenses`) и возвращает выход вместе с признаком
   `effort_limited`. Пробный шаг берёт признак из той же копии намерений, что и выход.
-- Тик намерений — «всё или ничего» для любого отвергнутого входа:
-  1. `Perception::peek` проверяет выборку и считает задержанное восприятие, ничего не меняя;
-  2. копия реакции (в ней нет памяти в куче) обновляется по этому восприятию;
-  3. обычная политика проверяет все свои входы до первого изменения (решение 11), затем обновляется с добавкой
-     наклона реакции;
-  4. только после этого восприятие и реакция фиксируются: `Perception::commit` и присваивание копии.
-
-  Отказ на шагах 1–3 не меняет ничего. Повтор того же шага с исправленным входом даёт ровно один тик.
+- Тик намерений — «всё или ничего» (решение 11). Всё, что тик меняет, лежит в ядре `Core`: политика с программой
+  позы, восприятие, реакция, часы и намерение. Тик идёт на двойнике `staged_` (копия ядра присваиванием; его
+  очереди сохраняют свои блоки, поэтому тёплый тик не выделяет память) и фиксируется обменом без исключений.
+  Отвергнутый вход, нарушение позы или нехватка памяти оставляют ядро как было. Повтор шага даёт ровно один тик.
 - «Наклониться» входит в цель программы позы добавкой (`extra_target_rad`). Поэтому общий наклон подчиняется
   прежнему ограничению скорости и пределам позы, а нулевая добавка не меняет арифметику.
 - «Ослабить» умножает выход «предел нажима»; множитель 1 не применяется.
@@ -110,28 +106,38 @@
       (`bootstrap.cpp:300-302`).
     - Состояние меняется только внутри `rider_intent`: ключи `perception` и `reaction`. Список ключей верхнего
       уровня состояния (`bootstrap.cpp:358-363`) не трогается.
-11. **Политика проверяет входы до первого изменения (исправление причины).**
+11. **Граница транзакции — `RiderIntent`, двойной буфер (исправление причины).**
     - Сейчас `SeatedClimbPolicy::update` (`intent.cpp:292-364`) меняет запас рывка, очередь и наклон, а уже потом
-      программа позы отвергает предел наклона, нижний предел или долю нагрузки (`intent.cpp:142-161`). После такого
-      отказа политика остаётся наполовину продвинутой; это уже есть в обычной езде.
-    - Исправление: проверки входов программы выносятся в открытую константную
-      `SeatedPostureProgram::check_inputs(...)`. Её вызывают и начало `SeatedPostureProgram::update`, и начало
-      `SeatedClimbPolicy::update`, до `power_target_w`.
-    - Новая добавка `extra_target_rad` / `extra_lean_rad` проверяется там же: конечная и неотрицательная.
+      программа позы отвергает вход или `validate_posture` отвергает выведенную позу (например, `lean_limit_rad = 1`
+      вместе с `min_lean_rad = 1`: `intent.cpp:168-174,197-201,39-44`). После такого отказа политика остаётся
+      наполовину продвинутой; это уже есть в обычной езде.
+    - Правило проекта (`docs/agents/native-engineering.md`, «Validate and stage before committing state»): повтор после
+      отказа входа и после нехватки памяти равен одной успешной операции от исходного состояния.
+    - Решение: `RiderIntent` держит `Core core_` и `Core staged_`. Тик: `staged_ = core_;` → тик на `staged_` →
+      `std::swap(core_, staged_)`. Обмен не бросает (`static_assert(std::is_nothrow_swappable_v<Core>)`). Пробный
+      шаг считает тик на локальной копии ядра и не трогает ни `core_`, ни `staged_`.
+    - Политика и программа позы сами по себе транзакциями не становятся: они части ядра, и граница — `RiderIntent`.
+      Это записывается в комментарии к `Core`.
+    - Цена: копия ядра на каждом тике (около 30 КБ памяти при задержке 0,15 с). Скорость поездки замеряется в
+      задаче 3 (шаг 4).
+    - Добавка `extra_target_rad` проверяется в начале `SeatedPostureProgram::update` вместе с прежними проверками:
+      конечная и неотрицательная.
     - Арифметика при допустимых входах не меняется.
-    - Не входят в «всё или ничего» нехватка памяти и нарушение внутреннего инварианта (`validate_posture` выведенной
-      позы). Они остаются фатальными, как сейчас.
-12. **Согласованное состояние при восстановлении.** `RiderIntent::restore` отвергает состояние, которое не может
-    получиться из `resolve_full`:
+12. **Согласованное состояние при восстановлении.** `RiderIntent::restore` отвергает состояние, которое нарушает
+    необходимое условие `resolve_full`:
     - при включённых намерениях восприятие и реакция есть, при выключенных — нет;
     - `last_tick_step` равен −1 или делится на `period_steps_` (первый тик — шаг 0, дальше подряд:
-      `intent.cpp:470-478`);
+      `intent.cpp:470-478`). Частное `last_tick_step / period_steps_` меньше `INT64_MAX`, иначе `+ 1` переполнится;
     - тик восприятия равен числу тиков намерений: 0 при `last_tick_step = −1`, иначе
       `last_tick_step / period_steps_ + 1`;
-    - пока восприятие ничего не выдало (пустое `delayed`), реакция в начальном состоянии `State{}`;
-    - реакция проверяет свою часть сама (задача 2): фаза, признак, счётчики и выходы вместе.
+    - счётчик реакции `percepts_seen` равен `min(percepts_cap(), max(0, тик восприятия − delay_ticks))` — числу
+      выданных восприятий. Отсюда следует начальное состояние до первого восприятия и самые ранние номера фаз:
+      признак — не раньше `dwell + 1` восприятий, действие — ещё через `decision` тиков, возврат — ещё через
+      `clear + 1`;
+    - реакция проверяет свою часть сама (задача 2).
 
-    Значения выходов между пределами не сверяются с сеткой шагов скорости — так же, как наклон политики.
+    Это необходимые условия, а не точная достижимость: значения выходов между пределами не сверяются с сеткой шагов
+    скорости, так же как наклон политики.
 
 ## Общие ограничения
 
@@ -162,13 +168,14 @@
     - Итоговая проверка сравнивает и с итогом части 2 (с накопленным списком), и с проверкой задачи 3 (без
       списка).
   - `reference.native_rider_intent` уже падает при построении адаптера
-    (`.../2026-11-11-launch2/final/reds_output.log:38-39`). Это воспроизведение записей оракула на Python, которого
-    больше нет. Его двоичные входы `input.restore.*` (`test_native_rider_intent.cpp:287-294`) после задачи 3
-    отвергнутся строгим декодером. Честно перевести их нельзя: тик восприятия должен равняться числу тиков
-    намерений, а очередь — хранить ощущения прошлых тиков. В записях этих ощущений нет; дописать их значит выдумать
-    данные. Записанные выходы `output.state.*` — это старая форма оракула; их трогать нельзя, тест красный.
-    Поэтому входы не переводятся. В отчёте части 3a пользователю задаётся вопрос: убрать тест с причиной и задачей
-    или перезаписать его записи нашим кодом.
+    (`.../2026-11-11-launch2/final/reds_output.log:38-39`). Его выходы `output.*` — записи старого оракула, они не
+    трогаются. Входы `input.restore.*` переводятся точно (замечание I6 третьего ревью; задача 3, шаг 5):
+    - `state_roundtrip` (оба платформенных набора) — снимки в разгоне: `last_tick_step = 30`, период 10 шагов,
+      4 выборки в очереди, ничего не выдано. Тик восприятия 4; очередь — те же 4 сигнала с ощущениями
+      `RiderSenses{}`, которые передаёт адаптер; наклон 0; реакция начальная;
+    - `state_rejects_malformed` — добавляются начальные состояния, намеренная ошибка каждого документа остаётся.
+
+    Тест остаётся красным с прежней первой причиной (адаптер).
 - Без отладчиков, с ограничением времени у длинных команд, без `git stash`, без push, `.claude/` и `.agents/` не
   трогать. Последняя строка коммита ровно `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
@@ -240,48 +247,48 @@ BASELOG=/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch3a/baseline-before-task<N>
 тика: `rider_intent.last_tick_step = -1`, и в парном `config.json` `rider_intent.enabled = true` (проверено
 2026-11-11). Поэтому новые ключи — начальные состояния, ничего не выдумывается:
 - `"perception": {"delayed": null, "pitch_rad": 0.0, "samples": [], "tick": 0}`;
-- `"reaction": {"clear_ticks": 0, "decision_ticks": 0, "effort_factor": 1.0, "lean_add_rad": 0.0, "phase": "idle",
-  "predicate": false, "unload_ticks": 0}`.
+- `"reaction": {"clear_ticks": 0, "decision_ticks": 0, "effort_factor": 1.0, "lean_add_rad": 0.0, "percepts_seen": 0,
+  "phase": "idle", "predicate": false, "unload_ticks": 0}`.
 
-Ключи верхнего уровня документа отсортированы, отступ 2. Каждый файл относится к одному из трёх видов:
-- **вход** — правится скриптом ниже;
-- **выход зелёного теста** — перезаписывается способом перезаписи этого теста;
-- **выход красного теста** — не трогается и перечисляется в отчёте.
+Список входов — тот же, что часть 1 перевела как входы (21 состояние и 22 конфигурации, отчёт
+`.scratch/devin/2026-11-11-launch1-task2/report.md:85-102`), плюс два документа `tests/fixtures/state/rider_intent*.json`
+(`io_state_codecs`: вход и канонический выход того же кодека). Выходов зелёных тестов среди них нет, кроме
+`rider_intent.canonical.json`: его содержимое после переноса должно совпасть с выводом кодировщика, это проверяет сам
+`io_state_codecs`. Файлы каталога (`catalog_welded.json`, `schema.json`) получают только новые записи, как в части 1.
 
-Негативные документы (`faults/*`) сохраняют свою намеренную ошибку: новый ключ им добавляется, а испорченное поле
-остаётся испорченным. Скрипт для входов (`FILES` — список входов, составленный исполнителем; `RC` — документ
-`rider_reaction` из `encode_reaction_config` рабочего профиля, его печатает новый тест задачи 3 или он собирается
-по числам описи):
+Инструменты переноса лежат в `/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch3a/tools/` и проверены на копии
+2026-11-12. Скрипты:
+- `manifest.sh` печатает список из 45 файлов;
+- `migrate_json.py <список>` сначала проверяет, что каждый файл воспроизводится байт в байт в одном из трёх видов
+  записи: отступ 2 с сортировкой — состояния; отступ 2 в исходном порядке — конфигурации, где `rider_reaction`
+  встаёт сразу после `rider_intent`; компактный с сортировкой — `rider_intent*.json`. Потом он переписывает файл в
+  том же виде, так что меняются только вставленные ключи. Пока не прошли все проверки, ничего не пишется;
+- `migrate_rider_intent_bins.py` переводит записи `native_rider_intent` (см. «Общие ограничения»);
+- `verify_migration.py <старый корень> <новый корень> <список>` проверяет: документ без новых ключей равен старому
+  точно, все записи, кроме `input.restore.*`, совпадают байт в байт, а восстановленные записи без новых ключей
+  равны старым.
+
+Команды (из корня копии, после кода задачи 3):
 
 ```bash
-python3 - "$@" <<'EOF'
-import json, pathlib, sys
-PERCEPTION = {"delayed": None, "pitch_rad": 0.0, "samples": [], "tick": 0}
-REACTION = {"clear_ticks": 0, "decision_ticks": 0, "effort_factor": 1.0, "lean_add_rad": 0.0,
-            "phase": "idle", "predicate": False, "unload_ticks": 0}
-RC = {"clear_s": 0.3, "decision_s": 0.1, "ease_enabled": False, "ease_fraction": 0.7, "ease_rate_per_s": 5.0,
-      "hand_unload_n": 20.0, "lean_add_rad": 0.1, "lean_enabled": False, "lean_rate_rad_s": 0.5,
-      "pitch_rad": 0.17, "pitch_rate_up_rad_s": 0.5, "rear_brake_tap_enabled": False, "unload_dwell_s": 0.05}
-for name in sys.argv[1:]:
-    path = pathlib.Path(name)
-    doc = json.loads(path.read_text())
-    if path.name == "state.json" or path.name.startswith("rider_intent"):
-        # tests/fixtures/state/rider_intent*.json are the intent state itself.
-        intent = doc["rider_intent"] if path.name == "state.json" else doc
-        assert intent["last_tick_step"] == -1 and "perception" not in intent, name
-        intent["perception"], intent["reaction"] = PERCEPTION, REACTION
-    else:
-        assert path.name == "config.json" and "rider_reaction" not in doc, name
-        doc["rider_reaction"] = RC
-    path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
-print("updated", len(sys.argv) - 1)
-EOF
+T=/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch3a/tools; O=/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch3a/pre-migration
+bash $T/manifest.sh > $O.manifest.txt && test "$(wc -l < $O.manifest.txt)" -eq 45
+rm -rf $O && mkdir -p $O && tar cf - $(cat $O.manifest.txt) tests/fixtures/golden/*/native_rider_intent/state_roundtrip.* \
+  tests/fixtures/golden/*/native_rider_intent/state_rejects_malformed.* | (cd $O && tar xf -)
+python3 -I $T/migrate_json.py $O.manifest.txt
+python3 -I $T/migrate_rider_intent_bins.py
+python3 -I $T/verify_migration.py $O . $O.manifest.txt
+python3 /Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch1/check_rerecord.py --repo . --ref <база задачи> $(cat $O.manifest.txt) \
+  tests/fixtures/recording/catalog_welded.json tests/fixtures/recording/schema.json
 ```
 
-После скрипта `git diff --numstat` у каждого файла показывает не больше 2 удалённых строк (запятые перед
-вставкой). Если удалений больше, значит `json.dumps` переформатировал числа или строки. Тогда этот файл
-правится вставкой текста, а не перезаписью целиком. Затем `check_rerecord.py --ref <база задачи>` по всем
-изменённым файлам.
+Ожидание:
+- `updated 45`;
+- четыре строки `restore records 2/2/7/7`;
+- у `verify_migration.py` все строки `ok`;
+- у `check_rerecord.py` все `OK`.
+
+Негативные документы (`faults/*`, `state_rejects_malformed`) сохраняют свою намеренную ошибку.
 
 **Вызовы `resolve` и конструктора `RiderIntent`:**
 - `native/src/rider/intent.cpp:466` (пробная рекурсия);
@@ -407,7 +414,7 @@ int main() {
 - [ ] **Шаг 4.** `mise run test 'pedaling_cut_order|native_drivetrain|native_drive_policies|seated_pedaling_cycle|realistic_pedelec_acceptance'`
   — новые зелёные, прежние как в базе.
 - [ ] **Шаг 5. Коммит и проверка.** `feat(drivetrain): cut a rider-limited effort after its ceiling`, затем
-  `check_task.sh` с базой `50217951` и `ab`.
+  `check_task.sh` с базой — вершиной ветки перед задачей (её пишет бриф) — и `ab`.
 
 ### Задача 2. Таблица реакции и узел реакции
 
@@ -493,10 +500,15 @@ public:
         std::int64_t clear_ticks = 0;      // <= clear ticks while acting, else 0
         double effort_factor = 1.;
         double lean_add_rad = 0.;
-        // The intent's joint restore check compares with the initial State{}.
+        // Updates that carried percepts, saturating at percepts_cap(): the
+        // earliest tick each phase can be reached is a count of percepts.
+        std::int64_t percepts_seen = 0;
         bool operator==(const State &) const = default;
     };
     FrontLiftReaction(const FrontLiftReactionConfig &config, double period_s);
+    // dwell + 1 + decision + clear + 1 ticks: the percept count past which
+    // every phase is reachable (at most about 2^33 with the 2^31 tick bound).
+    [[nodiscard]] std::int64_t percepts_cap() const noexcept;
     void reset();
     // Rejects nonfinite percept fields without changing anything.
     static void validate(const std::optional<Percepts> &percepts);
@@ -505,9 +517,12 @@ public:
     ReactionCommand update(const std::optional<Percepts> &percepts);
     [[nodiscard]] ReactionCommand command() const;
     [[nodiscard]] State state() const;
-    // Validates the whole state against the configuration (phase domain,
-    // phase/counter/predicate consistency, switch-dependent outputs),
-    // then commits; a rejected state leaves the reaction unchanged.
+    // Rejects every state that breaks a necessary condition of update():
+    // phase domain, phase/counter/predicate consistency, the earliest
+    // percept count of each phase, switch ranges of the outputs and
+    // "acting moves every enabled output". It does not check the outputs
+    // against the grid of rate steps. A rejected state leaves the reaction
+    // unchanged.
     void restore(const State &state);
 
 private:
@@ -525,7 +540,7 @@ private:
 ```cpp
 // The reaction's restorable document: {"phase", "predicate",
 // "unload_ticks", "decision_ticks", "clear_ticks", "effort_factor",
-// "lean_add_rad"} — exact keys, phase one of idle/deciding/acting/releasing,
+// "lean_add_rad", "percepts_seen"} — exact keys, phase one of idle/deciding/acting/releasing,
 // int64 counters, finite reals. Reachability belongs to
 // FrontLiftReaction::restore.
 [[nodiscard]] bike::io::Value encode_reaction_state(const FrontLiftReaction::State &state);
@@ -748,6 +763,13 @@ void test_restore_rejects_unreachable_states() {
     bad.effort_factor = 1.;
     bad.lean_add_rad = 0.;
     rejects([&] { on.restore(bad); }, "phase", "releasing with nothing left");
+    bad = acting;
+    bad.effort_factor = 1.;
+    bad.lean_add_rad = 0.;
+    rejects([&] { on.restore(bad); }, "phase", "acting that moved no enabled output");
+    bad = acting;
+    bad.percepts_seen = 12;   // dwell + 1 + decision = 13 percepts are needed
+    rejects([&] { on.restore(bad); }, "percepts_seen", "acting before the dwell and decision could pass");
     bt::require(text(on) == on_before, "rejected restores change nothing");
     on.restore(acting);   // control: a reachable state of this configuration
     bt::require(on.state().phase == rider::ReactionPhase::acting, "the reachable state restores");
@@ -983,6 +1005,7 @@ ReactionCommand FrontLiftReaction::update(const std::optional<Percepts> &percept
         n.unload_ticks = 0;
         n.predicate = false;
     } else {
+        n.percepts_seen = std::min(n.percepts_seen + 1, percepts_cap());
         n.unload_ticks = percepts->senses.hand_press_n < config_.hand_unload_n
                              ? std::min(n.unload_ticks + 1, dwell_ticks_ + 1)
                              : 0;
@@ -1023,6 +1046,10 @@ ReactionCommand FrontLiftReaction::update(const std::optional<Percepts> &percept
     return command();
 }
 
+std::int64_t FrontLiftReaction::percepts_cap() const noexcept {
+    return dwell_ticks_ + 1 + decision_ticks_ + clear_ticks_ + 1;
+}
+
 ReactionCommand FrontLiftReaction::command() const {
     return {.phase = s_.phase, .predicate = s_.predicate, .effort_factor = s_.effort_factor,
             .lean_add_rad = s_.lean_add_rad};
@@ -1030,16 +1057,19 @@ ReactionCommand FrontLiftReaction::command() const {
 
 FrontLiftReaction::State FrontLiftReaction::state() const { return s_; }
 
-// Accepts exactly the states update() can leave behind, phase by phase
-// (review-2 I3): a state outside that set could report events that never
-// happened or skip the decision time. The output values between their
-// switch bounds are not checked against the grid of rate steps.
+// Rejects states update() cannot leave behind (review-2 I3, review-3 I5):
+// a state outside that set could report events that never happened or skip
+// the dwell and decision time. These are necessary conditions, not exact
+// reachability: the output values between their bounds are not checked
+// against the grid of rate steps.
 void FrontLiftReaction::restore(const State &s) {
     const auto bad = [](std::string_view field, std::string_view why) {
         throw std::invalid_argument("front-lift reaction " + std::string(field) + ": " + std::string(why));
     };
     (void)reaction_phase_name(s.phase);   // throws on a phase outside the enum
-    if (s.unload_ticks < 0 || s.unload_ticks > dwell_ticks_ + 1) bad("unload_ticks", "outside [0, dwell + 1]");
+    if (s.percepts_seen < 0 || s.percepts_seen > percepts_cap()) bad("percepts_seen", "outside [0, cap]");
+    if (s.unload_ticks < 0 || s.unload_ticks > dwell_ticks_ + 1 || s.unload_ticks > s.percepts_seen)
+        bad("unload_ticks", "outside [0, min(dwell + 1, percepts_seen)]");
     // update() sets the predicate only on a saturated unload counter.
     if (s.predicate && s.unload_ticks != dwell_ticks_ + 1) bad("predicate", "set without an unload past the dwell");
     if (!std::isfinite(s.effort_factor) || s.effort_factor > 1. ||
@@ -1049,6 +1079,10 @@ void FrontLiftReaction::restore(const State &s) {
         s.lean_add_rad > (config_.lean_enabled ? config_.lean_add_rad : 0.))
         bad("lean_add_rad", "outside the range its switch allows");
     const bool neutral = s.effort_factor == 1. && s.lean_add_rad == 0.;
+    // The earliest percept count of each phase: the predicate first holds
+    // at dwell + 1 percepts, acting starts decision ticks later, and a
+    // release needs clear + 1 more percepts without the predicate.
+    const std::int64_t acting_from = dwell_ticks_ + 1 + decision_ticks_;
     switch (s.phase) {
     case ReactionPhase::idle:
         if (s.predicate) bad("predicate", "idle with the predicate");
@@ -1062,18 +1096,27 @@ void FrontLiftReaction::restore(const State &s) {
             bad("decision_ticks", "outside the decision window");
         if (s.clear_ticks != 0) bad("clear_ticks", "running while deciding");
         if (!neutral) bad("phase", "no action may be in force while deciding");
+        if (s.percepts_seen < dwell_ticks_ + 1 + s.decision_ticks)
+            bad("percepts_seen", "deciding longer than the percepts allow");
         break;
     case ReactionPhase::acting:
         if (s.decision_ticks != 0) bad("decision_ticks", "running while acting");
         if (s.clear_ticks < 0 || s.clear_ticks > clear_ticks_) bad("clear_ticks", "outside the clear window");
         // Acting counts clear ticks exactly while the predicate is absent.
         if (s.predicate != (s.clear_ticks == 0)) bad("clear_ticks", "inconsistent with the predicate");
+        if (s.percepts_seen < std::min(acting_from + s.clear_ticks, percepts_cap()))
+            bad("percepts_seen", "acting before the dwell and decision could pass");
+        // The first acting update already moves every enabled output.
+        if ((config_.ease_enabled && config_.ease_fraction > 0. && s.effort_factor == 1.) ||
+            (config_.lean_enabled && config_.lean_add_rad > 0. && s.lean_add_rad == 0.))
+            bad("phase", "acting without moving an enabled output");
         break;
     case ReactionPhase::releasing:
         if (s.predicate) bad("predicate", "releasing with the predicate");
         if (s.decision_ticks != 0 || s.clear_ticks != 0) bad("phase", "releasing with a running counter");
         // A release with nothing left turns idle on the same tick.
         if (neutral) bad("phase", "releasing with nothing left to release");
+        if (s.percepts_seen != percepts_cap()) bad("percepts_seen", "releasing before clear_s could pass");
         break;
     }
     s_ = s;
@@ -1094,13 +1137,14 @@ bio::Value encode_reaction_state(const FrontLiftReaction::State &s) {
     out.emplace_back("clear_ticks", integer_value(s.clear_ticks));
     out.emplace_back("effort_factor", real_value(s.effort_factor));
     out.emplace_back("lean_add_rad", real_value(s.lean_add_rad));
+    out.emplace_back("percepts_seen", integer_value(s.percepts_seen));
     return bio::Value{std::move(out)};
 }
 
 FrontLiftReaction::State decode_reaction_state(const bio::Value &value, std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d, keys("phase", "predicate", "unload_ticks", "decision_ticks", "clear_ticks",
-                       "effort_factor", "lean_add_rad"));
+                       "effort_factor", "lean_add_rad", "percepts_seen"));
     FrontLiftReaction::State s;
     try {
         s.phase = reaction_phase(d["phase"].string(std::string(path) + ".phase"));
@@ -1113,6 +1157,7 @@ FrontLiftReaction::State decode_reaction_state(const bio::Value &value, std::str
     s.clear_ticks = d["clear_ticks"].integer(path);
     s.effort_factor = d["effort_factor"].finite_real(path);
     s.lean_add_rad = d["lean_add_rad"].finite_real(path);
+    s.percepts_seen = d["percepts_seen"].integer(path);
     return s;
 }
 
@@ -1309,10 +1354,14 @@ done
 **Файлы:**
 - Создать: `native/src/rider/intent_signals.hpp` (перенос `IntentSignals` из `intent.hpp:58-66`).
 - Изменить:
-  - `native/src/rider/perception.hpp`, `native/src/rider/perception.cpp` — `#include "intent_signals.hpp"` вместо
-    `intent.hpp`; `update` делится на `peek` и `commit`; комментарий о времени выборки;
-  - `native/src/rider/intent.hpp`, `native/src/rider/intent.cpp` — `SeatedPostureProgram::check_inputs`, добавка цели,
-    проверка входов политики до первого изменения (решение 11), `RiderIntent`;
+  - `native/src/rider/perception.hpp`, `native/src/rider/perception.cpp`:
+    - `#include "intent_signals.hpp"` вместо `intent.hpp`;
+    - открытый `delay_ticks()`;
+    - комментарий о времени выборки;
+  - `native/src/rider/intent.hpp`, `native/src/rider/intent.cpp`:
+    - проверка добавки в `SeatedPostureProgram::update`;
+    - добавка в политике;
+    - `RiderIntent` с ядром `Core` и двойником `staged_` (решение 11);
   - `native/src/rider/state_codec.cpp:2278-2345` — ключи `perception`, `reaction`; `#include "senses_codec.hpp"`;
   - `native/src/runtime/config.hpp:57-87` (`RuntimeConfig::rider_reaction`), `native/src/runtime/step.hpp:50-66`
     (`StepConfig::reaction`);
@@ -1320,9 +1369,10 @@ done
     `native/src/runtime/runtime.cpp:350-354`;
   - `native/src/runtime/step.cpp:1024,1264-1269,1328-1337,2031-2049`;
   - каталог: `native/resources/recording/catalog-v1.json`, `native/src/recording/catalog_data.inc`;
-  - `native/tests/recording/test_catalog.cpp:55-72` (512 и комментарий), `native/tests/reference/test_recording_catalog.cpp:110-114`
-    (ожидаемый набор таблиц) и новый тест в нём;
+  - `native/tests/recording/test_catalog.cpp:55-72` (512 и комментарий);
+  - `native/tests/reference/test_recording_catalog.cpp`: ожидаемый набор таблиц (`:110-114`) и новый тест;
   - `native/tests/reference/launch_ride_support.hpp:60-120` (перегрузка `environment`);
+  - `native/tests/reference/Phase3Ports.cmake` — `front_lift_reaction` получает объект `bike_test_allocation_faults`;
   - вызовы и документы из описи.
 - Тест: `test_front_lift_reaction.cpp` (намерения), `test_rider_senses.cpp` (канал в поездке),
   `test_recording_catalog.cpp` (кодирование и чтение канала).
@@ -1334,14 +1384,10 @@ done
 // intent.hpp so perception.hpp and intent.hpp do not include each other).
 struct IntentSignals { /* the five members of intent.hpp:58-66, unchanged */ };
 
-// perception.hpp — update() split in two so the intent can stage a tick.
-[[nodiscard]] std::optional<Percepts> Perception::peek(const SenseSample &sample) const;   // checks, changes nothing
-void Perception::commit(const SenseSample &sample, const std::optional<Percepts> &percepts); // applies peek's tick
+// perception.hpp
+[[nodiscard]] std::int64_t Perception::delay_ticks() const noexcept { return delay_ticks_; }
 
 // intent.hpp
-void SeatedPostureProgram::check_inputs(double time_s, double road_grade, double dt_s,
-    std::optional<double> front_load_share, std::optional<double> lean_limit_rad,
-    std::optional<double> dead_time_s, std::optional<double> min_lean_rad, double extra_target_rad) const;
 double SeatedPostureProgram::update(double time_s, double road_grade, double dt_s,
     std::optional<double> front_load_share = std::nullopt, std::optional<double> lean_limit_rad = std::nullopt,
     std::optional<double> dead_time_s = std::nullopt, std::optional<double> min_lean_rad = std::nullopt,
@@ -1377,15 +1423,53 @@ public:
         std::optional<double> min_lean_rad = std::nullopt);   // resolve_full(...).control
     // The reaction's current command; neutral (idle, false, 1, 0) when the intent is disabled.
     [[nodiscard]] ReactionCommand reaction() const;
-    // ... reset, seed_lean, schedule_pulse, state, restore, accessors as today ...
+    // ... reset, seed_lean, schedule_pulse, state, restore, intent(), commands(), config(),
+    // policy(), period_steps() keep their signatures; policy() returns core_.policy ...
+private:
+    // Launch part 3a, decision 11: everything a tick changes. The tick runs
+    // on staged_ (copy-assigned from core_, so its queues keep their blocks
+    // and a warm tick does not allocate) and commits by a nonthrowing swap.
+    // SeatedClimbPolicy and SeatedPostureProgram are not transactional on
+    // their own; the transaction boundary is RiderIntent.
+    struct Core {
+        explicit Core(const IntentConfig &config) : policy(config) {}
+        SeatedClimbPolicy policy;
+        std::optional<Perception> perception;
+        std::optional<FrontLiftReaction> reaction;
+        std::int64_t last_tick_step = -1;
+        Intent intent;
+    };
+    static_assert(std::is_nothrow_swappable_v<Core>);
+    // One tick on `core` (called on staged_ or on a probe copy).
+    void tick(Core &core, const IntentSignals &signals, const RiderSenses &senses, std::int64_t step,
+              double road_grade, std::optional<double> preview_grade, std::optional<double> lean_limit_rad,
+              std::optional<double> min_lean_rad) const;
+    // The output merge from `core`'s intent and reaction.
+    static IntentResolution output(const Core &core, IntentControl control);
+    IntentConfig config_;
+    double dt_s_;
+    std::int64_t period_steps_;
+    Core core_;
+    Core staged_;
+    RiderCommands commands_{};
 };
 ```
 
-Проверка «реакция в начальном состоянии» (решение 12) пользуется `FrontLiftReaction::State::operator==` из
-задачи 2.
+Проверка «счётчик восприятий реакции» (решение 12) пользуется `FrontLiftReaction::percepts_cap()` и
+`Perception::delay_ticks()`.
 
 - [ ] **Шаг 1. Тесты (падают)** в `test_front_lift_reaction.cpp`. Добавить `#include "rider/intent.hpp"`,
-  `#include "rider/state_codec.hpp"`, `#include "configuration/model_config.hpp"`, `<bit>`, `<cstdint>`:
+  `#include "rider/state_codec.hpp"`, `#include "configuration/model_config.hpp"`, `#include "allocation_faults.hpp"`
+  (как в `config/test_writer_config.cpp:14`), `<bit>`, `<cstdint>`, `<new>`. Регистрация в `Phase3Ports.cmake`
+  получает объект имитатора, как у `config_writer` (`native/tests/config/CMakeLists.txt:12-13`):
+
+```cmake
+bike_add_reference_test(front_lift_reaction ENGINE
+  SOURCES test_front_lift_reaction.cpp $<TARGET_OBJECTS:bike_test_allocation_faults>
+  LIBRARIES bike_app LABELS launch rider)
+```
+
+  Тесты:
 
 ```cpp
 rider::IntentConfig enabled_intent() {
@@ -1394,6 +1478,8 @@ rider::IntentConfig enabled_intent() {
     return config;
 }
 
+// The 1.25 ms timing tables of this file use table()'s short times; this
+// one keeps them with both actions off.
 rider::FrontLiftReactionConfig switched_off() {
     auto t = table();
     t.ease_enabled = false;
@@ -1526,10 +1612,11 @@ void test_caller_overrides_and_disabled_paths() {
 // With both actions on: the ease starts exactly reaction_delay + dwell +
 // decision ticks after the first lifting sample (161 + 120 + 4 + 8 = 293);
 // the lean add goes through the posture program, so the total lean never
-// outruns its rate; probe and advance agree on output and effort_limited;
-// encode → decode → restore during warm-up (50), deciding (290) and
-// releasing (560: clear percepts from 520, release from 536, lean back by
-// ~696) continues bitwise.
+// outruns its rate; probe and advance agree on output, flag and the whole
+// owner state; encode → decode → restore during warm-up (50), deciding
+// (290) and releasing (560: clear percepts from 520, release from 536,
+// lean back by ~696) continues with the same output and the same
+// serialized state.
 void test_reacting_resolver_timing_slew_probe_and_restore() {
     const auto config = enabled_intent();
     rider::RiderIntent reacting(config, table(), kPeriod);
@@ -1539,7 +1626,9 @@ void test_reacting_resolver_timing_slew_probe_and_restore() {
     double previous_lean = 0.;
     std::optional<rider::RiderIntent> restored;
     for (std::int64_t step = 0; step < 900; ++step) {
+        const std::string before = encoded(reacting);
         const auto probe = tick(reacting, step, false);
+        bt::require(encoded(reacting) == before, "a probe changes no resolver state");
         const auto a = tick(reacting, step);
         const auto b = tick(inert, step);
         bt::require(same_control(probe.control, a.control) && probe.effort_limited == a.effort_limited,
@@ -1562,17 +1651,19 @@ void test_reacting_resolver_timing_slew_probe_and_restore() {
             restored->restore(rider::decode_intent_state(rider::encode_intent_state(reacting.state()), "intent"));
         } else if (restored) {
             const auto r = tick(*restored, step);
-            bt::require(same_control(r.control, a.control) && r.effort_limited == a.effort_limited,
-                        "the restored resolver continues bitwise");
+            bt::require(same_control(r.control, a.control) && r.effort_limited == a.effort_limited &&
+                            encoded(*restored) == encoded(reacting),
+                        "the restored resolver continues bitwise, state included");
         }
     }
     bt::require(reacting.reaction().phase == rider::ReactionPhase::idle, "the reaction ended after the pulse");
 }
 
-// Every rejected input leaves the whole resolver untouched, and the
+// Every rejected call leaves the whole resolver untouched, and the
 // corrected retry of that step equals one successful tick from the same
-// state (review-2 I1): a NaN sense (perception peek), a NaN road grade and
-// a NaN lean limit (the policy's up-front checks, decision 11).
+// state (review-2 I1, review-3 I3): a NaN sense, a NaN road grade, a NaN
+// lean limit, and finite limits whose posture validate_posture rejects
+// after the policy has computed (lean_limit_rad = min_lean_rad = 1).
 void test_rejected_ticks_change_nothing() {
     const auto config = enabled_intent();
     rider::RiderIntent intent(config, table(), kPeriod);
@@ -1593,53 +1684,113 @@ void test_rejected_ticks_change_nothing() {
     rejects([&] { (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 300, .06, .06, nan); },
             "lean limit", "a NaN lean limit");
     bt::require(encoded(intent) == before, "a rejected lean limit advances nothing");
+    rejects([&] {
+        (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 300, .06, .06, 1., true, true, 1.);
+    }, "torso_lean_rad", "a posture the limits force out of its envelope");
+    bt::require(encoded(intent) == before, "a rejected posture advances nothing");
     const auto retry = tick(intent, 300);
     bt::require(same_control(retry.control, good.control) && retry.effort_limited == good.effort_limited &&
                     encoded(intent) == encoded(reference),
                 "the corrected retry is exactly one tick");
 }
 
-// The public posture-target inputs reject NaN, infinity and a backward add
-// before any state moves (review-2 I6); a valid add is accepted.
+// Allocation failures (native-engineering «Validate and stage»): each
+// failing allocation inside a cold tick — the staged twin and the queues
+// grow — leaves the resolver unchanged, and the retry after disarming
+// equals one successful tick. A warm tick may allocate nothing by design.
+void test_allocation_failures_change_nothing() {
+    const auto config = enabled_intent();
+    const auto [signals, senses] = inputs(0);
+    std::size_t needed = 0;
+    {
+        rider::RiderIntent measured(config, table(), kPeriod);
+        const allocation_faults::Guard guard;
+        allocation_faults::arm(SIZE_MAX);
+        (void)measured.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+        allocation_faults::disarm();
+        needed = allocation_faults::allocated();
+    }
+    bt::require(needed > 0, "a cold tick allocates, so the sweep exercises failures");
+    for (std::size_t k = 0; k < needed; ++k) {
+        rider::RiderIntent intent(config, table(), kPeriod);
+        rider::RiderIntent reference(intent);
+        const std::string before = encoded(intent);
+        bool threw = false;
+        {
+            const allocation_faults::Guard guard;
+            allocation_faults::arm(k);
+            try {
+                (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+            } catch (const std::bad_alloc &) {
+                threw = true;
+            }
+        }
+        bt::require(threw, "the armed allocation fails");
+        bt::require(encoded(intent) == before, "a failed allocation changes nothing");
+        const auto retry = intent.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+        const auto good = reference.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+        bt::require(same_control(retry.control, good.control) && encoded(intent) == encoded(reference),
+                    "the retry after a failed allocation is exactly one tick");
+    }
+}
+
+// The posture-target add rejects NaN, infinity and a backward add before
+// the program moves (review-2 I6); a valid add is accepted. The policy
+// forwards the add and rejects the same values (it is not a transaction
+// on its own — RiderIntent is).
 void test_extra_lean_domain() {
     const auto config = enabled_intent();
     const auto [signals, senses] = inputs(0);
     for (const double extra : {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity(), -.01}) {
-        rider::SeatedClimbPolicy policy(config);
-        const auto before = policy.state();
-        rejects([&] { (void)policy.update(signals, config.period_s, .06, .06, .35, std::nullopt, extra); },
-                "extra", "an invalid lean add on the policy");
-        bt::require(policy.state().time_s == before.time_s && policy.state().samples.size() == before.samples.size(),
-                    "a rejected add moves nothing");
         rider::SeatedPostureProgram program(config);
+        const auto before = program.state();
         rejects([&] { (void)program.update(0., .06, config.period_s, .35, .35, std::nullopt, std::nullopt, extra); },
                 "extra", "an invalid lean add on the program");
+        bt::require(program.state().lean_rad == before.lean_rad &&
+                        program.state().load_samples.size() == before.load_samples.size(),
+                    "a rejected add moves no program state");
+        rider::SeatedClimbPolicy policy(config);
+        rejects([&] { (void)policy.update(signals, config.period_s, .06, .06, .35, std::nullopt, extra); },
+                "extra", "an invalid lean add on the policy");
     }
     rider::SeatedClimbPolicy policy(config);
     (void)policy.update(signals, config.period_s, .06, .06, .35, std::nullopt, .05);   // control
 }
 
-// Restore accepts only states resolve_full can produce (decision 12):
-// presence, the perception clock against the intention ticks, a neutral
-// reaction before the first percept, and the component checks; a rejected
-// restore changes nothing; the encoded document path rejects the same.
+// Restore rejects what breaks a necessary condition of resolve_full
+// (decision 12): presence, the perception clock against the intention
+// ticks (without overflow), the reaction's percept count against the
+// delivered percepts, and the component checks. A reaction grafted onto
+// the first delivery is rejected; that state's own reaction is accepted.
+// Rejected restores change nothing; the document path rejects the same.
 void test_restore_checks_the_joint_state() {
     const auto config = enabled_intent();
+    const std::int64_t delay = std::llround(config.reaction_delay_s / config.period_s);   // 120
     rider::RiderIntent donor(config, table(), kPeriod);
     for (std::int64_t step = 0; step < 300; ++step) (void)tick(donor, step);
+    rider::RiderIntent first(config, table(), kPeriod);
+    for (std::int64_t step = 0; step <= delay; ++step) (void)tick(first, step);   // exactly one percept delivered
     rider::RiderIntent fresh(config, table(), kPeriod);
     const std::string before = encoded(fresh);
     auto early = fresh.state();
     early.reaction = donor.state().reaction;   // acting, from another episode
-    rejects([&] { fresh.restore(early); }, "before the first percept", "a reaction before any percept");
+    rejects([&] { fresh.restore(early); }, "percepts_seen", "a reaction before any percept");
     rejects([&] { fresh.restore(rider::decode_intent_state(rider::encode_intent_state(early), "intent")); },
-            "before the first percept", "the same state through the document");
+            "percepts_seen", "the same state through the document");
+    auto graft = first.state();
+    graft.reaction = donor.state().reaction;
+    rejects([&] { fresh.restore(graft); }, "percepts_seen", "an acting reaction on the first delivery");
     auto bad = donor.state();
     bad.perception->tick += 1;
     rejects([&] { fresh.restore(bad); }, "perception tick", "a perception clock off the intention ticks");
     bad = donor.state();
     bad.last_tick_step = -2;
     rejects([&] { fresh.restore(bad); }, "intention grid", "a tick before the first one");
+    bad = donor.state();
+    bad.last_tick_step = std::numeric_limits<std::int64_t>::max();   // period_steps == 1 here
+    rejects([&] { fresh.restore(bad); }, "intention grid", "a tick count that would overflow");
+    rejects([&] { fresh.restore(rider::decode_intent_state(rider::encode_intent_state(bad), "intent")); },
+            "intention grid", "the overflowing tick through the document");
     bad = donor.state();
     bad.reaction->effort_factor = .1;   // below 1 - ease_fraction
     bad.policy.time_s += 1.;            // must not leak when the restore fails
@@ -1648,16 +1799,19 @@ void test_restore_checks_the_joint_state() {
     bad.perception.reset();
     rejects([&] { fresh.restore(bad); }, "perception", "an enabled intent without perception state");
     bt::require(encoded(fresh) == before, "rejected restores change nothing");
+    fresh.restore(first.state());   // control: the first delivery with its own reaction
+    bt::require(encoded(fresh) == encoded(first), "the first-delivery state restores");
     fresh.restore(donor.state());   // control
     bt::require(encoded(fresh) == encoded(donor), "a reachable state restores");
 }
 ```
 
-  Все шесть вызовов добавить в `main` файла `test_front_lift_reaction.cpp`. Если сообщение отказа называет поле
+  Все семь вызовов добавить в `main` файла `test_front_lift_reaction.cpp`. Если сообщение отказа называет поле
   иначе, чем ожидает тест, подстроку берут из настоящего сообщения и записывают в отчёт; смысл проверки не меняется.
 
-  В `test_recording_catalog.cpp` — тест и вызов в `main`; в ожидаемый набор `test_catalog_tables_are_finite_and_fully_described`
-  добавить `"channel_rider_reaction"` после `"channel_rider_senses"`:
+  В `test_recording_catalog.cpp` добавить тест и его вызов в `main`. В ожидаемый набор
+  `test_catalog_tables_are_finite_and_fully_described` добавить `"channel_rider_reaction"` после
+  `"channel_rider_senses"`:
 
 ```cpp
 // Launch part 3a — the rider_reaction channel's four leaves survive the
@@ -1687,40 +1841,52 @@ void test_rider_reaction_channel_round_trips() {
 }
 ```
 
-  В `launch_ride_support.hpp` — перегрузка; тело нынешней `environment` переносится в неё без изменений, кроме
-  двух строк:
+  В `launch_ride_support.hpp` — перегрузка. Нынешнее тело `environment` (`:63-120`) переносится в неё без
+  изменений, кроме трёх строк, помеченных `// part 3a` ниже. Двухаргументная форма вызывает её с прежними
+  значениями, так что все нынешние вызовы ведут себя как раньше:
 
 ```cpp
 // Launch part 3a: the environment with a physics edit applied right after
-// the profile load and an explicit record decimation (the reaction
-// channel's decimated-ride test). The two-argument form keeps every
-// existing caller unchanged.
+// the profile load, an explicit record decimation and capture mode (the
+// reaction channel's decimated-ride test: legacy capture keeps only every
+// decimation-th interval, accounting.cpp:764-776, so a full capture is
+// needed to see unmeasured intervals).
 template <typename Edit>
 [[nodiscard]] PedelecEnv environment(terrain::TrackSpec track, double duration_s, Edit &&edit,
-                                     int record_decimation) {
+                                     int record_decimation, runtime::ResearchCaptureMode capture_mode) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     request.setup.model.physics = bike::configuration::load_physics(
         repo_file("examples/research/viewer_physics_welded.toml"));
-    std::forward<Edit>(edit)(*request.setup.model.physics);
-    // ... the rest of today's body, with
-    request.experiment.record_decimation = record_decimation;
-    // ... in place of the literal 1 ...
+    std::forward<Edit>(edit)(*request.setup.model.physics);   // part 3a
+    request.setup.model.mode = "ride";
+    request.setup.model.crank_joint = true;
+    request.setup.model.rider =
+        bike::model::rider_from_args("articulated_planar");
+    request.setup.track = std::move(track);
+    request.setup.model.physics->initial_speed_mps = 0.;
+    request.experiment.duration_s = duration_s;
+    request.experiment.record_decimation = record_decimation;   // part 3a (was 1)
+    request.capture_mode = capture_mode;                        // part 3a (was the legacy default)
+    // ... every remaining line of today's body (:74-120) unchanged ...
 }
 
 [[nodiscard]] inline PedelecEnv environment(terrain::TrackSpec track, double duration_s) {
-    return environment(std::move(track), duration_s, [](auto &) {}, 1);
+    return environment(std::move(track), duration_s, [](auto &) {}, 1, runtime::ResearchCaptureMode::legacy);
 }
 ```
 
-  В `test_rider_senses.cpp` — тест и вызов в `main` (`#include <optional>`, `<set>`, `<utility>`, `<bit>`):
+  Комментарий `// ... every remaining line ...` — указание переноса, а не код: на его месте остаются строки
+  `:74-120` нынешней функции, дословно.
+
+  В `test_rider_senses.cpp` добавить тест и его вызов в `main` (`#include <optional>`, `<set>`, `<utility>`, `<bit>`):
 
 ```cpp
 // One recorded interval of the reaction channel, plus whether the
 // interval was measured: an unmeasured row carries the kinematic mass
 // channel without com_velocity_mps (step.cpp:1694-1698).
 struct ReactionRow {
-    double time_s = 0.;
+    std::int64_t interval = 0;
     bool full = false;
     std::string phase;
     bool predicate = false;
@@ -1741,7 +1907,7 @@ struct ReactionRow {
             bt::require(wire != nullptr, "every interval publishes the rider_reaction channel");
             const auto &reaction = sw::object(*wire);
             const auto &mass = sw::object(sw::required(sample->channels, "mass"));
-            rows.push_back({.time_s = sample->time_s,
+            rows.push_back({.interval = sample->interval_id,
                             .full = sw::find(mass, "com_velocity_mps") != nullptr,
                             .phase = sw::string(sw::required(reaction, "phase")),
                             .predicate = sw::boolean(sw::required(reaction, "predicate")),
@@ -1753,14 +1919,15 @@ struct ReactionRow {
     return rows;
 }
 
-// Launch part 3a — the reaction channel on every interval of a decimated
-// ride: physical control period 4 steps and record decimation 8, so
-// unmeasured intervals really occur. Both actions are on, with test-only
-// thresholds a flat standstill start crosses (hands always count as
-// unloaded; 0.05 rad of perceived pitch). The rows follow the reaction's
-// order — deciding lasts exactly decision_s, acting eases and leans — and
-// a reset replays them bitwise, so perception and reaction state travel
-// through the bootstrap capture and restore.
+// Launch part 3a — transport of the reaction channel on a decimated ride
+// (physical control period 4 steps, record decimation 8, full capture):
+// every consecutive interval, measured or not, carries the channel; the
+// rows obey the reaction's phase order and switch ranges; a reset replays
+// them bitwise, so perception and reaction state travel through the
+// bootstrap capture and restore. Both actions are on with test-only
+// thresholds (hands always count as unloaded, 0.05 rad of perceived
+// pitch). Whether this ride reaches acting is reported, not required: the
+// exact timing contract belongs to the resolver tests above.
 [[gnu::noinline]] void test_reaction_channel_on_a_decimated_ride() {
     const auto edit = [](auto &physics) {
         physics.control_period_s = .005;
@@ -1770,116 +1937,69 @@ struct ReactionRow {
         r.hand_unload_n = 1000.;
         r.pitch_rad = .05;
     };
-    auto env = launch_ride::environment(launch_ride::track("[[0.0, 0.0], [60.0, 0.0]]", 60.), 3., edit, 8);
+    auto env = launch_ride::environment(launch_ride::track("[[0.0, 0.0], [60.0, 0.0]]", 60.), 3., edit, 8,
+                                        runtime::ResearchCaptureMode::full);
     const std::size_t windows = 300;   // 3 s of the .01 s research control period
     const auto rows = reaction_rows(env, windows);
     std::size_t full = 0, unmeasured = 0;
-    for (const auto &row : rows) ++(row.full ? full : unmeasured);
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        ++(rows[i].full ? full : unmeasured);
+        bt::require(i == 0 || rows[i].interval == rows[i - 1].interval + 1, "consecutive intervals are recorded");
+    }
     bt::require(full > 0 && unmeasured > 0, "the ride records measured and unmeasured intervals");
     const std::set<std::pair<std::string, std::string>> allowed{
         {"idle", "idle"}, {"idle", "deciding"}, {"deciding", "deciding"}, {"deciding", "idle"},
         {"deciding", "acting"}, {"acting", "acting"}, {"acting", "releasing"}, {"releasing", "releasing"},
         {"releasing", "acting"}, {"releasing", "idle"}};
-    std::optional<double> deciding_from, acting_at;
-    bool eased = false, leaned = false;
+    std::optional<std::int64_t> deciding_from, acting_at;
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto &row = rows[i];
         if (i > 0)
             bt::require(allowed.contains({rows[i - 1].phase, row.phase}), "the phases follow the reaction's order");
         if (row.phase == "idle" || row.phase == "deciding")
             bt::require(row.factor == 1. && row.lean == 0., "no action before acting");
+        bt::require(row.factor >= .3 && row.factor <= 1. && row.lean >= 0. && row.lean <= .1,
+                    "the outputs stay inside their switch ranges");
         if (row.phase == "deciding" && (i == 0 || rows[i - 1].phase != "deciding") && !acting_at)
-            deciding_from = row.time_s;
-        if (row.phase == "acting") {
-            if (!acting_at) acting_at = row.time_s;
-            eased = eased || row.factor < 1.;
-            leaned = leaned || row.lean > 0.;
-        }
+            deciding_from = row.interval;
+        if (row.phase == "acting" && !acting_at) acting_at = row.interval;
     }
-    bt::require(deciding_from && acting_at, "the flat start lifts the front: the reaction decides and acts");
-    bt::require(std::abs(*acting_at - *deciding_from - .1) < 1e-9, "acting starts decision_s after deciding");
-    bt::require(eased && leaned, "both switched-on actions move their outputs");
+    if (acting_at)   // one interval is one intention tick here: 0.1 s = 80 ticks
+        bt::require(deciding_from && *acting_at - *deciding_from == 80, "acting starts decision_s after deciding");
+    std::printf("reaction ride: %zu rows, %zu unmeasured, acting %s\n", rows.size(), unmeasured,
+                acting_at ? "reached" : "not reached");
     env.runtime->reset();
     const auto replay = reaction_rows(env, windows);
     bt::require(replay.size() == rows.size(), "the replay covers the same intervals");
     for (std::size_t i = 0; i < rows.size(); ++i)
-        bt::require(replay[i].phase == rows[i].phase && replay[i].predicate == rows[i].predicate &&
+        bt::require(replay[i].interval == rows[i].interval && replay[i].phase == rows[i].phase &&
+                        replay[i].predicate == rows[i].predicate &&
                         std::bit_cast<std::uint64_t>(replay[i].factor) == std::bit_cast<std::uint64_t>(rows[i].factor) &&
                         std::bit_cast<std::uint64_t>(replay[i].lean) == std::bit_cast<std::uint64_t>(rows[i].lean),
                     "the reaction replays bitwise through reset");
 }
 ```
 
-  Если на этой поездке признак так и не появился, исполнитель не меняет числа сам. Он приводит наибольший
-  наклон рамы и наименьший нажим рук за поездку и останавливается (`NEEDS_CONTEXT`).
+  Отчёт приводит строку `reaction ride: ...` из вывода теста. `<cstdio>` — в включениях файла.
 - [ ] **Шаг 2.** `mise run test 'front_lift_reaction|rider_senses|recording_catalog'` — сборка падает.
 - [ ] **Шаг 3. Код.**
   - `intent_signals.hpp`: структура `IntentSignals` из `intent.hpp:58-66` без изменений, с комментарием над ней,
     `#include <array>`, `<optional>`. `intent.hpp` и `perception.hpp` включают её; `intent.hpp` дополнительно
-    включает `perception.hpp` и `front_lift_reaction.hpp`.
-  - `perception.hpp`: в комментарии о времени выборки заменить «update() is called once per intention period at an
-    interval start» на «the step hands it, at each intention tick, the senses of the interval that just ended —
-    taken at that interval's start — so the percepts lag reaction_delay_s plus one physics step (launch part 3a,
-    decision 4)». Объявления `peek` и `commit` из «Интерфейсов» — рядом с `update`.
-  - `perception.cpp`: `update` заменяется тремя функциями. Арифметика и порядок прежние, но переполнение наклона
-    теперь проверяется до изменения:
+    включает `perception.hpp`, `front_lift_reaction.hpp` и `<type_traits>`.
+  - `perception.hpp`:
+    - в комментарии о времени выборки заменить «update() is called once per intention period at an interval start»
+      на «the step hands it, at each intention tick, the senses of the interval that just ended — taken at that
+      interval's start — so the percepts lag reaction_delay_s plus one physics step (launch part 3a, decision 4)»;
+    - добавить `delay_ticks()` из «Интерфейсов».
 
-```cpp
-std::optional<Percepts> Perception::peek(const SenseSample &sample) const {
-    if (s_.tick == std::numeric_limits<std::int64_t>::max())
-        throw std::invalid_argument("perception tick counter overflowed");
-    check_sample(sample, "perception sample");
-    // The queue holds stamps tick-size..tick-1 with size = min(tick,
-    // delay_ticks) (restore's reachability rule), so with this sample the
-    // one newly due stamp is tick - delay_ticks: the sample itself when the
-    // delay is zero, the queue front once tick >= delay_ticks, none before.
-    const SenseSample *due = nullptr;
-    if (delay_ticks_ == 0)
-        due = &sample;
-    else if (s_.tick >= delay_ticks_)
-        due = &s_.samples.front().second;
-    if (due == nullptr) return std::nullopt;
-    const double pitch = s_.pitch_rad + due->signals.pitch_rate_up_rad_s * period_s_;
-    if (!std::isfinite(pitch))
-        throw std::invalid_argument("perception pitch overflowed");
-    return Percepts{.senses = due->senses,
-                    .crank_rpm = std::abs(due->signals.crank_rate_rad_s) * 60. / (2. * std::numbers::pi),
-                    .human_crank_torque_nm = due->signals.human_crank_torque_nm,
-                    .pitch_rate_up_rad_s = due->signals.pitch_rate_up_rad_s,
-                    .pitch_rad = pitch};
-}
-
-// Applies the tick peek() computed for this sample; throws only on
-// allocation failure.
-void Perception::commit(const SenseSample &sample, const std::optional<Percepts> &percepts) {
-    s_.samples.emplace_back(s_.tick, sample);
-    while (!s_.samples.empty() && s_.samples.front().first <= s_.tick - delay_ticks_) {
-        s_.delayed = s_.samples.front().second;
-        s_.samples.pop_front();
-    }
-    ++s_.tick;
-    if (percepts) s_.pitch_rad = percepts->pitch_rad;
-}
-
-std::optional<Percepts> Perception::update(const SenseSample &sample) {
-    auto percepts = peek(sample);
-    commit(sample, percepts);
-    return percepts;
-}
-```
-
-  - Программа позы. Проверки из начала `SeatedPostureProgram::update` (`intent.cpp:142-161`, от `if
-    (!(std::isfinite(time_s) ...` до проверки `min_lean_rad` включительно) переносятся без изменений в
-    `check_inputs`, плюс одна новая:
+    `update` не меняется.
+  - Программа позы. В начале `SeatedPostureProgram::update`, после проверки `min_lean_rad` (`intent.cpp:160-161`),
+    добавить проверку новой добавки. После суммы импульсов (`intent.cpp:175-178`) — саму добавку:
 
 ```cpp
     if (!(std::isfinite(extra_target_rad) && extra_target_rad >= 0.))
         throw std::invalid_argument("posture extra target must be finite and nonnegative");
 ```
-
-    `update` начинается с `check_inputs(time_s, road_grade, dt_s, front_load_share, lean_limit_rad, dead_time_s,
-    min_lean_rad, extra_target_rad);`, затем прежняя строка `const double delay = ...`. После суммы импульсов
-    (`intent.cpp:175-178`) добавляется:
 
 ```cpp
     // Launch part 3a: the reaction's forward lean joins the target and
@@ -1888,126 +2008,167 @@ std::optional<Percepts> Perception::update(const SenseSample &sample) {
     if (extra_target_rad != 0.) extra += extra_target_rad;
 ```
 
-  - Политика. В `SeatedClimbPolicy::update` сразу после `if (!config_.enabled) return {};` и до `power_target_w`:
+  - Политика: вызов программы получает добавку — `program_.update(time_s_, preview, dt, signals.front_load_share,
+    lean_limit_rad, std::nullopt, min_lean_rad, extra_lean_rad)`. Больше политика не меняется.
+  - `RiderIntent` — члены и `Core` из «Интерфейсов» (`policy_`, `last_tick_step_`, `intent_` переходят в `core_`).
+    Каждое обращение к ним в `intent.cpp` идёт через `core_`. Конструктор:
 
 ```cpp
-    // Plan decision 11: every input the posture program will see is checked
-    // before the first change, so a rejected update leaves the policy as
-    // it was (the program used to reject after the queue and the surge
-    // budget had moved).
-    program_.check_inputs(time_s_, preview, dt, signals.front_load_share, lean_limit_rad, std::nullopt,
-                          min_lean_rad, extra_lean_rad);
-```
-
-    и вызов программы получает добавку: `program_.update(time_s_, preview, dt, signals.front_load_share,
-    lean_limit_rad, std::nullopt, min_lean_rad, extra_lean_rad)`.
-  - `RiderIntent`:
-    - члены `std::optional<Perception> perception_;` и `std::optional<FrontLiftReaction> reaction_;` после
-      `policy_`;
-    - конструктор `RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, double dt_s)`: прежние
-      проверки, затем внутри `if (config_.enabled) { ... }` после проверки `orientation_tau_s`:
-
-```cpp
+RiderIntent::RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, double dt_s)
+    : config_(config),
+      dt_s_(validation::positive(dt_s, "rider physics timestep")),
+      period_steps_(python_round_steps(config_.period_s / dt_s_)),
+      core_(config_),
+      staged_(config_) {
+    // ... the existing min_elbow_flexion_deg check and the existing
+    // `if (config_.enabled) { ... }` checks, unchanged, then inside that block:
         // Launch part 3a: the runtime document never passes post_init, so
         // the reaction's period and posture context is checked here too.
         validate_reaction_context(reaction, config_.period_s, config_.max_forward_lean_rad);
-        perception_.emplace(config_.reaction_delay_s, config_.period_s);
-        reaction_.emplace(reaction, config_.period_s);
+        core_.perception.emplace(config_.reaction_delay_s, config_.period_s);
+        core_.reaction.emplace(reaction, config_.period_s);
+    // (end of the enabled block)
+    staged_ = core_;
+    reset();
+}
 ```
 
-    - прежний конструктор `RiderIntent(IntentConfig, double)` удаляется;
-    - `reset()` после `policy_.reset();` — `if (perception_) perception_->reset(); if (reaction_) reaction_->reset();`;
-    - `reaction()` — `return reaction_ ? reaction_->command() : ReactionCommand{};`;
-    - `state()` дополнительно заполняет `.perception = perception_ ? std::optional{perception_->state()} :
-      std::nullopt` и так же `.reaction`.
-  - `resolve_full` — тело нынешнего `resolve` (`intent.cpp:448-489`) с такими изменениями. Ранний выход:
-    `return {.control = control, .effort_limited = false};`. Пробная рекурсия:
+    Комментарии `// ...` в этом блоке — указание: на их месте остаются нынешние проверки
+    `intent.cpp:400-426` дословно.
+    - Прежний конструктор `RiderIntent(IntentConfig, double)` удаляется.
+    - `reset()`:
 
 ```cpp
-    if (!advance) {
-        RiderIntent probe(*this);
-        return probe.resolve_full(control, signals, senses, step, road_grade, preview_grade,
-                                  lean_limit_rad, true, true, min_lean_rad);
-    }
+void RiderIntent::reset() {
+    core_.policy.reset();
+    if (core_.perception) core_.perception->reset();
+    if (core_.reaction) core_.reaction->reset();
+    core_.last_tick_step = -1;
+    core_.intent = {};
+}
 ```
 
-    Тик (проверка `on_schedule` прежняя):
+    - `seed_lean` и `schedule_pulse` работают с `core_.policy` и `core_.intent`, как сейчас с `policy_` и `intent_`.
+    - `reaction()` — `return core_.reaction ? core_.reaction->command() : ReactionCommand{};`.
+    - `state()` — прежние поля из `core_`; дополнительно `.perception = core_.perception ?
+      std::optional{core_.perception->state()} : std::nullopt` и так же `.reaction`.
+  - Тик, выход и `resolve_full`:
 
 ```cpp
-        // Launch part 3a — one acquisition per intention tick, staged so a
-        // rejected input changes nothing: perception and reaction are
-        // computed without committing, the policy checks all its inputs
-        // before its first change (decision 11), and only then do
-        // perception and reaction commit. Both are engaged here: a
-        // disabled intent returned above.
-        const SenseSample sample{.signals = signals, .senses = senses};
-        const std::optional<Percepts> percepts = perception_->peek(sample);
-        FrontLiftReaction next_reaction = *reaction_;   // a value copy: no heap memory
-        const double lean_add = next_reaction.update(percepts).lean_add_rad;
-        intent_ = policy_.update(signals, config_.period_s, road_grade, preview_grade, lean_limit_rad,
-                                 min_lean_rad, lean_add);
-        perception_->commit(sample, percepts);
-        *reaction_ = next_reaction;
-        last_tick_step_ = step;
-```
+void RiderIntent::tick(Core &core, const IntentSignals &signals, const RiderSenses &senses, std::int64_t step,
+                       double road_grade, std::optional<double> preview_grade,
+                       std::optional<double> lean_limit_rad, std::optional<double> min_lean_rad) const {
+    // Python's expected = last+period uses unbounded ints; the difference
+    // form cannot overflow since 0 <= last_tick <= step.
+    const bool on_schedule =
+        core.last_tick_step < 0 ? step == 0 : step - core.last_tick_step == period_steps_;
+    if (!on_schedule)
+        throw std::invalid_argument("rider intention clock skipped an acquisition");
+    // Launch part 3a: one acquisition per intention tick — the delayed
+    // percepts move the front-lift reaction, whose lean add joins the
+    // policy's posture target. Perception and reaction are engaged: a
+    // disabled intent never reaches a tick.
+    const SenseSample sample{.signals = signals, .senses = senses};
+    const double lean_add = core.reaction->update(core.perception->update(sample)).lean_add_rad;
+    core.intent = core.policy.update(signals, config_.period_s, road_grade, preview_grade, lean_limit_rad,
+                                     min_lean_rad, lean_add);
+    core.last_tick_step = step;
+}
 
-    Выход:
-
-```cpp
+IntentResolution RiderIntent::output(const Core &core, IntentControl control) {
     if (!control.rider_enabled)
         return {.control = control, .effort_limited = false};
     if (!control.posture.has_value())
-        control.posture = intent_.posture;
+        control.posture = core.intent.posture;
     bool limited = false;
     if (!control.human_torque_nm.has_value()) {
-        control.human_torque_nm = intent_.effort_ceiling_nm;
+        control.human_torque_nm = core.intent.effort_ceiling_nm;
         // The rider eases the ceiling while reacting; a factor of one is
         // not applied at all (bitwise unchanged).
-        const double factor = reaction().effort_factor;
+        const double factor = core.reaction ? core.reaction->command().effort_factor : 1.;
         if (factor != 1.) {
-            control.human_torque_nm = intent_.effort_ceiling_nm * factor;
+            control.human_torque_nm = core.intent.effort_ceiling_nm * factor;
             limited = true;
         }
     }
     return {.control = control, .effort_limited = limited};
+}
+
+// NOLINTBEGIN(bugprone-easily-swappable-parameters) fixed Python call signature
+IntentResolution RiderIntent::resolve_full(IntentControl control, const IntentSignals &signals,
+                                           const RiderSenses &senses, std::int64_t step, double road_grade,
+                                           std::optional<double> preview_grade,
+                                           std::optional<double> lean_limit_rad, bool active, bool advance,
+                                           std::optional<double> min_lean_rad) {
+    // The wire decode already guaranteed a well-formed control dict — the
+    // oracle's isinstance check maps to that boundary.
+    if (!config_.enabled || !active)
+        return {.control = control, .effort_limited = false};
+    if (step < 0)
+        throw std::invalid_argument("rider clock requires a nonnegative physics step");
+    if (step < core_.last_tick_step)
+        throw std::invalid_argument("reset rider intention before rewinding physics");
+    const bool due = step % period_steps_ == 0 && step != core_.last_tick_step;
+    if (!advance) {
+        // The probe runs the tick on a local copy, like
+        // copy.deepcopy(self).resolve(...): core_ and staged_ stay as they are.
+        if (!due) return output(core_, control);
+        Core probe = core_;
+        tick(probe, signals, senses, step, road_grade, preview_grade, lean_limit_rad, min_lean_rad);
+        return output(probe, control);
+    }
+    if (due) {
+        // Decision 11: stage, then commit by a nonthrowing swap — a rejected
+        // input, a rejected posture or a failed allocation leaves core_ as
+        // it was, and a retry is exactly one tick.
+        staged_ = core_;
+        tick(staged_, signals, senses, step, road_grade, preview_grade, lean_limit_rad, min_lean_rad);
+        std::swap(core_, staged_);
+    }
+    return output(core_, control);
+}
+// NOLINTEND(bugprone-easily-swappable-parameters)
 ```
 
     `resolve` — `return resolve_full(control, signals, senses, step, road_grade, preview_grade, lean_limit_rad,
-    active, advance, min_lean_rad).control;`. Комментарий `NOLINTBEGIN(...misc-no-recursion)` переходит на
-    `resolve_full`.
+    active, advance, min_lean_rad).control;`. Старая рекурсия пробного шага исчезает, вместе с ней уходит
+    `misc-no-recursion` из `NOLINT`.
   - `restore` (решение 12):
 
 ```cpp
 void RiderIntent::restore(const State &state) {
-    if (state.perception.has_value() != perception_.has_value())
+    if (state.perception.has_value() != core_.perception.has_value())
         throw std::invalid_argument("rider intent perception state presence must match the enabled intent");
-    if (state.reaction.has_value() != reaction_.has_value())
+    if (state.reaction.has_value() != core_.reaction.has_value())
         throw std::invalid_argument("rider intent reaction state presence must match the enabled intent");
-    if (perception_) {
+    if (core_.perception) {
         // One acquisition per intention tick, the first at step 0, so the
-        // perception clock is the tick count; before the first percept the
-        // reaction has only ever seen "no percepts" and is initial.
+        // perception clock is the tick count; the reaction has seen exactly
+        // the percepts delivered so far (saturating at its cap).
         if (state.last_tick_step < -1 ||
-            (state.last_tick_step >= 0 && state.last_tick_step % period_steps_ != 0))
+            (state.last_tick_step >= 0 && (state.last_tick_step % period_steps_ != 0 ||
+                                           state.last_tick_step / period_steps_ ==
+                                               std::numeric_limits<std::int64_t>::max())))
             throw std::invalid_argument("rider intent last_tick_step is off the intention grid");
         const std::int64_t ticks = state.last_tick_step < 0 ? 0 : state.last_tick_step / period_steps_ + 1;
         if (state.perception->tick != ticks)
             throw std::invalid_argument("rider intent perception tick must equal the intention tick count");
-        if (!state.perception->delayed.has_value() && !(*state.reaction == FrontLiftReaction::State{}))
-            throw std::invalid_argument("rider intent reaction must be initial before the first percept");
+        const std::int64_t delivered = std::max<std::int64_t>(0, ticks - core_.perception->delay_ticks());
+        if (state.reaction->percepts_seen != std::min(delivered, core_.reaction->percepts_cap()))
+            throw std::invalid_argument("rider intent reaction percepts_seen must equal the delivered percepts");
     }
-    RiderIntent next(*this);   // staged: every component restores into the copy first
-    next.policy_.restore(state.policy);
-    next.policy_.program().restore(state.program);
-    if (next.perception_) next.perception_->restore(*state.perception);
-    if (next.reaction_) next.reaction_->restore(*state.reaction);
-    next.last_tick_step_ = state.last_tick_step;
-    next.intent_ = state.intent;
-    *this = std::move(next);
+    Core next = core_;   // staged: every component restores into the copy first
+    next.policy.restore(state.policy);
+    next.policy.program().restore(state.program);
+    if (next.perception) next.perception->restore(*state.perception);
+    if (next.reaction) next.reaction->restore(*state.reaction);
+    next.last_tick_step = state.last_tick_step;
+    next.intent = state.intent;
+    std::swap(core_, next);
 }
 ```
 
-  - Кодек состояния (`state_codec.cpp`, `#include "senses_codec.hpp"`). Декодер (`:2278-2293`):
+  - Кодек состояния (`state_codec.cpp`, `#include "senses_codec.hpp"`). В декодере (`:2278-2293`):
 
 ```cpp
     ncd::exact(d, keys("last_tick_step", "intent", "policy", "program", "perception", "reaction"));
@@ -2018,7 +2179,7 @@ void RiderIntent::restore(const State &state) {
         state.reaction = decode_reaction_state(*d["reaction"].value, std::string(path) + ".reaction");
 ```
 
-    Кодировщик (`:2328-...`), после блока `program`:
+    В кодировщике (`:2328-...`), после блока `program`:
 
 ```cpp
     out.emplace_back("perception", state.perception ? encode_perception_state(*state.perception) : bio::Value{});
@@ -2066,8 +2227,9 @@ void RiderIntent::restore(const State &state) {
         }
 ```
 
-  - Каталог. В `catalog-v1.json` и в `catalog_data.inc` таблица вставляется сразу после `channel_rider_senses`. Два
-    ключа (`episode_id`, `interval_id`) копируются дословно из `channel_rider_senses`:
+  - Каталог. В `catalog-v1.json` и в `catalog_data.inc` таблица вставляется сразу после `channel_rider_senses`. Её
+    два ключа — дословные копии ключей `episode_id` и `interval_id` таблицы `channel_rider_senses`
+    (`catalog-v1.json:8015-8058`), строка `"keys"` ниже — место для них:
 
 ```json
 {
@@ -2091,36 +2253,57 @@ void RiderIntent::restore(const State &state) {
      "except_keys": [], "children": [], "key": "effort_factor", "dtype": "double", "unit": "1", "phase": "interval",
      "optional": false, "measurement": "derived",
      "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Front wheel lift reaction",
-     "description": "multiplier on the rider's own effort ceiling; 1 when the ease action is off or not acting"},
+     "description": "multiplier on the rider's own effort ceiling; 1 when the ease action is off or the reaction is idle or deciding, below 1 while acting and on the way back during releasing"},
     {"frame": "n/a", "path": ["rider_reaction", "lean_add_rad"], "aliases": [], "shape": null, "axes": null,
      "except_keys": [], "children": [], "key": "lean_add_rad", "dtype": "double", "unit": "rad", "phase": "interval",
      "optional": false, "measurement": "derived",
      "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Front wheel lift reaction",
-     "description": "forward lean the reaction adds to the posture program target; 0 when the lean action is off or not acting"}
+     "description": "forward lean the reaction adds to the posture program target; 0 when the lean action is off or the reaction is idle or deciding, positive while acting and on the way back during releasing"}
   ],
   "description": "front-lift reaction state per interval (launch part 3a); neutral when the rider intent is off",
   "source": "native/src/runtime/step.cpp::PhysicalStep::publish_raw"
 }
 ```
 
-    Строка `"keys"` выше — указание, а не текст: вместо неё стоят два описателя ключей. Части `catalog_data.inc` —
-    сырые строки короче 64 КиБ (`-Woverlength-strings`). Часть с `channel_rider_senses` уже 64 317 байт, поэтому
-    новая таблица идёт отдельной частью: размер массива `kCatalogDocumentParts` 7 → 8. Проверка — склеенные части
-    `catalog_data.inc` разбираются как JSON, и длина каждой части меньше 65 536 байт. Ресурс
-    `catalog-v1.json` уже расходится с `catalog_data.inc` в `channel_energy` (нет `closure_signed_j` и
-    `closure_absolute_j`). Это старый долг: он не исправляется здесь и записывается в журнал. Новая таблица в обоих
-    файлах одинакова.
-    `test_catalog.cpp:72` — 512, комментарий «512 = 506 plus channel_rider_reaction's two identity keys and four
-    leaf fields (phase, predicate, effort_factor, lean_add_rad)». `tests/fixtures/recording/schema.json` — имя
-    таблицы после `channel_rider_senses`; `catalog_welded.json` перезаписывается по правилу.
-  - Вызовы из описи: `resolve(...)` получает `senses` третьим аргументом (в тестах — `rider::RiderSenses{}` или
-    смысловое значение теста); конструкторы — выключенная реакция с числами описи (в тестах — константа файла
-    `kSwitchedOffReaction`, равная `switched_off()`).
-- [ ] **Шаг 4.** `perl -e 'alarm 2400; exec @ARGV' -- mise run test 'front_lift_reaction|rider_senses|rider_perception|launch_preparation|seated_posture_program|seated_pedaling_cycle|realistic_pedelec_acceptance|io_state_codecs|recording_catalog|pedaling_cut_order|runtime_bootstrap|research_bootstrap'`
-  — новые зелёные, прежние как в базе (`runtime_bootstrap`, `research_bootstrap` — красные, причина прежняя).
-- [ ] **Шаг 5. Перезаписи** документов описи — скриптом описи для входов, способом перезаписи теста для выходов
-  зелёных тестов, с выводом `check_rerecord.py --ref <коммит задачи 2>`. Выходы красных тестов не трогать,
-  перечислить.
+    - `catalog_data.inc` — сырые строки короче 64 КиБ (`-Woverlength-strings`). Часть, в которой лежит
+      `channel_rider_senses` (`:7221-8227`), занимает 33 886 байт, предыдущая — 64 317. Новая таблица вставляется
+      отдельной частью на границе перед `channel_rider_commands` (`:8228`). Размер массива `kCatalogDocumentParts`
+      7 → 8.
+    - Проверка: склеенные части `catalog_data.inc` разбираются как JSON, длина каждой меньше 65 536 байт, и новая
+      таблица в обоих файлах одинакова.
+    - Ресурс `catalog-v1.json` уже расходится с `catalog_data.inc` в `channel_energy` (нет `closure_signed_j` и
+      `closure_absolute_j`). Это старый долг: здесь он не исправляется и записывается в журнал.
+    - `test_catalog.cpp:72` — 512, комментарий «512 = 506 plus channel_rider_reaction's two identity keys and four
+      leaf fields (phase, predicate, effort_factor, lean_add_rad)». `tests/fixtures/recording/schema.json` — имя
+      таблицы после `channel_rider_senses`. `catalog_welded.json` получает только новые записи.
+  - Вызовы из описи:
+    - `resolve(...)` получает `senses` третьим аргументом: в тестах `rider::RiderSenses{}` или значение, которое
+      имеет смысл для этого теста;
+    - конструкторы получают выключенную реакцию с числами описи (`.05/.1/.3`, на сетке и при периоде `.01`, и при
+      `.00125`): константа `kSwitchedOffReaction` в каждом файле из описи вызовов (`test_launch_preparation.cpp`,
+      `test_seated_posture_program.cpp`, `test_native_rider_intent.cpp`):
+
+```cpp
+// The working profile's switched-off reaction (part 3a inventory numbers);
+// its .05/.1/.3 s times sit on every intention period these tests use.
+const rider::FrontLiftReactionConfig kSwitchedOffReaction{
+    .hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
+    .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
+    .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
+```
+
+- [ ] **Шаг 4. Тесты и скорость.**
+  - `perl -e 'alarm 2400; exec @ARGV' -- mise run test 'front_lift_reaction|rider_senses|rider_perception|launch_preparation|seated_posture_program|seated_pedaling_cycle|realistic_pedelec_acceptance|io_state_codecs|recording_catalog|pedaling_cut_order|runtime_bootstrap|research_bootstrap|native_rider_intent'`.
+    Новые зелёные, прежние как в базе: `runtime_bootstrap`, `research_bootstrap`, `native_rider_intent` красные с
+    прежней причиной.
+  - Скорость. Две поездки по очереди, не параллельно и не во время другой проверки: база (сборка
+    `/Volumes/SSD_1TB_M2/work/wt/lane-flip`) и вершина. Сначала посмотреть флаги в
+    `build/native-release/bin/bike-ride --help`, затем
+    `perl -e 'alarm 600; exec @ARGV' -- /usr/bin/time -p <bin>/bike-ride --backend native --physics-config examples/research/viewer_physics_welded.toml --headless --no-plots --duration 20 --check-policy diagnostic --out <новая папка>`
+    (дорога по умолчанию). В отчёт идут обе строки `real` и отношение. Это замер, а не проверка: решение о цене копии
+    ядра — за пользователем.
+- [ ] **Шаг 5. Перезаписи** — команды раздела «Опись» («Команды…»), с базой задачи 2 для `check_rerecord.py`.
+  Выходы красных тестов не трогать, перечислить.
 - [ ] **Шаг 6. Коммит и проверка.** `feat(rider): perception and the front-lift reaction in the intent`;
   `check_task.sh`, база — коммит задачи 2, `EXPECT` пусто, с `ab`.
 
@@ -2156,10 +2339,9 @@ bash $T/ab_settle.sh /Volumes/SSD_1TB_M2/work/wt/lane-flip "$PWD" $F/ab > $F/ab.
 
 Отчёт называет доказательство по частям, как в «Общих ограничениях». Затем строка состояния в дорожной карте,
 запись в журнал и коммит `docs(plan): launch part 3a is in the code`. В журнал идут:
-- вопрос пользователю о `native_rider_intent`: убрать тест с причиной и задачей или перезаписать записи;
 - расхождение `catalog-v1.json` и `catalog_data.inc` в `channel_energy`;
-- пробный шаг (`advance=false`) теперь копирует и очередь восприятия. Скорость поездки не замерялась; замер — в
-  части 3b вместе с планом старта.
+- замер скорости из задачи 3 (копия ядра на каждом тике) — пользователю на решение;
+- дошла ли тестовая поездка канала до `acting` (строка `reaction ride: ...`).
 
 ## Ответы на ревью
 
@@ -2195,21 +2377,35 @@ bash $T/ab_settle.sh /Volumes/SSD_1TB_M2/work/wt/lane-flip "$PWD" $F/ab > $F/ab.
 
 | Пункт | Ответ |
 |---|---|
-| I1 — отказ тика оставлял частичное продвижение | Тик «посчитать → проверить → зафиксировать»: `Perception::peek`/`commit`, копия реакции, проверка всех входов политики до первого изменения (решение 11, это и старая ошибка обычной езды). Тест: NaN ощущения, уклона и предела наклона ничего не меняют, исправленный повтор равен одному тику. Нехватка памяти и внутренние инварианты вне договора — записано |
+| I1 — отказ тика оставлял частичное продвижение | Редакция 4: двойной буфер ядра `Core` (решение 11), см. I3 третьего ревью |
 | I2 — два теста падали не по делу | Удаление ключа — только внутри блока `[front_lift_reaction]` и по полной строке; отказ восстановления проверяется на действующей реакции с выходом за предел выключателя |
 | I3 — согласованность частей при восстановлении | Решение 12: часы восприятия равны числу тиков, реакция начальная до первого восприятия; восстановление реакции принимает ровно достижимые сочетания фазы, признака и счётчиков; тесты прямые и через документ; продолжение после восстановления в разгоне, решении и возврате |
 | I4 — каталог | Отдельная таблица по образцу `channel_rider_senses`: 2 ключа + 4 поля, 506 → 512; `schema.json`, ожидаемый набор `test_recording_catalog`, `catalog_welded.json`; канал всегда есть, без `null`; новая часть `catalog_data.inc` из-за предела 64 КиБ |
 | I5 — тест прореживания не прореживал | Физический период управления 4 шага и прореживание 8; тест требует и измеренные, и неизмеренные интервалы; реакция включена с тестовыми порогами, проверяются порядок фаз, ровно `decision_s` до действия, оба действия и повтор после сброса бит в бит (захват и восстановление); кодирование и чтение канала через DuckDB — отдельный тест |
-| I6 — домен добавки | Конечная и неотрицательная, проверка в `check_inputs` у программы и политики до изменений; тест NaN, бесконечности и отрицательной |
-| I7 — двоичные входы `native_rider_intent` | Не принято как ошибка плана: честный перевод невозможен (в записях нет истории ощущений, которую требует согласованное восстановление), выходы оракула трогать нельзя. Вопрос пользователю — в отчёте части |
+| I6 — домен добавки | Конечная и неотрицательная, проверка в начале `SeatedPostureProgram::update` до его изменений; тест NaN, бесконечности и отрицательной у программы и у политики |
+| I7 — двоичные входы `native_rider_intent` | Редакция 4: входы переводятся точно, см. I6 третьего ревью |
 | I8 — `causes 0` против изменения причины | `causes.py` с `EXPECT`: точные пары строк, всё прочее — стоп; список задачи 2 готов; итог сравнивается с частью 2 (со списком) и с задачей 3 (без списка); нулевой итог не выдаётся за зелёный |
-| I9 — заглушки | Приведены `peek`/`commit`, `check_inputs`, конструктор, `reset`, `state`, `restore`, `resolve`, кодек состояния, перегрузка окружения, описатели каталога, скрипты TOML и документов; правило проверки контекста решено (безусловно, с доказательством) |
+| I9 — заглушки | Редакция 4: см. M2 третьего ревью |
 | M1 — доказательства шире проверок | `same_control` сравнивает все поля, `same_posture` — значения смещения; оракул через сброс с посевом наклона; тест вызывающего и выключенных путей; точки восстановления 50 / 290 / 560 с проверкой фазы; комментарий о времени выборки в `perception.hpp`. Задача 1 по-прежнему проверяет только скалярный порядок; отчёт называет это так |
 | M2 — указатели | `drivetrain::PrepareInputs`; тело `resolve` — `intent.cpp:448-489`; база задачи — вершина ветки перед задачей |
+
+**Третье ревью (`2026-11-11-plan3a-review/review-3.md`):**
+
+| Пункт | Ответ |
+|---|---|
+| I1 — поездка не могла показать неизмеренный интервал (`legacy`-захват) | Перегрузка окружения задаёт и режим захвата; тест берёт `full`, требует подряд идущие интервалы, измеренные и неизмеренные. Точные сроки реакции доказывают тесты намерений; поездка проверяет перенос канала, порядок фаз, пределы выходов и повтор после сброса, а дошла ли она до `acting` — печатает и пишет в отчёт |
+| I2 — выключенная таблица не на сетке периода `.01` | `kSwitchedOffReaction` с числами описи `.05/.1/.3` в файлах вызовов; короткая таблица `switched_off()` осталась только в тестах 1,25 мс |
+| I3 — тик не транзакция (нарушение позы, нехватка памяти) | Решение 11: ядро `Core`, тик на двойнике, фиксация обменом без исключений; пробный шаг — на локальной копии. Тесты: NaN трёх входов, пределы `lean_limit = min_lean = 1` (отказ `validate_posture`), перебор отказов выделения памяти на холодном тике с имитатором `bike_test_allocation_faults`; повтор равен одному тику. Цена копии замеряется |
+| I4 — переполнение `last_tick_step / period_steps + 1` | Проверка частного до `+ 1`; тест `INT64_MAX` напрямую и через документ |
+| I5 — реакция в обход выдержки и решения после первого восприятия | Счётчик `percepts_seen` в состоянии реакции; совместная проверка с числом выданных восприятий; самые ранние номера фаз; «действие сдвигает каждый включённый выход». Тест прививки на первое восприятие и контроль. Договор назван «необходимые условия», не «точная достижимость» |
+| I6 — опровержение I7 второго ревью неверно | Принято. Записи `state_roundtrip` — снимки в разгоне, переводятся точно; `state_rejects_malformed` получают начальные состояния. Скрипт `migrate_rider_intent_bins.py` и проверка `verify_migration.py` прогнаны на копии |
+| M1 — доказательства шире проверок | Сравнение всего сохранённого состояния при продолжении и вокруг пробного шага в тесте реакции; задача 1 по-прежнему проверяет только скалярный порядок, отчёт называет это так; поездка не доказывает физическую правдоподобность |
+| M2 — исполнимые детали переноса | Список из 45 файлов (`manifest.sh`), скрипт с проверкой вида записи до записи, проверка прежних значений, команды с путями и `--repo`, ожидаемый вывод; перенос тела окружения и ключей каталога — дословные указания с номерами строк |
+| M3 — база, размеры частей, описания | База задачи 1 — вершина перед задачей; размеры частей `catalog_data.inc` и граница вставки исправлены; описания выходов говорят о возврате во время `releasing` |
 
 ## Что остаётся части 3b
 
 План старта (`rider/launch_plan.{hpp,cpp}`), поля таблицы удержания, отпускания тормоза, предела нажима,
 переключения и конца старта, встраивание в `RiderIntent` с выключателем, протокол просьбы и конца среза, передача
 обычной езде с посевом политики (добавка реакции в цели программы сохраняется), события плана в записи, подбор
-чисел — C2, C3, I10, I11, I14 для плана. Замер скорости поездки: пробный шаг теперь копирует и очередь восприятия.
+чисел — C2, C3, I10, I11, I14 для плана.

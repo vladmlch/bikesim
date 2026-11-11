@@ -2951,6 +2951,7 @@ StepState PhysicalStep::state() const {
     s.contact_query = contact_query_.state();
     s.probe_query = probe_query_.state();
     s.energy = energy_;
+    s.brake_latch = brake_.state();
     s.signals = intent_signals_;
     s.senses = rider_senses_;
     if (rider_control_.has_value())

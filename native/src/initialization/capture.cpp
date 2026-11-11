@@ -14,6 +14,7 @@
 #include "../model/mapping.hpp"
 #include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
+#include "../runtime/brake_latch_codec.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../stepper.hpp"
 
@@ -115,7 +116,9 @@ Value runtime_state(const runtime::StepState& s, const runtime::RuntimeConfig& c
         {"research_accounting_valid", Value{s.research_accounting_valid}},
         {"initializing", Value{s.initializing}},
         {"filters", Value{Object{{"front", grounded(s.filters[0])}, {"rear", grounded(s.filters[1])}}}},
-        {"balance", balance(s.balance)}, {"crash", Value{Object{{"event", std::move(crash)}}}},
+        {"balance", balance(s.balance)},
+        {"brake_latch", runtime::encode_brake_latch(s.brake_latch)},
+        {"crash", Value{Object{{"event", std::move(crash)}}}},
         {"contacts", contacts(s.contacts)}, {"contact_query", query(s.contact_query)},
         {"probe_query", query(s.probe_query)}, {"energy", energy(s.energy)},
         {"history", wire_value(runtime::Wire(runtime::WorkHistory{}.as_wire()))},

@@ -300,6 +300,13 @@ bike_add_reference_test(rider_perception ENGINE
 bike_add_reference_test(rider_brake_channel ENGINE
   SOURCES test_rider_brake_channel.cpp LIBRARIES bike_app bike_validation
   LABELS launch rider)
+# Launch part 1, task 6 — the static-brake latch in the step state: a
+# committed bite rides the runtime.brake_latch document, and the
+# component-level serialize -> codec -> restore continuation holds
+# bitwise through advancing hold/release/reseat inputs (review P9).
+bike_add_reference_test(static_brake_latch ENGINE
+  SOURCES test_static_brake_latch.cpp LIBRARIES bike_app bike_validation
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

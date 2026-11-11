@@ -151,6 +151,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/runtime/presentation.cpp"
   "${_bike_native_dir}/src/runtime/status.cpp"
   "${_bike_native_dir}/src/runtime/static_brake.cpp"
+  "${_bike_native_dir}/src/runtime/brake_latch_codec.cpp"
   "${_bike_native_dir}/src/runtime/step.cpp"
   "${_bike_native_dir}/src/runtime/bootstrap.cpp"
   "${_bike_native_dir}/src/runtime/bootstrap_io.cpp"

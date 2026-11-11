@@ -50,6 +50,7 @@
 #include "../tyre/profile.hpp"
 #include "../writer_config.hpp"
 #include "../writers/drivetrain.hpp"
+#include "brake_latch_codec.hpp"
 #include "value_readers.hpp"
 
 namespace runtime {
@@ -259,7 +260,7 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
                          "research_accounting_valid", "initializing",
                          "filters", "balance", "crash", "contacts",
                          "contact_query", "probe_query", "energy", "history",
-                         "model_status", "monitor"));
+                         "model_status", "monitor", "brake_latch"));
     runtime::StepState out;
     out.step = int_field(rt, "step");
     if (out.step < 0)
@@ -310,6 +311,9 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
         parse_query_state(vread::section(rt, "contact_query"));
     out.probe_query = parse_query_state(vread::section(rt, "probe_query"));
     out.energy = parse_energy(vread::section(rt, "energy"));
+    out.brake_latch = decode_brake_latch(
+        *vread::field(rt, "brake_latch").value,
+        rt.child("brake_latch"));
     out.signals =
         rider::decode_intent_signals(bootstrap.signals, "state.signals");
     out.senses =

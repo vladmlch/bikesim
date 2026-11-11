@@ -70,6 +70,19 @@ public:
     // fresh episode; here the bootstrap restore does.
     void reset();
 
+    // The two captured bite anchors — the step state's serializable share
+    // (launch part 1, task 6): state.runtime.brake_latch carries them as
+    // {"front": number|null, "rear": number|null}. restore() validates
+    // before committing: a present angle must be finite, and a rejected
+    // field leaves BOTH latches untouched — no half-restored bite.
+    struct State {
+        std::optional<double> latch_front, latch_rear;
+    };
+    [[nodiscard]] State state() const {
+        return {.latch_front = latch_front_, .latch_rear = latch_rear_};
+    }
+    void restore(const State &state);
+
     // solved_components: per-brake generalized force of the solved
     // mjCNSTR_FRICTION_DOF constraint rows, via mj_mulJacTVec over the
     // selected multipliers. Zero vector when no row is present.

@@ -131,6 +131,17 @@ void StaticBrake::reset() {
     latch_rear_ = std::nullopt;
 }
 
+void StaticBrake::restore(const State &state) {
+    // Both angles validate before either commits — a rejected rear must
+    // not orphan an already-written front.
+    if (state.latch_front.has_value())
+        validation::finite(*state.latch_front, "front latch angle");
+    if (state.latch_rear.has_value())
+        validation::finite(*state.latch_rear, "rear latch angle");
+    latch_front_ = state.latch_front;
+    latch_rear_ = state.latch_rear;
+}
+
 std::pair<std::vector<double>, std::vector<double>>
 StaticBrake::solved_components(const mjModel *model,
                                const mjData *data) const {

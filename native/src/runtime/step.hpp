@@ -193,6 +193,10 @@ struct StepState {
     RuntimeContacts contacts{};
     RuntimeContactQuery::State contact_query{}, probe_query{};
     EnergyState energy{};
+    // The committed static-brake bite anchors — decoded strictly on the
+    // transport but intentionally NOT applied by PhysicalStep::restore:
+    // a fresh episode still re-bites (brake_.reset() stays the rule).
+    StaticBrake::State brake_latch{};
     rider::IntentSignals signals{};
     rider::RiderSenses senses{};
     std::optional<rider::SpindleController::State> rider_controller;

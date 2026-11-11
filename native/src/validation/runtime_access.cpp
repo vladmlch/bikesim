@@ -31,6 +31,9 @@ void RuntimeRigAccess::set_rider_commands(runtime::NativeRideRuntime& ride,std::
 void RuntimeRigAccess::set_rider_commands(runtime::NativeResearchRuntime& research,std::optional<::rider::RiderCommands> commands) {
     const Guard guard(research.busy_);research.require_open();set_rider_commands(*research.runtime_,commands);
 }
+const runtime::StaticBrake &RuntimeRigAccess::static_brake(const runtime::PhysicalStep& physical) {
+    return physical.brake_;
+}
 void RuntimeRigAccess::release_rider(Stepper& stepper,runtime::PhysicalStep& physical){
     if(stepper.has_rider_contacts())stepper.rider_contacts_release_all();
     if(physical.rider_present()){auto state=physical.rider_control().state();state.enabled=false;physical.rider_control().restore(state);}

@@ -1006,6 +1006,10 @@
       "low_started_s": null,
       "started_s": null
     },
+    "brake_latch": {
+      "front": null,
+      "rear": null
+    },
     "contact_query": {
       "front_controller_grounded": {
         "last_loaded_s": null,

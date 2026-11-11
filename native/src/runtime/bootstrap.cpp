@@ -393,7 +393,8 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
                              "research_accounting_valid", "initializing",
                              "filters", "balance", "crash", "contacts",
                              "contact_query", "probe_query", "energy",
-                             "history", "model_status", "monitor"));
+                             "history", "model_status", "monitor",
+                             "brake_latch"));
     out.step = vread::integer(vread::field(runtime_section, "step"),
                               runtime_section.child("step"));
     if (out.step < 0)

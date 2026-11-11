@@ -4,6 +4,7 @@
 #include "../rider/intent.hpp"
 #include "../runtime/control.hpp"
 #include "../runtime/research_metrics.hpp"
+#include "../runtime/static_brake.hpp"
 #include "../stepper.hpp"
 #include <functional>
 
@@ -43,6 +44,10 @@ public:
     // step-internal), so the journal and the channel observe them at the
     // next committed interval.
     static void set_rider_commands(runtime::NativeResearchRuntime&,std::optional<::rider::RiderCommands>);
+    // Launch part 1, task 6 — read-only handle on the physical step's
+    // static brake so the latch tests snapshot its committed State (and
+    // copy it for continuation) without a writable component handle.
+    static const runtime::StaticBrake &static_brake(const runtime::PhysicalStep&);
 private:
     // -O0 frame budget: the rebase_airborne mutation stays under
     // -Wframe-larger-than by routing the multi-kilobyte rider-contact

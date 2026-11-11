@@ -125,6 +125,7 @@ public:
     explicit SeatedPostureProgram(const IntentConfig &config);
 
     void reset();
+    void seed_lean(double lean_rad);
     void schedule_pulse(double start_s, double duration_s,
                         double amplitude_rad);
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
@@ -169,6 +170,7 @@ public:
     explicit SeatedClimbPolicy(const IntentConfig &config);
 
     void reset();
+    void seed_lean(double lean_rad);
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
     double power_target_w(double preview_grade, double dt_s);
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
@@ -217,6 +219,9 @@ public:
     RiderIntent(IntentConfig config, double dt_s);
 
     void reset();
+    // Starts the posture from the prepared start lean after reset(): the
+    // policy, its posture program and the held intent continue from it.
+    void seed_lean(double lean_rad);
     void schedule_pulse(double start_s, double duration_s,
                         double amplitude_rad);
 

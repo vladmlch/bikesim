@@ -111,6 +111,13 @@ void SeatedPostureProgram::reset() {
     pulses_.clear();
 }
 
+void SeatedPostureProgram::seed_lean(double lean_rad) {
+    if (!std::isfinite(lean_rad) || lean_rad > config_.max_forward_lean_rad ||
+        lean_rad < -config_.max_backward_lean_rad)
+        throw std::invalid_argument("seeded lean must be finite and inside the seated posture bounds");
+    lean_rad_ = lean_rad;
+}
+
 void SeatedPostureProgram::schedule_pulse(double start_s, double duration_s,
                                           double amplitude_rad) {
     if (!std::isfinite(start_s))
@@ -254,6 +261,11 @@ void SeatedClimbPolicy::reset() {
     launch_ramp_s_ = -1.;
     launch_decided_ = false;
     program_.reset();
+}
+
+void SeatedClimbPolicy::seed_lean(double lean_rad) {
+    program_.seed_lean(lean_rad);
+    lean_rad_ = lean_rad;
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
@@ -418,6 +430,11 @@ void RiderIntent::reset() {
     policy_.reset();
     last_tick_step_ = -1;
     intent_ = {};
+}
+
+void RiderIntent::seed_lean(double lean_rad) {
+    policy_.seed_lean(lean_rad);
+    intent_.posture.torso_lean_rad = lean_rad;
 }
 
 void RiderIntent::schedule_pulse(double start_s, double duration_s,

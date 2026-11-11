@@ -5,23 +5,30 @@
 #include "support/temporary_directory.hpp"
 #include "diag.hpp"
 #include "rider/launch_config.hpp"
+#include "rider/intent.hpp"
 #include "initialization/setup_owner.hpp"
 #include "initialization/launch_preparation.hpp"
+#include "initialization/state_file.hpp"
 #include "research/environment.hpp"
 #include "configuration/load.hpp"
+#include "configuration/model_config.hpp"
 #include "launch_ride_support.hpp"
 #include "validation/scenarios.hpp"
 #include "cli/application.hpp"
 #include "io/value.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -273,6 +280,166 @@ void test_start_grade_looks_ahead_of_the_start() {
             "start_cog_teeth", "a research profile that authors the rear cog");
 }
 
+// After reset the intent starts from the seeded lean and slews from it at
+// lean_rate_rad_s: on flat ground with no front-load sample yet the first
+// tick moves the lean exactly one rate step toward upright.
+void test_intent_slews_from_the_seeded_lean() {
+    auto config = cfg::default_physics().seated_climb;
+    config.enabled = true;
+    rider::RiderIntent intent(config, .00125);
+    intent.seed_lean(.05);
+    bt::require(intent.state().policy.lean_rad == .05 && intent.state().program.lean_rad == .05 &&
+                    intent.intent().posture.torso_lean_rad == .05,
+                "the seed reaches the policy, the program and the held intent");
+    const auto control = intent.resolve(rider::IntentControl{}, rider::IntentSignals{}, 0, 0., 0.);
+    const double step = config.lean_rate_rad_s * config.period_s;
+    bt::require(control.posture.has_value() && control.posture->torso_lean_rad == .05 - step,
+                "the first tick slews one rate step from the seed");
+    rejects([&] { intent.seed_lean(config.max_forward_lean_rad + 1e-3); }, "lean", "a seed beyond the forward bound");
+    intent.reset();
+    bt::require(intent.state().program.lean_rad == 0., "reset still starts upright before a seed");
+}
+
+// Bootstrap rider-intent lean, from the sealed state document.
+double intent_lean(const runtime::RuntimeBootstrap &bootstrap, std::string_view part) {
+    return bike::io::as_double(member(member(bootstrap.state.rider_intent, part), "lean_rad"), "lean_rad");
+}
+
+std::vector<std::filesystem::path> cache_entries(const std::filesystem::path &directory) {
+    std::vector<std::filesystem::path> out;
+    for (const auto &entry : std::filesystem::directory_iterator(directory))
+        if (entry.path().extension() == ".npz") out.push_back(entry.path());
+    return out;
+}
+
+// The complete settled state of a completed setup, as the state file
+// stores it — coordinates, integration state, drive, rider, tire and model
+// arrays — by array name, each with its dtype, shape and bytes.
+using StateArrays = std::vector<std::pair<std::string, std::tuple<std::string, std::vector<std::size_t>, std::vector<std::byte>>>>;
+StateArrays settled_state(const init::SetupOwner &owner) {
+    StateArrays out;
+    for (const auto &[name, array] : owner.capture_state_file().arrays)
+        out.emplace_back(name, std::tuple{array.dtype, array.shape, array.bytes});
+    return out;
+}
+std::vector<std::byte> qpos_of(const StateArrays &state) {
+    for (const auto &[name, array] : state)
+        if (name == "qpos") return std::get<2>(array);
+    bt::require(false, "the state file stores qpos");
+    return {};
+}
+
+// One completed setup of `request`: its result, settled state and sealed lean.
+struct Settled {
+    init::EquilibriumResult result;
+    StateArrays state;
+    std::vector<std::byte> qpos;
+    double policy_lean = 0., program_lean = 0.;
+};
+[[gnu::noinline]] Settled settle_once(const init::SetupRequest &request) {
+    auto owner = init::make_setup(request);
+    Settled out{.result = init::settle(*owner), .state = {}, .qpos = {}};
+    out.state = settled_state(*owner);
+    out.qpos = qpos_of(out.state);
+    const auto bootstrap = std::make_unique<runtime::RuntimeBootstrap>(owner->seal_bootstrap());
+    out.policy_lean = intent_lean(*bootstrap, "policy");
+    out.program_lean = intent_lean(*bootstrap, "program");
+    return out;
+}
+
+// The prepared lean is part of every way a settled start is reused. A
+// cache miss settles holding it; a cache hit and an explicit state file
+// restore the very same coordinates and lean; an explicit file settled
+// with another lean is refused; a different lean is a different cache
+// entry and a different rest pose.
+[[gnu::noinline]] void test_prepared_lean_survives_cache_and_state_file() {
+    const bt::TemporaryDirectory cache("launch-lean-cache");
+    auto request = settle_request(0.);
+    request->model.physics->equilibrium_cache_enabled = true; // NOLINT(bugprone-unchecked-optional-access) set by settle_request
+    request->model.physics->rider_launch.start_lean_rad = {.05}; // NOLINT(bugprone-unchecked-optional-access) set by settle_request
+    request->cache_directory = cache.path();
+    const auto miss = settle_once(*request);
+    bt::require(!miss.result.cache_hit && miss.policy_lean == .05 && miss.program_lean == .05,
+                "a cache miss settles and seals the prepared lean");
+    const auto hit = settle_once(*request);
+    bt::require(hit.result.cache_hit && hit.state == miss.state && hit.policy_lean == .05,
+                "a cache hit restores the same complete state and lean");
+    const auto entries = cache_entries(cache.path());
+    bt::require(entries.size() == 1, "one lean is one cache entry");
+    auto pinned = std::make_unique<init::SetupRequest>(*request);
+    pinned->model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    pinned->model.physics->equilibrium_state_file = entries.front().string(); // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    const auto from_file = settle_once(*pinned);
+    bt::require(from_file.result.cache_hit && from_file.state == miss.state && from_file.policy_lean == .05,
+                "an explicit state file restores the same complete state and lean");
+    pinned->model.physics->rider_launch.start_lean_rad = {0.}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    rejects([&] { (void)settle_once(*pinned); }, "fingerprint", "a state file settled with another lean");
+    pinned->model.physics->rider_launch.start_lean_rad = {.05}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    pinned->model.physics->rider_launch.start_pedal_angle_rad = .3; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    rejects([&] { (void)settle_once(*pinned); }, "fingerprint", "a state file settled with another pedal angle");
+    pinned->model.physics->rider_launch.start_pedal_angle_rad = 0.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    pinned->model.physics->rider_launch.start_cog_teeth = {45}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    rejects([&] { (void)settle_once(*pinned); }, "fingerprint", "a state file settled on another cog");
+    auto upright = std::make_unique<init::SetupRequest>(*request);
+    upright->model.physics->rider_launch.start_lean_rad = {0.}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    const auto settled_upright = settle_once(*upright);
+    bt::require(!settled_upright.result.cache_hit && cache_entries(cache.path()).size() == 2,
+                "another lean is another cache entry");
+    bt::require(settled_upright.qpos != miss.qpos, "the settle held the prepared lean: the rest pose differs");
+}
+
+// The transfer contract binds the prepared lean, not the table: a transfer
+// validates for the same prepared start (also from a different table that
+// prepares the same lean), and is refused by a start with another lean.
+[[gnu::noinline]] void test_transfer_contract_binds_the_prepared_lean() {
+    auto request = settle_request(0.);
+    request->model.physics->rider_launch.start_lean_rad = {.05}; // NOLINT(bugprone-unchecked-optional-access) set by settle_request
+    auto source = init::make_setup(*request);
+    (void)init::settle(*source);
+    const auto captured = source->capture_initial_state();
+    const auto source_qpos = qpos_of(settled_state(*source));
+    auto same = std::make_unique<init::SetupRequest>(*request);
+    same->initial_state = captured;
+    auto reused = init::make_setup(*same);
+    bt::require(init::settle(*reused).initial_state_sha256 == std::optional<std::string>(captured.sha256()) &&
+                    qpos_of(settled_state(*reused)) == source_qpos,
+                "the same prepared start reuses the transfer and lands on its coordinates");
+    same->model.physics->rider_launch.start_lean_grades = {-.5, .5}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    same->model.physics->rider_launch.start_lean_rad = {.05, .05}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    auto retabled = init::make_setup(*same);
+    bt::require(init::settle(*retabled).initial_state_sha256 == std::optional<std::string>(captured.sha256()) &&
+                    qpos_of(settled_state(*retabled)) == source_qpos,
+                "a different table with the same prepared lean reuses it too");
+    auto upright = std::make_unique<init::SetupRequest>(*request);
+    upright->initial_state = captured;
+    upright->model.physics->rider_launch.start_lean_rad = {0.}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    auto refused = init::make_setup(*upright);
+    rejects([&] { (void)init::settle(*refused); }, "contract differs", "a leaning transfer into an upright start");
+}
+
+// The validation rig captures the prepared lean too: a capture through
+// validation::Simulation of a leaning start is refused by an upright one.
+[[gnu::noinline]] void test_validation_capture_binds_the_lean() {
+    auto request = settle_request(0.);
+    request->model.physics->rider_launch.start_lean_rad = {.05}; // NOLINT(bugprone-unchecked-optional-access) set by settle_request
+    auto simulation = std::make_unique<bike::validation::Simulation>(*request);
+    auto upright = std::make_unique<init::SetupRequest>(*request);
+    upright->initial_state = simulation->initial_state();
+    upright->model.physics->rider_launch.start_lean_rad = {0.}; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    auto refused = init::make_setup(*upright);
+    rejects([&] { (void)init::settle(*refused); }, "contract differs", "a rig capture with another lean");
+}
+
+// A lumped rider has no torso: a nonzero table lean leaves its settle
+// command empty (the step rejects any posture for it) and setup completes.
+[[gnu::noinline]] void test_lumped_rider_ignores_the_prepared_lean() {
+    const std::vector<std::string_view> args{"--physics", "physical", "--rider", "lumped", "--track", "flat"};
+    auto ride = bike::cli::resolve_ride(bike::cli::parse_arguments("bike-ride", args));
+    ride->setup.model.physics->rider_launch.start_lean_rad = {.05}; // NOLINT(bugprone-unchecked-optional-access) resolve_ride sets physics
+    auto owner = init::make_setup(ride->setup);
+    bt::require(std::isfinite(init::settle(*owner).pitch_rad), "a lumped rider settles with a table lean");
+}
+
 } // namespace
 
 int main() {
@@ -286,6 +453,11 @@ int main() {
         test_research_records_the_prepared_cog();
         test_validation_capture_matches_the_prepared_start();
         test_research_profile_cannot_author_the_cog();
+        test_intent_slews_from_the_seeded_lean();
+        test_prepared_lean_survives_cache_and_state_file();
+        test_transfer_contract_binds_the_prepared_lean();
+        test_validation_capture_binds_the_lean();
+        test_lumped_rider_ignores_the_prepared_lean();
     });
 }
 NATIVE_DIAG_POP

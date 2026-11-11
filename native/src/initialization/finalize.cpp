@@ -67,7 +67,10 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     physical.control_clock_.reset();physical.contact_query_.restore({});physical.probe_query_.restore({});
     for(auto& filter:physical.filters_)filter.restore({});
     physical.balance_monitor_.restore({});physical.crash_detector_.set_event(std::nullopt);
-    physical.rider_intent_.reset();physical.intent_signals_={};physical.applied_control_={};physical.held_rider_terms_.reset();
+    physical.rider_intent_.reset();
+    // Launch part 2: the first running posture continues from the prepared lean.
+    physical.rider_intent_.seed_lean(context.preparation.lean_rad);
+    physical.intent_signals_={};physical.applied_control_={};physical.held_rider_terms_.reset();
     physical.energy_={};physical.rollback_hold_=false;physical.research_accounting_valid_=false;physical.last_force_sample_.reset();physical.last_constraint_snapshot_={};physical.accumulator_.clear();
     physical.measurement_decimation_=config.measurement_decimation;
     if(stepper.has_cruise())stepper.cruise_reset();

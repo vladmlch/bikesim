@@ -9,9 +9,19 @@
 namespace bike::initialization {
 void apply_initial_forces(SetupContext& context,bool advance) {
     require_initializing(context);
+    // Launch part 2: an articulated rider holds the prepared start lean
+    // through the settle. A zero lean keeps the empty command the settle
+    // always sent, and a lumped or absent rider has no torso to lean — the
+    // step rejects any posture for it (control.cpp:40-44).
+    runtime::RideControl control{};
+    if(context.preparation.lean_rad!=0.&&context.physical.rider_present()){
+        auto posture=::rider::RiderPosture{};
+        posture.torso_lean_rad=context.preparation.lean_rad;
+        control.posture=posture;
+    }
     (void)context.physical.apply_forces(false,advance,
         context.physics.initial_front_brake,context.physics.initial_rear_brake,
-        std::nullopt,runtime::RideControl{});
+        std::nullopt,control);
 }
 double acceleration_residual(SetupContext const& context) {
     double result=0.;

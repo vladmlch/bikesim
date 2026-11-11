@@ -172,6 +172,10 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     // Historical payloads also predate [rider_launch]; their cog and angle
     // stay bound through drive.
     if(legacy)std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_relaxation"||field.first=="rider_launch";});
+    // Historical payloads were all settled upright: a nonzero prepared lean
+    // is bound so it can never reuse one, while the upright key stays the
+    // historical bytes.
+    if(legacy&&context.preparation.lean_rad!=0.)fields.emplace_back("launch_lean_rad",number(context.preparation.lean_rad));
     for(auto& [key,item]:fields)if(key=="seated_climb"){auto& sc=std::get<io::Value::Object>(item.data);std::erase_if(sc,[](const auto& p){return p.first=="min_elbow_flexion_deg"||p.first=="launch_effort_ramp_s"||p.first=="launch_min_grade"||p.first=="launch_standstill_crank_rate_rad_s";});for(auto& [k,v]:sc)if(k=="period_s")v=number(0.01);}
     io::Value::Object payload{{"version",io::Value{io::Number{"4"}}},{"source",io::Value{legacy?*context.legacy_source_identity:context.source_identity}},{"mujoco",io::Value{std::string(mj_versionString())}},{"physics",std::move(physics)},
         {"specs",plain(field(identity,"specs"))},{"mass_specs",plain(field(identity,"mass_specs"))},{"rider",plain(field(identity,"rider"))},{"track",plain(legacy?*context.legacy_track_identity:field(identity,"track"))},{"start_x_m",number(context.start_x_m)}};

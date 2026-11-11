@@ -78,6 +78,11 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // lean, bound explicitly when nonzero — so the table itself is dropped
     // and every transfer recorded before it keeps validating.
     std::erase_if(config,[](const auto& p){return p.first=="research"||p.first=="monitors"||p.first=="rider_launch";});
+    // The prepared start lean shapes the rest pose (launch part 2). It is
+    // bound only when nonzero: an absent member is the upright start every
+    // transfer before the launch table was captured with, so those stay
+    // valid while two different leans never share a contract.
+    if(context.preparation.lean_rad!=0.)put(config,"launch_lean_rad",real(context.preparation.lean_rad));
     const mjModel* m=context.stepper.model();bio::Value::Array joints;for(int i=0;i<m->njnt;++i){const char* name=mj_id2name(m,mjOBJ_JOINT,i);joints.push_back(name?string(name):bio::Value{});}
     bio::Value::Object compiled;
     auto const add=[&](std::string name,const double* pointer,mjtSize count,std::optional<std::size_t> columns=std::nullopt){const auto values=std::span<const double>{std::views::counted(pointer,count)};compiled.emplace_back(std::move(name),columns?matrix(values,*columns):numbers(values));};

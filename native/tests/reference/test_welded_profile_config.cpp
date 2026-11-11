@@ -430,6 +430,100 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
     cfg::validate(config);   // control: the bound itself is a valid lean
 }
 
+// Rejects one profile-text edit; noinline keeps the loaded config's return
+// slot in this frame so the caller can hold further checks.
+template <typename Edit>
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (needle, what) mirrors the rejects() signature below
+[[gnu::noinline]] void rejects_profile_edit(Edit &&edit, std::string_view needle, std::string_view what) {
+    rejects([&] { (void)load_edited_profile(std::forward<Edit>(edit)); }, needle, what);
+}
+
+// The two computed drive members are never authored: a profile that still
+// names either one is rejected, and the error points at the table field
+// that replaced it. An override document is held to the same rule.
+[[gnu::noinline]] void test_computed_drive_members_are_not_authored() {
+    rejects_profile_edit(
+        [](std::string &t) { replace_once(t, "[drive.gearing]\n", "[drive.gearing]\nrear_teeth = 51\n"); },
+        "start_cog_teeth", "a profile that authors drive.gearing.rear_teeth");
+    rejects_profile_edit(
+        [](std::string &t) { replace_once(t, "[drive]\n", "[drive]\ncrank_phase_rad = 0.0\n"); },
+        "start_pedal_angle_rad", "a profile that authors drive.crank_phase_rad");
+    using bike::io::Number;
+    using bike::io::Value;
+    const Value cog{Value::Object{{"rear_teeth", Value{Number{"39"}}}}};
+    const Value gearing{Value::Object{{"gearing", cog}}};
+    const Value gear{Value::Object{{"drive", gearing}}};
+    rejects([&] { (void)cfg::resolve_physics(gear, profile()); },
+            "start_cog_teeth", "an override that authors the rear cog");
+}
+
+// Loading resolves the computed members for a flat start from the
+// document's own table: the shipped profile carries 51T at angle 0, and a
+// stepwise table puts grade 0 on the cog of its middle interval. An
+// override of the table re-resolves them after the merge.
+[[gnu::noinline]] void test_load_resolves_a_flat_start() {
+    bt::require(profile().drive.gearing.rear_teeth == 51 && profile().drive.crank_phase_rad == 0.,
+                "the shipped profile resolves to 51T at angle 0");
+    const auto stepwise = load_edited_profile([](std::string &t) {
+        replace_once(t, "start_cog_grade_breaks = []", "start_cog_grade_breaks = [-0.01, 0.05]");
+        replace_once(t, "start_cog_teeth = [51]", "start_cog_teeth = [21, 39, 51]");
+        replace_once(t, "start_pedal_angle_rad = 0.0", "start_pedal_angle_rad = 0.5");
+    });
+    bt::require(stepwise.drive.gearing.rear_teeth == 39 && stepwise.drive.crank_phase_rad == .5,
+                "grade 0 takes the middle cog and the table's angle");
+    using bike::io::Value;
+    const Value teeth{Value::Array{Value{bike::io::Number{"45"}}}};
+    const Value launch{Value::Object{{"start_cog_teeth", teeth}}};
+    const Value table{Value::Object{{"rider_launch", launch}}};
+    bt::require(cfg::resolve_physics(table, profile()).drive.gearing.rear_teeth == 45,
+                "an overridden table re-resolves the start cog");
+}
+
+// A written profile authors only the table (round trip normalized to a
+// flat start): write_physics_toml leaves the two computed members out, the
+// text loads back with the same table, and the computed members come back
+// as the table's flat start — for a stepwise table too.
+[[gnu::noinline]] void test_written_profile_authors_only_the_table() {
+    const auto stepwise = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
+    stepwise->rider_launch.start_cog_grade_breaks = {-.01, .05};
+    stepwise->rider_launch.start_cog_teeth = {21, 39, 51};
+    stepwise->drive.gearing.rear_teeth = 51;   // a prepared value for a steep start
+    const auto text = cfg::write_physics_toml(*stepwise);
+    bt::require(text.find("rear_teeth") == std::string::npos &&
+                    text.find("crank_phase_rad") == std::string::npos,
+                "the writer leaves out the computed members");
+    const bt::TemporaryDirectory dir("welded-written-profile");
+    const auto path = dir.path() / "physics.toml";
+    { std::ofstream out(path); out << text; }
+    const auto reread = cfg::load_physics(path);
+    bt::require(reread.rider_launch.start_cog_teeth == stepwise->rider_launch.start_cog_teeth &&
+                    reread.rider_launch.start_cog_grade_breaks == stepwise->rider_launch.start_cog_grade_breaks,
+                "the written table loads back unchanged");
+    bt::require(reread.drive.gearing.rear_teeth == 39 && reread.drive.crank_phase_rad == 0.,
+                "the computed members come back as the flat start");
+}
+
+// A recorded (resolved) physics document keeps its prepared members: the
+// reader for recordings does not re-resolve them. A document without the
+// launch table — a recording from before part 2 — is rejected and named.
+[[gnu::noinline]] void test_recorded_document_keeps_the_prepared_start() {
+    const auto prepared = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
+    prepared->rider_launch.start_cog_grade_breaks = {.03};
+    prepared->rider_launch.start_cog_teeth = {24, 39};
+    prepared->rider_launch.start_pedal_angle_rad = .6;
+    prepared->drive.gearing.rear_teeth = 39;   // what setup prepares on a 4 % start
+    prepared->drive.crank_phase_rad = .6;
+    const auto recorded = cfg::detail::plain_document(cfg::to_value(*prepared));
+    const auto rebuilt = cfg::detail::construct_config(recorded);
+    bt::require(rebuilt.drive.gearing.rear_teeth == 39 && rebuilt.drive.crank_phase_rad == .6,
+                "the recorded prepared start survives the recording reader");
+    auto old = recorded;
+    std::erase_if(std::get<bike::io::Value::Object>(old.data),
+                  [](const auto &member) { return member.first == "rider_launch"; });
+    rejects([&] { (void)cfg::detail::construct_config(old); }, "rider_launch",
+            "a recorded document from before the launch table");
+}
+
 } // namespace
 
 int main() {
@@ -443,5 +537,9 @@ int main() {
         test_launch_table_reproduces_todays_start();
         test_launch_table_keys_are_required();
         test_launch_table_cross_record_rules();
+        test_computed_drive_members_are_not_authored();
+        test_load_resolves_a_flat_start();
+        test_written_profile_authors_only_the_table();
+        test_recorded_document_keeps_the_prepared_start();
     });
 }

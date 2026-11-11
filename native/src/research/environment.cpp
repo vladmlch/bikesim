@@ -1,5 +1,6 @@
 #include "environment.hpp"
 #include "evidence.hpp"
+#include "../initialization/launch_preparation.hpp"
 #include <memory>
 #include <stdexcept>
 
@@ -15,6 +16,9 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
 [[gnu::noinline]] void prepare_environment_into(ResearchRequest& request, PreparedEnvironment& out) {
     request.experiment.validate(); request.sensors.validate(); request.programs.validate();
     if (!request.setup.model.physics) throw std::invalid_argument("research requires physical configuration");
+    // Launch part 2: the research request itself carries the prepared
+    // start, so its recorded physics and assets name it.
+    (void)initialization::prepare_request(request.setup);
     auto& physics = *request.setup.model.physics;
     configuration::post_init(physics);
     if (physics.physics_mode != "physical" || (physics.drive_mode != "crank_effort" && physics.drive_mode != "articulated_effort"))

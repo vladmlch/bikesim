@@ -195,9 +195,12 @@ void emit_table(const Value::Object& obj, const std::string& prefix,
 std::string write_physics_toml(const SimulationPhysicsConfig& config) {
     std::vector<std::string> lines{
         "# Explicit candidate; not real-world safety validation."};
-    const Value document =
+    Value document =
         detail::plain_document(detail::as_object(
             detail::kSimulationPhysicsConfigSchema, &config));
+    // A written profile authors only the launch table; the two computed
+    // drive members would be rejected on reload.
+    detail::erase_computed_members(document);
     emit_table(std::get<Value::Object>(document.data), "", lines);
     std::string out;
     for (const std::string& line : lines) out += line + '\n';

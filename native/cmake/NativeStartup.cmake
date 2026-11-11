@@ -89,7 +89,8 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/initialization/state_file.cpp"
     "${native_dir}/src/initialization/artifact_identity.cpp"
     "${native_dir}/src/initialization/equilibrium_cache.cpp"
-    "${native_dir}/src/initialization/initial_state.cpp")
+    "${native_dir}/src/initialization/initial_state.cpp"
+    "${native_dir}/src/initialization/launch_preparation.cpp")
   bike_startup_target_policy(bike_initialization "${native_dir}")
   target_link_libraries(bike_initialization PUBLIC
     bike_model bike_terrain bike_configuration bike_platform bike_io bike_numpy_io bike_startup_runtime)

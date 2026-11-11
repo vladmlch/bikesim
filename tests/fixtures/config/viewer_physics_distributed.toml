@@ -93,7 +93,6 @@ release_hold_s = 0.3
 
 [drive.gearing]
 front_teeth = 22
-rear_teeth = 51
 
 [drive.shifting]
 enabled = true

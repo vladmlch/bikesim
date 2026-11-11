@@ -193,13 +193,14 @@ configuration::SimulationPhysicsConfig resolve_research_physics(
             set(base, "tires", std::move(base_tires));
         }
     overrides = configuration::detail::merge_values(overrides, explicit_overrides);
+    configuration::detail::reject_computed_members(overrides);
     // The physics step comes from the profile/defaults document alone — a
     // transmission choice no longer rewrites it behind the caller's back.
     if (!find(overrides, "closure_time_constant_s"))
         if (const auto* dt = find(overrides, "timestep_s"))
             if (io::as_double(*dt, "timestep_s") * 2. > defaults.closure_time_constant_s)
                 set(overrides, "closure_time_constant_s", real(.0025));
-    return configuration::detail::construct_config(configuration::detail::merge_values(base, overrides));
+    return configuration::detail::construct_config(configuration::detail::with_flat_start(configuration::detail::merge_values(base, overrides)));
 }
 
 NATIVE_DIAG_PUSH

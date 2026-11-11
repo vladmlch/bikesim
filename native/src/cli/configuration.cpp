@@ -79,16 +79,19 @@ namespace {
     physics = configuration::resolve_physics(overrides, physics);
 }
 std::unique_ptr<configuration::SimulationPhysicsConfig> ride_physics(Arguments& args) {
-    Value overrides{Object{}}, drive{Object{}}, assist{Object{}};
+    Value overrides{Object{}}, drive{Object{}}, assist{Object{}}, launch{Object{}};
     add_text(overrides, args, "physics", "physics_mode");
     add_text(overrides, args, "drive", "drive_mode");
     add_number(overrides, args, "timestep", "timestep_s");
     if (args.has("initial_speed")) set(overrides, "initial_speed_mps", real(args.real("initial_speed") / 3.6));
     add_number(drive, args, "human_torque", "human_torque_nm");
     add_number(assist, args, "assist_gain", "gain");
-    if (args.has("crank_phase")) set(drive, "crank_phase_rad", real(args.real("crank_phase") * std::numbers::pi / 180.));
+    // --crank-phase authors the launch table's pedal angle (launch part 2);
+    // setup computes drive.crank_phase_rad from it.
+    if (args.has("crank_phase")) set(launch, "start_pedal_angle_rad", real(args.real("crank_phase") * std::numbers::pi / 180.));
     if (!io::as_object(assist, "assist").empty()) set(drive, "assist", assist);
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", drive);
+    if (!io::as_object(launch, "rider_launch").empty()) set(overrides, "rider_launch", launch);
     auto physics = load_ride_physics(args);
     resolve_physics_into(*physics, overrides);
     if (args.has("assist")) {
@@ -205,12 +208,12 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     defaults->tires.front.mu = 1.1; defaults->tires.rear.mu = 1.1;
     defaults->drive.transmission_model = "ideal_mid_drive";
     defaults->drive.motor_clutch = true;
-    defaults->drive.human_torque_nm = 0.; defaults->drive.gearing.front_teeth = 34; defaults->drive.gearing.rear_teeth = 51;
+    defaults->drive.human_torque_nm = 0.; defaults->drive.gearing.front_teeth = 34;
     defaults->rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {51}, .start_pedal_angle_rad = 0., .start_lean_grades = {0.}, .start_lean_rad = {0.}};
     defaults->drive.assist.max_torque = 80.; defaults->drive.assist.max_power = 500.;
     defaults->equilibrium_refine_after_s = args.text("rider") == "articulated_planar" ? 3. : .1;
     defaults->equilibrium_refine_period_s = args.text("rider") == "articulated_planar" ? 3. : .5;
-    Value overrides{Object{}}, drive{Object{}}, assist{Object{}}, gearing{Object{}};
+    Value overrides{Object{}}, drive{Object{}}, assist{Object{}}, gearing{Object{}}, launch{Object{}};
     if (args.present("dt")) set(overrides, "timestep_s", real(args.real("dt")));
     if (args.present("initial_speed")) set(overrides, "initial_speed_mps", real(args.real("initial_speed")));
     if (args.present("initial_brake_demand")) { set(overrides, "initial_front_brake", real(args.real("initial_brake_demand"))); set(overrides, "initial_rear_brake", real(args.real("initial_brake_demand"))); }
@@ -219,10 +222,16 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     if (args.present("motor_max_torque")) set(assist, "max_torque", real(args.real("motor_max_torque")));
     if (args.present("motor_max_power")) set(assist, "max_power", real(args.real("motor_max_power")));
     if (args.present("front_teeth")) set(gearing, "front_teeth", integer(args.integer("front_teeth")));
-    if (args.present("rear_teeth")) set(gearing, "rear_teeth", integer(args.integer("rear_teeth")));
+    // --rear-teeth authors a one-cog launch table (launch part 2); setup
+    // computes drive.gearing.rear_teeth from it at every grade.
+    if (args.present("rear_teeth")) {
+        set(launch, "start_cog_teeth", Value{Value::Array{integer(args.integer("rear_teeth"))}});
+        set(launch, "start_cog_grade_breaks", Value{Value::Array{}});
+    }
     if (!io::as_object(assist, "assist").empty()) set(drive, "assist", std::move(assist));
     if (!io::as_object(gearing, "gearing").empty()) set(drive, "gearing", std::move(gearing));
     if (!io::as_object(drive, "drive").empty()) set(overrides, "drive", std::move(drive));
+    if (!io::as_object(launch, "rider_launch").empty()) set(overrides, "rider_launch", std::move(launch));
     request.setup.model.physics = research::resolve_research_physics(*defaults, file(args, "physics_config"), overrides);
     // The six research timings are profile-owned: copy [research] verbatim
     // and let an explicitly passed flag override the value it names.

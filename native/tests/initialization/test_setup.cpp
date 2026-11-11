@@ -91,7 +91,7 @@ namespace init=bike::initialization;
     request.model.physics.value().initial_speed_mps=0.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     request.model.physics.value().initial_front_brake=1.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     request.model.physics.value().initial_rear_brake=1.; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
-    request.model.physics.value().drive.crank_phase_rad=.75; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
+    request.model.physics.value().rider_launch.start_pedal_angle_rad=.75; // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture/request contract under test; .value() reports violations loudly
     request.track.grade_profile=bike::terrain::GradeProfile{{{0.,.04},{request.track.length_m,.04}}};
     request.model.field=bike::terrain::HeightFieldSpec::for_track(request.track);
     auto owner=init::make_setup(request);const auto result=init::settle(*owner);

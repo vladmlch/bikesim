@@ -2,6 +2,7 @@
 #include "mechanics.hpp"
 #include "../model_access.hpp"
 #include "../initialization/context.hpp"
+#include "../initialization/launch_preparation.hpp"
 #include "../research/evidence.hpp"
 #include "../runtime/research.hpp"
 #include <atomic>
@@ -79,7 +80,15 @@ runtime::TruthGeometry RuntimeRigAccess::truth_geometry(runtime::NativeRideRunti
 }
 initialization::PhysicalInitialState RuntimeRigAccess::initial_state(runtime::NativeRideRuntime& ride,const initialization::SetupRequest& request,const initialization::EquilibriumResult& eq,const Value& metadata,std::optional<int> stations) {
     const Guard guard(ride.advancing_);ride.require_open();if(ride.committed_step_!=0||ride.stepper_->time()!=0.)throw std::invalid_argument("initial-state capture requires t=0");auto const* m=ride.stepper_->model();
-    initialization::SetupContext const context{.stepper=*ride.stepper_,.physical=*ride.physical_,.physics=*request.model.physics,.start_x_m=request.start_x_m, // NOLINT(bugprone-unchecked-optional-access) optional engagement is guaranteed by the fixture/request contract.
+    // Launch part 2: capture the start that was actually prepared — the
+    // caller's request is the unprepared original (Simulation keeps it).
+    const auto prepared=std::make_unique<initialization::SetupRequest>(request);
+    const auto preparation=initialization::prepare_request(*prepared);
+    // The same normalization make_setup applied to the physics it compiled
+    // (drive_mode/pitch_assist resolution, cassette sort): the contract must
+    // hash that physics, not the caller's unnormalized copy.
+    configuration::post_init(*prepared->model.physics); // NOLINT(bugprone-unchecked-optional-access) prepare_request checked it
+    initialization::SetupContext const context{.stepper=*ride.stepper_,.physical=*ride.physical_,.physics=*prepared->model.physics,.start_x_m=prepared->start_x_m,.preparation=preparation, // NOLINT(bugprone-unchecked-optional-access) prepare_request checked it
         .ground_z_m=geometry::compute_ground_z(request.model.bike)/1000.,.frame_body_id=object_id(m,mjOBJ_BODY,"frame"),.front_geom_id=object_id(m,mjOBJ_GEOM,"geom_front_contact"),.rear_geom_id=object_id(m,mjOBJ_GEOM,"geom_rear_contact"),
         .identity=get(metadata,"inputs"),.source_identity=text(metadata,"source_identity"),.provider_identity=text(metadata,"provider_identity"),.model_sha256=text(metadata,"model_sha256"),.initializing=true,.completed=true,.equilibrium=eq};
     return stations?initialization::PhysicalInitialState::project_stations(context,*stations):initialization::PhysicalInitialState::capture(context);

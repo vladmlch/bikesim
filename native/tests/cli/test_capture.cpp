@@ -3,8 +3,10 @@
 #include "cli/application.hpp"
 #include "cli/physical_capture.hpp"
 #include "cli/viewer_options.hpp"
+#include "initialization/setup_owner.hpp"
 #include "io/hash.hpp"
 #include "io/npy.hpp"
+#include "io/value.hpp"
 #include "platform/argv.hpp"
 #include "platform/process.hpp"
 #include "runtime/setup_values.hpp"
@@ -14,6 +16,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <string>
 #include <vector>
@@ -121,6 +124,33 @@ void settled_pose_loads_into_ride(const std::filesystem::path& bin) {
         "a ride accepts the pose bike-settle wrote for the same configuration (" + ride.err + ")");
     bt::require(ride.exit_code == 0, "the pinned ride completes (" + ride.err + ")");
 }
+// The start flags author the launch table, never the computed drive
+// members: --crank-phase sets the table's pedal angle, --rear-teeth a
+// one-cog table, so the recorded physics shows what the user asked for.
+void start_flags_author_the_launch_table() {
+    const auto ride = bike::cli::resolve_ride(parse("bike-ride", {"--physics", "physical", "--crank-phase", "30"}));
+    const auto &ride_physics = ride->setup.model.physics.value(); // NOLINT(bugprone-unchecked-optional-access) resolve_ride sets physics
+    bt::require(ride_physics.rider_launch.start_pedal_angle_rad == 30. * std::numbers::pi / 180. &&
+                    ride_physics.drive.crank_phase_rad == ride_physics.rider_launch.start_pedal_angle_rad,
+                "--crank-phase is the table's pedal angle");
+    // ... and the prepared setup records it: the setup physics names the
+    // table's angle as both the authored value and the computed member.
+    auto owner = bike::initialization::make_setup(ride->setup);
+    const auto metadata = owner->metadata();
+    const auto &physics = std::get<bike::io::Value::Object>(metadata.data);
+    const auto *recorded = bike::io::find_member(physics, "physics");
+    bt::require(recorded != nullptr, "setup metadata carries the physics");
+    const auto &launch_doc = *bike::io::find_member(bike::io::as_object(*recorded, "physics"), "rider_launch");
+    bt::require(bike::io::as_double(*bike::io::find_member(bike::io::as_object(launch_doc, "rider_launch"),
+                                                           "start_pedal_angle_rad"), "angle") ==
+                    ride_physics.rider_launch.start_pedal_angle_rad,
+                "the recorded physics names the flag's angle");
+    const auto research = bike::cli::resolve_research(parse("bike-research", {"--rear-teeth", "39"}));
+    const auto &launch = research->setup.model.physics.value().rider_launch; // NOLINT(bugprone-unchecked-optional-access) resolve_research sets physics
+    bt::require(launch.start_cog_teeth == std::vector<int>{39} && launch.start_cog_grade_breaks.empty() &&
+                    research->setup.model.physics.value().drive.gearing.rear_teeth == 39, // NOLINT(bugprone-unchecked-optional-access) resolve_research sets physics
+                "--rear-teeth is a one-cog table");
+}
 }
 int main(int argc, char** argv) {
     return bt::run([&] {
@@ -182,6 +212,7 @@ int main(int argc, char** argv) {
         bt::require(native_help.exit_code == 0 && native_help.out.find("Legacy mode") == std::string::npos,
             "bike-native-ride help lists no legacy option block");
         settled_pose_loads_into_ride(bin);
+        start_flags_author_the_launch_table();
         bike::BikeConfig first, second;
         first.damper_clicks.fork_hsc = 0;
         bt::require(second.damper_clicks.fork_hsc == 2, "BikeConfig owns independent nested defaults");

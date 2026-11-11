@@ -682,6 +682,73 @@ SimulationPhysicsConfig construct_config(const bike::io::Value& values) {
     return construct_simulation(values);
 }
 
+namespace {
+const Value::Object* object_of(const Value& value) { return std::get_if<Value::Object>(&value.data); }
+Value::Object* object_of(Value& value) { return std::get_if<Value::Object>(&value.data); }
+Value& child_object(Value::Object& parent, std::string_view key) {
+    for (auto& [name, member] : parent)
+        if (name == key) return member;
+    parent.emplace_back(std::string(key), Value{Value::Object{}});
+    return parent.back().second;
+}
+void put(Value::Object& parent, std::string_view key, Value value) {
+    for (auto& [name, member] : parent)
+        if (name == key) { member = std::move(value); return; }
+    parent.emplace_back(std::string(key), std::move(value));
+}
+} // namespace
+
+void reject_computed_members(const Value& authored) {
+    const auto* root = object_of(authored);
+    const Value* drive = root ? io::find_member(*root, "drive") : nullptr;
+    const auto* drive_object = drive ? object_of(*drive) : nullptr;
+    if (drive_object == nullptr) return;   // shape errors stay with construction
+    if (io::find_member(*drive_object, "crank_phase_rad") != nullptr)
+        construct_error("drive.crank_phase_rad is computed from [rider_launch]; "
+                        "author rider_launch.start_pedal_angle_rad instead");
+    const Value* gearing = io::find_member(*drive_object, "gearing");
+    const auto* gearing_object = gearing ? object_of(*gearing) : nullptr;
+    if (gearing_object != nullptr && io::find_member(*gearing_object, "rear_teeth") != nullptr)
+        construct_error("drive.gearing.rear_teeth is computed from [rider_launch]; "
+                        "author rider_launch.start_cog_teeth instead");
+}
+
+Value with_flat_start(Value document) {
+    auto* root = object_of(document);
+    const Value* table = root ? io::find_member(*root, "rider_launch") : nullptr;
+    const auto* table_object = table ? object_of(*table) : nullptr;
+    if (table_object == nullptr) return document;
+    // drive is an optional member: a document without it stays without it,
+    // so the constructor reports its own missing fields unchanged.
+    Value* drive_member = nullptr;
+    for (auto& [name, member] : *root)
+        if (name == "drive") drive_member = &member;
+    auto* drive = drive_member ? object_of(*drive_member) : nullptr;
+    if (drive == nullptr) return document;   // construction names the bad shape
+    RiderLaunchConfig launch{};
+    construct_record(kRiderLaunchConfigSchema, *table_object, &launch, "rider_launch");
+    const auto start = ::rider::prepare_launch(launch, 0.);
+    auto* gearing = object_of(child_object(*drive, "gearing"));
+    if (gearing == nullptr) return document;
+    put(*gearing, "rear_teeth", Value{Number{std::to_string(start.rear_teeth)}});
+    put(*drive, "crank_phase_rad", Value{Number{repr_double(start.crank_phase_rad)}});
+    return document;
+}
+
+void erase_computed_members(Value& document) {
+    auto* root = object_of(document);
+    if (root == nullptr) return;
+    for (auto& [name, drive] : *root) {
+        if (name != "drive") continue;
+        auto* drive_object = object_of(drive);
+        if (drive_object == nullptr) return;
+        std::erase_if(*drive_object, [](const auto& p) { return p.first == "crank_phase_rad"; });
+        for (auto& [key, gearing] : *drive_object)
+            if (auto* gearing_object = key == "gearing" ? object_of(gearing) : nullptr)
+                std::erase_if(*gearing_object, [](const auto& p) { return p.first == "rear_teeth"; });
+    }
+}
+
 ArticulatedConfig construct_articulated(const bike::io::Value& values) {
     const auto* obj = std::get_if<Value::Object>(&values.data);
     if (obj == nullptr)
@@ -700,16 +767,24 @@ resolve_physics(const bike::io::Value& overrides,
     // encode_tree tags so the merge sees the same document shape the TOML
     // decode produces; overrides pass through plain() for symmetry (a
     // to_value-derived override document is a supported spelling).
+    detail::reject_computed_members(overrides);
     const Value base_doc = detail::plain_document(to_value(base));
     const Value override_doc = detail::plain_document(overrides);
-    return construct_simulation(
-        detail::merge_values(base_doc, override_doc));
+    return construct_simulation(detail::with_flat_start(
+        detail::merge_values(base_doc, override_doc)));
+}
+
+void resolve_flat_start(SimulationPhysicsConfig& config) {
+    const auto start = ::rider::prepare_launch(config.rider_launch, 0.);
+    config.drive.gearing.rear_teeth = start.rear_teeth;
+    config.drive.crank_phase_rad = start.crank_phase_rad;
 }
 
 SimulationPhysicsConfig load_physics(const std::filesystem::path& file) {
     Value values = detail::parse_toml_file(file);
     detail::resolve_config_paths(values, file.parent_path());
-    return construct_simulation(values);
+    detail::reject_computed_members(values);
+    return construct_simulation(detail::with_flat_start(std::move(values)));
 }
 
 } // namespace bike::configuration

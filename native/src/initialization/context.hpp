@@ -6,6 +6,7 @@
 #include <string>
 #include "../configuration/model_config.hpp"
 #include "../io/value.hpp"
+#include "../rider/launch_config.hpp"
 #include "../rider/spindle_controller.hpp"
 #include "equilibrium.hpp"
 #include "finalize.hpp"
@@ -25,6 +26,9 @@ struct SetupContext {
     runtime::PhysicalStep& physical;
     configuration::SimulationPhysicsConfig physics;
     double start_x_m = 2.;
+    // Launch part 2 — the start the rider prepared for this request (cog,
+    // pedal angle, lean); make_setup fills it before the model is built.
+    ::rider::LaunchPreparation preparation{};
     // compute_ground_z(specs)/1000, in the bike model's local frame.
     double ground_z_m = 0.;
     int frame_body_id = -1;

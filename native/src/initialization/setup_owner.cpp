@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include "capture.hpp"
 #include "context.hpp"
+#include "launch_preparation.hpp"
 #include "../configuration/load.hpp"
 #include "../engine_identity.hpp"
 #include "../io/hash.hpp"
@@ -162,6 +163,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if (!request.model.physics)
         throw std::invalid_argument("native setup requires an explicit physical configuration");
+    // Launch part 2: the rider prepares the start before anything validates
+    // or reads the computed drive members — the cog and pedal angle become
+    // drive.gearing.rear_teeth / drive.crank_phase_rad for the model, the
+    // writers and the recording; the lean waits in the context for the
+    // settle and the intent reset.
+    const auto preparation = prepare_request(request);
     configuration::post_init(*request.model.physics);
     if (request.model.mode != "ride")
         throw std::invalid_argument("native setup requires model mode 'ride'");
@@ -187,6 +194,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         .stepper=*impl->stepper, .physical=*impl->physical, .physics=*impl->request.model.physics});
     auto& context = *impl->context;
     context.start_x_m = impl->request.start_x_m;
+    context.preparation = preparation;
     context.ground_z_m = geometry::compute_ground_z(impl->request.model.bike) / 1000.;
     context.frame_body_id = model::required_id(*compiled, mjOBJ_BODY, "frame");
     context.front_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_front_contact");

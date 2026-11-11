@@ -59,6 +59,12 @@ load_physics(const std::filesystem::path& file);
 resolve_physics(const bike::io::Value& overrides,
                 const SimulationPhysicsConfig& base);
 
+// Launch part 2 — resolves the two computed drive members of a typed
+// configuration for a flat start from its own launch table, for model
+// builders that bypass setup (the validation stands); setup re-resolves
+// them for the real start grade.
+void resolve_flat_start(SimulationPhysicsConfig& config);
+
 // plant_profile.py write_physics_toml, the document half: emits the
 // asdict-equivalent TOML text (banner comment, bare-key tables in field
 // order, scalars then subtables per section). The source's exclusive
@@ -108,6 +114,20 @@ void resolve_config_paths(bike::io::Value& values,
 // merge_values for layered documents).
 [[nodiscard]] SimulationPhysicsConfig
 construct_config(const bike::io::Value& values);
+
+// Launch part 2 — drive.gearing.rear_teeth and drive.crank_phase_rad are
+// computed from [rider_launch], never authored. Throws
+// std::invalid_argument naming the table field when an authored document
+// (profile file, override document) names either member.
+void reject_computed_members(const bike::io::Value& authored);
+// Resolves the two computed members for a flat start (grade 0) from the
+// document's own [rider_launch], before construction; setup re-resolves
+// them for the real start grade. A document without the table is
+// returned unchanged (construction then names the missing section).
+[[nodiscard]] bike::io::Value with_flat_start(bike::io::Value document);
+// Removes the two computed members from a document a profile is written
+// from.
+void erase_computed_members(bike::io::Value& document);
 
 // Direct construction of ArticulatedConfig without fabricating a full physics document.
 [[nodiscard]] ArticulatedConfig

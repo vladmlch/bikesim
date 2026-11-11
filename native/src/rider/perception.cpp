@@ -1,7 +1,6 @@
 // perception.cpp — the delayed, periodic senses adapter.
 #include "perception.hpp"
 
-#include <algorithm>
 #include <cmath>
 #include <numbers>
 #include <stdexcept>
@@ -53,17 +52,18 @@ namespace {
                 " surface_ahead outside the label domain");
     }
 
-    // t must sit on this adapter's period grid within the constructor's
-    // own 1e-9 tolerance; the returned tick is the grid index.
-    long long grid_ticks(double t, double period_s,
-                         std::string_view what) {
-        const double ratio = t / period_s;
-        if (!std::isfinite(ratio) || std::abs(ratio) > 4e15)
-            throw std::invalid_argument(std::string(what));
-        const long long ticks = std::llround(ratio);
-        if (std::abs(static_cast<double>(ticks) * period_s - t) > 1e-9)
-            throw std::invalid_argument(std::string(what));
-        return ticks;
+    // acc(n): the adapter clock after n updates — n repeated
+    // `+= period_s` steps from zero. The reachable timestamps are this
+    // accumulated sequence, never the closed-form n * period: after a
+    // long ride the IEEE drift pushes stamps off the ideal grid by more
+    // than any small absolute tolerance (follow-up 1). O(n); restore is
+    // a snapshot boundary, not a tick.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed (ticks, period) order
+    [[nodiscard]] double accumulated_clock(long long ticks,
+                                           double period_s) {
+        double acc = 0.;
+        for (long long i = 0; i < ticks; ++i) acc += period_s;
+        return acc;
     }
 
 } // namespace
@@ -117,32 +117,66 @@ void Perception::restore(const State &state) {
     if (!std::isfinite(state.time_s) || state.time_s < 0.)
         throw std::invalid_argument(
             "perception state clock must be finite and nonnegative");
-    // The reachable domain (P10): every emitted tick sits on the period
-    // grid; the queue is exactly the contiguous tail of samples not yet
-    // due — min(clock, delay) rows stamped clock-size..clock-1 — and the
-    // delayed slot is engaged iff at least one delivery already
-    // happened. A state failing any of these can never come out of
-    // update(), so it can never change delay semantics.
-    const long long clock_ticks =
-        grid_ticks(state.time_s, period_s_,
-                   "perception clock off the period grid");
-    const long long delay_ticks = std::llround(delay_s_ / period_s_);
+    // The reachable domain (P10), stated over update()'s own arithmetic
+    // rather than the ideal period grid (follow-up 1): the recorded
+    // clock must be a bitwise value of the accumulated sequence
+    // acc(n); the queue must be exactly the samples update() left
+    // undelivered — the contiguous tail acc(delivered)..acc(clock-1) —
+    // and the delayed slot is engaged iff at least one delivery
+    // happened. Replaying the accumulation makes the acceptance set
+    // exactly the reachable set, drift and delivery slips included;
+    // anything else — reordered, duplicated, off-sequence or fabricated
+    // timestamps — can never have come out of update() and rejects.
+    const double ratio = state.time_s / period_s_;
+    if (!std::isfinite(ratio) || std::abs(ratio) > 4e15)
+        throw std::invalid_argument(
+            "perception state clock outside the replayable domain");
+    const long long estimate = std::llround(ratio);
+    // Drift stays far below one period for any realistic ride length,
+    // so the tick count is the grid estimate or an immediate neighbour.
+    long long clock_ticks = -1;
+    double ready_clock = 0.;   // acc(clock_ticks - 1) once found
+    {
+        double acc = 0., prev = 0.;
+        for (long long n = 0; n <= estimate + 1 && clock_ticks < 0; ++n) {
+            if (n >= estimate - 1 && acc == state.time_s) {
+                clock_ticks = n;
+                ready_clock = prev;
+            }
+            prev = acc;
+            acc += period_s_;
+        }
+    }
+    if (clock_ticks < 0)
+        throw std::invalid_argument(
+            "perception state clock is not an update()-reachable value");
+    // Delivered prefix length: update() pops every sample whose stamp
+    // is at or under `ready + 1e-12`; the last tick's clock is
+    // acc(clock_ticks - 1) and a stamp delivered by then is a prefix.
+    long long delivered = 0;
+    if (clock_ticks > 0) {
+        const double boundary = ready_clock - delay_s_ + 1e-12;
+        double acc = 0.;
+        for (long long j = 0; j < clock_ticks; ++j) {
+            if (acc <= boundary) ++delivered;
+            acc += period_s_;
+        }
+    }
     const long long queued = static_cast<long long>(state.samples.size());
-    if (queued != std::min(clock_ticks, delay_ticks))
+    if (queued != clock_ticks - delivered ||
+        state.delayed.has_value() != (delivered > 0))
         throw std::invalid_argument(
             "perception queue is not the reachable undelivered tail");
-    if (state.delayed.has_value() != (clock_ticks > delay_ticks))
-        throw std::invalid_argument(
-            "perception delayed slot disagrees with the clock");
-    long long expected = clock_ticks - queued;
-    for (const auto &[t, sample] : state.samples) {
-        if (grid_ticks(t, period_s_,
-                       "perception sample time off the period grid") !=
-            expected)
-            throw std::invalid_argument(
-                "perception queue times are not the contiguous tail");
-        check_sample(sample, "perception queued sample");
-        ++expected;
+    {
+        double stamp = accumulated_clock(delivered, period_s_);
+        for (const auto &[t, sample] : state.samples) {
+            if (t != stamp)
+                throw std::invalid_argument(
+                    "perception queue times are not the contiguous "
+                    "tail");
+            check_sample(sample, "perception queued sample");
+            stamp += period_s_;
+        }
     }
     if (state.delayed.has_value())
         check_sample(*state.delayed, "perception delayed sample");

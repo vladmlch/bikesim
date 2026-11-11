@@ -9,7 +9,11 @@
 // tail of domain-valid samples — and rejects without touching the
 // adapter; update() validates its input before the queue or clock move.
 
+#include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
+#include <deque>
 #include <limits>
 #include <numbers>
 #include <optional>
@@ -18,6 +22,7 @@
 #include <string_view>
 #include <utility>
 
+#include "configuration/load.hpp"
 #include "io/json.hpp"
 #include "io/value.hpp"
 #include "rider/perception.hpp"
@@ -60,6 +65,48 @@ void require_same(const rider::Percepts &a, const rider::Percepts &b,
 
 std::string state_json(const rider::Perception::State &state) {
     return bio::canonical_json(rider::encode_perception_state(state));
+}
+
+// Bitwise equality on every Percepts field — bit patterns, not ==.
+void require_same_bits(const rider::Percepts &a, const rider::Percepts &b,
+                       std::string_view what) {
+    const auto bits = [](double v) {
+        return std::bit_cast<std::uint64_t>(v);
+    };
+    bt::require(bits(a.senses.hand_press_n) == bits(b.senses.hand_press_n) &&
+                    bits(a.senses.speed_mps) == bits(b.senses.speed_mps) &&
+                    a.senses.rear_teeth == b.senses.rear_teeth &&
+                    a.senses.surface_front == b.senses.surface_front &&
+                    a.senses.surface_ahead == b.senses.surface_ahead &&
+                    bits(a.senses.grade_ahead) ==
+                        bits(b.senses.grade_ahead) &&
+                    bits(a.crank_rpm) == bits(b.crank_rpm) &&
+                    bits(a.human_crank_torque_nm) ==
+                        bits(b.human_crank_torque_nm) &&
+                    bits(a.pitch_rate_up_rad_s) ==
+                        bits(b.pitch_rate_up_rad_s) &&
+                    bits(a.pitch_rad) == bits(b.pitch_rad),
+                what);
+}
+
+// A varying but always domain-valid acquisition; the torque carries the
+// push index so delivery ticks can be matched across adapters.
+rider::SenseSample ride_sample(int k) {
+    rider::SenseSample s;
+    s.signals.pitch_rate_up_rad_s = .02 * ((k % 11) - 5);
+    s.signals.specific_force_body_mps2 = {.1 * (k % 7), 0., 9.81};
+    s.signals.crank_rate_rad_s = 5. + .01 * (k % 40);
+    s.signals.human_crank_torque_nm = static_cast<double>(k);
+    if (k % 4 == 1) s.signals.front_load_share = .3;
+    s.senses = {.hand_press_n = 30. + (k % 80),
+                .speed_mps = 4. + .0001 * (k % 300),
+                .rear_teeth = 11 + (k % 41),
+                .surface_front =
+                    static_cast<rider::SurfaceLabel>(k % 5),
+                .surface_ahead =
+                    static_cast<rider::SurfaceLabel>((k + 2) % 5),
+                .grade_ahead = .001 * ((k % 13) - 6)};
+    return s;
 }
 
 // The mutable twin of bio::find_member for building malformed fixtures.
@@ -344,6 +391,74 @@ void test_perception_state_codec_is_exact_and_bitwise() {
     }
 }
 
+// Follow-up 1 (review of b7168982): the adapter clock is an IEEE
+// accumulation, not the closed-form n * period — over a long ride it
+// drifts off the ideal grid and the delivery epsilon can slip a due
+// sample a tick late. Every state update() reaches must still restore.
+// Two realistic cadences: the welded profile's [seated_climb] block
+// (period_s / reaction_delay_s, parsed from the fixture TOML the other
+// tests load) and the .01/.15 intent cadence the sibling seated-climb
+// tests run on the welded plant. A side-by-side replay of the intent
+// policy's own queue arithmetic (intent.cpp:276-282,322 — push at the
+// pre-increment clock, pop every stamp <= clock - delay + 1e-12, then
+// advance) must deliver on the same ticks.
+void test_long_run_states_stay_restorable() {
+    const auto welded = bike::configuration::load_physics(
+        bt::fixture("config/viewer_physics_welded.toml"));
+    const std::array<std::pair<double, double>, 2> cadences{{
+        {welded.seated_climb.period_s,
+         welded.seated_climb.reaction_delay_s},
+        {.01, .15}}};
+    for (const auto &[period, delay] : cadences) {
+        rider::Perception a(delay, period);
+        // The intent policy's own queue arithmetic.
+        double intent_clock = 0.;
+        std::deque<std::pair<double, int>> intent_queue;
+        const auto intent_update = [&](int k) {
+            intent_queue.emplace_back(intent_clock, k);
+            int delivered = -1;
+            while (!intent_queue.empty() &&
+                   intent_queue.front().first <=
+                       intent_clock - delay + 1e-12) {
+                delivered = intent_queue.front().second;
+                intent_queue.pop_front();
+            }
+            intent_clock += period;
+            return delivered;
+        };
+        const auto check_tick = [&](int k, const auto &percept) {
+            const int delivered = intent_update(k);
+            bt::require(percept.has_value() == (delivered >= 0),
+                        "perception delivers on the intent queue's "
+                        "tick");
+            if (delivered >= 0)
+                bt::require(
+                    percept.has_value() &&
+                        percept->human_crank_torque_nm == delivered,
+                    "the same sample arrives on that tick");
+        };
+        for (int k = 0; k < 200000; ++k) {
+            check_tick(k, a.update(ride_sample(k)));
+            if ((k + 1) % 10000 != 0) continue;
+            rider::Perception twin(delay, period);
+            twin.restore(a.state());   // a state update() produced
+            for (int j = k + 1; j <= k + 50; ++j) {
+                const auto x = a.update(ride_sample(j));
+                const auto y = twin.update(ride_sample(j));
+                check_tick(j, x);
+                bt::require(x.has_value() == y.has_value(),
+                            "restored twin keeps the same tick");
+                if (x.has_value() && y.has_value())
+                    require_same_bits(*x, *y,
+                                      "restored twin continues bitwise");
+            }
+            bt::require(state_json(a.state()) ==
+                            state_json(twin.state()),
+                        "restored twin state matches bitwise");
+        }
+    }
+}
+
 } // namespace
 
 int main() {
@@ -360,5 +475,6 @@ int main() {
         test_zero_delay_delivers_immediately();
         test_reset_returns_to_constructed_state();
         test_perception_state_codec_is_exact_and_bitwise();
+        test_long_run_states_stay_restorable();
     });
 }

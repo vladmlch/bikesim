@@ -738,7 +738,15 @@ void test_schema() {
                 kTopOrder.at(i),
             "field order mismatch at index " + std::to_string(i));
 
-    // Structural spot checks ahead of the golden: nested counts and the
+    // The whole document — every default, factory qualname, type string and
+    // nested field table — equals the oracle capture after canonicalization
+    // (the fixture is pretty-printed; canonical_json is the semantic form).
+    const std::string expected = canonical(
+        fixture_json("config/schema.json", "config/schema.json"));
+    bt::require(canonical(document) == expected,
+                "schema() differs from the oracle document");
+
+    // Structural spot checks behind the golden: nested counts and the
     // required/optional/default encodings.
     const auto fields_named = [&](const Value& node, std::string_view path) {
         std::vector<std::string> names;
@@ -770,14 +778,6 @@ void test_schema() {
                 "monitors field count");
     bt::require(fields_named(fields[13], "research").size() == 6,
                 "research field count");
-
-    // The whole document — every default, factory qualname, type string and
-    // nested field table — equals the oracle capture after canonicalization
-    // (the fixture is pretty-printed; canonical_json is the semantic form).
-    const std::string expected = canonical(
-        fixture_json("config/schema.json", "config/schema.json"));
-    bt::require(canonical(document) == expected,
-                "schema() differs from the oracle document");
 
     // Optional leaves serialize explicit null defaults; required leaves
     // (TyreSpecs) also carry null defaults but no factory.

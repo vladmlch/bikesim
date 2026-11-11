@@ -1018,7 +1018,7 @@ PhysicalStep::PhysicalStep(
     std::vector<std::array<double, 2>> vertices, StaticBrake brake,
     const std::optional<rider::SpindlePose> &rider_pose,
     const std::optional<rider::SpindleConfig> &rider_config)
-    : stepper_(&stepper), config_(config),
+    : stepper_(&stepper), config_(std::move(config)),
       vertices_(std::move(vertices)),
       road_profile_(vertices_),
       rider_intent_(config_.intent, config_.timestep_s),

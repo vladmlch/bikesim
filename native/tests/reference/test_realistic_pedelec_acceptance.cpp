@@ -53,7 +53,6 @@
 
 namespace {
 
-namespace research = bike::research;
 namespace sw = runtime::sample_wire;
 namespace terrain = bike::terrain;
 

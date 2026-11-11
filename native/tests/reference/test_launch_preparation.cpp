@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 NATIVE_DIAG_PUSH
 // NATIVE_DIAG_IGNORE is the project diagnostic-pragma macro from diag.hpp; cppcheck cannot resolve it.
@@ -23,7 +24,7 @@ template <typename Action>
 void rejects(Action &&action, std::string_view needle, std::string_view what) {
     bool threw = false;
     try {
-        action();
+        std::forward<Action>(action)();
     } catch (const std::invalid_argument &failure) {
         threw = true;
         bt::require(std::string_view(failure.what()).find(needle) != std::string_view::npos,

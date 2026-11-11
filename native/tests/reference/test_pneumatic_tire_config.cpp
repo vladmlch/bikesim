@@ -39,6 +39,14 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"launch_standstill_crank_rate_rad_s",
                  io::Value{io::Number{"1.0"}}}}});
         }
+        if (!io::find_member(*obj, "rider_launch")) {
+            obj->emplace_back("rider_launch", io::Value{io::Value::Object{
+                {"start_cog_grade_breaks", io::Value{io::Value::Array{}}},
+                {"start_cog_teeth", io::Value{io::Value::Array{io::Value{io::Number{"24"}}}}},
+                {"start_pedal_angle_rad", io::Value{io::Number{"0.0"}}},
+                {"start_lean_grades", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
+                {"start_lean_rad", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}}}});
+        }
         // These documents exercise the tire section only — fill the
         // required timing keys the oracle's defaults used to supply, with
         // the 10-step dropout expressed at the document's own tick.

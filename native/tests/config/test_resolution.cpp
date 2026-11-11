@@ -434,7 +434,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_timestep.toml",
                 "control_period_s = 0.005\n"
-                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
@@ -444,12 +444,12 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_control_period.toml",
                 "timestep_s = 0.00125\n"
-                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
-        "missing 1 required positional argument: 'monitors'",
+        "missing 2 required positional arguments: 'rider_launch' and 'monitors'",
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_monitors.toml",
@@ -462,7 +462,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_grounded_hold.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ncontact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ncontact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid MonitorsConfig: MonitorsConfig.__init__() missing 1 "
@@ -471,7 +471,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_contact_dropout.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ngrounded_hold_s = 0.005\n" + std::string(kResearchSection))));
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n" + std::string(kResearchSection))));
         });
 
     // The monitor holds count whole physics steps — a non-multiple value is
@@ -482,7 +482,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "nonmultiple_grounded.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ngrounded_hold_s = 0.006\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.006\n"
                 "contact_dropout_s = 0.0125\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -502,7 +502,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "nonmultiple_dropout.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.006\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -522,7 +522,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         discard(cfg::load_physics(stage(
             "nonfinite.toml",
             "timestep_s = inf\ncontrol_period_s = 0.005\n"
-            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
             "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -539,7 +539,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         discard(cfg::load_physics(stage(
             "nonfinite2.toml",
             "timestep_s = nan\ncontrol_period_s = 0.005\n"
-            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
             "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -568,7 +568,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         discard(cfg::load_physics(stage(
             "scalar_array.toml",
             "timestep_s = [0.001]\ncontrol_period_s = 0.005\n"
-            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
     });
     bt::invalid([&] {
@@ -584,7 +584,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "legacy.toml",
             "physics_mode = \"legacy\"\ntimestep_s = 0.00125\n"
             "control_period_s = 0.005\n"
-            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
     });
 
@@ -618,7 +618,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     };
     const std::string_view seated_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = true\n";
     const std::string_view seated_tail =
         "period_s = 0.00125\nreaction_delay_s = 0.15\n"
@@ -697,7 +697,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "disabled_seated.toml",
             "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
             "closure_time_constant_s = 0.0025\n"
-            "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+            "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
             "[seated_climb]\nenabled = false\n"
             "period_s = 0.002\nreaction_delay_s = 0.151\n"
             "lean_rate_rad_s = 0.5\norientation_tau_s = 0.001\n"
@@ -731,7 +731,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view repo_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
@@ -775,7 +775,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view engaged_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
@@ -912,7 +912,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view research_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
@@ -936,7 +936,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "missing_research.toml",
                 "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-                "[monitors]\ngrounded_hold_s = 0.005\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.0125\n")));
         });
     for (const auto missing : {"control_period_s", "actuator_delay_s",
@@ -1022,7 +1022,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
@@ -1136,7 +1136,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "assist_resolved_tau.toml",
                 "timestep_s = 0.03\ncontrol_period_s = 0.03\n"
                 "closure_time_constant_s = 0.06\n"
-                "[monitors]\ngrounded_hold_s = 0.03\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.03\n"
                 "contact_dropout_s = 0.03\n"
                 "[seated_climb]\nenabled = false\nperiod_s = 0.03\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -1172,7 +1172,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
         "drive_mode = \"articulated_effort\"\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[drive]\nmotor_clutch = true\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -1210,7 +1210,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "disabled_climb_timings.toml",
             "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
             "closure_time_constant_s = 0.0025\n"
-            "[monitors]\ngrounded_hold_s = 0.005\n"
+            "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\n"
@@ -1273,7 +1273,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string full =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
-        "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
+        "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
@@ -1463,6 +1463,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.drive.shifting.shift_cut_duration_s = .2;
         unresolved_base.articulated.balance_dwell_s = .5;
         unresolved_base.articulated.balance_grace_s = 3.;
+        unresolved_base.rider_launch = {.start_cog_grade_breaks = {},
+                                        .start_cog_teeth = {24},
+                                        .start_pedal_angle_rad = 0.,
+                                        .start_lean_grades = {0.},
+                                        .start_lean_rad = {0.}};
         unresolved_base.research.control_period_s = .01;
         unresolved_base.research.actuator_delay_s = .005;
         unresolved_base.research.sensor_latency_s = .01;

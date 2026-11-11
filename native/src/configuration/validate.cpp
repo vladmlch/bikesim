@@ -883,6 +883,12 @@ void post_init(const SeatedClimbConfig &config) {
     }
 }
 
+void post_init(const RiderLaunchConfig &config) {
+    // Launch part 2 — the table's own rules; the cassette and posture
+    // bounds need other records and run in the root post_init.
+    ::rider::validate_launch_table(config);
+}
+
 void post_init(const MonitorsConfig &config) {
     // model_config.py MonitorsConfig.__post_init__ — holds are durations,
     // not counts; the whole-step rule lives on the owning
@@ -1090,6 +1096,21 @@ void post_init(SimulationPhysicsConfig &config) {
     detail::post_init(config.seated_climb);
     detail::post_init(config.monitors);
     detail::post_init(config.research);
+    detail::post_init(config.rider_launch);
+    // The start cogs are cassette cogs while shifting runs (the computed
+    // start cog must pass the same membership rule as drive.gearing), and
+    // the start leans stay inside the seated posture bounds the intent
+    // clamps to.
+    if (config.drive.shifting.enabled)
+        for (const int teeth : config.rider_launch.start_cog_teeth)
+            if (std::ranges::find(config.drive.shifting.cassette, teeth) ==
+                config.drive.shifting.cassette.end())
+                fail("rider_launch.start_cog_teeth: cog " + std::to_string(teeth) +
+                     " is not on the cassette");
+    for (const double lean : config.rider_launch.start_lean_rad)
+        if (lean > config.seated_climb.max_forward_lean_rad ||
+            lean < -config.seated_climb.max_backward_lean_rad)
+            fail("rider_launch.start_lean_rad: lean outside the seated posture bounds");
     if (!std::isfinite(config.timestep_s) || config.timestep_s <= 0.)
         fail("timestep_s must be finite and positive");
     scalar(config.control_period_s, "control period", std::nullopt, true);
@@ -1303,7 +1324,8 @@ SimulationPhysicsConfig default_physics() {
     // code defaults, and the research-mode timings the CLI and request
     // paths carried (10 ms control tick, 5 ms actuator delay, 10 ms
     // sensor latency, 100 ms maximum age, 5 ms sample period, record
-    // decimation 80). The motor clutch is declared explicitly too: the
+    // decimation 80) and the 24T launch table. The motor clutch is
+    // declared explicitly too: the
     // default resolves to coast/ideal_speed_control, where the clutch is
     // forbidden, so it stays false here.
     SimulationPhysicsConfig config{};
@@ -1325,6 +1347,13 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.launch_effort_ramp_s = 1.5;
     config.seated_climb.launch_min_grade = .03;
     config.seated_climb.launch_standstill_crank_rate_rad_s = 1.;
+    // Launch part 2 — the built-in profile starts on its own 34/24
+    // drivetrain at angle 0 without lean (today's start).
+    config.rider_launch = {.start_cog_grade_breaks = {},
+                           .start_cog_teeth = {24},
+                           .start_pedal_angle_rad = 0.,
+                           .start_lean_grades = {0.},
+                           .start_lean_rad = {0.}};
     config.drive.motor_clutch = false;
     config.drive.assist.release_hold_s = .3;
     config.drive.pedaling.stop_time_s = .35;

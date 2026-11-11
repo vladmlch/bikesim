@@ -606,6 +606,7 @@ construct_record(const RecordSchema& schema, const Value::Object& obj,
     BIKE_T13_RECORD(ResistanceConfig, kResistanceConfigSchema)
     BIKE_T13_RECORD(ArticulatedConfig, kArticulatedConfigSchema)
     BIKE_T13_RECORD(SeatedClimbConfig, kSeatedClimbConfigSchema)
+    BIKE_T13_RECORD(RiderLaunchConfig, kRiderLaunchConfigSchema)
     BIKE_T13_RECORD(MonitorsConfig, kMonitorsConfigSchema)
     BIKE_T13_RECORD(ResearchConfig, kResearchConfigSchema)
 #undef BIKE_T13_RECORD

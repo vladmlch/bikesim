@@ -245,7 +245,7 @@ namespace cfg = bike::configuration;
                 "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"
                 "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
                 "[seated_climb]\nperiod_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15.0\nlaunch_effort_ramp_s = 1.5\nlaunch_min_grade = 0.03\nlaunch_standstill_crank_rate_rad_s = 1.0\n"
-                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
                 "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
                 "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
                 "sample_period_s = 0.005\nrecord_decimation = 80\n";

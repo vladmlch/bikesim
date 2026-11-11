@@ -65,7 +65,7 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
                "drive_mode = \"coast\"\n"
                "timestep_s = 0.0005\n"
                "control_period_s = 0.005\n"
-               "[monitors]\n"
+               "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\n"
                "grounded_hold_s = 0.005\n"
                "contact_dropout_s = 0.005\n"
                "[seated_climb]\n"

@@ -12,6 +12,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -333,6 +334,101 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
         "the schema rejects activation_tau_s");
 }
 
+// Runs `action`, which must throw std::invalid_argument naming `needle`.
+template <typename Action>
+void rejects(Action &&action, std::string_view needle, std::string_view what) {
+    bool threw = false;
+    try {
+        action();
+    } catch (const std::invalid_argument &failure) {
+        threw = true;
+        bt::require(std::string_view(failure.what()).find(needle) != std::string_view::npos,
+                    std::string(what) + " names " + std::string(needle) + " (" + failure.what() + ")");
+    }
+    bt::require(threw, std::string(what) + " is rejected");
+}
+
+// Loads the shipped welded profile after `edit` changed its text. The two
+// rider data files the profile names travel along, so only the edit
+// decides whether the load succeeds.
+[[gnu::noinline]] cfg::SimulationPhysicsConfig load_edited_profile(
+    const std::function<void(std::string &)> &edit) {
+    std::string text = bt::text(repo_file("examples/research/viewer_physics_welded.toml"));
+    edit(text);
+    const bt::TemporaryDirectory dir("welded-edited-profile");
+    for (const char *name : {"rider_joint_envelope_anatomical.json", "rider_strength_reference.json"})
+        std::filesystem::copy_file(repo_file(std::string("examples/research/") + name), dir.path() / name);
+    const auto path = dir.path() / "physics.toml";
+    { std::ofstream out(path); out << text; }
+    return cfg::load_physics(path);
+}
+
+// Replaces the one occurrence of `from`; a missing or repeated line fails.
+void replace_once(std::string &text, std::string_view from, std::string_view to) {
+    const auto at = text.find(from);
+    bt::require(at != std::string::npos && text.find(from, at + 1) == std::string::npos,
+                "the profile text occurs exactly once: " + std::string(from));
+    text.replace(at, from.size(), to);
+}
+
+// The welded profile carries today's start as its launch table: the 51T
+// cog at every grade, the pedal at angle 0 and no lean. The built-in
+// default profile keeps its own 34/24 drivetrain.
+[[gnu::noinline]] void test_launch_table_reproduces_todays_start() {
+    const auto &launch = profile().rider_launch;
+    bt::require(launch.start_cog_grade_breaks.empty() &&
+                    launch.start_cog_teeth == std::vector<int>{51},
+                "one 51T start cog");
+    bt::require(launch.start_pedal_angle_rad == 0., "pedal angle 0");
+    bt::require(launch.start_lean_grades == std::vector<double>{0.} &&
+                    launch.start_lean_rad == std::vector<double>{0.},
+                "no start lean");
+    const auto defaults = cfg::default_physics();
+    bt::require(defaults.rider_launch.start_cog_teeth == std::vector<int>{24} &&
+                    defaults.drive.gearing.front_teeth == 34 &&
+                    defaults.drive.gearing.rear_teeth == 24,
+                "the built-in profile starts on 34/24");
+}
+
+// Every [rider_launch] key and the section itself are required: dropping
+// one fails the load and the error names it (no code default).
+[[gnu::noinline]] void test_launch_table_keys_are_required() {
+    for (const char *line : {"start_cog_grade_breaks = []\n", "start_cog_teeth = [51]\n",
+                             "start_pedal_angle_rad = 0.0\n", "start_lean_grades = [0.0]\n",
+                             "start_lean_rad = [0.0]\n"}) {
+        const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
+        rejects([&] { (void)load_edited_profile([&](std::string &t) { replace_once(t, line, ""); }); },
+                key, "a profile without " + key);
+    }
+    rejects([] {
+        (void)load_edited_profile([](std::string &t) {
+            const auto from = t.find("[rider_launch]\n");
+            const std::string_view last = "start_lean_rad = [0.0]\n";
+            const auto to = t.find(last, from);
+            bt::require(from != std::string::npos && to != std::string::npos, "the profile has the launch block");
+            t.erase(from, to + last.size() - from);
+        });
+    }, "rider_launch", "a profile without [rider_launch]");
+}
+
+// Rules that need other records: a start cog must be on the cassette while
+// shifting runs (any cog when it does not), and a start lean must stay
+// inside the seated posture bounds of [seated_climb].
+[[gnu::noinline]] void test_launch_table_cross_record_rules() {
+    auto config = profile();
+    config.rider_launch.start_cog_teeth = {50};
+    rejects([&] { cfg::validate(config); }, "start_cog_teeth", "a start cog off the cassette");
+    config.drive.shifting.enabled = false;
+    cfg::validate(config);   // control: any cog >= 3 without shifting
+    config = profile();
+    config.rider_launch.start_lean_rad = {config.seated_climb.max_forward_lean_rad + 1e-3};
+    rejects([&] { cfg::validate(config); }, "start_lean_rad", "a lean beyond the forward bound");
+    config.rider_launch.start_lean_rad = {-config.seated_climb.max_backward_lean_rad - 1e-3};
+    rejects([&] { cfg::validate(config); }, "start_lean_rad", "a lean beyond the backward bound");
+    config.rider_launch.start_lean_rad = {config.seated_climb.max_forward_lean_rad};
+    cfg::validate(config);   // control: the bound itself is a valid lean
+}
+
 } // namespace
 
 int main() {
@@ -343,5 +439,8 @@ int main() {
         test_relaxation_is_kinetic_for_the_rotor_drive();
         test_assist_is_bosch_turbo_with_the_declared_envelope();
         test_rider_numbers();
+        test_launch_table_reproduces_todays_start();
+        test_launch_table_keys_are_required();
+        test_launch_table_cross_record_rules();
     });
 }

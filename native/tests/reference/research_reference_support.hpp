@@ -100,6 +100,9 @@ struct Knobs {
     physics.seated_climb.launch_effort_ramp_s = 1.5;
     physics.seated_climb.launch_min_grade = .03;
     physics.seated_climb.launch_standstill_crank_rate_rad_s = 1.;
+    physics.rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {24},
+                            .start_pedal_angle_rad = 0., .start_lean_grades = {0.},
+                            .start_lean_rad = {0.}};
     physics.drive.assist.release_hold_s = .3;
     physics.drive.pedaling.stop_time_s = .35;
     physics.drive.pedaling.reposition_on_stall = false;

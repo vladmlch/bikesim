@@ -39,6 +39,9 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.seated_climb.launch_effort_ramp_s = 1.5;
     config.seated_climb.launch_min_grade = .03;
     config.seated_climb.launch_standstill_crank_rate_rad_s = 1.;
+    config.rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {24},
+                           .start_pedal_angle_rad = 0., .start_lean_grades = {0.},
+                           .start_lean_rad = {0.}};
     config.drive.assist.release_hold_s = .3;
     config.drive.pedaling.stop_time_s = .35;
     config.drive.pedaling.reposition_on_stall = false;

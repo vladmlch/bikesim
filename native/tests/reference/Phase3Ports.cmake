@@ -307,6 +307,12 @@ bike_add_reference_test(rider_brake_channel ENGINE
 bike_add_reference_test(static_brake_latch ENGINE
   SOURCES test_static_brake_latch.cpp LIBRARIES bike_app bike_validation
   LABELS launch rider)
+# Launch part 2 — the rider's launch table and the start preparation:
+# the pure table rules, the cog/pedal angle the setup computes from it and
+# the lean the settle and the intent reset hold (tasks 1-3).
+bike_add_reference_test(launch_preparation ENGINE
+  SOURCES test_launch_preparation.cpp LIBRARIES bike_app bike_validation bike_cli
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

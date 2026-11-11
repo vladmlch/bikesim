@@ -19,6 +19,7 @@
 #include "physical_config.hpp"
 #include "../io/value.hpp"
 #include "../rider/intent.hpp"
+#include "../rider/launch_config.hpp"
 #include <array>
 
 namespace bike::configuration {
@@ -39,6 +40,10 @@ struct EndStopConfig {
 // native rider/intent.hpp IntentConfig (same 22 fields, same defaults);
 // reuse keeps one declaration for the input and the intent boundary.
 using SeatedClimbConfig = ::rider::IntentConfig;
+
+// Launch part 2 — the rider's launch experience table ([rider_launch]):
+// the record is the rider-layer LaunchConfig, like SeatedClimbConfig.
+using RiderLaunchConfig = ::rider::LaunchConfig;
 
 // model_config.py MonitorsConfig — contact-monitor holds declared by the
 // profile in seconds; both count whole physics steps, so post_init requires
@@ -78,6 +83,7 @@ struct SimulationPhysicsConfig {
     ResistanceConfig resistance;
     ArticulatedConfig articulated;
     SeatedClimbConfig seated_climb;
+    RiderLaunchConfig rider_launch;
     MonitorsConfig monitors;
     ResearchConfig research;
     double initial_speed_mps = 0.;
@@ -139,6 +145,7 @@ void validate_rider_contacts(
 namespace detail {
 void post_init(const EndStopConfig&);
 void post_init(const SeatedClimbConfig&);
+void post_init(const RiderLaunchConfig&);
 void post_init(const MonitorsConfig&);
 void post_init(const ResearchConfig&);
 } // namespace detail
@@ -252,6 +259,30 @@ inline const RecordSchema kResearchConfigSchema{
     .path="bike_sim.physics.model_config.ResearchConfig",
     .fields=kResearchConfigFields, .declared_default=nullptr};
 
+// Launch part 2 — [rider_launch]: every key is required and the record has
+// no declared-default instance, like [monitors].
+inline constexpr auto kRiderLaunchConfigFields = std::to_array<FieldDecl>({
+    {.name="start_cog_grade_breaks", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(RiderLaunchConfig, start_cog_grade_breaks), .required=true, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="start_cog_teeth", .type="tuple[int, ...]", .kind=FieldKind::IntegerTuple,
+     .offset=offsetof(RiderLaunchConfig, start_cog_teeth), .required=true, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="start_pedal_angle_rad", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(RiderLaunchConfig, start_pedal_angle_rad), .required=true, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="start_lean_grades", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(RiderLaunchConfig, start_lean_grades), .required=true, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+    {.name="start_lean_rad", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(RiderLaunchConfig, start_lean_rad), .required=true, .factory="",
+     .nested=nullptr, .nested2=nullptr},
+});
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
+inline const RecordSchema kRiderLaunchConfigSchema{
+    .path="bike_sim.physics.rider_launch.RiderLaunchConfig",
+    .fields=kRiderLaunchConfigFields, .declared_default=nullptr};
+
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const SimulationPhysicsConfig kDeclaredSimulationPhysicsConfig{};
 inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>({
@@ -293,6 +324,10 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .type="<class 'bike_sim.physics.seated_climb.SeatedClimbConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, seated_climb),
      .required=false, .factory="SeatedClimbConfig", .nested=&kSeatedClimbConfigSchema, .nested2=nullptr},
+    {.name="rider_launch",
+     .type="<class 'bike_sim.physics.rider_launch.RiderLaunchConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, rider_launch),
+     .required=true, .factory="", .nested=&kRiderLaunchConfigSchema, .nested2=nullptr},
     {.name="monitors",
      .type="<class 'bike_sim.physics.model_config.MonitorsConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, monitors),

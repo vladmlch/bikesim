@@ -289,6 +289,11 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.launch_effort_ramp_s = 1.5;
     climb.launch_min_grade = 0.03;
     climb.launch_standstill_crank_rate_rad_s = 1.0;
+    c.rider_launch = {.start_cog_grade_breaks = {},
+                      .start_cog_teeth = {51},
+                      .start_pedal_angle_rad = 0.0,
+                      .start_lean_grades = {0.0},
+                      .start_lean_rad = {0.0}};
     c.monitors.grounded_hold_s = 0.005;
     c.monitors.contact_dropout_s = 0.0125;
     c.research.control_period_s = 0.01;
@@ -701,7 +706,7 @@ void test_schema() {
                 "schema config_class");
     const Value::Array& fields = io::as_array(
         member(document, "fields", "schema"), "schema.fields");
-    static constexpr std::array<std::string_view, 22> kTopOrder{
+    static constexpr std::array<std::string_view, 23> kTopOrder{
         "physics_mode",
         "drive_mode",
         "timestep_s",
@@ -713,6 +718,7 @@ void test_schema() {
         "resistance",
         "articulated",
         "seated_climb",
+        "rider_launch",
         "monitors",
         "research",
         "initial_speed_mps",
@@ -725,22 +731,14 @@ void test_schema() {
         "equilibrium_state_file",
         "equilibrium_relaxation",
     };
-    bt::require(fields.size() == 22, "top-level field count");
+    bt::require(fields.size() == 23, "top-level field count");
     for (std::size_t i = 0; i < fields.size(); ++i)
         bt::require(
             string_of(member(fields[i], "name", "fields"), "name") ==
                 kTopOrder.at(i),
             "field order mismatch at index " + std::to_string(i));
 
-    // The whole document — every default, factory qualname, type string and
-    // nested field table — equals the oracle capture after canonicalization
-    // (the fixture is pretty-printed; canonical_json is the semantic form).
-    const std::string expected = canonical(
-        fixture_json("config/schema.json", "config/schema.json"));
-    bt::require(canonical(document) == expected,
-                "schema() differs from the oracle document");
-
-    // Structural spot checks behind the golden: nested counts and the
+    // Structural spot checks ahead of the golden: nested counts and the
     // required/optional/default encodings.
     const auto fields_named = [&](const Value& node, std::string_view path) {
         std::vector<std::string> names;
@@ -766,10 +764,20 @@ void test_schema() {
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 22,
                 "seated_climb field count");
-    bt::require(fields_named(fields[11], "monitors").size() == 2,
+    bt::require(fields_named(fields[11], "rider_launch").size() == 5,
+                "rider_launch field count");
+    bt::require(fields_named(fields[12], "monitors").size() == 2,
                 "monitors field count");
-    bt::require(fields_named(fields[12], "research").size() == 6,
+    bt::require(fields_named(fields[13], "research").size() == 6,
                 "research field count");
+
+    // The whole document — every default, factory qualname, type string and
+    // nested field table — equals the oracle capture after canonicalization
+    // (the fixture is pretty-printed; canonical_json is the semantic form).
+    const std::string expected = canonical(
+        fixture_json("config/schema.json", "config/schema.json"));
+    bt::require(canonical(document) == expected,
+                "schema() differs from the oracle document");
 
     // Optional leaves serialize explicit null defaults; required leaves
     // (TyreSpecs) also carry null defaults but no factory.

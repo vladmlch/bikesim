@@ -300,7 +300,7 @@ void test_equilibrium_state_field_validation() {
                                "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
                                "equilibrium_state_file = ";
         document.append(spelling).append(
-            "\n[monitors]\ngrounded_hold_s = 0.005\n"
+            "\n[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.005\n"
             "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
             "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
@@ -338,7 +338,7 @@ void test_toml_state_file_resolves_relative_to_the_config() {
                 "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n"
                 "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"
                 "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
-                "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
                 "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
                 "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
                 "sample_period_s = 0.005\nrecord_decimation = 80\n";
@@ -368,7 +368,7 @@ void test_toml_state_file_resolves_relative_to_the_config() {
              << "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n"
              << "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"
              << "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
-             << "[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
+             << "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
              << "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
              << "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
              << "sample_period_s = 0.005\nrecord_decimation = 80\n";

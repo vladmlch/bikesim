@@ -26,6 +26,7 @@
 #include "../initialization/research_startup.hpp"
 #include "../rider/attachment_wrench.hpp"
 #include "../rider/intent.hpp"
+#include "../rider/senses.hpp"
 #include "../rider/spindle_controller.hpp"
 #include "../writers/rider_contacts.hpp"
 #include "../writers/tire.hpp"
@@ -59,6 +60,9 @@ struct StepConfig {
     bool rider_present = false;
     MonitorConfig monitors;
     rider::IntentConfig intent{};
+    // The track's surface-label map — the senses fold's lookup for the
+    // front-wheel and lookahead labels.
+    rider::SurfaceLabels surface_labels{};
 };
 
 // constraint_forces.py ConstraintForceSnapshot — solved-limit forces for
@@ -190,6 +194,7 @@ struct StepState {
     RuntimeContactQuery::State contact_query{}, probe_query{};
     EnergyState energy{};
     rider::IntentSignals signals{};
+    rider::RiderSenses senses{};
     std::optional<rider::SpindleController::State> rider_controller;
     rider::RiderIntent::State rider_intent{};
 };
@@ -335,6 +340,10 @@ public:
         const noexcept {
         return intent_signals_;
     }
+    [[nodiscard]] const rider::RiderSenses &rider_senses()
+        const noexcept {
+        return rider_senses_;
+    }
 
 private:
     // Freshness predicate for the mjSTAGE_VEL-skip fast path: drains the
@@ -420,6 +429,30 @@ private:
     // committed drive telemetry lane, snapshots_): the sensor channel
     // dict with 'tires' merged in, as a wire object.
     void update_intent_signals(const WireObject &sensors_and_tires);
+    // update_rider_senses — the senses fold (launch part 1): every field
+    // of the interval's record is sampled at the SAME instant — the
+    // interval-start state (review M-P2). `settled_entries` carries the
+    // settle entries latched on that start pose (the interval call passes
+    // in.settle's list, the startup calls the settle latch), `wheel_x_m`
+    // the front/rear wheel positions, `frame_up` the bicycle frame's up
+    // axis and `qvel_start` the velocity — all at that one instant.
+    void update_rider_senses(
+        std::span<const std::pair<std::string,
+                                  writers::RiderSettledEntry>>
+            settled_entries,
+        std::span<const double, 2> wheel_x_m,
+        std::span<const double, 3> frame_up,
+        std::span<const double> qvel_start);
+    // Current wheel positions and the frame up axis from the live data's
+    // kinematics — the startup callers' sources (the interval fold stages
+    // its own copies before settle_welds republishes endpoint kinematics).
+    [[nodiscard]] std::array<double, 2> current_wheel_x_m() const;
+    [[nodiscard]] std::array<double, 3> current_frame_up() const;
+    // The settle latch's entry list for the startup acquisitions — empty
+    // when no rider contacts or no settle latched yet.
+    [[nodiscard]] std::span<const std::pair<std::string,
+                                            writers::RiderSettledEntry>>
+    settled_grip_entries() const;
 
     // The mutate()'d body of apply_forces — separate frame keeps the
     // per-function stack budget sweep green on unoptimized builds.
@@ -503,6 +536,7 @@ private:
     std::optional<rider::SpindleController> rider_control_;
     rider::RiderIntent rider_intent_;
     rider::IntentSignals intent_signals_{};
+    rider::RiderSenses rider_senses_{};
     StaticBrake brake_;
 
     ControlClock control_clock_;

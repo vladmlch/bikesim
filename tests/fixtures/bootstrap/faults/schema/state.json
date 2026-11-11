@@ -1349,6 +1349,14 @@
     "step": 0
   },
   "schema": 99,
+  "senses": {
+    "grade_ahead": 0.0,
+    "hand_press_n": 0.0,
+    "rear_teeth": 51,
+    "speed_mps": 0.0,
+    "surface_ahead": "asphalt",
+    "surface_front": "asphalt"
+  },
   "signals": {
     "crank_rate_rad_s": 0.0,
     "front_load_share": 0.418881478486283,

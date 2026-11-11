@@ -637,6 +637,10 @@
   },
   "runtime_schema": 1,
   "strict": false,
+  "surface_labels": {
+    "sections": [],
+    "surface": "asphalt"
+  },
   "timestep_s": 0.00125,
   "writer_config": {
     "brake": {

@@ -338,12 +338,16 @@ void reset_enters_new_episode() {
 // The shared research-failure fixture: strict mode + priced-out weld
 // bound produce a real *.normal rejection; an optional test_fail_at_step
 // arm injects the engine failure at the committed boundary.
+// By-value bootstrap temporaries — budget waived like main() below.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[nodiscard]] std::unique_ptr<runtime::NativeResearchRuntime>
 armed_env(std::optional<std::int64_t> fail_step) {
     auto env = make_env(strict_bootstrap());
     if (fail_step.has_value()) env->test_fail_at_step(*fail_step);
     return env;
 }
+NATIVE_DIAG_POP
 
 void headless_tail_failure_preserves_primary_error() {
     // Python parametrizes over tail exception classes; the native contract

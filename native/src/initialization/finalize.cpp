@@ -103,6 +103,11 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         physical.energy_.mechanical_energy_j=total;physical.energy_.elastic_energy_j=std::move(elastic);physical.energy_.residual_j=0.;
         physical.update_compiled_com_marker();
         if(context.physics.seated_climb.enabled){auto sensors=physical.sensor_channels(stepper.qvel(),stepper.drive().diagnostics(true).to_map());auto tires=physical.tire_channels(physical.snapshots_,stepper.qvel());sensors.emplace_back("tires",runtime::Wire{std::move(tires)});physical.update_intent_signals(sensors);}
+        // The settled startup senses record: the settle latch above
+        // already holds the grip reactions on the settled pose, so this
+        // refresh carries the real hand pressure into the initial
+        // capture (P2's startup acquisition point).
+        physical.update_rider_senses(physical.settled_grip_entries(),physical.current_wheel_x_m(),physical.current_frame_up(),stepper.qvel());
     });
     physical.research_accounting_valid_=true;context.completed=true;
 }

@@ -280,6 +280,13 @@ bike_add_reference_test(native_spindle_controller ENGINE
 bike_add_reference_test(seated_climb_surge ENGINE
   SOURCES test_seated_climb_surge.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider)
+# Launch part 1, task 2 — the RiderSenses fold, SurfaceLabels map and
+# strict codecs plus the senses channel's welded-ride transport (the
+# shared launch_ride_support.hpp harness links bike_validation for the
+# inspect seam).
+bike_add_reference_test(rider_senses ENGINE
+  SOURCES test_rider_senses.cpp LIBRARIES bike_app bike_validation
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

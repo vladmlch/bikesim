@@ -21,6 +21,7 @@
 #include "../configuration/suspension_spec.hpp"
 #include "../engine_call.hpp"
 #include "../model/mapping.hpp"
+#include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
 #include "../terrain/profile.hpp"
 #include "../writer_config.hpp"
@@ -42,6 +43,28 @@ cfg::SimulationPhysicsConfig physics(const mdl::BuildRequest& request) {
 cfg::RiderSpecs rider(const mdl::BuildRequest& request) {
     return request.rider.value_or(mdl::rider_from_args(
         request.include_rider ? "lumped" : "none"));
+}
+
+// The track's label twin for the runtime envelope: same surface/section
+// structure as SurfaceMap, projected to names only. Track validation
+// already runs upstream, so every name lands inside the label domain.
+[[nodiscard]] rider::SurfaceLabels surface_labels_of(const trn::TrackSpec& track) {
+    const auto label_of = [](std::string_view name) {
+        const auto label = rider::surface_label(name);
+        if (!label.has_value())
+            throw std::invalid_argument(
+                std::string("track surface is not a label: ") +
+                std::string(name));
+        return *label;
+    };
+    std::vector<rider::SurfaceLabelSection> sections;
+    sections.reserve(track.surface_sections.size());
+    for (const auto& section : track.surface_sections)
+        sections.push_back(rider::SurfaceLabelSection{
+            .start_m = section.start_m, .end_m = section.end_m,
+            .label = label_of(section.surface)});
+    return rider::SurfaceLabels{label_of(track.surface),
+                                std::move(sections)};
 }
 
 std::vector<std::byte> immutable_model_image(const mjModel& model) {
@@ -480,6 +503,8 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         {"rider_controller", project_rider_controller_impl(
             config, model, articulated_pose ? &*articulated_pose : nullptr)},
         {"rider_intent", field(physics_document, "seated_climb")},
+        {"surface_labels", rider::encode_surface_labels(
+            surface_labels_of(track))},
         {"monitors", Value{Object{{"balance_floor_mps", real(config.articulated.balance_floor_kmh / 3.6)},
             {"balance_dwell_s", real(config.articulated.balance_dwell_s)},
             {"balance_grace_s", real(config.articulated.balance_grace_s)},

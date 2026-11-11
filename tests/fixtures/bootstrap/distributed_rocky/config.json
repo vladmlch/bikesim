@@ -637,6 +637,26 @@
   },
   "runtime_schema": 1,
   "strict": false,
+  "surface_labels": {
+    "sections": [
+      {
+        "end_m": 28.26,
+        "start_m": 14.77,
+        "surface": "scree"
+      },
+      {
+        "end_m": 53.17,
+        "start_m": 45.82,
+        "surface": "scree"
+      },
+      {
+        "end_m": 97.04,
+        "start_m": 84.87,
+        "surface": "scree"
+      }
+    ],
+    "surface": "hardpack"
+  },
   "timestep_s": 0.00125,
   "writer_config": {
     "brake": {

@@ -70,6 +70,15 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
         signals.emplace_back("tires", runtime::Wire{physical.tire_channels(physical.snapshots_, stepper.qvel())});
         stepper.mutate([&] { physical.update_intent_signals(signals); });
     }
+    // The startup senses record (P2): this path runs no settle_welds,
+    // so the latch from the pre-startup settle supplies the grip load;
+    // speed/gear/labels/grade refresh on the current pose.
+    stepper.mutate([&] {
+        physical.update_rider_senses(physical.settled_grip_entries(),
+                                     physical.current_wheel_x_m(),
+                                     physical.current_frame_up(),
+                                     stepper.qvel());
+    });
     runtime::PhysicalSampleData initial;
     initial.channels.emplace_back("sensors", runtime::Wire{std::move(channels)});
     ResearchStartup result;

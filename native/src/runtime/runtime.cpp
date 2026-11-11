@@ -44,6 +44,7 @@
 #include "../diag.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
+#include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
 #include "../stepper.hpp"
 #include "../tyre/profile.hpp"
@@ -311,6 +312,8 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
     out.energy = parse_energy(vread::section(rt, "energy"));
     out.signals =
         rider::decode_intent_signals(bootstrap.signals, "state.signals");
+    out.senses =
+        rider::decode_rider_senses(bootstrap.senses, "state.senses");
     out.rider_intent =
         rider::decode_intent_state(bootstrap.rider_intent,
                                    "state.rider_intent");
@@ -342,6 +345,8 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
     out.monitors = config.monitors;
     out.intent = rider::decode_intent_config(config.rider_intent,
                                              "config.rider_intent");
+    out.surface_labels = rider::decode_surface_labels(
+        config.surface_labels, "config.surface_labels");
     return out;
 }
 

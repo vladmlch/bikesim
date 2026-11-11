@@ -79,6 +79,11 @@ struct RuntimeConfig {
     // Owned config.rider_intent document — decoded into
     // rider::IntentConfig inside the physical-step assembly.
     bike::io::Value rider_intent;
+    // Owned config.surface_labels document — the track's surface-label
+    // map (default + sections), decoded into rider::SurfaceLabels inside
+    // the physical-step assembly. Projected from the track spec on every
+    // surface_mode — the senses channel reads labels, never friction.
+    bike::io::Value surface_labels;
 };
 
 } // namespace runtime

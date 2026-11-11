@@ -12,6 +12,7 @@
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
 #include "../model/mapping.hpp"
+#include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/setup_values.hpp"
 #include "../stepper.hpp"
@@ -210,6 +211,7 @@ runtime::RuntimeBootstrap capture_initialized(Stepper const& stepper,
     doc_obj.emplace_back("rider_controller", state.rider_controller ? ::rider::encode_spindle_state(*state.rider_controller) : Value{});
     doc_obj.emplace_back("rider_intent", ::rider::encode_intent_state(state.rider_intent));
     doc_obj.emplace_back("signals", ::rider::encode_intent_signals(state.signals));
+    doc_obj.emplace_back("senses", ::rider::encode_rider_senses(state.senses));
     doc_obj.emplace_back("runtime", runtime_state(state, config));
     Value const document{std::move(doc_obj)};
     // Decode into the exact same owned state used by the captured-file path.

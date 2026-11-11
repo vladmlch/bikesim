@@ -7974,6 +7974,178 @@ R"CATALOG(                      "axes": null,
     },
     {
       "claims": [
+        "rider_senses"
+      ],
+      "exempt_keys": [],
+      "name": "channel_rider_senses",
+      "kind": "channels",
+      "keys": [
+        {
+          "frame": "n/a",
+          "path": [
+            "episode_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "episode_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "n/a",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+          "description": "episode identity within the owning run"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "interval_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "interval_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+          "description": "accounted physics interval identifier, consecutive per episode"
+        }
+      ],
+      "fields": [
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
+            "hand_press_n"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "hand_press_n",
+          "dtype": "double",
+          "unit": "N",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider senses",
+          "description": "summed vertical grip reaction the rider feels at the handlebar"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
+            "speed_mps"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "speed_mps",
+          "dtype": "double",
+          "unit": "m/s",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider senses",
+          "description": "forward speed the rider reads at the cockpit"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
+            "rear_teeth"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "rear_teeth",
+          "dtype": "bigint",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider senses",
+          "description": "engaged rear cassette cog in teeth"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
+            "surface_front"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "surface_front",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider senses",
+          "description": "surface label under the front wheel"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
+            "surface_ahead"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "surface_ahead",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider senses",
+          "description": "surface label at the lookahead point ahead of the front wheel"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
+            "grade_ahead"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "grade_ahead",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Rider senses",
+          "description": "road grade preview over the lookahead window"
+        }
+      ],
+      "description": "rider-sensed channel: human-perception record beside the model telemetry (launch part 1)",
+      "source": "native/src/runtime/step.cpp::PhysicalStep::update_rider_senses"
+    },
+    {
+      "claims": [
         "attachment_violations",
         "contact_crash_cause",
         "model_status"

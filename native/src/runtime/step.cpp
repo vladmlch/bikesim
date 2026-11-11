@@ -1062,6 +1062,16 @@ PhysicalStep::PhysicalStep(
     accel_sensor_adr_ = sensor_adr(m, "sensor_frame_accel");
     gyro_sensor_adr_ = sensor_adr(m, "sensor_frame_gyro");
     crash_geoms_ = crash_geom_ids(m);
+    // The startup senses record: a valid RiderSenses before the first
+    // ride interval — the strict reader's rear_teeth >= 3 domain comes
+    // from the drivetrain's initial gear, the labels/grade from the
+    // already-forwarded construction pose, the grip load stays 0 until
+    // the first settle (P2's valid-startup contract).
+    {
+        const mjData *d = stepper_->data();
+        update_rider_senses(settled_grip_entries(), current_wheel_x_m(),
+                            current_frame_up(), buf(d->qvel, m->nv));
+    }
     // native_reference has no applied tire writer: its solved contact
     // rows are read by RuntimeContactQuery after the engine solve.
     // Per-wheel staging bound: the writer reserves its published patch
@@ -1724,6 +1734,12 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
                     std::string("MuJoCo numerical failure: ") +
                     watched_names[i]);
         // efc_force and poses still belong to this solved interval.
+        // The senses fold's interval-start wheel positions: the last
+        // kinematics still describe the incoming (start) pose here —
+        // settle_welds' interval swap republishes endpoint kinematics
+        // on its way out, so stage the start positions first (M-P2).
+        const std::array<double, 2> senses_wheel_x = current_wheel_x_m();
+        const std::array<double, 3> senses_frame_up = current_frame_up();
         if (rider_control_.has_value()) {
             in.settle = stepper_->rider_contacts().settle_welds(
                 d, writers::RiderIntervalState{q, v}, true,
@@ -1796,6 +1812,8 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             wire_set(signals_in, "tires", Wire(in.tires));
             update_intent_signals(signals_in);
         }
+        update_rider_senses(in.settle.entries, senses_wheel_x,
+                            senses_frame_up, v);
         in.loss_step = loss_increment(components, in.qvel_mid, dt);
         if (rider_control_.has_value())
             in.rider_diag =
@@ -1960,6 +1978,26 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         channels.emplace_back("drive", Wire(std::move(drive)));
         channels.emplace_back("suspension", Wire(std::move(suspension)));
         channels.emplace_back("sensors", Wire(sensors));
+        {
+            WireObject senses;
+            senses.emplace_back("hand_press_n",
+                                Wire(rider_senses_.hand_press_n));
+            senses.emplace_back("speed_mps",
+                                Wire(rider_senses_.speed_mps));
+            senses.emplace_back("rear_teeth",
+                                Wire(static_cast<std::int64_t>(
+                                    rider_senses_.rear_teeth)));
+            senses.emplace_back("surface_front",
+                                Wire(std::string(rider::surface_label_name(
+                                    rider_senses_.surface_front))));
+            senses.emplace_back("surface_ahead",
+                                Wire(std::string(rider::surface_label_name(
+                                    rider_senses_.surface_ahead))));
+            senses.emplace_back("grade_ahead",
+                                Wire(rider_senses_.grade_ahead));
+            channels.emplace_back("rider_senses",
+                                  Wire(std::move(senses)));
+        }
         channels.emplace_back("mass", Wire(mass0));
         if (contact_crash.has_value())
             channels.emplace_back("contact_crash_cause",
@@ -2610,6 +2648,71 @@ void PhysicalStep::update_compiled_com_marker() {
         site_x[3 * static_cast<std::size_t>(cg_site_id_) + k] = com[k];
 }
 
+// ---- rider senses fold (launch part 1, task 2) -------------------------
+// Every field of one interval's RiderSenses is sampled at the SAME
+// instant — the interval-start state (M-P2): the settle latch measured
+// on that start pose supplies the grip load, the caller-staged start
+// wheel positions drive both surface labels and the grade preview, and
+// the start velocity supplies speed_mps. No control-tick or endpoint
+// value ever mixes into the record.
+
+std::array<double, 2> PhysicalStep::current_wheel_x_m() const {
+    const mjModel *m = stepper_->model();
+    const mjData *d = stepper_->data();
+    const auto xpos = buf(d->xpos, 3 * m->nbody);
+    return {xpos[3 * static_cast<std::size_t>(wheel_bodies_[0])],
+            xpos[3 * static_cast<std::size_t>(wheel_bodies_[1])]};
+}
+
+std::array<double, 3> PhysicalStep::current_frame_up() const {
+    const mjModel *m = stepper_->model();
+    const mjData *d = stepper_->data();
+    const auto xmat = buf(d->xmat, 9 * m->nbody);
+    const std::size_t fb = 9 * static_cast<std::size_t>(frame_body_);
+    return {xmat[fb + 2], xmat[fb + 5], xmat[fb + 8]};
+}
+
+std::span<const std::pair<std::string, writers::RiderSettledEntry>>
+PhysicalStep::settled_grip_entries() const {
+    if (stepper_->has_rider_contacts() &&
+        stepper_->rider_contacts().state().settled_welds.has_value())
+        return stepper_->rider_contacts().state().settled_welds->entries;
+    return {};
+}
+
+void PhysicalStep::update_rider_senses(
+    std::span<const std::pair<std::string, writers::RiderSettledEntry>>
+        settled_entries,
+    std::span<const double, 2> wheel_x_m,
+    std::span<const double, 3> frame_up,
+    std::span<const double> qvel_start) {
+    rider::RiderSenses s = rider_senses_;
+    // The settled weld reactions this instant's settle latched — grip
+    // entries carry the world-frame force on the rider, projected on the
+    // bicycle frame's up axis (+z_frame): positive when the bar pushes
+    // the hands up, i.e. the hands press down on the bar — the same
+    // convention rider_contacts.cpp:951-952 uses for the support
+    // reactions. Absent hands sense 0; the support entries never enter.
+    double hand_press_n = 0.;
+    for (const auto &[name, entry] : settled_entries)
+        if (name.starts_with("grip_"))
+            hand_press_n += blas::ddot(3, entry.force_on_rider_n.data(),
+                                     1, frame_up.data(), 1);
+    s.hand_press_n = hand_press_n;
+    s.speed_mps = qvel_start[static_cast<std::size_t>(root_x_dofadr_)];
+    if (stepper_->has_drive())
+        s.rear_teeth = stepper_->drive().state().shifting.rear_teeth;
+    s.surface_front = config_.surface_labels.at(wheel_x_m[0]);
+    s.surface_ahead = config_.surface_labels.at(
+        wheel_x_m[0] + config_.road_lookahead_m);
+    // The same lookahead window and preview the intent layer computes —
+    // evaluated on this interval's start positions, not the control
+    // tick's cached rider_state_.
+    s.grade_ahead = road_grade_preview(road_profile_.samples(
+        wheel_x_m, config_.road_lookahead_m));
+    rider_senses_ = s;
+}
+
 // ---- update_rider_intent_signals (physical_runtime.py:454-459) --------
 // signals_from_channels on the channel dict the same interval published.
 
@@ -2734,6 +2837,7 @@ StepState PhysicalStep::state() const {
     s.probe_query = probe_query_.state();
     s.energy = energy_;
     s.signals = intent_signals_;
+    s.senses = rider_senses_;
     if (rider_control_.has_value())
         s.rider_controller = rider_control_->state();
     s.rider_intent = rider_intent_.state();
@@ -2765,6 +2869,7 @@ void PhysicalStep::restore(const StepState &s) {
     probe_query_.restore(s.probe_query);
     energy_ = s.energy;
     intent_signals_ = s.signals;
+    rider_senses_ = s.senses;
     if (s.rider_controller.has_value() && rider_control_.has_value())
         rider_control_->restore(*s.rider_controller);
     rider_intent_.restore(s.rider_intent);

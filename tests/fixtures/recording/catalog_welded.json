@@ -886,6 +886,7 @@
     "rider_lean_limit_rad",
     "rider_positive_power_w",
     "rider_positive_work_step_j",
+    "rider_senses",
     "rider_strength_limited",
     "rider_strength_violations",
     "rider_support_targets",
@@ -1327,6 +1328,7 @@
     "channel_suspension",
     "channel_control",
     "channel_rider",
+    "channel_rider_senses",
     "channel_model_status"
   ]
 }

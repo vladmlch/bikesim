@@ -250,7 +250,8 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         "runtime_schema", "timestep_s", "control_period_s",
         "control_period_steps", "physics_mode", "drive_mode", "strict",
         "measurement_decimation", "record_retention", "writer_config",
-        "rider_controller", "rider_intent", "monitors", "geometry");
+        "rider_controller", "rider_intent", "surface_labels", "monitors",
+        "geometry");
     vread::exact(root, required, vread::keys("async_telemetry"));
     if (vread::integer32(vread::field(root, "runtime_schema"),
                          root.child("runtime_schema")) != kRuntimeSchema)
@@ -298,6 +299,7 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         vread::invalid(root.child("drive_mode"), "differs from writer_config.drive.drive_mode");
     out.rider_controller = owned_mapping(root, "rider_controller");
     out.rider_intent = owned_mapping(root, "rider_intent");
+    out.surface_labels = owned_mapping(root, "surface_labels");
 
     const vread::Dict monitors = vread::section(root, "monitors");
     vread::exact(monitors,
@@ -356,7 +358,8 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
     constexpr auto required = vread::keys(
         "schema", "model_digest", "model_dims", "integration_state",
         "model_mutable", "tire", "drive", "rider_contacts",
-        "rider_controller", "rider_intent", "signals", "runtime");
+        "rider_controller", "rider_intent", "signals", "senses",
+        "runtime");
     vread::exact(root, required);
     if (vread::integer32(vread::field(root, "schema"), "state.schema") !=
         kRuntimeSchema)
@@ -380,6 +383,7 @@ BootstrapState decode_bootstrap_state(const bike::io::Value &state,
     out.rider_controller = owned_optional(root, "rider_controller");
     out.rider_intent = owned_mapping(root, "rider_intent");
     out.signals = owned_mapping(root, "signals");
+    out.senses = owned_mapping(root, "senses");
 
     const vread::Dict runtime_section = vread::section(root, "runtime");
     vread::exact(runtime_section,

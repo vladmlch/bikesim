@@ -84,10 +84,12 @@ struct BootstrapState {
     // state.rider_controller — null or the owned document (the spindle
     // controller state the step-state decode restores).
     bike::io::Value rider_controller;
-    // state.rider_intent / state.signals — owned documents decoded into
-    // the intent stack at step-state decode.
+    // state.rider_intent / state.signals / state.senses — owned
+    // documents decoded into the intent/senses stack at step-state
+    // decode.
     bike::io::Value rider_intent;
     bike::io::Value signals;
+    bike::io::Value senses;
     // state.runtime — the owned document the step-state and accounting
     // decoders consume at their contract positions.
     bike::io::Value runtime;

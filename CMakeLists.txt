@@ -139,6 +139,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/rider/attachment_wrench.cpp"
   "${_bike_native_dir}/src/rider/equality_reactions.cpp"
   "${_bike_native_dir}/src/rider/state_codec.cpp"
+  "${_bike_native_dir}/src/rider/senses_codec.cpp"
   "${_bike_native_dir}/src/rider/intent.cpp"
   "${_bike_native_dir}/src/rider/spindle_controller.cpp"
   "${_bike_native_dir}/src/runtime/samples.cpp"

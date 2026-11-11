@@ -2281,6 +2281,26 @@ R"CATALOG(          "source": "src/bike_sim/sim/ride/drivetrain_forces.py::Drive
           "frame": "n/a",
           "path": [
             "drive",
+            "shift_rider_response"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "shift_rider_response",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "diagnostic",
+          "source": "native/src/drivetrain/shifting.cpp::CadenceShifter::update",
+          "description": "rider shift request outcome: none/accepted/deferred/rejected"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "drive",
             "shift_from_teeth"
           ],
           "aliases": [],

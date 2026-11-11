@@ -94,7 +94,7 @@ enum class ShiftRequest : std::uint8_t { up, down };
 struct RiderCommands {
     double front_brake = 0.;
     double rear_brake = 0.;
-    std::optional<ShiftRequest> shift_request;
+    std::optional<ShiftRequest> shift_request = std::nullopt;
     bool owns_shifting = false;
 };
 // Brake demands are fractions in [0, 1] — validate rejects nonfinite or
@@ -236,9 +236,12 @@ public:
     [[nodiscard]] State state() const;
     void restore(const State &state);
     [[nodiscard]] const Intent &intent() const { return intent_; }
-    // Launch part 1, task 4: the rider-owned commands the resolver
-    // currently resolves to — always the empty set in part 1; part 5's
-    // produced commands will update this on the resolve() cadence.
+    // Launch part 1, tasks 4-5: the rider-owned commands the resolver
+    // currently resolves to — always the empty set in part 1; a later
+    // launch part will teach the intent to fill them on the resolve()
+    // cadence. Task 5 already transports whatever this returns — brakes,
+    // owns_shifting, shift_request — through PhysicalStep into the
+    // drivetrain's cadence shifter.
     [[nodiscard]] const RiderCommands &commands() const noexcept {
         return commands_;
     }

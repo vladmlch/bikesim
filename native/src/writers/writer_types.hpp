@@ -6,7 +6,7 @@
 //
 // DriveTelemetry is the fixed-lane replacement for the per-tick
 // std::map<std::string, DiagnosticValue>: the serialized schema is a closed
-// set of 63 keys, so every field is a compile-time-declared lane — POD
+// set of 64 keys, so every field is a compile-time-declared lane — POD
 // storage for numeric/flag/closed-label values plus two capacity-managed
 // strings for the open-label fields (assist_mode, coasting_reason). Presence
 // bits keep the explicit-None semantics of the optional fields, and
@@ -113,6 +113,7 @@ namespace drivetrain {
         shift_from_teeth,
         shift_interval_constraint_work_j,
         shift_parameter_work_j,
+        shift_rider_response,
         shift_time_s,
         shift_torque_factor,
         transmission_boundary_m,
@@ -154,6 +155,11 @@ namespace drivetrain {
             motor_control_source_labels{"assist", "external_request"};
     inline constexpr std::array<std::string_view, 3>
             shift_direction_labels{"none", "up", "down"};
+    // Launch part 1, task 5 — the closed rider-request outcome domain,
+    // spelled exactly like ShiftingSnapshot.rider_response.
+    inline constexpr std::array<std::string_view, 4>
+            shift_rider_response_labels{"none", "accepted", "deferred",
+                                        "rejected"};
     inline constexpr std::array<std::string_view, 1>
             transmission_reference_status_labels{
                 "experimental_geometric_reduction"};
@@ -340,6 +346,11 @@ namespace drivetrain {
                  .name = "shift_parameter_work_j",
                  .kind = TelemetryKind::real,
                  .lane = 23},
+                {.field = TelemetryField::shift_rider_response,
+                 .name = "shift_rider_response",
+                 .kind = TelemetryKind::label,
+                 .lane = 5,
+                 .labels = shift_rider_response_labels},
                 {.field = TelemetryField::shift_time_s,
                  .name = "shift_time_s",
                  .kind = TelemetryKind::optional,
@@ -678,7 +689,7 @@ namespace drivetrain {
         std::array<double, 33> numeric_{};
         std::array<std::int32_t, 4> integer_{};
         std::array<bool, 7> flag_{};
-        std::array<std::uint8_t, 5> label_{};
+        std::array<std::uint8_t, 6> label_{};
         std::array<std::string, 2> open_{};
         std::array<std::uint8_t, telemetry_field_count> presence_{};
     };

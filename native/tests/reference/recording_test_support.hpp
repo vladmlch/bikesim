@@ -175,6 +175,7 @@ inline WireObject drive_channels(double brake) {
         {"gear_ratio", Wire{51. / 34.}},
         {"shift_active", Wire{false}},
         {"shift_direction", Wire{std::string("none")}},
+        {"shift_rider_response", Wire{std::string("none")}},
         {"shift_from_teeth", Wire{std::int64_t{0}}},
         {"shift_count", Wire{std::int64_t{0}}},
         {"shift_torque_factor", Wire{1.}},

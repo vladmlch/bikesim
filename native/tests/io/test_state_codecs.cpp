@@ -303,7 +303,7 @@ void checks_drive_invalid() {
              "deceleration_rad_s2":0.0,"_effort":0.0,"_cadence_ema":null},
              "shifting":{"rear_teeth":22.0,"from_teeth":22,"shift_count":0,
              "cooldown_s":0.0,"cut_remaining_s":0.0,"direction":"none",
-             "cadence_ema":null,"required_ema":null},
+             "cadence_ema":null,"required_ema":null,"rider_response":"none"},
              "assist":{"torque":0.0,"pedaling":false,"last_gain":0.0}},
              "shift_time_s":null,"last_time_s":null,
              "angles":null,"last":{},"probe_last":null,

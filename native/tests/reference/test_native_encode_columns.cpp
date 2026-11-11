@@ -223,6 +223,7 @@ WireObject drive_channels(double speed = 0., const WireObject &drive_over = {},
     drive.emplace_back("gear_ratio", Wire{2.75});
     drive.emplace_back("shift_active", Wire{false});
     drive.emplace_back("shift_direction", Wire{"none"});
+    drive.emplace_back("shift_rider_response", Wire{"none"});
     drive.emplace_back("shift_from_teeth", Wire{std::int64_t{16}});
     drive.emplace_back("shift_count", Wire{static_cast<std::int64_t>(speed)});
     drive.emplace_back("shift_time_s", Wire{0.5 + speed});

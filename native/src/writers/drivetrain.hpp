@@ -57,7 +57,7 @@ namespace drivetrain {
         AssistSnapshot assist;
         std::optional<double> shift_time_s, last_time_s;
         std::optional<DriveAngles> angles;
-        // Typed telemetry lanes (R1) — the closed 67-field schema replaces
+        // Typed telemetry lanes (R1) — the closed 64-field schema replaces
         // the per-tick map; lane presence keeps the wire's absent/explicit-
         // None distinction and for_each()/to_map() emit the map's sorted
         // order at the serialization boundary.
@@ -126,6 +126,11 @@ namespace drivetrain {
         // step's merged shift_blocked predicate (rider brakes block
         // admission without coasting the rider's legs).
         std::optional<bool> shift_blocked;
+        // Launch part 1, task 5 — the step's rider-owned shift request.
+        // The default empty set keeps the pure automaton; an owned
+        // request suppresses the band for the tick and reports through
+        // the snapshot's rider_response label.
+        RiderShift rider_shift;
     };
 
     struct TickInputs {
@@ -297,7 +302,8 @@ namespace drivetrain {
         prepare(const RideControl &control, double dt, bool braking,
                 bool active, bool advance, bool contact,
                 std::optional<double> slip, std::optional<double> ceiling,
-                std::optional<bool> shift_blocked = std::nullopt);
+                std::optional<bool> shift_blocked = std::nullopt,
+                RiderShift rider_shift = {});
 
         [[nodiscard]] const ForceComponents &
         components(const RideControl &control, double dt,

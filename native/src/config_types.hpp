@@ -71,6 +71,10 @@ namespace drivetrain {
         double cooldown_s{}, cut_remaining_s{};
         std::string direction = "none";
         std::optional<double> cadence_ema, required_ema;
+        // Launch part 1, task 5 — the closed rider-request outcome label
+        // ("none" | "accepted" | "deferred" | "rejected"), reset to "none"
+        // at the top of every CadenceShifter::update.
+        std::string rider_response = "none";
     };
 
     struct AssistSnapshot {

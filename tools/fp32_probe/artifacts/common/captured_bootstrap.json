@@ -1316,7 +1316,8 @@
      "direction": "none",
      "from_teeth": 51,
      "cadence_ema": 1.2015829578674546,
-     "required_ema": 1.1883238338306767
+     "required_ema": 1.1883238338306767,
+     "rider_response": "none"
     },
     "assist": {
      "torque": 4.515885142813834,

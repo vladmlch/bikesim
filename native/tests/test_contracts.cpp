@@ -1681,7 +1681,8 @@ namespace {
                same(a.cut_remaining_s, b.cut_remaining_s) &&
                a.direction == b.direction &&
                same(a.cadence_ema, b.cadence_ema) &&
-               same(a.required_ema, b.required_ema);
+               same(a.required_ema, b.required_ema) &&
+               a.rider_response == b.rider_response;
     }
     bool same(const drivetrain::AssistSnapshot &a,
               const drivetrain::AssistSnapshot &b) {
@@ -1900,7 +1901,8 @@ namespace {
         const auto tick = fixture.writer.stage_prepare(
             {.control = {}, .dt = .002, .braking = false, .active = true,
              .advance = true, .contact = true, .slip = std::nullopt,
-             .ceiling = std::nullopt, .shift_blocked = std::nullopt});
+             .ceiling = std::nullopt, .shift_blocked = std::nullopt,
+             .rider_shift = {}});
         digest.numbers = {tick.result.effort_nm,
                           tick.result.required_cadence_rpm,
                           tick.result.target_phase_rad ? 1. : 0.,

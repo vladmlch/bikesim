@@ -274,7 +274,8 @@ namespace {
                               "_effort", "_cadence_ema"));
         exact(s, ncd::keys("rear_teeth", "from_teeth", "cooldown_s",
                               "cut_remaining_s", "shift_count", "direction",
-                              "cadence_ema", "required_ema"));
+                              "cadence_ema", "required_ema",
+                              "rider_response"));
         exact(a, ncd::keys("torque", "pedaling", "last_gain",
                               "hold_power_w", "hold_torque_nm",
                               "release_hold_left_s"));
@@ -293,7 +294,8 @@ namespace {
             .cut_remaining_s = num(s, "cut_remaining_s"),
             .direction = string(s, "direction"),
             .cadence_ema = optional_num(s, "cadence_ema"),
-            .required_ema = optional_num(s, "required_ema")};
+            .required_ema = optional_num(s, "required_ema"),
+            .rider_response = string(s, "rider_response")};
         out.assist = {.torque = num(a, "torque"),
                       .last_gain = num(a, "last_gain"),
                       .hold_power_w = num(a, "hold_power_w"),
@@ -422,6 +424,8 @@ namespace {
                         optional_value(s.shifting.cadence_ema));
         sh.emplace_back("required_ema",
                         optional_value(s.shifting.required_ema));
+        sh.emplace_back("rider_response",
+                        bio::Value{s.shifting.rider_response});
         a.emplace_back("torque", real_value(s.assist.torque));
         a.emplace_back("pedaling", bio::Value{s.assist.pedaling});
         a.emplace_back("last_gain", real_value(s.assist.last_gain));

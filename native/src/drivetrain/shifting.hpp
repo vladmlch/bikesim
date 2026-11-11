@@ -48,6 +48,29 @@ namespace drivetrain {
         std::unreachable();
     }
 
+    // Launch part 1, task 5 — the rider-owned request carried into
+    // update(). owns=true hands shifting to the rider for that tick: the
+    // band never selects and an engaged request moves exactly the
+    // adjacent cog in its direction, sharing the automaton's admission
+    // gate and checked commit. owns=false is the automatic path, and a
+    // request without ownership is an inconsistency update() rejects.
+    struct RiderShift {
+        bool owns = false;
+        std::optional<ShiftDirection> request = std::nullopt;
+    };
+
+    // The closed serialization domain of ShiftingSnapshot.rider_response
+    // — the label every update() writes: "none" outside an owned request
+    // (including an owned tick with no request), "accepted" on the shared
+    // commit, "deferred" when admission or an in-flight cut declines the
+    // request without judging the target, and "rejected" when the
+    // cassette end, slip limit or landing veto declines the target.
+    [[nodiscard]] constexpr bool
+    rider_response_label(std::string_view label) noexcept {
+        return label == "none" || label == "accepted" || label == "deferred" ||
+               label == "rejected";
+    }
+
     // The closed set of upshift slip modes accepted by
     // ShiftingConfig.upshift_slip_mode ("legacy_signed" | "magnitude").
     // The config keeps the wire string; the shifter resolves it once at
@@ -121,7 +144,17 @@ namespace drivetrain {
 
         [[nodiscard]] bool update(double cadence_rpm, double required_cadence_rpm, double dt,
                                   bool pedaling = true, bool braking = false, bool rear_in_contact = true,
-                                  std::optional<double> rear_slip_mps = std::nullopt);
+                                  std::optional<double> rear_slip_mps = std::nullopt) {
+            return update(cadence_rpm, required_cadence_rpm, dt, pedaling, braking,
+                          rear_in_contact, rear_slip_mps, RiderShift{});
+        }
+
+        // The task-5 signature: rider stays defaulted-out on the old
+        // positional call so existing callers keep the pure automaton.
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror shifting.py
+        [[nodiscard]] bool update(double cadence_rpm, double required_cadence_rpm, double dt,
+                                  bool pedaling, bool braking, bool rear_in_contact,
+                                  std::optional<double> rear_slip_mps, RiderShift rider);
 
         [[nodiscard]] double gear_ratio() const noexcept {
             return static_cast<double>(gearing_.front_teeth) / state_.rear_teeth;

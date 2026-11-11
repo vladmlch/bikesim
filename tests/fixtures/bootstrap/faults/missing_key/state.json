@@ -63,6 +63,7 @@
         "from_teeth": 51,
         "rear_teeth": 51,
         "required_ema": null,
+        "rider_response": "none",
         "shift_count": 0
       }
     },

@@ -67,7 +67,9 @@ void catalog_contract() {
     // shift_blocked, riding}), and commands_applied's three new demand
     // columns ({rider_front_brake_demand, rider_rear_brake_demand,
     // motor_braking}).
-    bt::require(count == 505, "full reviewed catalog retains all 505 repeated/nested descriptor occurrences");
+    // 506 = 505 plus channel_drive.shift_rider_response (launch part 1
+    // task 5's rider shift request outcome label).
+    bt::require(count == 506, "full reviewed catalog retains all 506 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

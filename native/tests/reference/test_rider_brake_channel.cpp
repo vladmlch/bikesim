@@ -127,6 +127,14 @@ void test_validate_rejects_out_of_range() {
             .rear_brake = std::numeric_limits<double>::infinity(),
             .shift_request = std::nullopt});
     });
+    // Launch part 1, task 5: a shift request without ownership is an
+    // inconsistent command set — the request would be silently dropped.
+    rider::validate(rider::RiderCommands{
+        .shift_request = rider::ShiftRequest::up, .owns_shifting = true});
+    bt::invalid([&] {
+        rider::validate(rider::RiderCommands{
+            .shift_request = rider::ShiftRequest::down});
+    });
 }
 
 void test_rider_brake_holds_while_legs_press() {
@@ -530,6 +538,132 @@ void test_set_rider_commands_validates() {
     bike::validation::RuntimeRigAccess::set_rider_commands(*env.runtime, std::nullopt);
 }
 
+// Launch part 1, task 5: the production transport — a commanded request
+// reaches the drivetrain's cadence shifter and the closed rider_response
+// label is recorded on the drive channel. Three deterministic phases:
+// the cassette end rejects, the resolved shift_blocked defers, and a
+// flat-track run finds a real in-band landing to accept.
+void test_rider_shift_request_flows_to_the_shifter() {
+    // One flat environment serves all three outcomes: at low speed there
+    // is no rollback latch, so the only gate phase 2 trips is the
+    // commanded rider brake itself. The welded gear starts at 51T.
+    const auto track = terrain::load_track(launch_ride::repo_file(
+        "tests/fixtures/tracks/flat.toml"));
+    auto env = launch_ride::environment(track, 12.);
+    runtime::RideControl control;
+    control.human_torque_nm = 30.;
+    ride_intervals(env, 8, control);   // 10 ms — the gear is still 51T.
+    const auto cassette = std::vector<int>{10, 12, 14, 16, 18, 21, 24, 28,
+                                           33, 39, 45, 51};
+    const auto response_of = [&](const runtime::SamplePtr &sample) {
+        return channel_string(sample, "drive", "shift_rider_response");
+    };
+    // Uncommanded intervals carry the reset label.
+    bt::require(response_of(env.runtime->recorded_intervals().back()) ==
+                    "none",
+                "the recorded response defaults to none");
+    // 1) Rejected at the cassette end: 'down' asks past 51T.
+    bike::validation::RuntimeRigAccess::set_rider_commands(
+        *env.runtime, rider::RiderCommands{
+            .shift_request = rider::ShiftRequest::down,
+            .owns_shifting = true});
+    ride_intervals(env, 1, control);
+    const auto &rejected = env.runtime->recorded_intervals().back();
+    bt::require(response_of(rejected) == "rejected",
+                "the cassette end rejects the request");
+    bt::require(channel_number(rejected, "drive", "gear_rear_teeth") == 51.,
+                "the rejected request keeps the cog");
+    const auto &asked = channel_of(rejected, "rider_commands");
+    bt::require(sw::string(sw::required(asked, "shift_request")) == "down" &&
+                    sw::boolean(sw::required(asked, "owns_shifting")),
+                "the commanded request rides the rider_commands channel");
+    // 2) Deferred through the resolved shift_blocked: a rider brake on
+    //    the same step wins the shared admission gate.
+    bike::validation::RuntimeRigAccess::set_rider_commands(
+        *env.runtime, rider::RiderCommands{.front_brake = 1., .rear_brake = 1.,
+            .shift_request = rider::ShiftRequest::up, .owns_shifting = true});
+    ride_intervals(env, 1, control);
+    const auto &deferred = env.runtime->recorded_intervals().back();
+    bt::require(response_of(deferred) == "deferred",
+                "rider braking defers through shift_blocked");
+    bt::require(channel_number(deferred, "drive", "gear_rear_teeth") == 51.,
+                "the deferred request keeps the cog");
+    bt::require(sw::boolean(sw::required(
+                    channel_of(deferred, "rider_commands"), "shift_blocked")),
+                "the resolved predicate marks the deferral's cause");
+    // 3) Accepted: the same flat run accelerates into a window whose
+    //    landing sits inside the band; the persistent command
+    //    re-evaluates every tick — a deferred request keeps waiting
+    //    while the ride continues, a rejected one (the automaton raced
+    //    the request or the landing drifted out) is cleared and the
+    //    poll resumes. The phase-2 command set is latched state — clear
+    //    it or the brakes hold the bike at standstill forever.
+    bike::validation::RuntimeRigAccess::set_rider_commands(
+        *env.runtime, rider::RiderCommands{});
+    control.human_torque_nm = 80.;
+    bool latched = false, accepted = false;
+    int asked_smaller = 0;
+    for (int round = 0; round < 4800 && !accepted; ++round) {
+        ride_intervals(env, 1, control);
+        const auto &sample = env.runtime->recorded_intervals().back();
+        const auto response = response_of(sample);
+        if (latched) {
+            if (response == "accepted") {
+                bt::require(channel_number(sample, "drive",
+                                           "gear_rear_teeth") ==
+                                static_cast<double>(asked_smaller),
+                            "the accepted request moves exactly one cog smaller");
+                bt::require(channel_number(sample, "drive",
+                                           "shift_torque_factor") < 1.,
+                            "the accepted shift arms the torque cut");
+                accepted = true;
+                break;
+            }
+            if (response == "rejected") {
+                bike::validation::RuntimeRigAccess::set_rider_commands(
+                    *env.runtime, rider::RiderCommands{});
+                latched = false;
+            }
+            continue;
+        }
+        const double required =
+            channel_number(sample, "drive", "required_cadence_rpm");
+        const int teeth = static_cast<int>(
+            channel_number(sample, "drive", "gear_rear_teeth"));
+        const auto at = std::ranges::find(cassette, teeth);
+        bt::require(at != cassette.end(), "the recorded cog is on the cassette");
+        // up = one cog smaller: landing = required * smaller/current must
+        // sit strictly inside [75, 110] (margin against the EMA lag and
+        // the one-tick delay between the read sample and the request).
+        if (at == cassette.begin())
+            continue;
+        const int smaller = *std::prev(at);
+        const double landing = required * smaller / teeth;
+        if (landing < 80. || landing > 105.)
+            continue;
+        bike::validation::RuntimeRigAccess::set_rider_commands(
+            *env.runtime, rider::RiderCommands{
+                .shift_request = rider::ShiftRequest::up,
+                .owns_shifting = true});
+        asked_smaller = smaller;
+        latched = true;
+    }
+    bt::require(accepted,
+                "the flat run reached an admissible in-band window");
+    // Ownership without a request suppresses the band automaton and
+    // reports none.
+    bike::validation::RuntimeRigAccess::set_rider_commands(
+        *env.runtime, rider::RiderCommands{.owns_shifting = true});
+    const auto count_at_hold = channel_number(
+        env.runtime->recorded_intervals().back(), "drive", "shift_count");
+    ride_intervals(env, 400, control);
+    const auto &held = env.runtime->recorded_intervals().back();
+    bt::require(channel_number(held, "drive", "shift_count") == count_at_hold,
+                "the band never selects while the rider owns");
+    bt::require(response_of(held) == "none",
+                "ownership without a request reports none");
+}
+
 } // namespace
 
 int main() {
@@ -545,5 +679,6 @@ int main() {
         test_rollback_does_not_set_motor_braking();
         test_research_mode_records_the_same_journal();
         test_set_rider_commands_validates();
+        test_rider_shift_request_flows_to_the_shifter();
     });
 }

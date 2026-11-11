@@ -6,7 +6,13 @@
 // When no cog lands inside the band the fallback is the last cog in the
 // shift direction. Cooldown, cut, torque factor, band and the landing
 // veto are unchanged; the oracle's band-edge throw stays superseded.
+// Launch part 1, task 5 adds the rider-owned request path: one admission
+// check and one commit shared with the automaton, with the rider_response
+// label reporting accepted/deferred/rejected.
 #include "drive_reference_support.hpp"
+#include "drivetrain_reference_support.hpp"
+
+#include <limits>
 
 namespace {
 using drive_reference::shifter;
@@ -129,6 +135,287 @@ void test_downshift_that_lands_above_the_band_is_rejected() {
     bt::require(!s.update(60., 110., .01), "reject above-band landing");
     bt::require(s.state().rear_teeth == 28, "rejected downshift preserves gear");
 }
+
+// ---- Launch part 1, task 5: the rider-owned request --------------------
+// Rider-owned: the band never selects; an up request moves one cog with
+// the usual cooldown and cut.
+void test_rider_up_request_moves_one_cog_with_cooldown_and_cut() {
+    auto s = shifter();   // 28T
+    const drivetrain::RiderShift owns{.owns = true};
+    bt::require(!s.update(130., 130., .01, true, false, true, std::nullopt,
+                          owns),
+                "no band shift while the rider owns");
+    bt::require(s.update(90., 90., .01, true, false, true, std::nullopt,
+                         {.owns = true,
+                          .request = drivetrain::ShiftDirection::up}),
+                "the up request shifts");
+    bt::require(s.state().rear_teeth == 24 &&
+                    s.state().rider_response == "accepted" &&
+                    s.state().cut_remaining_s > 0. &&
+                    s.state().cooldown_s > 0.,
+                "one cog smaller, cut and cooldown armed");
+}
+// Inside the cooldown or cut the request is deferred.
+void test_rider_request_inside_cooldown_is_deferred() {
+    auto s = shifter();
+    (void)s.update(90., 90., .01, true, false, true, std::nullopt,
+                   {.owns = true, .request = drivetrain::ShiftDirection::up});
+    bt::require(!s.update(90., 90., .01, true, false, true, std::nullopt,
+                          {.owns = true,
+                           .request = drivetrain::ShiftDirection::up}),
+                "no second shift inside the cooldown");
+    bt::require(s.state().rider_response == "deferred" &&
+                    s.state().rear_teeth == 24,
+                "deferred, gear kept");
+}
+// The cassette end rejects.
+void test_rider_request_past_the_cassette_end_is_rejected() {
+    auto s = shifter(51);
+    bt::require(!s.update(60., 60., .01, true, false, true, std::nullopt,
+                          {.owns = true,
+                           .request = drivetrain::ShiftDirection::down}),
+                "no cog larger than 51");
+    bt::require(s.state().rider_response == "rejected" &&
+                    s.state().rear_teeth == 51,
+                "rejected, gear kept");
+}
+// The existing vetoes stay: no pedaling, braking, no contact and reverse
+// cadence defer.
+void test_rider_request_keeps_the_admission_vetoes() {
+    const drivetrain::RiderShift up{.owns = true,
+                                    .request = drivetrain::ShiftDirection::up};
+    {
+        auto s = shifter();
+        bt::require(!s.update(90., 90., .01, false, false, true,
+                              std::nullopt, up),
+                    "not pedaling defers");
+        bt::require(s.state().rider_response == "deferred" &&
+                        s.state().rear_teeth == 28,
+                    "deferred, gear kept");
+    }
+    {
+        auto s = shifter();
+        bt::require(!s.update(90., 90., .01, true, true, true, std::nullopt,
+                              up),
+                    "braking defers");
+        bt::require(s.state().rider_response == "deferred" &&
+                        s.state().rear_teeth == 28,
+                    "deferred, gear kept");
+    }
+    {
+        auto s = shifter();
+        bt::require(!s.update(90., 90., .01, true, false, false,
+                              std::nullopt, up),
+                    "no contact defers");
+        bt::require(s.state().rider_response == "deferred" &&
+                        s.state().rear_teeth == 28,
+                    "deferred, gear kept");
+    }
+    {
+        auto s = shifter();
+        bt::require(!s.update(-10., 90., .01, true, false, true,
+                              std::nullopt, up),
+                    "reverse cadence defers");
+        bt::require(s.state().rider_response == "deferred" &&
+                        s.state().rear_teeth == 28,
+                    "deferred, gear kept");
+    }
+}
+// Slip and landing vetoes reject with the existing numbers.
+void test_rider_request_keeps_the_slip_and_landing_vetoes() {
+    {
+        auto s = shifter();
+        bt::require(!s.update(90., 90., .01, true, false, true, 1.0,
+                              {.owns = true,
+                               .request = drivetrain::ShiftDirection::up}),
+                    "slip above .5 m/s vetoes an upshift");
+        bt::require(s.state().rider_response == "rejected",
+                    "slip rejection");
+    }
+    {
+        auto s = shifter();
+        // landing 70 * 24/28 = 60 < 75: the upshift would land below the
+        // band.
+        bt::require(!s.update(70., 70., .01, true, false, true,
+                              std::nullopt,
+                              {.owns = true,
+                               .request = drivetrain::ShiftDirection::up}),
+                    "landing below the band vetoes");
+        bt::require(s.state().rider_response == "rejected",
+                    "landing rejection");
+    }
+    {
+        auto s = shifter();
+        // Down request landing above the band: 110*33/28 = 129.6 > 110.
+        bt::require(!s.update(60., 110., .01, true, false, true,
+                              std::nullopt,
+                              {.owns = true,
+                               .request = drivetrain::ShiftDirection::down}),
+                    "downshift landing above the band vetoes");
+        bt::require(s.state().rider_response == "rejected" &&
+                        s.state().rear_teeth == 28,
+                    "downshift landing rejection keeps the gear");
+    }
+}
+// Not owned: behaviour and response are exactly as before.
+void test_automatic_path_reports_no_rider_response() {
+    auto s = shifter();
+    bt::require(s.update(115., 115., .01), "automatic upshift as before");
+    bt::require(s.state().rider_response == "none",
+                "no rider response on the automatic path");
+    // The default RiderShift{} overload is the same call: the band keeps
+    // committing through the cooldown cycle and every tick reports none.
+    int shifts = 0;
+    for (int i = 0; i < 90; ++i)
+        if (s.update(115., 115., .01)) {
+            ++shifts;
+            bt::require(s.state().rider_response == "none",
+                        "the old overload stays a pure automaton");
+        }
+    bt::require(shifts >= 2, "the automatic path keeps shifting");
+}
+// Magnitude slip mode: a signed-negative slip magnitude still vetoes the
+// upshift — the mode resolution is shared with the automaton's.
+void test_rider_request_magnitude_slip_mode_vetoes_negative_slip() {
+    drivetrain::ShiftingConfig config{
+        .enabled = true,
+        .cassette = {10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51},
+        .target_cadence_min_rpm = 75., .target_cadence_max_rpm = 110.,
+        .shift_cooldown_s = .4, .shift_cut_duration_s = .2,
+        .torque_factor_larger_cog = .8, .torque_factor_smaller_cog = .3,
+        .cadence_smoothing_tau_s = 0.,
+        .upshift_slip_limit_mps = .5, .upshift_slip_mode = "magnitude"};
+    drivetrain::CadenceShifter s(
+        {.front_teeth = 22, .rear_teeth = 28, .chain_pitch_m = .0127},
+        std::move(config));
+    bt::require(!s.update(90., 90., .01, true, false, true, -1.0,
+                          {.owns = true,
+                           .request = drivetrain::ShiftDirection::up}),
+                "magnitude mode turns -1 m/s into a veto");
+    bt::require(s.state().rider_response == "rejected" &&
+                    s.state().rear_teeth == 28,
+                "magnitude slip rejection keeps the gear");
+    auto legacy = shifter();   // legacy_signed keeps the signed value
+    bt::require(legacy.update(90., 90., .01, true, false, true, -1.0,
+                              {.owns = true,
+                               .request = drivetrain::ShiftDirection::up}),
+                "legacy_signed admits a negative slip");
+    bt::require(legacy.state().rider_response == "accepted",
+                "the control request accepts");
+}
+// A request inside the torque cut defers; the serialized mid-cut state
+// restores and continues the cut on the next ticks.
+void test_mid_cut_request_defers_and_serialized_state_continues() {
+    auto s = shifter();
+    bt::require(s.update(90., 90., .01, true, false, true, std::nullopt,
+                         {.owns = true,
+                          .request = drivetrain::ShiftDirection::up}),
+                "first request accepted");
+    auto restored = shifter();
+    restored.set_state(s.state());
+    bt::require(restored.state().cut_remaining_s > 0. &&
+                    restored.state().cooldown_s > 0. &&
+                    restored.state().rider_response == "accepted",
+                "the mid-cut snapshot restores verbatim");
+    const double cut = restored.state().cut_remaining_s;
+    bt::require(!restored.update(90., 90., .01, true, false, true,
+                                 std::nullopt,
+                                 {.owns = true,
+                                  .request = drivetrain::ShiftDirection::up}),
+                "a request inside the cut defers");
+    bt::require(restored.state().rider_response == "deferred" &&
+                    restored.state().cut_remaining_s < cut &&
+                    restored.state().cut_remaining_s > 0.,
+                "the restored cut keeps running down");
+}
+// The shared commit still throws when the counter saturates — the rider
+// branch cannot bypass the overflow guard.
+void test_rider_request_keeps_the_count_overflow_guard() {
+    auto s = shifter();
+    auto state = s.state();
+    state.shift_count = std::numeric_limits<int>::max();
+    s.set_state(state);
+    drivetrain_reference::error<std::overflow_error>([&] {
+        (void)s.update(90., 90., .01, true, false, true, std::nullopt,
+                       {.owns = true,
+                        .request = drivetrain::ShiftDirection::up});
+    });
+}
+// A restored state off the cassette is an internal-invariant failure, not
+// a request rejection.
+void test_rider_request_on_an_off_cassette_state_is_internal_error() {
+    auto s = shifter();
+    auto state = s.state();
+    state.rear_teeth = 25;   // not on the cassette
+    s.set_state(state);
+    drivetrain_reference::error<std::logic_error>([&] {
+        (void)s.update(60., 60., .01, true, false, true, std::nullopt,
+                       {.owns = true,
+                        .request = drivetrain::ShiftDirection::down});
+    });
+}
+// Request/ownership consistency and the closed response domain are
+// validated, not silently dropped.
+void test_rider_shift_contract_validation() {
+    {
+        auto s = shifter();
+        drivetrain_reference::error<std::invalid_argument>([&] {
+            (void)s.update(90., 90., .01, true, false, true, std::nullopt,
+                           {.owns = true,
+                            .request = drivetrain::ShiftDirection::none});
+        }, "rider shift");
+        drivetrain_reference::error<std::invalid_argument>([&] {
+            (void)s.update(90., 90., .01, true, false, true, std::nullopt,
+                           {.owns = false,
+                            .request = drivetrain::ShiftDirection::up});
+        }, "rider shift");
+        // Rejections are atomic: a valid control still shifts.
+        bt::require(s.update(90., 90., .01, true, false, true, std::nullopt,
+                             {.owns = true,
+                              .request = drivetrain::ShiftDirection::up}),
+                    "the valid control shifts after the rejections");
+    }
+    {
+        auto s = shifter();
+        auto state = s.state();
+        state.rider_response = "bogus";
+        drivetrain_reference::error<std::invalid_argument>([&] {
+            s.set_state(state);
+        }, "rider_response");
+    }
+}
+// Writer level: a non-advancing prepare never consumes the request — the
+// staged shifter tick is gated on advance, and the probe publishes the
+// committed snapshot unchanged.
+void test_probe_prepare_does_not_consume_a_rider_request() {
+    auto source = drivetrain_reference::source("ideal_mid_drive");
+    source.shifting.enabled = true;
+    source.shifting.cadence_smoothing_tau_s = 0.;
+    const auto owner = drivetrain_reference::pair(source);
+    const drivetrain::RiderShift up{.owns = true,
+                                    .request = drivetrain::ShiftDirection::up};
+    const auto before = owner->drive().state().shifting;
+    (void)owner->drive().prepare({}, .01, false, true, false, true,
+                                 std::nullopt, std::nullopt, std::nullopt,
+                                 up);
+    const auto &probed = owner->drive().state().shifting;
+    bt::require(probed.rear_teeth == before.rear_teeth &&
+                    probed.shift_count == before.shift_count &&
+                    probed.direction == before.direction &&
+                    probed.rider_response == "none",
+                "a probe tick publishes the committed shifter state");
+    (void)owner->drive().prepare({}, .01, false, true, true, true,
+                                 std::nullopt, std::nullopt, std::nullopt,
+                                 up);
+    const auto &after = owner->drive().state().shifting;
+    // Every evaluated outcome — deferred at standstill as much as
+    // accepted/rejected — proves the request reached the automaton.
+    bt::require(after.rider_response != "none",
+                "the advancing tick consumes the request");
+    bt::require((after.rider_response == "accepted") ==
+                    (after.rear_teeth != probed.rear_teeth),
+                "accepted shifts, rejected keeps the cog");
+}
 } // namespace
 int main() { return bt::run([] {
     test_low_crank_cadence_downshifts_to_the_next_bigger_cog();
@@ -145,4 +432,16 @@ int main() { return bt::run([] {
     test_ema_filters_a_single_stroke_spike();
     test_upshift_that_lands_below_the_band_is_rejected();
     test_downshift_that_lands_above_the_band_is_rejected();
+    test_rider_up_request_moves_one_cog_with_cooldown_and_cut();
+    test_rider_request_inside_cooldown_is_deferred();
+    test_rider_request_past_the_cassette_end_is_rejected();
+    test_rider_request_keeps_the_admission_vetoes();
+    test_rider_request_keeps_the_slip_and_landing_vetoes();
+    test_automatic_path_reports_no_rider_response();
+    test_rider_request_magnitude_slip_mode_vetoes_negative_slip();
+    test_mid_cut_request_defers_and_serialized_state_continues();
+    test_rider_request_keeps_the_count_overflow_guard();
+    test_rider_request_on_an_off_cassette_state_is_internal_error();
+    test_rider_shift_contract_validation();
+    test_probe_prepare_does_not_consume_a_rider_request();
 }); }

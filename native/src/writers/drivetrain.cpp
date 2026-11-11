@@ -208,6 +208,13 @@ namespace drivetrain {
               static_cast<std::int32_t>(s.from_teeth));
         d.set(TelemetryField::shift_count,
               static_cast<std::int32_t>(s.shift_count));
+        // Launch part 1, task 5 — the committed snapshot's closed-domain
+        // label; set_state rejects anything outside it, so the lookup is
+        // an internal invariant (engaged() reports it like every other).
+        d.set_label(TelemetryField::shift_rider_response,
+                    engaged(telemetry_label(
+                        TelemetryField::shift_rider_response,
+                        s.rider_response)));
         // Presence 2 serializes the explicit None the map's monostate
         // carried — the key stays present either way.
         d.set_optional(TelemetryField::shift_time_s, shift_time_s);
@@ -468,12 +475,13 @@ namespace drivetrain {
                                             bool braking, bool active, bool advance,
                                             bool contact, std::optional<double> slip,
                                             std::optional<double> ceiling,
-                                            std::optional<bool> shift_blocked) {
+                                            std::optional<bool> shift_blocked,
+                                            RiderShift rider_shift) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         const auto tick = stage_prepare(
             {.control = control, .dt = dt, .braking = braking, .active = active,
              .advance = advance, .contact = contact, .slip = slip, .ceiling = ceiling,
-             .shift_blocked = shift_blocked});
+             .shift_blocked = shift_blocked, .rider_shift = rider_shift});
         const auto result = tick.result;
         commit(tick);
         return result;
@@ -684,7 +692,8 @@ namespace drivetrain {
             const bool shifted = shifting_scratch_.update(
                 v[static_cast<std::size_t>(shaft_joint_.dof)] * 60. / (2. * std::numbers::pi),
                 required, in.dt, enabled && effort > 0.,
-                in.shift_blocked.value_or(in.braking), in.contact, in.slip);
+                in.shift_blocked.value_or(in.braking), in.contact, in.slip,
+                in.rider_shift);
             const auto stage_ratio = [this, &bank](double ratio) {
                 // Compose onto the candidate already staged this tick or
                 // seed the bank slot from the live transmission.
@@ -813,7 +822,8 @@ namespace drivetrain {
                                  .active = in.active, .advance = in.advance,
                                  .contact = in.contact, .slip = in.slip,
                                  .ceiling = std::nullopt,
-                                 .shift_blocked = in.shift_blocked},
+                                 .shift_blocked = in.shift_blocked,
+                                 .rider_shift = {}},
                                 pedaling_scratch_);
             bank.pedaling = pedaling_scratch_.state();
             ps = bank.result;

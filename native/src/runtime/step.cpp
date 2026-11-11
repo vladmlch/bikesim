@@ -1313,13 +1313,25 @@ PhysicalStep::apply_forces_body(
             .motor_limit_nm = control.motor_limit_nm,
             .human_torque_nm = control.human_torque_nm,
             .rider_enabled = control.rider_enabled};
+        // Launch part 1, task 5 — the same rider_commands() record the
+        // channel documents, mapped onto the shifter's request type. The
+        // empty production set carries owns=false and no request, so the
+        // automaton below runs exactly as before.
+        const auto &shift_commands = rider_commands();
+        drivetrain::RiderShift rider_shift{
+            .owns = shift_commands.owns_shifting};
+        if (shift_commands.shift_request)
+            rider_shift.request =
+                    *shift_commands.shift_request == rider::ShiftRequest::up
+                        ? drivetrain::ShiftDirection::up
+                        : drivetrain::ShiftDirection::down;
         const drivetrain::PedalingState pedaling = stepper_->drive().prepare(
             drive_control, dt, brakes.legs_coast, active, advance,
             contacts_.rear_controller_grounded.value_or(false),
             contacts_.rear_slip_mps,
             automatic_effort ? control.human_torque_nm
                              : std::optional<double>{},
-            brakes.shift_blocked);
+            brakes.shift_blocked, rider_shift);
         // Oracle: the apply_forces entry forward runs only while
         // `initializing` — init callers mutate qpos/qvel or
         // constraint-defining model constants between apply_forces calls

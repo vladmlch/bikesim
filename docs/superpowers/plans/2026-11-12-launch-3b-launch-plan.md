@@ -3,7 +3,8 @@
 > **Для исполнителя:** задачи выполняются по одной, в порядке номеров (`superpowers:subagent-driven-development`).
 > Шаги помечены `- [ ]`. Финальное ревью ветки делает оркестратор.
 
-Редакция 1 (2026-11-12). Факты кода: `/Volumes/SSD_1TB_M2/work/tmp/2026-11-12-launch3b/facts.md` (снят на `794cc9b4`).
+Редакция 2 (2026-11-12, после ревью qoder `/Volumes/SSD_1TB_M2/work/tmp/2026-11-12-launch3b/plan-review-1.md`:
+«готово с правками», 9 мелких замечаний исправлены, M8 — пояснение в решении 5). Факты кода: `/Volumes/SSD_1TB_M2/work/tmp/2026-11-12-launch3b/facts.md` (снят на `794cc9b4`).
 
 **Цель.** Построить узел плана старта (`rider::LaunchPlan`) и встроить его в намерения райдера за выключателем
 `rider_launch.plan_enabled`, который во всех профилях выключен. Поведение поездок не меняется. Затем замерить
@@ -90,6 +91,8 @@
      `rejected`. В обоих случаях `blocked_teeth = request_teeth`: новая просьба — только когда ощущаемая звезда
      сменилась. Поэтому задержанный каденс до переключения не вызывает второго переключения, а отказ на краю
      кассеты не повторяется.
+   - Второе принятие одной просьбы между двумя тиками невозможно и при нулевой паузе автомата: пока идёт срез,
+     автомат отвечает `deferred` (`shifting.cpp:62-90`), а срез длиннее периода намерений во всех профилях.
    - `deferred` и `none` просьбу не снимают. При входе в `handover` просьба снимается всегда; владение уходит
      автомату только при `cut_active = false` — круговое ожидание из C3 невозможно: срез конечен.
 6. **Кто может запустить план и кто им владеет (I10).** Тик подходящий, если намерения активны (`active`), райдер
@@ -131,7 +134,8 @@
       в списке ключей конфигурации. `project_config.cpp` кодирует его из профиля.
     - Состояние: внутри `rider_intent` ключ `launch` (состояние узла, 13 ключей). Есть ровно при включённых
       намерениях, как `perception` и `reaction`.
-11. **Восстановление.** `LaunchPlan::restore` отвергает состояние, которое `update()` оставить не может (фаза,
+11. **Восстановление.** `LaunchPlan::restore` проверяет необходимые условия, как в части 3a, а не точную
+    достижимость: отвергает состояния, которые `update()` оставить не может, по признакам (фаза,
     счётчики, тормоз по фазе и часам, вес, просьба только в `accelerate`, сброшенные поля в `idle`/`done`).
     `RiderIntent::restore` добавляет совместное правило: в `hold` `phase_ticks` не больше числа выданных
     восприятий, а `launch_ticks` не больше его во всех фазах (часы плана идут только после первого восприятия).
@@ -258,7 +262,7 @@ void validate_launch_plan_context(const LaunchConfig &table, double period_s);
 // Launch part 3b: every plan field has a domain, the release table needs one
 // torque per ascending knot, and the plan times sit on the intention grid.
 void test_plan_fields_name_the_field() {
-    const auto with = [](auto edit) { auto t = normal_table(); edit(t); return t; };
+    const auto with = [](auto edit) { auto t = ramp_table(); edit(t); return t; };
     rejects([&] { rider::validate_launch_table(with([](auto &t) { t.standstill_speed_mps = -.1; })); },
             "standstill_speed_mps", "a negative standstill speed");
     rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_rate_nm_s = 0.; })); },
@@ -285,16 +289,24 @@ void test_plan_fields_name_the_field() {
     rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.max_launch_s = 0x1p40 * .00125; }),
                                                       .00125); },
             "max_launch_s", "a launch limit beyond 2^31 ticks");
-    rider::validate_launch_plan_context(normal_table(), .00125);   // control
-    bt::require(rider::release_torque_nm(normal_table(), -.1) == 0. &&
-                    rider::release_torque_nm(normal_table(), .1) == 15. &&
-                    rider::release_torque_nm(normal_table(), .5) == 30.,
+    rider::validate_launch_plan_context(ramp_table(), .00125);   // control
+    bt::require(rider::release_torque_nm(ramp_table(), -.1) == 0. &&
+                    rider::release_torque_nm(ramp_table(), .1) == 15. &&
+                    rider::release_torque_nm(ramp_table(), .5) == 30.,
                 "the release torque interpolates and holds its end values");
 }
 ```
 
-  `normal_table()` в этом файле получает 19 полей предварительными числами решения 2 (`plan_enabled = false`).
-  `rejects` — помощник файла (если его нет — тот же, что в `test_front_lift_reaction.cpp:31-40`).
+  `ramp_table()` (`test_launch_preparation.cpp:58`) получает 19 полей предварительными числами решения 2
+  (`plan_enabled = false`). `rejects` — помощник файла (`:44-54`).
+
+  В `test_welded_profile_config.cpp` (ревью 1, M7):
+  - `test_launch_table_keys_are_required` (`:397-399`): список строк получает 19 новых строк блока (по одной на
+    ключ, точный текст из блока шага 3), чтобы отсутствие каждого ключа отвергалось с его именем;
+  - удаление всего раздела (`:404-412`): конечный маркер `"start_lean_rad = [0.0]\n"` меняется на
+    `"handover_s = 0.9\n"` — последнюю строку нового блока;
+  - `test_load_resolves_a_flat_start` (`:518-534`) меняет отдельные ключи профиля и не трогает новые; проверить,
+    что он зелёный, и не менять его.
 
 - [ ] **Шаг 2.** `mise run test 'launch_preparation'` — сборка падает (нет полей).
 - [ ] **Шаг 3. Код.**
@@ -876,8 +888,13 @@ void test_codec_round_trip_continuation_and_rejected_restores() {
     bad.effort_nm = 1.;
     rejects([&] { fresh.restore(bad); }, "idle", "an idle plan that is not reset");
     bt::require(text(fresh) == before, "rejected restores change nothing");
-    rejects([&] { (void)rider::decode_launch_state(bike::io::parse_json(R"({"phase": "soaring"})"), "launch"); },
-            "launch", "an unknown phase name");
+    // A complete document with an unknown phase: the exact-key check passes,
+    // so the phase name is what fails (review 1, M6).
+    auto fields = bike::io::as_object(rider::encode_launch_state(hold.state()), "launch");
+    for (auto &[key, value] : fields)
+        if (key == "phase") value = bike::io::Value{std::string("soaring")};
+    const bike::io::Value doc{std::move(fields)};
+    rejects([&] { (void)rider::decode_launch_state(doc, "launch"); }, "unknown launch phase", "an unknown phase name");
 }
 
 // Nonfinite percepts and a negative shift count are rejected before any change.
@@ -964,7 +981,8 @@ void test_surge_is_not_spent_on_request() {
 }
 ```
 
-  `enabled()` — помощник файла с включёнными намерениями (`test_seated_posture_program.cpp:85-96`); если его
+  В `test_seated_posture_program.cpp` помощника `rejects` нет: добавить его в безымянное пространство файла
+  дословной копией `test_launch_preparation.cpp:44-54` (ревью 1, M2). `enabled()` — помощник файла с включёнными намерениями (`test_seated_posture_program.cpp:67-81`); если его
   период не 0,01 — подставить его период вместо `.01`. Если `lean_rate_rad_s` названо иначе — поле темпа наклона
   `IntentConfig`. Проверка «смесь меньше плана и больше обычной цели» записана так, чтобы не зависеть от знака
   обычной цели; при неудаче исполнитель приводит числа, а не ослабляет проверку.
@@ -1214,8 +1232,9 @@ void LaunchPlan::restore(const State &s) {
     case LaunchPhase::hold:
         if (s.brake != 1.) bad_state("brake", "the hold brakes fully");
         if (s.phase_ticks >= max_hold_ticks_) bad_state("phase_ticks", "the hold is past its limit");
-        if (s.launch_ticks != 0 || s.end_ok_ticks != 0 || s.blend_ticks != 0 || s.preload_missed)
-            bad_state("hold", "a hold with launch counters or an event");
+        if (s.launch_ticks != 0 || s.end_ok_ticks != 0 || s.blend_ticks != 0 || s.preload_missed ||
+            s.request_count != 0 || s.request_teeth != 0 || s.blocked_teeth != 0)
+            bad_state("hold", "a hold with launch counters, a request memory or an event");
         break;
     case LaunchPhase::release:
         if (release_ticks_ == 0 || s.phase_ticks >= release_ticks_ || s.launch_ticks != s.phase_ticks)
@@ -1287,8 +1306,8 @@ LaunchPlan::State decode_launch_state(const bio::Value &value, std::string_view 
     s.lean_target_rad = d["lean_target_rad"].finite_real(path);
     s.shift_up = d["shift_up"].boolean(path);
     s.request_count = d["request_count"].integer(path);
-    s.request_teeth = static_cast<int>(d["request_teeth"].integer(path));
-    s.blocked_teeth = static_cast<int>(d["blocked_teeth"].integer(path));
+    s.request_teeth = d["request_teeth"].integer32(path);
+    s.blocked_teeth = d["blocked_teeth"].integer32(path);
     s.preload_missed = d["preload_missed"].boolean(path);
     return s;
 }
@@ -1297,7 +1316,7 @@ LaunchPlan::State decode_launch_state(const bio::Value &value, std::string_view 
     Таблица — `encode_launch_config`/`decode_launch_config`: 24 ключа в порядке структуры; массивы — как массивы
     `real_value`/`integer_value` (`start_cog_teeth` — целые); `decode` — `ncd::exact` на 24 ключа, затем
     `validate_launch_table`. Если в файле у строки другое имя помощника (`string`), взять то, которым
-    `decode_reaction_state` читает `phase`. `request_teeth`/`blocked_teeth` вне `int` — `invalid(path, ...)`.
+    `decode_reaction_state` читает `phase`. `integer32` — помощник файла (`senses_codec.cpp:146-152`), он отвергает значения вне `int`.
   - `intent.hpp/.cpp` — крючки:
     - `SeatedPostureProgram::update(..., double extra_target_rad = 0., std::optional<LeanOverride> launch = std::nullopt)`.
       В начале к прежним проверкам:
@@ -1801,7 +1820,9 @@ LaunchCommand RiderIntent::launch() const {
   - Каталог: таблица `channel_rider_launch` по образцу `channel_rider_reaction` (`catalog-v1.json:8181-8300`):
     `claims: ["rider_launch"]`, два ключа — дословные копии ключей `channel_rider_reaction`, поля `phase`
     (строка), `brake`, `effort_nm` (Н·м), `weight`, `lean_target_rad` (рад), `preload_missed` (логическое), с
-    описаниями. Та же таблица — в `catalog_data.inc` (вручную, как в части 3a), в
+    описаниями. Та же таблица — в `catalog_data.inc` (вручную, как в части 3a: сырая строка делится на части не
+    длиннее 64 КиБ, после правки собранный текст проверяется разбором JSON и сравнением с `catalog-v1.json` —
+    раздел каталога задачи 3 плана 3a), в
     `tests/fixtures/recording/schema.json` и в ожидаемом наборе `test_recording_catalog.cpp:110-114`. Счёт
     `test_catalog.cpp:76` — 520, с комментарием «520 added channel_rider_launch (2 identity keys + 6 leaves)». Тест
     круга канала — по образцу `test_rider_reaction_channel_round_trips` (`:654-672`).

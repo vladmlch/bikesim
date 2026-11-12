@@ -8178,6 +8178,138 @@
     },
     {
       "claims": [
+        "rider_reaction"
+      ],
+      "exempt_keys": [],
+      "name": "channel_rider_reaction",
+      "kind": "channels",
+      "keys": [
+        {
+          "frame": "n/a",
+          "path": [
+            "episode_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "episode_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "n/a",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+          "description": "episode identity within the owning run"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "interval_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "interval_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+          "description": "accounted physics interval identifier, consecutive per episode"
+        }
+      ],
+      "fields": [
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_reaction",
+            "phase"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "phase",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Front wheel lift reaction",
+          "description": "front-lift reaction phase after this interval's intention tick: idle, deciding, acting or releasing"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_reaction",
+            "predicate"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "predicate",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Front wheel lift reaction",
+          "description": "delayed percepts meet the lift predicate: hands unloaded past the dwell and a pitch-up rate or held pitch"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_reaction",
+            "effort_factor"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "effort_factor",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Front wheel lift reaction",
+          "description": "multiplier on the rider's own effort ceiling; 1 when the ease action is off or the reaction is idle or deciding, below 1 while acting and on the way back during releasing"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_reaction",
+            "lean_add_rad"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "lean_add_rad",
+          "dtype": "double",
+          "unit": "rad",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Front wheel lift reaction",
+          "description": "forward lean the reaction adds to the posture program target; 0 when the lean action is off or the reaction is idle or deciding, positive while acting and on the way back during releasing"
+        }
+      ],
+      "description": "front-lift reaction state per interval (launch part 3a); neutral when the rider intent is off",
+      "source": "native/src/runtime/step.cpp::PhysicalStep::publish_raw"
+    },
+    {
+      "claims": [
         "rider_commands"
       ],
       "exempt_keys": [],

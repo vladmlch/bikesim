@@ -2,13 +2,19 @@
 // percepts, the two independent actions, recovery, the codec round trip
 // with bitwise continuation, atomic restore and the table rules.
 #include "support/fixture_test.hpp"
+#include "allocation_faults.hpp"
+#include "configuration/model_config.hpp"
 #include "io/json.hpp"
 #include "rider/front_lift_reaction.hpp"
+#include "rider/intent.hpp"
 #include "rider/senses_codec.hpp"
+#include "rider/state_codec.hpp"
 
+#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <new>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -252,6 +258,343 @@ void test_table_rules() {
             "lean_add_rad", "a lean add beyond the forward bound");
 }
 
+// ---- RiderIntent: perception and the reaction inside the resolver -----------
+
+rider::IntentConfig enabled_intent() {
+    auto config = bike::configuration::default_physics().seated_climb;
+    config.enabled = true;
+    return config;
+}
+
+// The 1.25 ms timing tables of this file use table()'s short times; this
+// one keeps them with both actions off.
+rider::FrontLiftReactionConfig switched_off() {
+    auto t = table();
+    t.ease_enabled = false;
+    t.lean_enabled = false;
+    return t;
+}
+
+bool same_bits(double a, double b) { return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b); }
+
+bool same_optional(const std::optional<double> &a, const std::optional<double> &b) {
+    return a.has_value() == b.has_value() && (!a || same_bits(*a, *b));
+}
+
+bool same_posture(const rider::RiderPosture &a, const rider::RiderPosture &b) {
+    return same_bits(a.torso_lean_rad, b.torso_lean_rad) && same_bits(a.pelvis_pitch_rad, b.pelvis_pitch_rad) &&
+           a.pelvis_offset_m.has_value() == b.pelvis_offset_m.has_value() &&
+           (!a.pelvis_offset_m || (same_bits((*a.pelvis_offset_m)[0], (*b.pelvis_offset_m)[0]) &&
+                                   same_bits((*a.pelvis_offset_m)[1], (*b.pelvis_offset_m)[1]))) &&
+           a.use_saddle == b.use_saddle;
+}
+
+// Every IntentControl field, bit for bit.
+bool same_control(const rider::IntentControl &a, const rider::IntentControl &b) {
+    return same_optional(a.motor_torque_nm, b.motor_torque_nm) && same_optional(a.motor_limit_nm, b.motor_limit_nm) &&
+           same_optional(a.human_torque_nm, b.human_torque_nm) &&
+           same_optional(a.crank_target_rate_rad_s, b.crank_target_rate_rad_s) &&
+           a.posture.has_value() == b.posture.has_value() && (!a.posture || same_posture(*a.posture, *b.posture)) &&
+           a.rider_enabled == b.rider_enabled;
+}
+
+std::string encoded(const rider::RiderIntent &intent) {
+    return bike::io::canonical_json(rider::encode_intent_state(intent.state()));
+}
+
+// The varying inputs every intent test feeds: a pitch-up pulse with light
+// hands on steps 161..399, crank and load-share signals that exercise the
+// policy's queues and trim, a 6 % preview.
+std::pair<rider::IntentSignals, rider::RiderSenses> inputs(std::int64_t step) {
+    rider::IntentSignals s;
+    s.pitch_rate_up_rad_s = step > 160 && step < 400 ? 1. : 0.;
+    s.specific_force_body_mps2 = {.3, 0., 9.81};
+    s.crank_rate_rad_s = 6.;
+    s.human_crank_torque_nm = 20.;
+    s.front_load_share = .35;
+    rider::RiderSenses senses;
+    senses.hand_press_n = step > 160 && step < 400 ? 5. : 60.;
+    senses.grade_ahead = .06;
+    return {s, senses};
+}
+
+rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool advance = true) {
+    const auto [signals, senses] = inputs(step);
+    return intent.resolve_full(rider::IntentControl{}, signals, senses, step, .06, .06, .35, true, advance);
+}
+
+// Oracle (review M3): with both actions off the resolver output is the
+// bare ordinary policy's in every IntentControl field, bit for bit, at
+// every tick, across a reset with a seeded lean; probes between ticks
+// change no resolver state and preview the advancing output exactly.
+[[gnu::noinline]] void test_switched_off_resolver_equals_the_bare_policy() {
+    const auto config = enabled_intent();
+    rider::RiderIntent intent(config, switched_off(), kPeriod);
+    rider::SeatedClimbPolicy policy(config);
+    for (const auto &[steps, seed] : {std::pair{600, 0.}, std::pair{300, .05}}) {
+        intent.reset();
+        policy.reset();
+        if (seed != 0.) {
+            intent.seed_lean(seed);
+            policy.seed_lean(seed);
+        }
+        for (std::int64_t step = 0; step < steps; ++step) {
+            const std::string before = encoded(intent);
+            const auto probe = tick(intent, step, false);
+            bt::require(encoded(intent) == before, "a probe changes no resolver state");
+            const auto out = tick(intent, step);
+            const auto [signals, senses] = inputs(step);
+            const auto bare = policy.update(signals, config.period_s, .06, .06, .35);
+            rider::IntentControl expected;
+            expected.posture = bare.posture;
+            expected.human_torque_nm = bare.effort_ceiling_nm;
+            bt::require(same_control(out.control, expected) && !out.effort_limited,
+                        "switched-off actions leave the resolver output bitwise the policy's");
+            bt::require(same_control(probe.control, out.control) && probe.effort_limited == out.effort_limited,
+                        "the probe previews the advancing output");
+        }
+    }
+}
+
+// Caller-set effort and posture pass through untouched — never eased,
+// never flagged — while the reaction acts; rider-off and inactive calls
+// return the control as given; a disabled intent has no perception or
+// reaction state and reports the neutral command.
+[[gnu::noinline]] void test_caller_overrides_and_disabled_paths() {
+    const auto config = enabled_intent();
+    rider::RiderIntent intent(config, table(), kPeriod);
+    rider::IntentControl given;
+    given.human_torque_nm = 12.5;
+    given.motor_limit_nm = 30.;
+    rider::RiderPosture posture;
+    posture.torso_lean_rad = .02;
+    given.posture = posture;
+    for (std::int64_t step = 0; step < 320; ++step) {
+        const auto [signals, senses] = inputs(step);
+        const auto out = intent.resolve_full(given, signals, senses, step, .06, .06, .35);
+        bt::require(same_control(out.control, given) && !out.effort_limited,
+                    "caller-set fields win and are never eased");
+    }
+    bt::require(intent.reaction().phase == rider::ReactionPhase::acting, "the reaction acts meanwhile");
+    rider::IntentControl off;
+    off.rider_enabled = false;
+    const auto [signals, senses] = inputs(320);
+    bt::require(same_control(intent.resolve_full(off, signals, senses, 320, .06, .06, .35).control, off),
+                "a rider-off call returns the control as given");
+    const std::string before = encoded(intent);
+    bt::require(same_control(intent.resolve_full(rider::IntentControl{}, signals, senses, 321, .06, .06, .35,
+                                                 false).control,
+                             rider::IntentControl{}),
+                "an inactive call returns the control as given");
+    bt::require(encoded(intent) == before, "an inactive call advances nothing");
+    auto disabled_config = config;
+    disabled_config.enabled = false;
+    rider::RiderIntent disabled(disabled_config, table(), kPeriod);
+    bt::require(!disabled.state().perception && !disabled.state().reaction, "a disabled intent has no new state");
+    const auto neutral = disabled.reaction();
+    bt::require(neutral.phase == rider::ReactionPhase::idle && !neutral.predicate && neutral.effort_factor == 1. &&
+                    neutral.lean_add_rad == 0.,
+                "a disabled intent reports the neutral reaction");
+}
+
+// With both actions on: the ease starts exactly reaction_delay + dwell +
+// decision ticks after the first lifting sample (161 + 120 + 4 + 8 = 293);
+// the lean add goes through the posture program, so the total lean never
+// outruns its rate; probe and advance agree on output, flag and the whole
+// owner state; encode → decode → restore during warm-up (50), deciding
+// (290) and releasing (560: clear percepts from 520, release from 536,
+// lean back by ~696) continues with the same output and the same
+// serialized state.
+[[gnu::noinline]] void test_reacting_resolver_timing_slew_probe_and_restore() {
+    const auto config = enabled_intent();
+    // -Wframe-larger-than: the three resolvers live on the heap.
+    auto reacting = std::make_unique<rider::RiderIntent>(config, table(), kPeriod);
+    auto inert = std::make_unique<rider::RiderIntent>(config, switched_off(), kPeriod);
+    const std::int64_t delay = std::llround(config.reaction_delay_s / config.period_s);
+    const std::int64_t onset = 161 + delay + 4 + 8;
+    double previous_lean = 0.;
+    std::unique_ptr<rider::RiderIntent> restored;
+    for (std::int64_t step = 0; step < 900; ++step) {
+        const std::string before = encoded(*reacting);
+        const auto probe = tick(*reacting, step, false);
+        bt::require(encoded(*reacting) == before, "a probe changes no resolver state");
+        const auto a = tick(*reacting, step);
+        const auto b = tick(*inert, step);
+        bt::require(same_control(probe.control, a.control) && probe.effort_limited == a.effort_limited,
+                    "the probe previews the advancing output and its cut order");
+        if (step < onset)
+            bt::require(same_bits(*a.control.human_torque_nm, *b.control.human_torque_nm) && !a.effort_limited,
+                        "no ease before delay + dwell + decision");
+        if (step == onset)
+            bt::require(*a.control.human_torque_nm < *b.control.human_torque_nm && a.effort_limited,
+                        "the ease starts on the computed tick");
+        const double lean = a.control.posture->torso_lean_rad;
+        bt::require(std::abs(lean - previous_lean) <= config.lean_rate_rad_s * config.period_s + 1e-15,
+                    "the total lean never outruns the posture rate");
+        previous_lean = lean;
+        if (step == 50 || step == onset - 3 || step == 560) {
+            const auto phase = reacting->reaction().phase;
+            bt::require(step != onset - 3 || phase == rider::ReactionPhase::deciding, "snapshot while deciding");
+            bt::require(step != 560 || phase == rider::ReactionPhase::releasing, "snapshot while releasing");
+            restored = std::make_unique<rider::RiderIntent>(config, table(), kPeriod);
+            restored->restore(rider::decode_intent_state(rider::encode_intent_state(reacting->state()), "intent"));
+        } else if (restored) {
+            const auto r = tick(*restored, step);
+            bt::require(same_control(r.control, a.control) && r.effort_limited == a.effort_limited &&
+                            encoded(*restored) == encoded(*reacting),
+                        "the restored resolver continues bitwise, state included");
+        }
+    }
+    bt::require(reacting->reaction().phase == rider::ReactionPhase::idle, "the reaction ended after the pulse");
+}
+
+// Every rejected call leaves the whole resolver untouched, and the
+// corrected retry of that step equals one successful tick from the same
+// state (review-2 I1, review-3 I3): a NaN sense, a NaN road grade, a NaN
+// lean limit, and finite limits whose posture validate_posture rejects
+// after the policy has computed (lean_limit_rad = min_lean_rad = 1).
+[[gnu::noinline]] void test_rejected_ticks_change_nothing() {
+    const auto config = enabled_intent();
+    rider::RiderIntent intent(config, table(), kPeriod);
+    for (std::int64_t step = 0; step < 300; ++step) (void)tick(intent, step);   // acting from 293
+    const std::string before = encoded(intent);
+    rider::RiderIntent reference(intent);
+    const auto good = tick(reference, 300);
+    const auto [signals, senses] = inputs(300);
+    const double nan = std::numeric_limits<double>::quiet_NaN();
+    auto bad_senses = senses;
+    bad_senses.hand_press_n = nan;
+    rejects([&] { (void)intent.resolve_full(rider::IntentControl{}, signals, bad_senses, 300, .06, .06, .35); },
+            "hand_press_n", "a NaN hand press");
+    bt::require(encoded(intent) == before, "a rejected sense advances nothing");
+    rejects([&] { (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 300, nan, .06, .35); },
+            "grade", "a NaN road grade");
+    bt::require(encoded(intent) == before, "a rejected grade advances nothing");
+    rejects([&] { (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 300, .06, .06, nan); },
+            "lean limit", "a NaN lean limit");
+    bt::require(encoded(intent) == before, "a rejected lean limit advances nothing");
+    rejects([&] {
+        (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 300, .06, .06, 1., true, true, 1.);
+    }, "torso_lean_rad", "a posture the limits force out of its envelope");
+    bt::require(encoded(intent) == before, "a rejected posture advances nothing");
+    const auto retry = tick(intent, 300);
+    bt::require(same_control(retry.control, good.control) && retry.effort_limited == good.effort_limited &&
+                    encoded(intent) == encoded(reference),
+                "the corrected retry is exactly one tick");
+}
+
+// Allocation failures (native-engineering «Validate and stage»): each
+// failing allocation inside a cold tick — the staged twin and the queues
+// grow — leaves the resolver unchanged, and the retry after disarming
+// equals one successful tick. A warm tick may allocate nothing by design.
+[[gnu::noinline]] void test_allocation_failures_change_nothing() {
+    const auto config = enabled_intent();
+    const auto [signals, senses] = inputs(0);
+    std::size_t needed = 0;
+    {
+        rider::RiderIntent measured(config, table(), kPeriod);
+        const allocation_faults::Guard guard;
+        allocation_faults::arm(SIZE_MAX);
+        (void)measured.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+        allocation_faults::disarm();
+        needed = allocation_faults::allocated();
+    }
+    bt::require(needed > 0, "a cold tick allocates, so the sweep exercises failures");
+    for (std::size_t k = 0; k < needed; ++k) {
+        rider::RiderIntent intent(config, table(), kPeriod);
+        rider::RiderIntent reference(intent);
+        const std::string before = encoded(intent);
+        bool threw = false;
+        {
+            const allocation_faults::Guard guard;
+            allocation_faults::arm(k);
+            try {
+                (void)intent.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+            } catch (const std::bad_alloc &) {
+                threw = true;
+            }
+        }
+        bt::require(threw, "the armed allocation fails");
+        bt::require(encoded(intent) == before, "a failed allocation changes nothing");
+        const auto retry = intent.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+        const auto good = reference.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
+        bt::require(same_control(retry.control, good.control) && encoded(intent) == encoded(reference),
+                    "the retry after a failed allocation is exactly one tick");
+    }
+}
+
+// The posture-target add rejects NaN, infinity and a backward add before
+// the program moves (review-2 I6); a valid add is accepted. The policy
+// forwards the add and rejects the same values (it is not a transaction
+// on its own — RiderIntent is).
+[[gnu::noinline]] void test_extra_lean_domain() {
+    const auto config = enabled_intent();
+    const auto [signals, senses] = inputs(0);
+    for (const double extra : {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity(), -.01}) {
+        rider::SeatedPostureProgram program(config);
+        const auto before = program.state();
+        rejects([&] { (void)program.update(0., .06, config.period_s, .35, .35, std::nullopt, std::nullopt, extra); },
+                "extra", "an invalid lean add on the program");
+        bt::require(program.state().lean_rad == before.lean_rad &&
+                        program.state().load_samples.size() == before.load_samples.size(),
+                    "a rejected add moves no program state");
+        rider::SeatedClimbPolicy policy(config);
+        rejects([&] { (void)policy.update(signals, config.period_s, .06, .06, .35, std::nullopt, extra); },
+                "extra", "an invalid lean add on the policy");
+    }
+    rider::SeatedClimbPolicy policy(config);
+    (void)policy.update(signals, config.period_s, .06, .06, .35, std::nullopt, .05);   // control
+}
+
+// Restore rejects what breaks a necessary condition of resolve_full
+// (decision 12): presence, the perception clock against the intention
+// ticks (without overflow), the reaction's percept count against the
+// delivered percepts, and the component checks. A reaction grafted onto
+// the first delivery is rejected; that state's own reaction is accepted.
+// Rejected restores change nothing; the document path rejects the same.
+[[gnu::noinline]] void test_restore_checks_the_joint_state() {
+    const auto config = enabled_intent();
+    const std::int64_t delay = std::llround(config.reaction_delay_s / config.period_s);   // 120
+    // -Wframe-larger-than: the intents and the staged states live on the heap.
+    auto donor = std::make_unique<rider::RiderIntent>(config, table(), kPeriod);
+    for (std::int64_t step = 0; step < 300; ++step) (void)tick(*donor, step);
+    auto first = std::make_unique<rider::RiderIntent>(config, table(), kPeriod);
+    for (std::int64_t step = 0; step <= delay; ++step) (void)tick(*first, step);   // exactly one percept delivered
+    rider::RiderIntent fresh(config, table(), kPeriod);
+    const std::string before = encoded(fresh);
+    auto early = std::make_unique<rider::RiderIntent::State>(fresh.state());
+    early->reaction = donor->state().reaction;   // acting, from another episode
+    rejects([&] { fresh.restore(*early); }, "percepts_seen", "a reaction before any percept");
+    rejects([&] { fresh.restore(rider::decode_intent_state(rider::encode_intent_state(*early), "intent")); },
+            "percepts_seen", "the same state through the document");
+    auto graft = std::make_unique<rider::RiderIntent::State>(first->state());
+    graft->reaction = donor->state().reaction;
+    rejects([&] { fresh.restore(*graft); }, "percepts_seen", "an acting reaction on the first delivery");
+    auto bad = std::make_unique<rider::RiderIntent::State>(donor->state());
+    bad->perception->tick += 1;
+    rejects([&] { fresh.restore(*bad); }, "perception tick", "a perception clock off the intention ticks");
+    *bad = donor->state();
+    bad->last_tick_step = -2;
+    rejects([&] { fresh.restore(*bad); }, "intention grid", "a tick before the first one");
+    *bad = donor->state();
+    bad->last_tick_step = std::numeric_limits<std::int64_t>::max();   // period_steps == 1 here
+    rejects([&] { fresh.restore(*bad); }, "intention grid", "a tick count that would overflow");
+    rejects([&] { fresh.restore(rider::decode_intent_state(rider::encode_intent_state(*bad), "intent")); },
+            "intention grid", "the overflowing tick through the document");
+    *bad = donor->state();
+    bad->reaction->effort_factor = .1;   // below 1 - ease_fraction
+    bad->policy.time_s += 1.;            // must not leak when the restore fails
+    rejects([&] { fresh.restore(*bad); }, "effort_factor", "a reaction outside its switch range");
+    *bad = donor->state();
+    bad->perception.reset();
+    rejects([&] { fresh.restore(*bad); }, "perception", "an enabled intent without perception state");
+    bt::require(encoded(fresh) == before, "rejected restores change nothing");
+    fresh.restore(first->state());   // control: the first delivery with its own reaction
+    bt::require(encoded(fresh) == encoded(*first), "the first-delivery state restores");
+    fresh.restore(donor->state());   // control
+    bt::require(encoded(fresh) == encoded(*donor), "a reachable state restores");
+}
+
 } // namespace
 
 int main() {
@@ -264,5 +607,12 @@ int main() {
         test_codec_round_trip_and_continuation();
         test_restore_rejects_unreachable_states();
         test_table_rules();
+        test_switched_off_resolver_equals_the_bare_policy();
+        test_caller_overrides_and_disabled_paths();
+        test_reacting_resolver_timing_slew_probe_and_restore();
+        test_rejected_ticks_change_nothing();
+        test_allocation_failures_change_nothing();
+        test_extra_lean_domain();
+        test_restore_checks_the_joint_state();
     });
 }

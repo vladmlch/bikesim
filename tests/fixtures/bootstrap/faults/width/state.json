@@ -1178,6 +1178,12 @@
       }
     },
     "last_tick_step": -1,
+    "perception": {
+      "delayed": null,
+      "pitch_rad": 0.0,
+      "samples": [],
+      "tick": 0
+    },
     "policy": {
       "delayed": null,
       "effort_nm": 0.0,
@@ -1195,6 +1201,16 @@
       "load_samples": [],
       "pulses": [],
       "trim_rad": 0.0
+    },
+    "reaction": {
+      "clear_ticks": 0,
+      "decision_ticks": 0,
+      "effort_factor": 1.0,
+      "lean_add_rad": 0.0,
+      "percepts_seen": 0,
+      "phase": "idle",
+      "predicate": false,
+      "unload_ticks": 0
     }
   },
   "runtime": {

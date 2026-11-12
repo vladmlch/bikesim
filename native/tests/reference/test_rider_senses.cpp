@@ -13,7 +13,10 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <memory>
+#include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <utility>
@@ -336,6 +339,111 @@ void test_grade_ahead_tracks_the_profile() {
     bt::require(climb_seen, "the climb previews a positive grade");
 }
 
+// One recorded interval of the reaction channel, plus whether the
+// interval was measured: an unmeasured row carries the kinematic mass
+// channel without com_velocity_mps (step.cpp:1694-1698).
+struct ReactionRow {
+    std::int64_t interval = 0;
+    bool full = false;
+    std::string phase;
+    bool predicate = false;
+    double factor = 1., lean = 0.;
+};
+
+[[nodiscard]] std::vector<ReactionRow> reaction_rows(launch_ride::PedelecEnv &env, std::size_t windows) {
+    std::vector<ReactionRow> rows;
+    std::int64_t last_id = -1;
+    runtime::RideControl control;   // effort and posture come from the rider intent
+    for (std::size_t w = 0; w < windows; ++w) {
+        const auto result = env.runtime->advance(
+            (static_cast<std::int64_t>(w) + 1) * env.control_steps, control, 0., 0., std::nullopt);
+        for (const auto &sample : env.runtime->recorded_intervals()) {
+            if (sample->interval_id <= last_id) continue;
+            last_id = sample->interval_id;
+            const auto *wire = sw::find(sample->channels, "rider_reaction");
+            bt::require(wire != nullptr, "every interval publishes the rider_reaction channel");
+            const auto &reaction = sw::object(*wire);
+            const auto &mass = sw::object(sw::required(sample->channels, "mass"));
+            rows.push_back({.interval = sample->interval_id,
+                            .full = sw::find(mass, "com_velocity_mps") != nullptr,
+                            .phase = sw::string(sw::required(reaction, "phase")),
+                            .predicate = sw::boolean(sw::required(reaction, "predicate")),
+                            .factor = sw::number(sw::required(reaction, "effort_factor")),
+                            .lean = sw::number(sw::required(reaction, "lean_add_rad"))});
+        }
+        if (result.outcome.has_value()) break;
+    }
+    return rows;
+}
+
+// Launch part 3a — transport of the reaction channel on a decimated ride
+// (physical control period 4 steps, record decimation 8, full capture):
+// every consecutive interval, measured or not, carries the channel; the
+// rows obey the reaction's phase order and switch ranges; a reset replays
+// them bitwise, so perception and reaction state travel through the
+// bootstrap capture and restore. Both actions are on with test-only
+// thresholds (hands always count as unloaded, 0.05 rad of perceived
+// pitch). Whether this ride reaches acting is reported, not required: the
+// exact timing contract belongs to the resolver tests above.
+[[gnu::noinline]] void test_reaction_channel_on_a_decimated_ride() {
+    const auto edit = [](auto &physics) {
+        physics.control_period_s = .005;
+        auto &r = physics.front_lift_reaction;
+        r.ease_enabled = true;
+        r.lean_enabled = true;
+        r.hand_unload_n = 1000.;
+        r.pitch_rad = .05;
+    };
+    auto env = launch_ride::environment(launch_ride::track("[[0.0, 0.0], [60.0, 0.0]]", 60.), 3., edit, 8,
+                                        runtime::ResearchCaptureMode::full);
+    const std::size_t windows = 300;   // 3 s of the .01 s research control period
+    const auto rows = reaction_rows(env, windows);
+    std::size_t full = 0, unmeasured = 0;
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        ++(rows[i].full ? full : unmeasured);
+        bt::require(i == 0 || rows[i].interval == rows[i - 1].interval + 1, "consecutive intervals are recorded");
+    }
+    bt::require(full > 0 && unmeasured > 0, "the ride records measured and unmeasured intervals");
+    const std::set<std::pair<std::string, std::string>> allowed{
+        {"idle", "idle"}, {"idle", "deciding"}, {"deciding", "deciding"}, {"deciding", "idle"},
+        {"deciding", "acting"}, {"acting", "acting"}, {"acting", "releasing"}, {"releasing", "releasing"},
+        {"releasing", "acting"}, {"releasing", "idle"},
+        // A row is the phase at the interval's close, 8 intention ticks
+        // apart: releasing -> idle -> deciding can fit inside one interval.
+        {"releasing", "deciding"}};
+    std::optional<std::int64_t> deciding_from, acting_at;
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        const auto &row = rows[i];
+        if (i > 0)
+            bt::require(allowed.contains({rows[i - 1].phase, row.phase}), "the phases follow the reaction's order");
+        if (row.phase == "idle" || row.phase == "deciding")
+            bt::require(row.factor == 1. && row.lean == 0., "no action before acting");
+        bt::require(row.factor >= .3 && row.factor <= 1. && row.lean >= 0. && row.lean <= .1,
+                    "the outputs stay inside their switch ranges");
+        if (row.phase == "deciding" && (i == 0 || rows[i - 1].phase != "deciding") && !acting_at)
+            deciding_from = row.interval;
+        if (row.phase == "acting" && !acting_at) acting_at = row.interval;
+    }
+    // One research interval (.01 s) is 8 intention ticks (seated_climb.period_s
+    // = .00125 s), so decision_s = .1 s is 80 ticks = 10 intervals. Rows are
+    // sampled at interval close: a short return to idle inside one interval
+    // is invisible and only makes the observed gap longer, so the bound is
+    // >= 10 (exactly 10 without such a hidden return).
+    if (acting_at)
+        bt::require(deciding_from && *acting_at - *deciding_from >= 10, "acting starts decision_s after deciding");
+    std::printf("reaction ride: %zu rows, %zu unmeasured, acting %s\n", rows.size(), unmeasured,
+                acting_at ? "reached" : "not reached");
+    env.runtime->reset();
+    const auto replay = reaction_rows(env, windows);
+    bt::require(replay.size() == rows.size(), "the replay covers the same intervals");
+    for (std::size_t i = 0; i < rows.size(); ++i)
+        bt::require(replay[i].interval == rows[i].interval && replay[i].phase == rows[i].phase &&
+                        replay[i].predicate == rows[i].predicate &&
+                        std::bit_cast<std::uint64_t>(replay[i].factor) == std::bit_cast<std::uint64_t>(rows[i].factor) &&
+                        std::bit_cast<std::uint64_t>(replay[i].lean) == std::bit_cast<std::uint64_t>(rows[i].lean),
+                    "the reaction replays bitwise through reset");
+}
+
 } // namespace
 
 int main() {
@@ -347,5 +455,6 @@ int main() {
         test_surface_labels_codec_is_strict();
         test_ride_senses_follow_the_label_map();
         test_grade_ahead_tracks_the_profile();
+        test_reaction_channel_on_a_decimated_ride();
     });
 }

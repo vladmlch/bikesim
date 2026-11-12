@@ -110,8 +110,8 @@ void test_catalog_tables_are_finite_and_fully_described() {
     const std::set<std::string> expected{"physics", "forces", "channel_mass",
         "channel_energy", "channel_sensors", "channel_drive", "channel_tires",
         "channel_suspension", "channel_control", "channel_rider",
-        "channel_rider_senses", "channel_rider_commands",
-        "channel_model_status"};
+        "channel_rider_senses", "channel_rider_reaction",
+        "channel_rider_commands", "channel_model_status"};
     std::set<std::string> actual;
     for (const auto &spec : catalog.table_order()) {
         actual.insert(spec.name);
@@ -648,6 +648,32 @@ void test_catalog_rejects_malformed_joint_descriptors() {
                                 "dense", "non-dense addresses are rejected");
 }
 
+// Launch part 3a — the rider_reaction channel's four leaves survive the
+// typed encoding and the DuckDB read-back verbatim: text phase, boolean
+// predicate and two doubles.
+void test_rider_reaction_channel_round_trips() {
+    const bt::TemporaryDirectory dir("catalog-reaction");
+    const auto &spec = synthetic_catalog().table("channel_rider_reaction");
+    const auto row = [](std::int64_t id, const char *phase, bool predicate, double factor, double lean) {
+        return Object{{"rider_reaction", io::Value{Object{{"phase", text(phase)},
+                                                          {"predicate", io::Value{predicate}},
+                                                          {"effort_factor", real(factor)},
+                                                          {"lean_add_rad", real(lean)}}}},
+                      {"interval_id", integer(id)}};
+    };
+    const auto decoded = round_trip(spec, {row(0, "idle", false, 1., 0.), row(1, "acting", true, .3, .1)}, dir);
+    bt::require(decoded.size() == 2, "two rows read back");
+    const auto check = [&](std::size_t i, std::string_view phase, bool predicate, double factor, double lean) {
+        bt::require(io::as_string(detail::field(decoded[i], "phase"), "phase") == phase &&
+                        io::as_bool(detail::field(decoded[i], "predicate"), "predicate") == predicate &&
+                        io::as_double(detail::field(decoded[i], "effort_factor"), "factor") == factor &&
+                        io::as_double(detail::field(decoded[i], "lean_add_rad"), "lean") == lean,
+                    "the reaction row reads back verbatim");
+    };
+    check(0, "idle", false, 1., 0.);
+    check(1, "acting", true, .3, .1);
+}
+
 } // namespace
 
 int main() {
@@ -667,6 +693,7 @@ int main() {
         test_tree_physical_source_emits_typed_batches_through_the_catalog();
         test_forces_explode_per_component_with_vector_and_power();
         test_tree_source_rejects_batch_arguments_and_bad_intervals();
+        test_rider_reaction_channel_round_trips();
         test_catalog_rejects_malformed_joint_descriptors();
     });
 }

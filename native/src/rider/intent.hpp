@@ -10,15 +10,23 @@
 // mirror the Python sources — resolve() arguments are validated where the
 // oracle validates them, not earlier. Pure C++: no nanobind or mujoco
 // types enter this header; dict decoding lives in intent_wire.*.
+//
+// Launch part 3a: perception and the front-lift reaction ride inside the
+// resolver's Core double buffer (decision 11): every tick mutates a staged
+// copy and commits by a nonthrowing swap.
 #pragma once
 #include <array>
 #include <cstdint>
 #include <deque>
 #include <limits>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "front_lift_reaction.hpp"
+#include "intent_signals.hpp"
+#include "perception.hpp"
 #include "rider_posture.hpp"
 
 namespace rider {
@@ -55,16 +63,6 @@ struct IntentConfig {
     double launch_standstill_crank_rate_rad_s = -1.;
 };
 
-// seated_climb.py SeatedClimbSignals — validated at wire decode like the
-// frozen dataclass's __post_init__.
-struct IntentSignals {
-    double pitch_rate_up_rad_s = 0.;
-    std::array<double, 3> specific_force_body_mps2{0., 0., 0.};
-    double crank_rate_rad_s = 0.;
-    double human_crank_torque_nm = 0.;
-    std::optional<double> front_load_share;
-};
-
 // seated_climb.py SeatedClimbIntent.
 struct Intent {
     RiderPosture posture;
@@ -81,6 +79,11 @@ struct IntentControl {
     std::optional<double> crank_target_rate_rad_s;
     std::optional<RiderPosture> posture;
     bool rider_enabled = true;
+};
+
+struct IntentResolution {
+    IntentControl control;
+    bool effort_limited = false;   // the rider's own reduction is in force
 };
 
 // Launch part 1, task 4 — the rider-owned command set. Part 1's intent
@@ -133,7 +136,8 @@ public:
                   std::optional<double> front_load_share = std::nullopt,
                   std::optional<double> lean_limit_rad = std::nullopt,
                   std::optional<double> dead_time_s = std::nullopt,
-                  std::optional<double> min_lean_rad = std::nullopt);
+                  std::optional<double> min_lean_rad = std::nullopt,
+                  double extra_target_rad = 0.);
 
     [[nodiscard]] State state() const;
     void restore(const State &state);
@@ -178,7 +182,8 @@ public:
         const IntentSignals &signals, double dt_s, double road_grade,
         std::optional<double> preview_grade = std::nullopt,
         std::optional<double> lean_limit_rad = std::nullopt,
-        std::optional<double> min_lean_rad = std::nullopt);
+        std::optional<double> min_lean_rad = std::nullopt,
+        double extra_lean_rad = 0.);
 
     [[nodiscard]] const IntentConfig &config() const { return config_; }
     [[nodiscard]] SeatedPostureProgram &program() { return program_; }
@@ -214,9 +219,13 @@ public:
         Intent intent;
         SeatedClimbPolicy::State policy;
         SeatedPostureProgram::State program;
+        std::optional<Perception::State> perception;        // engaged exactly when the intent is enabled
+        std::optional<FrontLiftReaction::State> reaction;   // engaged exactly when the intent is enabled
     };
 
-    RiderIntent(IntentConfig config, double dt_s);
+    // Replaces RiderIntent(IntentConfig, double): the reaction table has no
+    // in-code default.
+    RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, double dt_s);
 
     void reset();
     // Starts the posture from the prepared start lean after reset(): the
@@ -230,17 +239,29 @@ public:
     // preserved. `step` is the physics step counter; the wire layer rejects
     // non-int values before this point (type(step) is int in the oracle).
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python call signature
+    [[nodiscard]] IntentResolution
+    resolve_full(IntentControl control, const IntentSignals &signals,
+                 const RiderSenses &senses, std::int64_t step,
+                 double road_grade,
+                 std::optional<double> preview_grade = std::nullopt,
+                 std::optional<double> lean_limit_rad = std::nullopt,
+                 bool active = true, bool advance = true,
+                 std::optional<double> min_lean_rad = std::nullopt);
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python call signature
     [[nodiscard]] IntentControl
     resolve(IntentControl control, const IntentSignals &signals,
-            std::int64_t step, double road_grade,
+            const RiderSenses &senses, std::int64_t step, double road_grade,
             std::optional<double> preview_grade = std::nullopt,
             std::optional<double> lean_limit_rad = std::nullopt,
             bool active = true, bool advance = true,
-            std::optional<double> min_lean_rad = std::nullopt);
+            std::optional<double> min_lean_rad = std::nullopt);   // resolve_full(...).control
 
     [[nodiscard]] State state() const;
     void restore(const State &state);
-    [[nodiscard]] const Intent &intent() const { return intent_; }
+    [[nodiscard]] const Intent &intent() const { return core_.intent; }
+    // The reaction's current command; neutral (idle, false, 1, 0) when the
+    // intent is disabled.
+    [[nodiscard]] ReactionCommand reaction() const;
     // Launch part 1, tasks 4-5: the rider-owned commands the resolver
     // currently resolves to — always the empty set in part 1; a later
     // launch part will teach the intent to fill them on the resolve()
@@ -251,17 +272,39 @@ public:
         return commands_;
     }
     [[nodiscard]] const IntentConfig &config() const { return config_; }
-    [[nodiscard]] const SeatedClimbPolicy &policy() const { return policy_; }
-    [[nodiscard]] SeatedClimbPolicy &policy() { return policy_; }
+    [[nodiscard]] const SeatedClimbPolicy &policy() const { return core_.policy; }
+    [[nodiscard]] SeatedClimbPolicy &policy() { return core_.policy; }
     [[nodiscard]] std::int64_t period_steps() const { return period_steps_; }
 
 private:
+    // Launch part 3a, decision 11: everything a tick changes. The tick runs
+    // on staged_ (copy-assigned from core_, so its queues keep their blocks
+    // and a warm tick does not allocate) and commits by a nonthrowing swap.
+    // SeatedClimbPolicy and SeatedPostureProgram are not transactional on
+    // their own; the transaction boundary is RiderIntent.
+    struct Core {
+        explicit Core(const IntentConfig &config) : policy(config) {}
+        SeatedClimbPolicy policy;
+        std::optional<Perception> perception;
+        std::optional<FrontLiftReaction> reaction;
+        std::int64_t last_tick_step = -1;
+        Intent intent;
+    };
+    static_assert(std::is_nothrow_swappable_v<Core>);
+    // One tick on `core` (called on staged_ or on a probe copy).
+    void tick(Core &core, const IntentSignals &signals,
+              const RiderSenses &senses, std::int64_t step,
+              double road_grade, std::optional<double> preview_grade,
+              std::optional<double> lean_limit_rad,
+              std::optional<double> min_lean_rad) const;
+    // The output merge from `core`'s intent and reaction.
+    static IntentResolution output(const Core &core, IntentControl control);
+
     IntentConfig config_;
     double dt_s_;
     std::int64_t period_steps_;
-    SeatedClimbPolicy policy_;
-    std::int64_t last_tick_step_ = -1;
-    Intent intent_{};
+    Core core_;
+    Core staged_;
     RiderCommands commands_{};
 };
 

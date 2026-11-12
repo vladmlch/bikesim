@@ -503,6 +503,7 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         {"rider_controller", project_rider_controller_impl(
             config, model, articulated_pose ? &*articulated_pose : nullptr)},
         {"rider_intent", field(physics_document, "seated_climb")},
+        {"rider_reaction", rider::encode_reaction_config(config.front_lift_reaction)},
         {"surface_labels", rider::encode_surface_labels(
             surface_labels_of(track))},
         {"monitors", Value{Object{{"balance_floor_mps", real(config.articulated.balance_floor_kmh / 3.6)},

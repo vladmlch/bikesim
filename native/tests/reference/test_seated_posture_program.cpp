@@ -80,19 +80,26 @@ rider::IntentConfig enabled(double lean_rate = 0.) {
     return config;
 }
 
+// The working profile's switched-off reaction (part 3a inventory numbers);
+// its .05/.1/.3 s times sit on every intention period these tests use.
+const rider::FrontLiftReactionConfig kSwitchedOffReaction{
+    .hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
+    .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
+    .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
+
 // test_posture_program_reads_no_inertial_signal — the AST sweep's
 // behavioral contract: the posture intent resolves identically under
 // arbitrary IMU perturbation, because no inertial channel reaches it.
 void test_posture_program_reads_no_inertial_signal() {
     std::array<rider::RiderIntent, 2> resolvers{
-        rider::RiderIntent(enabled(), .0005),
-        rider::RiderIntent(enabled(), .0005)};
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005),
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005)};
     const rider::IntentSignals calm;
     rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;
     perturbed.specific_force_body_mps2 = {5., 0., 8.};
-    const auto a = resolvers[0].resolve({}, calm, 0, .18);
-    const auto b = resolvers[1].resolve({}, perturbed, 0, .18);
+    const auto a = resolvers[0].resolve({}, calm, rider::RiderSenses{}, 0, .18);
+    const auto b = resolvers[1].resolve({}, perturbed, rider::RiderSenses{}, 0, .18);
     bt::require(a.posture.has_value() && b.posture.has_value(),
                 "both resolves emit a posture");
     bt::require(a.posture->torso_lean_rad == b.posture.value().torso_lean_rad && // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
@@ -134,17 +141,17 @@ void test_road_grade_uses_underwheel_and_preview_samples_uniformly() {
 // test_resolver_road_grade_survives_probe_and_ignores_imu
 void test_resolver_road_grade_survives_probe_and_ignores_imu() {
     std::array<rider::RiderIntent, 2> resolvers{
-        rider::RiderIntent(enabled(), .0005),
-        rider::RiderIntent(enabled(), .0005)};
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005),
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005)};
     const rider::IntentSignals base;
     rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;
     perturbed.specific_force_body_mps2 = {5., 0., 8.};
     rider::IntentControl first;
     for (std::int64_t step = 0; step < 2000; step += 20) {
-        const auto calm = resolvers[0].resolve({}, base, step, .18);
+        const auto calm = resolvers[0].resolve({}, base, rider::RiderSenses{}, step, .18);
         const auto noisy =
-            resolvers[1].resolve({}, perturbed, step, .18);
+            resolvers[1].resolve({}, perturbed, rider::RiderSenses{}, step, .18);
         bt::require(calm.posture.has_value() && noisy.posture.has_value(),
                     "every tick emits a posture");
         bt::require(calm.posture.value().torso_lean_rad == // NOLINT(bugprone-unchecked-optional-access) optional engagement is the fixture contract under test; .value() reports violations loudly
@@ -163,8 +170,8 @@ void test_resolver_road_grade_survives_probe_and_ignores_imu() {
     auto &resolver = resolvers[0];
     const double before = resolver.policy().state().time_s;
     const auto probe =
-        resolver.resolve({}, perturbed, 2000, .18, std::nullopt,
-                         std::nullopt, true, false);
+        resolver.resolve({}, perturbed, rider::RiderSenses{}, 2000, .18,
+                         std::nullopt, std::nullopt, true, false);
     bt::require(resolver.policy().state().time_s == before,
                 "a probe resolve does not advance the policy clock");
     bt::require(probe.posture.has_value() &&

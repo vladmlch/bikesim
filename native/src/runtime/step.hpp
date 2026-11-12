@@ -60,6 +60,10 @@ struct StepConfig {
     bool rider_present = false;
     MonitorConfig monitors;
     rider::IntentConfig intent{};
+    // The front-lift reaction table — decoded from config.rider_reaction
+    // (launch part 3a); validated inside RiderIntent when the intent is
+    // enabled.
+    rider::FrontLiftReactionConfig reaction{};
     // The track's surface-label map — the senses fold's lookup for the
     // front-wheel and lookahead labels.
     rider::SurfaceLabels surface_labels{};

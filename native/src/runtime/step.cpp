@@ -1021,7 +1021,7 @@ PhysicalStep::PhysicalStep(
     : stepper_(&stepper), config_(std::move(config)),
       vertices_(std::move(vertices)),
       road_profile_(vertices_),
-      rider_intent_(config_.intent, config_.timestep_s),
+      rider_intent_(config_.intent, config_.reaction, config_.timestep_s),
       brake_(brake),
       control_clock_(config_.timestep_s, config_.control_period_s),
       contact_query_(stepper_->model(), config_.monitors.grounded_hold_s,
@@ -1251,6 +1251,7 @@ PhysicalStep::apply_forces_body(
             !caller_control.human_torque_nm.has_value() &&
             caller_control.rider_enabled;
         RideControl control = caller_control;
+        bool effort_limited = false;
         if (config_.intent.enabled) {
             const auto &road = rider_state_.has_value()
                                    ? rider_state_->road
@@ -1261,12 +1262,14 @@ PhysicalStep::apply_forces_body(
                           d, config_.intent.min_elbow_flexion_deg *
                                  (std::numbers::pi / 180.))
                     : std::optional<double>{};
-            control = rider_intent_.resolve(
-                control, intent_signals_, step_,
+            const auto resolution = rider_intent_.resolve_full(
+                control, intent_signals_, rider_senses_, step_,
                 road_grade_for_posture(road), road_grade_preview(road),
                 rider_control_.has_value() ? rider_control_->lean_limit_rad()
                                            : std::optional<double>{},
                 active, advance, min_lean_rad);
+            control = resolution.control;
+            effort_limited = resolution.effort_limited;
         }
         if (advance)
             applied_control_ = control;
@@ -1333,7 +1336,7 @@ PhysicalStep::apply_forces_body(
                              : std::optional<double>{},
             brakes.shift_blocked, rider_shift,
             // launch part 3a, task 3 passes the resolver's effort_limited
-            false);
+            effort_limited);
         // Oracle: the apply_forces entry forward runs only while
         // `initializing` — init callers mutate qpos/qvel or
         // constraint-defining model constants between apply_forces calls
@@ -2049,6 +2052,18 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
                                 Wire(rider_senses_.grade_ahead));
             channels.emplace_back("rider_senses",
                                   Wire(std::move(senses)));
+        }
+        {
+            // Launch part 3a — the front-lift reaction on every interval
+            // (measured or not), so its onsets are never hidden by
+            // decimation; neutral (idle, false, 1, 0) when the intent is off.
+            const rider::ReactionCommand reaction = rider_intent_.reaction();
+            WireObject fields;
+            fields.emplace_back("phase", Wire(std::string(rider::reaction_phase_name(reaction.phase))));
+            fields.emplace_back("predicate", Wire(reaction.predicate));
+            fields.emplace_back("effort_factor", Wire(reaction.effort_factor));
+            fields.emplace_back("lean_add_rad", Wire(reaction.lean_add_rad));
+            channels.emplace_back("rider_reaction", Wire(std::move(fields)));
         }
         {
             // Launch part 1, task 4 — the rider-owned command set and

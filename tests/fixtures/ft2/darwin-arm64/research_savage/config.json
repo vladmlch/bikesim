@@ -635,6 +635,21 @@
     "target_crank_power_w": 250.0,
     "trim_dead_time_s": 0.2
   },
+  "rider_reaction": {
+    "hand_unload_n": 20.0,
+    "unload_dwell_s": 0.05,
+    "pitch_rate_up_rad_s": 0.5,
+    "pitch_rad": 0.17,
+    "decision_s": 0.1,
+    "ease_enabled": false,
+    "lean_enabled": false,
+    "rear_brake_tap_enabled": false,
+    "ease_fraction": 0.7,
+    "ease_rate_per_s": 5.0,
+    "lean_add_rad": 0.1,
+    "lean_rate_rad_s": 0.5,
+    "clear_s": 0.3
+  },
   "runtime_schema": 1,
   "strict": false,
   "surface_labels": {

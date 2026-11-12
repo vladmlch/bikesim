@@ -12,18 +12,18 @@
 // taken at the SAME instant — the start of the interval it describes.
 // That is the step's own convention: update_rider_senses samples every
 // RiderSenses field at the interval-start state (step.cpp's fold
-// comment), and update() is called once per intention period at an
-// interval start. The adapter stamps each sample with its
-// interval-start tick, so the Percepts returned at interval start n
-// carry the acquisition of interval start n - delay_ticks.
+// comment), and the step hands it, at each intention tick, the senses of
+// the interval that just ended — taken at that interval's start — so the
+// percepts lag reaction_delay_s plus one physics step (launch part 3a,
+// decision 4). The adapter stamps each sample with its interval-start
+// tick, so the Percepts returned at interval start n carry the
+// acquisition of interval start n - delay_ticks.
 //
 // The clock is an integer tick count (follow-up 2): a double clock
 // accumulated by += drifts off the period grid and makes restore-time
 // validation depend on accumulated error; integer ticks are exact.
 // Where a wall time is ever needed it is derived as tick * period_s —
 // closed form, never accumulated.
-//
-// Part 1 carries the record only — no rider decision consumes Percepts.
 #pragma once
 
 #include <cstdint>
@@ -31,7 +31,7 @@
 #include <optional>
 #include <utility>
 
-#include "intent.hpp"
+#include "intent_signals.hpp"
 #include "senses.hpp"
 
 namespace rider {
@@ -74,6 +74,7 @@ public:
     // sample contents inside the readers' domains — then commits
     // atomically (P10).
     void restore(const State &state);
+    [[nodiscard]] std::int64_t delay_ticks() const noexcept { return delay_ticks_; }
 
 private:
     std::int64_t delay_ticks_ = 0;

@@ -37,6 +37,13 @@ namespace bio = bike::io;
 constexpr std::string_view kFile =
     "native_rider_intent/";
 
+// The working profile's switched-off reaction (part 3a inventory numbers);
+// its .05/.1/.3 s times sit on every intention period these tests use.
+const rider::FrontLiftReactionConfig kSwitchedOffReaction{
+    .hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
+    .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
+    .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
+
 // Per-tag counters mirror the source file's _SEQ — a label mismatch is
 // itself a contract failure.
 struct Seq {
@@ -170,7 +177,7 @@ void op_adapter(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
         plant.intent.emplace(
             rider::decode_intent_config(member(doc, "config"),
                                         "adapter.rider_intent.config"),
-            real_arg(doc, "dt_s"));
+            kSwitchedOffReaction, real_arg(doc, "dt_s"));
     } catch (const std::exception &) {
         consumed_error(golden, seq, "adapter");
     }
@@ -201,8 +208,9 @@ void op_resolve(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
                 ? rider::decode_intent_step(member(doc, "step"),
                                             "resolve.step")
                 : 0;
-        result = intent.resolve(control, signals, step, grade, preview,
-                                lean, active, advance);
+        result = intent.resolve(control, signals, rider::RiderSenses{},
+                                step, grade, preview, lean, active,
+                                advance);
     } catch (const std::exception &) {
         consumed_error(golden, seq, "resolve");
         return;

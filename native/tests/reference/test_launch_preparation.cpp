@@ -134,6 +134,13 @@ void test_table_rules_name_the_field() {
 namespace init = bike::initialization;
 namespace cfg = bike::configuration;
 
+// The working profile's switched-off reaction (part 3a inventory numbers);
+// its .05/.1/.3 s times sit on every intention period these tests use.
+const rider::FrontLiftReactionConfig kSwitchedOffReaction{
+    .hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
+    .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
+    .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
+
 // A member of a JSON-like document; a missing member fails the test.
 const bike::io::Value &member(const bike::io::Value &object, std::string_view key) {
     const auto *found = bike::io::find_member(bike::io::as_object(object, key), key);
@@ -286,12 +293,12 @@ void test_start_grade_looks_ahead_of_the_start() {
 void test_intent_slews_from_the_seeded_lean() {
     auto config = cfg::default_physics().seated_climb;
     config.enabled = true;
-    rider::RiderIntent intent(config, .00125);
+    rider::RiderIntent intent(config, kSwitchedOffReaction, .00125);
     intent.seed_lean(.05);
     bt::require(intent.state().policy.lean_rad == .05 && intent.state().program.lean_rad == .05 &&
                     intent.intent().posture.torso_lean_rad == .05,
                 "the seed reaches the policy, the program and the held intent");
-    const auto control = intent.resolve(rider::IntentControl{}, rider::IntentSignals{}, 0, 0., 0.);
+    const auto control = intent.resolve(rider::IntentControl{}, rider::IntentSignals{}, rider::RiderSenses{}, 0, 0., 0.);
     const double step = config.lean_rate_rad_s * config.period_s;
     bt::require(control.posture.has_value() && control.posture->torso_lean_rad == .05 - step,
                 "the first tick slews one rate step from the seed");

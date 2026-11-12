@@ -53,6 +53,7 @@
 #include "spindle_math.hpp"
 #include "../configuration/load.hpp"
 #include "response_codec.hpp"
+#include "senses_codec.hpp"
 
 namespace rider {
 namespace {
@@ -2278,7 +2279,8 @@ IntentControl decode_intent_control(const bio::Value &value,
 RiderIntent::State decode_intent_state(const bio::Value &value,
                                        std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, keys("last_tick_step", "intent", "policy", "program"));
+    ncd::exact(d, keys("last_tick_step", "intent", "policy", "program",
+                       "perception", "reaction"));
     RiderIntent::State state;
     state.last_tick_step =
         decode_intent_step(*d["last_tick_step"].value,
@@ -2289,6 +2291,12 @@ RiderIntent::State decode_intent_state(const bio::Value &value,
         decode_intent_policy(d["policy"], std::string(path) + ".policy");
     state.program =
         decode_intent_program(d["program"], std::string(path) + ".program");
+    if (!d["perception"].is_none())
+        state.perception = decode_perception_state(
+            *d["perception"].value, std::string(path) + ".perception");
+    if (!d["reaction"].is_none())
+        state.reaction = decode_reaction_state(
+            *d["reaction"].value, std::string(path) + ".reaction");
     return state;
 }
 
@@ -2395,6 +2403,14 @@ bio::Value encode_intent_state(const RiderIntent::State &state) {
         program.emplace_back("pulses", bio::Value{std::move(pulses)});
         out.emplace_back("program", bio::Value{std::move(program)});
     }
+    out.emplace_back("perception",
+                     state.perception
+                         ? encode_perception_state(*state.perception)
+                         : bio::Value{});
+    out.emplace_back("reaction",
+                     state.reaction
+                         ? encode_reaction_state(*state.reaction)
+                         : bio::Value{});
     return bio::Value{std::move(out)};
 }
 

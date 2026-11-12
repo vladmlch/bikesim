@@ -79,6 +79,10 @@ struct RuntimeConfig {
     // Owned config.rider_intent document — decoded into
     // rider::IntentConfig inside the physical-step assembly.
     bike::io::Value rider_intent;
+    // Owned config.rider_reaction document — decoded into
+    // rider::FrontLiftReactionConfig inside the physical-step assembly
+    // (launch part 3a).
+    bike::io::Value rider_reaction;
     // Owned config.surface_labels document — the track's surface-label
     // map (default + sections), decoded into rider::SurfaceLabels inside
     // the physical-step assembly. Projected from the track spec on every

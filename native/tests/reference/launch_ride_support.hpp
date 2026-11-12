@@ -58,12 +58,21 @@ struct PedelecEnv {
            shift_cadence_tau_s = 0.;
 };
 
-[[nodiscard]] inline PedelecEnv environment(terrain::TrackSpec track,
-                                            double duration_s) {
+// Launch part 3a: the environment with a physics edit applied right after
+// the profile load, an explicit record decimation and capture mode (the
+// reaction channel's decimated-ride test: legacy capture keeps only every
+// decimation-th interval, accounting.cpp:764-776, so a full capture is
+// needed to see unmeasured intervals).
+template <typename Edit>
+[[nodiscard]] PedelecEnv environment(terrain::TrackSpec track,
+                                     double duration_s, Edit &&edit,
+                                     int record_decimation,
+                                     runtime::ResearchCaptureMode capture_mode) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     request.setup.model.physics = bike::configuration::load_physics(
         repo_file("examples/research/viewer_physics_welded.toml"));
+    std::forward<Edit>(edit)(*request.setup.model.physics);
     request.setup.model.mode = "ride";
     request.setup.model.crank_joint = true;
     request.setup.model.rider =
@@ -71,7 +80,8 @@ struct PedelecEnv {
     request.setup.track = std::move(track);
     request.setup.model.physics->initial_speed_mps = 0.;
     request.experiment.duration_s = duration_s;
-    request.experiment.record_decimation = 1;
+    request.experiment.record_decimation = record_decimation;
+    request.capture_mode = capture_mode;
     // --energy-tolerance 1e9 / --diagnostic-model-limits
     request.experiment.maximum_energy_residual_ratio = 1e9;
     request.experiment.stop_on_model_violation = false;
@@ -130,6 +140,12 @@ struct PedelecEnv {
                 stepper.model()->njnt)[static_cast<std::size_t>(root)];
         });
     return env;
+}
+
+[[nodiscard]] inline PedelecEnv environment(terrain::TrackSpec track,
+                                            double duration_s) {
+    return environment(std::move(track), duration_s, [](auto &) {}, 1,
+                       runtime::ResearchCaptureMode::legacy);
 }
 
 [[nodiscard]] inline terrain::TrackSpec track(std::string_view knots,

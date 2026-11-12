@@ -88,11 +88,12 @@ StepWork raw_work(const RawStep &raw, double dt_s) {
     // absorbs work while the rider's and motor's work is still near zero, which
     // the 1% bound would misread as a defect. Every limited tendon is such a
     // closure (model_mjcf pins it). Joint-limit rows stay numerical
-    // constraint work. First-appearance order is preserved per class.
+    // constraint work, and rider_end_stop rows are the anatomical end stops:
+    // a loss, account_energy. First-appearance order is preserved per class.
     for (const auto &[name, power] : raw.numerical_constraint_power_w) {
         if (name.starts_with("equality:") || name.starts_with("tendon_limit:"))
             closure.push_back(power);
-        else
+        else if (!name.starts_with("rider_end_stop:"))
             constraint.push_back(power);
     }
     return step_work(muscle, motor, constraint, closure, dt_s);
@@ -167,7 +168,13 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
     auto &e = state.energy;
     if (!e.initial_energy_j.has_value())
         throw std::invalid_argument("accounting requires initialized energy baselines");
-    e.loss_j += raw.loss_step_j;
+    // Launch part 4, decision 7: the rider's anatomical end stops (MuJoCo's
+    // default limit spring-damper on the envelope joints) are a loss line.
+    double end_stop_power = 0.;
+    for (const auto &[name, power] : raw.numerical_constraint_power_w)
+        if (name.starts_with("rider_end_stop:")) end_stop_power += power;
+    const double end_stop_loss = -end_stop_power * config.timestep_s;
+    e.loss_j += raw.loss_step_j + end_stop_loss;
     e.muscle_signed_j += work.muscle_signed_j;
     e.muscle_positive_j += work.muscle_positive_j;
     e.motor_signed_j += work.motor_signed_j;
@@ -188,7 +195,8 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
         {"mechanical_energy_j", Wire(total_j)},
         {"elastic_energy_j", Wire(elastic)},
         {"active_work_j", Wire(e.active_work_j)}, {"external_work_j", Wire(e.external_work_j)},
-        {"loss_j", Wire(e.loss_j)}, {"loss_step_j", Wire(raw.loss_step_j)},
+        {"loss_j", Wire(e.loss_j)}, {"loss_step_j", Wire(raw.loss_step_j + end_stop_loss)},
+        {"rider_end_stop_loss_step_j", Wire(end_stop_loss)},
         {"solver_constraint_work_j", Wire(e.solver_work_j)}, {"energy_scale_j", Wire(e.energy_scale_j)},
         {"muscle_signed_j", Wire(e.muscle_signed_j)}, {"muscle_positive_j", Wire(e.muscle_positive_j)},
         {"motor_signed_j", Wire(e.motor_signed_j)}, {"motor_positive_j", Wire(e.motor_positive_j)},

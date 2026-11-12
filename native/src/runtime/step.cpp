@@ -932,7 +932,15 @@ numerical_constraint_powers(const mjModel *model, const mjData *data,
         const char *kind = nullptr;
         switch (efc_type[static_cast<std::size_t>(i)]) {
             case mjCNSTR_EQUALITY: kind = "equality"; break;
-            case mjCNSTR_LIMIT_JOINT: kind = "joint_limit"; break;
+            case mjCNSTR_LIMIT_JOINT: {
+                // Launch part 4, decision 7: a rider joint's limit is the
+                // anatomical end stop (articulated_rider.cpp:38-53), charged as
+                // a loss in accounting.cpp, not as numerical constraint work.
+                const char *joint = mj_id2name(model, mjOBJ_JOINT, efc_id[static_cast<std::size_t>(i)]);
+                kind = joint != nullptr && std::string_view(joint).starts_with("rider_") ? "rider_end_stop"
+                                                                                          : "joint_limit";
+                break;
+            }
             case mjCNSTR_LIMIT_TENDON: kind = "tendon_limit"; break;
             default: break;
         }

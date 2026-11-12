@@ -215,6 +215,7 @@ inline WireObject energy_channels(const WireObject &energy_over = {}, // NOLINT(
             {"external_work_j", Wire{-.5}},
             {"loss_j", Wire{.25}},
             {"loss_step_j", Wire{.001}},
+            {"rider_end_stop_loss_step_j", Wire{0.}},
             {"solver_constraint_work_j", Wire{0.}},
             {"energy_scale_j", Wire{10.}},
             {"muscle_signed_j", Wire{1.}},

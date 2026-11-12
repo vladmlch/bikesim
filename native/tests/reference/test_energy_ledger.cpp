@@ -29,6 +29,11 @@
 //      drift of .scratch/devin/2026-11-06-diag-48j/report.md is fixed by
 //      charging every integrated F·v·dt channel the interval-midpoint
 //      velocity — the same convention records 12-15 apply by hand.
+//   17 test_rider_end_stops_are_the_envelope_joints and
+//      test_end_stop_work_is_a_loss — native-only records (launch part 4,
+//      decision 7): a rider joint's limit row is an anatomical end stop,
+//      keyed rider_end_stop:<id> and charged to the loss line — never to
+//      numerical constraint work or the closure channel.
 //
 // The oracle's neutral-runtime seams (`runtime_for_raws`/`neutral_raw` in
 // test_monitor_strictness.py, imported by this file) live in
@@ -45,6 +50,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -55,7 +61,12 @@
 
 #include "engine_call.hpp"
 #include "model_access.hpp"
+#include "configuration/load.hpp"
+#include "configuration/rider_spec.hpp"
+#include "diag.hpp"
 #include "drivetrain/transmission.hpp"
+#include "model/builder.hpp"
+#include "model/rider_geometry.hpp"
 #include "research/evidence.hpp"
 #include "rider_control_reference_support.hpp"
 #include "runtime/accounting.hpp"
@@ -69,6 +80,8 @@
 namespace {
 
 namespace wire = runtime::sample_wire;
+namespace cfg = bike::configuration;
+namespace mdl = bike::model;
 namespace rr = rider_control_reference;
 using strictness_support::neutral_raw;
 using strictness_support::runtime_for_raws;
@@ -519,6 +532,122 @@ void test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(
     }
 }
 
+// ---- record 17: rider end stops are a loss line (native-only) ---------------
+
+// Launch part 4, decision 7: joint-limit rows of rider joints are the
+// anatomical end stops — exactly the limited joints whose name starts with
+// "rider_" — and the welded model limits exactly the envelope joints.
+void test_rider_end_stops_are_the_envelope_joints() {
+    // Compile the welded articulated model from viewer_physics_welded.toml
+    // (its envelope map and its lock_ankles value, as the ride does —
+    // test_pinned_topology.cpp's compiled() assembly).
+    const auto physics = cfg::load_physics(
+        rr::repo_file("examples/research/viewer_physics_welded.toml"));
+    mdl::BuildRequest request;
+    request.mode = "ride";
+    request.include_rider = true;
+    request.crank_joint = true;
+    request.rider = mdl::resolve_rider(
+        cfg::RiderSpecs{.variant = "articulated_planar",
+                        .inseam_m = std::nullopt},
+        true, "lumped");
+    request.physics = physics;
+    const mdl::ModelOwner model =
+        mdl::compile_mjcf(mdl::generate_mjcf(request));
+    // From the compiled mjModel collect the joints with jnt_limited set and
+    // a name starting with "rider_"; require that set to equal the
+    // rider_-prefixed joints of configuration::kRiderJoints present in the
+    // model (ankles are absent when lock_ankles holds), and require that no
+    // non-rider joint name starts with "rider_" — rider_root_* are the
+    // pelvis's free-body surrogate, excluded exactly like the actuator and
+    // limit emitters do (articulated_rider.cpp).
+    const auto limited = model_access::readonly_buffer(model->jnt_limited,
+                                                       model->njnt);
+    std::set<std::string> limited_rider, expected;
+    for (int j = 0; j < model->njnt; ++j) {
+        const char *name = mj_id2name(model.get(), mjOBJ_JOINT, j);
+        if (name == nullptr) continue;
+        const std::string_view joint(name);
+        if (!joint.starts_with("rider_")) continue;
+        if (joint.starts_with("rider_root_")) {
+            bt::require(limited[static_cast<std::size_t>(j)] == 0,
+                        "the free-body root carriers are not end stops");
+            continue;
+        }
+        bt::require(std::ranges::find(cfg::kRiderJoints, joint) !=
+                        cfg::kRiderJoints.end(),
+                    "no non-rider joint name starts with rider_");
+        if (limited[static_cast<std::size_t>(j)] != 0)
+            limited_rider.emplace(joint);
+    }
+    for (const std::string_view joint : cfg::kRiderJoints)
+        if (mj_name2id(model.get(), mjOBJ_JOINT,
+                       std::string(joint).c_str()) >= 0)
+            expected.emplace(joint);
+    bt::require(expected == std::set<std::string>{
+                                "rider_torso_hinge",
+                                "rider_shoulder_left", "rider_shoulder_right",
+                                "rider_elbow_left", "rider_elbow_right",
+                                "rider_hip_front", "rider_hip_rear",
+                                "rider_knee_front", "rider_knee_rear"},
+                "the spindle pedal attachment locks both ankles");
+    bt::require(limited_rider == expected,
+                "the welded model limits exactly the rider envelope joints");
+}
+
+// The end-stop rows leave the numerical constraint work and become a loss:
+// loss_j and loss_step_j carry -sum(power) * dt of the rider_end_stop rows,
+// rider_end_stop_loss_step_j publishes it, and constraint_absolute_j no
+// longer counts them; joint_limit rows of bike joints stay numerical.
+void test_end_stop_work_is_a_loss() {
+    // The plan's dt = .001 — runtime_for_raws is fixed at kDt, so the same
+    // detached accounting is assembled with the task's timestep.
+    runtime::AccountingConfig config;
+    config.timestep_s = .001;
+    config.period_steps = 10;
+    config.measurement_decimation = 1;
+    config.retention = runtime::RetentionMode::legacy;
+    runtime::AccountingState initial;
+    initial.energy.initial_energy_j = 0.;
+    initial.energy.energy_scale_j = 1.;
+    initial.monitor.strict = true;
+    const auto accounting = std::make_unique<runtime::PeriodAccounting>(
+        config, initial, /*generation=*/1,
+        /*controller=*/nullptr, /*contacts=*/nullptr);
+    auto raw = neutral_raw(0);
+    raw.time_s = 0.;
+    raw.end_time_s = .001;
+    raw.constraint_snapshot.interval_start_s = 0.;
+    raw.constraint_snapshot.interval_end_s = .001;
+    raw.qvel = {1.};
+    raw.qvel_mid = {1.};
+    raw.constraint_snapshot.qvel_start = raw.qvel;
+    raw.loss_step_j = .001;
+    // human_crank feeds source_positive_work_j so the .0005 J joint-limit
+    // remainder clears the 1 % strict bound — the end-stop's .004 J would
+    // trip the closing-tail rejection if it were still numerical work.
+    raw.components = {{"human_crank", {60.}}};
+    raw.numerical_constraint_power_w =
+        {{"rider_end_stop:12", -4.}, {"joint_limit:3", .5}, {"equality:0", 1.}};
+    accounting->push(std::move(raw));
+    accounting->flush();
+    const auto &energy = accounting->state().energy;
+    const auto &channels = accounting->state().energy_channels;
+    bt::require(wire::number(wire::required(channels,
+                                          "rider_end_stop_loss_step_j")) == .004,
+                "the end-stop loss is -sum(power) * dt");
+    bt::require(wire::number(wire::required(channels, "loss_step_j")) == .005,
+                "loss_step_j carries the raw's loss plus the end-stop loss");
+    bt::require(energy.loss_j == .005,
+                "loss_j accumulates the same charge");
+    bt::require(energy.constraint_absolute_j == .0005,
+                "only the bike joint-limit row stays numerical");
+    bt::require(energy.closure_signed_j == .001,
+                "the equality row still charges the closure channel");
+    bt::require(energy.closure_absolute_j == .001,
+                "closure_absolute_j keeps the equality row's work");
+}
+
 // ---- records 11-14: physical energy on direct MuJoCo plants -----------------
 
 [[nodiscard]] std::unique_ptr<mjModel, decltype(&mj_deleteModel)>
@@ -853,6 +982,11 @@ void test_publish_raw_carries_the_interval_midpoint_velocity() {
 
 } // namespace
 
+// The model-compilation test inlines the BuildRequest/physics configuration
+// into the bt::run lambda — multi-KiB of automatic storage, over the
+// -Wframe-larger-than=8192 gate, exactly like test_pinned_topology.cpp.
+// cppcheck-suppress unknownMacro // NATIVE_DIAG_* is the clang-dialect _Pragma wrapper from diag.hpp; cppcheck does not resolve it through -isystem
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {
         test_positive_body_work_is_not_net_joint_work();
@@ -867,6 +1001,8 @@ int main() {
         test_cached_equilibrium_restores_the_actual_one_way_constraint_preload();
         for (const std::string_view kind : {"equality", "tendon", "joint"})
             test_opposite_actual_closure_work_cannot_cancel_inside_one_interval(kind);
+        test_rider_end_stops_are_the_envelope_joints();
+        test_end_stop_work_is_a_loss();
         test_free_fall_keeps_energy_without_constraint_work();
         test_closed_ideal_constraint_does_no_work();
         test_inelastic_impact_loss_is_physical_not_constraint_credit();

@@ -82,7 +82,7 @@ std::string text(const rider::FrontLiftReaction &r) {
 // The calibration probe's criterion B (gradecap/_diff_reaction.txt) with
 // unbounded histories, kept verbatim as the oracle for the bounded state.
 struct ProbeHandB {
-    std::deque<double> hand, phase_at, avg;
+    std::deque<double> hand{}, phase_at{}, avg{};
     double phase = 0.;
     std::int64_t fcap = 0, lag = 0;
     double thr = 0.;
@@ -315,7 +315,7 @@ void test_restore_rejects_unreachable_states() {
     bad.lean_add_rad = .05;
     rejects([&] { target.restore(bad); }, "lean_add_rad", "a lean the switch forbids");
     bad = target.state();
-    bad.phase = static_cast<rider::ReactionPhase>(9);
+    bad.phase = static_cast<rider::ReactionPhase>(9);   // NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange) the out-of-range phase is the rejection under test
     rejects([&] { target.restore(bad); }, "phase", "a phase outside the enum");
     bad = target.state();
     bad.predicate = false;

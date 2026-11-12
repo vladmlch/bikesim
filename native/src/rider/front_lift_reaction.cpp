@@ -178,7 +178,7 @@ ReactionCommand FrontLiftReaction::update(const std::optional<Percepts> &percept
                                  config_.lean_rate_rad_s * period_s_);
     if (n.phase == ReactionPhase::releasing && n.effort_factor == 1. && n.lean_add_rad == 0.)
         n.phase = ReactionPhase::idle;
-    s_ = n;
+    s_ = std::move(n);
     return command();
 }
 

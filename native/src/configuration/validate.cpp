@@ -1395,9 +1395,10 @@ SimulationPhysicsConfig default_physics() {
                            .end_hold_s = .3,
                            .max_launch_s = 6.,
                            .handover_s = .9};
-    // Launch part 3a — the switched-off reaction with the inventory's
-    // preliminary numbers; nothing reads it during a ride yet.
-    config.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5,
+    // Launch part 3a — the switched-off reaction; part 4 gives it the
+    // criterion-B numbers of the shared document migration.
+    config.front_lift_reaction = {.hand_window_s = .5, .hand_lag_s = .5, .hand_drop_ratio = .7,
+                                  .pitch_rate_up_rad_s = .5,
                                   .pitch_rad = .17, .decision_s = .1, .ease_enabled = false,
                                   .lean_enabled = false, .rear_brake_tap_enabled = false,
                                   .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1,

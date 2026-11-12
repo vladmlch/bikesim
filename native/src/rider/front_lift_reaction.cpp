@@ -2,6 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
+#include <iterator>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -38,8 +41,10 @@ double step_toward(double value, double target, double step) {
 } // namespace
 
 void validate_reaction_table(const FrontLiftReactionConfig &t) {
-    if (!std::isfinite(t.hand_unload_n)) reject("hand_unload_n", "must be finite");
-    finite_at_least(t.unload_dwell_s, 0., "unload_dwell_s");
+    finite_positive(t.hand_window_s, "hand_window_s");
+    finite_positive(t.hand_lag_s, "hand_lag_s");
+    if (!std::isfinite(t.hand_drop_ratio) || t.hand_drop_ratio <= 0. || t.hand_drop_ratio > 1.)
+        reject("hand_drop_ratio", "must lie in (0, 1]");
     finite_positive(t.pitch_rate_up_rad_s, "pitch_rate_up_rad_s");
     finite_positive(t.pitch_rad, "pitch_rad");
     finite_at_least(t.decision_s, 0., "decision_s");
@@ -57,7 +62,8 @@ void validate_reaction_context(const FrontLiftReactionConfig &t, double period_s
     validate_reaction_table(t);
     if (!std::isfinite(period_s) || period_s <= 0.)
         throw std::invalid_argument("front-lift reaction needs a positive intention period");
-    (void)ticks(t.unload_dwell_s, period_s, "unload_dwell_s");
+    (void)ticks(t.hand_window_s, period_s, "hand_window_s");
+    (void)ticks(t.hand_lag_s, period_s, "hand_lag_s");
     (void)ticks(t.decision_s, period_s, "decision_s");
     (void)ticks(t.clear_s, period_s, "clear_s");
     if (t.lean_add_rad > max_forward_lean_rad) reject("lean_add_rad", "beyond the seated forward lean bound");
@@ -86,7 +92,8 @@ FrontLiftReaction::FrontLiftReaction(const FrontLiftReactionConfig &config, doub
     validate_reaction_table(config_);
     if (!std::isfinite(period_s_) || period_s_ <= 0.)
         throw std::invalid_argument("front-lift reaction needs a positive intention period");
-    dwell_ticks_ = ticks(config_.unload_dwell_s, period_s_, "unload_dwell_s");
+    window_ticks_ = ticks(config_.hand_window_s, period_s_, "hand_window_s");
+    lag_ticks_ = ticks(config_.hand_lag_s, period_s_, "hand_lag_s");
     decision_ticks_ = ticks(config_.decision_s, period_s_, "decision_s");
     clear_ticks_ = ticks(config_.clear_s, period_s_, "clear_s");
 }
@@ -94,25 +101,53 @@ FrontLiftReaction::FrontLiftReaction(const FrontLiftReactionConfig &config, doub
 void FrontLiftReaction::reset() { s_ = {}; }
 
 void FrontLiftReaction::validate(const std::optional<Percepts> &p) {
-    if (p && (!std::isfinite(p->senses.hand_press_n) || !std::isfinite(p->pitch_rate_up_rad_s) ||
-              !std::isfinite(p->pitch_rad)))
+    if (p && (!std::isfinite(p->senses.hand_press_n) || !std::isfinite(p->crank_rpm) ||
+              !std::isfinite(p->pitch_rate_up_rad_s) || !std::isfinite(p->pitch_rad)))
         throw std::invalid_argument("front-lift reaction percepts must be finite");
+}
+
+// Launch part 4, decision 4 — the calibration probe's criterion B on a
+// bounded history (gradecap/_diff_reaction.txt; same arithmetic and
+// summation order). The newest sample at least half a revolution back is
+// inside the last window + 1 samples whenever the probe's span fits the
+// window, so the bounded search finds the same span or falls back the same way.
+bool FrontLiftReaction::hand_term(State &n, const Percepts &p) const {
+    n.hand_n.push_back(p.senses.hand_press_n);
+    n.crank_angle_total_rad += p.crank_rpm * (2. * std::numbers::pi / 60.) * period_s_;
+    n.crank_angle_rad.push_back(n.crank_angle_total_rad);
+    if (std::ssize(n.hand_n) > window_ticks_ + 1) {
+        n.hand_n.pop_front();
+        n.crank_angle_rad.pop_front();
+    }
+    std::int64_t span = -1;
+    for (std::size_t i = n.crank_angle_rad.size(); i-- > 0;)
+        if (n.crank_angle_total_rad - n.crank_angle_rad[i] >= std::numbers::pi) {
+            span = static_cast<std::int64_t>(n.crank_angle_rad.size() - 1 - i);
+            break;
+        }
+    if (span < 0 || span > window_ticks_) span = std::min<std::int64_t>(window_ticks_, std::ssize(n.hand_n));
+    double sum = 0.;
+    const std::int64_t count = std::ssize(n.hand_n);
+    for (std::int64_t i = count - span; i < count; ++i) sum += n.hand_n[static_cast<std::size_t>(i)];
+    const double average = sum / static_cast<double>(span);
+    n.hand_average_n.push_back(average);
+    if (std::ssize(n.hand_average_n) > lag_ticks_ + 1) n.hand_average_n.pop_front();
+    if (std::ssize(n.hand_average_n) < lag_ticks_ + 1) return false;
+    const double reference = n.hand_average_n.front();
+    return reference > 0. && average < config_.hand_drop_ratio * reference;
 }
 
 ReactionCommand FrontLiftReaction::update(const std::optional<Percepts> &percepts) {
     validate(percepts);
     State n = s_;
     if (!percepts) {
-        n.unload_ticks = 0;
         n.predicate = false;
     } else {
         n.percepts_seen = std::min(n.percepts_seen + 1, percepts_cap());
-        n.unload_ticks = percepts->senses.hand_press_n < config_.hand_unload_n
-                             ? std::min(n.unload_ticks + 1, dwell_ticks_ + 1)
-                             : 0;
-        n.predicate = n.unload_ticks > dwell_ticks_ &&
-                      (percepts->pitch_rate_up_rad_s > config_.pitch_rate_up_rad_s ||
-                       percepts->pitch_rad > config_.pitch_rad);
+        // The hand term runs first on every percept so the history always advances.
+        const bool hands = hand_term(n, *percepts);
+        n.predicate = hands && (percepts->pitch_rate_up_rad_s > config_.pitch_rate_up_rad_s ||
+                                percepts->pitch_rad > config_.pitch_rad);
     }
     switch (n.phase) {
     case ReactionPhase::idle:
@@ -148,7 +183,7 @@ ReactionCommand FrontLiftReaction::update(const std::optional<Percepts> &percept
 }
 
 std::int64_t FrontLiftReaction::percepts_cap() const noexcept {
-    return dwell_ticks_ + 1 + decision_ticks_ + clear_ticks_ + 1;
+    return lag_ticks_ + 1 + decision_ticks_ + clear_ticks_ + 1;
 }
 
 ReactionCommand FrontLiftReaction::command() const {
@@ -160,19 +195,32 @@ FrontLiftReaction::State FrontLiftReaction::state() const { return s_; }
 
 // Rejects states update() cannot leave behind (review-2 I3, review-3 I5):
 // a state outside that set could report events that never happened or skip
-// the dwell and decision time. These are necessary conditions, not exact
-// reachability: the output values between their bounds are not checked
-// against the grid of rate steps.
+// the reference lag and the decision time. These are necessary conditions,
+// not exact reachability: the output values between their bounds are not
+// checked against the grid of rate steps.
 void FrontLiftReaction::restore(const State &s) {
     const auto bad = [] [[noreturn]] (std::string_view field, std::string_view why) {
         throw std::invalid_argument("front-lift reaction " + std::string(field) + ": " + std::string(why));
     };
     (void)reaction_phase_name(s.phase);   // throws on a phase outside the enum
     if (s.percepts_seen < 0 || s.percepts_seen > percepts_cap()) bad("percepts_seen", "outside [0, cap]");
-    if (s.unload_ticks < 0 || s.unload_ticks > dwell_ticks_ + 1 || s.unload_ticks > s.percepts_seen)
-        bad("unload_ticks", "outside [0, min(dwell + 1, percepts_seen)]");
-    // update() sets the predicate only on a saturated unload counter.
-    if (s.predicate && s.unload_ticks != dwell_ticks_ + 1) bad("predicate", "set without an unload past the dwell");
+    if (s.hand_n.size() != s.crank_angle_rad.size()) bad("hand_n", "hand and crank histories differ in length");
+    const std::int64_t hands = std::ssize(s.hand_n), averages = std::ssize(s.hand_average_n);
+    const bool saturated = s.percepts_seen == percepts_cap();
+    if (saturated ? hands < std::min(percepts_cap(), window_ticks_ + 1) || hands > window_ticks_ + 1
+                  : hands != std::min(s.percepts_seen, window_ticks_ + 1))
+        bad("hand_n", "history length off its percept count");
+    if (averages != std::min(s.percepts_seen, lag_ticks_ + 1)) bad("hand_average_n", "history length off its percept count");
+    for (const double v : s.hand_n) if (!std::isfinite(v)) bad("hand_n", "must be finite");
+    for (const double v : s.hand_average_n) if (!std::isfinite(v)) bad("hand_average_n", "must be finite");
+    for (const double v : s.crank_angle_rad) if (!std::isfinite(v)) bad("crank_angle_rad", "must be finite");
+    if (!std::isfinite(s.crank_angle_total_rad) ||
+        (s.crank_angle_rad.empty() ? s.crank_angle_total_rad != 0. : s.crank_angle_rad.back() != s.crank_angle_total_rad))
+        bad("crank_angle_total_rad", "must equal the newest crank angle");
+    // update() sets the predicate only on a full reference and a hand drop.
+    if (s.predicate && (averages != lag_ticks_ + 1 || !(s.hand_average_n.front() > 0.) ||
+                        !(s.hand_average_n.back() < config_.hand_drop_ratio * s.hand_average_n.front())))
+        bad("predicate", "set without a hand drop against a full reference");
     if (!std::isfinite(s.effort_factor) || s.effort_factor > 1. ||
         s.effort_factor < (config_.ease_enabled ? 1. - config_.ease_fraction : 1.))
         bad("effort_factor", "outside the range its switch allows");
@@ -181,9 +229,9 @@ void FrontLiftReaction::restore(const State &s) {
         bad("lean_add_rad", "outside the range its switch allows");
     const bool neutral = s.effort_factor == 1. && s.lean_add_rad == 0.;
     // The earliest percept count of each phase: the predicate first holds
-    // at dwell + 1 percepts, acting starts decision ticks later, and a
+    // at lag + 1 percepts, acting starts decision ticks later, and a
     // release needs clear + 1 more percepts without the predicate.
-    const std::int64_t acting_from = dwell_ticks_ + 1 + decision_ticks_;
+    const std::int64_t acting_from = lag_ticks_ + 1 + decision_ticks_;
     switch (s.phase) {
     case ReactionPhase::idle:
         if (s.predicate) bad("predicate", "idle with the predicate");
@@ -197,7 +245,7 @@ void FrontLiftReaction::restore(const State &s) {
             bad("decision_ticks", "outside the decision window");
         if (s.clear_ticks != 0) bad("clear_ticks", "running while deciding");
         if (!neutral) bad("phase", "no action may be in force while deciding");
-        if (s.percepts_seen < dwell_ticks_ + 1 + s.decision_ticks)
+        if (s.percepts_seen < lag_ticks_ + 1 + s.decision_ticks)
             bad("percepts_seen", "deciding longer than the percepts allow");
         break;
     case ReactionPhase::acting:
@@ -206,7 +254,7 @@ void FrontLiftReaction::restore(const State &s) {
         // Acting counts clear ticks exactly while the predicate is absent.
         if (s.predicate != (s.clear_ticks == 0)) bad("clear_ticks", "inconsistent with the predicate");
         if (s.percepts_seen < std::min(acting_from + s.clear_ticks, percepts_cap()))
-            bad("percepts_seen", "acting before the dwell and decision could pass");
+            bad("percepts_seen", "acting before the lag and decision could pass");
         // The first acting update already moves every enabled output whose
         // first step is nonzero — the same step_toward call update() makes, so
         // a subnormal rate or a fraction lost to rounding (review 4, M3) is

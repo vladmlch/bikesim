@@ -54,7 +54,8 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
                            .end_speed_mps = 3.,
                            .end_crank_rpm = 60., .end_hold_s = .3,
                            .max_launch_s = 6., .handover_s = .9};
-    config.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5,
+    config.front_lift_reaction = {.hand_window_s = .5, .hand_lag_s = .5, .hand_drop_ratio = .7,
+                                  .pitch_rate_up_rad_s = .5,
                                   .pitch_rad = .17, .decision_s = .1, .ease_enabled = false,
                                   .lean_enabled = false, .rear_brake_tap_enabled = false,
                                   .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1,

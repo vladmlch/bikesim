@@ -447,7 +447,7 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
 [[gnu::noinline]] void test_reaction_table_is_switched_off() {
     const auto &r = profile().front_lift_reaction;
     bt::require(!r.ease_enabled && !r.lean_enabled && !r.rear_brake_tap_enabled, "both actions off");
-    bt::require(r.hand_unload_n == 20. && r.unload_dwell_s == .05 && r.pitch_rate_up_rad_s == .5 &&
+    bt::require(r.hand_window_s == .5 && r.hand_lag_s == .5 && r.hand_drop_ratio == .7 && r.pitch_rate_up_rad_s == .5 &&
                     r.pitch_rad == .17 && r.decision_s == .1 && r.ease_fraction == .7 &&
                     r.ease_rate_per_s == 5. && r.lean_add_rad == .1 && r.lean_rate_rad_s == .5 && r.clear_s == .3,
                 "the preliminary numbers");
@@ -456,7 +456,7 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
 // Every [front_lift_reaction] key and the section are required; the period
 // grid and the forward bound are checked against [seated_climb].
 [[gnu::noinline]] void test_reaction_keys_and_context_rules() {
-    for (const char *line : {"hand_unload_n = 20.0\n", "unload_dwell_s = 0.05\n", "pitch_rate_up_rad_s = 0.5\n",
+    for (const char *line : {"hand_window_s = 0.5\n", "hand_lag_s = 0.5\n", "hand_drop_ratio = 0.7\n", "pitch_rate_up_rad_s = 0.5\n",
                              "pitch_rad = 0.17\n", "decision_s = 0.1\n", "ease_enabled = false\n",
                              "lean_enabled = false\n", "rear_brake_tap_enabled = false\n",
                              "ease_fraction = 0.7\n", "ease_rate_per_s = 5.0\n", "lean_add_rad = 0.1\n",

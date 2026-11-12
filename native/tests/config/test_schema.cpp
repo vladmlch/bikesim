@@ -317,7 +317,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
                       .end_hold_s = 0.3,
                       .max_launch_s = 6.0,
                       .handover_s = 0.9};
-    c.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05,
+    c.front_lift_reaction = {.hand_window_s = .5, .hand_lag_s = .5, .hand_drop_ratio = .7,
                              .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
                              .decision_s = .1, .ease_enabled = false,
                              .lean_enabled = false, .rear_brake_tap_enabled = false,
@@ -807,7 +807,7 @@ void test_schema() {
     // 4 launch part 4 fields (the grade cap, its rise and the shift retry).
     bt::require(fields_named(fields[11], "rider_launch").size() == 28,
                 "rider_launch field count");
-    bt::require(fields_named(fields[12], "front_lift_reaction").size() == 13,
+    bt::require(fields_named(fields[12], "front_lift_reaction").size() == 14,
                 "front_lift_reaction field count");
     bt::require(fields_named(fields[13], "monitors").size() == 2,
                 "monitors field count");

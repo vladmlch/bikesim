@@ -1,14 +1,16 @@
 // rider/front_lift_reaction.hpp — the rider's reaction to a rising front
 // wheel (launch plan, part 3a; «Решено — не сделано», item 2). One reaction
-// for the whole ride: on the delayed percepts, unloaded hands that last
-// longer than a dwell, together with a fast pitch-up or a held pitch, make
-// the predicate; after a decision time the rider eases the effort ceiling
-// and/or shifts the lean target forward, each behind its own switch, and
-// recovers once the predicate has been absent for clear_s. Times count
-// intention ticks.
+// for the whole ride: on the delayed percepts, hands whose press averaged
+// over the last half crank revolution (at most a window) is below a share
+// of the same average a lag earlier — launch part 4, criterion B —
+// together with a fast pitch-up or a held pitch, make the predicate; after
+// a decision time the rider eases the effort ceiling and/or shifts the
+// lean target forward, each behind its own switch, and recovers once the
+// predicate has been absent for clear_s. Times count intention ticks.
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <limits>
 #include <optional>
 #include <string_view>
@@ -18,8 +20,13 @@
 namespace rider {
 
 struct FrontLiftReactionConfig {
-    double hand_unload_n = std::numeric_limits<double>::quiet_NaN();
-    double unload_dwell_s = std::numeric_limits<double>::quiet_NaN();
+    // Launch part 4, criterion B: the hands are unloading while their press
+    // averaged over the last half crank revolution (at most hand_window_s)
+    // is below hand_drop_ratio of the same average hand_lag_s earlier and
+    // that earlier average is positive.
+    double hand_window_s = std::numeric_limits<double>::quiet_NaN();
+    double hand_lag_s = std::numeric_limits<double>::quiet_NaN();
+    double hand_drop_ratio = std::numeric_limits<double>::quiet_NaN();
     double pitch_rate_up_rad_s = std::numeric_limits<double>::quiet_NaN();
     double pitch_rad = std::numeric_limits<double>::quiet_NaN();
     double decision_s = std::numeric_limits<double>::quiet_NaN();
@@ -59,7 +66,6 @@ public:
     struct State {
         ReactionPhase phase = ReactionPhase::idle;
         bool predicate = false;
-        std::int64_t unload_ticks = 0;     // saturates at dwell + 1
         std::int64_t decision_ticks = 0;   // < decision ticks while deciding, else 0
         std::int64_t clear_ticks = 0;      // <= clear ticks while acting, else 0
         double effort_factor = 1.;
@@ -67,10 +73,18 @@ public:
         // Updates that carried percepts, saturating at percepts_cap(): the
         // earliest tick each phase can be reached is a count of percepts.
         std::int64_t percepts_seen = 0;
+        // Criterion B history, one entry per percept: the delayed hand press
+        // and the crank angle integrated from the delayed cadence (the last
+        // window + 1 of each), the window averages (the last lag + 1) and
+        // the integrated angle itself.
+        std::deque<double> hand_n;
+        std::deque<double> crank_angle_rad;
+        std::deque<double> hand_average_n;
+        double crank_angle_total_rad = 0.;
         bool operator==(const State &) const = default;
     };
     FrontLiftReaction(const FrontLiftReactionConfig &config, double period_s);
-    // dwell + 1 + decision + clear + 1 ticks: the percept count past which
+    // lag + 1 + decision + clear + 1 ticks: the percept count past which
     // every phase is reachable (at most about 2^33 with the 2^31 tick bound).
     [[nodiscard]] std::int64_t percepts_cap() const noexcept;
     void reset();
@@ -92,7 +106,8 @@ public:
 private:
     FrontLiftReactionConfig config_;
     double period_s_;
-    std::int64_t dwell_ticks_ = 0, decision_ticks_ = 0, clear_ticks_ = 0;
+    std::int64_t window_ticks_ = 0, lag_ticks_ = 0, decision_ticks_ = 0, clear_ticks_ = 0;
+    bool hand_term(State &n, const Percepts &p) const;
     State s_;
 };
 

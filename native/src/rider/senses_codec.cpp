@@ -12,6 +12,7 @@
 #include <array>
 #include <charconv>
 #include <cmath>
+#include <deque>
 #include <limits>
 #include <ranges>
 #include <span>
@@ -406,24 +407,58 @@ bio::Value encode_perception_state(const Perception::State &state) {
     return bio::Value{std::move(out)};
 }
 
+namespace {
+
+    [[nodiscard]] bio::Value::Array real_array(const std::vector<double> &values) {
+        bio::Value::Array out;
+        out.reserve(values.size());
+        for (const double v : values) out.push_back(real_value(v));
+        return out;
+    }
+
+    [[nodiscard]] std::vector<double> real_list(const VNode &v, std::string_view path) {
+        const auto items = v.sequence(path);
+        std::vector<double> out;
+        out.reserve(items.size());
+        for (std::size_t i = 0; i < items.size(); ++i) out.push_back(items.at(i).finite_real(path));
+        return out;
+    }
+
+    [[nodiscard]] std::vector<int> int_list(const VNode &v, std::string_view path) {
+        const auto items = v.sequence(path);
+        std::vector<int> out;
+        out.reserve(items.size());
+        for (std::size_t i = 0; i < items.size(); ++i) out.push_back(items.at(i).integer32(path));
+        return out;
+    }
+
+} // namespace
+
 // ---- front-lift reaction (launch part 3a, task 2) -------------------------
 bio::Value encode_reaction_state(const FrontLiftReaction::State &s) {
     bio::Value::Object out;
     out.emplace_back("phase", bio::Value{std::string(reaction_phase_name(s.phase))});
     out.emplace_back("predicate", bio::Value{s.predicate});
-    out.emplace_back("unload_ticks", integer_value(s.unload_ticks));
     out.emplace_back("decision_ticks", integer_value(s.decision_ticks));
     out.emplace_back("clear_ticks", integer_value(s.clear_ticks));
     out.emplace_back("effort_factor", real_value(s.effort_factor));
     out.emplace_back("lean_add_rad", real_value(s.lean_add_rad));
     out.emplace_back("percepts_seen", integer_value(s.percepts_seen));
+    const auto reals = [](const std::deque<double> &history) {
+        return bio::Value{real_array(std::vector<double>(history.begin(), history.end()))};
+    };
+    out.emplace_back("hand_n", reals(s.hand_n));
+    out.emplace_back("crank_angle_rad", reals(s.crank_angle_rad));
+    out.emplace_back("hand_average_n", reals(s.hand_average_n));
+    out.emplace_back("crank_angle_total_rad", real_value(s.crank_angle_total_rad));
     return bio::Value{std::move(out)};
 }
 
 FrontLiftReaction::State decode_reaction_state(const bio::Value &value, std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, keys("phase", "predicate", "unload_ticks", "decision_ticks", "clear_ticks",
-                       "effort_factor", "lean_add_rad", "percepts_seen"));
+    ncd::exact(d, keys("phase", "predicate", "decision_ticks", "clear_ticks",
+                       "effort_factor", "lean_add_rad", "percepts_seen", "hand_n",
+                       "crank_angle_rad", "hand_average_n", "crank_angle_total_rad"));
     FrontLiftReaction::State s;
     try {
         s.phase = reaction_phase(d["phase"].string(std::string(path) + ".phase"));
@@ -431,19 +466,27 @@ FrontLiftReaction::State decode_reaction_state(const bio::Value &value, std::str
         invalid(std::string(path) + ".phase", "unknown reaction phase");
     }
     s.predicate = d["predicate"].boolean(path);
-    s.unload_ticks = d["unload_ticks"].integer(path);
     s.decision_ticks = d["decision_ticks"].integer(path);
     s.clear_ticks = d["clear_ticks"].integer(path);
     s.effort_factor = d["effort_factor"].finite_real(path);
     s.lean_add_rad = d["lean_add_rad"].finite_real(path);
     s.percepts_seen = d["percepts_seen"].integer(path);
+    const auto reals = [path](const VNode &node) {
+        const std::vector<double> values = real_list(node, path);
+        return std::deque<double>(values.begin(), values.end());
+    };
+    s.hand_n = reals(d["hand_n"]);
+    s.crank_angle_rad = reals(d["crank_angle_rad"]);
+    s.hand_average_n = reals(d["hand_average_n"]);
+    s.crank_angle_total_rad = d["crank_angle_total_rad"].finite_real(path);
     return s;
 }
 
 bio::Value encode_reaction_config(const FrontLiftReactionConfig &c) {
     bio::Value::Object out;
-    out.emplace_back("hand_unload_n", real_value(c.hand_unload_n));
-    out.emplace_back("unload_dwell_s", real_value(c.unload_dwell_s));
+    out.emplace_back("hand_window_s", real_value(c.hand_window_s));
+    out.emplace_back("hand_lag_s", real_value(c.hand_lag_s));
+    out.emplace_back("hand_drop_ratio", real_value(c.hand_drop_ratio));
     out.emplace_back("pitch_rate_up_rad_s", real_value(c.pitch_rate_up_rad_s));
     out.emplace_back("pitch_rad", real_value(c.pitch_rad));
     out.emplace_back("decision_s", real_value(c.decision_s));
@@ -460,12 +503,13 @@ bio::Value encode_reaction_config(const FrontLiftReactionConfig &c) {
 
 FrontLiftReactionConfig decode_reaction_config(const bio::Value &value, std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, keys("hand_unload_n", "unload_dwell_s", "pitch_rate_up_rad_s", "pitch_rad", "decision_s",
-                       "ease_enabled", "lean_enabled", "rear_brake_tap_enabled", "ease_fraction",
+    ncd::exact(d, keys("hand_window_s", "hand_lag_s", "hand_drop_ratio", "pitch_rate_up_rad_s", "pitch_rad",
+                       "decision_s", "ease_enabled", "lean_enabled", "rear_brake_tap_enabled", "ease_fraction",
                        "ease_rate_per_s", "lean_add_rad", "lean_rate_rad_s", "clear_s"));
     FrontLiftReactionConfig c;
-    c.hand_unload_n = d["hand_unload_n"].finite_real(path);
-    c.unload_dwell_s = d["unload_dwell_s"].finite_real(path);
+    c.hand_window_s = d["hand_window_s"].finite_real(path);
+    c.hand_lag_s = d["hand_lag_s"].finite_real(path);
+    c.hand_drop_ratio = d["hand_drop_ratio"].finite_real(path);
     c.pitch_rate_up_rad_s = d["pitch_rate_up_rad_s"].finite_real(path);
     c.pitch_rad = d["pitch_rad"].finite_real(path);
     c.decision_s = d["decision_s"].finite_real(path);
@@ -529,33 +573,6 @@ LaunchPlan::State decode_launch_state(const bio::Value &value, std::string_view 
     s.retry_tick = d["retry_tick"].integer(path);
     return s;
 }
-
-namespace {
-
-    [[nodiscard]] bio::Value::Array real_array(const std::vector<double> &values) {
-        bio::Value::Array out;
-        out.reserve(values.size());
-        for (const double v : values) out.push_back(real_value(v));
-        return out;
-    }
-
-    [[nodiscard]] std::vector<double> real_list(const VNode &v, std::string_view path) {
-        const auto items = v.sequence(path);
-        std::vector<double> out;
-        out.reserve(items.size());
-        for (std::size_t i = 0; i < items.size(); ++i) out.push_back(items.at(i).finite_real(path));
-        return out;
-    }
-
-    [[nodiscard]] std::vector<int> int_list(const VNode &v, std::string_view path) {
-        const auto items = v.sequence(path);
-        std::vector<int> out;
-        out.reserve(items.size());
-        for (std::size_t i = 0; i < items.size(); ++i) out.push_back(items.at(i).integer32(path));
-        return out;
-    }
-
-} // namespace
 
 bio::Value encode_launch_config(const LaunchConfig &c) {
     bio::Value::Object out;

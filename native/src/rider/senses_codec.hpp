@@ -38,13 +38,15 @@ encode_perception_state(const Perception::State &state);
 decode_perception_state(const bike::io::Value &v, std::string_view path);
 
 // The reaction's restorable document: {"phase", "predicate",
-// "unload_ticks", "decision_ticks", "clear_ticks", "effort_factor",
-// "lean_add_rad", "percepts_seen"} — exact keys, phase one of idle/deciding/acting/releasing,
-// int64 counters, finite reals. Reachability belongs to
+// "decision_ticks", "clear_ticks", "effort_factor", "lean_add_rad",
+// "percepts_seen", "hand_n", "crank_angle_rad", "hand_average_n",
+// "crank_angle_total_rad"} — exact keys, phase one of
+// idle/deciding/acting/releasing, int64 counters, finite reals and the
+// bounded criterion-B history arrays. Reachability belongs to
 // FrontLiftReaction::restore.
 [[nodiscard]] bike::io::Value encode_reaction_state(const FrontLiftReaction::State &state);
 [[nodiscard]] FrontLiftReaction::State decode_reaction_state(const bike::io::Value &v, std::string_view path);
-// The runtime document of [front_lift_reaction]: the 13 keys, exact, then
+// The runtime document of [front_lift_reaction]: the 14 keys, exact, then
 // validate_reaction_table.
 [[nodiscard]] bike::io::Value encode_reaction_config(const FrontLiftReactionConfig &config);
 [[nodiscard]] FrontLiftReactionConfig decode_reaction_config(const bike::io::Value &v, std::string_view path);

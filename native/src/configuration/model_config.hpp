@@ -369,7 +369,8 @@ inline const RecordSchema kRiderLaunchConfigSchema{
     {.name=#f, .type="<class 'bool'>", .kind=FieldKind::Boolean, \
      .offset=offsetof(FrontLiftReactionConfig, f), .required=true, .factory="", .nested=nullptr, .nested2=nullptr}
 inline constexpr auto kFrontLiftReactionConfigFields = std::to_array<FieldDecl>({
-    FLR_REAL(hand_unload_n), FLR_REAL(unload_dwell_s), FLR_REAL(pitch_rate_up_rad_s), FLR_REAL(pitch_rad),
+    FLR_REAL(hand_window_s), FLR_REAL(hand_lag_s), FLR_REAL(hand_drop_ratio), FLR_REAL(pitch_rate_up_rad_s),
+    FLR_REAL(pitch_rad),
     FLR_REAL(decision_s), FLR_BOOL(ease_enabled), FLR_BOOL(lean_enabled), FLR_BOOL(rear_brake_tap_enabled),
     FLR_REAL(ease_fraction), FLR_REAL(ease_rate_per_s), FLR_REAL(lean_add_rad), FLR_REAL(lean_rate_rad_s),
     FLR_REAL(clear_s),

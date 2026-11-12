@@ -392,7 +392,7 @@ struct ReactionRow {
         auto &r = physics.front_lift_reaction;
         r.ease_enabled = true;
         r.lean_enabled = true;
-        r.hand_unload_n = 1000.;
+        r.hand_drop_ratio = 1.;
         r.pitch_rad = .05;
     };
     auto env = launch_ride::environment(launch_ride::track("[[0.0, 0.0], [60.0, 0.0]]", 60.), 3., edit, 8,

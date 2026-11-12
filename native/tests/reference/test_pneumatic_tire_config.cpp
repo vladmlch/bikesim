@@ -74,8 +74,9 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
         }
         if (!io::find_member(*obj, "front_lift_reaction")) {
             obj->emplace_back("front_lift_reaction", io::Value{io::Value::Object{
-                {"hand_unload_n", io::Value{io::Number{"20.0"}}},
-                {"unload_dwell_s", io::Value{io::Number{"0.05"}}},
+                {"hand_window_s", io::Value{io::Number{"0.5"}}},
+                {"hand_lag_s", io::Value{io::Number{"0.5"}}},
+                {"hand_drop_ratio", io::Value{io::Number{"0.7"}}},
                 {"pitch_rate_up_rad_s", io::Value{io::Number{"0.5"}}},
                 {"pitch_rad", io::Value{io::Number{"0.17"}}},
                 {"decision_s", io::Value{io::Number{"0.1"}}},

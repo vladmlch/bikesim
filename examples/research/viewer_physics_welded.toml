@@ -264,8 +264,9 @@ handover_s = 0.9
 # Both actions are off until the launch plan is switched on (part 4);
 # preliminary numbers, calibrated with the launch plan.
 [front_lift_reaction]
-hand_unload_n = 20.0
-unload_dwell_s = 0.05
+hand_window_s = 0.5
+hand_lag_s = 0.5
+hand_drop_ratio = 0.7
 pitch_rate_up_rad_s = 0.5
 pitch_rad = 0.17
 decision_s = 0.1

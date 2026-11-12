@@ -37,10 +37,10 @@ namespace bio = bike::io;
 constexpr std::string_view kFile =
     "native_rider_intent/";
 
-// The working profile's switched-off reaction (part 3a inventory numbers);
-// its .05/.1/.3 s times sit on every intention period these tests use.
+// The working profile's switched-off reaction (the criterion-B numbers);
+// its .5/.1/.3 s times sit on every intention period these tests use.
 const rider::FrontLiftReactionConfig kSwitchedOffReaction{
-    .hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
+    .hand_window_s = .5, .hand_lag_s = .5, .hand_drop_ratio = .7, .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
     .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
     .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
 

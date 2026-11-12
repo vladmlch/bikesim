@@ -1,6 +1,9 @@
 // Launch part 3a — the front-lift reaction node: its timing on the delayed
 // percepts, the two independent actions, recovery, the codec round trip
-// with bitwise continuation, atomic restore and the table rules.
+// with bitwise continuation, atomic restore and the table rules. Launch
+// part 4 replaces the dwell hand term with criterion B (launch-4, decision
+// 4): a bounded serialized hand/crank history and the lagged window
+// average as the reference.
 #include "support/fixture_test.hpp"
 #include "allocation_faults.hpp"
 #include "configuration/model_config.hpp"
@@ -13,9 +16,12 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <limits>
 #include <new>
+#include <numbers>
 #include <optional>
+#include <print>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -39,12 +45,13 @@ void rejects(Action &&action, std::string_view needle, std::string_view what) {
     bt::require(threw, std::string(what) + " is rejected");
 }
 
-// Dwell 4 ticks, decision 8 ticks, clear 16 ticks; both actions on.
+// Window and lag 40 ticks, drop ratio .7, decision 8 ticks, clear 16
+// ticks; both actions on.
 rider::FrontLiftReactionConfig table() {
-    return {.hand_unload_n = 20., .unload_dwell_s = 4 * kPeriod, .pitch_rate_up_rad_s = .5,
-            .pitch_rad = .17, .decision_s = 8 * kPeriod, .ease_enabled = true, .lean_enabled = true,
-            .rear_brake_tap_enabled = false, .ease_fraction = .7, .ease_rate_per_s = 5.,
-            .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = 16 * kPeriod};
+    return {.hand_window_s = 40 * kPeriod, .hand_lag_s = 40 * kPeriod, .hand_drop_ratio = .7,
+            .pitch_rate_up_rad_s = .5, .pitch_rad = .17, .decision_s = 8 * kPeriod, .ease_enabled = true,
+            .lean_enabled = true, .rear_brake_tap_enabled = false, .ease_fraction = .7,
+            .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = 16 * kPeriod};
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) mirrors the Percepts field order
@@ -56,53 +63,151 @@ rider::Percepts percept(double hand_press_n, double pitch_rate, double pitch) {
     return p;
 }
 
+// 40 loaded samples fill the window and the 41st completes the reference:
+// the window average and the reference are both 80 N.
+void loaded(rider::FrontLiftReaction &reaction, int ticks) {
+    for (int tick = 0; tick < ticks; ++tick) (void)reaction.update(percept(80., 0., 0.));
+}
+
+// A steadily unloading grip with the pitch term on: the press falls by 1 %
+// per tick. After 41 loaded samples criterion B first holds at k = 62 and
+// then without a gap (the window/reference ratio settles at 0.99^40 = 0.669);
+// a step to light hands would extinguish itself once the reference is light too.
+rider::Percepts pulling(int k) { return percept(80. * std::pow(.99, k), 1., 0.); }
+
 std::string text(const rider::FrontLiftReaction &r) {
     return bike::io::canonical_json(rider::encode_reaction_state(r.state()));
 }
 
-// Unloaded hands must last longer than the dwell (4 samples) before the
-// predicate rises; the action starts after the decision time (8 ticks);
-// the first acting tick already moves both outputs one rate step.
-void test_predicate_dwell_and_decision_timing() {
+// The calibration probe's criterion B (gradecap/_diff_reaction.txt) with
+// unbounded histories, kept verbatim as the oracle for the bounded state.
+struct ProbeHandB {
+    std::deque<double> hand, phase_at, avg;
+    double phase = 0.;
+    std::int64_t fcap = 0, lag = 0;
+    double thr = 0.;
+    bool term(const rider::Percepts &p, double period_s) {
+        hand.push_back(p.senses.hand_press_n);
+        phase += p.crank_rpm * (2. * std::numbers::pi / 60.) * period_s;
+        phase_at.push_back(phase);
+        std::int64_t span = -1;
+        for (std::size_t i = phase_at.size(); i-- > 0;)
+            if (phase - phase_at[i] >= std::numbers::pi) {
+                span = static_cast<std::int64_t>(phase_at.size() - 1 - i);
+                break;
+            }
+        if (span < 0 || span > fcap) span = std::min<std::int64_t>(fcap, static_cast<std::int64_t>(hand.size()));
+        double sum = 0.;
+        const auto n = static_cast<std::int64_t>(hand.size());
+        for (std::int64_t i = n - span; i < n; ++i) sum += hand[static_cast<std::size_t>(i)];
+        const double a = sum / static_cast<double>(span);
+        avg.push_back(a);
+        const auto j = static_cast<std::int64_t>(avg.size()) - 1;
+        if (j < lag) return false;
+        const double ref = avg[static_cast<std::size_t>(j - lag)];
+        return ref > 0. && a < thr * ref;
+    }
+};
+
+// Criterion B on the bounded state equals the probe's unbounded replay on
+// every tick: steady cadence, a stall (the fallback window), a cadence
+// that leaves no sample half a revolution back inside the window, hands
+// that rise out of a pull (negative and zero references) and absent
+// percepts; the pitch term is always on so the predicate is the hand term.
+void test_criterion_b_equals_the_probe_replay() {
+    auto t = table();
+    t.decision_s = 0.;
+    // The profile's 0.5 s window and lag (400 ticks): at 90 rpm half a
+    // revolution is about 267 ticks, inside the window; 40 rpm and a stall
+    // take the fallback.
+    t.hand_window_s = 400 * kPeriod;
+    t.hand_lag_s = 400 * kPeriod;
+    rider::FrontLiftReaction reaction(t, kPeriod);
+    ProbeHandB probe{.fcap = 400, .lag = 400, .thr = .7};
+    for (int tick = 0; tick < 3000; ++tick) {
+        if (tick % 997 == 500) {
+            (void)reaction.update(std::nullopt);   // absent percepts leave the history alone
+            continue;
+        }
+        rider::Percepts p = percept(0., 1., 0.);
+        p.crank_rpm = tick < 800 ? 90. : tick < 1200 ? 0. : tick < 1600 ? 3. : 70. + 30. * std::sin(tick * .01);
+        p.senses.hand_press_n = 60. + 50. * std::sin(tick * .037) - (tick > 2200 && tick < 2400 ? 120. : 0.);
+        const bool expected = probe.term(p, kPeriod);
+        const auto cmd = reaction.update(p);
+        bt::require(cmd.predicate == expected, "tick " + std::to_string(tick) + ": the bounded criterion B equals the probe");
+    }
+}
+
+// Criterion B: after 41 loaded samples (80 N, the 40-tick reference full)
+// the light-hand average falls below 0.7 of the reference on the 13th light
+// sample; the action starts after the decision time (8 ticks); the first
+// acting tick already moves both outputs one rate step.
+void test_predicate_window_and_decision_timing() {
     rider::FrontLiftReaction reaction(table(), kPeriod);
+    loaded(reaction, 41);
     const auto lifting = percept(5., 1., 0.);
     std::vector<rider::ReactionCommand> out;
-    out.reserve(20);
-    for (int tick = 0; tick < 20; ++tick) out.push_back(reaction.update(lifting));
-    for (std::size_t tick = 0; tick < 4; ++tick)
-        bt::require(!out[tick].predicate, "no predicate within the dwell");
-    bt::require(out[4].predicate && out[4].phase == rider::ReactionPhase::deciding,
-                "the predicate rises when the unload outlasts the dwell");
-    for (std::size_t tick = 4; tick < 12; ++tick)
+    out.reserve(30);
+    for (int tick = 0; tick < 30; ++tick) out.push_back(reaction.update(lifting));
+    for (std::size_t tick = 0; tick < 12; ++tick)
+        bt::require(!out[tick].predicate, "no predicate before the window average drops below 0.7");
+    bt::require(out[12].predicate && out[12].phase == rider::ReactionPhase::deciding,
+                "the predicate rises on the 13th light sample");
+    for (std::size_t tick = 12; tick < 20; ++tick)
         bt::require(out[tick].phase == rider::ReactionPhase::deciding && out[tick].effort_factor == 1.,
                     "the rider is still deciding");
-    bt::require(out[12].phase == rider::ReactionPhase::acting, "the action starts after the decision time");
-    bt::require(std::abs(out[12].effort_factor - (1. - 5. * kPeriod)) < 1e-15 &&
-                    std::abs(out[12].lean_add_rad - .5 * kPeriod) < 1e-15,
+    bt::require(out[20].phase == rider::ReactionPhase::acting, "the action starts after the decision time");
+    bt::require(std::abs(out[20].effort_factor - (1. - 5. * kPeriod)) < 1e-15 &&
+                    std::abs(out[20].lean_add_rad - .5 * kPeriod) < 1e-15,
                 "acting moves both outputs one rate step");
 }
 
+// A step to light hands extinguishes itself: once the reference 40 ticks
+// back is light too, the ratio returns to 1 and the predicate ends (k = 79).
+void test_a_hand_step_extinguishes_itself() {
+    rider::FrontLiftReaction reaction(table(), kPeriod);
+    loaded(reaction, 41);
+    std::vector<bool> predicate;
+    for (int k = 1; k <= 90; ++k) predicate.push_back(reaction.update(percept(5., 1., 0.)).predicate);
+    for (int k = 1; k <= 90; ++k)
+        bt::require(predicate[static_cast<std::size_t>(k - 1)] == (k >= 13 && k <= 78),
+                    "light sample " + std::to_string(k) + ": the predicate holds exactly for k = 13..78");
+}
+
 // A held-high wheel triggers through the accumulated pitch with a small
-// rate; light hands without pitch never trigger; no percepts keep idle.
+// rate; light hands without pitch never trigger; unloaded hands without
+// pitch never trigger either; a reference that is not positive never
+// triggers; no percepts keep idle.
 void test_held_pitch_triggers_and_light_hands_alone_do_not() {
     rider::FrontLiftReaction held(table(), kPeriod);
+    loaded(held, 41);
     rider::ReactionCommand last;
-    for (int tick = 0; tick < 5; ++tick) last = held.update(percept(5., .01, .3));
+    for (int tick = 0; tick < 13; ++tick) last = held.update(percept(5., .01, .3));
     bt::require(last.predicate, "a held pitch above the threshold makes the predicate");
     rider::FrontLiftReaction light(table(), kPeriod);
-    for (int tick = 0; tick < 40; ++tick) last = light.update(percept(5., .01, .01));
+    for (int tick = 0; tick < 400; ++tick) last = light.update(percept(5., .01, .01));
     bt::require(!last.predicate && last.phase == rider::ReactionPhase::idle, "light hands alone never trigger");
     rider::FrontLiftReaction blind(table(), kPeriod);
     for (int tick = 0; tick < 40; ++tick) last = blind.update(std::nullopt);
     bt::require(last.phase == rider::ReactionPhase::idle && !last.predicate, "no percepts, no reaction");
+    rider::FrontLiftReaction flat(table(), kPeriod);
+    loaded(flat, 41);
+    for (int tick = 0; tick < 40; ++tick) last = flat.update(percept(5., 0., 0.));
+    bt::require(!last.predicate && last.phase == rider::ReactionPhase::idle, "unloaded hands without pitch never trigger");
+    rider::FrontLiftReaction pull(table(), kPeriod);
+    for (int tick = 0; tick < 41; ++tick) last = pull.update(percept(-10., 1., 0.));
+    for (int tick = 0; tick < 40; ++tick) last = pull.update(percept(-30., 1., 0.));
+    bt::require(!last.predicate && last.phase == rider::ReactionPhase::idle,
+                "a non-positive reference never triggers");
 }
 
 // A predicate that vanishes during the decision returns to idle without
 // any action.
 void test_short_predicate_is_dropped_while_deciding() {
     rider::FrontLiftReaction reaction(table(), kPeriod);
+    loaded(reaction, 41);
     rider::ReactionCommand last;
-    for (int tick = 0; tick < 6; ++tick) last = reaction.update(percept(5., 1., 0.));
+    for (int tick = 0; tick < 14; ++tick) last = reaction.update(percept(5., 1., 0.));
     bt::require(last.phase == rider::ReactionPhase::deciding, "deciding");
     last = reaction.update(percept(80., 0., 0.));
     bt::require(last.phase == rider::ReactionPhase::idle && last.effort_factor == 1. && last.lean_add_rad == 0.,
@@ -117,8 +222,9 @@ void test_each_action_has_its_own_switch() {
         t.ease_enabled = ease;
         t.lean_enabled = lean;
         rider::FrontLiftReaction reaction(t, kPeriod);
+        loaded(reaction, 41);
         rider::ReactionCommand last;
-        for (int tick = 0; tick < 200; ++tick) last = reaction.update(percept(5., 1., 0.));
+        for (int k = 0; k < 300; ++k) last = reaction.update(pulling(k));
         bt::require(last.phase == rider::ReactionPhase::acting, "acting with any switch setting");
         bt::require((last.effort_factor < 1.) == ease && (ease || last.effort_factor == 1.), "ease follows its switch");
         bt::require((last.lean_add_rad > 0.) == lean && (lean || last.lean_add_rad == 0.), "lean follows its switch");
@@ -131,8 +237,9 @@ void test_each_action_has_its_own_switch() {
 // clear_s; both outputs return at their rates and the phase becomes idle.
 void test_recovery_after_clear() {
     rider::FrontLiftReaction reaction(table(), kPeriod);
+    loaded(reaction, 41);
     rider::ReactionCommand last;
-    for (int tick = 0; tick < 200; ++tick) last = reaction.update(percept(5., 1., 0.));
+    for (int k = 0; k < 300; ++k) last = reaction.update(pulling(k));
     for (int tick = 0; tick < 16; ++tick) {
         last = reaction.update(percept(80., 0., 0.));
         bt::require(last.phase == rider::ReactionPhase::acting, "still acting within clear_s");
@@ -146,10 +253,31 @@ void test_recovery_after_clear() {
 }
 
 // Serialize → read → continue: restored mid-decision and mid-release, the
-// reaction continues bitwise (whole state compared as canonical JSON).
+// reaction continues bitwise (whole state compared as canonical JSON). The
+// template run of the same sequence locates the split points itself: the
+// first deciding tick plus 2 and the first releasing tick plus 20.
 void test_codec_round_trip_and_continuation() {
-    const auto input = [](int tick) { return tick < 200 ? percept(5., 1., 0.) : percept(80., 0., 0.); };
-    for (const int split : {7, 230}) {
+    const auto input = [](int tick) {
+        return tick < 41 ? percept(80., 0., 0.) : tick < 341 ? pulling(tick - 41) : percept(80., 0., 0.);
+    };
+    rider::FrontLiftReaction reference(table(), kPeriod);
+    std::vector<rider::ReactionPhase> phases;
+    phases.reserve(700);
+    int first_deciding = -1, first_releasing = -1;
+    for (int tick = 0; tick < 700; ++tick) {
+        const auto cmd = reference.update(input(tick));
+        phases.push_back(cmd.phase);
+        if (first_deciding < 0 && cmd.phase == rider::ReactionPhase::deciding) first_deciding = tick;
+        if (first_releasing < 0 && cmd.phase == rider::ReactionPhase::releasing) first_releasing = tick;
+    }
+    bt::require(first_deciding >= 0 && first_releasing >= 0, "the template run reaches deciding and releasing");
+    const int deciding_split = first_deciding + 2, releasing_split = first_releasing + 20;
+    std::println("codec splits: deciding {} releasing {}", deciding_split, releasing_split);
+    bt::require(phases[static_cast<std::size_t>(deciding_split)] == rider::ReactionPhase::deciding,
+                "the deciding split is deciding");
+    bt::require(phases[static_cast<std::size_t>(releasing_split)] == rider::ReactionPhase::releasing,
+                "the releasing split is releasing");
+    for (const int split : {deciding_split, releasing_split}) {
         rider::FrontLiftReaction original(table(), kPeriod);
         for (int tick = 0; tick < split; ++tick) (void)original.update(input(tick));
         rider::FrontLiftReaction copy(table(), kPeriod);
@@ -163,14 +291,20 @@ void test_codec_round_trip_and_continuation() {
 }
 
 // Restore rejects unreachable states atomically, including actions a
-// switch forbids, a phase outside the enum and inconsistent counters; a
-// reachable state from the same configuration is accepted.
+// switch forbids, a phase outside the enum, inconsistent counters and
+// histories that cannot come out of update(); a reachable state from the
+// same configuration is accepted.
 void test_restore_rejects_unreachable_states() {
     auto off = table();
     off.ease_enabled = false;
     off.lean_enabled = false;
     rider::FrontLiftReaction target(off, kPeriod);
-    for (int tick = 0; tick < 6; ++tick) (void)target.update(percept(5., 1., 0.));
+    loaded(target, 41);
+    rider::ReactionCommand last;
+    for (int tick = 0; tick < 40 && last.phase != rider::ReactionPhase::deciding; ++tick)
+        last = target.update(percept(5., 1., 0.));
+    bt::require(last.phase == rider::ReactionPhase::deciding, "the light-hand drop reaches deciding");
+    (void)target.update(percept(5., 1., 0.));   // one more tick deciding
     const std::string before = text(target);
     auto bad = target.state();
     bad.phase = rider::ReactionPhase::acting;
@@ -187,15 +321,27 @@ void test_restore_rejects_unreachable_states() {
     bad.predicate = false;
     rejects([&] { target.restore(bad); }, "predicate", "deciding without the predicate");
     bad = target.state();
-    bad.unload_ticks = std::numeric_limits<std::int64_t>::max();
-    rejects([&] { target.restore(bad); }, "unload_ticks", "an unload counter past saturation");
+    bad.hand_n.push_back(1.);
+    rejects([&] { target.restore(bad); }, "hand_n", "hand and crank histories differ in length");
+    // The predicate needs a full positive reference: a state from 30 loaded
+    // percepts cannot carry one.
+    rider::FrontLiftReaction short_run(off, kPeriod);
+    for (int tick = 0; tick < 30; ++tick) (void)short_run.update(percept(80., 0., 0.));
+    bad = short_run.state();
+    bad.predicate = true;
+    rejects([&] { short_run.restore(bad); }, "predicate", "a predicate before the reference is full");
+    rider::FrontLiftReaction fresh(off, kPeriod);
+    bad = fresh.state();
+    bad.crank_angle_total_rad = 1.;
+    rejects([&] { fresh.restore(bad); }, "crank_angle", "a crank total on an empty history");
     bt::require(text(target) == before, "rejected restores change nothing");
     target.restore(target.state());   // control: its own reachable state
 
     // Phase/predicate/counter combinations update() never leaves behind
     // (review-2 I3), on a reaction with both actions on.
     rider::FrontLiftReaction on(table(), kPeriod);
-    for (int tick = 0; tick < 200; ++tick) (void)on.update(percept(5., 1., 0.));
+    loaded(on, 41);
+    for (int k = 0; k < 300; ++k) (void)on.update(pulling(k));
     const auto acting = on.state();
     bt::require(acting.phase == rider::ReactionPhase::acting && acting.predicate, "acting under the predicate");
     for (int tick = 0; tick < 20; ++tick) (void)on.update(percept(80., 0., 0.));
@@ -207,7 +353,6 @@ void test_restore_rejects_unreachable_states() {
     rejects([&] { on.restore(bad); }, "clear_ticks", "acting that counts clear ticks under the predicate");
     bad = releasing;
     bad.predicate = true;
-    bad.unload_ticks = 5;
     rejects([&] { on.restore(bad); }, "predicate", "releasing with the predicate");
     bad = releasing;
     bad.effort_factor = 1.;
@@ -218,8 +363,8 @@ void test_restore_rejects_unreachable_states() {
     bad.lean_add_rad = 0.;
     rejects([&] { on.restore(bad); }, "phase", "acting that moved no enabled output");
     bad = acting;
-    bad.percepts_seen = 12;   // dwell + 1 + decision = 13 percepts are needed
-    rejects([&] { on.restore(bad); }, "percepts_seen", "acting before the dwell and decision could pass");
+    bad.percepts_seen = 48;   // lag + 1 + decision = 49 percepts are needed
+    rejects([&] { on.restore(bad); }, "percepts_seen", "acting before the lag and decision could pass");
     bt::require(text(on) == on_before, "rejected restores change nothing");
     on.restore(acting);   // control: a reachable state of this configuration
     bt::require(on.state().phase == rider::ReactionPhase::acting, "the reachable state restores");
@@ -233,6 +378,21 @@ void test_table_rules() {
     rider::validate_reaction_table(table());
     rider::validate_reaction_context(table(), kPeriod, .35);
     auto with = [](auto change) { auto t = table(); change(t); return t; };
+    rider::validate_reaction_table(with([](auto &t) { t.hand_drop_ratio = 1.; }));   // a unit ratio is allowed
+    rejects([&] { rider::validate_reaction_table(with([](auto &t) { t.hand_window_s = 0.; })); },
+            "hand_window_s", "a zero hand window");
+    rejects([&] { rider::validate_reaction_table(with([](auto &t) { t.hand_lag_s = 0.; })); },
+            "hand_lag_s", "a zero hand lag");
+    rejects([&] { rider::validate_reaction_context(with([](auto &t) { t.hand_window_s = .5 * kPeriod; }), kPeriod, .35); },
+            "whole multiple", "a hand window below one tick");
+    rejects([&] { rider::validate_reaction_context(with([](auto &t) { t.hand_lag_s = .5 * kPeriod; }), kPeriod, .35); },
+            "whole multiple", "a hand lag below one tick");
+    rejects([&] { rider::validate_reaction_context(with([](auto &t) { t.hand_window_s = 1.5 * kPeriod; }), kPeriod, .35); },
+            "whole multiple", "a hand window off the tick grid");
+    rejects([&] { rider::validate_reaction_table(with([](auto &t) { t.hand_drop_ratio = 0.; })); },
+            "hand_drop_ratio", "a zero drop ratio");
+    rejects([&] { rider::validate_reaction_table(with([](auto &t) { t.hand_drop_ratio = 1.5; })); },
+            "hand_drop_ratio", "a drop ratio above one");
     rejects([&] { rider::validate_reaction_table(with([](auto &t) { t.rear_brake_tap_enabled = true; })); },
             "not implemented", "the rear brake tap");
     rejects([&] { rider::validate_reaction_table(with([](auto &t) { t.ease_fraction = 1.2; })); },
@@ -428,21 +588,24 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
                 "a disabled intent reports the neutral reaction");
 }
 
-// With both actions on: the ease starts exactly reaction_delay + dwell +
-// decision ticks after the first lifting sample (161 + 120 + 4 + 8 = 293);
-// the lean add goes through the posture program, so the total lean never
+// With both actions on: the delayed light-hand samples arrive from step
+// 281 and the predicate rises on the 14th of them against the 60 N
+// reference, so the ease starts exactly reaction_delay + 13 + decision
+// ticks after the first lifting sample (161 + 120 + 13 + 8 = 302); the
+// lean add goes through the posture program, so the total lean never
 // outruns its rate; probe and advance agree on output, flag and the whole
 // owner state; encode → decode → restore during warm-up (50), deciding
-// (290) and releasing (560: clear percepts from 520, release from 536,
-// lean back by ~696) continues with the same output and the same
-// serialized state.
+// (299) and releasing (400: the predicate ends at 359, releasing runs
+// 375-446) continues with the same output and the same serialized state.
 [[gnu::noinline]] void test_reacting_resolver_timing_slew_probe_and_restore() {
     const auto config = enabled_intent();
     // -Wframe-larger-than: the three resolvers live on the heap.
     auto reacting = std::make_unique<rider::RiderIntent>(config, table(), switched_off_launch(), kPeriod);
     auto inert = std::make_unique<rider::RiderIntent>(config, switched_off(), switched_off_launch(), kPeriod);
     const std::int64_t delay = std::llround(config.reaction_delay_s / config.period_s);
-    const std::int64_t onset = 161 + delay + 4 + 8;
+    // The predicate rises on the 14th light sample against the 60 N
+    // reference (ratio .7, fallback window 40).
+    const std::int64_t onset = 161 + delay + 13 + 8;
     double previous_lean = 0.;
     std::unique_ptr<rider::RiderIntent> restored;
     for (std::int64_t step = 0; step < 900; ++step) {
@@ -466,10 +629,10 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
         bt::require(std::abs(lean - previous_lean) <= config.lean_rate_rad_s * config.period_s + 1e-15,
                     "the total lean never outruns the posture rate");
         previous_lean = lean;
-        if (step == 50 || step == onset - 3 || step == 560) {
+        if (step == 50 || step == onset - 3 || step == 400) {
             const auto phase = reacting->reaction().phase;
             bt::require(step != onset - 3 || phase == rider::ReactionPhase::deciding, "snapshot while deciding");
-            bt::require(step != 560 || phase == rider::ReactionPhase::releasing, "snapshot while releasing");
+            bt::require(step != 400 || phase == rider::ReactionPhase::releasing, "snapshot while releasing");
             restored = std::make_unique<rider::RiderIntent>(config, table(), switched_off_launch(), kPeriod);
             restored->restore(rider::decode_intent_state(rider::encode_intent_state(reacting->state()), "intent"));
         } else if (restored) {
@@ -490,7 +653,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
 [[gnu::noinline]] void test_rejected_ticks_change_nothing() {
     const auto config = enabled_intent();
     rider::RiderIntent intent(config, table(), switched_off_launch(), kPeriod);
-    for (std::int64_t step = 0; step < 300; ++step) (void)tick(intent, step);   // acting from 293
+    for (std::int64_t step = 0; step < 300; ++step) (void)tick(intent, step);   // predicate from 294, acting from 302
     const std::string before = encoded(intent);
     rider::RiderIntent reference(intent);
     const auto good = tick(reference, 300);
@@ -597,13 +760,13 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     rider::RiderIntent fresh(config, table(), switched_off_launch(), kPeriod);
     const std::string before = encoded(fresh);
     auto early = std::make_unique<rider::RiderIntent::State>(fresh.state());
-    early->reaction = donor->state().reaction;   // acting, from another episode
+    early->reaction = donor->state().reaction;   // deciding, from another episode
     rejects([&] { fresh.restore(*early); }, "percepts_seen", "a reaction before any percept");
     rejects([&] { fresh.restore(rider::decode_intent_state(rider::encode_intent_state(*early), "intent")); },
             "percepts_seen", "the same state through the document");
     auto graft = std::make_unique<rider::RiderIntent::State>(first->state());
     graft->reaction = donor->state().reaction;
-    rejects([&] { fresh.restore(*graft); }, "percepts_seen", "an acting reaction on the first delivery");
+    rejects([&] { fresh.restore(*graft); }, "percepts_seen", "a deciding reaction on the first delivery");
     auto bad = std::make_unique<rider::RiderIntent::State>(donor->state());
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the donor intent is enabled, so the pair is engaged
     bad->perception->tick += 1;
@@ -635,7 +798,9 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
 
 int main() {
     return bt::run([] {
-        test_predicate_dwell_and_decision_timing();
+        test_criterion_b_equals_the_probe_replay();
+        test_predicate_window_and_decision_timing();
+        test_a_hand_step_extinguishes_itself();
         test_held_pitch_triggers_and_light_hands_alone_do_not();
         test_short_predicate_is_dropped_while_deciding();
         test_each_action_has_its_own_switch();

@@ -209,34 +209,29 @@ launch_effort_ramp_s = 1.5
 launch_min_grade = 0.03
 launch_standstill_crank_rate_rad_s = 1.0
 
-# Rider launch experience table (launch plan, part 2): start cog by grade,
-# working pedal angle, torso lean by grade. Preliminary values that keep
-# today's start (51T cog, pedal angle 0, no lean); the launch plan
-# calibrates them later.
+# Rider launch experience table — launch part 4: the normal rider,
+# calibrated (gradecap §17, user rulings 2026-11-12). The launch plan and
+# the front-lift reaction actions are on.
 [rider_launch]
-start_cog_grade_breaks = []
-start_cog_teeth = [51]
-start_pedal_angle_rad = 0.0
-start_lean_grades = [0.0]
-start_lean_rad = [0.0]
-# Launch plan (part 3b): off until part 4 switches it on; preliminary
-# numbers, calibrated before activation.
-plan_enabled = false
+start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]
+start_cog_teeth = [24, 33, 39, 33, 39]
+start_pedal_angle_rad = 1.12
+start_lean_grades = [0.0, 0.15]
+start_lean_rad = [0.0, 0.35]
+plan_enabled = true
 standstill_speed_mps = 0.1
 standstill_crank_rpm = 5.0
-effort_rate_nm_s = 40.0
-effort_cap_asphalt_nm = 60.0
+effort_rate_nm_s = 80.0
+effort_cap_asphalt_nm = 45.0
 effort_cap_hardpack_nm = 60.0
-effort_cap_loose_nm = 60.0
-effort_cap_wet_nm = 60.0
-effort_cap_scree_nm = 60.0
-# launch part 4 — the normal rider's calibrated grade cap, rise and
-# retry; inert until plan_enabled
+effort_cap_loose_nm = 45.0
+effort_cap_wet_nm = 45.0
+effort_cap_scree_nm = 40.0
 effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]
 effort_cap_grade_nm = [38.5, 18.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]
 effort_rise_speed_mps = 2.5
-release_torque_grades = [0.0, 0.2]
-release_torque_nm = [0.0, 30.0]
+release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]
+release_torque_nm = [0.0, 9.0, 9.0, 9.0, 8.0]
 brake_release_s = 0.15
 max_hold_s = 1.5
 upshift_crank_rpm = 82.0
@@ -247,25 +242,24 @@ end_hold_s = 0.3
 max_launch_s = 6.0
 handover_s = 0.9
 
-# Front-lift reaction (launch plan, part 3a): the rider eases the effort
-# and/or leans forward when the hands unload and the bike pitches up.
-# Both actions are off until the launch plan is switched on (part 4);
-# preliminary numbers, calibrated with the launch plan.
+# Front-lift reaction — launch part 4: criterion B for the hands (the
+# half-revolution press average against its value half a second earlier),
+# the ease and lean actions on, calibrated for the normal rider.
 [front_lift_reaction]
 hand_window_s = 0.5
 hand_lag_s = 0.5
 hand_drop_ratio = 0.7
-pitch_rate_up_rad_s = 0.5
-pitch_rad = 0.17
-decision_s = 0.1
-ease_enabled = false
-lean_enabled = false
+pitch_rate_up_rad_s = 0.15
+pitch_rad = 0.09
+decision_s = 0.2
+ease_enabled = true
+lean_enabled = true
 rear_brake_tap_enabled = false
 ease_fraction = 0.7
 ease_rate_per_s = 5.0
-lean_add_rad = 0.1
-lean_rate_rad_s = 0.5
-clear_s = 0.3
+lean_add_rad = 0.15
+lean_rate_rad_s = 1.0
+clear_s = 0.4
 
 [monitors]
 grounded_hold_s = 0.005

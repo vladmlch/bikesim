@@ -103,6 +103,9 @@ struct IntervalRow {
     int gear = 0, shift_from = 0;
     std::string shift_direction;
     bool shift = false;
+    // Launch part 4, decision 12: the launch plan's phase and the rider's
+    // own shift request on this interval.
+    std::string launch_phase, shift_request;
 };
 
 struct SupportMinima {
@@ -181,6 +184,10 @@ violations_after(const std::vector<WindowRow> &rows, double after_s = .5) {
           sw::number(sw::required(drive, "shift_from_teeth")));
       interval.shift_direction =
           sw::string(sw::required(drive, "shift_direction"));
+      interval.launch_phase = sw::string(sw::required(
+          section(sample->channels, "rider_launch"), "phase"));
+      interval.shift_request = sw::string(sw::required(
+          section(sample->channels, "rider_commands"), "shift_request"));
       auto violations = violation_strings(*sample);
       if (!violations.empty())
         row.interval_violations.emplace_back(
@@ -357,6 +364,24 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
     for (const std::size_t shift : commits) {
         const IntervalRow &row = result.intervals[shift];
         const bool up = row.shift_direction == "up";
+        // Launch part 4, decision 12: while the launch plan owns shifting
+        // (hold through handover) a commit answers the rider's own upshift
+        // request; from blend on the automaton picks the cog, so only
+        // those commits get the nearest-cog and landing-band checks.
+        const bool plan_phase =
+            row.launch_phase == "hold" || row.launch_phase == "release" ||
+            row.launch_phase == "accelerate" ||
+            row.launch_phase == "handover";
+        if (plan_phase) {
+            bt::require(up, "every launch-plan shift is an upshift");
+            bt::require(
+                row.shift_request == "up" ||
+                    result.intervals[shift - 1].shift_request == "up",
+                "every launch-plan shift answers a rider 'up' request in "
+                "this or the previous interval");
+            ++upshifts;
+            continue;
+        }
         const auto landing_of = [&](int teeth) {
             return required_ema[shift] * teeth / row.shift_from;
         };
@@ -386,7 +411,7 @@ void test_motor_follows_the_rider_through_a_shift_without_an_extra_cut() {
         if (up) ++upshifts;
     }
     bt::require(upshifts >= 1,
-                "the 22/51 flat launch produces at least one upshift");
+                "the flat launch produces at least one upshift");
     int checked = 0, failed = 0;
     double worst_ratio = std::numeric_limits<double>::infinity();
     for (const std::size_t shift : shifts) {

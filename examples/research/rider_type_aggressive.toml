@@ -1,0 +1,310 @@
+# Welded-rider research profile: rider pinned to the saddle (saddle pin,
+# spindle foot connects, bar connects), ideal mid-drive, Bosch CX Gen 4
+# assist (recalled, unverified). Default for bike-ride and the acceptance
+# rides.
+physics_mode = "physical"
+drive_mode = "articulated_effort"
+timestep_s = 0.00125
+control_period_s = 0.00125
+closure_time_constant_s = 0.0025
+initial_speed_mps = 0.0
+initial_front_brake = 1.0
+initial_rear_brake = 1.0
+# Kinetic relaxation, not cycle: with the 0.2 kg·m² rotor the drivetrain
+# equilibrates through a mode much slower than the fixed 20 ms reset window
+# (climb needed 146368 steps vs the 64000 budget; kinetic: 966). Kinetic's
+# window adapts to the mode's kinetic-energy peak; the settled pose and the
+# 0.05 residual contract are unchanged (measured 2026-11-06).
+equilibrium_relaxation = "kinetic"
+equilibrium_refine_after_s = 1.0
+equilibrium_refine_period_s = 3.0
+equilibrium_cache_enabled = true
+
+[tires]
+backend = "compliant_2d"
+surface_mode = "track"
+
+[tires.front]
+mu = 1.1
+
+# Compliant material: the radial loss is the rate-independent hysteresis
+# F = kδ + η·kδ·tanh(δ̇/ε) — simulation decisions 22/39 (2026-11-10);
+# viscous radial damping is forbidden. loss_factor is the pneumatic
+# model's fitted front value (kFrontTyre, physical_config.hpp),
+# hysteresis_rate_eps_mps its shared rate scale.
+[tires.front.material]
+radial_k_n_m = 130000.0
+loss_factor = 0.0662
+hysteresis_rate_eps_mps = 0.01
+pressure_pa_gauge = 200000.0
+provenance = "synthetic"
+valid_load_range_n = [0.0, 2000.0]
+
+[tires.rear]
+mu = 1.1
+
+# Same law as the front material; loss_factor is the pneumatic model's
+# fitted rear value (kRearTyre, physical_config.hpp).
+[tires.rear.material]
+radial_k_n_m = 130000.0
+loss_factor = 0.0690
+hysteresis_rate_eps_mps = 0.01
+pressure_pa_gauge = 200000.0
+provenance = "synthetic"
+valid_load_range_n = [0.0, 2000.0]
+
+[drive]
+# Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling
+# forward engages it and drives the chainring; backward, or slower than the
+# motor shaft, it is free — the pedals turn back freely and the motor may
+# keep turning the chainring while they stand. The rear freehub is the only
+# other one-way element; the drive is lossless (AGENTS.md «Передача»).
+# RU: педаль вперёд — зацепление, назад — свободно; муфт две: в моторе и втулка.
+transmission_model = "ideal_mid_drive"
+motor_clutch = true
+# Reflected rotor inertia from the 2026-10-07 drive audit — unverified.
+rotor_inertia_kgm2 = 0.2
+
+[drive.pedaling]
+enabled = true
+# Coast/resume hysteresis on the EMA-filtered cadence (tau below): above
+# coast_above_rpm the rider stops pressing, pedalling resumes below
+# resume_below_rpm. RU: накат выше 120, возврат ниже 105; EMA убирает
+# дёрганье от двух пульсаций момента за оборот.
+coast_above_rpm = 120.0
+resume_below_rpm = 105.0
+coast_cadence_tau_s = 0.35
+stop_time_s = 0.35
+# Legacy low-cadence ramp; inactive while seated_climb supplies the effort.
+mash_cadence_rpm = 45.0
+mash_torque_nm = 60.0
+effort_slew_nm_s = 300.0
+# Rider's hand on the brake during rollback (until hill-hold D4 replaces it).
+# RU: при откате быстрее 0.25 м/с райдер зажимает тормоза до остановки отката.
+rollback_brake = true
+rollback_engage_mps = 0.25
+rollback_release_mps = 0.0
+rollback_demand = 1.0
+# Crank reposition (stall reflex + operator request) — spindle-weld riders
+# only; required profile members carrying the former code defaults.
+reposition_on_stall = false
+reposition_min_effort_nm = 20.0
+reposition_stall_window_s = 1.0
+reposition_stall_progress_rad = 0.5
+reposition_cooldown_s = 1.0
+reposition_back_rate_rad_s = 3.0
+reposition_timeout_s = 3.0
+reposition_phase_tolerance_rad = 0.05
+reposition_noop_rad = 0.12
+
+[drive.assist]
+# Bosch Performance Line CX Gen 4 (no ABS), recalled from memory, unverified:
+# 85 N*m, 600 W peak, 40 ms torque lag, Eco 0.6 / Tour 1.4 / eMTB 1.4-3.4 /
+# Turbo 3.4, taper 23-25 km/h. The profile owns those numbers; only the
+# cadence envelope and the engagement threshold are declared here.
+# RU: режим ассиста: eco | tour | emtb | turbo. Мотор = множитель x момент
+# на педалях через лаг 40 мс; вал мотора не связан с шатуном жёстко, шатун
+# ассист не глушит. При ослаблении нажима мотор release_hold_s держит
+# прежнюю мощность (выбег, Р1). Stall-отсечки и boost нет.
+profile = "bosch_cx_gen4"
+mode = "turbo"
+# Torque envelope vs motor-shaft rpm (motor.cpp ceiling). With the clutch
+# engaged the shaft turns at crank rpm.
+torque_curve = [[0.0, 85.0], [120.0, 85.0], [120.1, 47.7], [180.0, 0.0]]
+# Sensor noise floor: measured pedal torque below this is "not pedalling".
+engage_torque_nm = 4.0
+# P1 run-on: after the rider eases off the motor holds its delivered
+# power (torque x shaft speed) for this window before following the tau lag.
+release_hold_s = 0.3
+
+[drive.gearing]
+front_teeth = 22
+
+[drive.shifting]
+enabled = true
+cassette = [10, 12, 14, 16, 18, 21, 24, 28, 33, 39, 45, 51]
+# RU: полоса каденса звезды — вала мотора (решение 2026-11-06). Ниже 75 —
+# на большую звезду (легче), выше 110 — на меньшую (тяжелее). Муфта держит
+# шатун не быстрее вала, поэтому скорость вала — это скорость звезды в любом
+# состоянии; на жёсткой связи вал — это шатун. Колёсный каденс используется
+# лишь для проверки посадки на новую передачу.
+target_cadence_min_rpm = 75.0
+target_cadence_max_rpm = 110.0
+# RU: пауза между переключениями 0,25 с (решение пользователя 2026-11-06): на первое переключение на старте не влияет, дальше передачи меняются быстрее.
+shift_cooldown_s = 0.25
+shift_cut_duration_s = 0.2
+# RU: на время переключения райдер сбрасывает усилие: на бо́льшую звезду (легче) до 80 %, на меньшую (тяжелее) до 30 % (решение 2026-10-03). Мотор НЕ режется — он следует за моментом райдера через свой лаг (спека S6).
+torque_factor_larger_cog = 0.8
+torque_factor_smaller_cog = 0.3
+# RU: каденс для переключателя сглаживается за 0,05 с (решение пользователя 2026-11-06): с ротором 0,2 кг·м² скорость звезды ровная, а при 0,35 с первое переключение на старте было только на 1,1 с.
+cadence_smoothing_tau_s = 0.05
+upshift_slip_limit_mps = 0.5
+
+[articulated]
+balance_floor_kmh = 4.0
+balance_dwell_s = 0.5
+balance_grace_s = 3.0
+road_lookahead_m = 2.0
+pedal_attachment = "spindle"
+saddle_attachment = "pin"
+grip_attachment = "connect"
+joint_envelope_path = "rider_joint_envelope_anatomical.json"
+# Provisional directional strength sheet (verified=false curves). Engineering
+# bounds only; the verified-provenance gate is a separate release decision.
+joint_strength_path = "rider_strength_reference.json"
+# Whole-body positive mechanical power cap: an engineering budget chosen in
+# the requested 400-500 W band, not a physiological claim. This stays the
+# *command* cap — it shapes what the controller asks, so it is plant physics,
+# not a monitor knob.
+active_positive_power_limit_w = 450.0
+# F1 contract re-scope: the delivered-power verdict reads this monitor-side
+# budget, not the command cap. The solved envelope runs above the cap because
+# interval velocities drift inside a control period and the weld springs drag
+# the legs through the backstroke — the measured model-delivery gap. Budget
+# = 1.25x the largest delivered power observed across the five pinned-plant
+# scenario shapes (max 596 W -> 750 W, per-joint 289 W -> 375 W); a run that
+# exceeds it has a real energy-source defect, not a clipped command.
+delivered_positive_power_budget_w = 750.0
+delivered_joint_power_budget_w = 375.0
+# F1 weld load envelope for the pinned plant. Connect equalities are
+# bidirectional soft spring joints: they pull in tension and carry shear that
+# a unilateral friction cone cannot express. These are declared hardware
+# capacities bounding the solved weld load — never controller inputs — set at
+# 1.25x the largest magnitude observed across the same five scenario shapes
+# (foot tension -820 N, compression 2383 N, shear 1803 N; saddle tension
+# -1800 N onset transient / -1501 N p01, compression 1054 N, shear 1024 N),
+# consistent with clipless-pedal and saddle-rail retention ratings of order
+# 1-3 kN. A solved load outside the envelope is a defect signal. Extrema are
+# measured on the provisional strength sheet — audit status NOT ACCEPTED,
+# curves recalled/unverified
+# (docs/superpowers/audits/2026-10-04-seated-rider-closed-form.md) — so the
+# envelope bounds this plant, not rated hardware.
+weld_foot_min_normal_n = -1050.0
+weld_foot_max_normal_n = 3000.0
+weld_foot_shear_n = 2250.0
+weld_saddle_min_normal_n = -2250.0
+weld_saddle_max_normal_n = 1300.0
+weld_saddle_shear_n = 1300.0
+# Two-leg torque waveform depth mean*(1 + 0.5 cos 2phi): peak ~1.5x mean,
+# dead spots ~0.5x. The bike's flywheel carries the cranks through the dead
+# spots now that crank and chainring are rigid.
+pedal_torque_ripple = 0.5
+# Residual recovery-leg load on the rising pedal (recreational rider ~40-100 N,
+# lower bound used; engineering estimate). Keeps the welded flat-pedal foot in
+# compression -- a real foot cannot pull a flat pedal.
+return_foot_preload_n = 40.0
+
+[seated_climb]
+enabled = true
+period_s = 0.00125
+reaction_delay_s = 0.15
+lean_rate_rad_s = 0.5
+orientation_tau_s = 0.5
+# Rider holds ~250 W at the crank, torque-capped at 60 N*m (grinds below ~40 rpm).
+target_crank_power_w = 250.0
+max_crank_torque_nm = 60.0
+surge_power_w = 400.0
+surge_grade = 0.20
+surge_budget_s = 15.0
+surge_recovery_rate = 0.3333333333333333
+front_load_share_target = 0.30
+lean_trim_gain_rad_s = 0.3
+lean_trim_limit_rad = 0.15
+trim_dead_time_s = 0.2
+# RU: корпус не отклоняется назад дальше сгиба локтя 15° (0° — прямая рука): у почти прямых рук обратная кинематика даёт скачок момента в плечах и локтях; 15° — инженерный запас от прямой руки (решение 2026-11-08).
+min_elbow_flexion_deg = 15.0
+# Uphill standstill start (2026-11-10 experiment, user decision): the rider
+# effort ceiling ramps from 0 to full over 1.5 s instead of mashing at once.
+# Flat starts (preview grade < 3 %) and starts with the crank already
+# turning never arm the ramp, so they are unchanged.
+launch_effort_ramp_s = 1.5
+launch_min_grade = 0.03
+launch_standstill_crank_rate_rad_s = 1.0
+
+# Rider launch experience table — launch part 4: the aggressive rider,
+# calibrated (gradecap §17, user rulings 2026-11-12). This file is a full
+# copy of viewer_physics_welded.toml; only [rider_launch] and
+# [front_lift_reaction] differ, each difference carrying the normal
+# rider's number in a comment above it. The launch plan and the
+# front-lift reaction actions are on.
+[rider_launch]
+start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]
+# aggressive: normal 24,33,39,33,39
+start_cog_teeth = [21, 28, 33, 28, 33]
+# aggressive: normal 1.12
+start_pedal_angle_rad = 1.24
+start_lean_grades = [0.0, 0.15]
+start_lean_rad = [0.0, 0.35]
+plan_enabled = true
+standstill_speed_mps = 0.1
+standstill_crank_rpm = 5.0
+# aggressive: normal 80.0
+effort_rate_nm_s = 200.0
+effort_cap_asphalt_nm = 45.0
+effort_cap_hardpack_nm = 60.0
+# aggressive: normal 45.0
+effort_cap_loose_nm = 60.0
+# aggressive: normal 45.0
+effort_cap_wet_nm = 60.0
+# aggressive: normal 40.0
+effort_cap_scree_nm = 60.0
+# aggressive: normal 0,0.05,0.08,0.1,0.12,0.13,0.15,0.2
+effort_cap_grades = [0.0, 0.05, 0.08, 0.12, 0.13, 0.15, 0.2]
+# aggressive: normal 38.5,18,14.5,13.2,14,15.5,19.5,18.5
+effort_cap_grade_nm = [50.0, 32.0, 24.0, 26.0, 33.0, 39.5, 35.0]
+effort_rise_speed_mps = 2.5
+release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]
+# aggressive: normal 0,9,9,9,8
+release_torque_nm = [0.0, 12.0, 12.0, 12.0, 12.0]
+# aggressive: normal 0.15
+brake_release_s = 0.1
+# aggressive: normal 1.5
+max_hold_s = 1.0
+# aggressive: normal 82.0
+upshift_crank_rpm = 95.0
+shift_retry_s = 0.25
+end_speed_mps = 3.0
+end_crank_rpm = 60.0
+end_hold_s = 0.3
+max_launch_s = 6.0
+# aggressive: normal 0.9
+handover_s = 0.6
+
+# Front-lift reaction — launch part 4: criterion B for the hands (the
+# half-revolution press average against its value half a second earlier),
+# the ease and lean actions on, calibrated for the aggressive rider.
+[front_lift_reaction]
+hand_window_s = 0.5
+hand_lag_s = 0.5
+hand_drop_ratio = 0.7
+# aggressive: normal 0.15
+pitch_rate_up_rad_s = 0.21
+# aggressive: normal 0.09
+pitch_rad = 0.12
+# aggressive: normal 0.2
+decision_s = 0.1
+ease_enabled = true
+lean_enabled = true
+rear_brake_tap_enabled = false
+# aggressive: normal 0.7
+ease_fraction = 0.5
+# aggressive: normal 5.0
+ease_rate_per_s = 6.0
+# aggressive: normal 0.15
+lean_add_rad = 0.2
+# aggressive: normal 1.0
+lean_rate_rad_s = 1.5
+# aggressive: normal 0.4
+clear_s = 0.25
+
+[monitors]
+grounded_hold_s = 0.005
+contact_dropout_s = 0.0125
+
+[research]
+control_period_s = 0.01
+actuator_delay_s = 0.005
+sensor_latency_s = 0.01
+sensor_maximum_age_s = 0.1
+sample_period_s = 0.005
+record_decimation = 80

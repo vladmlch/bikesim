@@ -8,6 +8,8 @@
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "configuration/physical_config.hpp"
+#include "io/json.hpp"
+#include "io/value.hpp"
 #include <array>
 #include <cmath>
 #include <filesystem>
@@ -372,39 +374,405 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
     text.replace(at, from.size(), to);
 }
 
-// The welded profile carries today's start as its launch table: the 51T
-// cog at every grade, the pedal at angle 0 and no lean. The built-in
-// default profile keeps its own 34/24 drivetrain.
-[[gnu::noinline]] void test_launch_table_reproduces_todays_start() {
-    const auto &launch = profile().rider_launch;
-    bt::require(launch.start_cog_grade_breaks.empty() &&
-                    launch.start_cog_teeth == std::vector<int>{51},
-                "one 51T start cog");
-    bt::require(launch.start_pedal_angle_rad == 0., "pedal angle 0");
-    bt::require(launch.start_lean_grades == std::vector<double>{0.} &&
-                    launch.start_lean_rad == std::vector<double>{0.},
-                "no start lean");
+// ---- launch part 4 — the calibrated rider tables ------------------------
+
+// The launch part 4 decision-5 table of one rider type: the calibrated
+// probe profile's [rider_launch] and [front_lift_reaction] blocks plus the
+// part-1/2 fields (grade cap knots, rise speed, shift retry, criterion B).
+struct RiderTable {
+    cfg::RiderLaunchConfig launch;
+    cfg::FrontLiftReactionConfig reaction;
+};
+
+const RiderTable &careful_rider_table() {
+    static const RiderTable table{
+        .launch{
+            .start_cog_grade_breaks = {.03, .08, .13, .18},
+            .start_cog_teeth = {28, 39, 45, 39, 39},
+            .start_pedal_angle_rad = .9,
+            .start_lean_grades = {0., .15},
+            .start_lean_rad = {0., .35},
+            .plan_enabled = true,
+            .standstill_speed_mps = .1,
+            .standstill_crank_rpm = 5.,
+            .effort_rate_nm_s = 40.,
+            .effort_cap_asphalt_nm = 45.,
+            .effort_cap_hardpack_nm = 45.,
+            .effort_cap_loose_nm = 35.,
+            .effort_cap_wet_nm = 35.,
+            .effort_cap_scree_nm = 30.,
+            .effort_cap_grades = {0., .05, .08, .12, .13, .15, .2},
+            .effort_cap_grade_nm = {26., 14., 11.5, 13., 14., 15., 18.},
+            .effort_rise_speed_mps = 2.5,
+            .release_torque_grades = {0., .05, .1, .15, .2},
+            .release_torque_nm = {0., 7., 7., 7., 7.},
+            .brake_release_s = .2,
+            .max_hold_s = 2.,
+            .upshift_crank_rpm = 72.,
+            .shift_retry_s = .25,
+            .end_speed_mps = 3.,
+            .end_crank_rpm = 60.,
+            .end_hold_s = .3,
+            .max_launch_s = 6.,
+            .handover_s = 1.2,
+        },
+        .reaction{
+            .hand_window_s = .5,
+            .hand_lag_s = .5,
+            .hand_drop_ratio = .7,
+            .pitch_rate_up_rad_s = .105,
+            .pitch_rad = .06,
+            .decision_s = .28,
+            .ease_enabled = true,
+            .lean_enabled = true,
+            .rear_brake_tap_enabled = false,
+            .ease_fraction = .9,
+            .ease_rate_per_s = 4.,
+            .lean_add_rad = .08,
+            .lean_rate_rad_s = .5,
+            .clear_s = .65,
+        },
+    };
+    return table;
+}
+
+const RiderTable &normal_rider_table() {
+    static const RiderTable table{
+        .launch{
+            .start_cog_grade_breaks = {.03, .08, .13, .18},
+            .start_cog_teeth = {24, 33, 39, 33, 39},
+            .start_pedal_angle_rad = 1.12,
+            .start_lean_grades = {0., .15},
+            .start_lean_rad = {0., .35},
+            .plan_enabled = true,
+            .standstill_speed_mps = .1,
+            .standstill_crank_rpm = 5.,
+            .effort_rate_nm_s = 80.,
+            .effort_cap_asphalt_nm = 45.,
+            .effort_cap_hardpack_nm = 60.,
+            .effort_cap_loose_nm = 45.,
+            .effort_cap_wet_nm = 45.,
+            .effort_cap_scree_nm = 40.,
+            .effort_cap_grades = {0., .05, .08, .1, .12, .13, .15, .2},
+            .effort_cap_grade_nm = {38.5, 18., 14.5, 13.2, 14., 15.5, 19.5, 18.5},
+            .effort_rise_speed_mps = 2.5,
+            .release_torque_grades = {0., .05, .1, .15, .2},
+            .release_torque_nm = {0., 9., 9., 9., 8.},
+            .brake_release_s = .15,
+            .max_hold_s = 1.5,
+            .upshift_crank_rpm = 82.,
+            .shift_retry_s = .25,
+            .end_speed_mps = 3.,
+            .end_crank_rpm = 60.,
+            .end_hold_s = .3,
+            .max_launch_s = 6.,
+            .handover_s = .9,
+        },
+        .reaction{
+            .hand_window_s = .5,
+            .hand_lag_s = .5,
+            .hand_drop_ratio = .7,
+            .pitch_rate_up_rad_s = .15,
+            .pitch_rad = .09,
+            .decision_s = .2,
+            .ease_enabled = true,
+            .lean_enabled = true,
+            .rear_brake_tap_enabled = false,
+            .ease_fraction = .7,
+            .ease_rate_per_s = 5.,
+            .lean_add_rad = .15,
+            .lean_rate_rad_s = 1.,
+            .clear_s = .4,
+        },
+    };
+    return table;
+}
+
+const RiderTable &aggressive_rider_table() {
+    static const RiderTable table{
+        .launch{
+            .start_cog_grade_breaks = {.03, .08, .13, .18},
+            .start_cog_teeth = {21, 28, 33, 28, 33},
+            .start_pedal_angle_rad = 1.24,
+            .start_lean_grades = {0., .15},
+            .start_lean_rad = {0., .35},
+            .plan_enabled = true,
+            .standstill_speed_mps = .1,
+            .standstill_crank_rpm = 5.,
+            .effort_rate_nm_s = 200.,
+            .effort_cap_asphalt_nm = 45.,
+            .effort_cap_hardpack_nm = 60.,
+            .effort_cap_loose_nm = 60.,
+            .effort_cap_wet_nm = 60.,
+            .effort_cap_scree_nm = 60.,
+            .effort_cap_grades = {0., .05, .08, .12, .13, .15, .2},
+            .effort_cap_grade_nm = {50., 32., 24., 26., 33., 39.5, 35.},
+            .effort_rise_speed_mps = 2.5,
+            .release_torque_grades = {0., .05, .1, .15, .2},
+            .release_torque_nm = {0., 12., 12., 12., 12.},
+            .brake_release_s = .1,
+            .max_hold_s = 1.,
+            .upshift_crank_rpm = 95.,
+            .shift_retry_s = .25,
+            .end_speed_mps = 3.,
+            .end_crank_rpm = 60.,
+            .end_hold_s = .3,
+            .max_launch_s = 6.,
+            .handover_s = .6,
+        },
+        .reaction{
+            .hand_window_s = .5,
+            .hand_lag_s = .5,
+            .hand_drop_ratio = .7,
+            .pitch_rate_up_rad_s = .21,
+            .pitch_rad = .12,
+            .decision_s = .1,
+            .ease_enabled = true,
+            .lean_enabled = true,
+            .rear_brake_tap_enabled = false,
+            .ease_fraction = .5,
+            .ease_rate_per_s = 6.,
+            .lean_add_rad = .2,
+            .lean_rate_rad_s = 1.5,
+            .clear_s = .25,
+        },
+    };
+    return table;
+}
+
+// Field-by-field equality against a decision-5 table; a failed check names
+// the file and the member.
+[[gnu::noinline]] void require_launch_table(
+    const cfg::RiderLaunchConfig &actual, const cfg::RiderLaunchConfig &expected,
+    std::string_view who) {
+    const auto field = [&](bool equal, std::string_view name) {
+        bt::require(equal, std::string(who) + " [rider_launch]." +
+                               std::string(name) +
+                               " matches the calibrated table");
+    };
+    field(actual.start_cog_grade_breaks == expected.start_cog_grade_breaks,
+          "start_cog_grade_breaks");
+    field(actual.start_cog_teeth == expected.start_cog_teeth,
+          "start_cog_teeth");
+    field(actual.start_pedal_angle_rad == expected.start_pedal_angle_rad,
+          "start_pedal_angle_rad");
+    field(actual.start_lean_grades == expected.start_lean_grades,
+          "start_lean_grades");
+    field(actual.start_lean_rad == expected.start_lean_rad, "start_lean_rad");
+    field(actual.plan_enabled == expected.plan_enabled, "plan_enabled");
+    field(actual.standstill_speed_mps == expected.standstill_speed_mps,
+          "standstill_speed_mps");
+    field(actual.standstill_crank_rpm == expected.standstill_crank_rpm,
+          "standstill_crank_rpm");
+    field(actual.effort_rate_nm_s == expected.effort_rate_nm_s,
+          "effort_rate_nm_s");
+    field(actual.effort_cap_asphalt_nm == expected.effort_cap_asphalt_nm,
+          "effort_cap_asphalt_nm");
+    field(actual.effort_cap_hardpack_nm == expected.effort_cap_hardpack_nm,
+          "effort_cap_hardpack_nm");
+    field(actual.effort_cap_loose_nm == expected.effort_cap_loose_nm,
+          "effort_cap_loose_nm");
+    field(actual.effort_cap_wet_nm == expected.effort_cap_wet_nm,
+          "effort_cap_wet_nm");
+    field(actual.effort_cap_scree_nm == expected.effort_cap_scree_nm,
+          "effort_cap_scree_nm");
+    field(actual.effort_cap_grades == expected.effort_cap_grades,
+          "effort_cap_grades");
+    field(actual.effort_cap_grade_nm == expected.effort_cap_grade_nm,
+          "effort_cap_grade_nm");
+    field(actual.effort_rise_speed_mps == expected.effort_rise_speed_mps,
+          "effort_rise_speed_mps");
+    field(actual.release_torque_grades == expected.release_torque_grades,
+          "release_torque_grades");
+    field(actual.release_torque_nm == expected.release_torque_nm,
+          "release_torque_nm");
+    field(actual.brake_release_s == expected.brake_release_s,
+          "brake_release_s");
+    field(actual.max_hold_s == expected.max_hold_s, "max_hold_s");
+    field(actual.upshift_crank_rpm == expected.upshift_crank_rpm,
+          "upshift_crank_rpm");
+    field(actual.shift_retry_s == expected.shift_retry_s, "shift_retry_s");
+    field(actual.end_speed_mps == expected.end_speed_mps, "end_speed_mps");
+    field(actual.end_crank_rpm == expected.end_crank_rpm, "end_crank_rpm");
+    field(actual.end_hold_s == expected.end_hold_s, "end_hold_s");
+    field(actual.max_launch_s == expected.max_launch_s, "max_launch_s");
+    field(actual.handover_s == expected.handover_s, "handover_s");
+}
+
+[[gnu::noinline]] void require_reaction_table(
+    const cfg::FrontLiftReactionConfig &actual,
+    const cfg::FrontLiftReactionConfig &expected, std::string_view who) {
+    const auto field = [&](bool equal, std::string_view name) {
+        bt::require(equal, std::string(who) + " [front_lift_reaction]." +
+                               std::string(name) +
+                               " matches the calibrated table");
+    };
+    field(actual.hand_window_s == expected.hand_window_s, "hand_window_s");
+    field(actual.hand_lag_s == expected.hand_lag_s, "hand_lag_s");
+    field(actual.hand_drop_ratio == expected.hand_drop_ratio,
+          "hand_drop_ratio");
+    field(actual.pitch_rate_up_rad_s == expected.pitch_rate_up_rad_s,
+          "pitch_rate_up_rad_s");
+    field(actual.pitch_rad == expected.pitch_rad, "pitch_rad");
+    field(actual.decision_s == expected.decision_s, "decision_s");
+    field(actual.ease_enabled == expected.ease_enabled, "ease_enabled");
+    field(actual.lean_enabled == expected.lean_enabled, "lean_enabled");
+    field(actual.rear_brake_tap_enabled == expected.rear_brake_tap_enabled,
+          "rear_brake_tap_enabled");
+    field(actual.ease_fraction == expected.ease_fraction, "ease_fraction");
+    field(actual.ease_rate_per_s == expected.ease_rate_per_s,
+          "ease_rate_per_s");
+    field(actual.lean_add_rad == expected.lean_add_rad, "lean_add_rad");
+    field(actual.lean_rate_rad_s == expected.lean_rate_rad_s,
+          "lean_rate_rad_s");
+    field(actual.clear_s == expected.clear_s, "clear_s");
+}
+
+// The welded profile carries the calibrated normal rider's launch table
+// (launch part 4, decision 5): the start cog steps down by grade, the
+// pedal leads at 1.12 rad and the torso leans up to .35 rad. The built-in
+// default profile keeps its own 34/24 drivetrain with the plan off.
+[[gnu::noinline]] void test_launch_table_is_the_normal_rider() {
+    require_launch_table(profile().rider_launch, normal_rider_table().launch,
+                         "viewer_physics_welded.toml");
     const auto defaults = cfg::default_physics();
-    bt::require(defaults.rider_launch.start_cog_teeth == std::vector<int>{24} &&
+    bt::require(!defaults.rider_launch.plan_enabled &&
+                    defaults.rider_launch.start_cog_teeth ==
+                        std::vector<int>{24} &&
                     defaults.drive.gearing.front_teeth == 34 &&
                     defaults.drive.gearing.rear_teeth == 24,
-                "the built-in profile starts on 34/24");
+                "the built-in profile keeps its own 34/24 with the plan off");
+}
+
+// The three research profiles carry the normal rider; the two rider-type
+// files carry their own calibrated tables — five files, five loads, every
+// field of the two sections checked against decision 5 (launch part 4,
+// step 1).
+[[gnu::noinline]] void test_all_five_profiles_carry_the_calibrated_tables() {
+    const std::array cases = std::to_array<
+        std::pair<const char *, const RiderTable *>>({
+        {"viewer_physics_welded.toml", &normal_rider_table()},
+        {"viewer_physics_distributed.toml", &normal_rider_table()},
+        {"viewer_physics_pneumatic.toml", &normal_rider_table()},
+        {"rider_type_careful.toml", &careful_rider_table()},
+        {"rider_type_aggressive.toml", &aggressive_rider_table()},
+    });
+    for (const auto &[file, expected] : cases) {
+        const auto loaded = cfg::load_physics(
+            repo_file(std::string("examples/research/") + file));
+        require_launch_table(loaded.rider_launch, expected->launch, file);
+        require_reaction_table(loaded.front_lift_reaction, expected->reaction,
+                               file);
+    }
+}
+
+// Profile text without comments and blank lines, the [rider_launch] and
+// [front_lift_reaction] section bodies dropped — the "everything except
+// the two sections" text of step 1.
+[[nodiscard]] std::vector<std::string>
+text_outside_rider_sections(std::string_view text) {
+    std::vector<std::string> lines;
+    bool in_rider_section = false;
+    std::size_t at = 0;
+    while (at <= text.size()) {
+        const auto eol = text.find('\n', at);
+        const auto end =
+            eol == std::string_view::npos ? text.size() : eol;
+        std::string line(text.substr(at, end - at));
+        // The research profiles carry no '#' inside string values.
+        if (const auto hash = line.find('#'); hash != std::string::npos)
+            line.erase(hash);
+        const auto first = line.find_first_not_of(" \t\r");
+        if (first == std::string::npos) {
+            if (eol == std::string_view::npos) break;
+            at = eol + 1;
+            continue;
+        }
+        line.erase(0, first);
+        line.erase(line.find_last_not_of(" \t\r") + 1);
+        if (line.front() == '[')
+            in_rider_section = line == "[rider_launch]" ||
+                               line == "[front_lift_reaction]";
+        else if (!in_rider_section)
+            lines.push_back(line);
+        if (eol == std::string_view::npos) break;
+        at = eol + 1;
+    }
+    return lines;
+}
+
+// rider_type_{careful,aggressive}.toml are full copies of
+// viewer_physics_welded.toml that differ only in [rider_launch] and
+// [front_lift_reaction] (launch part 4, decision 5 and step 1): the parsed
+// SimulationPhysicsConfig is identical once the two sections and the two
+// members they compute are dropped, and the text outside the two sections
+// matches without comments and blank lines.
+[[gnu::noinline]] void test_rider_type_files_differ_only_in_the_two_sections() {
+    const auto canonical_outside_sections = [](
+        const cfg::SimulationPhysicsConfig &config) {
+        auto document = cfg::detail::plain_document(cfg::to_value(config));
+        // The launch table computes these two at load; the comparison
+        // leaves them out along with the sections that produce them.
+        cfg::detail::erase_computed_members(document);
+        std::erase_if(
+            std::get<bike::io::Value::Object>(document.data),
+            [](const auto &member) {
+                return member.first == "rider_launch" ||
+                       member.first == "front_lift_reaction";
+            });
+        return bike::io::canonical_json(document);
+    };
+    const auto welded_lines = text_outside_rider_sections(
+        bt::text(repo_file("examples/research/viewer_physics_welded.toml")));
+    const std::string welded_canonical = canonical_outside_sections(profile());
+    for (const char *name :
+         {"rider_type_careful.toml", "rider_type_aggressive.toml"}) {
+        const auto path =
+            repo_file(std::string("examples/research/") + name);
+        const auto config = cfg::load_physics(path);
+        bt::require(
+            canonical_outside_sections(config) == welded_canonical,
+            std::string(name) + " parses to the welded profile outside "
+                                "the two rider sections");
+        const auto lines = text_outside_rider_sections(bt::text(path));
+        std::string first_difference;
+        for (std::size_t i = 0;
+             i < std::max(lines.size(), welded_lines.size()); ++i) {
+            const std::string_view own =
+                i < lines.size() ? std::string_view(lines[i]) : "<eof>";
+            const std::string_view base =
+                i < welded_lines.size() ? std::string_view(welded_lines[i])
+                                        : "<eof>";
+            if (own != base) {
+                first_difference = "line " + std::to_string(i) + ": '" +
+                                   std::string(own) + "' vs '" +
+                                   std::string(base) + "'";
+                break;
+            }
+        }
+        bt::require(first_difference.empty(),
+                    std::string(name) +
+                        " matches the welded profile outside the two "
+                        "rider sections (" + first_difference + ")");
+    }
 }
 
 // Every rider_launch key and the section itself are required: dropping
 // one fails the load and the error names it (no code default).
 [[gnu::noinline]] void test_launch_table_keys_are_required() {
-    for (const char *line : {"start_cog_grade_breaks = []\n", "start_cog_teeth = [51]\n",
-                             "start_pedal_angle_rad = 0.0\n", "start_lean_grades = [0.0]\n",
-                             "start_lean_rad = [0.0]\n", "plan_enabled = false\n",
+    for (const char *line : {"start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]\n",
+                             "start_cog_teeth = [24, 33, 39, 33, 39]\n",
+                             "start_pedal_angle_rad = 1.12\n", "start_lean_grades = [0.0, 0.15]\n",
+                             "start_lean_rad = [0.0, 0.35]\n", "plan_enabled = true\n",
                              "standstill_speed_mps = 0.1\n", "standstill_crank_rpm = 5.0\n",
-                             "effort_rate_nm_s = 40.0\n", "effort_cap_asphalt_nm = 60.0\n",
-                             "effort_cap_hardpack_nm = 60.0\n", "effort_cap_loose_nm = 60.0\n",
-                             "effort_cap_wet_nm = 60.0\n", "effort_cap_scree_nm = 60.0\n",
+                             "effort_rate_nm_s = 80.0\n", "effort_cap_asphalt_nm = 45.0\n",
+                             "effort_cap_hardpack_nm = 60.0\n", "effort_cap_loose_nm = 45.0\n",
+                             "effort_cap_wet_nm = 45.0\n", "effort_cap_scree_nm = 40.0\n",
                              "effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]\n",
                              "effort_cap_grade_nm = [38.5, 18.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]\n",
                              "effort_rise_speed_mps = 2.5\n",
-                             "release_torque_grades = [0.0, 0.2]\n", "release_torque_nm = [0.0, 30.0]\n",
+                             "release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]\n",
+                             "release_torque_nm = [0.0, 9.0, 9.0, 9.0, 8.0]\n",
                              "brake_release_s = 0.15\n", "max_hold_s = 1.5\n", "upshift_crank_rpm = 82.0\n",
                              "shift_retry_s = 0.25\n",
                              "end_speed_mps = 3.0\n", "end_crank_rpm = 60.0\n", "end_hold_s = 0.3\n",
@@ -429,38 +797,39 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
 // inside the seated posture bounds of [seated_climb].
 [[gnu::noinline]] void test_launch_table_cross_record_rules() {
     auto config = profile();
-    config.rider_launch.start_cog_teeth = {50};
+    config.rider_launch.start_cog_teeth = {50, 50, 50, 50, 50};
     rejects([&] { cfg::validate(config); }, "start_cog_teeth", "a start cog off the cassette");
     config.drive.shifting.enabled = false;
     cfg::validate(config);   // control: any cog >= 3 without shifting
     config = profile();
-    config.rider_launch.start_lean_rad = {config.seated_climb.max_forward_lean_rad + 1e-3};
+    config.rider_launch.start_lean_rad = {config.seated_climb.max_forward_lean_rad + 1e-3,
+                                        config.seated_climb.max_forward_lean_rad + 1e-3};
     rejects([&] { cfg::validate(config); }, "start_lean_rad", "a lean beyond the forward bound");
-    config.rider_launch.start_lean_rad = {-config.seated_climb.max_backward_lean_rad - 1e-3};
+    config.rider_launch.start_lean_rad = {-config.seated_climb.max_backward_lean_rad - 1e-3,
+                                        -config.seated_climb.max_backward_lean_rad - 1e-3};
     rejects([&] { cfg::validate(config); }, "start_lean_rad", "a lean beyond the backward bound");
-    config.rider_launch.start_lean_rad = {config.seated_climb.max_forward_lean_rad};
+    config.rider_launch.start_lean_rad = {config.seated_climb.max_forward_lean_rad,
+                                        config.seated_climb.max_forward_lean_rad};
     cfg::validate(config);   // control: the bound itself is a valid lean
 }
 
-// The welded profile carries the switched-off reaction with the
-// preliminary numbers of the inventory.
-[[gnu::noinline]] void test_reaction_table_is_switched_off() {
-    const auto &r = profile().front_lift_reaction;
-    bt::require(!r.ease_enabled && !r.lean_enabled && !r.rear_brake_tap_enabled, "both actions off");
-    bt::require(r.hand_window_s == .5 && r.hand_lag_s == .5 && r.hand_drop_ratio == .7 && r.pitch_rate_up_rad_s == .5 &&
-                    r.pitch_rad == .17 && r.decision_s == .1 && r.ease_fraction == .7 &&
-                    r.ease_rate_per_s == 5. && r.lean_add_rad == .1 && r.lean_rate_rad_s == .5 && r.clear_s == .3,
-                "the preliminary numbers");
+// The welded profile carries the calibrated normal rider's front-lift
+// reaction with the ease and lean actions on (launch part 4, decision 5).
+[[gnu::noinline]] void test_reaction_table_is_the_calibrated_normal_rider() {
+    require_reaction_table(profile().front_lift_reaction,
+                           normal_rider_table().reaction,
+                           "viewer_physics_welded.toml");
 }
 
 // Every [front_lift_reaction] key and the section are required; the period
 // grid and the forward bound are checked against [seated_climb].
 [[gnu::noinline]] void test_reaction_keys_and_context_rules() {
-    for (const char *line : {"hand_window_s = 0.5\n", "hand_lag_s = 0.5\n", "hand_drop_ratio = 0.7\n", "pitch_rate_up_rad_s = 0.5\n",
-                             "pitch_rad = 0.17\n", "decision_s = 0.1\n", "ease_enabled = false\n",
-                             "lean_enabled = false\n", "rear_brake_tap_enabled = false\n",
-                             "ease_fraction = 0.7\n", "ease_rate_per_s = 5.0\n", "lean_add_rad = 0.1\n",
-                             "lean_rate_rad_s = 0.5\n", "clear_s = 0.3\n"}) {
+    for (const char *line : {"hand_window_s = 0.5\n", "hand_lag_s = 0.5\n", "hand_drop_ratio = 0.7\n",
+                             "pitch_rate_up_rad_s = 0.15\n",
+                             "pitch_rad = 0.09\n", "decision_s = 0.2\n", "ease_enabled = true\n",
+                             "lean_enabled = true\n", "rear_brake_tap_enabled = false\n",
+                             "ease_fraction = 0.7\n", "ease_rate_per_s = 5.0\n", "lean_add_rad = 0.15\n",
+                             "lean_rate_rad_s = 1.0\n", "clear_s = 0.4\n"}) {
         const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
         // Remove the key inside [front_lift_reaction] only: lean_rate_rad_s
         // also exists in [seated_climb], so replace_once would refuse the
@@ -481,7 +850,7 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
     rejects([] {
         (void)load_edited_profile([](std::string &t) {
             const auto from = t.find("[front_lift_reaction]\n");
-            const std::string_view last = "clear_s = 0.3\n";
+            const std::string_view last = "clear_s = 0.4\n";
             const auto to = t.find(last, from);
             bt::require(from != std::string::npos && to != std::string::npos, "the profile has the reaction block");
             t.erase(from, to + last.size() - from);
@@ -524,22 +893,28 @@ template <typename Edit>
 }
 
 // Loading resolves the computed members for a flat start from the
-// document's own table: the shipped profile carries 51T at angle 0, and a
-// stepwise table puts grade 0 on the cog of its middle interval. An
-// override of the table re-resolves them after the merge.
+// document's own table: the shipped profile carries the normal rider's
+// 24T cog at 1.12 rad, and a stepwise table puts grade 0 on the cog of
+// its middle interval. An override of the table re-resolves them after
+// the merge.
 [[gnu::noinline]] void test_load_resolves_a_flat_start() {
-    bt::require(profile().drive.gearing.rear_teeth == 51 && profile().drive.crank_phase_rad == 0.,
-                "the shipped profile resolves to 51T at angle 0");
+    bt::require(profile().drive.gearing.rear_teeth == 24 &&
+                    profile().drive.crank_phase_rad == 1.12,
+                "the shipped profile resolves to the flat-start cog and pedal angle");
     const auto stepwise = load_edited_profile([](std::string &t) {
-        replace_once(t, "start_cog_grade_breaks = []", "start_cog_grade_breaks = [-0.01, 0.05]");
-        replace_once(t, "start_cog_teeth = [51]", "start_cog_teeth = [21, 39, 51]");
-        replace_once(t, "start_pedal_angle_rad = 0.0", "start_pedal_angle_rad = 0.5");
+        replace_once(t, "start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]",
+                     "start_cog_grade_breaks = [-0.01, 0.05]");
+        replace_once(t, "start_cog_teeth = [24, 33, 39, 33, 39]",
+                     "start_cog_teeth = [21, 39, 51]");
+        replace_once(t, "start_pedal_angle_rad = 1.12",
+                     "start_pedal_angle_rad = 0.5");
     });
     bt::require(stepwise.drive.gearing.rear_teeth == 39 && stepwise.drive.crank_phase_rad == .5,
                 "grade 0 takes the middle cog and the table's angle");
     using bike::io::Value;
     const Value teeth{Value::Array{Value{bike::io::Number{"45"}}}};
-    const Value launch{Value::Object{{"start_cog_teeth", teeth}}};
+    const Value launch{Value::Object{
+        {"start_cog_teeth", teeth}, {"start_cog_grade_breaks", Value{Value::Array{}}}}};
     const Value table{Value::Object{{"rider_launch", launch}}};
     bt::require(cfg::resolve_physics(table, profile()).drive.gearing.rear_teeth == 45,
                 "an overridden table re-resolves the start cog");
@@ -565,7 +940,7 @@ template <typename Edit>
     bt::require(reread.rider_launch.start_cog_teeth == stepwise->rider_launch.start_cog_teeth &&
                     reread.rider_launch.start_cog_grade_breaks == stepwise->rider_launch.start_cog_grade_breaks,
                 "the written table loads back unchanged");
-    bt::require(reread.drive.gearing.rear_teeth == 39 && reread.drive.crank_phase_rad == 0.,
+    bt::require(reread.drive.gearing.rear_teeth == 39 && reread.drive.crank_phase_rad == 1.12,
                 "the computed members come back as the flat start");
 }
 
@@ -600,10 +975,12 @@ int main() {
         test_relaxation_is_kinetic_for_the_rotor_drive();
         test_assist_is_bosch_turbo_with_the_declared_envelope();
         test_rider_numbers();
-        test_launch_table_reproduces_todays_start();
+        test_launch_table_is_the_normal_rider();
+        test_all_five_profiles_carry_the_calibrated_tables();
+        test_rider_type_files_differ_only_in_the_two_sections();
         test_launch_table_keys_are_required();
         test_launch_table_cross_record_rules();
-        test_reaction_table_is_switched_off();
+        test_reaction_table_is_the_calibrated_normal_rider();
         test_reaction_keys_and_context_rules();
         test_computed_drive_members_are_not_authored();
         test_load_resolves_a_flat_start();

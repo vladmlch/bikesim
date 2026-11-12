@@ -4,8 +4,8 @@
 > `superpowers:executing-plans`. Шаги отмечаются флажками (`- [ ]`). Исполнитель — Devin (`devin-orchestration`);
 > финальное ревью ветки делает оркестратор.
 
-Редакция 4 — после трёх ревью codex: `/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-plan3a-review/review.md`,
-`review-2.md`, `review-3.md` (ответы в конце).
+Редакция 5 — после трёх ревью codex (`/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-plan3a-review/review.md`,
+`review-2.md`, `review-3.md`) и ревью qoder (`review-4.md`); ответы в конце.
 
 **Цель.** Подготовить всё, на что опирается план старта (часть 3b), кроме самого плана. Поведение поездок не
 меняется:
@@ -86,7 +86,7 @@
    3b к нему добавится план. Признак возвращается из `resolve_full` вместе с выходом той же (пробной или
    настоящей) копии, и шаг передаёт его на педали.
 7. **Порядок на педалях (I4).** При `cut_after_ceiling` цель строится так: `min(цель с прибавкой mash, предел) ×
-   срез`, затем прежний темп. Иначе порядок прежний: `(цель × срез)`, затем `min(предел)` (`pedaling.cpp:68-74`).
+   срез`, затем прежний темп. Иначе порядок прежний: `(цель × срез)`, затем `min(предел)` (`pedaling.cpp:68-73`).
 8. **Запись.** Канал `rider_reaction` (`phase`, `predicate`, `effort_factor`, `lean_add_rad`) кладётся в каналы
    каждого интервала там же, где `rider_senses` (`step.cpp:2031-2049`), а не в подробные каналы. Поэтому он есть и
    на прореженных интервалах.
@@ -217,7 +217,9 @@ BASELOG=/Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch3a/baseline-before-task<N>
 - `fixture_config`, `momentum_config`, `airborne_config` (`validation/drivetrain.cpp`, `validation/rider.cpp`), две
   конфигурации `validation/scenarios.cpp`;
 - тестовые структуры `replay_reference_support.hpp`, `research_reference_support.hpp`, `test_control_clock.cpp`,
-  `replay/test_session.cpp`, `test_resolution.cpp` (`unresolved_base`), `test_schema.cpp` (`welded_profile()`);
+  `replay/test_session.cpp`, `test_resolution.cpp` (`unresolved_base`), `test_schema.cpp` (`welded_profile()`
+  и структурные проверки `test_schema()`: `kTopOrder`, число полей, индексы вложенных проверок — их поиск по
+  `rider_launch *=` не находит);
 - подстановка недостающих разделов в `test_pneumatic_tire_config.cpp` (`resolve()`);
 - встроенные TOML-строки: проверка «`[front_lift_reaction]` столько же, сколько `[monitors]`» по образцу шага 4
   задачи 1 части 2.
@@ -304,7 +306,7 @@ python3 /Volumes/SSD_1TB_M2/work/tmp/2026-11-11-launch1/check_rerecord.py --repo
 ### Задача 1. Порядок «предел райдера → срез» на педалях
 
 **Файлы:**
-- Изменить: `native/src/drivetrain/pedaling.hpp:82-86`, `native/src/drivetrain/pedaling.cpp:68-74`,
+- Изменить: `native/src/drivetrain/pedaling.hpp:83-87`, `native/src/drivetrain/pedaling.cpp:68-73`,
   `native/src/writers/drivetrain.hpp:119-134,301-306`, `native/src/writers/drivetrain.cpp:476-488,751-755`,
   `native/src/runtime/step.cpp:1328-1337`.
 - Создать: `native/tests/reference/test_pedaling_cut_order.cpp`; регистрация в `native/tests/reference/Phase3Ports.cmake`
@@ -319,7 +321,7 @@ bike_add_reference_test(pedaling_cut_order ENGINE
 ```
 
 **Интерфейсы:**
-- Создаёт: последний параметр `bool cut_after_ceiling = false` у `PedalingPolicy::update` (`pedaling.hpp:83-86`);
+- Создаёт: последний параметр `bool cut_after_ceiling = false` у `PedalingPolicy::update` (`pedaling.hpp:83-87`);
   поле `bool cut_after_ceiling = false;` в `drivetrain::PrepareInputs` (структура уровня пространства имён); последний параметр
   `bool cut_after_ceiling = false` у `DrivetrainWriter::prepare`. Значения по умолчанию сохраняют всех нынешних
   вызывающих; это параметры кода, а не профиля.
@@ -382,7 +384,7 @@ int main() {
 ```
 
 - [ ] **Шаг 2.** `mise run test 'pedaling_cut_order'` — сборка падает (нет параметра).
-- [ ] **Шаг 3. Код.** В `pedaling.cpp` строки `:68-74` (от `double target = effort;` до `target = std::min(target,
+- [ ] **Шаг 3. Код.** В `pedaling.cpp` строки `:68-73` (от `double target = effort;` до `target = std::min(target,
   *ceiling_nm);`) заменить на
 
 ```cpp
@@ -1106,9 +1108,14 @@ void FrontLiftReaction::restore(const State &s) {
         if (s.predicate != (s.clear_ticks == 0)) bad("clear_ticks", "inconsistent with the predicate");
         if (s.percepts_seen < std::min(acting_from + s.clear_ticks, percepts_cap()))
             bad("percepts_seen", "acting before the dwell and decision could pass");
-        // The first acting update already moves every enabled output.
-        if ((config_.ease_enabled && config_.ease_fraction > 0. && s.effort_factor == 1.) ||
-            (config_.lean_enabled && config_.lean_add_rad > 0. && s.lean_add_rad == 0.))
+        // The first acting update already moves every enabled output whose
+        // first step is nonzero — the same step_toward call update() makes, so
+        // a subnormal rate or a fraction lost to rounding (review 4, M3) is
+        // not rejected.
+        if ((config_.ease_enabled && s.effort_factor == 1. &&
+             step_toward(1., 1. - config_.ease_fraction, config_.ease_rate_per_s * period_s_) != 1.) ||
+            (config_.lean_enabled && s.lean_add_rad == 0. &&
+             step_toward(0., config_.lean_add_rad, config_.lean_rate_rad_s * period_s_) != 0.))
             bad("phase", "acting without moving an enabled output");
         break;
     case ReactionPhase::releasing:
@@ -1243,6 +1250,23 @@ inline const RecordSchema kFrontLiftReactionConfigSchema{
      .required=true, .factory="", .nested=&kFrontLiftReactionConfigSchema, .nested2=nullptr},
 ```
 
+  - `native/tests/config/test_schema.cpp`, `test_schema()` (ревью 4, I2): структурные проверки
+    описывают живой `cfg::schema()` и обновляются, как в части 2 для `rider_launch`. Порядок и состав
+    проверок не меняются; сравнение с оракулом остаётся перед вложенными проверками (коммит 1ad60e32), так что
+    первое падение `config_schema` остаётся `schema() differs from the oracle document` и строка в `EXPECT` не
+    нужна. Файл оракула `tests/fixtures/config/schema.json` не трогать: это выход красного теста.
+    - `kTopOrder`: `std::array<std::string_view, 24>`, `"front_lift_reaction"` сразу после `"rider_launch"`;
+    - `fields.size() == 24` в проверке `"top-level field count"`;
+    - вложенные проверки: `monitors` — `fields[13]`, `research` — `fields[14]`; после проверки `rider_launch`
+      добавить:
+
+```cpp
+    bt::require(fields_named(fields[12], "front_lift_reaction").size() == 13,
+                "front_lift_reaction field count");
+```
+
+    Проверка: `git grep -n 'fields\[1[1-9]\]' native/tests/config/test_schema.cpp` показывает только индексы
+    11-14 с именами `rider_launch`, `front_lift_reaction`, `monitors`, `research`.
   - `load.cpp`, `construct_record`: `BIKE_T13_RECORD(FrontLiftReactionConfig, kFrontLiftReactionConfigSchema)`
     после строки `RiderLaunchConfig`.
   - `validate.cpp`: `detail::post_init(const FrontLiftReactionConfig &c)` вызывает
@@ -1841,7 +1865,7 @@ void test_rider_reaction_channel_round_trips() {
 }
 ```
 
-  В `launch_ride_support.hpp` — перегрузка. Нынешнее тело `environment` (`:63-120`) переносится в неё без
+  В `launch_ride_support.hpp` — перегрузка. Нынешнее тело `environment` (`:61-133`) переносится в неё без
   изменений, кроме трёх строк, помеченных `// part 3a` ниже. Двухаргументная форма вызывает её с прежними
   значениями, так что все нынешние вызовы ведут себя как раньше:
 
@@ -1868,7 +1892,7 @@ template <typename Edit>
     request.experiment.duration_s = duration_s;
     request.experiment.record_decimation = record_decimation;   // part 3a (was 1)
     request.capture_mode = capture_mode;                        // part 3a (was the legacy default)
-    // ... every remaining line of today's body (:74-120) unchanged ...
+    // ... every remaining line of today's body (:75-132) unchanged ...
 }
 
 [[nodiscard]] inline PedelecEnv environment(terrain::TrackSpec track, double duration_s) {
@@ -1877,7 +1901,7 @@ template <typename Edit>
 ```
 
   Комментарий `// ... every remaining line ...` — указание переноса, а не код: на его месте остаются строки
-  `:74-120` нынешней функции, дословно.
+  `:75-132` нынешней функции, дословно.
 
   В `test_rider_senses.cpp` добавить тест и его вызов в `main` (`#include <optional>`, `<set>`, `<utility>`, `<bit>`):
 
@@ -1950,7 +1974,10 @@ struct ReactionRow {
     const std::set<std::pair<std::string, std::string>> allowed{
         {"idle", "idle"}, {"idle", "deciding"}, {"deciding", "deciding"}, {"deciding", "idle"},
         {"deciding", "acting"}, {"acting", "acting"}, {"acting", "releasing"}, {"releasing", "releasing"},
-        {"releasing", "acting"}, {"releasing", "idle"}};
+        {"releasing", "acting"}, {"releasing", "idle"},
+        // A row is the phase at the interval's close, 8 intention ticks
+        // apart: releasing -> idle -> deciding can fit inside one interval.
+        {"releasing", "deciding"}};
     std::optional<std::int64_t> deciding_from, acting_at;
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto &row = rows[i];
@@ -1964,8 +1991,13 @@ struct ReactionRow {
             deciding_from = row.interval;
         if (row.phase == "acting" && !acting_at) acting_at = row.interval;
     }
-    if (acting_at)   // one interval is one intention tick here: 0.1 s = 80 ticks
-        bt::require(deciding_from && *acting_at - *deciding_from == 80, "acting starts decision_s after deciding");
+    // One research interval (.01 s) is 8 intention ticks (seated_climb.period_s
+    // = .00125 s), so decision_s = .1 s is 80 ticks = 10 intervals. Rows are
+    // sampled at interval close: a short return to idle inside one interval
+    // is invisible and only makes the observed gap longer, so the bound is
+    // >= 10 (exactly 10 without such a hidden return).
+    if (acting_at)
+        bt::require(deciding_from && *acting_at - *deciding_from >= 10, "acting starts decision_s after deciding");
     std::printf("reaction ride: %zu rows, %zu unmeasured, acting %s\n", rows.size(), unmeasured,
                 acting_at ? "reached" : "not reached");
     env.runtime->reset();
@@ -2229,7 +2261,7 @@ void RiderIntent::restore(const State &state) {
 
   - Каталог. В `catalog-v1.json` и в `catalog_data.inc` таблица вставляется сразу после `channel_rider_senses`. Её
     два ключа — дословные копии ключей `episode_id` и `interval_id` таблицы `channel_rider_senses`
-    (`catalog-v1.json:8015-8058`), строка `"keys"` ниже — место для них:
+    (`catalog-v1.json:8015-8052`), строка `"keys"` ниже — место для них:
 
 ```json
 {
@@ -2402,6 +2434,16 @@ bash $T/ab_settle.sh /Volumes/SSD_1TB_M2/work/wt/lane-flip "$PWD" $F/ab > $F/ab.
 | M1 — доказательства шире проверок | Сравнение всего сохранённого состояния при продолжении и вокруг пробного шага в тесте реакции; задача 1 по-прежнему проверяет только скалярный порядок, отчёт называет это так; поездка не доказывает физическую правдоподобность |
 | M2 — исполнимые детали переноса | Список из 45 файлов (`manifest.sh`), скрипт с проверкой вида записи до записи, проверка прежних значений, команды с путями и `--repo`, ожидаемый вывод; перенос тела окружения и ключей каталога — дословные указания с номерами строк |
 | M3 — база, размеры частей, описания | База задачи 1 — вершина перед задачей; размеры частей `catalog_data.inc` и граница вставки исправлены; описания выходов говорят о возврате во время `releasing` |
+
+**Четвёртое ревью (qoder, `2026-11-11-plan3a-review/review-4.md`):**
+
+| Пункт | Ответ |
+|---|---|
+| I1 — поездка сравнивала интервалы записи с тиками намерений (`== 80`) | Интервал записи — 8 тиков намерений, решение `.1` с — 10 интервалов. Строки берутся на конце интервала, скрытый возврат в `idle` только удлиняет разрыв: проверка `>= 10`. По той же выборке допущен переход `releasing → deciding` (внутри интервала `releasing → idle → deciding`) |
+| I2 — новое поле корня ломает структурные проверки `test_schema()` | Задача 2 обновляет `kTopOrder` (24), число полей и индексы вложенных проверок, добавляет счёт полей `front_lift_reaction`; первое падение `config_schema` не меняется, строка в `EXPECT` не нужна, оракул не трогаем |
+| M1, M2, M4 — сдвиг номеров строк | Исправлены: `launch_ride_support.hpp:61-133` (перенос `:75-132`), `catalog-v1.json:8015-8052`, `pedaling.cpp:68-73`, `pedaling.hpp:83-87` |
+| M3 — проверка `acting` отвергала достижимое состояние при исчезающе малом шаге | Проверка повторяет первый шаг `update()` тем же `step_toward`: выход обязан сдвинуться, только если его первый шаг ненулевой |
+| Неоднозначность спецификации «Одна на всю поездку» | Подробный раздел спецификации однозначен (реакция срабатывает повторно); план это и делает. Формулировку спецификации поправлю вместе с частью 3b |
 
 ## Что остаётся части 3b
 

@@ -45,7 +45,28 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"start_cog_teeth", io::Value{io::Value::Array{io::Value{io::Number{"24"}}}}},
                 {"start_pedal_angle_rad", io::Value{io::Number{"0.0"}}},
                 {"start_lean_grades", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
-                {"start_lean_rad", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}}}});
+                {"start_lean_rad", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
+                {"plan_enabled", io::Value{false}},
+                {"standstill_speed_mps", io::Value{io::Number{"0.1"}}},
+                {"standstill_crank_rpm", io::Value{io::Number{"5.0"}}},
+                {"effort_rate_nm_s", io::Value{io::Number{"40.0"}}},
+                {"effort_cap_asphalt_nm", io::Value{io::Number{"60.0"}}},
+                {"effort_cap_hardpack_nm", io::Value{io::Number{"60.0"}}},
+                {"effort_cap_loose_nm", io::Value{io::Number{"60.0"}}},
+                {"effort_cap_wet_nm", io::Value{io::Number{"60.0"}}},
+                {"effort_cap_scree_nm", io::Value{io::Number{"60.0"}}},
+                {"release_torque_grades", io::Value{io::Value::Array{
+                     io::Value{io::Number{"0.0"}}, io::Value{io::Number{"0.2"}}}}},
+                {"release_torque_nm", io::Value{io::Value::Array{
+                     io::Value{io::Number{"0.0"}}, io::Value{io::Number{"30.0"}}}}},
+                {"brake_release_s", io::Value{io::Number{"0.15"}}},
+                {"max_hold_s", io::Value{io::Number{"1.5"}}},
+                {"upshift_crank_rpm", io::Value{io::Number{"82.0"}}},
+                {"end_speed_mps", io::Value{io::Number{"3.0"}}},
+                {"end_crank_rpm", io::Value{io::Number{"60.0"}}},
+                {"end_hold_s", io::Value{io::Number{"0.3"}}},
+                {"max_launch_s", io::Value{io::Number{"6.0"}}},
+                {"handover_s", io::Value{io::Number{"0.9"}}}}});
         }
         if (!io::find_member(*obj, "front_lift_reaction")) {
             obj->emplace_back("front_lift_reaction", io::Value{io::Value::Object{

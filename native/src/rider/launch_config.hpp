@@ -25,6 +25,29 @@ struct LaunchConfig {
     // knots, held at the end values outside them.
     std::vector<double> start_lean_grades;
     std::vector<double> start_lean_rad;
+    // Launch part 3b — the launch plan (rider/launch_plan.hpp). Off in
+    // every profile until part 4 switches it on.
+    bool plan_enabled = false;
+    double standstill_speed_mps = std::numeric_limits<double>::quiet_NaN();
+    double standstill_crank_rpm = std::numeric_limits<double>::quiet_NaN();
+    double effort_rate_nm_s = std::numeric_limits<double>::quiet_NaN();
+    double effort_cap_asphalt_nm = std::numeric_limits<double>::quiet_NaN();
+    double effort_cap_hardpack_nm = std::numeric_limits<double>::quiet_NaN();
+    double effort_cap_loose_nm = std::numeric_limits<double>::quiet_NaN();
+    double effort_cap_wet_nm = std::numeric_limits<double>::quiet_NaN();
+    double effort_cap_scree_nm = std::numeric_limits<double>::quiet_NaN();
+    // Felt crank torque that releases the brakes, piecewise linear over
+    // strictly ascending grade knots, held at the end values outside them.
+    std::vector<double> release_torque_grades;
+    std::vector<double> release_torque_nm;
+    double brake_release_s = std::numeric_limits<double>::quiet_NaN();
+    double max_hold_s = std::numeric_limits<double>::quiet_NaN();
+    double upshift_crank_rpm = std::numeric_limits<double>::quiet_NaN();
+    double end_speed_mps = std::numeric_limits<double>::quiet_NaN();
+    double end_crank_rpm = std::numeric_limits<double>::quiet_NaN();
+    double end_hold_s = std::numeric_limits<double>::quiet_NaN();
+    double max_launch_s = std::numeric_limits<double>::quiet_NaN();
+    double handover_s = std::numeric_limits<double>::quiet_NaN();
 };
 
 // The start the table gives for one grade.
@@ -43,5 +66,13 @@ void validate_launch_table(const LaunchConfig &table);
 // fixed pedal angle and the interpolated lean for that grade.
 [[nodiscard]] LaunchPreparation prepare_launch(const LaunchConfig &table,
                                                double grade);
+
+// The release torque the table gives for one grade (same interpolation as
+// the start lean). Validates the table first.
+[[nodiscard]] double release_torque_nm(const LaunchConfig &table, double grade);
+
+// The plan times on the intention period grid, at most 2^31 ticks each.
+// The profile post_init (always) and RiderIntent (enabled intent) call it.
+void validate_launch_plan_context(const LaunchConfig &table, double period_s);
 
 } // namespace rider

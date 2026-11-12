@@ -293,7 +293,26 @@ cfg::SimulationPhysicsConfig welded_profile() {
                       .start_cog_teeth = {51},
                       .start_pedal_angle_rad = 0.0,
                       .start_lean_grades = {0.0},
-                      .start_lean_rad = {0.0}};
+                      .start_lean_rad = {0.0},
+                      .plan_enabled = false,
+                      .standstill_speed_mps = 0.1,
+                      .standstill_crank_rpm = 5.0,
+                      .effort_rate_nm_s = 40.0,
+                      .effort_cap_asphalt_nm = 60.0,
+                      .effort_cap_hardpack_nm = 60.0,
+                      .effort_cap_loose_nm = 60.0,
+                      .effort_cap_wet_nm = 60.0,
+                      .effort_cap_scree_nm = 60.0,
+                      .release_torque_grades = {0.0, 0.2},
+                      .release_torque_nm = {0.0, 30.0},
+                      .brake_release_s = 0.15,
+                      .max_hold_s = 1.5,
+                      .upshift_crank_rpm = 82.0,
+                      .end_speed_mps = 3.0,
+                      .end_crank_rpm = 60.0,
+                      .end_hold_s = 0.3,
+                      .max_launch_s = 6.0,
+                      .handover_s = 0.9};
     c.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05,
                              .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
                              .decision_s = .1, .ease_enabled = false,
@@ -780,7 +799,8 @@ void test_schema() {
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 22,
                 "seated_climb field count");
-    bt::require(fields_named(fields[11], "rider_launch").size() == 5,
+    // 24 = the 5 part-2 fields + the 19 launch plan fields of part 3b.
+    bt::require(fields_named(fields[11], "rider_launch").size() == 24,
                 "rider_launch field count");
     bt::require(fields_named(fields[12], "front_lift_reaction").size() == 13,
                 "front_lift_reaction field count");

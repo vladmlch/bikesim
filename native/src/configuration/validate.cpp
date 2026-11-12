@@ -1118,6 +1118,9 @@ void post_init(SimulationPhysicsConfig &config) {
         if (lean > config.seated_climb.max_forward_lean_rad ||
             lean < -config.seated_climb.max_backward_lean_rad)
             fail("rider_launch.start_lean_rad: lean outside the seated posture bounds");
+    // Launch part 3b: the plan counts intention ticks — the same context
+    // check RiderIntent runs on runtime documents.
+    ::rider::validate_launch_plan_context(config.rider_launch, config.seated_climb.period_s);
     detail::post_init(config.front_lift_reaction);
     // Launch part 3a: the reaction counts intention ticks and leans inside
     // the seated forward bound — the same context check RiderIntent runs on
@@ -1366,7 +1369,28 @@ SimulationPhysicsConfig default_physics() {
                            .start_cog_teeth = {24},
                            .start_pedal_angle_rad = 0.,
                            .start_lean_grades = {0.},
-                           .start_lean_rad = {0.}};
+                           .start_lean_rad = {0.},
+                           // Launch part 3b — the switched-off launch plan;
+                           // preliminary numbers until part 4 calibrates.
+                           .plan_enabled = false,
+                           .standstill_speed_mps = .1,
+                           .standstill_crank_rpm = 5.,
+                           .effort_rate_nm_s = 40.,
+                           .effort_cap_asphalt_nm = 60.,
+                           .effort_cap_hardpack_nm = 60.,
+                           .effort_cap_loose_nm = 60.,
+                           .effort_cap_wet_nm = 60.,
+                           .effort_cap_scree_nm = 60.,
+                           .release_torque_grades = {0., .2},
+                           .release_torque_nm = {0., 30.},
+                           .brake_release_s = .15,
+                           .max_hold_s = 1.5,
+                           .upshift_crank_rpm = 82.,
+                           .end_speed_mps = 3.,
+                           .end_crank_rpm = 60.,
+                           .end_hold_s = .3,
+                           .max_launch_s = 6.,
+                           .handover_s = .9};
     // Launch part 3a — the switched-off reaction with the inventory's
     // preliminary numbers; nothing reads it during a ride yet.
     config.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5,

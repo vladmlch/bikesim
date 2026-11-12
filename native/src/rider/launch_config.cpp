@@ -40,6 +40,33 @@ void validate_launch_table(const LaunchConfig &table) {
     strictly_ascending(table.start_lean_grades, "start_lean_grades");
     for (const double lean : table.start_lean_rad)
         if (!std::isfinite(lean)) reject("start_lean_rad", "values must be finite");
+    const auto nonnegative = [](double v, std::string_view field) {
+        if (!(std::isfinite(v) && v >= 0.)) reject(field, "must be finite and nonnegative");
+    };
+    const auto positive = [](double v, std::string_view field) {
+        if (!(std::isfinite(v) && v > 0.)) reject(field, "must be finite and positive");
+    };
+    nonnegative(table.standstill_speed_mps, "standstill_speed_mps");
+    nonnegative(table.standstill_crank_rpm, "standstill_crank_rpm");
+    positive(table.effort_rate_nm_s, "effort_rate_nm_s");
+    positive(table.effort_cap_asphalt_nm, "effort_cap_asphalt_nm");
+    positive(table.effort_cap_hardpack_nm, "effort_cap_hardpack_nm");
+    positive(table.effort_cap_loose_nm, "effort_cap_loose_nm");
+    positive(table.effort_cap_wet_nm, "effort_cap_wet_nm");
+    positive(table.effort_cap_scree_nm, "effort_cap_scree_nm");
+    if (table.release_torque_grades.empty()) reject("release_torque_grades", "needs at least one knot");
+    if (table.release_torque_nm.size() != table.release_torque_grades.size())
+        reject("release_torque_nm", "needs one torque per release_torque_grades knot");
+    strictly_ascending(table.release_torque_grades, "release_torque_grades");
+    for (const double torque : table.release_torque_nm) nonnegative(torque, "release_torque_nm");
+    nonnegative(table.brake_release_s, "brake_release_s");
+    positive(table.max_hold_s, "max_hold_s");
+    positive(table.upshift_crank_rpm, "upshift_crank_rpm");
+    nonnegative(table.end_speed_mps, "end_speed_mps");
+    nonnegative(table.end_crank_rpm, "end_crank_rpm");
+    nonnegative(table.end_hold_s, "end_hold_s");
+    positive(table.max_launch_s, "max_launch_s");
+    nonnegative(table.handover_s, "handover_s");
 }
 
 LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
@@ -64,6 +91,35 @@ LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
     return {.rear_teeth = table.start_cog_teeth[cog],
             .crank_phase_rad = table.start_pedal_angle_rad,
             .lean_rad = lean};
+}
+
+double release_torque_nm(const LaunchConfig &table, double grade) {
+    validate_launch_table(table);
+    if (!std::isfinite(grade)) throw std::invalid_argument("launch release grade must be finite");
+    const auto &knots = table.release_torque_grades;
+    const auto &torques = table.release_torque_nm;
+    if (grade >= knots.back()) return torques.back();
+    if (grade <= knots.front()) return torques.front();
+    const auto upper = static_cast<std::size_t>(
+        std::distance(knots.begin(), std::ranges::upper_bound(knots, grade)));
+    const double t = (grade - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
+    return torques[upper - 1] + t * (torques[upper] - torques[upper - 1]);
+}
+
+void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
+    validate_launch_table(table);
+    if (!(std::isfinite(period_s) && period_s > 0.))
+        throw std::invalid_argument("launch plan needs a positive intention period");
+    const auto on_grid = [period_s](double seconds, std::string_view field) {
+        const double ticks = std::rint(seconds / period_s);
+        if (std::abs(ticks * period_s - seconds) > 1e-9) reject(field, "must be a whole number of intention periods");
+        if (ticks > 0x1p31) reject(field, "must be at most 2^31 intention periods");
+    };
+    on_grid(table.brake_release_s, "brake_release_s");
+    on_grid(table.max_hold_s, "max_hold_s");
+    on_grid(table.end_hold_s, "end_hold_s");
+    on_grid(table.max_launch_s, "max_launch_s");
+    on_grid(table.handover_s, "handover_s");
 }
 
 } // namespace rider

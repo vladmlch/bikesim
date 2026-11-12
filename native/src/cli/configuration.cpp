@@ -209,7 +209,7 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     defaults->drive.transmission_model = "ideal_mid_drive";
     defaults->drive.motor_clutch = true;
     defaults->drive.human_torque_nm = 0.; defaults->drive.gearing.front_teeth = 34;
-    defaults->rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {51}, .start_pedal_angle_rad = 0., .start_lean_grades = {0.}, .start_lean_rad = {0.}};
+    defaults->rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {51}, .start_pedal_angle_rad = 0., .start_lean_grades = {0.}, .start_lean_rad = {0.}, .plan_enabled = false, .standstill_speed_mps = .1, .standstill_crank_rpm = 5., .effort_rate_nm_s = 40., .effort_cap_asphalt_nm = 60., .effort_cap_hardpack_nm = 60., .effort_cap_loose_nm = 60., .effort_cap_wet_nm = 60., .effort_cap_scree_nm = 60., .release_torque_grades = {0., .2}, .release_torque_nm = {0., 30.}, .brake_release_s = .15, .max_hold_s = 1.5, .upshift_crank_rpm = 82., .end_speed_mps = 3., .end_crank_rpm = 60., .end_hold_s = .3, .max_launch_s = 6., .handover_s = .9};
     // Launch part 3a — the switched-off front-lift reaction (both actions
     // off), the same preliminary numbers the profiles declare.
     defaults->front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5, .pitch_rad = .17, .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false, .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};

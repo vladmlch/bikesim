@@ -60,7 +60,26 @@ rider::LaunchConfig ramp_table() {
             .start_cog_teeth = {24, 33, 51},
             .start_pedal_angle_rad = .6,
             .start_lean_grades = {0., .2},
-            .start_lean_rad = {0., .2}};
+            .start_lean_rad = {0., .2},
+            .plan_enabled = false,
+            .standstill_speed_mps = .1,
+            .standstill_crank_rpm = 5.,
+            .effort_rate_nm_s = 40.,
+            .effort_cap_asphalt_nm = 60.,
+            .effort_cap_hardpack_nm = 60.,
+            .effort_cap_loose_nm = 60.,
+            .effort_cap_wet_nm = 60.,
+            .effort_cap_scree_nm = 60.,
+            .release_torque_grades = {0., .2},
+            .release_torque_nm = {0., 30.},
+            .brake_release_s = .15,
+            .max_hold_s = 1.5,
+            .upshift_crank_rpm = 82.,
+            .end_speed_mps = 3.,
+            .end_crank_rpm = 60.,
+            .end_hold_s = .3,
+            .max_launch_s = 6.,
+            .handover_s = .9};
 }
 
 // The cog is stepwise and each interval is closed below: a grade equal to a
@@ -129,6 +148,43 @@ void test_table_rules_name_the_field() {
             "grade", "an infinite preparation grade");
     const rider::LaunchConfig unset;
     rejects([&] { rider::validate_launch_table(unset); }, "start_cog_teeth", "a default-constructed table");
+}
+
+// Launch part 3b: every plan field has a domain, the release table needs one
+// torque per ascending knot, and the plan times sit on the intention grid.
+void test_plan_fields_name_the_field() {
+    const auto with = [](auto edit) { auto t = ramp_table(); edit(t); return t; };
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.standstill_speed_mps = -.1; })); },
+            "standstill_speed_mps", "a negative standstill speed");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_rate_nm_s = 0.; })); },
+            "effort_rate_nm_s", "a zero effort rate");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_cap_wet_nm = 0.; })); },
+            "effort_cap_wet_nm", "a zero wet cap");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.release_torque_nm = {5.}; })); },
+            "release_torque_nm", "one torque for two knots");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.release_torque_grades = {.2, .1}; })); },
+            "release_torque_grades", "descending knots");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.release_torque_nm = {-1., 30.}; })); },
+            "release_torque_nm", "a negative release torque");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.max_hold_s = 0.; })); },
+            "max_hold_s", "a zero hold limit");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.upshift_crank_rpm = 0.; })); },
+            "upshift_crank_rpm", "a zero upshift cadence");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.max_launch_s = 0.; })); },
+            "max_launch_s", "a zero launch limit");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) {
+                t.end_hold_s = std::numeric_limits<double>::quiet_NaN(); })); },
+            "end_hold_s", "a NaN end hold");
+    rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.brake_release_s = .0011; }), .00125); },
+            "brake_release_s", "a release time off the grid");
+    rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.max_launch_s = 0x1p40 * .00125; }),
+                                                      .00125); },
+            "max_launch_s", "a launch limit beyond 2^31 ticks");
+    rider::validate_launch_plan_context(ramp_table(), .00125);   // control
+    bt::require(rider::release_torque_nm(ramp_table(), -.1) == 0. &&
+                    rider::release_torque_nm(ramp_table(), .1) == 15. &&
+                    rider::release_torque_nm(ramp_table(), .5) == 30.,
+                "the release torque interpolates and holds its end values");
 }
 
 namespace init = bike::initialization;
@@ -454,6 +510,7 @@ int main() {
         test_cog_is_stepwise_by_grade();
         test_lean_interpolates_and_angle_is_fixed();
         test_table_rules_name_the_field();
+        test_plan_fields_name_the_field();
         test_start_grade_looks_ahead_of_the_start();
         test_setup_prepares_cog_and_angle_for_the_start_grade();
         test_setup_prepares_before_validating();

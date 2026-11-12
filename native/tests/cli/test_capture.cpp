@@ -1,3 +1,4 @@
+#include "diag.hpp"
 #include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 #include "cli/application.hpp"
@@ -152,6 +153,11 @@ void start_flags_author_the_launch_table() {
                 "--rear-teeth is a one-cog table");
 }
 }
+// The resolved commands hold whole multi-kilobyte records in one frame —
+// the same cold-path exemption the other big-config tests carry for
+// -Wframe-larger-than.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main(int argc, char** argv) {
     return bt::run([&] {
         using namespace bike::cli;
@@ -219,3 +225,4 @@ int main(int argc, char** argv) {
         compiled_capture();
     });
 }
+NATIVE_DIAG_POP

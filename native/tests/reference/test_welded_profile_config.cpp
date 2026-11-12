@@ -391,12 +391,20 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
                 "the built-in profile starts on 34/24");
 }
 
-// Every [rider_launch] key and the section itself are required: dropping
+// Every rider_launch key and the section itself are required: dropping
 // one fails the load and the error names it (no code default).
 [[gnu::noinline]] void test_launch_table_keys_are_required() {
     for (const char *line : {"start_cog_grade_breaks = []\n", "start_cog_teeth = [51]\n",
                              "start_pedal_angle_rad = 0.0\n", "start_lean_grades = [0.0]\n",
-                             "start_lean_rad = [0.0]\n"}) {
+                             "start_lean_rad = [0.0]\n", "plan_enabled = false\n",
+                             "standstill_speed_mps = 0.1\n", "standstill_crank_rpm = 5.0\n",
+                             "effort_rate_nm_s = 40.0\n", "effort_cap_asphalt_nm = 60.0\n",
+                             "effort_cap_hardpack_nm = 60.0\n", "effort_cap_loose_nm = 60.0\n",
+                             "effort_cap_wet_nm = 60.0\n", "effort_cap_scree_nm = 60.0\n",
+                             "release_torque_grades = [0.0, 0.2]\n", "release_torque_nm = [0.0, 30.0]\n",
+                             "brake_release_s = 0.15\n", "max_hold_s = 1.5\n", "upshift_crank_rpm = 82.0\n",
+                             "end_speed_mps = 3.0\n", "end_crank_rpm = 60.0\n", "end_hold_s = 0.3\n",
+                             "max_launch_s = 6.0\n", "handover_s = 0.9\n"}) {
         const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
         rejects([&] { (void)load_edited_profile([&](std::string &t) { replace_once(t, line, ""); }); },
                 key, "a profile without " + key);
@@ -404,12 +412,12 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
     rejects([] {
         (void)load_edited_profile([](std::string &t) {
             const auto from = t.find("[rider_launch]\n");
-            const std::string_view last = "start_lean_rad = [0.0]\n";
+            const std::string_view last = "handover_s = 0.9\n";
             const auto to = t.find(last, from);
             bt::require(from != std::string::npos && to != std::string::npos, "the profile has the launch block");
             t.erase(from, to + last.size() - from);
         });
-    }, "rider_launch", "a profile without [rider_launch]");
+    }, "rider_launch", "a profile without the rider_launch section");
 }
 
 // Rules that need other records: a start cog must be on the cassette while

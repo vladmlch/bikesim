@@ -34,11 +34,16 @@
 #include <mujoco/mujoco.h>
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -62,6 +67,20 @@ std::filesystem::path repo_file(std::string_view relative) {
 bool approx(double actual, double expected, double rtol = 1e-9,
             double atol = 1e-12) {
     return std::abs(actual - expected) <= atol + rtol * std::abs(expected);
+}
+
+// Runs `action`, which must throw std::invalid_argument naming `needle`.
+template <typename Action>
+void rejects(Action &&action, std::string_view needle, std::string_view what) {
+    bool threw = false;
+    try {
+        std::forward<Action>(action)();
+    } catch (const std::invalid_argument &failure) {
+        threw = true;
+        bt::require(std::string_view(failure.what()).find(needle) != std::string_view::npos,
+                    std::string(what) + " names " + std::string(needle) + " (" + failure.what() + ")");
+    }
+    bt::require(threw, std::string(what) + " is rejected");
 }
 
 rider::IntentConfig enabled(double lean_rate = 0.) {
@@ -610,6 +629,49 @@ void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
                 "without it the legacy config ceiling applies");
 }
 
+// Launch part 3b: without an override the program's arithmetic is bitwise
+// the part-3a one; an override at weight 1 replaces the grade target and
+// freezes the load trim; at a partial weight the targets mix; every
+// override still obeys the lean rate; an invalid override is rejected.
+void test_lean_override_hook() {
+    rider::SeatedPostureProgram plain(enabled()), hooked(enabled()), owned(enabled()), mixed(enabled());
+    for (int i = 0; i < 400; ++i) {
+        const double t = i * .01;
+        const double a = plain.update(t, .15, .01, .2);
+        const double b = hooked.update(t, .15, .01, .2, std::nullopt, std::nullopt, std::nullopt, 0., std::nullopt);
+        bt::require(std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b),
+                    "an absent override is bitwise the old program");
+        const double before = owned.lean_rad();
+        (void)owned.update(t, .15, .01, .2, std::nullopt, std::nullopt, std::nullopt, 0.,
+                           rider::LeanOverride{.target_rad = .3, .weight = 1.});
+        bt::require(std::abs(owned.lean_rad() - before) <= enabled().lean_rate_rad_s * .01 + 1e-15,
+                    "the override obeys the lean rate");
+        (void)mixed.update(t, .15, .01, .2, std::nullopt, std::nullopt, std::nullopt, 0.,
+                           rider::LeanOverride{.target_rad = .3, .weight = .5});
+    }
+    bt::require(std::abs(owned.lean_rad() - .3) < 1e-9 && owned.state().trim_rad == 0.,
+                "weight 1 holds the plan target and freezes the trim");
+    bt::require(mixed.lean_rad() < owned.lean_rad() && mixed.lean_rad() > plain.lean_rad() - 1.,
+                "a partial weight mixes the targets");
+    rejects([&] { (void)owned.update(4., .15, .01, .2, std::nullopt, std::nullopt, std::nullopt, 0.,
+                                     rider::LeanOverride{.target_rad = .3, .weight = 0.}); },
+            "launch override", "a zero weight");
+    rejects([&] { (void)owned.update(4., .15, .01, .2, std::nullopt, std::nullopt, std::nullopt, 0.,
+                                     rider::LeanOverride{.target_rad = std::numeric_limits<double>::infinity(),
+                                                         .weight = 1.}); },
+            "launch override", "an infinite target");
+}
+
+// Launch part 3b: spend_surge = false neither spends nor recovers the surge
+// budget and returns the sustained power.
+void test_surge_is_not_spent_on_request() {
+    rider::SeatedClimbPolicy policy(enabled());
+    const double before = policy.state().surge_budget_s_left;
+    const double power = policy.power_target_w(.3, .01, false);
+    bt::require(power == enabled().target_crank_power_w && policy.state().surge_budget_s_left == before,
+                "a held surge budget stays where it was");
+}
+
 } // namespace
 
 int main() {
@@ -629,5 +691,7 @@ int main() {
         test_geometric_limit_caps_lean();
         test_preview_is_last_sample_and_preserves_exact_endpoint();
         test_geometric_limit_replaces_the_legacy_config_ceiling_when_available();
+        test_lean_override_hook();
+        test_surge_is_not_spent_on_request();
     });
 }

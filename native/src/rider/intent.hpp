@@ -106,6 +106,13 @@ struct RiderCommands {
 // other input-boundary check raises.
 void validate(const RiderCommands &commands);
 
+// Launch part 3b, decision 8: the launch plan's lean target and its share.
+// The program keeps its rate and bounds for every target it is given.
+struct LeanOverride {
+    double target_rad = 0.;
+    double weight = 1.;   // (0, 1]
+};
+
 // rider_program.py body_pulse — a smooth finite torso-thrust wish. Runs
 // its input validation on every call exactly like the oracle.
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
@@ -138,7 +145,8 @@ public:
                   std::optional<double> lean_limit_rad = std::nullopt,
                   std::optional<double> dead_time_s = std::nullopt,
                   std::optional<double> min_lean_rad = std::nullopt,
-                  double extra_target_rad = 0.);
+                  double extra_target_rad = 0.,
+                  std::optional<LeanOverride> launch = std::nullopt);
 
     [[nodiscard]] State state() const;
     void restore(const State &state);
@@ -177,14 +185,15 @@ public:
     void reset();
     void seed_lean(double lean_rad);
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
-    double power_target_w(double preview_grade, double dt_s);
+    double power_target_w(double preview_grade, double dt_s, bool spend_surge = true);
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
     [[nodiscard]] Intent update(
         const IntentSignals &signals, double dt_s, double road_grade,
         std::optional<double> preview_grade = std::nullopt,
         std::optional<double> lean_limit_rad = std::nullopt,
         std::optional<double> min_lean_rad = std::nullopt,
-        double extra_lean_rad = 0.);
+        double extra_lean_rad = 0., bool spend_surge = true,
+        std::optional<LeanOverride> launch = std::nullopt);
 
     [[nodiscard]] const IntentConfig &config() const { return config_; }
     [[nodiscard]] SeatedPostureProgram &program() { return program_; }

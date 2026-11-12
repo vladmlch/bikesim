@@ -7,6 +7,7 @@
 
 #include "../io/value.hpp"
 #include "front_lift_reaction.hpp"
+#include "launch_plan.hpp"
 #include "perception.hpp"
 #include "senses.hpp"
 
@@ -47,5 +48,16 @@ decode_perception_state(const bike::io::Value &v, std::string_view path);
 // validate_reaction_table.
 [[nodiscard]] bike::io::Value encode_reaction_config(const FrontLiftReactionConfig &config);
 [[nodiscard]] FrontLiftReactionConfig decode_reaction_config(const bike::io::Value &v, std::string_view path);
+
+// The plan's restorable document: {"phase", "phase_ticks", "launch_ticks",
+// "end_ok_ticks", "blend_ticks", "effort_nm", "brake", "lean_target_rad",
+// "shift_up", "request_count", "request_teeth", "blocked_teeth",
+// "preload_missed"} — exact keys, the phase by name.
+[[nodiscard]] bike::io::Value encode_launch_state(const LaunchPlan::State &state);
+[[nodiscard]] LaunchPlan::State decode_launch_state(const bike::io::Value &v, std::string_view path);
+// The runtime document of [rider_launch]: the 24 keys, exact, then
+// validate_launch_table.
+[[nodiscard]] bike::io::Value encode_launch_config(const LaunchConfig &config);
+[[nodiscard]] LaunchConfig decode_launch_config(const bike::io::Value &v, std::string_view path);
 
 } // namespace rider

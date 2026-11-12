@@ -138,7 +138,8 @@ double SeatedPostureProgram::update(
     std::optional<double> lean_limit_rad,
     std::optional<double> dead_time_s,
     std::optional<double> min_lean_rad,
-    double extra_target_rad) {
+    double extra_target_rad,
+    std::optional<LeanOverride> launch) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
     if (!(std::isfinite(time_s) && std::isfinite(road_grade)))
         throw std::invalid_argument("nonfinite posture program input");
@@ -162,6 +163,9 @@ double SeatedPostureProgram::update(
         throw std::invalid_argument("minimum lean limit must be finite");
     if (!(std::isfinite(extra_target_rad) && extra_target_rad >= 0.))
         throw std::invalid_argument("posture extra target must be finite and nonnegative");
+    if (launch.has_value() &&
+        !(std::isfinite(launch->target_rad) && launch->weight > 0. && launch->weight <= 1.))
+        throw std::invalid_argument("posture launch override must be finite with a weight in (0, 1]");
     load_samples_.emplace_back(time_s, front_load_share);
     while (!load_samples_.empty() &&
            load_samples_.front().first <= time_s - delay + 1e-12) {
@@ -182,9 +186,15 @@ double SeatedPostureProgram::update(
     // obeys the program's rate and bounds; zero leaves the arithmetic
     // unchanged.
     if (extra_target_rad != 0.) extra += extra_target_rad;
-    const double grade_and_pulse =
-        config_.lean_gain * std::atan(road_grade) + extra;
-    if (delayed_load_share_.has_value()) {
+    // Launch part 3b, decision 8: the plan's lean target replaces (weight 1)
+    // or mixes with (0 < weight < 1) the grade target; without an override
+    // every expression below is the part-3a one.
+    const bool plan_owns = launch.has_value() && launch->weight == 1.;
+    double base = config_.lean_gain * std::atan(road_grade);
+    if (launch.has_value())
+        base = plan_owns ? launch->target_rad : launch->weight * launch->target_rad + (1. - launch->weight) * base;
+    const double grade_and_pulse = base + extra;
+    if (delayed_load_share_.has_value() && !plan_owns) {
         trim_rad_ += config_.lean_trim_gain_rad_s *
                      (config_.front_load_share_target -
                       *delayed_load_share_) *
@@ -198,9 +208,10 @@ double SeatedPostureProgram::update(
                              std::min(config_.lean_trim_limit_rad,
                                       trim_rad_));
     }
+    const double trim = plan_owns ? 0. : launch.has_value() ? (1. - launch->weight) * trim_rad_ : trim_rad_;
     const double target = std::max(
         backward_limit,
-        std::min(forward_limit, grade_and_pulse + trim_rad_));
+        std::min(forward_limit, grade_and_pulse + trim));
     lean_rad_ += std::max(-config_.lean_rate_rad_s * dt_s,
                           std::min(config_.lean_rate_rad_s * dt_s,
                                    target - lean_rad_));
@@ -276,10 +287,11 @@ void SeatedClimbPolicy::seed_lean(double lean_rad) {
 }
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed positional Python signature
-double SeatedClimbPolicy::power_target_w(double preview_grade, double dt_s) {
+double SeatedClimbPolicy::power_target_w(double preview_grade, double dt_s, bool spend_surge) {
     const double grade =
         validation::finite(preview_grade, "surge preview grade");
     const double dt = validation::positive(dt_s, "surge interval");
+    if (!spend_surge) return config_.target_crank_power_w;
     if (grade >= config_.surge_grade) {
         if (surge_budget_s_left_ + 1e-12 >= dt) {
             surge_budget_s_left_ =
@@ -301,7 +313,8 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
                                  std::optional<double> preview_grade,
                                  std::optional<double> lean_limit_rad,
                                  std::optional<double> min_lean_rad,
-                                 double extra_lean_rad) {
+                                 double extra_lean_rad, bool spend_surge,
+                                 std::optional<LeanOverride> launch) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
     const double dt = validation::positive(dt_s, "rider intention interval");
     validation::finite(road_grade, "posture road grade");
@@ -311,7 +324,7 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
             : road_grade;
     if (!config_.enabled)
         return {};
-    const double power_target = power_target_w(preview, dt);
+    const double power_target = power_target_w(preview, dt, spend_surge);
     samples_.emplace_back(time_s_, signals);
     const double ready_time = time_s_ - config_.reaction_delay_s;
     while (!samples_.empty() &&
@@ -357,7 +370,8 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
     }
     lean_rad_ = program_.update(time_s_, preview, dt,
                                 signals.front_load_share, lean_limit_rad,
-                                std::nullopt, min_lean_rad, extra_lean_rad);
+                                std::nullopt, min_lean_rad, extra_lean_rad,
+                                launch);
     time_s_ += dt;
     RiderPosture posture;
     posture.torso_lean_rad = lean_rad_;

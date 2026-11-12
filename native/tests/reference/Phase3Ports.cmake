@@ -324,6 +324,10 @@ bike_add_reference_test(front_lift_reaction ENGINE
   SOURCES test_front_lift_reaction.cpp $<TARGET_OBJECTS:bike_test_allocation_faults>
   LIBRARIES bike_app
   LABELS launch rider)
+# Launch part 3b — the launch plan node on synthetic percepts.
+bike_add_reference_test(launch_plan ENGINE
+  SOURCES test_launch_plan.cpp LIBRARIES bike_app
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

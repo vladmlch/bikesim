@@ -502,7 +502,9 @@ struct LaunchRow {
         {"release", "release"}, {"release", "accelerate"}, {"accelerate", "accelerate"},
         {"accelerate", "handover"}, {"accelerate", "blend"}, {"handover", "handover"}, {"handover", "blend"},
         {"blend", "blend"}, {"blend", "done"}, {"done", "done"}, {"done", "hold"}};
-    const double interval_s = static_cast<double>(env.control_steps) * .00125;
+    // A recorded interval is one physical step (interval_id = step_), not a
+    // research window of control_steps steps.
+    const double interval_s = .00125;
     double brake = rows.front().brake, min_x = rows.front().root_x;
     std::optional<double> release_at;
     bool left_hold = rows.front().phase != "hold", done = false;
@@ -519,8 +521,9 @@ struct LaunchRow {
         if (row.phase == "done") done = true;
     }
     bt::require(left_hold, "the ride leaves the hold inside 8 s");
-    std::println("launch ride: {} rows, rollback {:.4f} m, release {}, done {}",
-                 rows.size(), min_x - rows.front().root_x,
+    std::println("launch ride: {} rows to {:.3f} s, rollback {:.4f} m, release {}, done {}",
+                 rows.size(), static_cast<double>(rows.back().interval + 1) * interval_s,
+                 min_x - rows.front().root_x,
                  release_at ? std::format("{:.3f} s", *release_at) : std::string("not reached"),
                  done ? "reached" : "not reached");
 }

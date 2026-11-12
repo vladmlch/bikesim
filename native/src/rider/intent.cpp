@@ -485,13 +485,14 @@ void RiderIntent::schedule_pulse(double start_s, double duration_s,
     core_->policy.program().schedule_pulse(start_s, duration_s, amplitude_rad);
 }
 
-// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python call signature
+// NOLINTBEGIN(bugprone-easily-swappable-parameters) fixed Python call signature
 void RiderIntent::tick(Core &core, const IntentSignals &signals,
                        const RiderSenses &senses, std::int64_t step,
                        double road_grade,
                        std::optional<double> preview_grade,
                        std::optional<double> lean_limit_rad,
                        std::optional<double> min_lean_rad) const {
+// NOLINTEND(bugprone-easily-swappable-parameters)
     // Python's expected = last+period uses unbounded ints; the difference
     // form cannot overflow since 0 <= last_tick <= step.
     const bool on_schedule =
@@ -608,7 +609,9 @@ void RiderIntent::restore(const State &state) {
     *staged_ = *core_;   // staged: every component restores into the copy first
     staged_->policy.restore(state.policy);
     staged_->policy.program().restore(state.program);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the presence check above engaged exactly this pair
     if (staged_->perception) staged_->perception->restore(*state.perception);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) same presence pair as the perception check above
     if (staged_->reaction) staged_->reaction->restore(*state.reaction);
     staged_->last_tick_step = state.last_tick_step;
     staged_->intent = state.intent;

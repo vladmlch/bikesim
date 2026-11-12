@@ -231,6 +231,7 @@ public:
     RiderIntent &operator=(const RiderIntent &);
     RiderIntent(RiderIntent &&) noexcept;
     RiderIntent &operator=(RiderIntent &&) noexcept;
+    ~RiderIntent() = default;
 
     void reset();
     // Starts the posture from the prepared start lean after reset(): the

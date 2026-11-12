@@ -28,7 +28,7 @@ namespace drivetrain {
                                          double dt, bool enabled, bool braking,
                                          std::optional<double> shaft_rad_s,
                                          std::optional<double> ceiling_nm,
-                                         double torque_factor) {
+                                         double torque_factor, bool cut_after_ceiling) {
     // NOLINTEND(bugprone-easily-swappable-parameters)
         finite(phase, "crank phase");
         finite(rate, "crank rate");
@@ -68,9 +68,17 @@ namespace drivetrain {
             double target = effort;
             if (config_.mash_torque_nm > target && cadence < config_.mash_cadence_rpm)
                 target = effort + (config_.mash_torque_nm - effort) * (1. - cadence / config_.mash_cadence_rpm);
-            target = validation::derived(target * torque_factor, "PedalingPolicy.target_effort");
-            if (ceiling_nm)
-                target = std::min(target, *ceiling_nm);
+            if (cut_after_ceiling) {
+                // Launch part 3a (review I4): a rider-limited effort is
+                // capped first and the shift cut applies once to the cap.
+                if (ceiling_nm)
+                    target = std::min(target, *ceiling_nm);
+                target = validation::derived(target * torque_factor, "PedalingPolicy.target_effort");
+            } else {
+                target = validation::derived(target * torque_factor, "PedalingPolicy.target_effort");
+                if (ceiling_nm)
+                    target = std::min(target, *ceiling_nm);
+            }
             const double slew = config_.effort_slew_nm_s;
             if (slew <= 0.) effort = target;
             else {

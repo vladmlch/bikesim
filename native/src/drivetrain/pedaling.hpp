@@ -84,7 +84,7 @@ namespace drivetrain {
                                            double effort_nm, double dt, bool enabled = true, bool braking = false,
                                            std::optional<double> shaft_rad_s = std::nullopt,
                                            std::optional<double> ceiling_nm = std::nullopt,
-                                           double torque_factor = 1.);
+                                           double torque_factor = 1., bool cut_after_ceiling = false);
 
         [[nodiscard]] const PedalingSnapshot &state() const noexcept { return state_; }
 

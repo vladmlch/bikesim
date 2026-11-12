@@ -313,6 +313,11 @@ bike_add_reference_test(static_brake_latch ENGINE
 bike_add_reference_test(launch_preparation ENGINE
   SOURCES test_launch_preparation.cpp LIBRARIES bike_app bike_validation bike_cli
   LABELS launch rider)
+# Launch part 3a, task 1 — the shift cut after a rider-limited effort
+# ceiling (review I4): ordinary and rider-limited target construction.
+bike_add_reference_test(pedaling_cut_order ENGINE
+  SOURCES test_pedaling_cut_order.cpp LIBRARIES bike_app
+  LABELS launch drive)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

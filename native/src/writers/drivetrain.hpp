@@ -131,6 +131,10 @@ namespace drivetrain {
         // request suppresses the band for the tick and reports through
         // the snapshot's rider_response label.
         RiderShift rider_shift;
+        // Launch part 3a, task 1 — a rider-limited effort takes the
+        // ceiling before the shift cut; the default keeps the ordinary
+        // order (cut, then ceiling).
+        bool cut_after_ceiling = false;
     };
 
     struct TickInputs {
@@ -303,7 +307,7 @@ namespace drivetrain {
                 bool active, bool advance, bool contact,
                 std::optional<double> slip, std::optional<double> ceiling,
                 std::optional<bool> shift_blocked = std::nullopt,
-                RiderShift rider_shift = {});
+                RiderShift rider_shift = {}, bool cut_after_ceiling = false);
 
         [[nodiscard]] const ForceComponents &
         components(const RideControl &control, double dt,

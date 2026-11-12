@@ -476,12 +476,14 @@ namespace drivetrain {
                                             bool contact, std::optional<double> slip,
                                             std::optional<double> ceiling,
                                             std::optional<bool> shift_blocked,
-                                            RiderShift rider_shift) {
+                                            RiderShift rider_shift,
+                                            bool cut_after_ceiling) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         const auto tick = stage_prepare(
             {.control = control, .dt = dt, .braking = braking, .active = active,
              .advance = advance, .contact = contact, .slip = slip, .ceiling = ceiling,
-             .shift_blocked = shift_blocked, .rider_shift = rider_shift});
+             .shift_blocked = shift_blocked, .rider_shift = rider_shift,
+             .cut_after_ceiling = cut_after_ceiling});
         const auto result = tick.result;
         commit(tick);
         return result;
@@ -752,7 +754,7 @@ namespace drivetrain {
                                       v[static_cast<std::size_t>(crank.dof)], required,
                                       effort, in.dt, enabled, in.braking,
                                       v[static_cast<std::size_t>(shaft_joint_.dof)],
-                                      in.ceiling, torque_factor);
+                                      in.ceiling, torque_factor, in.cut_after_ceiling);
         bank.result = result;
     }
 

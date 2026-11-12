@@ -1331,7 +1331,9 @@ PhysicalStep::apply_forces_body(
             contacts_.rear_slip_mps,
             automatic_effort ? control.human_torque_nm
                              : std::optional<double>{},
-            brakes.shift_blocked, rider_shift);
+            brakes.shift_blocked, rider_shift,
+            // launch part 3a, task 3 passes the resolver's effort_limited
+            false);
         // Oracle: the apply_forces entry forward runs only while
         // `initializing` — init callers mutate qpos/qvel or
         // constraint-defining model constants between apply_forces calls

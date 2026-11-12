@@ -404,8 +404,8 @@ RiderIntent::RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, 
     : config_(config),
       dt_s_(validation::positive(dt_s, "rider physics timestep")),
       period_steps_(python_round_steps(config_.period_s / dt_s_)),
-      core_(config_),
-      staged_(config_) {
+      core_(std::make_unique<Core>(config_)),
+      staged_(std::make_unique<Core>(config_)) {
     if (!std::isfinite(config_.min_elbow_flexion_deg) ||
         config_.min_elbow_flexion_deg <= 0. ||
         config_.min_elbow_flexion_deg > 90.) {
@@ -434,31 +434,58 @@ RiderIntent::RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, 
         // Launch part 3a: the runtime document never passes post_init, so
         // the reaction's period and posture context is checked here too.
         validate_reaction_context(reaction, config_.period_s, config_.max_forward_lean_rad);
-        core_.perception.emplace(config_.reaction_delay_s, config_.period_s);
-        core_.reaction.emplace(reaction, config_.period_s);
+        core_->perception.emplace(config_.reaction_delay_s, config_.period_s);
+        core_->reaction.emplace(reaction, config_.period_s);
     }
-    staged_ = core_;
+    *staged_ = *core_;
     reset();
 }
 
+RiderIntent::RiderIntent(const RiderIntent &other)
+    : config_(other.config_),
+      dt_s_(other.dt_s_),
+      period_steps_(other.period_steps_),
+      core_(std::make_unique<Core>(*other.core_)),
+      staged_(std::make_unique<Core>(*other.staged_)),
+      commands_(other.commands_) {}
+
+RiderIntent &RiderIntent::operator=(const RiderIntent &other) {
+    if (this == &other)
+        return *this;
+    // Clones stage first, then commit by move — the strong guarantee.
+    auto core = std::make_unique<Core>(*other.core_);
+    auto staged = std::make_unique<Core>(*other.staged_);
+    config_ = other.config_;
+    dt_s_ = other.dt_s_;
+    period_steps_ = other.period_steps_;
+    commands_ = other.commands_;
+    core_ = std::move(core);
+    staged_ = std::move(staged);
+    return *this;
+}
+
+RiderIntent::RiderIntent(RiderIntent &&) noexcept = default;
+RiderIntent &RiderIntent::operator=(RiderIntent &&) noexcept = default;
+
 void RiderIntent::reset() {
-    core_.policy.reset();
-    if (core_.perception) core_.perception->reset();
-    if (core_.reaction) core_.reaction->reset();
-    core_.last_tick_step = -1;
-    core_.intent = {};
+    core_->policy.reset();
+    if (core_->perception) core_->perception->reset();
+    if (core_->reaction) core_->reaction->reset();
+    core_->last_tick_step = -1;
+    core_->intent = {};
 }
 
 void RiderIntent::seed_lean(double lean_rad) {
-    core_.policy.seed_lean(lean_rad);
-    core_.intent.posture.torso_lean_rad = lean_rad;
+    core_->policy.seed_lean(lean_rad);
+    core_->intent.posture.torso_lean_rad = lean_rad;
 }
 
 void RiderIntent::schedule_pulse(double start_s, double duration_s,
                                  double amplitude_rad) {
-    core_.policy.program().schedule_pulse(start_s, duration_s, amplitude_rad);
+    core_->policy.program().schedule_pulse(start_s, duration_s, amplitude_rad);
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python call signature
 void RiderIntent::tick(Core &core, const IntentSignals &signals,
                        const RiderSenses &senses, std::int64_t step,
                        double road_grade,
@@ -476,6 +503,7 @@ void RiderIntent::tick(Core &core, const IntentSignals &signals,
     // policy's posture target. Perception and reaction are engaged: a
     // disabled intent never reaches a tick.
     const SenseSample sample{.signals = signals, .senses = senses};
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) engaged exactly when the intent is enabled, and a disabled intent never ticks
     const double lean_add = core.reaction->update(core.perception->update(sample)).lean_add_rad;
     core.intent = core.policy.update(signals, config_.period_s, road_grade, preview_grade, lean_limit_rad,
                                      min_lean_rad, lean_add);
@@ -513,26 +541,26 @@ IntentResolution RiderIntent::resolve_full(IntentControl control, const IntentSi
         return {.control = control, .effort_limited = false};
     if (step < 0)
         throw std::invalid_argument("rider clock requires a nonnegative physics step");
-    if (step < core_.last_tick_step)
+    if (step < core_->last_tick_step)
         throw std::invalid_argument("reset rider intention before rewinding physics");
-    const bool due = step % period_steps_ == 0 && step != core_.last_tick_step;
+    const bool due = step % period_steps_ == 0 && step != core_->last_tick_step;
     if (!advance) {
         // The probe runs the tick on a local copy, like
         // copy.deepcopy(self).resolve(...): core_ and staged_ stay as they are.
-        if (!due) return output(core_, control);
-        Core probe = core_;
+        if (!due) return output(*core_, control);
+        Core probe = *core_;
         tick(probe, signals, senses, step, road_grade, preview_grade, lean_limit_rad, min_lean_rad);
         return output(probe, control);
     }
     if (due) {
         // Decision 11: stage, then commit by a nonthrowing swap — a rejected
-        // input, a rejected posture or a failed allocation leaves core_ as
+        // input, a rejected posture or a failed allocation leaves *core_ as
         // it was, and a retry is exactly one tick.
-        staged_ = core_;
-        tick(staged_, signals, senses, step, road_grade, preview_grade, lean_limit_rad, min_lean_rad);
+        *staged_ = *core_;
+        tick(*staged_, signals, senses, step, road_grade, preview_grade, lean_limit_rad, min_lean_rad);
         std::swap(core_, staged_);
     }
-    return output(core_, control);
+    return output(*core_, control);
 }
 // NOLINTEND(bugprone-easily-swappable-parameters)
 
@@ -546,20 +574,20 @@ IntentControl RiderIntent::resolve(IntentControl control, const IntentSignals &s
 }
 
 RiderIntent::State RiderIntent::state() const {
-    return {.last_tick_step = core_.last_tick_step,
-            .intent = core_.intent,
-            .policy = core_.policy.state(),
-            .program = core_.policy.program().state(),
-            .perception = core_.perception ? std::optional{core_.perception->state()} : std::nullopt,
-            .reaction = core_.reaction ? std::optional{core_.reaction->state()} : std::nullopt};
+    return {.last_tick_step = core_->last_tick_step,
+            .intent = core_->intent,
+            .policy = core_->policy.state(),
+            .program = core_->policy.program().state(),
+            .perception = core_->perception ? std::optional{core_->perception->state()} : std::nullopt,
+            .reaction = core_->reaction ? std::optional{core_->reaction->state()} : std::nullopt};
 }
 
 void RiderIntent::restore(const State &state) {
-    if (state.perception.has_value() != core_.perception.has_value())
+    if (state.perception.has_value() != core_->perception.has_value())
         throw std::invalid_argument("rider intent perception state presence must match the enabled intent");
-    if (state.reaction.has_value() != core_.reaction.has_value())
+    if (state.reaction.has_value() != core_->reaction.has_value())
         throw std::invalid_argument("rider intent reaction state presence must match the enabled intent");
-    if (core_.perception) {
+    if (core_->perception) {
         // One acquisition per intention tick, the first at step 0, so the
         // perception clock is the tick count; the reaction has seen exactly
         // the percepts delivered so far (saturating at its cap).
@@ -569,24 +597,26 @@ void RiderIntent::restore(const State &state) {
                                                std::numeric_limits<std::int64_t>::max())))
             throw std::invalid_argument("rider intent last_tick_step is off the intention grid");
         const std::int64_t ticks = state.last_tick_step < 0 ? 0 : state.last_tick_step / period_steps_ + 1;
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the presence check above engaged exactly this pair
         if (state.perception->tick != ticks)
             throw std::invalid_argument("rider intent perception tick must equal the intention tick count");
-        const std::int64_t delivered = std::max<std::int64_t>(0, ticks - core_.perception->delay_ticks());
-        if (state.reaction->percepts_seen != std::min(delivered, core_.reaction->percepts_cap()))
+        const std::int64_t delivered = std::max<std::int64_t>(0, ticks - core_->perception->delay_ticks());
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) same presence pair as the perception check above
+        if (state.reaction->percepts_seen != std::min(delivered, core_->reaction->percepts_cap()))
             throw std::invalid_argument("rider intent reaction percepts_seen must equal the delivered percepts");
     }
-    Core next = core_;   // staged: every component restores into the copy first
-    next.policy.restore(state.policy);
-    next.policy.program().restore(state.program);
-    if (next.perception) next.perception->restore(*state.perception);
-    if (next.reaction) next.reaction->restore(*state.reaction);
-    next.last_tick_step = state.last_tick_step;
-    next.intent = state.intent;
-    std::swap(core_, next);
+    *staged_ = *core_;   // staged: every component restores into the copy first
+    staged_->policy.restore(state.policy);
+    staged_->policy.program().restore(state.program);
+    if (staged_->perception) staged_->perception->restore(*state.perception);
+    if (staged_->reaction) staged_->reaction->restore(*state.reaction);
+    staged_->last_tick_step = state.last_tick_step;
+    staged_->intent = state.intent;
+    std::swap(core_, staged_);
 }
 
 ReactionCommand RiderIntent::reaction() const {
-    return core_.reaction ? core_.reaction->command() : ReactionCommand{};
+    return core_->reaction ? core_->reaction->command() : ReactionCommand{};
 }
 
 } // namespace rider

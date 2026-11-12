@@ -13,7 +13,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
-#include <cstdio>
+#include <print>
 #include <memory>
 #include <optional>
 #include <set>
@@ -353,7 +353,7 @@ struct ReactionRow {
 [[nodiscard]] std::vector<ReactionRow> reaction_rows(launch_ride::PedelecEnv &env, std::size_t windows) {
     std::vector<ReactionRow> rows;
     std::int64_t last_id = -1;
-    runtime::RideControl control;   // effort and posture come from the rider intent
+    const runtime::RideControl control;   // effort and posture come from the rider intent
     for (std::size_t w = 0; w < windows; ++w) {
         const auto result = env.runtime->advance(
             (static_cast<std::int64_t>(w) + 1) * env.control_steps, control, 0., 0., std::nullopt);
@@ -431,8 +431,8 @@ struct ReactionRow {
     // >= 10 (exactly 10 without such a hidden return).
     if (acting_at)
         bt::require(deciding_from && *acting_at - *deciding_from >= 10, "acting starts decision_s after deciding");
-    std::printf("reaction ride: %zu rows, %zu unmeasured, acting %s\n", rows.size(), unmeasured,
-                acting_at ? "reached" : "not reached");
+    std::println("reaction ride: {} rows, {} unmeasured, acting {}", rows.size(), unmeasured,
+                 acting_at ? "reached" : "not reached");
     env.runtime->reset();
     const auto replay = reaction_rows(env, windows);
     bt::require(replay.size() == rows.size(), "the replay covers the same intervals");

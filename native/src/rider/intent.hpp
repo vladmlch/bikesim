@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <deque>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -226,6 +227,10 @@ public:
     // Replaces RiderIntent(IntentConfig, double): the reaction table has no
     // in-code default.
     RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, double dt_s);
+    RiderIntent(const RiderIntent &);
+    RiderIntent &operator=(const RiderIntent &);
+    RiderIntent(RiderIntent &&) noexcept;
+    RiderIntent &operator=(RiderIntent &&) noexcept;
 
     void reset();
     // Starts the posture from the prepared start lean after reset(): the
@@ -258,7 +263,7 @@ public:
 
     [[nodiscard]] State state() const;
     void restore(const State &state);
-    [[nodiscard]] const Intent &intent() const { return core_.intent; }
+    [[nodiscard]] const Intent &intent() const { return core_->intent; }
     // The reaction's current command; neutral (idle, false, 1, 0) when the
     // intent is disabled.
     [[nodiscard]] ReactionCommand reaction() const;
@@ -272,8 +277,8 @@ public:
         return commands_;
     }
     [[nodiscard]] const IntentConfig &config() const { return config_; }
-    [[nodiscard]] const SeatedClimbPolicy &policy() const { return core_.policy; }
-    [[nodiscard]] SeatedClimbPolicy &policy() { return core_.policy; }
+    [[nodiscard]] const SeatedClimbPolicy &policy() const { return core_->policy; }
+    [[nodiscard]] SeatedClimbPolicy &policy() { return core_->policy; }
     [[nodiscard]] std::int64_t period_steps() const { return period_steps_; }
 
 private:
@@ -290,8 +295,11 @@ private:
         std::int64_t last_tick_step = -1;
         Intent intent;
     };
-    static_assert(std::is_nothrow_swappable_v<Core>);
-    // One tick on `core` (called on staged_ or on a probe copy).
+    // The commit is a pointer swap: unconditionally noexcept on every
+    // toolchain (libstdc++'s deque move constructor is not noexcept, so a
+    // by-value Core swap could not guarantee the all-or-nothing commit).
+    static_assert(std::is_nothrow_swappable_v<std::unique_ptr<Core>>);
+    // One tick on `core` (called on *staged_ or on a probe copy).
     void tick(Core &core, const IntentSignals &signals,
               const RiderSenses &senses, std::int64_t step,
               double road_grade, std::optional<double> preview_grade,
@@ -303,8 +311,8 @@ private:
     IntentConfig config_;
     double dt_s_;
     std::int64_t period_steps_;
-    Core core_;
-    Core staged_;
+    std::unique_ptr<Core> core_;
+    std::unique_ptr<Core> staged_;
     RiderCommands commands_{};
 };
 

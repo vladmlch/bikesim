@@ -389,7 +389,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     bt::require(encoded(intent) == before, "an inactive call advances nothing");
     auto disabled_config = config;
     disabled_config.enabled = false;
-    rider::RiderIntent disabled(disabled_config, table(), kPeriod);
+    const rider::RiderIntent disabled(disabled_config, table(), kPeriod);
     bt::require(!disabled.state().perception && !disabled.state().reaction, "a disabled intent has no new state");
     const auto neutral = disabled.reaction();
     bt::require(neutral.phase == rider::ReactionPhase::idle && !neutral.predicate && neutral.effort_factor == 1. &&
@@ -423,11 +423,14 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
         bt::require(same_control(probe.control, a.control) && probe.effort_limited == a.effort_limited,
                     "the probe previews the advancing output and its cut order");
         if (step < onset)
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
             bt::require(same_bits(*a.control.human_torque_nm, *b.control.human_torque_nm) && !a.effort_limited,
                         "no ease before delay + dwell + decision");
         if (step == onset)
+            // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
             bt::require(*a.control.human_torque_nm < *b.control.human_torque_nm && a.effort_limited,
                         "the ease starts on the computed tick");
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the posture
         const double lean = a.control.posture->torso_lean_rad;
         bt::require(std::abs(lean - previous_lean) <= config.lean_rate_rad_s * config.period_s + 1e-15,
                     "the total lean never outruns the posture rate");
@@ -571,6 +574,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     graft->reaction = donor->state().reaction;
     rejects([&] { fresh.restore(*graft); }, "percepts_seen", "an acting reaction on the first delivery");
     auto bad = std::make_unique<rider::RiderIntent::State>(donor->state());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the donor intent is enabled, so the pair is engaged
     bad->perception->tick += 1;
     rejects([&] { fresh.restore(*bad); }, "perception tick", "a perception clock off the intention ticks");
     *bad = donor->state();
@@ -582,6 +586,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     rejects([&] { fresh.restore(rider::decode_intent_state(rider::encode_intent_state(*bad), "intent")); },
             "intention grid", "the overflowing tick through the document");
     *bad = donor->state();
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the donor intent is enabled, so the pair is engaged
     bad->reaction->effort_factor = .1;   // below 1 - ease_fraction
     bad->policy.time_s += 1.;            // must not leak when the restore fails
     rejects([&] { fresh.restore(*bad); }, "effort_factor", "a reaction outside its switch range");

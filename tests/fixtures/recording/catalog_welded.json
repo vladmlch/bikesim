@@ -884,6 +884,7 @@
     "rider_joint_power_violations",
     "rider_joint_speed_violations",
     "rider_joint_torques",
+    "rider_launch",
     "rider_lean_limit_rad",
     "rider_positive_power_w",
     "rider_positive_work_step_j",
@@ -1332,6 +1333,7 @@
     "channel_rider",
     "channel_rider_senses",
     "channel_rider_reaction",
+    "channel_rider_launch",
     "channel_rider_commands",
     "channel_model_status"
   ]

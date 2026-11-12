@@ -328,6 +328,11 @@ bike_add_reference_test(front_lift_reaction ENGINE
 bike_add_reference_test(launch_plan ENGINE
   SOURCES test_launch_plan.cpp LIBRARIES bike_app
   LABELS launch rider)
+# Launch part 3b, task 3 — the launch plan inside the rider intent:
+# commands, effort and lean composition, arming, state and joint restore.
+bike_add_reference_test(launch_intent ENGINE
+  SOURCES test_launch_intent.cpp LIBRARIES bike_app
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

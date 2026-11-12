@@ -1178,6 +1178,21 @@
       }
     },
     "last_tick_step": -1,
+    "launch": {
+      "blend_ticks": 0,
+      "blocked_teeth": 0,
+      "brake": 0.0,
+      "effort_nm": 0.0,
+      "end_ok_ticks": 0,
+      "launch_ticks": 0,
+      "lean_target_rad": 0.0,
+      "phase": "idle",
+      "phase_ticks": 0,
+      "preload_missed": false,
+      "request_count": 0,
+      "request_teeth": 0,
+      "shift_up": false
+    },
     "perception": {
       "delayed": null,
       "pitch_rad": 0.0,

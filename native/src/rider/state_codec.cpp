@@ -2280,7 +2280,7 @@ RiderIntent::State decode_intent_state(const bio::Value &value,
                                        std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d, keys("last_tick_step", "intent", "policy", "program",
-                       "perception", "reaction"));
+                       "perception", "reaction", "launch"));
     RiderIntent::State state;
     state.last_tick_step =
         decode_intent_step(*d["last_tick_step"].value,
@@ -2297,6 +2297,9 @@ RiderIntent::State decode_intent_state(const bio::Value &value,
     if (!d["reaction"].is_none())
         state.reaction = decode_reaction_state(
             *d["reaction"].value, std::string(path) + ".reaction");
+    if (!d["launch"].is_none())
+        state.launch = decode_launch_state(
+            *d["launch"].value, std::string(path) + ".launch");
     return state;
 }
 
@@ -2410,6 +2413,10 @@ bio::Value encode_intent_state(const RiderIntent::State &state) {
     out.emplace_back("reaction",
                      state.reaction
                          ? encode_reaction_state(*state.reaction)
+                         : bio::Value{});
+    out.emplace_back("launch",
+                     state.launch
+                         ? encode_launch_state(*state.launch)
                          : bio::Value{});
     return bio::Value{std::move(out)};
 }

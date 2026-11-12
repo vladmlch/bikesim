@@ -349,7 +349,7 @@ void test_start_grade_looks_ahead_of_the_start() {
 void test_intent_slews_from_the_seeded_lean() {
     auto config = cfg::default_physics().seated_climb;
     config.enabled = true;
-    rider::RiderIntent intent(config, kSwitchedOffReaction, .00125);
+    rider::RiderIntent intent(config, kSwitchedOffReaction, ramp_table(), .00125);
     intent.seed_lean(.05);
     bt::require(intent.state().policy.lean_rad == .05 && intent.state().program.lean_rad == .05 &&
                     intent.intent().posture.torso_lean_rad == .05,

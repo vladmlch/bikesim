@@ -44,6 +44,33 @@ const rider::FrontLiftReactionConfig kSwitchedOffReaction{
     .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
     .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
 
+// Launch part 3b: the switched-off launch table (plan_enabled = false);
+// its times sit on every test grid.
+const rider::LaunchConfig kSwitchedOffLaunch = [] {
+    rider::LaunchConfig t;
+    t.start_cog_teeth = {51};
+    t.start_pedal_angle_rad = 0.;
+    t.start_lean_grades = {0.};
+    t.start_lean_rad = {0.};
+    t.plan_enabled = false;
+    t.standstill_speed_mps = .1;
+    t.standstill_crank_rpm = 5.;
+    t.effort_rate_nm_s = 40.;
+    t.effort_cap_asphalt_nm = t.effort_cap_hardpack_nm = t.effort_cap_loose_nm = t.effort_cap_wet_nm =
+        t.effort_cap_scree_nm = 60.;
+    t.release_torque_grades = {0., .2};
+    t.release_torque_nm = {0., 30.};
+    t.brake_release_s = .15;
+    t.max_hold_s = 1.5;
+    t.upshift_crank_rpm = 82.;
+    t.end_speed_mps = 3.;
+    t.end_crank_rpm = 60.;
+    t.end_hold_s = .3;
+    t.max_launch_s = 6.;
+    t.handover_s = .9;
+    return t;
+}();
+
 // Per-tag counters mirror the source file's _SEQ — a label mismatch is
 // itself a contract failure.
 struct Seq {
@@ -177,7 +204,7 @@ void op_adapter(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
         plant.intent.emplace(
             rider::decode_intent_config(member(doc, "config"),
                                         "adapter.rider_intent.config"),
-            kSwitchedOffReaction, real_arg(doc, "dt_s"));
+            kSwitchedOffReaction, kSwitchedOffLaunch, real_arg(doc, "dt_s"));
     } catch (const std::exception &) {
         consumed_error(golden, seq, "adapter");
     }

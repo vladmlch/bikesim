@@ -1021,7 +1021,8 @@ PhysicalStep::PhysicalStep(
     : stepper_(&stepper), config_(std::move(config)),
       vertices_(std::move(vertices)),
       road_profile_(vertices_),
-      rider_intent_(config_.intent, config_.reaction, config_.timestep_s),
+      rider_intent_(config_.intent, config_.reaction, config_.launch,
+                    config_.timestep_s),
       brake_(brake),
       control_clock_(config_.timestep_s, config_.control_period_s),
       contact_query_(stepper_->model(), config_.monitors.grounded_hold_s,
@@ -1262,12 +1263,25 @@ PhysicalStep::apply_forces_body(
                           d, config_.intent.min_elbow_flexion_deg *
                                  (std::numbers::pi / 180.))
                     : std::optional<double>{};
+            // Launch part 3b — the shifter's mechanical answer and the
+            // caller's own demands from this step, as the plan's context.
+            const auto &shifting = stepper_->drive().state().shifting;
+            const bool caller_braking =
+                resolved != nullptr
+                    ? resolved->caller_front > 0. || resolved->caller_rear > 0.
+                    : front > 0. || rear > 0.;
+            const rider::LaunchContext launch_context{
+                .shift = {.response = rider::shift_response(shifting.rider_response),
+                          .shift_count = shifting.shift_count,
+                          .cut_active = shifting.cut_remaining_s > 1e-12},
+                .effort_mode = drive_mode() == "articulated_effort" || drive_mode() == "crank_effort",
+                .external_brake = caller_braking};
             const auto resolution = rider_intent_.resolve_full(
                 control, intent_signals_, rider_senses_, step_,
                 road_grade_for_posture(road), road_grade_preview(road),
                 rider_control_.has_value() ? rider_control_->lean_limit_rad()
                                            : std::optional<double>{},
-                active, advance, min_lean_rad);
+                active, advance, min_lean_rad, launch_context);
             control = resolution.control;
             effort_limited = resolution.effort_limited;
         }
@@ -2064,6 +2078,19 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             fields.emplace_back("effort_factor", Wire(reaction.effort_factor));
             fields.emplace_back("lean_add_rad", Wire(reaction.lean_add_rad));
             channels.emplace_back("rider_reaction", Wire(std::move(fields)));
+        }
+        {
+            // Launch part 3b — the launch plan on every interval, neutral
+            // (idle, 0, 0, 0, 0, false) when the plan or the intent is off.
+            const rider::LaunchCommand launch = rider_intent_.launch();
+            WireObject fields;
+            fields.emplace_back("phase", Wire(std::string(rider::launch_phase_name(launch.phase))));
+            fields.emplace_back("brake", Wire(launch.brake));
+            fields.emplace_back("effort_nm", Wire(launch.effort_nm));
+            fields.emplace_back("weight", Wire(launch.weight));
+            fields.emplace_back("lean_target_rad", Wire(launch.lean_target_rad));
+            fields.emplace_back("preload_missed", Wire(launch.preload_missed));
+            channels.emplace_back("rider_launch", Wire(std::move(fields)));
         }
         {
             // Launch part 1, task 4 — the rider-owned command set and

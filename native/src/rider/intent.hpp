@@ -27,6 +27,7 @@
 
 #include "front_lift_reaction.hpp"
 #include "intent_signals.hpp"
+#include "launch_plan.hpp"
 #include "perception.hpp"
 #include "rider_posture.hpp"
 
@@ -111,6 +112,13 @@ void validate(const RiderCommands &commands);
 struct LeanOverride {
     double target_rad = 0.;
     double weight = 1.;   // (0, 1]
+};
+
+// Launch part 3b: what the step tells the resolver about the launch.
+struct LaunchContext {
+    ShiftFeedback shift;          // the shifter after the previous physics step
+    bool effort_mode = false;     // drive_mode is articulated_effort or crank_effort
+    bool external_brake = false;  // the caller brakes this step
 };
 
 // rider_program.py body_pulse — a smooth finite torso-thrust wish. Runs
@@ -231,11 +239,13 @@ public:
         SeatedPostureProgram::State program;
         std::optional<Perception::State> perception;        // engaged exactly when the intent is enabled
         std::optional<FrontLiftReaction::State> reaction;   // engaged exactly when the intent is enabled
+        std::optional<LaunchPlan::State> launch;            // engaged exactly when the intent is enabled
     };
 
-    // Replaces RiderIntent(IntentConfig, double): the reaction table has no
-    // in-code default.
-    RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction, double dt_s);
+    // Replaces RiderIntent(IntentConfig, double): the reaction and launch
+    // tables have no in-code default.
+    RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction,
+                LaunchConfig launch, double dt_s);
     RiderIntent(const RiderIntent &);
     RiderIntent &operator=(const RiderIntent &);
     RiderIntent(RiderIntent &&) noexcept;
@@ -246,6 +256,11 @@ public:
     // Starts the posture from the prepared start lean after reset(): the
     // policy, its posture program and the held intent continue from it.
     void seed_lean(double lean_rad);
+    // Launch part 3b, decision 7: arms the launch plan for a standing
+    // episode start — hold with the prepared lean before any percept.
+    // False (and no state change) when the plan is off or the intent is
+    // disabled.
+    bool arm_standstill_start(double lean_rad);
     void schedule_pulse(double start_s, double duration_s,
                         double amplitude_rad);
 
@@ -261,7 +276,8 @@ public:
                  std::optional<double> preview_grade = std::nullopt,
                  std::optional<double> lean_limit_rad = std::nullopt,
                  bool active = true, bool advance = true,
-                 std::optional<double> min_lean_rad = std::nullopt);
+                 std::optional<double> min_lean_rad = std::nullopt,
+                 const LaunchContext &launch = {});
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) fixed Python call signature
     [[nodiscard]] IntentControl
     resolve(IntentControl control, const IntentSignals &signals,
@@ -269,7 +285,8 @@ public:
             std::optional<double> preview_grade = std::nullopt,
             std::optional<double> lean_limit_rad = std::nullopt,
             bool active = true, bool advance = true,
-            std::optional<double> min_lean_rad = std::nullopt);   // resolve_full(...).control
+            std::optional<double> min_lean_rad = std::nullopt,
+            const LaunchContext &launch = {});   // resolve_full(...).control
 
     [[nodiscard]] State state() const;
     void restore(const State &state);
@@ -277,14 +294,17 @@ public:
     // The reaction's current command; neutral (idle, false, 1, 0) when the
     // intent is disabled.
     [[nodiscard]] ReactionCommand reaction() const;
+    // Launch part 3b: the launch plan's current command; neutral when the
+    // plan or the intent is off.
+    [[nodiscard]] LaunchCommand launch() const;
     // Launch part 1, tasks 4-5: the rider-owned commands the resolver
-    // currently resolves to — always the empty set in part 1; a later
-    // launch part will teach the intent to fill them on the resolve()
+    // currently resolves to — always the empty set in part 1; part 3b
+    // derives them from the launch plan's command on the resolve()
     // cadence. Task 5 already transports whatever this returns — brakes,
     // owns_shifting, shift_request — through PhysicalStep into the
     // drivetrain's cadence shifter.
     [[nodiscard]] const RiderCommands &commands() const noexcept {
-        return commands_;
+        return core_->commands;
     }
     [[nodiscard]] const IntentConfig &config() const { return config_; }
     [[nodiscard]] const SeatedClimbPolicy &policy() const { return core_->policy; }
@@ -302,6 +322,11 @@ private:
         SeatedClimbPolicy policy;
         std::optional<Perception> perception;
         std::optional<FrontLiftReaction> reaction;
+        // Launch part 3b: the plan and the commands derived from it ride
+        // the same transaction — a tick's command set commits with the
+        // plan state that produced it.
+        std::optional<LaunchPlan> launch;
+        RiderCommands commands;
         std::int64_t last_tick_step = -1;
         Intent intent;
     };
@@ -310,11 +335,13 @@ private:
     // by-value Core swap could not guarantee the all-or-nothing commit).
     static_assert(std::is_nothrow_swappable_v<std::unique_ptr<Core>>);
     // One tick on `core` (called on *staged_ or on a probe copy).
-    void tick(Core &core, const IntentSignals &signals,
+    void tick(Core &core, const IntentControl &control,
+              const IntentSignals &signals,
               const RiderSenses &senses, std::int64_t step,
               double road_grade, std::optional<double> preview_grade,
               std::optional<double> lean_limit_rad,
-              std::optional<double> min_lean_rad) const;
+              std::optional<double> min_lean_rad,
+              const LaunchContext &ctx) const;
     // The output merge from `core`'s intent and reaction.
     static IntentResolution output(const Core &core, IntentControl control);
 
@@ -323,7 +350,6 @@ private:
     std::int64_t period_steps_;
     std::unique_ptr<Core> core_;
     std::unique_ptr<Core> staged_;
-    RiderCommands commands_{};
 };
 
 } // namespace rider

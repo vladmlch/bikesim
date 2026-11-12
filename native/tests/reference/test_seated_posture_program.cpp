@@ -106,13 +106,40 @@ const rider::FrontLiftReactionConfig kSwitchedOffReaction{
     .decision_s = .1, .ease_enabled = false, .lean_enabled = false, .rear_brake_tap_enabled = false,
     .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = .3};
 
+// Launch part 3b: the switched-off launch table (plan_enabled = false);
+// its times sit on every test grid.
+const rider::LaunchConfig kSwitchedOffLaunch = [] {
+    rider::LaunchConfig t;
+    t.start_cog_teeth = {51};
+    t.start_pedal_angle_rad = 0.;
+    t.start_lean_grades = {0.};
+    t.start_lean_rad = {0.};
+    t.plan_enabled = false;
+    t.standstill_speed_mps = .1;
+    t.standstill_crank_rpm = 5.;
+    t.effort_rate_nm_s = 40.;
+    t.effort_cap_asphalt_nm = t.effort_cap_hardpack_nm = t.effort_cap_loose_nm = t.effort_cap_wet_nm =
+        t.effort_cap_scree_nm = 60.;
+    t.release_torque_grades = {0., .2};
+    t.release_torque_nm = {0., 30.};
+    t.brake_release_s = .15;
+    t.max_hold_s = 1.5;
+    t.upshift_crank_rpm = 82.;
+    t.end_speed_mps = 3.;
+    t.end_crank_rpm = 60.;
+    t.end_hold_s = .3;
+    t.max_launch_s = 6.;
+    t.handover_s = .9;
+    return t;
+}();
+
 // test_posture_program_reads_no_inertial_signal — the AST sweep's
 // behavioral contract: the posture intent resolves identically under
 // arbitrary IMU perturbation, because no inertial channel reaches it.
 void test_posture_program_reads_no_inertial_signal() {
     std::array<rider::RiderIntent, 2> resolvers{
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005),
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005)};
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005),
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005)};
     const rider::IntentSignals calm;
     rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;
@@ -160,8 +187,8 @@ void test_road_grade_uses_underwheel_and_preview_samples_uniformly() {
 // test_resolver_road_grade_survives_probe_and_ignores_imu
 void test_resolver_road_grade_survives_probe_and_ignores_imu() {
     std::array<rider::RiderIntent, 2> resolvers{
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005),
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, .0005)};
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005),
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005)};
     const rider::IntentSignals base;
     rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;

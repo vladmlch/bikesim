@@ -8357,6 +8357,178 @@ R"CATALOG(    {
       "description": "front-lift reaction state per interval (launch part 3a); neutral when the rider intent is off",
       "source": "native/src/runtime/step.cpp::PhysicalStep::publish_raw"
     },
+    {
+      "claims": [
+        "rider_launch"
+      ],
+      "exempt_keys": [],
+      "name": "channel_rider_launch",
+      "kind": "channels",
+      "keys": [
+        {
+          "frame": "n/a",
+          "path": [
+            "episode_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "episode_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "n/a",
+          "optional": false,
+          "measurement": "declared",
+          "source": "docs/superpowers/specs/2026-10-12-run-recording-design.md::R01",
+          "description": "episode identity within the owning run"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "interval_id"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "interval_id",
+          "dtype": "bigint",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "declared",
+          "source": "native/src/runtime/samples.cpp::PhysicalSampleData::flat_columns",
+          "description": "accounted physics interval identifier, consecutive per episode"
+        }
+      ],
+      "fields": [
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_launch",
+            "phase"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "phase",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Launch plan",
+          "description": "launch plan phase after this interval's intention tick: idle, hold, release, accelerate, handover, blend or done"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_launch",
+            "brake"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "brake",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Launch plan",
+          "description": "both-wheel brake fraction the plan commands: 1 through the hold, falling to 0 over the release, 0 afterwards"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_launch",
+            "effort_nm"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "effort_nm",
+          "dtype": "double",
+          "unit": "N·m",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Launch plan",
+          "description": "effort ceiling the plan ramps up against the surface cap and hands to the ordinary policy while it owns the launch"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_launch",
+            "weight"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "weight",
+          "dtype": "double",
+          "unit": "1",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Launch plan",
+          "description": "the plan's share of the effort ceiling and the lean target: 1 from hold through handover, falling through the blend, 0 when idle or done"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_launch",
+            "lean_target_rad"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "lean_target_rad",
+          "dtype": "double",
+          "unit": "rad",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Launch plan",
+          "description": "torso lean the plan holds as the posture program target — the prepared lean through the start, blended back during the handover"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_launch",
+            "preload_missed"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "preload_missed",
+          "dtype": "boolean",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "docs/superpowers/specs/2026-11-11-rider-launch-plan-design.md::Launch plan",
+          "description": "the hold ran out before the felt crank torque arrived — the start released without its preload"
+        }
+      ],
+      "description": "launch plan state per interval (launch part 3b); neutral when the plan or the rider intent is off",
+      "source": "native/src/runtime/step.cpp::PhysicalStep::publish_raw"
+    },
 )CATALOG",
 R"CATALOG(    {
       "claims": [

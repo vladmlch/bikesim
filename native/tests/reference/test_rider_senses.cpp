@@ -13,6 +13,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include <print>
 #include <memory>
 #include <optional>
@@ -444,6 +445,86 @@ struct ReactionRow {
                     "the reaction replays bitwise through reset");
 }
 
+// One recorded interval of the launch channel plus the root slide's
+// position for the rollback printout.
+struct LaunchRow {
+    std::int64_t interval = 0;
+    std::string phase;
+    double brake = 0.;
+    double effort_nm = 0., weight = 0., lean_target_rad = 0.;
+    bool preload_missed = false;
+    double root_x = 0.;
+};
+
+[[nodiscard]] std::vector<LaunchRow> launch_rows(launch_ride::PedelecEnv &env, std::size_t windows) {
+    std::vector<LaunchRow> rows;
+    std::int64_t last_id = -1;
+    const runtime::RideControl control;   // effort and posture come from the rider intent
+    for (std::size_t w = 0; w < windows; ++w) {
+        const auto result = env.runtime->advance(
+            (static_cast<std::int64_t>(w) + 1) * env.control_steps, control, 0., 0., std::nullopt);
+        for (const auto &sample : env.runtime->recorded_intervals()) {
+            if (sample->interval_id <= last_id) continue;
+            last_id = sample->interval_id;
+            const auto *wire = sw::find(sample->channels, "rider_launch");
+            bt::require(wire != nullptr, "every interval publishes the rider_launch channel");
+            const auto &launch = sw::object(*wire);
+            rows.push_back({.interval = sample->interval_id,
+                            .phase = sw::string(sw::required(launch, "phase")),
+                            .brake = sw::number(sw::required(launch, "brake")),
+                            .effort_nm = sw::number(sw::required(launch, "effort_nm")),
+                            .weight = sw::number(sw::required(launch, "weight")),
+                            .lean_target_rad = sw::number(sw::required(launch, "lean_target_rad")),
+                            .preload_missed = sw::boolean(sw::required(launch, "preload_missed")),
+                            .root_x = sample->qpos.at(static_cast<std::size_t>(env.root_x_qpos))});
+        }
+        if (result.outcome.has_value()) break;
+    }
+    return rows;
+}
+
+// Launch part 3b: the rider_launch channel on a standing 15 % start with
+// the plan switched on (test-only): the rows start in hold with the
+// brakes on, the phases follow the plan's order, the brake only falls,
+// and the ride leaves the hold. Rollback, the release time and whether the
+// handover is reached are printed for the calibration, not required.
+[[gnu::noinline]] void test_launch_channel_on_a_standing_climb() {
+    const auto edit = [](auto &physics) { physics.rider_launch.plan_enabled = true; };
+    auto env = launch_ride::environment(launch_ride::track("[[0.0, 0.15], [60.0, 0.15]]", 60.), 8., edit, 1,
+                                        runtime::ResearchCaptureMode::full);
+    const std::size_t windows = 800;   // 8 s of the .01 s research control period
+    const auto rows = launch_rows(env, windows);
+    bt::require(!rows.empty(), "the ride records intervals");
+    bt::require(rows.front().phase == "hold" && rows.front().brake == 1.,
+                "the first row holds with the brakes on");
+    const std::set<std::pair<std::string, std::string>> allowed{
+        {"idle", "idle"}, {"idle", "hold"}, {"hold", "hold"}, {"hold", "release"}, {"hold", "accelerate"},
+        {"release", "release"}, {"release", "accelerate"}, {"accelerate", "accelerate"},
+        {"accelerate", "handover"}, {"accelerate", "blend"}, {"handover", "handover"}, {"handover", "blend"},
+        {"blend", "blend"}, {"blend", "done"}, {"done", "done"}, {"done", "hold"}};
+    const double interval_s = static_cast<double>(env.control_steps) * .00125;
+    double brake = rows.front().brake, min_x = rows.front().root_x;
+    std::optional<double> release_at;
+    bool left_hold = rows.front().phase != "hold", done = false;
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        const auto &row = rows[i];
+        if (i > 0)
+            bt::require(allowed.contains({rows[i - 1].phase, row.phase}), "the phases follow the plan's order");
+        bt::require(row.brake <= brake || row.phase == "hold", "the brake only falls outside a new hold");
+        brake = row.brake;
+        min_x = std::min(min_x, row.root_x);
+        if (row.phase == "release" && !release_at)
+            release_at = static_cast<double>(row.interval) * interval_s;
+        if (row.phase != "hold") left_hold = true;
+        if (row.phase == "done") done = true;
+    }
+    bt::require(left_hold, "the ride leaves the hold inside 8 s");
+    std::println("launch ride: {} rows, rollback {:.4f} m, release {}, done {}",
+                 rows.size(), min_x - rows.front().root_x,
+                 release_at ? std::format("{:.3f} s", *release_at) : std::string("not reached"),
+                 done ? "reached" : "not reached");
+}
+
 } // namespace
 
 int main() {
@@ -456,5 +537,6 @@ int main() {
         test_ride_senses_follow_the_label_map();
         test_grade_ahead_tracks_the_profile();
         test_reaction_channel_on_a_decimated_ride();
+        test_launch_channel_on_a_standing_climb();
     });
 }

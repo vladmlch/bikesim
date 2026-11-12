@@ -64,6 +64,9 @@ struct StepConfig {
     // (launch part 3a); validated inside RiderIntent when the intent is
     // enabled.
     rider::FrontLiftReactionConfig reaction{};
+    // The launch plan table — decoded from config.rider_launch (launch
+    // part 3b); validated inside RiderIntent when the intent is enabled.
+    rider::LaunchConfig launch{};
     // The track's surface-label map — the senses fold's lookup for the
     // front-wheel and lookahead labels.
     rider::SurfaceLabels surface_labels{};

@@ -251,7 +251,7 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
         "control_period_steps", "physics_mode", "drive_mode", "strict",
         "measurement_decimation", "record_retention", "writer_config",
         "rider_controller", "rider_intent", "rider_reaction",
-        "surface_labels", "monitors", "geometry");
+        "rider_launch", "surface_labels", "monitors", "geometry");
     vread::exact(root, required, vread::keys("async_telemetry"));
     if (vread::integer32(vread::field(root, "runtime_schema"),
                          root.child("runtime_schema")) != kRuntimeSchema)
@@ -300,6 +300,7 @@ RuntimeConfig decode_runtime_config(const bike::io::Value &config) {
     out.rider_controller = owned_mapping(root, "rider_controller");
     out.rider_intent = owned_mapping(root, "rider_intent");
     out.rider_reaction = owned_mapping(root, "rider_reaction");
+    out.rider_launch = owned_mapping(root, "rider_launch");
     out.surface_labels = owned_mapping(root, "surface_labels");
 
     const vread::Dict monitors = vread::section(root, "monitors");

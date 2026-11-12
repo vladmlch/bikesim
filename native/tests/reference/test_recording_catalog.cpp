@@ -111,7 +111,8 @@ void test_catalog_tables_are_finite_and_fully_described() {
         "channel_energy", "channel_sensors", "channel_drive", "channel_tires",
         "channel_suspension", "channel_control", "channel_rider",
         "channel_rider_senses", "channel_rider_reaction",
-        "channel_rider_commands", "channel_model_status"};
+        "channel_rider_launch", "channel_rider_commands",
+        "channel_model_status"};
     std::set<std::string> actual;
     for (const auto &spec : catalog.table_order()) {
         actual.insert(spec.name);
@@ -674,6 +675,39 @@ void test_rider_reaction_channel_round_trips() {
     check(1, "acting", true, .3, .1);
 }
 
+// Launch part 3b — the rider_launch channel's six leaves survive the
+// typed encoding and the DuckDB read-back verbatim: text phase, four
+// doubles and a boolean.
+void test_rider_launch_channel_round_trips() {
+    const bt::TemporaryDirectory dir("catalog-launch");
+    const auto &spec = synthetic_catalog().table("channel_rider_launch");
+    const auto row = [](std::int64_t id, const char *phase, double brake, double effort, double weight,
+                        double lean, bool missed) {
+        return Object{{"rider_launch", io::Value{Object{{"phase", text(phase)},
+                                                        {"brake", real(brake)},
+                                                        {"effort_nm", real(effort)},
+                                                        {"weight", real(weight)},
+                                                        {"lean_target_rad", real(lean)},
+                                                        {"preload_missed", io::Value{missed}}}}},
+                      {"interval_id", integer(id)}};
+    };
+    const auto decoded = round_trip(spec, {row(0, "hold", 1., 12.5, 1., .08, false),
+                                           row(1, "done", 0., 40., 0., 0., true)}, dir);
+    bt::require(decoded.size() == 2, "two rows read back");
+    const auto check = [&](std::size_t i, std::string_view phase, double brake, double effort, double weight,
+                           double lean, bool missed) {
+        bt::require(io::as_string(detail::field(decoded[i], "phase"), "phase") == phase &&
+                        io::as_double(detail::field(decoded[i], "brake"), "brake") == brake &&
+                        io::as_double(detail::field(decoded[i], "effort_nm"), "effort") == effort &&
+                        io::as_double(detail::field(decoded[i], "weight"), "weight") == weight &&
+                        io::as_double(detail::field(decoded[i], "lean_target_rad"), "lean") == lean &&
+                        io::as_bool(detail::field(decoded[i], "preload_missed"), "missed") == missed,
+                    "the launch row reads back verbatim");
+    };
+    check(0, "hold", 1., 12.5, 1., .08, false);
+    check(1, "done", 0., 40., 0., 0., true);
+}
+
 } // namespace
 
 int main() {
@@ -694,6 +728,7 @@ int main() {
         test_forces_explode_per_component_with_vector_and_power();
         test_tree_source_rejects_batch_arguments_and_bad_intervals();
         test_rider_reaction_channel_round_trips();
+        test_rider_launch_channel_round_trips();
         test_catalog_rejects_malformed_joint_descriptors();
     });
 }

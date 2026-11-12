@@ -70,6 +70,10 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
     physical.rider_intent_.reset();
     // Launch part 2: the first running posture continues from the prepared lean.
     physical.rider_intent_.seed_lean(context.preparation.lean_rad);
+    // Launch part 3b, decision 7: a standing start in an effort drive mode
+    // holds the brakes from step 0; a moving start leaves the plan idle.
+    if(context.physics.initial_speed_mps==0.&&(context.physics.drive_mode=="articulated_effort"||context.physics.drive_mode=="crank_effort"))
+        (void)physical.rider_intent_.arm_standstill_start(context.preparation.lean_rad);
     physical.intent_signals_={};physical.applied_control_={};physical.held_rider_terms_.reset();
     physical.energy_={};physical.rollback_hold_=false;physical.research_accounting_valid_=false;physical.last_force_sample_.reset();physical.last_constraint_snapshot_={};physical.accumulator_.clear();
     physical.measurement_decimation_=config.measurement_decimation;

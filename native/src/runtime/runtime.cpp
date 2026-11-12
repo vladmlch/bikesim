@@ -351,6 +351,8 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
                                              "config.rider_intent");
     out.reaction = rider::decode_reaction_config(
         config.rider_reaction, "config.rider_reaction");
+    out.launch = rider::decode_launch_config(
+        config.rider_launch, "config.rider_launch");
     out.surface_labels = rider::decode_surface_labels(
         config.surface_labels, "config.surface_labels");
     return out;

@@ -68,7 +68,7 @@ public:
         bool preload_missed = false;
         bool operator==(const State &) const = default;
     };
-    LaunchPlan(const LaunchConfig &config, double period_s);
+    LaunchPlan(LaunchConfig config, double period_s);
     void reset();
     // A standing episode start: hold with the prepared lean before any
     // percept. No-op (and false) when the plan is switched off.

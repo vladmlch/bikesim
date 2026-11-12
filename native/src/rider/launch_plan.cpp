@@ -6,6 +6,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <utility>
 
 namespace rider {
 namespace {
@@ -15,7 +16,15 @@ namespace {
 }
 
 std::int64_t ticks(double seconds, double period_s) {
-    return static_cast<std::int64_t>(std::llround(seconds / period_s));
+    return std::llround(seconds / period_s);
+}
+
+// The table, period and duration checks run inside the constructor's first
+// member initializer, so every ticks() below converts a validated value —
+// the ordering the plan's constructor body spelled out.
+LaunchConfig valid(LaunchConfig config, double period_s) {
+    validate_launch_plan_context(config, period_s);
+    return config;
 }
 
 } // namespace
@@ -49,14 +58,14 @@ ShiftResponse shift_response(std::string_view label) {
     throw std::invalid_argument("unknown shifter rider_response " + std::string(label));
 }
 
-LaunchPlan::LaunchPlan(const LaunchConfig &config, double period_s) : config_(config), period_s_(period_s) {
-    validate_launch_plan_context(config_, period_s_);
-    release_ticks_ = ticks(config_.brake_release_s, period_s_);
-    max_hold_ticks_ = ticks(config_.max_hold_s, period_s_);
-    end_hold_ticks_ = ticks(config_.end_hold_s, period_s_);
-    max_launch_ticks_ = ticks(config_.max_launch_s, period_s_);
-    handover_ticks_ = ticks(config_.handover_s, period_s_);
-}
+LaunchPlan::LaunchPlan(LaunchConfig config, double period_s)
+    : config_(valid(std::move(config), period_s)),
+      period_s_(period_s),
+      release_ticks_(ticks(config_.brake_release_s, period_s_)),
+      max_hold_ticks_(ticks(config_.max_hold_s, period_s_)),
+      end_hold_ticks_(ticks(config_.end_hold_s, period_s_)),
+      max_launch_ticks_(ticks(config_.max_launch_s, period_s_)),
+      handover_ticks_(ticks(config_.handover_s, period_s_)) {}
 
 void LaunchPlan::reset() { s_ = State{}; }
 

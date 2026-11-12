@@ -79,7 +79,7 @@ rider::Percepts standing(double grade = 0.) {
 }
 
 rider::LaunchInputs in(std::optional<rider::Percepts> p, rider::ShiftFeedback shift = {}) {
-    return {.percepts = std::move(p), .shift = shift, .eligible = true, .external_brake = false};
+    return {.percepts = p, .shift = shift, .eligible = true, .external_brake = false};
 }
 
 std::string text(const rider::LaunchPlan &plan) {

@@ -431,6 +431,7 @@ int main() {
     `native/src/configuration/validate.cpp`;
   - `native/src/initialization/initial_state.cpp:80`, `native/src/initialization/equilibrium_cache.cpp:168`;
   - полные документы физики из описи;
+  - `native/tests/config/test_schema.cpp` — `welded_profile()` и структурные проверки `test_schema()` (ревью 4, I2);
   - `native/tests/reference/Phase3Ports.cmake`.
 - Тест: `test_front_lift_reaction.cpp`, `test_welded_profile_config.cpp`
 

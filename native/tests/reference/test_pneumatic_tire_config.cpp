@@ -55,6 +55,9 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"effort_cap_loose_nm", io::Value{io::Number{"60.0"}}},
                 {"effort_cap_wet_nm", io::Value{io::Number{"60.0"}}},
                 {"effort_cap_scree_nm", io::Value{io::Number{"60.0"}}},
+                {"effort_cap_grades", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
+                {"effort_cap_grade_nm", io::Value{io::Value::Array{io::Value{io::Number{"1000.0"}}}}},
+                {"effort_rise_speed_mps", io::Value{io::Number{"2.5"}}},
                 {"release_torque_grades", io::Value{io::Value::Array{
                      io::Value{io::Number{"0.0"}}, io::Value{io::Number{"0.2"}}}}},
                 {"release_torque_nm", io::Value{io::Value::Array{
@@ -62,6 +65,7 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"brake_release_s", io::Value{io::Number{"0.15"}}},
                 {"max_hold_s", io::Value{io::Number{"1.5"}}},
                 {"upshift_crank_rpm", io::Value{io::Number{"82.0"}}},
+                {"shift_retry_s", io::Value{io::Number{"0.25"}}},
                 {"end_speed_mps", io::Value{io::Number{"3.0"}}},
                 {"end_crank_rpm", io::Value{io::Number{"60.0"}}},
                 {"end_hold_s", io::Value{io::Number{"0.3"}}},

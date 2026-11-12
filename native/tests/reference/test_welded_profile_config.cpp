@@ -401,8 +401,12 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
                              "effort_rate_nm_s = 40.0\n", "effort_cap_asphalt_nm = 60.0\n",
                              "effort_cap_hardpack_nm = 60.0\n", "effort_cap_loose_nm = 60.0\n",
                              "effort_cap_wet_nm = 60.0\n", "effort_cap_scree_nm = 60.0\n",
+                             "effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]\n",
+                             "effort_cap_grade_nm = [38.5, 18.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]\n",
+                             "effort_rise_speed_mps = 2.5\n",
                              "release_torque_grades = [0.0, 0.2]\n", "release_torque_nm = [0.0, 30.0]\n",
                              "brake_release_s = 0.15\n", "max_hold_s = 1.5\n", "upshift_crank_rpm = 82.0\n",
+                             "shift_retry_s = 0.25\n",
                              "end_speed_mps = 3.0\n", "end_crank_rpm = 60.0\n", "end_hold_s = 0.3\n",
                              "max_launch_s = 6.0\n", "handover_s = 0.9\n"}) {
         const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));

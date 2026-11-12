@@ -55,11 +55,17 @@ rider::LaunchConfig table() {
     t.effort_cap_loose_nm = 20.;
     t.effort_cap_wet_nm = 60.;
     t.effort_cap_scree_nm = 60.;
+    // Launch part 4: a grade cap that never binds below the 60 N·m surface
+    // caps and a rise speed no helper reaches keep the 3b tests exact.
+    t.effort_cap_grades = {0.};
+    t.effort_cap_grade_nm = {1000.};
+    t.effort_rise_speed_mps = 100.;
     t.release_torque_grades = {0., .2};
     t.release_torque_nm = {10., 30.};
     t.brake_release_s = 4 * kPeriod;
     t.max_hold_s = 50 * kPeriod;
     t.upshift_crank_rpm = 80.;
+    t.shift_retry_s = 10 * kPeriod;
     t.end_speed_mps = 3.;
     t.end_crank_rpm = 60.;
     t.end_hold_s = 5 * kPeriod;
@@ -198,6 +204,98 @@ void test_upshift_request_follows_the_shifter() {
     bt::require(!cmd.shift_up, "no request while a cut runs");
 }
 
+// Launch part 4: the grade cap — piecewise linear over the knots, held at
+// the end values, the lower of it and the surface cap binds the ramp.
+void test_grade_cap_binds_below_the_surface_cap() {
+    auto t = table();
+    t.effort_cap_grades = {0., .1, .2};
+    t.effort_cap_grade_nm = {30., 10., 20.};
+    bt::require(rider::effort_grade_cap_nm(t, -.05) == 30. && rider::effort_grade_cap_nm(t, .3) == 20.,
+                "the grade cap holds its end values outside the knots");
+    bt::require(std::abs(rider::effort_grade_cap_nm(t, .05) - 20.) < 1e-12 &&
+                    std::abs(rider::effort_grade_cap_nm(t, .15) - 15.) < 1e-12,
+                "the grade cap is linear between knots, also where it rises again");
+    rider::LaunchPlan plan(t, kPeriod);
+    auto p = standing(.1);
+    rider::LaunchCommand cmd;
+    for (int i = 0; i < 40; ++i) cmd = plan.update(in(p));
+    bt::require(cmd.phase == rider::LaunchPhase::hold && cmd.effort_nm == 10.,
+                "the 10 % grade cap binds below the 60 N·m surface cap");
+    // A fresh plan: the 50-tick hold limit would end the first hold.
+    rider::LaunchPlan loose(t, kPeriod);
+    auto q = standing(0.);
+    q.senses.surface_front = rider::SurfaceLabel::loose;
+    for (int i = 0; i < 30; ++i) cmd = loose.update(in(q));
+    bt::require(cmd.phase == rider::LaunchPhase::hold && cmd.effort_nm == 20.,
+                "the 20 N·m loose cap binds below the 30 N·m flat grade cap");
+}
+
+// Launch part 4: once the felt speed reaches the rise speed the ceiling
+// rises from the grade cap at effort_rate_nm_s per second to the surface
+// cap; below the rise speed it is the grade cap again while the rise
+// clock keeps running; a new start resets the clock.
+void test_cap_rises_after_the_rise_speed() {
+    auto t = table();
+    t.effort_cap_grades = {0.};
+    t.effort_cap_grade_nm = {10.};
+    t.effort_rise_speed_mps = 2.;
+    rider::LaunchPlan plan(t, kPeriod);
+    auto p = standing();
+    (void)plan.update(in(p));
+    p.human_crank_torque_nm = 10.;
+    for (int i = 0; i < 5; ++i) (void)plan.update(in(p));
+    bt::require(plan.command().phase == rider::LaunchPhase::accelerate && plan.command().effort_nm == 5.,
+                "accelerate starts below the 10 N·m grade cap");
+    p.senses.speed_mps = 1.;
+    rider::LaunchCommand cmd;
+    for (int i = 0; i < 10; ++i) cmd = plan.update(in(p));
+    bt::require(cmd.effort_nm == 10. && plan.state().rise_ticks == -1, "below the rise speed the grade cap binds");
+    p.senses.speed_mps = 2.;
+    cmd = plan.update(in(p));
+    bt::require(cmd.effort_nm == 10. && plan.state().rise_ticks == 0, "the rise starts at the grade cap");
+    for (int i = 0; i < 5; ++i) cmd = plan.update(in(p));
+    bt::require(std::abs(cmd.effort_nm - 15.) < 1e-12 && plan.state().rise_ticks == 5,
+                "the ceiling rises one rate step per tick");
+    p.senses.speed_mps = 1.;
+    cmd = plan.update(in(p));
+    bt::require(cmd.effort_nm == 10. && plan.state().rise_ticks == 6,
+                "below the rise speed the ceiling is the grade cap again; the clock runs on");
+    p.senses.speed_mps = 2.;
+    for (int i = 0; i < 100; ++i) cmd = plan.update(in(p));
+    bt::require(cmd.effort_nm == 60., "the rise ends at the surface cap");
+}
+
+// Launch part 4: a rejected request repeats on the same cog after
+// shift_retry_s; a committed shift keeps the old cog blocked until the
+// felt cog changes.
+void test_rejected_request_repeats_after_the_retry_time() {
+    auto plan = accelerating();
+    auto p = standing();
+    p.senses.speed_mps = 1.;
+    p.crank_rpm = 85.;
+    rider::ShiftFeedback fb{.response = rider::ShiftResponse::none, .shift_count = 3, .cut_active = false};
+    auto cmd = plan.update(in(p, fb));
+    bt::require(cmd.shift_up, "the table cadence raises a request");
+    fb.response = rider::ShiftResponse::rejected;
+    cmd = plan.update(in(p, fb));
+    const std::int64_t rejected_at = plan.state().launch_ticks;
+    bt::require(!cmd.shift_up && plan.state().retry_tick == rejected_at + 10,
+                "a rejection retires the request and sets the retry tick");
+    fb.response = rider::ShiftResponse::none;
+    for (int i = 0; i < 9; ++i) {
+        cmd = plan.update(in(p, fb));
+        bt::require(!cmd.shift_up, "the same cog waits for the retry time");
+    }
+    cmd = plan.update(in(p, fb));
+    bt::require(cmd.shift_up && plan.state().retry_tick == -1 && plan.state().launch_ticks == rejected_at + 10,
+                "the same cog is asked again at the retry tick");
+    fb.shift_count = 4;
+    cmd = plan.update(in(p, fb));
+    bt::require(!cmd.shift_up && plan.state().retry_tick == -1, "a committed shift sets no retry");
+    for (int i = 0; i < 20; ++i) cmd = plan.update(in(p, fb));
+    bt::require(!cmd.shift_up, "after a committed shift the old cog stays blocked");
+}
+
 // Handover: the request is retired at entry, shifting stays with the plan
 // until the cut ends, then the weight falls linearly to 0 and the plan is done.
 void test_handover_waits_for_the_cut_then_blends() {
@@ -300,6 +398,12 @@ void test_codec_round_trip_continuation_and_rejected_restores() {
     bad = rider::LaunchPlan::State{};
     bad.effort_nm = 1.;
     rejects([&] { fresh.restore(bad); }, "idle", "an idle plan that is not reset");
+    bad = hold.state();
+    bad.rise_ticks = -2;
+    rejects([&] { fresh.restore(bad); }, "rise_ticks", "a rise clock below -1");
+    bad = hold.state();
+    bad.retry_tick = 5;
+    rejects([&] { fresh.restore(bad); }, "retry_tick", "a retry tick in the hold");
     bt::require(text(fresh) == before, "rejected restores change nothing");
     // A complete document with an unknown phase: the exact-key check passes,
     // so the phase name is what fails (review 1, M6).
@@ -332,6 +436,9 @@ int main() {
         test_no_percept_and_caller_brake_freeze_the_hold();
         test_release_by_felt_torque_and_by_timeout();
         test_upshift_request_follows_the_shifter();
+        test_grade_cap_binds_below_the_surface_cap();
+        test_cap_rises_after_the_rise_speed();
+        test_rejected_request_repeats_after_the_retry_time();
         test_handover_waits_for_the_cut_then_blends();
         test_restart_after_a_stop_and_backward_roll();
         test_ineligible_ticks_cancel_and_the_switch_keeps_idle();

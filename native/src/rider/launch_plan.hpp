@@ -66,6 +66,12 @@ public:
         int request_teeth = 0;           // felt cog when the pending request was issued
         int blocked_teeth = 0;           // felt cog of the last answered request; 0 = none
         bool preload_missed = false;
+        // Launch part 4: intention ticks since the felt speed first reached
+        // effort_rise_speed_mps in this launch; -1 = not yet.
+        std::int64_t rise_ticks = -1;
+        // launch_ticks at which a rejected request's same-cog block ends;
+        // -1 = the block lasts until the felt cog changes.
+        std::int64_t retry_tick = -1;
         bool operator==(const State &) const = default;
     };
     LaunchPlan(LaunchConfig config, double period_s);
@@ -85,7 +91,7 @@ public:
 
 private:
     [[nodiscard]] double cap(SurfaceLabel surface) const;
-    [[nodiscard]] double ramp(double effort, const Percepts &percepts) const;
+    [[nodiscard]] double ramp(double effort, const Percepts &percepts, State &n) const;
     [[nodiscard]] bool standstill(const Percepts &percepts) const;
     void arm(State &n, double lean_rad) const;
     void to_release(State &n) const;
@@ -94,7 +100,7 @@ private:
     LaunchConfig config_;
     double period_s_;
     std::int64_t release_ticks_ = 0, max_hold_ticks_ = 0, end_hold_ticks_ = 0, max_launch_ticks_ = 0,
-                 handover_ticks_ = 0;
+                 handover_ticks_ = 0, retry_ticks_ = 0;
     State s_;
 };
 

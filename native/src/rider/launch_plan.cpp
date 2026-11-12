@@ -65,7 +65,8 @@ LaunchPlan::LaunchPlan(LaunchConfig config, double period_s)
       max_hold_ticks_(ticks(config_.max_hold_s, period_s_)),
       end_hold_ticks_(ticks(config_.end_hold_s, period_s_)),
       max_launch_ticks_(ticks(config_.max_launch_s, period_s_)),
-      handover_ticks_(ticks(config_.handover_s, period_s_)) {}
+      handover_ticks_(ticks(config_.handover_s, period_s_)),
+      retry_ticks_(ticks(config_.shift_retry_s, period_s_)) {}
 
 void LaunchPlan::reset() { s_ = State{}; }
 
@@ -99,8 +100,18 @@ double LaunchPlan::cap(SurfaceLabel surface) const {
     throw std::invalid_argument("launch plan surface outside the enum");
 }
 
-double LaunchPlan::ramp(double effort, const Percepts &p) const {
-    return std::min(effort + config_.effort_rate_nm_s * period_s_, cap(p.senses.surface_front));
+double LaunchPlan::ramp(double effort, const Percepts &p, State &n) const {
+    // Launch part 4, decisions 1-2: the lower of the surface cap and the
+    // grade cap; from the first tick at the rise speed the grade cap rises at
+    // the effort rate (the calibration probe's arithmetic, operand order kept).
+    const double surface = cap(p.senses.surface_front);
+    const double grade = detail::grade_cap_unchecked(config_, p.senses.grade_ahead);
+    double ceiling = std::min(surface, grade);
+    if (p.senses.speed_mps >= config_.effort_rise_speed_mps) {
+        if (n.rise_ticks < 0) n.rise_ticks = 0;
+        ceiling = std::min(surface, grade + config_.effort_rate_nm_s * static_cast<double>(n.rise_ticks) * period_s_);
+    }
+    return std::min(effort + config_.effort_rate_nm_s * period_s_, ceiling);
 }
 
 bool LaunchPlan::standstill(const Percepts &p) const {
@@ -128,12 +139,16 @@ void LaunchPlan::shifting(State &n, const Percepts &p, const ShiftFeedback &fb) 
     if (n.shift_up && (fb.shift_count > n.request_count || fb.response == ShiftResponse::rejected)) {
         n.shift_up = false;
         n.blocked_teeth = n.request_teeth;
+        // Launch part 4, decision 3: a rejected cog may be asked again after
+        // shift_retry_s; a committed shift keeps it blocked until the felt cog changes.
+        n.retry_tick = fb.response == ShiftResponse::rejected ? n.launch_ticks + retry_ticks_ : -1;
     }
     if (!n.shift_up && !fb.cut_active && p.crank_rpm >= config_.upshift_crank_rpm &&
-        p.senses.rear_teeth != n.blocked_teeth) {
+        (p.senses.rear_teeth != n.blocked_teeth || (n.retry_tick >= 0 && n.launch_ticks >= n.retry_tick))) {
         n.shift_up = true;
         n.request_count = fb.shift_count;
         n.request_teeth = p.senses.rear_teeth;
+        n.retry_tick = -1;
     }
 }
 
@@ -145,6 +160,8 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
         return command();
     }
     State n = s_;
+    // The rise clock counts every eligible tick once started (probe: Rise.now).
+    if (n.rise_ticks >= 0) ++n.rise_ticks;
     const std::optional<Percepts> &p = in.percepts;
     switch (n.phase) {
     case LaunchPhase::idle:
@@ -154,7 +171,7 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
     case LaunchPhase::hold:
         if (!p || in.external_brake) break;   // the rider waits: no press, no clock
         ++n.phase_ticks;
-        n.effort_nm = ramp(n.effort_nm, *p);
+        n.effort_nm = ramp(n.effort_nm, *p, n);
         if (p->human_crank_torque_nm >= release_torque_nm(config_, p->senses.grade_ahead)) {
             to_release(n);
         } else if (n.phase_ticks >= max_hold_ticks_) {
@@ -165,7 +182,7 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
     case LaunchPhase::release:
         ++n.phase_ticks;
         ++n.launch_ticks;
-        if (p) n.effort_nm = ramp(n.effort_nm, *p);
+        if (p) n.effort_nm = ramp(n.effort_nm, *p, n);
         n.brake = std::max(0., 1. - static_cast<double>(n.phase_ticks) / static_cast<double>(release_ticks_));
         if (n.brake == 0.) {
             n.phase = LaunchPhase::accelerate;
@@ -175,7 +192,7 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
     case LaunchPhase::accelerate:
         ++n.launch_ticks;
         if (p) {
-            n.effort_nm = ramp(n.effort_nm, *p);
+            n.effort_nm = ramp(n.effort_nm, *p, n);
             shifting(n, *p, in.shift);
             n.end_ok_ticks = p->senses.speed_mps >= config_.end_speed_mps && p->crank_rpm >= config_.end_crank_rpm
                                  ? std::min(n.end_ok_ticks + 1, end_hold_ticks_ + 1)
@@ -187,7 +204,7 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
         }
         break;
     case LaunchPhase::handover:
-        if (p) n.effort_nm = ramp(n.effort_nm, *p);
+        if (p) n.effort_nm = ramp(n.effort_nm, *p, n);
         if (!in.shift.cut_active) {
             n.phase = LaunchPhase::blend;
             n.blend_ticks = 0;
@@ -195,7 +212,7 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
         }
         break;
     case LaunchPhase::blend:
-        if (p) n.effort_nm = ramp(n.effort_nm, *p);
+        if (p) n.effort_nm = ramp(n.effort_nm, *p, n);
         ++n.blend_ticks;
         if (n.blend_ticks >= handover_ticks_) n = State{.phase = LaunchPhase::done};
         break;
@@ -243,6 +260,11 @@ void LaunchPlan::restore(const State &s) {
     if (s.request_teeth < 0 || s.blocked_teeth < 0) bad_state("request_teeth", "negative cog");
     if (s.shift_up && s.phase != LaunchPhase::accelerate) bad_state("shift_up", "a request outside accelerate");
     if (s.shift_up && s.request_teeth < 3) bad_state("request_teeth", "a request without its felt cog");
+    if (s.rise_ticks < -1) bad_state("rise_ticks", "below -1");
+    if (s.retry_tick < -1) bad_state("retry_tick", "below -1");
+    if (s.retry_tick >= 0 &&
+        (s.shift_up || s.blocked_teeth < 3 || s.retry_tick < retry_ticks_ || s.retry_tick > s.launch_ticks + retry_ticks_))
+        bad_state("retry_tick", "a retry without the rejected request it follows");
     switch (s.phase) {
     case LaunchPhase::idle:
     case LaunchPhase::done:
@@ -254,6 +276,7 @@ void LaunchPlan::restore(const State &s) {
         if (s.launch_ticks != 0 || s.end_ok_ticks != 0 || s.blend_ticks != 0 || s.preload_missed ||
             s.request_count != 0 || s.request_teeth != 0 || s.blocked_teeth != 0)
             bad_state("hold", "a hold with launch counters, a request memory or an event");
+        if (s.retry_tick != -1) bad_state("retry_tick", "a retry before accelerate");
         break;
     case LaunchPhase::release:
         if (release_ticks_ == 0 || s.phase_ticks >= release_ticks_ || s.launch_ticks != s.phase_ticks)
@@ -261,6 +284,7 @@ void LaunchPlan::restore(const State &s) {
         if (s.brake != std::max(0., 1. - static_cast<double>(s.phase_ticks) / static_cast<double>(release_ticks_)))
             bad_state("brake", "off the release ramp");
         if (s.end_ok_ticks != 0 || s.blend_ticks != 0) bad_state("release", "end or blend counters");
+        if (s.retry_tick != -1) bad_state("retry_tick", "a retry before accelerate");
         break;
     case LaunchPhase::accelerate:
     case LaunchPhase::handover:

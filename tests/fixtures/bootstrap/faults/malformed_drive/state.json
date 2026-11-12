@@ -1192,6 +1192,8 @@
       "preload_missed": false,
       "request_count": 0,
       "request_teeth": 0,
+      "retry_tick": -1,
+      "rise_ticks": -1,
       "shift_up": false
     },
     "perception": {

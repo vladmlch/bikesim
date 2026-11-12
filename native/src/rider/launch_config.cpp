@@ -24,6 +24,17 @@ void strictly_ascending(const std::vector<double> &values, std::string_view fiel
     }
 }
 
+// Piecewise linear over strictly ascending knots, held at the end values —
+// the arithmetic release_torque_nm used since part 3b.
+double knot_value(const std::vector<double> &knots, const std::vector<double> &values, double grade) {
+    if (grade >= knots.back()) return values.back();
+    if (grade <= knots.front()) return values.front();
+    const auto upper = static_cast<std::size_t>(
+        std::distance(knots.begin(), std::ranges::upper_bound(knots, grade)));
+    const double t = (grade - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
+    return values[upper - 1] + t * (values[upper] - values[upper - 1]);
+}
+
 } // namespace
 
 void validate_launch_table(const LaunchConfig &table) {
@@ -54,6 +65,12 @@ void validate_launch_table(const LaunchConfig &table) {
     positive(table.effort_cap_loose_nm, "effort_cap_loose_nm");
     positive(table.effort_cap_wet_nm, "effort_cap_wet_nm");
     positive(table.effort_cap_scree_nm, "effort_cap_scree_nm");
+    if (table.effort_cap_grades.empty()) reject("effort_cap_grades", "needs at least one knot");
+    if (table.effort_cap_grade_nm.size() != table.effort_cap_grades.size())
+        reject("effort_cap_grade_nm", "needs one cap per effort_cap_grades knot");
+    strictly_ascending(table.effort_cap_grades, "effort_cap_grades");
+    for (const double cap : table.effort_cap_grade_nm) positive(cap, "effort_cap_grade_nm");
+    positive(table.effort_rise_speed_mps, "effort_rise_speed_mps");
     if (table.release_torque_grades.empty()) reject("release_torque_grades", "needs at least one knot");
     if (table.release_torque_nm.size() != table.release_torque_grades.size())
         reject("release_torque_nm", "needs one torque per release_torque_grades knot");
@@ -62,6 +79,7 @@ void validate_launch_table(const LaunchConfig &table) {
     nonnegative(table.brake_release_s, "brake_release_s");
     positive(table.max_hold_s, "max_hold_s");
     positive(table.upshift_crank_rpm, "upshift_crank_rpm");
+    positive(table.shift_retry_s, "shift_retry_s");
     nonnegative(table.end_speed_mps, "end_speed_mps");
     nonnegative(table.end_crank_rpm, "end_crank_rpm");
     nonnegative(table.end_hold_s, "end_hold_s");
@@ -96,15 +114,20 @@ LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
 double release_torque_nm(const LaunchConfig &table, double grade) {
     validate_launch_table(table);
     if (!std::isfinite(grade)) throw std::invalid_argument("launch release grade must be finite");
-    const auto &knots = table.release_torque_grades;
-    const auto &torques = table.release_torque_nm;
-    if (grade >= knots.back()) return torques.back();
-    if (grade <= knots.front()) return torques.front();
-    const auto upper = static_cast<std::size_t>(
-        std::distance(knots.begin(), std::ranges::upper_bound(knots, grade)));
-    const double t = (grade - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
-    return torques[upper - 1] + t * (torques[upper] - torques[upper - 1]);
+    return knot_value(table.release_torque_grades, table.release_torque_nm, grade);
 }
+
+double effort_grade_cap_nm(const LaunchConfig &table, double grade) {
+    validate_launch_table(table);
+    if (!std::isfinite(grade)) throw std::invalid_argument("launch grade cap grade must be finite");
+    return knot_value(table.effort_cap_grades, table.effort_cap_grade_nm, grade);
+}
+
+namespace detail {
+double grade_cap_unchecked(const LaunchConfig &table, double grade) {
+    return knot_value(table.effort_cap_grades, table.effort_cap_grade_nm, grade);
+}
+} // namespace detail
 
 void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
     validate_launch_table(table);
@@ -120,6 +143,7 @@ void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
     on_grid(table.end_hold_s, "end_hold_s");
     on_grid(table.max_launch_s, "max_launch_s");
     on_grid(table.handover_s, "handover_s");
+    on_grid(table.shift_retry_s, "shift_retry_s");
 }
 
 } // namespace rider

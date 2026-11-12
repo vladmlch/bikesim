@@ -242,11 +242,17 @@ effort_cap_hardpack_nm = 60.0
 effort_cap_loose_nm = 60.0
 effort_cap_wet_nm = 60.0
 effort_cap_scree_nm = 60.0
+# launch part 4 — the normal rider's calibrated grade cap, rise and
+# retry; inert until plan_enabled
+effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]
+effort_cap_grade_nm = [38.5, 18.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]
+effort_rise_speed_mps = 2.5
 release_torque_grades = [0.0, 0.2]
 release_torque_nm = [0.0, 30.0]
 brake_release_s = 0.15
 max_hold_s = 1.5
 upshift_crank_rpm = 82.0
+shift_retry_s = 0.25
 end_speed_mps = 3.0
 end_crank_rpm = 60.0
 end_hold_s = 0.3

@@ -36,6 +36,14 @@ struct LaunchConfig {
     double effort_cap_loose_nm = std::numeric_limits<double>::quiet_NaN();
     double effort_cap_wet_nm = std::numeric_limits<double>::quiet_NaN();
     double effort_cap_scree_nm = std::numeric_limits<double>::quiet_NaN();
+    // Launch part 4: the launch ceiling over the felt grade ahead —
+    // piecewise linear over strictly ascending knots, held at the end
+    // values outside them; the plan's ceiling is the lower of it and the
+    // surface cap until the felt speed first reaches effort_rise_speed_mps,
+    // then it rises from the grade cap at effort_rate_nm_s to the surface cap.
+    std::vector<double> effort_cap_grades;
+    std::vector<double> effort_cap_grade_nm;
+    double effort_rise_speed_mps = std::numeric_limits<double>::quiet_NaN();
     // Felt crank torque that releases the brakes, piecewise linear over
     // strictly ascending grade knots, held at the end values outside them.
     std::vector<double> release_torque_grades;
@@ -43,6 +51,9 @@ struct LaunchConfig {
     double brake_release_s = std::numeric_limits<double>::quiet_NaN();
     double max_hold_s = std::numeric_limits<double>::quiet_NaN();
     double upshift_crank_rpm = std::numeric_limits<double>::quiet_NaN();
+    // Launch part 4: a rejected upshift request may repeat on the same cog
+    // after this time.
+    double shift_retry_s = std::numeric_limits<double>::quiet_NaN();
     double end_speed_mps = std::numeric_limits<double>::quiet_NaN();
     double end_crank_rpm = std::numeric_limits<double>::quiet_NaN();
     double end_hold_s = std::numeric_limits<double>::quiet_NaN();
@@ -71,8 +82,18 @@ void validate_launch_table(const LaunchConfig &table);
 // the start lean). Validates the table first.
 [[nodiscard]] double release_torque_nm(const LaunchConfig &table, double grade);
 
+// The launch grade cap the table gives for one grade (same interpolation
+// as the release torque). Validates the table first.
+[[nodiscard]] double effort_grade_cap_nm(const LaunchConfig &table, double grade);
+
 // The plan times on the intention period grid, at most 2^31 ticks each.
 // The profile post_init (always) and RiderIntent (enabled intent) call it.
 void validate_launch_plan_context(const LaunchConfig &table, double period_s);
+
+namespace detail {
+// The grade cap without the table validation — the plan's per-tick path;
+// the table is validated at construction.
+[[nodiscard]] double grade_cap_unchecked(const LaunchConfig &table, double grade);
+} // namespace detail
 
 } // namespace rider

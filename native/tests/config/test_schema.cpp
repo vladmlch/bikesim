@@ -303,11 +303,15 @@ cfg::SimulationPhysicsConfig welded_profile() {
                       .effort_cap_loose_nm = 60.0,
                       .effort_cap_wet_nm = 60.0,
                       .effort_cap_scree_nm = 60.0,
+                      .effort_cap_grades = {0.0},
+                      .effort_cap_grade_nm = {1000.0},
+                      .effort_rise_speed_mps = 2.5,
                       .release_torque_grades = {0.0, 0.2},
                       .release_torque_nm = {0.0, 30.0},
                       .brake_release_s = 0.15,
                       .max_hold_s = 1.5,
                       .upshift_crank_rpm = 82.0,
+                      .shift_retry_s = 0.25,
                       .end_speed_mps = 3.0,
                       .end_crank_rpm = 60.0,
                       .end_hold_s = 0.3,
@@ -799,8 +803,9 @@ void test_schema() {
                 "articulated field count");
     bt::require(fields_named(fields[10], "seated_climb").size() == 22,
                 "seated_climb field count");
-    // 24 = the 5 part-2 fields + the 19 launch plan fields of part 3b.
-    bt::require(fields_named(fields[11], "rider_launch").size() == 24,
+    // 28 = the 5 part-2 fields + the 19 launch plan fields of part 3b + the
+    // 4 launch part 4 fields (the grade cap, its rise and the shift retry).
+    bt::require(fields_named(fields[11], "rider_launch").size() == 28,
                 "rider_launch field count");
     bt::require(fields_named(fields[12], "front_lift_reaction").size() == 13,
                 "front_lift_reaction field count");

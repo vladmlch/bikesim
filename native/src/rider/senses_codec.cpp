@@ -497,6 +497,8 @@ bio::Value encode_launch_state(const LaunchPlan::State &s) {
     out.emplace_back("request_teeth", integer_value(s.request_teeth));
     out.emplace_back("blocked_teeth", integer_value(s.blocked_teeth));
     out.emplace_back("preload_missed", bio::Value{s.preload_missed});
+    out.emplace_back("rise_ticks", integer_value(s.rise_ticks));
+    out.emplace_back("retry_tick", integer_value(s.retry_tick));
     return bio::Value{std::move(out)};
 }
 
@@ -504,7 +506,7 @@ LaunchPlan::State decode_launch_state(const bio::Value &value, std::string_view 
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d, keys("phase", "phase_ticks", "launch_ticks", "end_ok_ticks", "blend_ticks", "effort_nm",
                        "brake", "lean_target_rad", "shift_up", "request_count", "request_teeth",
-                       "blocked_teeth", "preload_missed"));
+                       "blocked_teeth", "preload_missed", "rise_ticks", "retry_tick"));
     LaunchPlan::State s;
     try {
         s.phase = launch_phase(d["phase"].string(path));
@@ -523,6 +525,8 @@ LaunchPlan::State decode_launch_state(const bio::Value &value, std::string_view 
     s.request_teeth = d["request_teeth"].integer32(path);
     s.blocked_teeth = d["blocked_teeth"].integer32(path);
     s.preload_missed = d["preload_missed"].boolean(path);
+    s.rise_ticks = d["rise_ticks"].integer(path);
+    s.retry_tick = d["retry_tick"].integer(path);
     return s;
 }
 
@@ -572,11 +576,15 @@ bio::Value encode_launch_config(const LaunchConfig &c) {
     out.emplace_back("effort_cap_loose_nm", real_value(c.effort_cap_loose_nm));
     out.emplace_back("effort_cap_wet_nm", real_value(c.effort_cap_wet_nm));
     out.emplace_back("effort_cap_scree_nm", real_value(c.effort_cap_scree_nm));
+    out.emplace_back("effort_cap_grades", bio::Value{real_array(c.effort_cap_grades)});
+    out.emplace_back("effort_cap_grade_nm", bio::Value{real_array(c.effort_cap_grade_nm)});
+    out.emplace_back("effort_rise_speed_mps", real_value(c.effort_rise_speed_mps));
     out.emplace_back("release_torque_grades", bio::Value{real_array(c.release_torque_grades)});
     out.emplace_back("release_torque_nm", bio::Value{real_array(c.release_torque_nm)});
     out.emplace_back("brake_release_s", real_value(c.brake_release_s));
     out.emplace_back("max_hold_s", real_value(c.max_hold_s));
     out.emplace_back("upshift_crank_rpm", real_value(c.upshift_crank_rpm));
+    out.emplace_back("shift_retry_s", real_value(c.shift_retry_s));
     out.emplace_back("end_speed_mps", real_value(c.end_speed_mps));
     out.emplace_back("end_crank_rpm", real_value(c.end_crank_rpm));
     out.emplace_back("end_hold_s", real_value(c.end_hold_s));
@@ -591,9 +599,10 @@ LaunchConfig decode_launch_config(const bio::Value &value, std::string_view path
                        "start_lean_grades", "start_lean_rad", "plan_enabled", "standstill_speed_mps",
                        "standstill_crank_rpm", "effort_rate_nm_s", "effort_cap_asphalt_nm",
                        "effort_cap_hardpack_nm", "effort_cap_loose_nm", "effort_cap_wet_nm",
-                       "effort_cap_scree_nm", "release_torque_grades", "release_torque_nm",
-                       "brake_release_s", "max_hold_s", "upshift_crank_rpm", "end_speed_mps",
-                       "end_crank_rpm", "end_hold_s", "max_launch_s", "handover_s"));
+                       "effort_cap_scree_nm", "effort_cap_grades", "effort_cap_grade_nm",
+                       "effort_rise_speed_mps", "release_torque_grades", "release_torque_nm",
+                       "brake_release_s", "max_hold_s", "upshift_crank_rpm", "shift_retry_s",
+                       "end_speed_mps", "end_crank_rpm", "end_hold_s", "max_launch_s", "handover_s"));
     LaunchConfig c;
     c.start_cog_grade_breaks = real_list(d["start_cog_grade_breaks"], path);
     c.start_cog_teeth = int_list(d["start_cog_teeth"], path);
@@ -609,11 +618,15 @@ LaunchConfig decode_launch_config(const bio::Value &value, std::string_view path
     c.effort_cap_loose_nm = d["effort_cap_loose_nm"].finite_real(path);
     c.effort_cap_wet_nm = d["effort_cap_wet_nm"].finite_real(path);
     c.effort_cap_scree_nm = d["effort_cap_scree_nm"].finite_real(path);
+    c.effort_cap_grades = real_list(d["effort_cap_grades"], path);
+    c.effort_cap_grade_nm = real_list(d["effort_cap_grade_nm"], path);
+    c.effort_rise_speed_mps = d["effort_rise_speed_mps"].finite_real(path);
     c.release_torque_grades = real_list(d["release_torque_grades"], path);
     c.release_torque_nm = real_list(d["release_torque_nm"], path);
     c.brake_release_s = d["brake_release_s"].finite_real(path);
     c.max_hold_s = d["max_hold_s"].finite_real(path);
     c.upshift_crank_rpm = d["upshift_crank_rpm"].finite_real(path);
+    c.shift_retry_s = d["shift_retry_s"].finite_real(path);
     c.end_speed_mps = d["end_speed_mps"].finite_real(path);
     c.end_crank_rpm = d["end_crank_rpm"].finite_real(path);
     c.end_hold_s = d["end_hold_s"].finite_real(path);

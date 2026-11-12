@@ -120,11 +120,15 @@ rider::LaunchConfig switched_off_launch() {
     t.effort_rate_nm_s = 40.;
     t.effort_cap_asphalt_nm = t.effort_cap_hardpack_nm = t.effort_cap_loose_nm = t.effort_cap_wet_nm =
         t.effort_cap_scree_nm = 60.;
+    t.effort_cap_grades = {0.};
+    t.effort_cap_grade_nm = {1000.};
+    t.effort_rise_speed_mps = 2.5;
     t.release_torque_grades = {0., .2};
     t.release_torque_nm = {0., 30.};
     t.brake_release_s = .15;
     t.max_hold_s = 1.5;
     t.upshift_crank_rpm = 82.;
+    t.shift_retry_s = .25;
     t.end_speed_mps = 3.;
     t.end_crank_rpm = 60.;
     t.end_hold_s = .3;

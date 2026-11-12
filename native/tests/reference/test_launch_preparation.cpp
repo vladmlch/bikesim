@@ -70,11 +70,15 @@ rider::LaunchConfig ramp_table() {
             .effort_cap_loose_nm = 60.,
             .effort_cap_wet_nm = 60.,
             .effort_cap_scree_nm = 60.,
+            .effort_cap_grades = {0.},
+            .effort_cap_grade_nm = {1000.},
+            .effort_rise_speed_mps = 2.5,
             .release_torque_grades = {0., .2},
             .release_torque_nm = {0., 30.},
             .brake_release_s = .15,
             .max_hold_s = 1.5,
             .upshift_crank_rpm = 82.,
+            .shift_retry_s = .25,
             .end_speed_mps = 3.,
             .end_crank_rpm = 60.,
             .end_hold_s = .3,
@@ -168,8 +172,21 @@ void test_plan_fields_name_the_field() {
             "release_torque_nm", "a negative release torque");
     rejects([&] { rider::validate_launch_table(with([](auto &t) { t.max_hold_s = 0.; })); },
             "max_hold_s", "a zero hold limit");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_cap_grades = {}; })); },
+            "effort_cap_grades", "no grade cap knot");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_cap_grade_nm = {60., 60.}; })); },
+            "effort_cap_grade_nm", "one cap for two knots");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) {
+                t.effort_cap_grades = {.2, .1}; t.effort_cap_grade_nm = {30., 30.}; })); },
+            "effort_cap_grades", "descending grade cap knots");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_cap_grade_nm = {0.}; })); },
+            "effort_cap_grade_nm", "a zero grade cap");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.effort_rise_speed_mps = 0.; })); },
+            "effort_rise_speed_mps", "a zero rise speed");
     rejects([&] { rider::validate_launch_table(with([](auto &t) { t.upshift_crank_rpm = 0.; })); },
             "upshift_crank_rpm", "a zero upshift cadence");
+    rejects([&] { rider::validate_launch_table(with([](auto &t) { t.shift_retry_s = 0.; })); },
+            "shift_retry_s", "a zero retry time");
     rejects([&] { rider::validate_launch_table(with([](auto &t) { t.max_launch_s = 0.; })); },
             "max_launch_s", "a zero launch limit");
     rejects([&] { rider::validate_launch_table(with([](auto &t) {
@@ -180,6 +197,8 @@ void test_plan_fields_name_the_field() {
     rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.max_launch_s = 0x1p40 * .00125; }),
                                                       .00125); },
             "max_launch_s", "a launch limit beyond 2^31 ticks");
+    rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.shift_retry_s = .0011; }), .00125); },
+            "shift_retry_s", "a retry time off the grid");
     rider::validate_launch_plan_context(ramp_table(), .00125);   // control
     bt::require(rider::release_torque_nm(ramp_table(), -.1) == 0. &&
                     rider::release_torque_nm(ramp_table(), .1) == 15. &&

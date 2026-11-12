@@ -671,6 +671,13 @@
     "effort_cap_loose_nm": 60.0,
     "effort_cap_wet_nm": 60.0,
     "effort_cap_scree_nm": 60.0,
+    "effort_cap_grades": [
+      0.0
+    ],
+    "effort_cap_grade_nm": [
+      1000.0
+    ],
+    "effort_rise_speed_mps": 2.5,
     "release_torque_grades": [
       0.0,
       0.2
@@ -682,6 +689,7 @@
     "brake_release_s": 0.15,
     "max_hold_s": 1.5,
     "upshift_crank_rpm": 82.0,
+    "shift_retry_s": 0.25,
     "end_speed_mps": 3.0,
     "end_crank_rpm": 60.0,
     "end_hold_s": 0.3,
